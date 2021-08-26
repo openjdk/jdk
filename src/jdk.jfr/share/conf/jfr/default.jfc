@@ -389,6 +389,16 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
+    <event name="jdk.GCPhaseConcurrentLevel2">
+      <setting name="enabled" control="gc-enabled-high">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.GCPhaseConcurrentLevel3">
+      <setting name="enabled" control="gc-enabled-high">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.GCReferenceStatistics">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -837,10 +847,10 @@
 
 
 
-  <!--                                                                                                        
-  Contents of the control element is not read by the JVM, it's used                                           
-  by JDK Mission Control and the 'jfr' tool to change settings that                                           
-  carry the control attribute.                                                                                
+  <!--
+  Contents of the control element is not read by the JVM, it's used
+  by JDK Mission Control and the 'jfr' tool to change settings that
+  carry the control attribute.
   -->
     <control>
      <selection name="gc" default="normal" label="Garbage Collector">

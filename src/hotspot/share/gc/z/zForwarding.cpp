@@ -194,7 +194,7 @@ void ZForwarding::release_page() {
 
 bool ZForwarding::wait_page_released() const {
   if (Atomic::load_acquire(&_ref_count) != 0) {
-    ZStatTimerFIXME timer(ZCriticalPhaseRelocationStall);
+    ZStatTimer timer(ZCriticalPhaseRelocationStall);
     ZLocker<ZConditionLock> locker(&_ref_lock);
     while (Atomic::load_acquire(&_ref_count) != 0) {
       if (_ref_abort) {

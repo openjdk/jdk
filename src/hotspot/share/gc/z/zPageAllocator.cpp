@@ -457,7 +457,7 @@ static void check_out_of_memory_during_initialization() {
 }
 
 bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
-  ZStatTimerFIXME timer(ZCriticalPhaseAllocationStall);
+  ZStatTimer timer(ZCriticalPhaseAllocationStall);
   EventZAllocationStall event;
   ZPageAllocationStall result;
 

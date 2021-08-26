@@ -24,6 +24,8 @@
 #include "gc/z/zGeneration.hpp"
 #include "gc/z/zHeap.inline.hpp"
 
+static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemset("Concurrent Minor Mark Root Remset");
+
 ZGeneration::ZGeneration(ZGenerationId generation_id, ZPageAge age) :
     _generation_id(generation_id),
     _used(0),
@@ -55,6 +57,7 @@ void ZYoungGeneration::flip_remembered_set() {
 }
 
 void ZYoungGeneration::scan_remembered() {
+  ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemset);
   _remember.scan();
 }
 

@@ -736,6 +736,10 @@ ZStatSubPhase::ZStatSubPhase(const char* name) :
     ZStatPhase("Subphase", name) {}
 
 void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  if (timer != NULL && !ZThread::is_worker()) {
+    timer->register_gc_phase_start(name(), start);
+  }
+
   if (ZThread::is_worker()) {
     LogTarget(Debug, gc, phases, thread, start) log;
     log_start(log, true /* thread */);
@@ -748,6 +752,10 @@ void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start)
 void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
     return;
+  }
+
+  if (timer != NULL && !ZThread::is_worker()) {
+    timer->register_gc_phase_end(end);
   }
 
   ZTracer::tracer()->report_thread_phase(name(), start, end);
@@ -793,10 +801,10 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
 }
 
 ZStatTimerMinor::ZStatTimerMinor(const ZStatPhase& phase) :
-    ZStatTimer(ZHeap::heap()->minor_collector()->timer(), phase) {}
+    ZStatTimer(phase, ZHeap::heap()->minor_collector()->timer()) {}
 
 ZStatTimerMajor::ZStatTimerMajor(const ZStatPhase& phase) :
-    ZStatTimer(ZHeap::heap()->major_collector()->timer(), phase) {}
+    ZStatTimer(phase, ZHeap::heap()->major_collector()->timer()) {}
 
 //
 // Stat timer

@@ -304,7 +304,7 @@ private:
   const Ticks        _start;
 
 public:
-  ZStatTimer(ConcurrentGCTimer* timer, const ZStatPhase& phase) :
+  ZStatTimer(const ZStatPhase& phase, ConcurrentGCTimer* timer) :
       _enabled(!ZStatTimerDisable::is_active()),
       _timer(timer),
       _phase(phase),
@@ -312,6 +312,14 @@ public:
     if (_enabled) {
       _phase.register_start(_timer, _start);
     }
+  }
+
+  ZStatTimer(const ZStatSubPhase& phase) :
+      ZStatTimer(phase, NULL /* timer */) {
+  }
+
+  ZStatTimer(const ZStatCriticalPhase& phase) :
+      ZStatTimer(phase, NULL /* timer */) {
   }
 
   ~ZStatTimer() {
@@ -330,15 +338,6 @@ public:
 class ZStatTimerMajor : public ZStatTimer {
 public:
   ZStatTimerMajor(const ZStatPhase& phase);
-};
-
-// FIXME: These sub-phases should belong somewhere.
-class ZStatTimerFIXME : public ZStatTimer {
-private:
-  ConcurrentGCTimer _temp_timer;
-public:
-  ZStatTimerFIXME(const ZStatPhase& phase) :
-      ZStatTimer(&_temp_timer, phase) {}
 };
 
 //

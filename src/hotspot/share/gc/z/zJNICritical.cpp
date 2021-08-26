@@ -107,7 +107,7 @@ void ZJNICritical::enter_inner(JavaThread* thread) {
 
     if (count < 0) {
       // Wait until unblocked
-      ZStatTimerFIXME timer(ZCriticalPhaseJNICriticalStall);
+      ZStatTimer timer(ZCriticalPhaseJNICriticalStall);
 
       // Transition thread to blocked before locking to avoid deadlock
       ThreadBlockInVM tbivm(thread);

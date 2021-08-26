@@ -51,6 +51,11 @@
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 
+static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRoots("Concurrent Minor Mark Roots");
+static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkFollow("Concurrent Minor Mark Follow");
+
+static const ZStatSubPhase ZSubPhaseConcurrentMajorMarkRoots("Concurrent Major Mark Roots");
+static const ZStatSubPhase ZSubPhaseConcurrentMajorMarkFollow("Concurrent Major Mark Follow");
 static const ZStatSubPhase ZSubPhaseConcurrentMajorRemapRootUncolored("Concurrent Major Remap Root Uncolored");
 
 ZCollector::ZCollector(ZCollectorId id, const char* worker_prefix, ZPageTable* page_table, ZPageAllocator* page_allocator) :
@@ -303,9 +308,6 @@ ZMinorCollector::ZMinorCollector(ZPageTable* page_table, ZPageAllocator* page_al
     ZCollector(ZCollectorId::_minor, "ZWorkerMinor", page_table, page_allocator),
     _skip_mark_start(false) {}
 
-static const ZStatSubPhase ZPhasePauseMinorMarkStart1("Pause Minor Mark Start 1");
-static const ZStatSubPhase ZPhasePauseMinorMarkStart2("Pause Minor Mark Start 2");
-
 bool ZMinorCollector::should_skip_mark_start() {
   SuspendibleThreadSetJoiner sts_joiner;
   if (_skip_mark_start) {
@@ -321,7 +323,6 @@ void ZMinorCollector::skip_mark_start() {
 
 void ZMinorCollector::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  { ZStatTimerMinor timer(ZPhasePauseMinorMarkStart1);
 
   // Flip address view
   ZGlobalsPointers::flip_minor_mark_start();
@@ -331,8 +332,7 @@ void ZMinorCollector::mark_start() {
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
-  }
-  { ZStatTimerMinor timer(ZPhasePauseMinorMarkStart2);
+
     // Enter mark phase
   set_phase(Phase::Mark);
 
@@ -344,14 +344,15 @@ void ZMinorCollector::mark_start() {
 
   // Update statistics
   stat_heap()->set_at_mark_start(_page_allocator->stats(this));
-  }
 }
 
 void ZMinorCollector::mark_roots() {
+  ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRoots);
   _mark.mark_roots();
 }
 
 void ZMinorCollector::mark_follow() {
+  ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkFollow);
   _mark.mark_follow();
 }
 
@@ -468,10 +469,12 @@ void ZMajorCollector::mark_start() {
 }
 
 void ZMajorCollector::mark_roots() {
+  ZStatTimerMajor timer(ZSubPhaseConcurrentMajorMarkRoots);
   _mark.mark_roots();
 }
 
 void ZMajorCollector::mark_follow() {
+  ZStatTimerMajor timer(ZSubPhaseConcurrentMajorMarkFollow);
   _mark.mark_follow();
 }
 

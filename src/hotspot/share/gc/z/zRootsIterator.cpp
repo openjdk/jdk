@@ -56,22 +56,22 @@ ZStrongOopStorageSetIterator::ZStrongOopStorageSetIterator() :
     _iter() {}
 
 void ZStrongOopStorageSetIterator::apply(OopClosure* cl) {
-  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsOopStorageSet);
+  ZStatTimer timer(ZSubPhaseConcurrentRootsOopStorageSet);
   _iter.oops_do(cl);
 }
 
 void ZStrongCLDsIterator::apply(CLDClosure* cl) {
-  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
+  ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   ClassLoaderDataGraph::always_strong_cld_do(cl);
 }
 
 void ZWeakCLDsIterator::apply(CLDClosure* cl) {
-  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
+  ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   ClassLoaderDataGraph::roots_cld_do(NULL /* strong */, cl /* weak */);
 }
 
 void ZAllCLDsIterator::apply(CLDClosure* cl) {
-  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
+  ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   ClassLoaderDataGraph::cld_do(cl);
 }
 
@@ -84,7 +84,7 @@ uint ZJavaThreadsIterator::claim() {
 }
 
 void ZJavaThreadsIterator::apply(ThreadClosure* cl) {
-  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsJavaThreads);
+  ZStatTimer timer(ZSubPhaseConcurrentRootsJavaThreads);
 
   // The resource mark is needed because interpreter oop maps are
   // not reused in concurrent mode. Instead, they are temporary and
@@ -110,7 +110,7 @@ ZNMethodsIterator::~ZNMethodsIterator() {
 }
 
 void ZNMethodsIterator::apply(NMethodClosure* cl) {
-  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsCodeCache);
+  ZStatTimer timer(ZSubPhaseConcurrentRootsCodeCache);
   ZNMethod::nmethods_do(_secondary, cl);
 }
 
@@ -136,7 +136,7 @@ ZWeakOopStorageSetIterator::ZWeakOopStorageSetIterator() :
     _iter() {}
 
 void ZWeakOopStorageSetIterator::apply(OopClosure* cl) {
-  ZStatTimerFIXME timer(ZSubPhaseConcurrentWeakRootsOopStorageSet);
+  ZStatTimer timer(ZSubPhaseConcurrentWeakRootsOopStorageSet);
   _iter.oops_do(cl);
 }
 

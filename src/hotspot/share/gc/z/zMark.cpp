@@ -69,7 +69,6 @@
 
 static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootUncolored("Concurrent Minor Mark Root Uncolored");
 static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootColored("Concurrent Minor Mark Root Colored");
-static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemset("Concurrent Minor Mark Root Remset");
 static const ZStatSubPhase ZSubPhaseConcurrentMark("Concurrent Mark");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryFlush("Concurrent Mark Try Flush");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryTerminate("Concurrent Mark Try Terminate");
@@ -512,7 +511,7 @@ bool ZMark::flush(bool gc_threads) {
 bool ZMark::try_terminate_flush() {
   Atomic::inc(&_work_nterminateflush);
 
-  ZStatTimer timer(_collector->timer(), ZSubPhaseConcurrentMarkTryFlush);
+  ZStatTimer timer(ZSubPhaseConcurrentMarkTryFlush, _collector->timer());
   return flush(true /* gc_threads */) ||
          _terminate.resurrected();
 }
@@ -530,13 +529,13 @@ bool ZMark::try_proactive_flush() {
     return false;
   }
 
-  ZStatTimer timer(_collector->timer(), ZSubPhaseConcurrentMarkTryFlush);
+  ZStatTimer timer(ZSubPhaseConcurrentMarkTryFlush);
   SuspendibleThreadSetLeaver sts;
   return flush(false /* gc_threads */);
 }
 
 bool ZMark::try_terminate() {
-  ZStatTimer timer(_collector->timer(), ZSubPhaseConcurrentMarkTryTerminate);
+  ZStatTimer timer(ZSubPhaseConcurrentMarkTryTerminate);
   for (;;) {
     if (_terminate.enter()) {
       // Last thread entered, terminate
@@ -555,7 +554,7 @@ bool ZMark::try_terminate() {
 }
 
 void ZMark::work() {
-  ZStatTimer timer(_collector->timer(), ZSubPhaseConcurrentMark);
+  ZStatTimer timer(ZSubPhaseConcurrentMark);
   SuspendibleThreadSetJoiner sts;
   ZMarkCache cache(_stripes.nstripes());
   ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
@@ -863,10 +862,9 @@ void ZMark::mark_roots() {
     ZMarkOldGenRootsTask task(this);
     workers()->run(&task);
   } else {
-    {
-      ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemset);
-      ZHeap::heap()->young_generation()->scan_remembered();
-    }
+    // Mark from old-to-young pointers
+    ZHeap::heap()->young_generation()->scan_remembered();
+
     ZMarkYoungGenRootsTask task(this);
     workers()->run(&task);
   }
