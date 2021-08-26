@@ -28,10 +28,6 @@
 
 #include "jfr/jfrEvents.hpp"
 
-inline ZTracer* ZTracer::tracer() {
-  return _tracer;
-}
-
 inline void ZTracer::report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value) {
   if (EventZStatisticsCounter::is_enabled()) {
     send_stat_counter(counter, increment, value);
@@ -61,7 +57,7 @@ inline ZTraceThreadPhase::ZTraceThreadPhase(const char* name) :
     _name(name) {}
 
 inline ZTraceThreadPhase::~ZTraceThreadPhase() {
-  ZTracer::tracer()->report_thread_phase(_name, _start, Ticks::now());
+  ZTracer::report_thread_phase(_name, _start, Ticks::now());
 }
 
 inline ZTraceThreadEvent::ZTraceThreadEvent(const char* name) :
@@ -69,7 +65,7 @@ inline ZTraceThreadEvent::ZTraceThreadEvent(const char* name) :
     _name(name) {}
 
 inline ZTraceThreadEvent::~ZTraceThreadEvent() {
-  ZTracer::tracer()->report_thread_event(_name, _start, Ticks::now());
+  ZTracer::report_thread_event(_name, _start, Ticks::now());
 }
 
 #endif // SHARE_GC_Z_ZTRACER_INLINE_HPP

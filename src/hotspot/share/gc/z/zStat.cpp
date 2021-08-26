@@ -631,10 +631,12 @@ ZStatPhaseCycle::ZStatPhaseCycle(ZCollectorId collector_id, const char* name) :
 void ZStatPhaseCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_start(start);
 
-  ZTracer::tracer()->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
+  GCTracer* tracer = ZHeap::heap()->collector(_collector_id)->tracer();
+
+  tracer->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
 
   ZCollectedHeap::heap()->print_heap_before_gc();
-  ZCollectedHeap::heap()->trace_heap_before_gc(ZTracer::tracer());
+  ZCollectedHeap::heap()->trace_heap_before_gc(tracer);
 
   log_info(gc, start)("Garbage Collection (%s)",
                        GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
@@ -649,10 +651,12 @@ void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start,
 
   timer->register_gc_end(end);
 
-  ZCollectedHeap::heap()->print_heap_after_gc();
-  ZCollectedHeap::heap()->trace_heap_after_gc(ZTracer::tracer());
+  GCTracer* tracer = ZHeap::heap()->collector(_collector_id)->tracer();
 
-  ZTracer::tracer()->report_gc_end(end, timer->time_partitions());
+  ZCollectedHeap::heap()->print_heap_after_gc();
+  ZCollectedHeap::heap()->trace_heap_after_gc(tracer);
+
+  tracer->report_gc_end(end, timer->time_partitions());
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -758,7 +762,7 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
     timer->register_gc_phase_end(end);
   }
 
-  ZTracer::tracer()->report_thread_phase(name(), start, end);
+  ZTracer::report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -785,7 +789,7 @@ void ZStatCriticalPhase::register_start(ConcurrentGCTimer* timer, const Ticks& s
 }
 
 void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
-  ZTracer::tracer()->report_thread_phase(name(), start, end);
+  ZTracer::report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -837,14 +841,14 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
     max = prev_max;
   }
 
-  ZTracer::tracer()->report_stat_sampler(sampler, value);
+  ZTracer::report_stat_sampler(sampler, value);
 }
 
 void ZStatInc(const ZStatCounter& counter, uint64_t increment) {
   ZStatCounterData* const cpu_data = counter.get();
   const uint64_t value = Atomic::add(&cpu_data->_counter, increment);
 
-  ZTracer::tracer()->report_stat_counter(counter, increment, value);
+  ZTracer::report_stat_counter(counter, increment, value);
 }
 
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {

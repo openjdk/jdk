@@ -427,7 +427,7 @@ void ZReferenceProcessor::collect_statistics() {
                                       discovered[REF_WEAK],
                                       discovered[REF_FINAL],
                                       discovered[REF_PHANTOM]);
-  ZTracer::tracer()->report_gc_reference_stats(stats);
+  ZHeap::heap()->major_collector()->tracer()->report_gc_reference_stats(stats);
 }
 
 class ZReferenceProcessorTask : public ZTask {

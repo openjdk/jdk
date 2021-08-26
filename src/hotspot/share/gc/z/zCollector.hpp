@@ -32,6 +32,7 @@
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zTracer.hpp"
 #include "gc/z/zUnload.hpp"
 #include "gc/z/zWeakRootsProcessor.hpp"
 #include "gc/z/zWorkers.hpp"
@@ -145,13 +146,17 @@ public:
   zaddress relocate_or_remap_object(zaddress_unsafe addr);
   zaddress remap_object(zaddress_unsafe addr);
 
+  // Tracing
+  virtual GCTracer* tracer() = 0;
+
   // Threads
   void threads_do(ThreadClosure* tc) const;
 };
 
 class ZMinorCollector : public ZCollector {
 private:
-  bool _skip_mark_start;
+  bool         _skip_mark_start;
+  ZMinorTracer _tracer;
 
 public:
   ZMinorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -170,6 +175,8 @@ public:
 
   void promote_flip(ZPage* page, ZPage* new_page);
   void promote_reloc(ZPage* page, ZPage* new_page);
+
+  virtual GCTracer* tracer();
 };
 
 class ZMajorCollector : public ZCollector {
@@ -178,6 +185,7 @@ private:
   ZWeakRootsProcessor _weak_roots_processor;
   ZUnload             _unload;
   int                 _total_collections_at_end;
+  ZMajorTracer        _tracer;
 
 public:
   ZMajorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -202,6 +210,8 @@ public:
   void roots_remap();
 
   int total_collections_at_end() const;
+
+  virtual GCTracer* tracer();
 };
 
 #endif // SHARE_GC_Z_ZCOLLECTOR_HPP

@@ -85,14 +85,14 @@ static void register_jfr_type_serializers() {
 
 #endif // INCLUDE_JFR
 
-ZTracer* ZTracer::_tracer = NULL;
+ZMinorTracer::ZMinorTracer() :
+    YoungGCTracer(ZMinor, false /* uses_tenuring_threshold */) {
+}
 
-ZTracer::ZTracer() :
-    GCTracer(Z) {}
+ZMajorTracer::ZMajorTracer() :
+    OldGCTracer(ZMajor) {}
 
 void ZTracer::initialize() {
-  assert(_tracer == NULL, "Already initialized");
-  _tracer = new (ResourceObj::C_HEAP, mtGC) ZTracer();
   JFR_ONLY(register_jfr_type_serializers());
 }
 

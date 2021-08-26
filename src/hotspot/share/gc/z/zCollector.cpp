@@ -428,6 +428,10 @@ void ZMinorCollector::promote_reloc(ZPage* old_page, ZPage* new_page) {
   ZHeap::heap()->old_generation()->increase_used(old_page->size());
 }
 
+GCTracer* ZMinorCollector::tracer() {
+  return &_tracer;
+}
+
 ZMajorCollector::ZMajorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
   ZCollector(ZCollectorId::_major, "ZWorkerMajor", page_table, page_allocator),
   _reference_processor(&_workers),
@@ -712,4 +716,8 @@ void ZMajorCollector::roots_remap() {
 
 int ZMajorCollector::total_collections_at_end() const {
   return _total_collections_at_end;
+}
+
+GCTracer* ZMajorCollector::tracer() {
+  return &_tracer;
 }
