@@ -319,7 +319,8 @@ public class ObjectMethods {
      * @param recordClass  the record class hosting the record components
      * @param names        the list of component names, joined into a string
      *                     separated by ";", or the empty string if there are no
-     *                     components
+     *                     components. This parameter is ignored if the {@code methodName}
+     *                     parameter is {@code "equals"} or {@code "hashCode"}
      * @param getters      method handles for the accessor methods for the components
      * @return             a call site if invoked by indy, or a method handle
      *                     if invoked by a condy
