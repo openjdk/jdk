@@ -83,10 +83,9 @@ G1EvacuationFailureObjsInHR::G1EvacuationFailureObjsInHR(uint region_idx, HeapWo
   _max_offset(static_cast<Elem>(1u << (HeapRegion::LogOfHRGrainBytes-LogHeapWordSize))),
   _region_idx(region_idx),
   _bottom(bottom),
-  _nodes_array(HeapRegion::GrainWords / NODE_LENGTH + 2),
+  _nodes_array(static_cast<uint32_t>(HeapRegion::GrainWords) / NODE_LENGTH + 2u),
   _offset_array(NULL),
-  _objs_num(0)
-  {
+  _objs_num(0) {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
 }
 
