@@ -33,10 +33,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
@@ -54,7 +52,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class FileServerHandler implements HttpHandler {
 
     private static final List<String> SUPPORTED_METHODS = List.of("HEAD", "GET");
-    private static final List<String> UNSUPPORTED_METHODS = List.of("CONNECT", "DELETE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE");
+    private static final List<String> UNSUPPORTED_METHODS =
+            List.of("CONNECT", "DELETE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE");
 
     private final Path root;
     private final UnaryOperator<String> mimeTable;
@@ -139,7 +138,7 @@ public final class FileServerHandler implements HttpHandler {
         String fileNotFound = ResourceBundleHelper.getMessage("html.not.found");
         var bytes = (openHTML
                 + "<h1>" + fileNotFound + "</h1>\n"
-                + "<p>" + sanitize.apply(exchange.getRequestURI().getPath(), chars) + "</p>\n"
+                + "<p>" + sanitize.apply(exchange.getRequestURI().getPath()) + "</p>\n"
                 + closeHTML).getBytes(UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
 
@@ -291,17 +290,25 @@ public final class FileServerHandler implements HttpHandler {
             </html>
             """;
 
+    private static final String hrefListItemTemplate = """
+            <li><a href="%s">%s</a></li>
+            """;
+
+    private static String hrefListItemFor(URI uri) {
+        return hrefListItemTemplate.formatted(uri.toASCIIString(), sanitize.apply(uri.getPath()));
+    }
+
     private static String dirListing(HttpExchange exchange, Path path) throws IOException {
         String dirListing = ResourceBundleHelper.getMessage("html.dir.list");
-        var sb = new StringBuffer(openHTML
+        var sb = new StringBuilder(openHTML
                 + "<h1>" + dirListing + " "
-                + sanitize.apply(exchange.getRequestURI().getPath(), chars)
+                + sanitize.apply(exchange.getRequestURI().getPath())
                 + "</h1>\n"
                 + "<ul>\n");
         try (var paths = Files.list(path)) {
             paths.filter(p -> !isHiddenOrSymLink(p))
                  .map(p -> path.toUri().relativize(p.toUri()))
-                 .forEach(uri -> sb.append("<li><a href=\"" + uri.toASCIIString() + "\">" + sanitize.apply(uri.getPath(), chars) + "</a></li>\n"));
+                 .forEach(uri -> sb.append(hrefListItemFor(uri)));
         }
         sb.append("</ul>\n");
         sb.append(closeHTML);
@@ -334,19 +341,23 @@ public final class FileServerHandler implements HttpHandler {
         return type != null ? type : DEFAULT_CONTENT_TYPE;
     }
 
-    private static final BiFunction<String, HashMap<Integer, String>, String> sanitize =
-            (file, chars) -> file.chars().collect(StringBuilder::new,
-                    (sb, c) -> sb.append(chars.getOrDefault(c, Character.toString(c))),
-                    StringBuilder::append).toString();
-
-    private static final HashMap<Integer,String> chars = new HashMap<>(Map.of(
+    // A non-exhaustive map of reserved-HTML and special characters to their
+    // equivalent entity.
+    private static final Map<Integer,String> RESERVED_CHARS = Map.of(
             (int) '&'  , "&amp;"   ,
             (int) '<'  , "&lt;"    ,
             (int) '>'  , "&gt;"    ,
             (int) '"'  , "&quot;"  ,
             (int) '\'' , "&#x27;"  ,
-            (int) '/'  , "&#x2F;"  )
-    );
+            (int) '/'  , "&#x2F;"  );
+
+    // A function that takes a string and returns a sanitized version of that
+    // string with the reserved-HTML and special characters replaced with their
+    // equivalent entity.
+    private static final UnaryOperator<String> sanitize =
+            file -> file.chars().collect(StringBuilder::new,
+                    (sb, c) -> sb.append(RESERVED_CHARS.getOrDefault(c, Character.toString(c))),
+                    StringBuilder::append).toString();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
