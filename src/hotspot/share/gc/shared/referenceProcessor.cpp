@@ -847,26 +847,31 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   return list;
 }
 
-inline void
-ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list,
-                                           oop             obj,
-                                           HeapWord*       discovered_addr) {
-  if (_discovery_is_mt) {
-    add_to_discovered_list_mt(refs_list, obj, discovered_addr);
+inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list,
+                                                       oop obj,
+                                                       HeapWord* discovered_addr) {
+  oop current_head = refs_list.head();
+  // Prepare value to put into the discovered field. The last ref must have its
+  // discovered field pointing to itself.
+  oop next_discovered = (current_head != NULL) ? current_head : obj;
+
+  bool added = discovery_is_mt() ? set_discovered_link_mt(discovered_addr, next_discovered)
+                                 : set_discovered_link_st(discovered_addr, next_discovered);
+  if (added) {
+    // We can always add the object without synchronization: every thread has its
+    // own list head.
+    refs_list.add_as_head(obj);
+    log_develop_trace(gc, ref)("Discovered reference (%s) (" INTPTR_FORMAT ": %s)",
+                               discovery_is_mt() ? "mt" : "st", p2i(obj), obj->klass()->internal_name());
   } else {
-    add_to_discovered_list_st(refs_list, obj, discovered_addr);
+    log_develop_trace(gc, ref)("Already discovered reference (mt) (" INTPTR_FORMAT ": %s)",
+                               p2i(obj), obj->klass()->internal_name());
   }
 }
 
-inline void
-ReferenceProcessor::add_to_discovered_list_st(DiscoveredList& refs_list,
-                                              oop             obj,
-                                              HeapWord*       discovered_addr) {
+inline bool ReferenceProcessor::set_discovered_link_st(HeapWord* discovered_addr,
+                                                       oop next_discovered) {
   assert(!_discovery_is_mt, "must be");
-
-  oop current_head = refs_list.head();
-  // The last ref must have its discovered field pointing to itself.
-  oop next_discovered = (current_head != NULL) ? current_head : obj;
 
   if (_discovery_is_atomic) {
     // Do a raw store here: the field will be visited later when processing
@@ -875,23 +880,15 @@ ReferenceProcessor::add_to_discovered_list_st(DiscoveredList& refs_list,
   } else {
     HeapAccess<AS_NO_KEEPALIVE>::oop_store(discovered_addr, next_discovered);
   }
-  refs_list.add_as_head(obj);
-
-  log_develop_trace(gc, ref)("Discovered reference (st) (" INTPTR_FORMAT ": %s)", p2i(obj), obj->klass()->internal_name());
+  // Always successful.
+  return true;
 }
 
-inline void
-ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
-                                              oop             obj,
-                                              HeapWord*       discovered_addr) {
+inline bool ReferenceProcessor::set_discovered_link_mt(HeapWord* discovered_addr,
+                                                       oop next_discovered) {
   assert(_discovery_is_mt, "must be");
 
-  oop current_head = refs_list.head();
-  // The last ref must have its discovered field pointing to itself.
-  oop next_discovered = (current_head != NULL) ? current_head : obj;
-
-  // First we must make sure this object is only enqueued once. CAS in a non null
-  // discovered_addr.
+  // We must make sure this object is only enqueued once. Try to CAS into the discovered_addr.
   oop retest;
   if (_discovery_is_atomic) {
     // Try a raw store here, still making sure that we enqueue only once: the field
@@ -900,21 +897,7 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
   } else {
     retest = HeapAccess<AS_NO_KEEPALIVE>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
   }
-
-  if (retest == NULL) {
-    // This thread just won the right to enqueue the object.
-    // We have separate lists for enqueueing, so no synchronization
-    // is necessary.
-    refs_list.add_as_head(obj);
-
-    log_develop_trace(gc, ref)("Discovered reference (mt) (" INTPTR_FORMAT ": %s)",
-                               p2i(obj), obj->klass()->internal_name());
-  } else {
-    // If retest was non NULL, another thread beat us to it:
-    // The reference has already been discovered...
-    log_develop_trace(gc, ref)("Already discovered reference (mt) (" INTPTR_FORMAT ": %s)",
-                               p2i(obj), obj->klass()->internal_name());
-  }
+  return retest == NULL;
 }
 
 #ifndef PRODUCT
