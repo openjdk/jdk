@@ -376,9 +376,10 @@ public class BasicSplitPaneDivider extends Container
 
     /**
      * Messaged when the oneTouchExpandable value of the JSplitPane the
-     * receiver is contained in changes. Will create the
-     * <code>leftButton</code> and <code>rightButton</code> if they
-     * are null. invalidates the receiver as well.
+     * receiver is contained in changes. If the Look and Feel does not
+     * support the one touch buttons, this will do nothing. Otherwise, this
+     * will create the <code>leftButton</code> and <code>rightButton</code>
+     * if they are null and invalidate the receiver as well.
      */
     protected void oneTouchExpandableChanged() {
         if (!DefaultLookup.getBoolean(splitPane, splitPaneUI,
