@@ -22,51 +22,55 @@
  */
 /*
  * @test
- * @bug 8266510 8271315
- * @summary  Verifies Nimbus JTree default tree cell renderer use selected text color
- * @run main/manual NimbusJTreeSelTextColor
+ * @bug 8266510 8271315 8273043
+ * @key headful
+ * @summary  Verifies Nimbus JTree default tree cell renderer uses selected text color
+ * @run main/othervm -Dawt.useSystemAAFontSettings=off -Dsun.java2d.uiScale=1.0 NimbusJTreeSelTextColor
  */
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+
 import java.awt.Color;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.GridBagConstraints;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import javax.swing.JButton;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
-import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.UIManager;
+import javax.swing.tree.DefaultTreeCellRenderer;
 
 public class NimbusJTreeSelTextColor {
 
     private static JFrame frame;
     private static JTree tree;
-    private static DefaultTreeCellRenderer treeCellRenderer;
-    private static volatile CountDownLatch countDownLatch;
-    private static volatile boolean testResult;
 
-    private static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n"
-            + "Verify selected text color is same as selected tree leaf icon color.\n "
-            + "If the color is same ie, white\n"
-            + "then press Pass otherwise press Fail.";
+    private static volatile Rectangle treeBounds;
+    private static volatile int iconOffset;
+    private static volatile Color foregroundColor;
+    private static volatile Color backgroundColor;
 
-    public static void main(String args[]) throws Exception{
-        countDownLatch = new CountDownLatch(1);
+    private static final String FILENAME = "image.png";
 
-        SwingUtilities.invokeAndWait(NimbusJTreeSelTextColor::createUI);
-        countDownLatch.await(5, TimeUnit.MINUTES);
+    public static void main(String[] args) throws Exception {
+        try {
+            SwingUtilities.invokeAndWait(NimbusJTreeSelTextColor::createUI);
 
-        if (!testResult) {
-            throw new RuntimeException("Selected text color not same as selected tree leaf icon color!");
+            Robot robot = new Robot();
+            robot.waitForIdle();
+            robot.delay(500);
+
+            SwingUtilities.invokeAndWait(NimbusJTreeSelTextColor::getTreeBounds);
+            treeBounds.height /= 4; // height of one row
+            treeBounds.x += iconOffset;
+            treeBounds.width -= iconOffset;
+            treeBounds.width -= 2; // crop selection border on the right
+            BufferedImage image = robot.createScreenCapture(treeBounds);
+            checkColors(image);
+        } finally {
+            SwingUtilities.invokeAndWait(frame::dispose);
         }
     }
 
@@ -77,85 +81,58 @@ public class NimbusJTreeSelTextColor {
             throw new RuntimeException(e);
         }
 
-        JFrame mainFrame = new JFrame();
-        GridBagLayout layout = new GridBagLayout();
-        JPanel mainControlPanel = new JPanel(layout);
-        JPanel resultButtonPanel = new JPanel(layout);
+        frame = new JFrame("Nimbus Tree selected color");
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        GridBagConstraints gbc = new GridBagConstraints();
+        frame.getContentPane().add(createTree());
 
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.insets = new Insets(5, 15, 5, 15);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        mainControlPanel.add(createComponent(), gbc);
-
-        JTextArea instructionTextArea = new JTextArea();
-        instructionTextArea.setText(INSTRUCTIONS);
-        instructionTextArea.setEditable(false);
-        instructionTextArea.setBackground(Color.white);
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        mainControlPanel.add(instructionTextArea, gbc);
-
-        JButton passButton = new JButton("Pass");
-        passButton.setActionCommand("Pass");
-        passButton.addActionListener((ActionEvent e) -> {
-            testResult = true;
-            mainFrame.dispose();
-            countDownLatch.countDown();
-
-        });
-
-        JButton failButton = new JButton("Fail");
-        failButton.setActionCommand("Fail");
-        failButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                mainFrame.dispose();
-                countDownLatch.countDown();
-            }
-        });
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-
-        resultButtonPanel.add(passButton, gbc);
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        resultButtonPanel.add(failButton, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        mainControlPanel.add(resultButtonPanel, gbc);
-
-        mainFrame.add(mainControlPanel);
-        mainFrame.pack();
-
-        mainFrame.addWindowListener(new WindowAdapter() {
-
-            @Override
-            public void windowClosing(WindowEvent e) {
-                mainFrame.dispose();
-                countDownLatch.countDown();
-            }
-        });
-        mainFrame.setLocationRelativeTo(null);
-        mainFrame.setVisible(true);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 
-    private static JComponent createComponent() {
+    private static void checkColors(final BufferedImage image) throws IOException {
+        final int y = treeBounds.height / 2;
+        final int foreground = foregroundColor.getRGB();
+        final int background = backgroundColor.getRGB();
+
+        for (int x = 0; x < treeBounds.width; x++) {
+            int rgb = image.getRGB(x, y);
+            if (rgb != foreground && rgb != background) {
+                save(image);
+                throw new RuntimeException(
+                        "Unexpected color found: " + Integer.toHexString(rgb)
+                        + " at (" + x + ", " + y + ");"
+                        + " foreground: " + Integer.toHexString(foreground) + ";"
+                        + " background: " + Integer.toHexString(background)
+                        + " - check " + FILENAME);
+            }
+        }
+    }
+
+    private static void getTreeBounds() {
+        treeBounds = new Rectangle(tree.getLocationOnScreen(),
+                                   tree.getSize());
+    }
+
+    private static JComponent createTree() {
         tree = new JTree();
 
-        treeCellRenderer =  new DefaultTreeCellRenderer();
-        tree.setRootVisible(true);
-        tree.setShowsRootHandles(true);
+        DefaultTreeCellRenderer cellRenderer = new DefaultTreeCellRenderer();
+        iconOffset = cellRenderer.getOpenIcon().getIconWidth()
+                     + cellRenderer.getIconTextGap();
+        foregroundColor = (Color) UIManager.get("Tree.selectionForeground");
+        backgroundColor = (Color) UIManager.get("Tree.selectionBackground");
 
-        tree.setCellRenderer(treeCellRenderer);
-        tree.setSelectionRow(1);
+        tree.setRootVisible(true);
+        tree.setShowsRootHandles(false);
+        tree.setCellRenderer(cellRenderer);
+        tree.setSelectionRow(0);
         return tree;
     }
-}
 
+    private static void save(final BufferedImage img) throws IOException {
+        ImageIO.write(img, "png", new File(FILENAME));
+    }
+
+}
