@@ -200,10 +200,10 @@ void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread
 }
 #endif
 
-#define def(var, type, pri, vm_block, safepoint_check_allowed ) {      \
-  var = new type(Mutex::pri, #var, vm_block, Mutex::safepoint_check_allowed); \
-  assert(_num_mutex < MAX_NUM_MUTEX, "increase MAX_NUM_MUTEX");        \
-  _mutex_array[_num_mutex++] = var;                                      \
+#define def(var, type, pri, vm_block, safepoint_check_allowed ) {             \
+  var = new type(Mutex::pri, #var, Mutex::safepoint_check_allowed, vm_block); \
+  assert(_num_mutex < MAX_NUM_MUTEX, "increase MAX_NUM_MUTEX");               \
+  _mutex_array[_num_mutex++] = var;                                           \
 }
 
 // Using Padded subclasses to prevent false sharing of these global monitors and mutexes.

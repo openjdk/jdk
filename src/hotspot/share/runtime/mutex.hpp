@@ -158,10 +158,11 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
 
  public:
-  Mutex(int rank, const char *name, bool allow_vm_block = false,
-        SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
+  Mutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required, bool allow_vm_block);
+
   Mutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
-    Mutex(rank, name, safepoint_check_required == _safepoint_check_never ? true : false, safepoint_check_required) {}
+    Mutex(rank, name, safepoint_check_required,
+          safepoint_check_required == _safepoint_check_never ? true : false) {}
 
   ~Mutex();
 
@@ -202,9 +203,8 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
 class Monitor : public Mutex {
  public:
-  Monitor(int rank, const char *name, bool allow_vm_block = false,
-         SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
-    Mutex(rank, name, allow_vm_block, safepoint_check_required) {}
+  Monitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required, bool allow_vm_block)  :
+    Mutex(rank, name, safepoint_check_required, allow_vm_block) {}
 
   Monitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
     Mutex(rank, name, safepoint_check_required) {}
@@ -227,9 +227,8 @@ class PaddedMutex : public Mutex {
   };
   char _padding[PADDING_LEN];
 public:
-  PaddedMutex(int rank, const char *name, bool allow_vm_block = false,
-              SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
-    Mutex(rank, name, allow_vm_block, safepoint_check_required) {};
+  PaddedMutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required, bool allow_vm_block) :
+    Mutex(rank, name, safepoint_check_required, allow_vm_block) {};
   PaddedMutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
     Mutex(rank, name, safepoint_check_required) {};
 };
@@ -241,9 +240,8 @@ class PaddedMonitor : public Monitor {
   };
   char _padding[PADDING_LEN];
  public:
-  PaddedMonitor(int rank, const char *name, bool allow_vm_block = false,
-               SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
-    Monitor(rank, name, allow_vm_block, safepoint_check_required) {};
+  PaddedMonitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required, bool allow_vm_block) :
+    Monitor(rank, name, safepoint_check_required, allow_vm_block) {};
   PaddedMonitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
     Monitor(rank, name, safepoint_check_required) {};
 };

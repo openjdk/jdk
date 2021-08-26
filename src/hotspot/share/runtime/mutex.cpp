@@ -274,8 +274,8 @@ Mutex::~Mutex() {
   os::free(const_cast<char*>(_name));
 }
 
-Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) : _owner(NULL) {
+Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check_required,
+             bool allow_vm_block) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != NULL, "Mutex requires a name");
   _name = os::strdup(name, mtInternal);

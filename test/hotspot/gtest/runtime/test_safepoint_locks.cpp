@@ -32,7 +32,7 @@
 // Test mismatched safepoint check flag on lock declaration vs. lock acquisition.
 TEST_VM_ASSERT_MSG(SafepointLockAssertTest, always_check,
     ".*This lock should always have a safepoint check for Java threads: SFPT_Test_lock") {
-  MutexLocker ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", true, Mutex::_safepoint_check_always),
+  MutexLocker ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", Mutex::_safepoint_check_always),
                  Mutex::_no_safepoint_check_flag);
 }
 
@@ -44,7 +44,7 @@ TEST_VM_ASSERT_MSG(SafepointLockAssertTest, never_check,
 
 TEST_VM_ASSERT_MSG(SafepointLockAssertTest, special_locks,
     ".*Special locks or below should never safepoint") {
-  MutexLocker ml(new Mutex(Mutex::special, "SpecialTest_lock", /*vm_block*/true, Mutex::_safepoint_check_always),
+  MutexLocker ml(new Mutex(Mutex::special, "SpecialTest_lock", Mutex::_safepoint_check_always),
                  Mutex::_safepoint_check_flag);
 }
 
