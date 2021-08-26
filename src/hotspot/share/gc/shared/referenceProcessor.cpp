@@ -40,9 +40,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/nonJavaThread.hpp"
-#if INCLUDE_MANAGEMENT
-#include "services/finalizerService.hpp"
-#endif
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -366,15 +363,6 @@ size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_
   return iter.removed();
 }
 
-#if INCLUDE_MANAGEMENT
-static void on_enqueue(const DiscoveredListIterator& iter) {
-  oop referent = iter.referent();
-  if (referent != NULL) {
-    FinalizerService::on_enqueue(referent);
-  }
-}
-#endif
-
 size_t ReferenceProcessor::process_final_keep_alive_work(DiscoveredList& refs_list,
                                                          OopClosure*     keep_alive,
                                                          EnqueueDiscoveredFieldClosure* enqueue) {
@@ -388,7 +376,6 @@ size_t ReferenceProcessor::process_final_keep_alive_work(DiscoveredList& refs_li
     assert(java_lang_ref_Reference::next(iter.obj()) == NULL, "enqueued FinalReference");
     java_lang_ref_Reference::set_next_raw(iter.obj(), iter.obj());
     iter.enqueue();
-    MANAGEMENT_ONLY(on_enqueue(iter);)
     log_enqueued_ref(iter, "Final");
     iter.next();
   }

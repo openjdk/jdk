@@ -38,13 +38,13 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -Xlog:class+unload,finalizer -Xmx16m jdk.jfr.event.runtime.TestFinalizerEvent
+ * @run main/othervm -Xlog:class+unload,finalizer -Xmx16m jdk.jfr.event.runtime.TestFinalizerStatisticsEvent
  */
 
-public final class TestFinalizerEvent {
-    private final static String TEST_CLASS_NAME = "jdk.jfr.event.runtime.TestFinalizerEvent$TestClassOverridingFinalize";
-    private final static String TEST_CLASS_UNLOAD_NAME = "jdk.jfr.event.runtime.TestFinalizerEvent$TestClassUnloadOverridingFinalize";
-    private final static String EVENT_PATH = EventNames.Finalizer;
+public final class TestFinalizerStatisticsEvent {
+    private final static String TEST_CLASS_NAME = "jdk.jfr.event.runtime.TestFinalizerStatisticsEvent$TestClassOverridingFinalize";
+    private final static String TEST_CLASS_UNLOAD_NAME = "jdk.jfr.event.runtime.TestFinalizerStatisticsEvent$TestClassUnloadOverridingFinalize";
+    private final static String EVENT_PATH = EventNames.FinalizerStatistics;
 
     // Declare as "public static to prevent the compiler from optimizing away all unread writes
     public static TestClassLoader unloadableClassLoader;
@@ -91,7 +91,7 @@ public final class TestFinalizerEvent {
         Events.hasEvents(events);
         for (RecordedEvent event : events) {
           System.out.println("Event:" + event);
-          RecordedClass overridingClass = event.getValue("overridingClass");
+          RecordedClass overridingClass = event.getValue("finalizableClass");
           switch (overridingClass.getName()) {
               case TEST_CLASS_NAME: {
                   Asserts.assertTrue(event.getString("codeSource").startsWith("file://"));

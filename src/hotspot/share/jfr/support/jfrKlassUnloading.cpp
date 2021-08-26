@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
-#include "jfr/periodic/jfrFinalizerEvent.hpp"
+#include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/utilities/jfrPredicate.hpp"
@@ -116,7 +116,7 @@ static void send_finalizer_event(const Klass* k) {
   }
   const InstanceKlass* const ik = InstanceKlass::cast(k);
   if (ik->has_finalizer()) {
-    JfrFinalizerEvent::send_unload_event(ik);
+    JfrFinalizerStatisticsEvent::send_unload_event(ik);
   }
 }
 #endif

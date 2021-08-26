@@ -22,17 +22,17 @@
  *
  */
 
-#ifndef SHARE_JFR_PERIODIC_JFRFINALIZEREVENT_HPP
-#define SHARE_JFR_PERIODIC_JFRFINALIZEREVENT_HPP
+#ifndef SHARE_JFR_PERIODIC_JFRFINALIZERSTATISTICSEVENT_HPP
+#define SHARE_JFR_PERIODIC_JFRFINALIZERSTATISTICSEVENT_HPP
 
 #include "memory/allocation.hpp"
 
 class InstanceKlass;
 
-class JfrFinalizerEvent : AllStatic {
+class JfrFinalizerStatisticsEvent : AllStatic {
  public:
   static void send_unload_event(const InstanceKlass* ik) NOT_MANAGEMENT_RETURN;
   static void generate_events() NOT_MANAGEMENT_RETURN;
 };
 
-#endif // SHARE_JFR_PERIODIC_JFRFINALIZEREVENT_HPP
+#endif // SHARE_JFR_PERIODIC_JFRFINALIZERSTATISTICSEVENT_HPP

@@ -32,20 +32,17 @@ class InstanceKlass;
 class JavaThread;
 class Thread;
 
-class FinalizerEntry : public CHeapObj<mtClass> {
+class FinalizerEntry : public CHeapObj<mtStatistics> {
  private:
   const InstanceKlass* const _ik;
-  uint64_t _registered;
-  uint64_t _enqueued;
-  uint64_t _finalized;
+  uint64_t _objects_on_heap;
+  uint64_t _total_finalizers_run;
  public:
   FinalizerEntry(const InstanceKlass* ik);
   const InstanceKlass* klass() const NOT_MANAGEMENT_RETURN_(nullptr);
-  uint64_t registered() const NOT_MANAGEMENT_RETURN_(0L);
-  uint64_t enqueued() const NOT_MANAGEMENT_RETURN_(0L);
-  uint64_t finalized() const NOT_MANAGEMENT_RETURN_(0L);
+  uint64_t objects_on_heap() const NOT_MANAGEMENT_RETURN_(0L);
+  uint64_t total_finalizers_run() const NOT_MANAGEMENT_RETURN_(0L);
   void on_register() NOT_MANAGEMENT_RETURN;
-  void on_enqueue() NOT_MANAGEMENT_RETURN;
   void on_complete() NOT_MANAGEMENT_RETURN;
 };
 
@@ -55,17 +52,17 @@ class FinalizerEntryClosure : public StackObj {
 };
 
 class FinalizerService : AllStatic {
+  friend class ParallelSPCleanupTask;
   friend class ServiceThread;
  private:
-  static bool has_work() NOT_MANAGEMENT_RETURN_(false);
-  static void do_concurrent_work(JavaThread* service_thread) NOT_MANAGEMENT_RETURN;;
- public:
-  static void init() NOT_MANAGEMENT_RETURN;
   static void rehash() NOT_MANAGEMENT_RETURN;
   static bool needs_rehashing() NOT_MANAGEMENT_RETURN_(false);
+  static bool has_work() NOT_MANAGEMENT_RETURN_(false);
+  static void do_concurrent_work(JavaThread* service_thread) NOT_MANAGEMENT_RETURN;
+ public:
+  static void init() NOT_MANAGEMENT_RETURN;
   static void purge_unloaded() NOT_MANAGEMENT_RETURN;
   static void on_register(oop finalizee, Thread* thread) NOT_MANAGEMENT_RETURN;
-  static void on_enqueue(oop finalizee) NOT_MANAGEMENT_RETURN;
   static void on_complete(oop finalizee, JavaThread* finalizer_thread) NOT_MANAGEMENT_RETURN;
   static void do_entries(FinalizerEntryClosure* closure, Thread* thread) NOT_MANAGEMENT_RETURN;
   static const FinalizerEntry* lookup(const InstanceKlass* ik, Thread* thread) NOT_MANAGEMENT_RETURN_(nullptr);

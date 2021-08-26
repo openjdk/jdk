@@ -40,17 +40,26 @@
 
 FinalizerEntry::FinalizerEntry(const InstanceKlass* ik) :
     _ik(ik),
-    _registered(0),
-    _enqueued(0),
-    _finalized(0) {}
+    _objects_on_heap(0),
+    _total_finalizers_run(0) {}
 
-static inline void atomic_inc(uint64_t* volatile dest) {
+static inline uint64_t inc(uint64_t value) {
+  return value + 1;
+}
+
+static inline uint64_t dec(uint64_t value) {
+  assert(value > 0, "invariant");
+  return value - 1;
+}
+
+template <uint64_t op(uint64_t)>
+static inline void set_atomic(volatile uint64_t* volatile dest) {
   assert(VM_Version::supports_cx8(), "invariant");
   uint64_t compare;
   uint64_t exchange;
   do {
     compare = *dest;
-    exchange = compare + 1;
+    exchange = op(compare);
   } while (Atomic::cmpxchg(dest, compare, exchange) != compare);
 }
 
@@ -58,28 +67,21 @@ const InstanceKlass* FinalizerEntry::klass() const {
   return _ik;
 }
 
-uint64_t FinalizerEntry::registered() const {
-  return Atomic::load(&_registered);
+uint64_t FinalizerEntry::objects_on_heap() const {
+  return Atomic::load(&_objects_on_heap);
 }
 
-uint64_t FinalizerEntry::enqueued() const {
-  return Atomic::load(&_enqueued);
-}
-
-uint64_t FinalizerEntry::finalized() const {
-  return Atomic::load(&_finalized);
+uint64_t FinalizerEntry::total_finalizers_run() const {
+  return Atomic::load(&_total_finalizers_run);
 }
 
 void FinalizerEntry::on_register() {
-  atomic_inc(&_registered);
-}
-
-void FinalizerEntry::on_enqueue() {
-  atomic_inc(&_enqueued);
+  set_atomic<inc>(&_objects_on_heap);
 }
 
 void FinalizerEntry::on_complete() {
-  atomic_inc(&_finalized);
+  set_atomic<inc>(&_total_finalizers_run);
+  set_atomic<dec>(&_objects_on_heap);
 }
 
 static constexpr const size_t DEFAULT_TABLE_SIZE = 2048;
@@ -109,11 +111,11 @@ static inline bool has_items_to_clean() {
 }
 
 static inline void added() {
-  Atomic::inc(&_count);
+  set_atomic<inc>(&_count);
 }
 
 static inline void removed() {
-  Atomic::dec(&_count);
+  set_atomic<dec>(&_count);
 }
 
 static inline uintx hash_function(const InstanceKlass* ik) {
@@ -157,7 +159,7 @@ class FinalizerTableConfig : public AllStatic {
   }
 };
 
-typedef ConcurrentHashTable<FinalizerTableConfig, mtClass> FinalizerHashtable;
+typedef ConcurrentHashTable<FinalizerTableConfig, mtStatistics> FinalizerHashtable;
 static FinalizerHashtable* _table = nullptr;
 
 static size_t ceil_log2(size_t value) {
@@ -430,26 +432,10 @@ void FinalizerService::on_register(oop finalizee, Thread* thread) {
   }
 }
 
-// Can't use FastHashCode for object identification here.
-static void log_enqueued(oop finalizee, Thread* thread) {
-  ResourceMark rm(thread);
-  log_debug(finalizer)("Enqueued an object of class %s for finalization", finalizee->klass()->external_name());
-}
-
-void FinalizerService::on_enqueue(oop finalizee) {
-  Thread* const thread = Thread::current();
-  FinalizerEntry* const fe = get_entry(finalizee, thread);
-  assert(fe != nullptr, "invariant");
-  fe->on_enqueue();
-  if (log_is_enabled(Debug, finalizer)) {
-    log_enqueued(finalizee, thread);
-  }
-}
-
 static void log_completed(oop finalizee, Thread* thread) {
   ResourceMark rm(thread);
   const intptr_t identity_hash = ObjectSynchronizer::FastHashCode(thread, finalizee);
-  log_info(finalizer)("Finalization complete for object (" INTPTR_FORMAT ") of class %s", identity_hash, finalizee->klass()->external_name());
+  log_info(finalizer)("Finalizer was run for object (" INTPTR_FORMAT ") of class %s", identity_hash, finalizee->klass()->external_name());
 }
 
 void FinalizerService::on_complete(oop finalizee, JavaThread* finalizer_thread) {

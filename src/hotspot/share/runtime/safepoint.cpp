@@ -592,9 +592,9 @@ public:
       OopStorage::trigger_cleanup_if_needed();
     }
 
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_FINALIZER_TABLE_REHASH)) {
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_FINALIZERSERVICE_TABLE_REHASH)) {
       if (FinalizerService::needs_rehashing()) {
-        Tracer t("rehashing finalizer table");
+        Tracer t("rehashing finalizerservice table");
         FinalizerService::rehash();
       }
     }
