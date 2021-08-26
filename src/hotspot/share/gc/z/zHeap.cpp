@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
@@ -70,7 +71,8 @@ ZHeap::ZHeap() :
   }
 
   // Prime cache
-  if (!_page_allocator.prime_cache(_major_collector.workers())) {
+  if (!_page_allocator.prime_cache(_major_collector.workers(), InitialHeapSize)) {
+    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
     return;
   }
 

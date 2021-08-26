@@ -234,14 +234,13 @@ public:
   }
 };
 
-bool ZPageAllocator::prime_cache(ZWorkers* workers) {
+bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   ZAllocationFlags flags;
   flags.set_non_blocking();
   flags.set_low_address();
 
-  ZPage* const page = alloc_page(ZPageTypeLarge, _initial_capacity, flags, ZGenerationId::young, ZPageAge::eden);
+  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZGenerationId::young, ZPageAge::eden);
   if (page == NULL) {
-    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", _initial_capacity / M);
     return false;
   }
 
