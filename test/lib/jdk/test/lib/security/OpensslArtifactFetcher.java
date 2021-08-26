@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.artifacts;
+package jdk.test.lib.security;
 
 import java.io.File;
 
