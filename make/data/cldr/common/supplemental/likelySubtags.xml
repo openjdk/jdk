@@ -340,6 +340,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Buhid; ?; ? } => { Buhid; Latin; Philippines }-->
 		<likelySubtag from="bkv" to="bkv_Latn_ZZ"/>
 		<!--{ Bekwarra; ?; ? } => { Bekwarra; Latin; Unknown Region }-->
+		<likelySubtag from="blg" to="blg_Latn_MY"/>
+		<!--{ Balau; ?; ? } => { Balau; Latin; Malaysia }-->
 		<likelySubtag from="blt" to="blt_Tavt_VN"/>
 		<!--{ Tai Dam; ?; ? } => { Tai Dam; Tai Viet; Vietnam }-->
 		<likelySubtag from="bm" to="bm_Latn_ML"/>
@@ -3651,7 +3653,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Rjng" to="rej_Rjng_ID"/>
 		<!--{ ?; Rejang; ? } => { Rejang; Rejang; Indonesia }-->
 		<likelySubtag from="und_Rohg" to="rhg_Rohg_MM"/>
-		<!--{ ?; Hanifi Rohingya; ? } => { Rohingya; Hanifi Rohingya; Myanmar (Burma) }-->
+		<!--{ ?; Hanifi; ? } => { Rohingya; Hanifi; Myanmar (Burma) }-->
 		<likelySubtag from="und_Runr" to="non_Runr_SE"/>
 		<!--{ ?; Runic; ? } => { Old Norse; Runic; Sweden }-->
 		<likelySubtag from="und_Samr" to="smp_Samr_IL"/>

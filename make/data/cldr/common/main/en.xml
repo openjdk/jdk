@@ -1330,6 +1330,11 @@ annotations.
 			<type key="colNormalization" type="yes">Sort Unicode Normalized</type>
 			<type key="colNumeric" type="no">Sort Digits Individually</type>
 			<type key="colNumeric" type="yes">Sort Digits Numerically</type>
+			<type key="colReorder" type="currency">Currency</type>
+			<type key="colReorder" type="digit">Digits</type>
+			<type key="colReorder" type="punct">Punctuation</type>
+			<type key="colReorder" type="space">Whitespace</type>
+			<type key="colReorder" type="symbol">Symbol</type>
 			<type key="colStrength" type="identical">Sort All</type>
 			<type key="colStrength" type="primary">Sort Base Letters Only</type>
 			<type key="colStrength" type="quaternary">Sort Accents/Case/Width/Kana</type>
@@ -1405,11 +1410,6 @@ annotations.
 			<type key="k0" type="var">Keyboard Variant</type>
 			<type key="k0" type="viqr">Vietnamese VIQR Keyboard</type>
 			<type key="k0" type="windows">Windows Keyboard</type>
-			<type key="kr" type="currency">Currency</type>
-			<type key="kr" type="digit">Digits</type>
-			<type key="kr" type="punct">Punctuation</type>
-			<type key="kr" type="space">Whitespace</type>
-			<type key="kr" type="symbol">Symbol</type>
 			<type key="kv" type="currency">Ignore Symbols affects spaces, punctuation, all symbols</type>
 			<type key="kv" type="punct">Ignore Symbols affects spaces and punctuation only</type>
 			<type key="kv" type="space">Ignore Symbols affects spaces only</type>

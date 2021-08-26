@@ -144,13 +144,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="ais" replacement="ami" reason="deprecated"/>  <!-- Nataoran Amis -->
 			<languageAlias type="baz" replacement="nvo" reason="deprecated"/>  <!-- Tunen -->
 			<languageAlias type="bhk" replacement="fbl" reason="deprecated"/>  <!-- Albay Bicolano -->
+			<languageAlias type="bic" replacement="bir" reason="deprecated"/> <!-- Bikaru ⇒ Bisorio -->
 			<languageAlias type="bjq" replacement="bzc" reason="deprecated"/>  <!-- Southern Betsimisaraka Malagasy -->
 			<languageAlias type="bkb" replacement="ebk" reason="deprecated"/>  <!-- Finallig -->
+			<languageAlias type="blg" replacement="iba" reason="deprecated"/> <!-- Balau ⇒ Iban -->
 			<languageAlias type="btb" replacement="beb" reason="deprecated"/>  <!-- Beti (Cameroon) -->
 			<languageAlias type="daf" replacement="dnj" reason="deprecated"/>  <!-- Dan -->
 			<languageAlias type="dap" replacement="njz" reason="deprecated"/>  <!-- Nisi (India) -->
 			<languageAlias type="djl" replacement="dze" reason="deprecated"/>  <!-- Djiwarli -->
 			<languageAlias type="dkl" replacement="aqd" reason="deprecated"/>  <!-- Kolum So Dogon -->
+			<languageAlias type="drr" replacement="kzk" reason="deprecated"/> <!-- Dororo ⇒ Kazukuru -->
 			<languageAlias type="dud" replacement="uth" reason="deprecated"/>  <!-- Hun-Saare -->
 			<languageAlias type="duj" replacement="dwu" reason="deprecated"/>  <!-- Dhuwal -->
 			<languageAlias type="dwl" replacement="dbt" reason="deprecated"/>  <!-- Walo Kumbe Dogon -->
@@ -159,12 +162,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="ggo" replacement="esg" reason="deprecated"/>  <!-- Southern Gondi -->
 			<languageAlias type="ggr" replacement="gtu" reason="deprecated"/>  <!-- Aghu Tharnggalu -->
 			<languageAlias type="gio" replacement="aou" reason="deprecated"/>  <!-- Gelao -->
+			<languageAlias type="gli" replacement="kzk" reason="deprecated"/> <!-- Guliguli ⇒ Kazukuru -->
 			<languageAlias type="ill" replacement="ilm" reason="deprecated"/>  <!-- Iranun -->
 			<languageAlias type="izi" replacement="eza" reason="deprecated"/>  <!-- Izi-Ezaa-Ikwo-Mgbo -->
 			<languageAlias type="jar" replacement="jgk" reason="deprecated"/>  <!-- Jarawa (Nigeria) -->
 			<languageAlias type="kdv" replacement="zkd" reason="deprecated"/>  <!-- Kado -->
 			<languageAlias type="kgd" replacement="ncq" reason="deprecated"/>  <!-- Kataang -->
 			<languageAlias type="kpp" replacement="jkm" reason="deprecated"/>  <!-- Paku Karen -->
+			<languageAlias type="kxl" replacement="kru" reason="deprecated"/> <!-- Nepali Kurux ⇒ Kurukh -->
 			<languageAlias type="kzh" replacement="dgl" reason="deprecated"/>  <!-- Kenuzi-Dongola -->
 			<languageAlias type="leg" replacement="enl" reason="deprecated"/>  <!-- Lengua -->
 			<languageAlias type="mgx" replacement="jbk" reason="deprecated"/>  <!-- Omati -->
@@ -176,25 +181,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="nln" replacement="azd" reason="deprecated"/>  <!-- Durango Nahuatl -->
 			<languageAlias type="nlr" replacement="nrk" reason="deprecated"/>  <!-- Ngarla -->
 			<languageAlias type="noo" replacement="dtd" reason="deprecated"/>  <!-- Nootka -->
+			<languageAlias type="nxu" replacement="bpp" reason="deprecated"/> <!-- Narau ⇒ Kaure -->
+			<languageAlias type="pat" replacement="kxr" reason="deprecated"/> <!-- Papitalai ⇒ Koro [Papua New Guinea] -->
 			<languageAlias type="rmr" replacement="emx" reason="deprecated"/>  <!-- Caló -->
 			<languageAlias type="sap" replacement="aqt" reason="deprecated"/>  <!-- Sanapaná -->
 			<languageAlias type="sgl" replacement="isk" reason="deprecated"/>  <!-- Sanglechi-Ishkashimi -->
 			<languageAlias type="sul" replacement="sgd" reason="deprecated"/>  <!-- Surigaonon -->
 			<languageAlias type="sum" replacement="ulw" reason="deprecated"/>  <!-- Sumo-Mayangna -->
 			<languageAlias type="tgg" replacement="bjp" reason="deprecated"/>  <!-- Tangga -->
+			<languageAlias type="thw" replacement="ola" reason="deprecated"/> <!-- Thudam ⇒ Walungge -->
 			<languageAlias type="tid" replacement="itd" reason="deprecated"/>  <!-- Tidong -->
 			<languageAlias type="unp" replacement="wro" reason="deprecated"/>  <!-- Worora -->
 			<languageAlias type="wgw" replacement="wgb" reason="deprecated"/>  <!-- Wagawaga -->
 			<languageAlias type="wit" replacement="nol" reason="deprecated"/>  <!-- Wintu -->
 			<languageAlias type="wiw" replacement="nwo" reason="deprecated"/>  <!-- Wirangu -->
+			<languageAlias type="xrq" replacement="dmw" reason="deprecated"/> <!-- Karranga ⇒ Mudburra -->
 			<languageAlias type="yen" replacement="ynq" reason="deprecated"/>  <!-- Yendang -->
 			<languageAlias type="yiy" replacement="yrm" reason="deprecated"/>  <!-- Yir Yoront -->
-			<languageAlias type="drr" replacement="kzk" reason="deprecated"/> <!-- Dororo ⇒ Kazukuru -->
-			<languageAlias type="gli" replacement="kzk" reason="deprecated"/> <!-- Guliguli ⇒ Kazukuru -->
-			<languageAlias type="kxl" replacement="kru" reason="deprecated"/> <!-- Nepali Kurux ⇒ Kurukh -->
-			<languageAlias type="nxu" replacement="bpp" reason="deprecated"/> <!-- Narau ⇒ Kaure -->
-			<languageAlias type="thw" replacement="ola" reason="deprecated"/> <!-- Thudam ⇒ Walungge -->
-			<languageAlias type="xrq" replacement="dmw" reason="deprecated"/> <!-- Karranga ⇒ Mudburra -->
 			<languageAlias type="zir" replacement="scv" reason="deprecated"/> <!-- Ziriya ⇒ Sheni -->
 			<!-- miscellaneous deprecated -->
 
