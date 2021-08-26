@@ -60,8 +60,9 @@ class G1EvacuationFailureObjsInHR {
       return new Node<LEN, Elem>();
     }
     static void free_node(Node<LEN, Elem>* node) {
+      assert(node != NULL, "must be");
       FreeHeap(node->_oop_offsets);
-      delete(node);
+      delete node;
     }
   };
 
@@ -94,7 +95,9 @@ class G1EvacuationFailureObjsInHR {
       return low(n);
     }
     uint32_t node_index(uint64_t n) {
-      return high(n) >> 32;
+      uint32_t hi = high(n) >> 32;
+      assert(hi < _max_nodes_length, "must be");
+      return hi;
     }
 
     uint64_t next(uint64_t n) {
@@ -128,6 +131,7 @@ class G1EvacuationFailureObjsInHR {
     }
 
     ~Array() {
+      assert(_nodes != NULL, "must be");
       reset();
       FreeHeap((NODE_XXX**)_nodes);
     }
@@ -182,15 +186,25 @@ class G1EvacuationFailureObjsInHR {
       for (uint32_t i = 0; i <= hi; i++) {
         NODE_XXX* node = Atomic::load(&_nodes[i]);
         uint32_t limit = (i == hi) ? lo : NODE_XXX::LENGTH;
+        if (limit == 0) {
+          break;
+        }
         v->visit(node, limit);
       }
     }
 
     void reset() {
       int64_t pos = Atomic::load(&_cur_pos);
-      for (uint32_t hi = 0; hi <= node_index(pos); hi++) {
-        NODE_XXX::free_node(_nodes[hi]);
-        Atomic::store(&_nodes[hi], (NODE_XXX *)NULL);
+      uint32_t hi = node_index(pos);
+      uint32_t lo = elem_index(pos);
+      for (uint32_t i = 0; i <= hi; i++) {
+        NODE_XXX* node = Atomic::load(&_nodes[i]);
+        assert(node != NULL || ((i == hi) && (lo == 0)), "must be");
+        if (node == NULL) {
+          break;
+        }
+        NODE_XXX::free_node(node);
+        Atomic::store(&_nodes[i], (NODE_XXX *)NULL);
       }
       Atomic::store(&_elements_num, 0u);
       Atomic::store(&_cur_pos, (uint64_t)0);
