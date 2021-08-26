@@ -28,19 +28,24 @@
 // system properties in samevm/agentvm mode.
 //
 
-import sun.security.ssl.SSLContextImpl;
-
 import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLContextSpi;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.KeyManagerFactorySpi;
+import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.Security;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 /*
  * @test
@@ -54,31 +59,19 @@ import java.security.cert.X509Certificate;
 public class MultipleChooseAlias extends SSLSocketTemplate {
 
     static volatile int numOfCalls = 0;
-    
+
     @Override
     protected void configureServerSocket(SSLServerSocket socket) {
         socket.setNeedClientAuth(true);
     }
 
     @Override
-    protected SSLContext createClientSSLContext() throws Exception {
-        SSLContext ctxt = super.createClientSSLContext();
-        var f = SSLContext.class.getDeclaredField("contextSpi");
-        f.setAccessible(true);
-        SSLContextSpi spi = (SSLContextSpi) f.get(ctxt);
-        var m1 = SSLContextImpl.class.getDeclaredMethod("getX509KeyManager");
-        m1.setAccessible(true);
-        var m2 = SSLContextImpl.class.getDeclaredMethod("getX509TrustManager");
-        m2.setAccessible(true);
-        SSLContext newCtxt = SSLContext.getInstance("TLS");
-        newCtxt.init(
-                new KeyManager[] {new myKM((X509KeyManager) m1.invoke(spi))},
-                new TrustManager[] {(X509TrustManager) m2.invoke(spi)},
-                null);
-        return newCtxt;
+    protected ContextParameters getClientContextParameters() {
+        return new ContextParameters("TLS", "PKIX", "Mine");
     }
 
     public static void main(String[] args) throws Exception {
+        Security.addProvider(new MyProvider());
         try {
             new MultipleChooseAlias().run();
         } catch (Exception e) {
@@ -89,12 +82,55 @@ public class MultipleChooseAlias extends SSLSocketTemplate {
         }
     }
 
+    static class MyProvider extends Provider {
+        public MyProvider() {
+            super("Mine", "1", "many many things");
+            put("KeyManagerFactory.Mine", "MultipleChooseAlias$MyKMF");
+        }
+    }
 
-    static class myKM implements X509KeyManager {
+    // This KeyManagerFactory impl returns key managers
+    // wrapped in MyKM
+    public static class MyKMF extends KeyManagerFactorySpi {
+        KeyManagerFactory fac;
+
+        public MyKMF() {
+            try {
+                fac = KeyManagerFactory.getInstance("SunX509");
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        @Override
+        protected void engineInit(KeyStore ks, char[] password)
+                throws KeyStoreException, NoSuchAlgorithmException,
+                UnrecoverableKeyException {
+            fac.init(ks, password);
+        }
+
+        @Override
+        protected void engineInit(ManagerFactoryParameters spec)
+                throws InvalidAlgorithmParameterException {
+            fac.init(spec);
+        }
+
+        @Override
+        protected KeyManager[] engineGetKeyManagers() {
+            KeyManager[] result = fac.getKeyManagers();
+            for (int i = 0; i < result.length; i++) {
+                result[i] = new MyKM((X509KeyManager)result[i]);
+            }
+            return result;
+        }
+    }
+
+    // This KeyManager remembers how many times  chooseClientAlias is called.
+    static class MyKM implements X509KeyManager {
 
         X509KeyManager km;
 
-        myKM(X509KeyManager km) {
+        MyKM(X509KeyManager km) {
             this.km = km;
         }
 
@@ -104,6 +140,8 @@ public class MultipleChooseAlias extends SSLSocketTemplate {
 
         public String chooseClientAlias(String[] keyType, Principal[] issuers,
                 Socket socket) {
+            System.out.println("chooseClientAlias called on "
+                    + Arrays.toString(keyType));
             numOfCalls++;
             return null; // so it will try all key types and finally fails
         }
