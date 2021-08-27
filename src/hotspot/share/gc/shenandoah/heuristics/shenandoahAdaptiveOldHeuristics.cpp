@@ -201,7 +201,17 @@ bool ShenandoahAdaptiveOldHeuristics::should_start_gc() {
   size_t max_capacity = _generation->max_capacity();
   size_t capacity = _generation->soft_max_capacity();
   size_t available = _generation->available();
+  // TODO: Fix implementation of old_generation->bytes_allocated_since_gc_start() to represent bytes promoted since
+  // start of most recent OLD collection.
+
+  // Note further: available is the difference between soft_capacity and in_use.  So soft_tail has already been removed
+  // from this total.  It is redundant to remove it again below.
+
   size_t allocated = _generation->bytes_allocated_since_gc_start();
+
+  log_debug(gc)("should_start_old_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT ", max_capacity: " SIZE_FORMAT,
+                available, capacity, max_capacity);
+  log_debug(gc)("  allocated: " SIZE_FORMAT, allocated);
 
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;
@@ -211,7 +221,11 @@ bool ShenandoahAdaptiveOldHeuristics::should_start_gc() {
   double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
 
-  size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
+  size_t min_threshold = (capacity * ShenandoahMinFreeThreshold) / 100;
+
+  log_debug(gc)("  available adjusted to: " SIZE_FORMAT ", min_threshold: " SIZE_FORMAT ", ShenandoahMinFreeThreshold: " SIZE_FORMAT,
+                available, min_threshold, ShenandoahMinFreeThreshold);
+
   if (available < min_threshold) {
     log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                  _generation->name(),
@@ -220,7 +234,7 @@ bool ShenandoahAdaptiveOldHeuristics::should_start_gc() {
     return true;
   }
 
-  // Check if are need to learn a bit about the application
+  // Check if we need to learn a bit about the application
   const size_t max_learn = ShenandoahLearningSteps;
   if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;

@@ -94,7 +94,6 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {
-  log_debug(gc)("SHR::clear_live_data on %s Region " SIZE_FORMAT,  affiliation_name(affiliation()), index());
   Atomic::store(&_live_data, (size_t)0);
 }
 

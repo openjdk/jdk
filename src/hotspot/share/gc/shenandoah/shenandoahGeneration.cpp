@@ -322,6 +322,12 @@ void ShenandoahGeneration::decrement_affiliated_region_count() {
   _affiliated_region_count--;
 }
 
+void ShenandoahGeneration::clear_used() {
+  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
+  // Do this atomically to assure visibility to other threads, even though these other threads may be idle "right now"..
+  Atomic::store(&_used, (size_t)0);
+}
+
 void ShenandoahGeneration::increase_used(size_t bytes) {
   Atomic::add(&_used, bytes);
 }

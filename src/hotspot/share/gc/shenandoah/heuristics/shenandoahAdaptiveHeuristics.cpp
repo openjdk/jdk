@@ -201,6 +201,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t available = _generation->available();
   size_t allocated = _generation->bytes_allocated_since_gc_start();
 
+  log_debug(gc)("should_start_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
+                ", max_capacity: " SIZE_FORMAT ", allocated: " SIZE_FORMAT,
+                available, capacity, max_capacity, allocated);
+
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;
   available = (available > soft_tail) ? (available - soft_tail) : 0;
@@ -210,6 +214,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   _last_trigger = OTHER;
 
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
+
+  log_debug(gc)("  available adjusted to: " SIZE_FORMAT ", min_threshold: " SIZE_FORMAT ", ShenandoahMinFreeThreshold: " SIZE_FORMAT,
+                available, min_threshold, ShenandoahMinFreeThreshold);
+
   if (available < min_threshold) {
     log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                  _generation->name(),

@@ -122,6 +122,9 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
 
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
     PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+    // CAUTION: retire_plab may register the remnant filler object with the remembered set scanner without a lock.
+    // This is safe iff it is assured that each PLAB is a whole-number multiple of card-mark memory size and each
+    // PLAB is aligned with the start of each card's memory range.
     heap->retire_plab(plab);
 
     // SATB protocol requires to keep alive reacheable oops from roots at the beginning of GC

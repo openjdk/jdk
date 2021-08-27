@@ -204,15 +204,21 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   }
 
   if (result != NULL) {
-    // Allocation successful, bump stats:
-    if (req.is_mutator_alloc()) {
-      increase_used(size * HeapWordSize);
-    }
 
     // Record actual allocation size
     req.set_actual_size(size);
 
-    if (req.is_gc_alloc()) {
+    // Allocation successful, bump stats:
+    if (req.is_mutator_alloc()) {
+      increase_used(size * HeapWordSize);
+    } else if (req.is_gc_alloc()) {
+      // For GC allocations, we advance update_watermark because the objects relocated into this memory during
+      // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
+      // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
+      // TODO: Making a PLAB parsable involves placing a filler object in its remnant memory but does not require
+      // that the PLAB be disabled for all future purposes.  We may want to introduce a new service to make the
+      // PLABs parsable while still allowing the PLAB to serve future allocation requests that arise during the
+      // next evacuation pass.
       r->set_update_watermark(r->top());
     }
 
@@ -487,7 +493,7 @@ void ShenandoahFreeSet::rebuild() {
       assert(!is_mutator_free(idx), "We are about to add it, it shouldn't be there already");
       _mutator_free_bitmap.set_bit(idx);
 
-      log_debug(gc)("  Setting _mutator_free_bitmap bit for " SIZE_FORMAT, idx);
+      log_debug(gc)("  Setting Region " SIZE_FORMAT " _mutator_free_bitmap bit to true", idx);
     }
   }
 

@@ -63,6 +63,67 @@
 #include "utilities/growableArray.hpp"
 #include "gc/shared/workgroup.hpp"
 
+// After Full GC is done, reconstruct the remembered set by iterating over OLD regions,
+// registering all objects between bottom() and top(), and setting remembered set cards to
+// DIRTY if they hold interesting pointers.
+class ShenandoahReconstructRememberedSetTask : public AbstractGangTask {
+private:
+  ShenandoahRegionIterator _regions;
+
+public:
+  ShenandoahReconstructRememberedSetTask() :
+    AbstractGangTask("Shenandoah Reset Bitmap") { }
+
+  void work(uint worker_id) {
+    ShenandoahParallelWorkerSession worker_session(worker_id);
+    ShenandoahHeapRegion* r = _regions.next();
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    RememberedScanner* scanner = heap->card_scan();
+    ShenandoahSetRememberedCardsToDirtyClosure dirty_cards_for_interesting_pointers;
+
+    while (r != NULL) {
+      if (r->is_old() && r->is_active()) {
+        HeapWord* obj_addr = r->bottom();
+        if (r->is_humongous_start()) {
+          // First, clear the remembered set
+          oop obj = cast_to_oop(obj_addr);
+          size_t size = obj->size();
+          HeapWord* end_object = r->bottom() + size;
+
+          // First, clear the remembered set
+          scanner->reset_remset(r->bottom(), size);
+          size_t region_index = r->index();
+          ShenandoahHeapRegion* humongous_region = heap->get_region(region_index);
+          do {
+            scanner->reset_object_range(humongous_region->bottom(), humongous_region->end());
+            region_index++;
+            humongous_region = heap->get_region(region_index);
+          } while (humongous_region->bottom() < end_object);
+
+          // Then register the humongous object and DIRTY relevant remembered set cards
+          scanner->register_object_wo_lock(obj_addr);
+          obj->oop_iterate(&dirty_cards_for_interesting_pointers);
+        } else if (!r->is_humongous()) {
+          // First, clear the remembered set
+          scanner->reset_remset(r->bottom(), ShenandoahHeapRegion::region_size_words());
+          scanner->reset_object_range(r->bottom(), r->end());
+
+          // Then iterate over all objects, registering object and DIRTYing relevant remembered set cards
+          HeapWord* t = r->top();
+          while (obj_addr < t) {
+            oop obj = cast_to_oop(obj_addr);
+            size_t size = obj->size();
+            scanner->register_object_wo_lock(obj_addr);
+            obj_addr += obj->oop_iterate_size(&dirty_cards_for_interesting_pointers);
+          }
+        } // else, ignore humongous continuation region
+      }
+      // else, this region is FREE or YOUNG or inactive and we can ignore it.
+      r = _regions.next();
+    }
+  }
+};
+
 ShenandoahFullGC::ShenandoahFullGC() :
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
@@ -96,10 +157,6 @@ void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
 }
 
 void ShenandoahFullGC::op_full(GCCause::Cause cause) {
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
-    fatal("Full GC not yet supported for generational mode.");
-  }
-
   ShenandoahMetricsSnapshot metrics;
   metrics.snap_before();
 
@@ -119,10 +176,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
+  heap->set_gc_generation(heap->global_generation());
 
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
-    fatal("Full GC not yet supported for generational mode in do_it().");
-  }
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_fullgc();
   }
@@ -243,6 +299,12 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     _preserved_marks->restore(heap->workers());
     BiasedLocking::restore_marks();
     _preserved_marks->reclaim();
+
+    if (heap->mode()->is_generational()) {
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_reconstruct_remembered_set);
+      ShenandoahReconstructRememberedSetTask task;
+      heap->workers()->run_task(&task);
+    }
   }
 
   // Resize metaspace
@@ -258,7 +320,11 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   heap->set_full_gc_in_progress(false);
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_fullgc();
+    if (heap->mode()->is_generational()) {
+      heap->verifier()->verify_after_generational_fullgc();
+    } else {
+      heap->verifier()->verify_after_fullgc();
+    }
   }
 
   if (VerifyAfterGC) {
@@ -308,6 +374,208 @@ void ShenandoahFullGC::phase1_mark_heap() {
   heap->parallel_cleaning(true /* full_gc */);
 }
 
+class ShenandoahPrepareForCompactionTask : public AbstractGangTask {
+private:
+  PreservedMarksSet*        const _preserved_marks;
+  ShenandoahHeap*           const _heap;
+  ShenandoahHeapRegionSet** const _worker_slices;
+  size_t                    const _num_workers;
+  size_t                    *_old_used;
+  size_t                    *_young_used;
+
+public:
+  ShenandoahPrepareForCompactionTask(PreservedMarksSet *preserved_marks, ShenandoahHeapRegionSet **worker_slices,
+                                     size_t num_workers, size_t* old_used, size_t* young_used);
+
+  static bool is_candidate_region(ShenandoahHeapRegion* r) {
+    // Empty region: get it into the slice to defragment the slice itself.
+    // We could have skipped this without violating correctness, but we really
+    // want to compact all live regions to the start of the heap, which sometimes
+    // means moving them into the fully empty regions.
+    if (r->is_empty()) return true;
+
+    // Can move the region, and this is not the humongous region. Humongous
+    // moves are special cased here, because their moves are handled separately.
+    return r->is_stw_move_allowed() && !r->is_humongous();
+  }
+
+  void work(uint worker_id);
+  void add_to_young_used(size_t worker_id, size_t amount);
+  void add_to_old_used(size_t worker_id, size_t amount);
+  size_t young_used();
+  size_t old_used();
+};
+
+class ShenandoahPrepareForGenerationalCompactionObjectClosure : public ObjectClosure {
+private:
+  ShenandoahPrepareForCompactionTask* _compactor;
+  PreservedMarks*          const _preserved_marks;
+  ShenandoahHeap*          const _heap;
+  GrowableArray<ShenandoahHeapRegion*>& _empty_regions;
+  int _empty_regions_pos;
+  ShenandoahHeapRegion*          _old_to_region;
+  ShenandoahHeapRegion*          _young_to_region;
+  ShenandoahHeapRegion*          _from_region;
+  ShenandoahRegionAffiliation    _from_affiliation;
+  HeapWord*                      _old_compact_point;
+  HeapWord*                      _young_compact_point;
+  uint                           _worker_id;
+
+public:
+  ShenandoahPrepareForGenerationalCompactionObjectClosure(ShenandoahPrepareForCompactionTask* compactor,
+                                                          PreservedMarks* preserved_marks,
+                                                          GrowableArray<ShenandoahHeapRegion*>& empty_regions,
+                                                          ShenandoahHeapRegion* old_to_region,
+                                                          ShenandoahHeapRegion* young_to_region, uint worker_id) :
+      _compactor(compactor),
+      _preserved_marks(preserved_marks),
+      _heap(ShenandoahHeap::heap()),
+      _empty_regions(empty_regions),
+      _empty_regions_pos(0),
+      _old_to_region(old_to_region),
+      _young_to_region(young_to_region),
+      _from_region(NULL),
+      _old_compact_point((old_to_region != nullptr)? old_to_region->bottom(): nullptr),
+      _young_compact_point((young_to_region != nullptr)? young_to_region->bottom(): nullptr),
+      _worker_id(worker_id) {}
+
+  void set_from_region(ShenandoahHeapRegion* from_region) {
+    _from_region = from_region;
+    _from_affiliation = from_region->affiliation();
+    if (_from_region->has_live()) {
+      if (_from_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION) {
+        if (_old_to_region == nullptr) {
+          _old_to_region = from_region;
+          _old_compact_point = from_region->bottom();
+        }
+      } else {
+        assert(_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION, "from_region must be OLD or YOUNG");
+        if (_young_to_region == nullptr) {
+          _young_to_region = from_region;
+          _young_compact_point = from_region->bottom();
+        }
+      }
+    } // else, we won't iterate over this _from_region so we don't need to set up to region to hold copies
+  }
+
+  void finish() {
+    finish_old_region();
+    finish_young_region();
+  }
+
+  void finish_old_region() {
+    if (_old_to_region != nullptr) {
+      log_debug(gc)("Planned compaction into Old Region " SIZE_FORMAT ", used: " SIZE_FORMAT " tabulated by worker %u",
+                    _old_to_region->index(), _old_compact_point - _old_to_region->bottom(), _worker_id);
+      _compactor->add_to_old_used(_worker_id, _old_compact_point - _old_to_region->bottom());
+      _old_to_region->set_new_top(_old_compact_point);
+      _old_to_region = nullptr;
+    }
+  }
+
+  void finish_young_region() {
+    if (_young_to_region != nullptr) {
+      log_debug(gc)("Worker %u planned compaction into Young Region " SIZE_FORMAT ", used: " SIZE_FORMAT,
+                    _worker_id, _young_to_region->index(), _young_compact_point - _young_to_region->bottom());
+      _compactor->add_to_young_used(_worker_id, _young_compact_point - _young_to_region->bottom());
+      _young_to_region->set_new_top(_young_compact_point);
+      _young_to_region = nullptr;
+    }
+  }
+
+  bool is_compact_same_region() {
+    return (_from_region == _old_to_region) || (_from_region == _young_to_region);
+  }
+
+  int empty_regions_pos() {
+    return _empty_regions_pos;
+  }
+
+  void do_object(oop p) {
+    assert(_from_region != NULL, "must set before work");
+    assert((_from_region->bottom() <= cast_from_oop<HeapWord*>(p)) && (cast_from_oop<HeapWord*>(p) < _from_region->top()),
+           "Object must reside in _from_region");
+    assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
+    assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
+
+    size_t obj_size = p->size();
+    if (_from_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION) {
+      assert(_old_to_region != nullptr, "_old_to_region should not be NULL when compacting OLD _from_region");
+      if (_old_compact_point + obj_size > _old_to_region->end()) {
+        ShenandoahHeapRegion* new_to_region;
+
+        log_debug(gc)("Worker %u finishing old region " SIZE_FORMAT ", compact_point: " PTR_FORMAT ", obj_size: " SIZE_FORMAT
+                      ", &compact_point[obj_size]: " PTR_FORMAT ", region end: " PTR_FORMAT,  _worker_id, _old_to_region->index(),
+                      p2i(_old_compact_point), obj_size, p2i(_old_compact_point + obj_size), p2i(_old_to_region->end()));
+
+        // Object does not fit.  Get a new _old_to_region.
+        finish_old_region();
+        if (_empty_regions_pos < _empty_regions.length()) {
+          new_to_region = _empty_regions.at(_empty_regions_pos);
+          _empty_regions_pos++;
+          new_to_region->set_affiliation(OLD_GENERATION);
+        } else {
+          // If we've exhausted the previously selected _old_to_region, we know that the _old_to_region is distinct
+          // from _from_region.  That's because there is always room for _from_region to be compacted into itself.
+          // Since we're out of empty regions, let's use _from_region to hold the results of its own compaction.
+          new_to_region = _from_region;
+        }
+
+        assert(new_to_region != _old_to_region, "must not reuse same OLD to-region");
+        assert(new_to_region != NULL, "must not be NULL");
+        _old_to_region = new_to_region;
+        _old_compact_point = _old_to_region->bottom();
+      }
+
+      // Object fits into current region, record new location:
+      assert(_old_compact_point + obj_size <= _old_to_region->end(), "must fit");
+      shenandoah_assert_not_forwarded(NULL, p);
+      _preserved_marks->push_if_necessary(p, p->mark());
+      p->forward_to(cast_to_oop(_old_compact_point));
+      _old_compact_point += obj_size;
+    } else {
+      assert(_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION,
+             "_from_region must be OLD_GENERATION or YOUNG_GENERATION");
+
+      assert(_young_to_region != nullptr, "_young_to_region should not be NULL when compacting YOUNG _from_region");
+      if (_young_compact_point + obj_size > _young_to_region->end()) {
+        ShenandoahHeapRegion* new_to_region;
+
+
+        log_debug(gc)("Worker %u finishing young region " SIZE_FORMAT ", compact_point: " PTR_FORMAT ", obj_size: " SIZE_FORMAT
+                      ", &compact_point[obj_size]: " PTR_FORMAT ", region end: " PTR_FORMAT,  _worker_id, _young_to_region->index(),
+                      p2i(_young_compact_point), obj_size, p2i(_young_compact_point + obj_size), p2i(_young_to_region->end()));
+
+        // Object does not fit.  Get a new _young_to_region.
+        finish_young_region();
+        if (_empty_regions_pos < _empty_regions.length()) {
+          new_to_region = _empty_regions.at(_empty_regions_pos);
+          _empty_regions_pos++;
+          new_to_region->set_affiliation(YOUNG_GENERATION);
+        } else {
+          // If we've exhausted the previously selected _young_to_region, we know that the _young_to_region is distinct
+          // from _from_region.  That's because there is always room for _from_region to be compacted into itself.
+          // Since we're out of empty regions, let's use _from_region to hold the results of its own compaction.
+          new_to_region = _from_region;
+        }
+
+        assert(new_to_region != _young_to_region, "must not reuse same OLD to-region");
+        assert(new_to_region != NULL, "must not be NULL");
+        _young_to_region = new_to_region;
+        _young_compact_point = _young_to_region->bottom();
+      }
+
+      // Object fits into current region, record new location:
+      assert(_young_compact_point + obj_size <= _young_to_region->end(), "must fit");
+      shenandoah_assert_not_forwarded(NULL, p);
+      _preserved_marks->push_if_necessary(p, p->mark());
+      p->forward_to(cast_to_oop(_young_compact_point));
+      _young_compact_point += obj_size;
+    }
+  }
+};
+
+
 class ShenandoahPrepareForCompactionObjectClosure : public ObjectClosure {
 private:
   PreservedMarks*          const _preserved_marks;
@@ -336,14 +604,7 @@ public:
 
   void finish_region() {
     assert(_to_region != NULL, "should not happen");
-    if (_heap->mode()->is_generational() && _to_region->affiliation() == FREE) {
-      // TODO: Changing this region to young during compaction may not be
-      // technically correct here because it completely disregards the ages
-      // and origins of the objects being moved. It is, however, certainly
-      // more correct than putting live objects into a region without a
-      // generational affiliation.
-      _to_region->set_affiliation(YOUNG_GENERATION);
-    }
+    assert(!_heap->mode()->is_generational(), "Generational GC should use different Closure");
     _to_region->set_new_top(_compact_point);
   }
 
@@ -389,52 +650,69 @@ public:
   }
 };
 
-class ShenandoahPrepareForCompactionTask : public AbstractGangTask {
-private:
-  PreservedMarksSet*        const _preserved_marks;
-  ShenandoahHeap*           const _heap;
-  ShenandoahHeapRegionSet** const _worker_slices;
 
-public:
-  ShenandoahPrepareForCompactionTask(PreservedMarksSet *preserved_marks, ShenandoahHeapRegionSet **worker_slices) :
+ShenandoahPrepareForCompactionTask::ShenandoahPrepareForCompactionTask(PreservedMarksSet *preserved_marks,
+                                                                       ShenandoahHeapRegionSet **worker_slices,
+                                                                       size_t num_workers, size_t* old_used, size_t* young_used) :
     AbstractGangTask("Shenandoah Prepare For Compaction"),
-    _preserved_marks(preserved_marks),
-    _heap(ShenandoahHeap::heap()), _worker_slices(worker_slices) {
+    _preserved_marks(preserved_marks), _heap(ShenandoahHeap::heap()),
+    _worker_slices(worker_slices), _num_workers(num_workers),
+    _old_used(old_used), _young_used(young_used) {
+  for (size_t i = 0; i < _num_workers; i++) {
+    _old_used[i] = 0;
+    _young_used[i] = 0;
+  }
+}
+
+
+void ShenandoahPrepareForCompactionTask::work(uint worker_id) {
+  ShenandoahParallelWorkerSession worker_session(worker_id);
+  ShenandoahHeapRegionSet* slice = _worker_slices[worker_id];
+  ShenandoahHeapRegionSetIterator it(slice);
+  ShenandoahHeapRegion* from_region = it.next();
+  // No work?
+  if (from_region == NULL) {
+    return;
   }
 
-  static bool is_candidate_region(ShenandoahHeapRegion* r) {
-    // Empty region: get it into the slice to defragment the slice itself.
-    // We could have skipped this without violating correctness, but we really
-    // want to compact all live regions to the start of the heap, which sometimes
-    // means moving them into the fully empty regions.
-    if (r->is_empty()) return true;
+  // Sliding compaction. Walk all regions in the slice, and compact them.
+  // Remember empty regions and reuse them as needed.
+  ResourceMark rm;
 
-    // Can move the region, and this is not the humongous region. Humongous
-    // moves are special cased here, because their moves are handled separately.
-    return r->is_stw_move_allowed() && !r->is_humongous();
-  }
+  GrowableArray<ShenandoahHeapRegion*> empty_regions((int)_heap->num_regions());
 
-  void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahHeapRegionSet* slice = _worker_slices[worker_id];
-    ShenandoahHeapRegionSetIterator it(slice);
-    ShenandoahHeapRegion* from_region = it.next();
-    // No work?
-    if (from_region == NULL) {
-       return;
-    }
-
-    // Sliding compaction. Walk all regions in the slice, and compact them.
-    // Remember empty regions and reuse them as needed.
-    ResourceMark rm;
-
-    GrowableArray<ShenandoahHeapRegion*> empty_regions((int)_heap->num_regions());
-
-    ShenandoahPrepareForCompactionObjectClosure cl(_preserved_marks->get(worker_id), empty_regions, from_region);
-
+  if (_heap->mode()->is_generational()) {
+    ShenandoahHeapRegion* old_to_region = (from_region->is_old())? from_region: nullptr;
+    ShenandoahHeapRegion* young_to_region = (from_region->is_young())? from_region: nullptr;
+    ShenandoahPrepareForGenerationalCompactionObjectClosure cl(this, _preserved_marks->get(worker_id), empty_regions,
+                                                               old_to_region, young_to_region, worker_id);
     while (from_region != NULL) {
       assert(is_candidate_region(from_region), "Sanity");
+      log_debug(gc)("Worker %u compacting %s Region " SIZE_FORMAT " which had used " SIZE_FORMAT " and %s live",
+                    worker_id, affiliation_name(from_region->affiliation()),
+                    from_region->index(), from_region->used(), from_region->has_live()? "has": "does not have");
+      cl.set_from_region(from_region);
+      if (from_region->has_live()) {
+        _heap->marked_object_iterate(from_region, &cl);
+      }
 
+      // Compacted the region to somewhere else? From-region is empty then.
+      if (!cl.is_compact_same_region()) {
+        empty_regions.append(from_region);
+      }
+      from_region = it.next();
+    }
+    cl.finish();
+
+    // Mark all remaining regions as empty
+    for (int pos = cl.empty_regions_pos(); pos < empty_regions.length(); ++pos) {
+      ShenandoahHeapRegion* r = empty_regions.at(pos);
+      r->set_new_top(r->bottom());
+    }
+  } else {
+    ShenandoahPrepareForCompactionObjectClosure cl(_preserved_marks->get(worker_id), empty_regions, from_region);
+    while (from_region != NULL) {
+      assert(is_candidate_region(from_region), "Sanity");
       cl.set_from_region(from_region);
       if (from_region->has_live()) {
         _heap->marked_object_iterate(from_region, &cl);
@@ -454,7 +732,45 @@ public:
       r->set_new_top(r->bottom());
     }
   }
-};
+}
+
+// Accumulate HeapWords of memory used in young-gen memory.
+void ShenandoahPrepareForCompactionTask::add_to_young_used(size_t worker_id, size_t amount) {
+  log_debug(gc)("Adding to _young_used for worker_id: " SIZE_FORMAT ", amount: " SIZE_FORMAT, worker_id, amount);
+  _young_used[worker_id] += amount;
+}
+
+// Accumulate HeapWords of memory used in old-gen memory.
+void ShenandoahPrepareForCompactionTask::add_to_old_used(size_t worker_id, size_t amount) {
+  log_debug(gc)("Adding to _old_used for worker_id: " SIZE_FORMAT ", amount: " SIZE_FORMAT, worker_id, amount);
+  _old_used[worker_id] += amount;
+}
+
+// Return total number of bytes used in young-gen memory
+size_t ShenandoahPrepareForCompactionTask::young_used() {
+  size_t result = 0;
+  log_debug(gc)("Calculating young_used by accumulating worker totals");
+  for (size_t i = 0; i < _num_workers; i++) {
+    log_debug(gc)("  worker [" SIZE_FORMAT "] contributed " SIZE_FORMAT, i, _young_used[i]);
+    result += _young_used[i];
+  }
+  result *= HeapWordSize;
+  log_debug(gc)("Accumulated _young_used is: " SIZE_FORMAT, result);
+  return result;
+}
+
+// Return total number of bytes used in old-gen memory
+size_t ShenandoahPrepareForCompactionTask::old_used() {
+  size_t result = 0;
+  log_debug(gc)("Calculating old_used by accumulating worker totals");
+  for (size_t i = 0; i < _num_workers; i++) {
+    log_debug(gc)("  worker [" SIZE_FORMAT "] contributed " SIZE_FORMAT, i, _old_used[i]);
+    result += _old_used[i];
+  }
+  log_debug(gc)("Accumulated _old_used is: " SIZE_FORMAT, result);
+  result *= HeapWordSize;
+  return result;
+}
 
 void ShenandoahFullGC::calculate_target_humongous_objects() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -476,6 +792,17 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
   log_debug(gc)("Full GC calculating target humongous objects from end " SIZE_FORMAT, to_end);
   for (size_t c = heap->num_regions(); c > 0; c--) {
     ShenandoahHeapRegion *r = heap->get_region(c - 1);
+
+    if (r->is_humongous_start() && heap->mode()->is_generational()) {
+      oop obj = cast_to_oop(r->bottom());
+      size_t humongous_bytes = obj->size() * HeapWordSize;
+      log_debug(gc)("Adjusting used for humongous %s object by " SIZE_FORMAT, r->is_old()? "OLD": "YOUNG", humongous_bytes);
+      if (r->is_old()) {
+        heap->old_generation()->increase_used(humongous_bytes);
+      } else {
+        heap->young_generation()->increase_used(humongous_bytes);
+      }
+    }
     if (r->is_humongous_continuation() || (r->new_top() == r->bottom())) {
       // To-region candidate: record this, and continue scan
       to_begin = r->index();
@@ -732,14 +1059,29 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
     heap->heap_region_iterate(&ecl);
   }
 
+  if (heap->mode()->is_generational()) {
+    heap->young_generation()->clear_used();
+    heap->old_generation()->clear_used();
+  }
+
   // Compute the new addresses for regular objects
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_calculate_addresses_regular);
 
     distribute_slices(worker_slices);
 
-    ShenandoahPrepareForCompactionTask task(_preserved_marks, worker_slices);
+    size_t num_workers = heap->workers()->total_workers();
+    size_t old_used[num_workers];
+    size_t young_used[num_workers];
+    ShenandoahPrepareForCompactionTask task(_preserved_marks, worker_slices, num_workers, old_used, young_used);
     heap->workers()->run_task(&task);
+
+    if (heap->mode()->is_generational()) {
+      log_debug(gc)("Usage after compacting regular objects is young: " SIZE_FORMAT ", old: " SIZE_FORMAT,
+                    task.young_used(), task.old_used());
+      heap->young_generation()->increase_used(task.young_used());
+      heap->old_generation()->increase_used(task.old_used());
+    }
   }
 
   // Compute the new addresses for humongous objects
@@ -1090,13 +1432,13 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
     heap->set_used(post_compact.get_live());
+    if (heap->mode()->is_generational()) {
+      log_info(gc)("FullGC done: GLOBAL usage: " SIZE_FORMAT ", young usage: " SIZE_FORMAT ", old usage: " SIZE_FORMAT,
+                    post_compact.get_live(), heap->young_generation()->used(), heap->old_generation()->used());
+    }
 
     heap->collection_set()->clear();
     heap->free_set()->rebuild();
-
-    if (heap->mode()->is_generational()) {
-      heap->young_generation()->promote_all_regions();
-    }
   }
 
   heap->clear_cancelled_gc(true /* clear oom handler */);

@@ -70,8 +70,8 @@ void ShenandoahMarkingContext::initialize_top_at_mark_start(ShenandoahHeapRegion
   // Arrange that the first time we use this bitmap, we clean from bottom to end.
   _top_bitmaps[idx] = r->end();
 
-  log_debug(gc)("SMC:initialize_top_at_mark_start for region [" PTR_FORMAT ", " PTR_FORMAT "], top_bitmaps set to " PTR_FORMAT,
-                p2i(r->bottom()), p2i(r->end()), p2i(r->end()));
+  log_debug(gc)("SMC:initialize_top_at_mark_start for Region " SIZE_FORMAT ", TAMS: " PTR_FORMAT ", TopOfBitMap: " PTR_FORMAT,
+                r->index(), p2i(bottom), p2i(r->end()));
 }
 
 HeapWord* ShenandoahMarkingContext::top_bitmap(ShenandoahHeapRegion* r) {
@@ -82,8 +82,8 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
   HeapWord* bottom = r->bottom();
   HeapWord* top_bitmap = _top_bitmaps[r->index()];
 
-  log_debug(gc)("SMC:clear_bitmap for %s region [" PTR_FORMAT ", " PTR_FORMAT "], top_bitmap: " PTR_FORMAT,
-                affiliation_name(r->affiliation()), p2i(r->bottom()), p2i(r->end()), p2i(top_bitmap));
+  log_debug(gc)("SMC:clear_bitmap for %s Region " SIZE_FORMAT ", top_bitmap: " PTR_FORMAT,
+                affiliation_name(r->affiliation()), r->index(), p2i(top_bitmap));
 
   if (r->affiliation() != FREE) {
     if (top_bitmap > bottom) {

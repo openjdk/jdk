@@ -559,11 +559,7 @@ void ShenandoahHeapRegion::fill_dead_and_register_for_promotion() {
     obj_addr += obj->size();
   }
 
-  // In case top() does not align with a card boundary, it's necessary to fill remainder of memory beyond top().
-  if (top() < end()) {
-    ShenandoahHeap::fill_with_object(top(), end() - top());;
-    rem_set_scanner->register_object_wo_lock(obj_addr);
-  }
+  // Remembered set scanning stops at top() so no need to fill beyond it.
 }
 
 void ShenandoahHeapRegion::oop_iterate_humongous(OopIterateClosure* blk) {
@@ -858,6 +854,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affil
 
 #ifdef ASSERT
   {
+    // During full gc, heap->complete_marking_context() is not valid, may equal nullptr.
     ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
     size_t idx = this->index();
     HeapWord* top_bitmap = ctx->top_bitmap(this);

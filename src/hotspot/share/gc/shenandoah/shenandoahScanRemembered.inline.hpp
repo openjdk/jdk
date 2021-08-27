@@ -492,7 +492,7 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
     if (!ctx || ctx->is_marked(obj)) {
       offset += obj->size();
     } else {
-      // This object is not live so don't trust its size()
+      // If this object is not live, don't trust its size(); all objects above tams are live.
       ShenandoahHeapRegion* r = heap->heap_region_containing(base_addr + offset);
       HeapWord* tams = ctx->top_at_mark_start(r);
       if (base_addr + offset >= tams) {
@@ -506,19 +506,26 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
     return false;
   }
 
+  // At this point, offset represents object whose registration we are verifying.  We know that at least this object resides
+  // within this card's memory.
+
+  // Make sure that last_offset is properly set for the enclosing card, but we can't verify this for
+  // candidate collection-set regions during mixed evacuations, so disable this check in general
+  // during mixed evacuations.
+
+  ShenandoahHeapRegion* r = heap->heap_region_containing(base_addr + offset);
+  size_t max_offset = r->top() - base_addr;
+  if (max_offset > CardTable::card_size_in_words) {
+    max_offset = CardTable::card_size_in_words;
+  }
+  size_t prev_offset;
   if (!ctx) {
-    // Make sure that last_offset is properly set for the enclosing card, but we can't verify this for
-    // candidate collection-set regions during mixed evacuations, so disable this check in general
-    // during mixed evacuations.
-    //
-    // TODO: could do some additional checking during mixed evacuations if we wanted to work harder.
-    size_t prev_offset = offset;
     do {
       HeapWord* obj_addr = base_addr + offset;
       oop obj = oop(base_addr + offset);
       prev_offset = offset;
       offset += obj->size();
-    } while (offset < CardTable::card_size_in_words);
+    } while (offset < max_offset);
     if (_scc->get_last_start(index) != prev_offset) {
       return false;
     }
@@ -542,8 +549,27 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
         return false;
       }
     }
-  }
+  } else {
+    // This is a mixed evacuation: rely on mark bits to identify which objects need to be properly registered
 
+    // If the object reaching or spanning the end of this card's memory is marked, then last_offset for this card
+    // should represents this object.  Otherwise, last_offset is a don't care.
+    HeapWord* end_of_interest = base_addr + max_offset;
+    do {
+      HeapWord* obj_addr = base_addr + offset;
+      oop obj = oop(base_addr + offset);
+      prev_offset = offset;
+      offset = ctx->get_next_marked_addr(base_addr + offset, end_of_interest) - base_addr;
+    } while (offset < max_offset);
+    oop last_obj = oop(base_addr + prev_offset);
+    if (prev_offset + last_obj->size() >= max_offset) {
+      if (_scc->get_last_start(index) != prev_offset) {
+        return false;
+      }
+      // otherwise, the value of _scc->get_last_start(index) is a don't care because it represents a dead object and we
+      // cannot verify its context
+    }
+  }
   return true;
 }
 

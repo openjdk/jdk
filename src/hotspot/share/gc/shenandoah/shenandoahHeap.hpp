@@ -205,6 +205,7 @@ public:
   void verify(VerifyOption vo);
   void verify_rem_set_at_mark();
   void verify_rem_set_at_update_ref();
+  void verify_rem_set_after_full_gc();
 
 // ---------- Heap counters and metrics
 //
@@ -219,6 +220,8 @@ private:
   shenandoah_padding(1);
 
   static size_t young_generation_capacity(size_t total_capacity);
+  void help_verify_region_rem_set(ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
+                                  HeapWord* from, HeapWord* top, HeapWord* update_watermark, const char* message);
 
 public:
   void increase_used(size_t bytes);

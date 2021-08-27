@@ -177,6 +177,7 @@ class outputStream;
   f(full_gc_copy_objects_humong,                    "    Humongous Objects")           \
   f(full_gc_copy_objects_reset_complete,            "    Reset Complete Bitmap")       \
   f(full_gc_copy_objects_rebuild,                   "    Rebuild Region Sets")         \
+  f(full_gc_reconstruct_remembered_set,             "    Reconstruct Remembered Set")  \
   f(full_gc_heapdump_post,                          "  Post Heap Dump")                \
                                                                                        \
   f(conc_uncommit,                                  "Concurrent Uncommit")             \

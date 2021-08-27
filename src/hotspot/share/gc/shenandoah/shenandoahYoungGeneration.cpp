@@ -86,21 +86,6 @@ void ShenandoahYoungGeneration::promote_tenured_regions() {
   log_info(gc)("Promoted " SIZE_FORMAT " regions.", task._promoted);
 }
 
-void ShenandoahYoungGeneration::promote_all_regions() {
-  // This only happens on a full stw collect. No allocations can happen here.
-  shenandoah_assert_safepoint();
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  for (size_t index = 0; index < heap->num_regions(); index++) {
-    ShenandoahHeapRegion* r = heap->get_region(index);
-    if (r->is_young()) {
-      r->promote(true);
-    }
-  }
-  assert(_affiliated_region_count == 0, "young generation must not have affiliated regions after reset");
-  _used = 0;
-}
-
 bool ShenandoahYoungGeneration::contains(ShenandoahHeapRegion* region) const {
   // TODO: why not test for equals YOUNG_GENERATION?  As written, returns true for regions that are FREE
   return region->affiliation() != OLD_GENERATION;
