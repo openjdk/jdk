@@ -672,9 +672,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private void genIncubatorModules(ClassWriter cw) {
             boolean hasIncubatorModules = moduleInfos.stream()
                     .map(ModuleInfo::moduleResolution)
-                    .filter(mres -> (mres != null && mres.hasIncubatingWarning()))
-                    .findFirst()
-                    .isPresent();
+                    .anyMatch(mres -> (mres != null && mres.hasIncubatingWarning()));
 
             mv = cw.visitMethod(ACC_PUBLIC,
                                 "hasIncubatorModules",

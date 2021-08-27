@@ -219,7 +219,7 @@ abstract class HttpConnection implements Closeable {
    private static final boolean hasRequiredHTTP2TLSVersion(HttpClient client) {
        String[] protos = client.sslParameters().getProtocols();
        if (protos != null) {
-           return Arrays.stream(protos).filter(testRequiredHTTP2TLSVersion).findAny().isPresent();
+           return Arrays.stream(protos).anyMatch(testRequiredHTTP2TLSVersion);
        } else {
            return false;
        }

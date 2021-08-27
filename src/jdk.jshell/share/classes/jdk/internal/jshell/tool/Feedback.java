@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -895,7 +895,7 @@ class Feedback {
             if (suspicious
                     // Super simple might not define typeKind, otherwise check for JDK-14 presence of record
                     && ((tk = fields.get("typeKind")) == null
-                    || !tk.stream().anyMatch(tkc -> tkc.selector.equals(RECORD_TYPEKIND_SELECTOR)))
+                    || tk.stream().noneMatch(tkc -> tkc.selector.equals(RECORD_TYPEKIND_SELECTOR)))
                     // no record typeKind, now check for corruption
                     && ((errf = fields.get("err")) == null
                     || errf.stream().anyMatch(tkc -> tkc.selector.equals(Selector.OLD_ALWAYS)))) {
