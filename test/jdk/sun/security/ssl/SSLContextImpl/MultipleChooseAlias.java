@@ -54,11 +54,13 @@ import java.util.Arrays;
  * @library /javax/net/ssl/templates
  * @modules java.base/sun.security.ssl:+open
  *          java.base/javax.net.ssl:+open
- * @run main/othervm MultipleChooseAlias
+ * @run main/othervm MultipleChooseAlias PKIX
+ * @run main/othervm MultipleChooseAlias SunX509
  */
 public class MultipleChooseAlias extends SSLSocketTemplate {
 
     static volatile int numOfCalls = 0;
+    static String kmfAlgorithm = null;
 
     @Override
     protected void configureServerSocket(SSLServerSocket socket) {
@@ -71,6 +73,7 @@ public class MultipleChooseAlias extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
+        kmfAlgorithm = args[0];
         Security.addProvider(new MyProvider());
         try {
             new MultipleChooseAlias().run();
@@ -96,7 +99,7 @@ public class MultipleChooseAlias extends SSLSocketTemplate {
 
         public MyKMF() {
             try {
-                fac = KeyManagerFactory.getInstance("SunX509");
+                fac = KeyManagerFactory.getInstance(kmfAlgorithm);
             } catch (Exception e) {
                 throw new AssertionError(e);
             }
@@ -164,4 +167,3 @@ public class MultipleChooseAlias extends SSLSocketTemplate {
         }
     }
 }
-

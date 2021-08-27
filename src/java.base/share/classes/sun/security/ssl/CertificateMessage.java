@@ -1082,15 +1082,13 @@ final class CertificateMessage {
                 allAuths.add(ss.keyAlgorithm);
             }
 
-            X509Authentications ka
-                    = new X509Authentications(allAuths.toArray(String[]::new));
-            SSLPossession pos = ka.createPossession(hc);
+            SSLPossession pos = X509Authentication
+                    .createPossession(hc, allAuths.toArray(String[]::new));
             if (pos == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "Unavailable authentication scheme: " + allAuths);
                 }
-                return null;
             }
             return pos;
         }
