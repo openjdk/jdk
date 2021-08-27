@@ -40,6 +40,8 @@ import sun.security.krb5.Credentials;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbException;
 import java.io.IOException;
+import java.util.Objects;
+
 import sun.security.krb5.KerberosSecrets;
 import sun.security.krb5.PrincipalName;
 
@@ -75,6 +77,11 @@ public class Krb5Util {
         return ticket;
     }
 
+    // A one slot local ccache for krb5 login. This is only used when
+    // useSubjectCredsOnly is false.
+    static String lastClient = null;
+    static KerberosTicket lastTicket = null;
+
     /**
      * Retrieves the initial TGT corresponding to the client principal
      * from the Subject in the specified AccessControlContext.
@@ -82,7 +89,7 @@ public class Krb5Util {
      * useSubjectCredsOnly is false, then obtain ticket from
      * a LoginContext.
      */
-    static KerberosTicket getInitialTicket(GSSCaller caller,
+    static synchronized KerberosTicket getInitialTicket(GSSCaller caller,
             String clientPrincipal,
             @SuppressWarnings("removal") AccessControlContext acc) throws LoginException {
 
@@ -95,9 +102,38 @@ public class Krb5Util {
 
         // Try to get ticket from Subject obtained from GSSUtil
         if (ticket == null && !GSSUtil.useSubjectCredsOnly(caller)) {
-            Subject subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
-            ticket = SubjectComber.find(subject,
-                    null, clientPrincipal, KerberosTicket.class);
+            if (Objects.equals(clientPrincipal, lastClient)
+                    && lastTicket != null) {
+                if (lastTicket.isCurrent()) {
+                    if (DEBUG) {
+                        System.out.println("getInitialTicket: use cached ticket");
+                    }
+                    ticket = lastTicket;
+                } else if (lastTicket.isRenewable()) {
+                    try {
+                        lastTicket.refresh();
+                        if (DEBUG) {
+                            System.out.println("getInitialTicket: renew cached ticket");
+                        }
+                        ticket = lastTicket;
+                    } catch (Exception e) {
+                        if (DEBUG) {
+                            System.out.println("getInitialTicket: renew cached ticket failed");
+                        }
+                    }
+                }
+            }
+
+            if (ticket == null) {
+                Subject subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
+                ticket = SubjectComber.find(subject,
+                        null, clientPrincipal, KerberosTicket.class);
+                lastClient = clientPrincipal;
+                lastTicket = ticket;
+                if (DEBUG) {
+                    System.out.println("getInitialTicket: retrieve ticket from KDC");
+                }
+            }
         }
         return ticket;
     }
