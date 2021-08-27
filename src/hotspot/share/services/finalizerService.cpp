@@ -43,13 +43,16 @@ FinalizerEntry::FinalizerEntry(const InstanceKlass* ik) :
     _objects_on_heap(0),
     _total_finalizers_run(0) {}
 
-static inline uint64_t inc(uint64_t value) {
-  return value + 1;
+const InstanceKlass* FinalizerEntry::klass() const {
+  return _ik;
 }
 
-static inline uint64_t dec(uint64_t value) {
-  assert(value > 0, "invariant");
-  return value - 1;
+uint64_t FinalizerEntry::objects_on_heap() const {
+  return Atomic::load(&_objects_on_heap);
+}
+
+uint64_t FinalizerEntry::total_finalizers_run() const {
+  return Atomic::load(&_total_finalizers_run);
 }
 
 template <uint64_t op(uint64_t)>
@@ -63,20 +66,17 @@ static inline void set_atomic(volatile uint64_t* volatile dest) {
   } while (Atomic::cmpxchg(dest, compare, exchange) != compare);
 }
 
-const InstanceKlass* FinalizerEntry::klass() const {
-  return _ik;
-}
-
-uint64_t FinalizerEntry::objects_on_heap() const {
-  return Atomic::load(&_objects_on_heap);
-}
-
-uint64_t FinalizerEntry::total_finalizers_run() const {
-  return Atomic::load(&_total_finalizers_run);
+static inline uint64_t inc(uint64_t value) {
+  return value + 1;
 }
 
 void FinalizerEntry::on_register() {
   set_atomic<inc>(&_objects_on_heap);
+}
+
+static inline uint64_t dec(uint64_t value) {
+  assert(value > 0, "invariant");
+  return value - 1;
 }
 
 void FinalizerEntry::on_complete() {
