@@ -343,7 +343,7 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
   if (options == NULL || strlen(options) == 0) {
     return true;
   }
-  bool success = false;
+  bool success = true;
   char* opts = os::strdup_check_oom(options, mtLogging);
 
   char* comma_pos;
@@ -356,6 +356,7 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
     char* equals_pos = strchr(pos, '=');
     if (equals_pos == NULL) {
       errstream->print_cr("Invalid option '%s' for log output (%s).", pos, name());
+      success = false;
       break;
     }
 
