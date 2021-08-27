@@ -60,7 +60,7 @@
  *
  * For further documentation, please see:
  * <ul>
- *   <li> {extLink security_guide_jca
+ *   <li> {@extLink security_guide_jca
  *       Java Cryptography Architecture Reference Guide}</li>
  * </ul>
  *
