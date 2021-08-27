@@ -1205,6 +1205,162 @@ public final class StrictMath {
     }
 
     /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Integer.MIN_VALUE}.
+     * <p>
+     * See {@link Math#ceilDiv(int, int) Math.ceilDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilDiv(int, int)
+     * @see Math#ceil(double)
+     * @since 18
+     */
+    public static int ceilDiv(int x, int y) {
+        return Math.ceilDiv(x, y);
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Long.MIN_VALUE}.
+     * <p>
+     * See {@link Math#ceilDiv(int, int) Math.ceilDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilDiv(long, int)
+     * @see Math#ceil(double)
+     * @since 18
+     */
+    public static long ceilDiv(long x, int y) {
+        return Math.ceilDiv(x, y);
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Long.MIN_VALUE}.
+     * <p>
+     * See {@link Math#ceilDiv(int, int) Math.ceilDiv} for examples and
+     * a comparison to the integer division {@code /} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilDiv(long, long)
+     * @see Math#ceil(double)
+     * @since 18
+     */
+    public static long ceilDiv(long x, long y) {
+        return Math.ceilDiv(x, y);
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code int} arguments.
+     * <p>
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * See {@link Math#ceilMod(int, int) Math.ceilMod} for examples and
+     * a comparison to the {@code %} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilMod(int, int)
+     * @see StrictMath#ceilDiv(int, int)
+     * @since 18
+     */
+    public static int ceilMod(int x, int y) {
+        return Math.ceilMod(x , y);
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code long} and {@code int} arguments.
+     * <p>
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * See {@link Math#ceilMod(int, int) Math.ceilMod} for examples and
+     * a comparison to the {@code %} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilMod(long, int)
+     * @see StrictMath#ceilDiv(long, int)
+     * @since 18
+     */
+    public static int ceilMod(long x, int y) {
+        return Math.ceilMod(x , y);
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code long} arguments.
+     * <p>
+     * The floor modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * See {@link Math#ceilMod(int, int) Math.ceilMod} for examples and
+     * a comparison to the {@code %} operator.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see Math#ceilMod(long, long)
+     * @see StrictMath#ceilDiv(long, long)
+     * @since 18
+     */
+    public static long ceilMod(long x, long y) {
+        return Math.ceilMod(x, y);
+    }
+
+    /**
      * Returns the absolute value of an {@code int} value.
      * If the argument is not negative, the argument is returned.
      * If the argument is negative, the negation of the argument is returned.
