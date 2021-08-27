@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,32 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
-#define SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
+/**
+ * @test
+ * @bug 8272570
+ * @summary crash in PhaseCFG::global_code_motion
+ * @requires vm.compiler2.enabled
+ *
+ * @run main/othervm -Xbatch TestGCMRecalcPressureNodes
+ */
 
-#include "utilities/globalDefinitions.hpp"
+public class TestGCMRecalcPressureNodes {
+    public boolean bo0;
+    public boolean bo1;
+    public void foo() {
+        int sh12 = 61;
+        for (int i = 0; i < 50; i++) {
+            sh12 *= 34;
+        }
+        Math.tan(1.0);
+        bo0 = true;
+        bo1 = true;
+    }
+    public static void main(String[] args) {
+        TestGCMRecalcPressureNodes instance = new TestGCMRecalcPressureNodes();
+        for (int i = 0; i < 50000; i++) {
+            instance.foo();
+        }
+    }
+}
 
-class G1DirtyCardQueueSet;
-
-// A dirty card queue providing thread-safe enqueue.  A shared global
-// instance can be used for cases where a thread-local dirty card can't
-// be used.
-class G1SharedDirtyCardQueue {
-  G1DirtyCardQueueSet* const _qset;
-  void** _buffer;
-  size_t _index;
-
-  NONCOPYABLE(G1SharedDirtyCardQueue);
-
-public:
-  G1SharedDirtyCardQueue(G1DirtyCardQueueSet* qset);
-  ~G1SharedDirtyCardQueue();    // flushes the queue.
-
-  // Thread-safe addition to shared logging buffer.
-  void enqueue(void* card_ptr);
-
-  // Flush any pending entries to the qset and remove the buffer.
-  // Not thread-safe.
-  void flush();
-
-  // Discard any pending entries.
-  // Not thread-safe.
-  void reset();
-};
-
-#endif // SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
