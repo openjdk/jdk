@@ -444,9 +444,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
 
-  // Clear the given bitmap in parallel using the given WorkGang. If may_yield is
+  // Clear the next marking bitmap in parallel using the given WorkGang. If may_yield is
   // true, periodically insert checks to see if this method should exit prematurely.
-  void clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield);
+  void clear_next_bitmap(WorkGang* workers, bool may_yield);
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;

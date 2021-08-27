@@ -475,7 +475,7 @@ public final class Console implements Flushable
             return in.ready();
         }
 
-        public int read(char cbuf[], int offset, int length)
+        public int read(char[] cbuf, int offset, int length)
             throws IOException
         {
             int off = offset;

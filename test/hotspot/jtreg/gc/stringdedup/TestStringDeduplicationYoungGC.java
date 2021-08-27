@@ -27,6 +27,19 @@ package gc.stringdedup;
  * @test TestStringDeduplicationYoungGC
  * @summary Test string deduplication during young GC
  * @bug 8029075
+ * @requires vm.gc.Serial
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationYoungGC Serial
+ */
+
+/*
+ * @test TestStringDeduplicationYoungGC
+ * @summary Test string deduplication during young GC
+ * @bug 8029075
  * @requires vm.gc.G1
  * @library /test/lib
  * @library /
@@ -34,6 +47,19 @@ package gc.stringdedup;
  * @modules java.base/java.lang:open
  *          java.management
  * @run driver gc.stringdedup.TestStringDeduplicationYoungGC G1
+ */
+
+/*
+ * @test TestStringDeduplicationYoungGC
+ * @summary Test string deduplication during young GC
+ * @bug 8029075
+ * @requires vm.gc.Parallel
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationYoungGC Parallel
  */
 
 /*

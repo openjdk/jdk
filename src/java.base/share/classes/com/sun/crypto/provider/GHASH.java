@@ -122,7 +122,7 @@ final class GHASH implements Cloneable, GCM {
 
     /* subkeyHtbl and state are stored in long[] for GHASH intrinsic use */
 
-    // hashtable subkeyHtbl holds 2*9 powers of subkeyH computed using
+    // hashtable subkeyHtbl holds 2*57 powers of subkeyH computed using
     // carry-less multiplication
     private long[] subkeyHtbl;
 
@@ -143,7 +143,9 @@ final class GHASH implements Cloneable, GCM {
             throw new ProviderException("Internal error");
         }
         state = new long[2];
-        subkeyHtbl = new long[2*9];
+         // 48 keys for the interleaved implementation,
+         // 8 for avx-ghash implementation and 1 for the original key
+        subkeyHtbl = new long[2*57];
         subkeyHtbl[0] = (long)asLongView.get(subkeyH, 0);
         subkeyHtbl[1] = (long)asLongView.get(subkeyH, 8);
     }
@@ -264,7 +266,7 @@ final class GHASH implements Cloneable, GCM {
             throw new RuntimeException("internal state has invalid length: " +
                                        st.length);
         }
-        if (subH.length != 18) {
+        if (subH.length != 114) {
             throw new RuntimeException("internal subkeyHtbl has invalid length: " +
                                        subH.length);
         }

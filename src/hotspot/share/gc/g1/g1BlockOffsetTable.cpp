@@ -337,8 +337,8 @@ void G1BlockOffsetTablePart::verify() const {
   assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
   size_t start_card = _bot->index_for(_hr->bottom());
   // Do not verify beyond the BOT allocation threshold.
-  size_t next_offset_index = _bot->index_for_raw(_next_offset_threshold);
-  size_t end_card = MIN2(_bot->index_for(_hr->top() - 1), next_offset_index - 1);
+  assert(_hr->top() <= _next_offset_threshold, "invariant");
+  size_t end_card = _bot->index_for(_hr->top() - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
     u_char entry = _bot->offset_array(current_card);
@@ -398,13 +398,6 @@ void G1BlockOffsetTablePart::print_on(outputStream* out) {
 }
 #endif // !PRODUCT
 
-HeapWord* G1BlockOffsetTablePart::initialize_threshold_raw() {
-  size_t next_offset_index = _bot->index_for_raw(_hr->bottom()) + 1;
-  _next_offset_threshold =
-    _bot->address_for_index_raw(next_offset_index);
-  return _next_offset_threshold;
-}
-
 void G1BlockOffsetTablePart::zero_bottom_entry_raw() {
   size_t bottom_index = _bot->index_for_raw(_hr->bottom());
   assert(_bot->address_for_index_raw(bottom_index) == _hr->bottom(),
@@ -413,9 +406,7 @@ void G1BlockOffsetTablePart::zero_bottom_entry_raw() {
 }
 
 HeapWord* G1BlockOffsetTablePart::initialize_threshold() {
-  size_t next_offset_index = _bot->index_for(_hr->bottom()) + 1 ;
-  _next_offset_threshold =
-    _bot->address_for_index(next_offset_index);
+  _next_offset_threshold = _hr->bottom() + BOTConstants::N_words;
   return _next_offset_threshold;
 }
 
