@@ -62,6 +62,7 @@
 
 #endif
 
+#if INCLUDE_MANAGEMENT
 // counters for classes loaded from class files
 PerfCounter*    ClassLoadingService::_classes_loaded_count = NULL;
 PerfCounter*    ClassLoadingService::_classes_unloaded_count = NULL;
@@ -74,8 +75,6 @@ PerfCounter*    ClassLoadingService::_shared_classes_unloaded_count = NULL;
 PerfCounter*    ClassLoadingService::_shared_classbytes_loaded = NULL;
 PerfCounter*    ClassLoadingService::_shared_classbytes_unloaded = NULL;
 PerfVariable*   ClassLoadingService::_class_methods_size = NULL;
-
-#if INCLUDE_MANAGEMENT
 
 size_t ClassLoadingService::compute_class_size(InstanceKlass* k) {
   // lifted from ClassStatistics.do_class(Klass* k)

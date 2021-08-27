@@ -375,6 +375,7 @@ size_t ReferenceProcessor::process_final_keep_alive_work(DiscoveredList& refs_li
     // Self-loop next, to mark the FinalReference not active.
     assert(java_lang_ref_Reference::next(iter.obj()) == NULL, "enqueued FinalReference");
     java_lang_ref_Reference::set_next_raw(iter.obj(), iter.obj());
+
     iter.enqueue();
     log_enqueued_ref(iter, "Final");
     iter.next();
