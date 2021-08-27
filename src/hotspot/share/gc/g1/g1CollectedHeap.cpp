@@ -2245,6 +2245,18 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
   }
 }
 
+void G1CollectedHeap::initiate_conc_gc_for_metadata_allocation(GCCause::Cause gc_cause) {
+  GCCauseSetter x(this, gc_cause);
+
+  // At this point we are supposed to start a concurrent cycle. We
+  // will do so if one is not already in progress.
+  bool should_start = policy()->force_concurrent_start_if_outside_cycle(gc_cause);
+  if (should_start) {
+    double pause_target = policy()->max_pause_time_ms();
+    do_collection_pause_at_safepoint(pause_target);
+  }
+}
+
 bool G1CollectedHeap::is_in(const void* p) const {
   return is_in_reserved(p) && _hrm.is_available(addr_to_region((HeapWord*)p));
 }
