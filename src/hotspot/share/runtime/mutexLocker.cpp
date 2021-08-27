@@ -241,7 +241,7 @@ void mutex_init() {
 
   def(Patching_lock                , PaddedMutex  , special,     true,  _safepoint_check_never);      // used for safepointing and code patching.
   def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  _safepoint_check_never);
-  def(MonitorDeflation_lock        , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for monitor deflation thread operations
+  def(MonitorDeflation_lock        , PaddedMonitor, special,     true,  _safepoint_check_never);      // used for monitor deflation thread operations
   def(Service_lock                 , PaddedMonitor, service,     true,  _safepoint_check_never);      // used for service thread operations
 
   if (UseNotificationThread) {
@@ -319,8 +319,8 @@ void mutex_init() {
 #if INCLUDE_JFR
   def(JfrMsg_lock                  , PaddedMonitor, leaf,        true,  _safepoint_check_always);
   def(JfrBuffer_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
-  def(JfrStream_lock               , PaddedMutex  , nonleaf + 1, true,  _safepoint_check_never);
-  def(JfrStacktrace_lock           , PaddedMutex  , tty-2,       true,  _safepoint_check_never);
+  def(JfrStream_lock               , PaddedMutex  , nonleaf + 1, true, _safepoint_check_never);
+  def(JfrStacktrace_lock           , PaddedMutex  , stackwatermark-1,  true,  _safepoint_check_never);
   def(JfrThreadSampler_lock        , PaddedMonitor, leaf,        true,  _safepoint_check_never);
 #endif
 

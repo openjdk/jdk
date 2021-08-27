@@ -195,7 +195,17 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
     char* value_str = equals_pos + 1;
     *equals_pos = '\0';
 
-    if (strcmp(FileCountOptionKey, key) == 0) {
+    if (strcmp(FoldMultilinesOptionKey, key) == 0) {
+      if (strcmp(value_str, "true") == 0) {
+        _fold_multilines = true;
+      } else if (strcmp(value_str, "false") == 0) {
+        _fold_multilines = false;
+      } else {
+        errstream->print_cr("Invalid option '%s' for %s.", value_str, FoldMultilinesOptionKey);
+        success = false;
+        break;
+      }
+    } else if (strcmp(FileCountOptionKey, key) == 0) {
       size_t value = parse_value(value_str);
       if (value > MaxRotationFileCount) {
         errstream->print_cr("Invalid option: %s must be in range [0, %u]",

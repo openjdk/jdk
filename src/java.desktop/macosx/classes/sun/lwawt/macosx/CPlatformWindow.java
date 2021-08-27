@@ -363,7 +363,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         });
         setPtr(ref.get());
-
+        if (peer != null) { // Not applicable to CWarningWindow
+            peer.setTextured(IS(TEXTURED, styleBits));
+        }
         if (target instanceof javax.swing.RootPaneContainer) {
             final javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer)target).getRootPane();
             if (rootpane != null) rootpane.addPropertyChangeListener("ancestor", new PropertyChangeListener() {
@@ -529,8 +531,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 styleBits = SET(styleBits, IS_MODAL, true);
             }
         }
-
-        peer.setTextured(IS(TEXTURED, styleBits));
 
         return styleBits;
     }

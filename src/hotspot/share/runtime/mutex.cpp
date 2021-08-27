@@ -292,6 +292,8 @@ Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check
   // allowing Java threads to block in native.
   assert(_safepoint_check_required == _safepoint_check_always || _allow_vm_block,
          "Safepoint check never locks should always allow the vm to block");
+
+  assert(_rank >= 0, "Bad lock rank");
 #endif
 }
 
@@ -365,7 +367,6 @@ Mutex* Mutex::get_least_ranked_lock_besides_this(Mutex* locks) {
 
 // Tests for rank violations that might indicate exposure to deadlock.
 void Mutex::check_rank(Thread* thread) {
-  assert(this->rank() >= 0, "bad lock rank");
   Mutex* locks_owned = thread->owned_locks();
 
   if (!SafepointSynchronize::is_at_safepoint()) {
