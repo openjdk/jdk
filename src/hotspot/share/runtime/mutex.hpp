@@ -42,27 +42,12 @@
 class Mutex : public CHeapObj<mtSynchronizer> {
 
  public:
-  // A special lock: Is a lock where you are guaranteed not to block while you are
-  // holding it, i.e., no vm operation can happen, taking other (blocking) locks, etc.
-  // The rank 'access' is similar to 'special' and has the same restrictions on usage.
-  // It is reserved for locks that may be required in order to perform memory accesses
-  // that require special barriers, e.g. SATB GC barriers, that in turn uses locks.
-  // The rank 'tty' is also similar to 'special' and has the same restrictions.
-  // It is reserved for the tty_lock.
-  // Since memory accesses should be able to be performed pretty much anywhere
-  // in the code, that requires locks required for performing accesses being
-  // inherently a bit more special than even locks of the 'special' rank.
-  // NOTE: It is critical that the rank 'special' be the lowest (earliest)
-  // (except for "event" and "access") for the deadlock detection to work correctly.
-  // While at a safepoint no mutexes of rank safepoint are held by any thread.
-  // The rank named "leaf" is probably historical (and should
-  // be changed) -- mutexes of this rank aren't really leaf mutexes
-  // at all.
+  // Special low level locks are given names and ranges avoid overlap.
   enum lock_types {
        event,
-       access         = event          +   1,
-       service        = access         +   3,
-       tty            = service        +   3,
+       service        = event          +   3,
+       stackwatermark = service        +   3,
+       tty            = stackwatermark +   3,
        special        = tty            +   3,
        oopstorage     = special        +   3,
        leaf           = oopstorage     +   2,
