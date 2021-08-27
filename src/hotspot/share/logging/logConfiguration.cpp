@@ -404,7 +404,27 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   char* output_options = substrings[3];
   char errbuf[512];
   stringStream ss(errbuf, sizeof(errbuf));
-  bool success = parse_log_arguments(output, what, decorators, output_options, &ss);
+  bool success = true;
+
+  // If output is stdout/err, their options (e.g. foldmultilines) need to be handled
+  // at first because it will be cause of error in parse_log_arguments().
+  // (options for existing output can't be applied.)
+  // StdoutLog and StderrLog are already instantiated at static initializer
+  // in logFileStreamOutput.cpp.
+  if (output == NULL || strlen(output) == 0 ||
+      strcmp("stdout", output) == 0 || strcmp("#0", output) == 0) {
+    success = StdoutLog.parse_options(output_options, &ss);
+    // We are no longer to need to pass output options to parse_log_arguments().
+    output_options = NULL;
+  } else if (strcmp("stderr", output) == 0 || strcmp("#1", output) == 0) {
+    success = StderrLog.parse_options(output_options, &ss);
+    // We are no longer to need to pass output options to parse_log_arguments().
+    output_options = NULL;
+  }
+
+  if (success) {
+    success = parse_log_arguments(output, what, decorators, output_options, &ss);
+  }
 
   if (ss.size() > 0) {
     // If it failed, log the error. If it didn't fail, but something was written
@@ -559,6 +579,15 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
 
   LogTagSet::describe_tagsets(out);
 
+  out->print_cr("\nAvailable log output options:");
+  out->print_cr(" foldmultilines=.. - If set to true, a log event that consists of multiple lines"
+                                       " will be folded into a single line by replacing newline characters"
+                                       " with the sequence '\\' and 'n' in the output."
+                                       " Existing single backslash characters will also be replaced"
+                                       " with a sequence of two backslashes so that the conversion can be reversed."
+                                       " This option is safe to use with UTF-8 character encodings,"
+                                       " but other encodings may not work.");
+
   out->print_cr("\nAvailable log outputs:");
   out->print_cr(" stdout/stderr");
   out->print_cr(" file=<filename>");
@@ -570,13 +599,6 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("   filecount=..      - Number of files to keep in rotation (not counting the active file)."
                                          " If set to 0, log rotation is disabled."
                                          " This will cause existing log files to be overwritten.");
-  out->print_cr("   foldmultilines=.. - If set to true, a log event that consists of multiple lines"
-                                         " will be folded into a single line by replacing newline characters"
-                                         " with the sequence '\\' and 'n' in the output."
-                                         " Existing single backslash characters will also be replaced"
-                                         " with a sequence of two backslashes so that the conversion can be reversed."
-                                         " This option is safe to use with UTF-8 character encodings,"
-                                         " but other encodings may not work.");
 
   out->cr();
   out->print_cr("\nAsynchronous logging (off by default):");

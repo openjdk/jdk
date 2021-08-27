@@ -31,31 +31,46 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class FoldMultilinesTest {
 
-    private static Path EXCEPTION_LOG_FILE = Path.of("exceptions.log");
-    private static String XLOG_BASE = "-Xlog:exceptions=info:file=" + EXCEPTION_LOG_FILE.toString();
+    private static String EXCEPTION_LOG_FILE = "exceptions.log";
+    private static String XLOG_BASE = "-Xlog:exceptions=info:";
+    private static String EXCEPTION_MESSAGE = "line 1\nline 2\\nstring";
+    private static String FOLDED_EXCEPTION_MESSAGE = "line 1\\nline 2\\\\nstring";
+    // Windows may out "\r\n" even though UL outs "\n" only, so we need to evaluate regex with \R.
+    private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\Rline 2\\\\nstring", Pattern.MULTILINE);
 
-    private static void analyzeFoldMultilinesOn(ProcessBuilder pb) throws Exception {
+    private static void analyzeFoldMultilinesOn(ProcessBuilder pb, String out) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
-        String logs = Files.readString(EXCEPTION_LOG_FILE);
-        if (!logs.contains("line 1\\nline 2\\\\nstring")) {
-            throw new RuntimeException("foldmultilines=true did not work.");
+        String logs = switch (out) {
+            case "stdout" -> output.getStdout();
+            case "stderr" -> output.getStderr();
+            default -> Files.readString(Path.of(EXCEPTION_LOG_FILE));
+        };
+
+        if (!logs.contains(FOLDED_EXCEPTION_MESSAGE)) {
+            throw new RuntimeException(out + ": foldmultilines=true did not work.");
         }
     }
 
-    private static void analyzeFoldMultilinesOff(ProcessBuilder pb) throws Exception {
+    private static void analyzeFoldMultilinesOff(ProcessBuilder pb, String out) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
-        String logs = Files.readString(EXCEPTION_LOG_FILE);
-        if (!logs.contains("line 1" + System.lineSeparator() + "line 2\\nstring")) {
-            throw new RuntimeException("foldmultilines=false did not work.");
+        String logs = switch (out) {
+            case "stdout" -> output.getStdout();
+            case "stderr" -> output.getStderr();
+            default -> Files.readString(Path.of(EXCEPTION_LOG_FILE));
+        };
+
+        if (!NEWLINE_LOG_PATTERN.matcher(logs).find()) {
+            throw new RuntimeException(out + ": foldmultilines=false did not work.");
         }
     }
 
@@ -65,27 +80,33 @@ public class FoldMultilinesTest {
         output.shouldNotHaveExitValue(0);
     }
 
-    public static void main(String[] args) throws Exception {
+    private static void test(String out) throws Exception {
         String Xlog;
         ProcessBuilder pb;
 
-        Xlog = XLOG_BASE + "::foldmultilines=true";
+        Xlog = XLOG_BASE + out +  "::foldmultilines=true";
         pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
-        analyzeFoldMultilinesOn(pb);
+        analyzeFoldMultilinesOn(pb, out);
 
-        Xlog = XLOG_BASE + "::foldmultilines=false";
+        Xlog = XLOG_BASE + out + "::foldmultilines=false";
         pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
-        analyzeFoldMultilinesOff(pb);
+        analyzeFoldMultilinesOff(pb, out);
 
-        Xlog = XLOG_BASE + "::foldmultilines=invalid";
+        Xlog = XLOG_BASE + out + "::foldmultilines=invalid";
         pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
         analyzeFoldMultilinesInvalid(pb);
+    }
+
+    public static void main(String[] args) throws Exception {
+        test("file=" + EXCEPTION_LOG_FILE);
+        test("stdout");
+        test("stderr");
     }
 
     public static class InternalClass {
         public static void main(String[] args) {
             try {
-                throw new RuntimeException("line 1\nline 2\\nstring");
+                throw new RuntimeException(EXCEPTION_MESSAGE);
             } catch (Exception e) {
                 // Do nothing to return exit code 0
             }
