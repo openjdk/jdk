@@ -45,48 +45,84 @@ public:
 // Class to expose perf counters used by jstat.
 class ZServiceabilityCounters : public CHeapObj<mtGC> {
 private:
-  ZGenerationCounters _generation_counters;
-  HSpaceCounters      _space_counters;
-  CollectorCounters   _collector_counters;
+  ZGenerationCounters _young_generation_counters;
+  ZGenerationCounters _old_generation_counters;
+  HSpaceCounters      _young_space_counters;
+  HSpaceCounters      _old_space_counters;
+  CollectorCounters   _minor_collector_counters;
+  CollectorCounters   _major_collector_counters;
 
 public:
   ZServiceabilityCounters(size_t min_capacity, size_t max_capacity);
 
-  CollectorCounters* collector_counters();
+  CollectorCounters* collector_counters(ZCollectorId collector_id);
 
-  void update_sizes();
+  void update_sizes(ZCollectorId collector_id);
 };
 
 ZServiceabilityCounters::ZServiceabilityCounters(size_t min_capacity, size_t max_capacity) :
+    // generation.0
+    _young_generation_counters(
+        "young"      /* name */,
+        0            /* ordinal */,
+        1            /* spaces */,
+        min_capacity /* min_capacity */,
+        max_capacity /* max_capacity */,
+        min_capacity /* curr_capacity */),
     // generation.1
-    _generation_counters("old"        /* name */,
-                         1            /* ordinal */,
-                         1            /* spaces */,
-                         min_capacity /* min_capacity */,
-                         max_capacity /* max_capacity */,
-                         min_capacity /* curr_capacity */),
+    _old_generation_counters(
+        "old"        /* name */,
+        1            /* ordinal */,
+        1            /* spaces */,
+        min_capacity /* min_capacity */,
+        max_capacity /* max_capacity */,
+        min_capacity /* curr_capacity */),
+    // generation.0.space.0
+    _young_space_counters(
+        _young_generation_counters.name_space(),
+        "space"      /* name */,
+        0            /* ordinal */,
+        max_capacity /* max_capacity */,
+        min_capacity /* init_capacity */),
     // generation.1.space.0
-    _space_counters(_generation_counters.name_space(),
-                    "space"      /* name */,
-                    0            /* ordinal */,
-                    max_capacity /* max_capacity */,
-                    min_capacity /* init_capacity */),
+    _old_space_counters(
+        _old_generation_counters.name_space(),
+        "space"      /* name */,
+        0            /* ordinal */,
+        max_capacity /* max_capacity */,
+        min_capacity /* init_capacity */),
+    // gc.collector.0
+    _minor_collector_counters(
+        "Z minor_concurrent cycle pauses" /* name */,
+        0                                 /* ordinal */),
     // gc.collector.2
-    _collector_counters("Z concurrent cycle pauses" /* name */,
-                        2                           /* ordinal */) {}
+    _major_collector_counters(
+        "Z major_concurrent cycle pauses" /* name */,
+        2                                 /* ordinal */) {}
 
-CollectorCounters* ZServiceabilityCounters::collector_counters() {
-  return &_collector_counters;
+CollectorCounters* ZServiceabilityCounters::collector_counters(ZCollectorId collector_id) {
+  return collector_id == ZCollectorId::_minor
+      ? &_minor_collector_counters
+      : &_major_collector_counters;
 }
 
-void ZServiceabilityCounters::update_sizes() {
+void ZServiceabilityCounters::update_sizes(ZCollectorId collector_id) {
   if (UsePerfData) {
     const size_t capacity = ZHeap::heap()->capacity();
-    const size_t used = MIN2(ZHeap::heap()->used(), capacity);
 
-    _generation_counters.update_capacity(capacity);
-    _space_counters.update_capacity(capacity);
-    _space_counters.update_used(used);
+    if  (collector_id == ZCollectorId::_minor) {
+      const size_t used = MIN2(ZHeap::heap()->young_generation()->used(), capacity);
+
+      _young_generation_counters.update_capacity(capacity);
+      _young_space_counters.update_capacity(capacity);
+      _young_space_counters.update_used(used);
+    } else {
+      const size_t used = MIN2(ZHeap::heap()->old_generation()->used(), capacity);
+
+      _old_generation_counters.update_capacity(capacity);
+      _old_space_counters.update_capacity(capacity);
+      _old_space_counters.update_used(used);
+    }
 
     MetaspaceCounters::update_performance_counters();
   }
@@ -120,8 +156,10 @@ ZServiceability::ZServiceability(size_t min_capacity, size_t max_capacity) :
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
     _memory_pool(_min_capacity, _max_capacity),
-    _cycle_memory_manager("ZGC Cycles", "end of GC cycle", &_memory_pool),
-    _pause_memory_manager("ZGC Pauses", "end of GC pause", &_memory_pool),
+    _minor_cycle_memory_manager("ZGC Minor Cycles", "end of GC cycle", &_memory_pool),
+    _major_cycle_memory_manager("ZGC Major Cycles", "end of GC cycle", &_memory_pool),
+    _minor_pause_memory_manager("ZGC Minor Pauses", "end of GC pause", &_memory_pool),
+    _major_pause_memory_manager("ZGC Major Pauses", "end of GC pause", &_memory_pool),
     _counters(NULL) {}
 
 void ZServiceability::initialize() {
@@ -132,20 +170,24 @@ MemoryPool* ZServiceability::memory_pool() {
   return &_memory_pool;
 }
 
-GCMemoryManager* ZServiceability::cycle_memory_manager() {
-  return &_cycle_memory_manager;
+GCMemoryManager* ZServiceability::cycle_memory_manager(ZCollectorId collector_id) {
+  return collector_id == ZCollectorId::_minor
+      ? &_minor_cycle_memory_manager
+      : &_major_cycle_memory_manager;
 }
 
-GCMemoryManager* ZServiceability::pause_memory_manager() {
-  return &_pause_memory_manager;
+GCMemoryManager* ZServiceability::pause_memory_manager(ZCollectorId collector_id) {
+  return collector_id == ZCollectorId::_minor
+      ? &_minor_pause_memory_manager
+      : &_minor_pause_memory_manager;
 }
 
 ZServiceabilityCounters* ZServiceability::counters() {
   return _counters;
 }
 
-ZServiceabilityCycleTracer::ZServiceabilityCycleTracer() :
-    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(),
+ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(ZCollectorId collector_id) :
+    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(collector_id),
                           ZCollectedHeap::heap()->gc_cause(),
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
@@ -156,10 +198,11 @@ ZServiceabilityCycleTracer::ZServiceabilityCycleTracer() :
                           true  /* recordGCEndTime */,
                           true  /* countCollection */) {}
 
-ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
+ZServiceabilityPauseTracer::ZServiceabilityPauseTracer(ZCollectorId collector_id) :
+    _collector_id(collector_id),
     _svc_gc_marker(SvcGCMarker::CONCURRENT),
-    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters()),
-    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(),
+    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters(collector_id)),
+    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(collector_id),
                           ZCollectedHeap::heap()->gc_cause(),
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
@@ -171,6 +214,6 @@ ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
                           true  /* countCollection */) {}
 
 ZServiceabilityPauseTracer::~ZServiceabilityPauseTracer()  {
-  ZHeap::heap()->serviceability_counters()->update_sizes();
+  ZHeap::heap()->serviceability_counters()->update_sizes(_collector_id);
   MemoryService::track_memory_usage();
 }

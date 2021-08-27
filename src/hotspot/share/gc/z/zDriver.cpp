@@ -161,7 +161,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerMinor timer(ZPhasePauseMinorMarkStart);
-    ZServiceabilityPauseTracer tracer;
+    ZServiceabilityPauseTracer tracer(ZCollectorId::_minor);
 
     ZCollectedHeap::heap()->increment_total_collections(false /* full */);
     ZHeap::heap()->minor_collector()->mark_start();
@@ -177,7 +177,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerMinor timer(ZPhasePauseMinorMarkEnd);
-    ZServiceabilityPauseTracer tracer;
+    ZServiceabilityPauseTracer tracer(ZCollectorId::_minor);
     return ZHeap::heap()->minor_collector()->mark_end();
   }
 };
@@ -194,7 +194,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerMinor timer(ZPhasePauseMinorRelocateStart);
-    ZServiceabilityPauseTracer tracer;
+    ZServiceabilityPauseTracer tracer(ZCollectorId::_minor);
     ZHeap::heap()->minor_collector()->relocate_start();
     return true;
   }
@@ -367,7 +367,7 @@ public:
       _gc_cause(request.cause()),
       _gc_cause_setter(ZCollectedHeap::heap(), request.cause()),
       _timer(ZPhaseMinorCycle),
-      _tracer() {
+      _tracer(ZCollectorId::_minor) {
     // Update statistics
     ZHeap::heap()->minor_collector()->stat_cycle()->at_start();
   }
@@ -451,7 +451,7 @@ public:
     ClassLoaderDataGraph::verify_claimed_marks_not(ClassLoaderData::_claim_strong);
 
     ZStatTimerMajor timer(ZPhasePauseMajorMarkStart);
-    ZServiceabilityPauseTracer tracer;
+    ZServiceabilityPauseTracer tracer(ZCollectorId::_major);
 
     ZCollectedHeap::heap()->increment_total_collections(true /* full */);
 
@@ -471,7 +471,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerMajor timer(ZPhasePauseMajorMarkEnd);
-    ZServiceabilityPauseTracer tracer;
+    ZServiceabilityPauseTracer tracer(ZCollectorId::_major);
     return ZHeap::heap()->major_collector()->mark_end();
   }
 };
@@ -488,7 +488,7 @@ public:
 
   virtual bool do_operation() {
     ZStatTimerMajor timer(ZPhasePauseMajorRelocateStart);
-    ZServiceabilityPauseTracer tracer;
+    ZServiceabilityPauseTracer tracer(ZCollectorId::_major);
     ZHeap::heap()->major_collector()->relocate_start();
     return true;
   }
@@ -767,7 +767,7 @@ public:
       _gc_cause(request.cause()),
       _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
       _timer(ZPhaseMajorCycle),
-      _tracer() {
+      _tracer(ZCollectorId::_major) {
 
     ZMajorCollector* const collector = ZHeap::heap()->major_collector();
 

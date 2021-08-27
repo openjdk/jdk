@@ -231,9 +231,11 @@ bool ZCollectedHeap::uses_stack_watermark_barrier() const {
 }
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
-  GrowableArray<GCMemoryManager*> memory_managers(2);
-  memory_managers.append(_heap.serviceability_cycle_memory_manager());
-  memory_managers.append(_heap.serviceability_pause_memory_manager());
+  GrowableArray<GCMemoryManager*> memory_managers(4);
+  memory_managers.append(_heap.serviceability_cycle_memory_manager(ZCollectorId::_minor));
+  memory_managers.append(_heap.serviceability_cycle_memory_manager(ZCollectorId::_major));
+  memory_managers.append(_heap.serviceability_pause_memory_manager(ZCollectorId::_minor));
+  memory_managers.append(_heap.serviceability_pause_memory_manager(ZCollectorId::_major));
   return memory_managers;
 }
 

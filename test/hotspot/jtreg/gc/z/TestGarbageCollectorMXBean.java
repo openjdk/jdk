@@ -86,7 +86,7 @@ public class TestGarbageCollectorMXBean {
             log("  MemoryUsageAfterGC: " + memoryUsageAfterGC);
             log("");
 
-            if (name.equals("ZGC Cycles")) {
+            if (name.equals("ZGC Major Cycles") || name.equals("ZGC Minor Cycles")) {
                 cycles.incrementAndGet();
 
                 if (!action.equals("end of GC cycle")) {
@@ -113,7 +113,7 @@ public class TestGarbageCollectorMXBean {
                     log("ERROR: MemoryUsageBeforeGC.max");
                     errors.incrementAndGet();
                 }
-            } else if (name.equals("ZGC Pauses")) {
+            } else if (name.equals("ZGC Minor Pauses") || name.equals("ZGC Minor Pauses")) {
                 pauses.incrementAndGet();
 
                 if (!action.equals("end of GC pause")) {
@@ -145,10 +145,10 @@ public class TestGarbageCollectorMXBean {
                 errors.incrementAndGet();
             }
 
-            if (!cause.equals("System.gc()")) {
-                log("ERROR: Cause");
-                errors.incrementAndGet();
-            }
+            //if (!cause.equals("System.gc()")) {
+            //    log("ERROR: Cause");
+            //    errors.incrementAndGet();
+            //}
 
             if (startTime > endTime) {
                 log("ERROR: StartTime");

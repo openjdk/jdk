@@ -53,8 +53,10 @@ private:
   const size_t                 _min_capacity;
   const size_t                 _max_capacity;
   ZServiceabilityMemoryPool    _memory_pool;
-  ZServiceabilityMemoryManager _cycle_memory_manager;
-  ZServiceabilityMemoryManager _pause_memory_manager;
+  ZServiceabilityMemoryManager _minor_cycle_memory_manager;
+  ZServiceabilityMemoryManager _major_cycle_memory_manager;
+  ZServiceabilityMemoryManager _minor_pause_memory_manager;
+  ZServiceabilityMemoryManager _major_pause_memory_manager;
   ZServiceabilityCounters*     _counters;
 
 public:
@@ -63,8 +65,8 @@ public:
   void initialize();
 
   MemoryPool* memory_pool();
-  GCMemoryManager* cycle_memory_manager();
-  GCMemoryManager* pause_memory_manager();
+  GCMemoryManager* cycle_memory_manager(ZCollectorId collector_id);
+  GCMemoryManager* pause_memory_manager(ZCollectorId collector_id);
   ZServiceabilityCounters* counters();
 };
 
@@ -73,17 +75,18 @@ private:
   TraceMemoryManagerStats _memory_manager_stats;
 
 public:
-  ZServiceabilityCycleTracer();
+  ZServiceabilityCycleTracer(ZCollectorId collector_id);
 };
 
 class ZServiceabilityPauseTracer : public StackObj {
 private:
+  const ZCollectorId      _collector_id;
   SvcGCMarker             _svc_gc_marker;
   TraceCollectorStats     _counters_stats;
   TraceMemoryManagerStats _memory_manager_stats;
 
 public:
-  ZServiceabilityPauseTracer();
+  ZServiceabilityPauseTracer(ZCollectorId collector_id);
   ~ZServiceabilityPauseTracer();
 };
 
