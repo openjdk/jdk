@@ -371,7 +371,7 @@ public class TransPatterns extends TreeTranslator {
 
             boolean enumSelector = seltype.tsym.isEnum();
             Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
-            Symbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
+            MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
             MethodType indyType = new MethodType(
@@ -382,7 +382,7 @@ public class TransPatterns extends TreeTranslator {
             );
             DynamicMethodSymbol dynSym = new DynamicMethodSymbol(bootstrapName,
                     syms.noSymbol,
-                    ((MethodSymbol)bsm).asHandle(),
+                    bsm.asHandle(),
                     indyType,
                     staticArgValues);
 

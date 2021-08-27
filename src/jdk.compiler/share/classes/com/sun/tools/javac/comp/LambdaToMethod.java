@@ -424,14 +424,14 @@ public class LambdaToMethod extends TreeTranslator {
         //add captured locals
         for (Symbol fv : localContext.getSymbolMap(CAPTURED_VAR).keySet()) {
             if (fv != localContext.self) {
-                JCTree captured_local = make.Ident(fv).setType(fv.type);
-                syntheticInits.append((JCExpression) captured_local);
+                JCExpression captured_local = make.Ident(fv).setType(fv.type);
+                syntheticInits.append(captured_local);
             }
         }
         // add captured outer this instances (used only when `this' capture itself is illegal)
         for (Symbol fv : localContext.getSymbolMap(CAPTURED_OUTER_THIS).keySet()) {
-            JCTree captured_local = make.QualThis(fv.type);
-            syntheticInits.append((JCExpression) captured_local);
+            JCExpression captured_local = make.QualThis(fv.type);
+            syntheticInits.append(captured_local);
         }
 
         //then, determine the arguments to the indy call
@@ -1184,13 +1184,13 @@ public class LambdaToMethod extends TreeTranslator {
                 syms.stringType,
                 syms.methodTypeType).appendList(staticArgs.map(types::constantType));
 
-            Symbol bsm = rs.resolveInternalMethod(pos, attrEnv, site,
+            MethodSymbol bsm = rs.resolveInternalMethod(pos, attrEnv, site,
                     bsmName, bsm_staticArgs, List.nil());
 
             DynamicMethodSymbol dynSym =
                     new DynamicMethodSymbol(methName,
                                             syms.noSymbol,
-                                            ((MethodSymbol)bsm).asHandle(),
+                                            bsm.asHandle(),
                                             indyType,
                                             staticArgs.toArray(new LoadableConstant[staticArgs.length()]));
             JCFieldAccess qualifier = make.Select(make.QualIdent(site.tsym), bsmName);

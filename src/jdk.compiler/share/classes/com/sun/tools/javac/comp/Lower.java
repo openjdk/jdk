@@ -2315,7 +2315,7 @@ public class Lower extends TreeTranslator {
         enumDefs.append(make.VarDef(valuesVar, make.App(make.QualIdent(valuesMethod))));
         tree.sym.members().enter(valuesVar);
 
-        Symbol valuesSym = lookupMethod(tree.pos(), names.values,
+        MethodSymbol valuesSym = lookupMethod(tree.pos(), names.values,
                                         tree.type, List.nil());
         List<JCStatement> valuesBody;
         if (useClone()) {
@@ -2366,7 +2366,7 @@ public class Lower extends TreeTranslator {
         }
 
         JCMethodDecl valuesDef =
-             make.MethodDef((MethodSymbol)valuesSym, make.Block(0, valuesBody));
+             make.MethodDef(valuesSym, make.Block(0, valuesBody));
 
         enumDefs.append(valuesDef);
 
@@ -2581,7 +2581,7 @@ public class Lower extends TreeTranslator {
             Name bootstrapName,
             Name argName,
             boolean isStatic) {
-        Symbol bsm = rs.resolveInternalMethod(tree.pos(), attrEnv, site,
+        MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), attrEnv, site,
                 bootstrapName, staticArgTypes, List.nil());
 
         MethodType indyType = msym.type.asMethodType();
@@ -2593,7 +2593,7 @@ public class Lower extends TreeTranslator {
         );
         DynamicMethodSymbol dynSym = new DynamicMethodSymbol(argName,
                 syms.noSymbol,
-                ((MethodSymbol)bsm).asHandle(),
+                bsm.asHandle(),
                 indyType,
                 staticArgValues);
         JCFieldAccess qualifier = make.Select(make.QualIdent(site.tsym), argName);
