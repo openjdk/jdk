@@ -219,6 +219,7 @@ void VM_CollectForMetadataAllocation::doit() {
     }
   }
 
+#if INCLUDE_G1GC
   if (UseG1GC && ClassUnloadingWithConcurrentMark) {
     G1CollectedHeap::heap()->initiate_conc_gc_for_metadata_allocation(_gc_cause);
     // For G1 expand since the collection is going to be concurrent.
@@ -229,6 +230,7 @@ void VM_CollectForMetadataAllocation::doit() {
 
     log_debug(gc)("G1 full GC for Metaspace");
   }
+#endif
 
   // Don't clear the soft refs yet.
   heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
