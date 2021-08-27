@@ -2172,7 +2172,7 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
   // See if it is a narrow oop array.
   if (adr_type->isa_aryptr()) {
     if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes()) {
-      const TypeOopPtr *elem_type = adr_type->is_aryptr()->elem()->isa_oopptr();
+      const TypeOopPtr* elem_type = adr_type->is_aryptr()->elem()->make_oopptr();
       if (elem_type != NULL) {
         sharpened_klass = elem_type->klass();
       }
