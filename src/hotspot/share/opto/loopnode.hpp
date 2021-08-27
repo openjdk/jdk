@@ -1275,10 +1275,17 @@ public:
   // Return true if exp is a scaled induction var plus (or minus) constant
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset, int depth = 0);
 
+  // Enum to determine the action to be performed in create_new_if_for_predicate() when processing phis of UCT regions.
+  enum class UnswitchingAction {
+    None,            // No special action.
+    FastLoopCloning, // Need to clone nodes for the fast loop.
+    SlowLoopRewiring // Need to rewire nodes for the slow loop.
+  };
+
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                        int opcode, bool if_cont_is_true_proj = true, bool unswitch_is_slow_loop = false,
-                                        Node_List* old_new = NULL);
+                                        int opcode, bool if_cont_is_true_proj = true, Node_List* old_new = NULL,
+                                        UnswitchingAction unswitching_action = UnswitchingAction::None);
 
   // Clone data nodes for the fast loop while creating a new If with create_new_if_for_predicate.
   Node* clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* uncommon_proj, Node* if_uct, Node_List* old_new);
