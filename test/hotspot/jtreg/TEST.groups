@@ -267,6 +267,8 @@ tier2_gc_shenandoah = \
   gc/logging/TestUnifiedLoggingSwitchStress.java \
   runtime/Metaspace/DefineClass.java \
   gc/shenandoah/ \
+  gc/CriticalNativeArgs.java \
+  gc/stress/CriticalNativeStress.java \
   serviceability/sa/TestHeapDumpForInvokeDynamic.java \
   -gc/shenandoah/TestStringDedupStress.java \
   -:tier1_gc_shenandoah
@@ -277,8 +279,6 @@ tier3_gc_shenandoah = \
   gc/stress/gclocker/TestGCLockerWithShenandoah.java \
   gc/stress/systemgc/TestSystemGCWithShenandoah.java \
   gc/shenandoah/TestStringDedupStress.java \
-  gc/CriticalNativeArgs.java \
-  gc/stress/CriticalNativeStress.java \
   -:tier2_gc_shenandoah
 
 hotspot_gc_shenandoah = \
