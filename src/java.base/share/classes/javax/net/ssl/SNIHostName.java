@@ -34,6 +34,7 @@ import java.nio.charset.CharacterCodingException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Instances of this class represent a server name of type
