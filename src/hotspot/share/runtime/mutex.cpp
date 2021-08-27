@@ -287,6 +287,8 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
 
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
          "Special locks or below should never safepoint");
+
+  assert(_rank >= 0, "Bad lock rank");
 #endif
 }
 
@@ -364,7 +366,6 @@ Mutex* Mutex::get_least_ranked_lock_besides_this(Mutex* locks) {
 
 // Tests for rank violations that might indicate exposure to deadlock.
 void Mutex::check_rank(Thread* thread) {
-  assert(this->rank() >= 0, "bad lock rank");
   Mutex* locks_owned = thread->owned_locks();
 
   if (!SafepointSynchronize::is_at_safepoint()) {

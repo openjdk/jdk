@@ -128,19 +128,19 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_trylock_rank_out_of_orderB,
   mutex_rankA->unlock();
 }
 
-TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_access_leaf,
-                   ".* Attempting to acquire lock mutex_rank_leaf/.* out of order with lock mutex_rank_access/1 "
+TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_event_leaf,
+                   ".* Attempting to acquire lock mutex_rank_leaf/.* out of order with lock mutex_rank_event/0 "
                    "-- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Mutex* mutex_rank_access = new Mutex(Mutex::access, "mutex_rank_access", false, Mutex::_safepoint_check_never);
+  Mutex* mutex_rank_event = new Mutex(Mutex::event, "mutex_rank_event", false, Mutex::_safepoint_check_never);
   Mutex* mutex_rank_leaf = new Mutex(Mutex::leaf, "mutex_rank_leaf", false, Mutex::_safepoint_check_never);
 
-  mutex_rank_access->lock_without_safepoint_check();
+  mutex_rank_event->lock_without_safepoint_check();
   mutex_rank_leaf->lock_without_safepoint_check();
   mutex_rank_leaf->unlock();
-  mutex_rank_access->unlock();
+  mutex_rank_event->unlock();
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_tty_special,
@@ -220,19 +220,19 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_special,
   monitor_rank_special->unlock();
 }
 
-TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_access_leaf,
-                   ".* Attempting to wait on monitor monitor_rank_access/1 while holding lock monitor_rank_tty/.*"
+TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_event_tty,
+                   ".* Attempting to wait on monitor monitor_rank_event/0 while holding lock monitor_rank_tty/.*"
                    "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank special.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
   Monitor* monitor_rank_tty = new Monitor(Mutex::tty, "monitor_rank_tty", false, Mutex::_safepoint_check_never);
-  Monitor* monitor_rank_access = new Monitor(Mutex::access, "monitor_rank_access", false, Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_event = new Monitor(Mutex::event, "monitor_rank_event", false, Mutex::_safepoint_check_never);
 
   monitor_rank_tty->lock_without_safepoint_check();
-  monitor_rank_access->lock_without_safepoint_check();
-  monitor_rank_access->wait_without_safepoint_check(1);
-  monitor_rank_access->unlock();
+  monitor_rank_event->lock_without_safepoint_check();
+  monitor_rank_event->wait_without_safepoint_check(1);
+  monitor_rank_event->unlock();
   monitor_rank_tty->unlock();
 }
 
@@ -250,5 +250,15 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_tty_special,
   monitor_rank_tty->wait_without_safepoint_check(1);
   monitor_rank_tty->unlock();
   monitor_rank_special->unlock();
+}
+
+TEST_VM_ASSERT_MSG(MutexRank, monitor_negative_rank,
+                   ".*Bad lock rank") {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  Monitor* monitor_rank_broken = new Monitor(Mutex::event-1, "monitor_rank_broken", false, Mutex::_safepoint_check_never);
+  monitor_rank_broken->lock_without_safepoint_check();
+  monitor_rank_broken->unlock();
 }
 #endif // ASSERT
