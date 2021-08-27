@@ -102,7 +102,7 @@ EXCLUDE_DIRS=" \
 "
 
 for ex in $EXCLUDE_DIRS; do
-    EXCLUDE_ARGS+="--exclude=$ex "
+    EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude=$ex "
 done
 
 echo "Copying Xcode.app..."
