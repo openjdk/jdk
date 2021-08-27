@@ -298,7 +298,7 @@ public final class SNIHostName extends SNIServerName {
      * @return a {@code SNIMatcher} object for {@code SNIHostName}s
      * @throws NullPointerException if {@code regex} is
      *         {@code null}
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's
+     * @throws PatternSyntaxException if the regular expression's
      *         syntax is invalid
      */
     public static SNIMatcher createSNIMatcher(String regex) {
