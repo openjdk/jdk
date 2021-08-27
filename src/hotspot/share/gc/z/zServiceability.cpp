@@ -179,7 +179,7 @@ GCMemoryManager* ZServiceability::cycle_memory_manager(ZCollectorId collector_id
 GCMemoryManager* ZServiceability::pause_memory_manager(ZCollectorId collector_id) {
   return collector_id == ZCollectorId::_minor
       ? &_minor_pause_memory_manager
-      : &_minor_pause_memory_manager;
+      : &_major_pause_memory_manager;
 }
 
 ZServiceabilityCounters* ZServiceability::counters() {

@@ -42,7 +42,7 @@
  * @author  Mandy Chung
  *
  * @modules jdk.management
- * @run main MemoryTest 2 1
+ * @run main MemoryTest 4 1
  */
 
 /*
