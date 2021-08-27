@@ -505,6 +505,7 @@ class ResponseContent {
             } catch (Throwable t) {
                 if (debug.on()) debug.log("Unexpected exception", t);
                 closedExceptionally = t;
+                onComplete.accept(t);
             }
         }
 
