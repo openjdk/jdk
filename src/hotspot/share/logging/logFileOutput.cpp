@@ -190,6 +190,7 @@ bool LogFileOutput::set_option(const char* key, const char* value, outputStream*
       if (!success || (longval > SIZE_MAX)) {
         errstream->print_cr("Invalid option: %s must be in range [0, "
                             SIZE_FORMAT "]", FileSizeOptionKey, (size_t)SIZE_MAX);
+        success = false;
       } else {
         _rotate_size = static_cast<size_t>(longval);
         success = true;
