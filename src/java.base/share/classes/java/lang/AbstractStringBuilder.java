@@ -579,7 +579,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
         int len = str.length();
         ensureCapacityInternal(count + len);
-        putStringAt(count, str);
+        putStringAt(count, str, len);
         count += len;
         return this;
     }
@@ -603,9 +603,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
         int len = asb.length();
         ensureCapacityInternal(count + len);
-        if (getCoder() != asb.getCoder()) {
-            inflate();
-        }
+        inflateIfNeededFor(asb);
         asb.getBytes(value, count, coder);
         count += len;
         return this;
@@ -1002,7 +1000,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         ensureCapacityInternal(newCount);
         shift(end, newCount - count);
         this.count = newCount;
-        putStringAt(start, str);
+        putStringAt(start, str, len);
         return this;
     }
 
@@ -1174,7 +1172,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         ensureCapacityInternal(count + len);
         shift(offset, len);
         count += len;
-        putStringAt(offset, str);
+        putStringAt(offset, str, len);
         return this;
     }
 
@@ -1712,15 +1710,26 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
     }
 
-    private void putStringAt(int index, String str, int off, int end) {
-        if (getCoder() != str.coder()) {
+    private void inflateIfNeededFor(String input) {
+        if (COMPACT_STRINGS && (coder != input.coder())) {
             inflate();
         }
+    }
+
+    private void inflateIfNeededFor(AbstractStringBuilder input) {
+        if (COMPACT_STRINGS && (coder != input.getCoder())) {
+            inflate();
+        }
+    }
+
+    private void putStringAt(int index, String str, int off, int end) {
+        inflateIfNeededFor(str);
         str.getBytes(value, off, index, coder, end - off);
     }
 
-    private void putStringAt(int index, String str) {
-        putStringAt(index, str, 0, str.length());
+    private void putStringAt(int index, String str, int len) {
+        inflateIfNeededFor(str);
+        str.getBytes(value, 0, index, coder, len);
     }
 
     private final void appendChars(char[] s, int off, int end) {
