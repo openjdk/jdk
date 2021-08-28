@@ -48,14 +48,25 @@ import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
+import jdk.test.lib.RandomFactory;
+
 /*
  * @test
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main TransferTo
  * @bug 8265891
  * @summary tests whether sun.nio.ChannelInputStream.transferTo conforms to the
  *          InputStream.transferTo contract defined in the javadoc
  * @key randomness
  */
 public class TransferTo {
+	private static final int MIN_SIZE      = 10_000;
+    private static final int MAX_SIZE_INCR = 100_000_000 - MIN_SIZE;
+
+    private static final int ITERATIONS = 10;
+
+	private static final Random RND = RandomFactory.getRandom();
 
     public static void main(String[] args) throws Exception {
         test(fileChannelInput(), fileChannelOutput());
@@ -86,29 +97,50 @@ public class TransferTo {
             throws Exception {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
+
         // to span through several batches
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(16384, 16384));
+
+        // randomly chosen starting points within source and target
+        for (int i = 0; i < ITERATIONS; i++) {
+            byte[] inBytes = createRandomBytes(MIN_SIZE, MAX_SIZE_INCR);
+            int posIn = RND.nextInt(inBytes.length);
+            int posOut = RND.nextInt(MIN_SIZE);
+            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut);
+        }
     }
 
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider, byte[] inBytes) throws Exception {
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0);
+    }
+
+    private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
+            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut) throws Exception {
         AtomicReference<Supplier<byte[]>> recorder = new AtomicReference<>();
         try (InputStream in = inputStreamProvider.input(inBytes);
                 OutputStream out = outputStreamProvider.output(recorder::set)) {
-            in.transferTo(out);
+            // skip bytes till starting point
+            in.readNBytes(posIn);
+            out.write(new byte[posOut]);
+
+            long reported = in.transferTo(out);
+            int count = inBytes.length - posIn;
+
+            if (reported != count)
+                throw new AssertionError(
+                        format("reported %d bytes but should report %d", reported, count));
 
             byte[] outBytes = recorder.get().get();
-
-            if (!Arrays.equals(inBytes, outBytes))
+            if (!Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count))
                 throw new AssertionError(
-                        format("bytes.length=%s, outBytes.length=%s", inBytes.length, outBytes.length));
+                        format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
         }
     }
 
     private static byte[] createRandomBytes(int min, int maxRandomAdditive) {
-        Random rnd = new Random();
-        byte[] bytes = new byte[min + rnd.nextInt(maxRandomAdditive)];
-        rnd.nextBytes(bytes);
+        byte[] bytes = new byte[min + RND.nextInt(maxRandomAdditive)];
+        RND.nextBytes(bytes);
         return bytes;
     }
 
