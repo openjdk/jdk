@@ -30,6 +30,7 @@
 #endif
 /**
  * Command line program to sleep at least given number of seconds.
+ * The behavior should equivalent to the Unix sleep command.
  * Actual time sleeping may vary if interrupted, the remaining time
  * returned from sleep has limited accuracy.
  *
@@ -39,7 +40,7 @@ int main(int argc, char** argv) {
     int seconds;
 
     if (argc < 2 || (seconds = atoi(argv[1])) < 0) {
-        fprintf(stderr, "usage: basicsleep <non-negative seconds>\n");
+        fprintf(stderr, "usage: BasicSleep <non-negative seconds>\n");
         exit(1);
     }
 

@@ -32,8 +32,8 @@
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  * @library /test/lib
- * @run main/othervm/timeout=300 -Djava.security.manager=allow Basic
- * @run main/othervm/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=fork Basic
+ * @run main/othervm/native/timeout=300 -Djava.security.manager=allow Basic
+ * @run main/othervm/native/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=fork Basic
  * @author Martin Buchholz
  */
 
@@ -50,7 +50,6 @@ import java.lang.ProcessHandle;
 import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,9 +81,6 @@ public class Basic {
     /* Used for regex String matching for long error messages */
     static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
     static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error=2)";
-
-    /* Path to native executables;  basicsleep */
-    static final Path TEST_NATIVEPATH = Path.of(System.getProperty("test.nativepath", "."));
 
     /**
      * Returns the number of milliseconds since time given by
@@ -2625,21 +2621,48 @@ public class Basic {
         } catch (Throwable t) { unexpected(t); }
     }
 
+    // Path to native executables, if any
+    private static final String TEST_NATIVEPATH = System.getProperty("test.nativepath");
+
+    // Path where "sleep" program may be found" or null
+    private static final Path SLEEP_PATH = initSleepPath();
+
     /**
-     * Return the list of process arguments for a child to sleep 10 minutes (600000 milliseconds).
+     * Compute the Path to a sleep executable.
+     * @return a Path to sleep or BasicSleep(.exe) or null if none
+     */
+    private static Path initSleepPath() {
+        if (Windows.is() && TEST_NATIVEPATH != null) {
+            // exeBasicSleep is equivalent to sleep on Unix
+            Path exePath = Path.of(TEST_NATIVEPATH).resolve("BasicSleep.exe");
+            if (exePath.toFile().canExecute()) {
+                return exePath;
+            }
+        }
+
+        Path exePath = Path.of("/bin").resolve("sleep");
+        if (exePath.toFile().canExecute()) {
+            return exePath;
+        }
+        return null;
+    }
+
+    /**
+     * Return the list of process arguments for a child to sleep 10 minutes (600 seconds).
      *
      * @return A list of process arguments to sleep 10 minutes.
      */
     private static List<String> getSleepArgs() {
         List<String> childArgs = null;
-        String exeName = "BasicSleep" + (Windows.is() ? ".exe" : "");
-        Path exePath = TEST_NATIVEPATH.resolve(exeName);
-        if (exePath.toFile().canExecute()) {
-            childArgs = List.of(exePath.toString(), "600");
+        if (SLEEP_PATH != null) {
+            childArgs = List.of(SLEEP_PATH.toString(), "600");
         } else {
             // Fallback to the JavaChild sleep does a sleep for 10 minutes.
-            // The fallback the Java child is used if the test is run without building
-            // the basicsleep native executable.
+            // The fallback the Java$Child is used if the test is run without building
+            // the BasicSleep native executable (for Windows).
+
+            Path exePath = Path.of(TEST_NATIVEPATH).resolve("BasicSleep.exe");
+            System.out.println("exePath: " + exePath + ", canExec: " + exePath.toFile().canExecute());
             childArgs = new ArrayList<>(javaChildArgs);
             childArgs.add("sleep");
             System.out.println("Using fallback to JavaChild: " + childArgs);
