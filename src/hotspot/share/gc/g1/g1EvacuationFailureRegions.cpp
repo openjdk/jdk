@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,34 +30,24 @@
 #include "runtime/atomic.hpp"
 
 
-uintx G1EvacuationFailureRegions::HashTableConfig::get_hash(Value const& value, bool* is_dead) {
-  *is_dead = false;
-  return value;
-}
-
-void* G1EvacuationFailureRegions::HashTableConfig::allocate_node(void* context, size_t size, Value const& value) {
-  return AllocateHeap(size, mtGC);
-}
-
-void G1EvacuationFailureRegions::HashTableConfig::free_node(void* context, void* memory, Value const& value) {
-  FreeHeap(memory);
-}
-
-G1EvacuationFailureRegions::G1EvacuationFailureRegions() {
+G1EvacuationFailureRegions::G1EvacuationFailureRegions() :
+  _regions_failed_evacuation(mtGC) {
 }
 
 G1EvacuationFailureRegions::~G1EvacuationFailureRegions() {
   FREE_C_HEAP_ARRAY(uint, _evac_failure_regions);
-  delete _table;
 }
 
 void G1EvacuationFailureRegions::initialize() {
   Atomic::store(&_evac_failure_regions_cur_length, 0u);
-  _table = new HashTable();
-  _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, G1CollectedHeap::heap()->max_reserved_regions(), mtGC);
+  _max_regions = G1CollectedHeap::heap()->max_reserved_regions();
+  _regions_failed_evacuation.resize(_max_regions);
+  _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, _max_regions, mtGC);
 }
 
-void G1EvacuationFailureRegions::par_iterate(HeapRegionClosure* closure, HeapRegionClaimer* _hrclaimer, uint worker_id) {
+void G1EvacuationFailureRegions::par_iterate(HeapRegionClosure* closure,
+                                             HeapRegionClaimer* _hrclaimer,
+                                             uint worker_id) {
   assert_at_safepoint();
   size_t length = Atomic::load(&_evac_failure_regions_cur_length);
   if (length == 0) {
@@ -85,15 +75,10 @@ void G1EvacuationFailureRegions::par_iterate(HeapRegionClosure* closure, HeapReg
 
 void G1EvacuationFailureRegions::reset() {
   Atomic::store(&_evac_failure_regions_cur_length, 0u);
-  delete _table;
-  _table = new HashTable();
+  _regions_failed_evacuation.clear();
 }
-
-static void found_func(uint* region_idx) { }
 
 bool G1EvacuationFailureRegions::contains(uint region_idx) const {
-  HashTableLookUp lookup(region_idx);
-  return _table->get(Thread::current(), lookup, found_func);
-  return false;
+  assert(region_idx < _max_regions, "must be");
+  return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
 }
-
