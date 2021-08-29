@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -305,7 +306,7 @@ public final class DLSSoundbank implements Soundbank {
         DLSID uuid;
         long x;
         long y;
-        Stack<Long> stack = new Stack<>();
+        ArrayDeque<Long> stack = new ArrayDeque<>();
 
         while (riff.available() != 0) {
             int opcode = riff.readUnsignedShort();

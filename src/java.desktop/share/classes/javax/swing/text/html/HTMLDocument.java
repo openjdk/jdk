@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2708,7 +2708,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         }
 
         private Element[] getPathTo(int offset) {
-            Stack<Element> elements = new Stack<Element>();
+            ArrayDeque<Element> elements = new ArrayDeque<Element>();
             Element e = getDefaultRootElement();
             int index;
             while (!e.isLeaf()) {
@@ -2716,7 +2716,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 e = e.getElement(e.getElementIndex(offset));
             }
             Element[] retValue = new Element[elements.size()];
-            elements.copyInto(retValue);
+            elements.toArray(retValue);
             return retValue;
         }
 
