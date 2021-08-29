@@ -61,12 +61,12 @@ import jdk.test.lib.RandomFactory;
  * @key randomness
  */
 public class TransferTo {
-	private static final int MIN_SIZE      = 10_000;
+    private static final int MIN_SIZE      = 10_000;
     private static final int MAX_SIZE_INCR = 100_000_000 - MIN_SIZE;
 
     private static final int ITERATIONS = 10;
 
-	private static final Random RND = RandomFactory.getRandom();
+    private static final Random RND = RandomFactory.getRandom();
 
     public static void main(String[] args) throws Exception {
         test(fileChannelInput(), fileChannelOutput());
