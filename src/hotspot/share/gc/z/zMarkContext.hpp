@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-import java.util.*;
+#ifndef SHARE_GC_Z_ZMARKCONTEXT_HPP
+#define SHARE_GC_Z_ZMARKCONTEXT_HPP
 
-// This is a test case executed by DumpClassList.java to load classes
-// from various places to ensure that they are not written to the class list.
-public class ArrayListTest {
-    public static void main(String args[]) throws Exception {
-        // The following lambda usage should generate various classes like
-        // java.lang.invoke.LambdaForm$MH/1146743572. All of them should be excluded from
-        // the class list.
-        List<String> a = new ArrayList<>();
-        a.add("hello world.");
-        a.forEach(str -> System.out.println(str));
+#include "gc/z/zMarkCache.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "memory/allocation.hpp"
 
-        System.out.println(Class.forName("java.lang.NewClass")); // should be excluded from the class list.
-        System.out.println(Class.forName("boot.append.Foo"));    // should be excluded from the class list.
-    }
-}
+class ZMarkStripe;
+class ZMarkThreadLocalStacks;
+
+class ZMarkContext : public StackObj {
+private:
+  ZMarkCache                    _cache;
+  ZMarkStripe* const            _stripe;
+  ZMarkThreadLocalStacks* const _stacks;
+  StringDedup::Requests         _string_dedup_requests;
+
+public:
+  ZMarkContext(size_t nstripes,
+               ZMarkStripe* stripe,
+               ZMarkThreadLocalStacks* stacks);
+
+  ZMarkCache* cache();
+  ZMarkStripe* stripe();
+  ZMarkThreadLocalStacks* stacks();
+  StringDedup::Requests* string_dedup_requests();
+};
+
+#endif // SHARE_GC_Z_ZMARKCONTEXT_HPP

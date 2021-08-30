@@ -33,6 +33,20 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
+class InFlightMutexRelease {
+ private:
+  Mutex* _in_flight_mutex;
+ public:
+  InFlightMutexRelease(Mutex* in_flight_mutex) : _in_flight_mutex(in_flight_mutex) {
+    assert(in_flight_mutex != NULL, "must be");
+  }
+  void operator()(JavaThread* current) {
+    _in_flight_mutex->release_for_safepoint();
+    _in_flight_mutex = NULL;
+  }
+  bool not_released() { return _in_flight_mutex != NULL; }
+};
+
 #ifdef ASSERT
 void Mutex::check_block_state(Thread* thread) {
   if (!_allow_vm_block && thread->is_VM_thread()) {
@@ -72,7 +86,6 @@ void Mutex::check_no_safepoint_state(Thread* thread) {
 #endif // ASSERT
 
 void Mutex::lock_contended(Thread* self) {
-  Mutex *in_flight_mutex = NULL;
   DEBUG_ONLY(int retry_cnt = 0;)
   bool is_active_Java_thread = self->is_active_Java_thread();
   do {
@@ -84,13 +97,14 @@ void Mutex::lock_contended(Thread* self) {
 
     // Is it a JavaThread participating in the safepoint protocol.
     if (is_active_Java_thread) {
+      InFlightMutexRelease ifmr(this);
       assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
-      { ThreadBlockInVM tbivmdc(JavaThread::cast(self), &in_flight_mutex);
-        in_flight_mutex = this;  // save for ~ThreadBlockInVM
+      {
+        ThreadBlockInVMPreprocess<InFlightMutexRelease> tbivmdc(JavaThread::cast(self), ifmr);
         _lock.lock();
       }
-      if (in_flight_mutex != NULL) {
-        // Not unlocked by ~ThreadBlockInVM
+      if (ifmr.not_released()) {
+        // Not unlocked by ~ThreadBlockInVMPreprocess
         break;
       }
     } else {
@@ -234,18 +248,17 @@ bool Monitor::wait(int64_t timeout) {
   check_safepoint_state(self);
 
   int wait_status;
-  Mutex* in_flight_mutex = NULL;
+  InFlightMutexRelease ifmr(this);
 
   {
-    ThreadBlockInVM tbivmdc(self, &in_flight_mutex);
+    ThreadBlockInVMPreprocess<InFlightMutexRelease> tbivmdc(self, ifmr);
     OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
 
     wait_status = _lock.wait(timeout);
-    in_flight_mutex = this;  // save for ~ThreadBlockInVM
   }
 
-  if (in_flight_mutex != NULL) {
-    // Not unlocked by ~ThreadBlockInVM
+  if (ifmr.not_released()) {
+    // Not unlocked by ~ThreadBlockInVMPreprocess
     assert_owner(NULL);
     // Conceptually reestablish ownership of the lock.
     set_owner(self);
@@ -274,6 +287,8 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
 
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
          "Special locks or below should never safepoint");
+
+  assert(_rank >= 0, "Bad lock rank");
 #endif
 }
 
@@ -351,23 +366,20 @@ Mutex* Mutex::get_least_ranked_lock_besides_this(Mutex* locks) {
 
 // Tests for rank violations that might indicate exposure to deadlock.
 void Mutex::check_rank(Thread* thread) {
-  assert(this->rank() >= 0, "bad lock rank");
   Mutex* locks_owned = thread->owned_locks();
 
   if (!SafepointSynchronize::is_at_safepoint()) {
     // We expect the locks already acquired to be in increasing rank order,
-    // modulo locks of native rank or acquired in try_lock_without_rank_check()
+    // modulo locks acquired in try_lock_without_rank_check()
     for (Mutex* tmp = locks_owned; tmp != NULL; tmp = tmp->next()) {
       if (tmp->next() != NULL) {
-        assert(tmp->rank() == Mutex::native || tmp->rank() < tmp->next()->rank()
+        assert(tmp->rank() < tmp->next()->rank()
                || tmp->skip_rank_check(), "mutex rank anomaly?");
       }
     }
   }
 
-  // Locks with rank native are an exception and are not
-  // subject to the verification rules.
-  bool check_can_be_skipped = this->rank() == Mutex::native || SafepointSynchronize::is_at_safepoint();
+  bool check_can_be_skipped = SafepointSynchronize::is_at_safepoint();
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);

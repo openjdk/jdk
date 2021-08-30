@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2447,7 +2447,7 @@ public class ModuleDescriptor
      * Reads the binary form of a module declaration from an input stream as a
      * module descriptor. This method works exactly as specified by the 2-arg
      * {@link #read(InputStream,Supplier) read} method with the exception that
-     * a packager finder is not used to find additional packages when the
+     * a package finder is not used to find additional packages when the
      * module descriptor read from the stream does not indicate the set of
      * packages.
      *
@@ -2516,7 +2516,7 @@ public class ModuleDescriptor
      * Reads the binary form of a module declaration from a byte buffer as a
      * module descriptor. This method works exactly as specified by the 2-arg
      * {@link #read(ByteBuffer,Supplier) read} method with the exception that a
-     * packager finder is not used to find additional packages when the module
+     * package finder is not used to find additional packages when the module
      * descriptor encoded in the buffer does not indicate the set of packages.
      *
      * @param  bb

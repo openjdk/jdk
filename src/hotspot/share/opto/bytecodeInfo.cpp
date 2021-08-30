@@ -156,18 +156,17 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   int invoke_count     = method()->interpreter_invocation_count();
 
   assert(invoke_count != 0, "require invocation count greater than zero");
-  int freq = call_site_count / invoke_count;
+  double freq = (double)call_site_count / (double)invoke_count;
 
   // bump the max size if the call is frequent
   if ((freq >= InlineFrequencyRatio) ||
-      (call_site_count >= InlineFrequencyCount) ||
       is_unboxing_method(callee_method, C) ||
       is_init_with_ea(callee_method, caller_method, C)) {
 
     max_inline_size = C->freq_inline_size();
     if (size <= max_inline_size && TraceFrequencyInlining) {
       CompileTask::print_inline_indent(inline_level());
-      tty->print_cr("Inlined frequent method (freq=%d count=%d):", freq, call_site_count);
+      tty->print_cr("Inlined frequent method (freq=%lf):", freq);
       CompileTask::print_inline_indent(inline_level());
       callee_method->print();
       tty->cr();
