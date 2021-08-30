@@ -47,13 +47,13 @@
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
+#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/plab.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/memRegion.hpp"
@@ -93,7 +93,6 @@ class G1ConcurrentRefine;
 class GenerationCounters;
 class STWGCTimer;
 class G1NewTracer;
-class EvacuationFailedInfo;
 class nmethod;
 class WorkGang;
 class G1Allocator;
@@ -150,8 +149,6 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1YoungGCVerifierMark;
 
   // Closures used in implementation.
-  friend class G1ParScanThreadState;
-  friend class G1ParScanThreadStateSet;
   friend class G1EvacuateRegionsTask;
   friend class G1PLABAllocator;
 
@@ -214,6 +211,8 @@ private:
 
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
+
+  G1YoungGCEvacFailureInjector _evac_failure_injector;
 
   // Manages all heap verification.
   G1HeapVerifier* _verifier;
@@ -566,6 +565,8 @@ public:
     return _allocator;
   }
 
+  G1YoungGCEvacFailureInjector* evac_failure_injector() { return &_evac_failure_injector; }
+
   G1HeapVerifier* verifier() {
     return _verifier;
   }
@@ -834,7 +835,6 @@ private:
 public:
   void pre_evacuate_collection_set(G1EvacuationInfo* evacuation_info, G1ParScanThreadStateSet* pss);
   void post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
-                                    G1RedirtyCardsQueueSet* rdcqs,
                                     G1ParScanThreadStateSet* pss);
 
   void expand_heap_after_young_collection();
@@ -849,12 +849,9 @@ public:
   // Global card set configuration
   G1CardSetConfiguration _card_set_config;
 
-  void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states,
-                               G1RedirtyCardsQueueSet* rdcqs);
-  void post_evacuate_cleanup_2(PreservedMarksSet* preserved_marks,
-                               G1RedirtyCardsQueueSet* rdcqs,
-                               G1EvacuationInfo* evacuation_info,
-                               const size_t* surviving_young_words);
+  void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states);
+  void post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
+                               G1EvacuationInfo* evacuation_info);
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -879,46 +876,9 @@ public:
   // Records for every region on the heap whether evacuation failed for it.
   CHeapBitMap _regions_failed_evacuation;
 
-  EvacuationFailedInfo* _evacuation_failed_info_array;
-
-  PreservedMarksSet _preserved_marks_set;
-
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.
   void preserve_mark_during_evac_failure(uint worker_id, oop obj, markWord m);
-
-#ifndef PRODUCT
-  // Support for forcing evacuation failures. Analogous to
-  // PromotionFailureALot for the other collectors.
-
-  // Records whether G1EvacuationFailureALot should be in effect
-  // for the current GC
-  bool _evacuation_failure_alot_for_current_gc;
-
-  // Used to record the GC number for interval checking when
-  // determining whether G1EvaucationFailureALot is in effect
-  // for the current GC.
-  size_t _evacuation_failure_alot_gc_number;
-
-  // Count of the number of evacuations between failures.
-  volatile size_t _evacuation_failure_alot_count;
-
-  // Set whether G1EvacuationFailureALot should be in effect
-  // for the current GC (based upon the type of GC and which
-  // command line flags are set);
-  inline bool evacuation_failure_alot_for_gc_type(bool for_young_gc,
-                                                  bool during_concurrent_start,
-                                                  bool mark_or_rebuild_in_progress);
-
-  inline void set_evacuation_failure_alot_for_current_gc();
-
-  // Return true if it's time to cause an evacuation failure.
-  inline bool evacuation_should_fail();
-
-  // Reset the G1EvacuationFailureALot counters.  Should be called at
-  // the end of an evacuation pause in which an evacuation failure occurred.
-  inline void reset_evacuation_should_fail();
-#endif // !PRODUCT
 
   // ("Weak") Reference processing support.
   //

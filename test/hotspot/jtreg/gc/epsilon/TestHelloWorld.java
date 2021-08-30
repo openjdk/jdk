@@ -27,7 +27,8 @@ package gc.epsilon;
  * @test TestHelloWorld
  * @requires vm.gc.Epsilon
  * @summary Basic sanity test for Epsilon
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestHelloWorld
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestHelloWorld
  */
 
 public class TestHelloWorld {

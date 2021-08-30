@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "utilities/ticks.hpp"
 
 ZMetronome::ZMetronome(uint64_t hz) :
-    _monitor(Monitor::leaf, "ZMetronome", false, Monitor::_safepoint_check_never),
+    _monitor(Monitor::leaf, "ZMetronome", Monitor::_safepoint_check_never),
     _interval_ms(MILLIUNITS / hz),
     _start_ms(0),
     _nticks(0),

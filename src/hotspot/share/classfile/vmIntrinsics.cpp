@@ -182,6 +182,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
     return 1;
   case vmIntrinsics::_digestBase_implCompressMB:
     return 5;
@@ -428,6 +429,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_counterMode_AESCrypt:
     if (!UseAESCTRIntrinsics) return true;
+    break;
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
+    if (!UseAESIntrinsics) return true;
     break;
   case vmIntrinsics::_md5_implCompress:
     if (!UseMD5Intrinsics) return true;

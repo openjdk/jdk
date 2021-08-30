@@ -27,6 +27,19 @@ package gc.stringdedup;
  * @test TestStringDeduplicationFullGC
  * @summary Test string deduplication during full GC
  * @bug 8029075
+ * @requires vm.gc.Serial
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationFullGC Serial
+ */
+
+/*
+ * @test TestStringDeduplicationFullGC
+ * @summary Test string deduplication during full GC
+ * @bug 8029075
  * @requires vm.gc.G1
  * @library /test/lib
  * @library /
