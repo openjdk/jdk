@@ -196,7 +196,7 @@ public:
 
 TEST_VM(FilterQueue, stress) {
   FilterQueue<uintptr_t> queue;
-  Mutex lock(Mutex::leaf, "Test Lock", true, Mutex::_safepoint_check_never);
+  Mutex lock(Mutex::leaf, "Test Lock", Mutex::_safepoint_check_never);
   static const int nthreads = 4;
   Semaphore post;
   FilterQueueTestThread* threads[nthreads] = {};
