@@ -25,6 +25,9 @@
 #ifndef SHARE_GC_G1_G1EVACUATIONFAILUREREGIONS_HPP
 #define SHARE_GC_G1_G1EVACUATIONFAILUREREGIONS_HPP
 
+#include "utilities/bitMap.hpp"
+#include "utilities/bitMap.inline.hpp"
+
 class HeapRegionClosure;
 class HeapRegionClaimer;
 
