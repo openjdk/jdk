@@ -37,6 +37,7 @@
 //
 // Available only in non-product builds.
 class G1YoungGCEvacFailureInjector {
+#ifndef PRODUCT
   // Should we inject evacuation failures in the current GC.
   bool _inject_evacuation_failure_for_current_gc;
 
@@ -47,6 +48,7 @@ class G1YoungGCEvacFailureInjector {
 
   // The number of evacuations between induced failures.
   volatile size_t _evacuation_failure_object_count;
+#endif
 
   bool arm_if_needed_for_gc_type(bool for_young_gc,
                                  bool during_concurrent_start,
