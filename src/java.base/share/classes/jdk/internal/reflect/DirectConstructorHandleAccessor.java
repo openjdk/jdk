@@ -38,12 +38,12 @@ import java.lang.reflect.InvocationTargetException;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.SPECIALIZED_PARAM_COUNT;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.newMethodHandleInvoker;
 
-class DirectConstructorHandleAccessorImpl extends ConstructorAccessorImpl {
+class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
     static ConstructorAccessorImpl constructorAccessor(Constructor<?> ctor, MethodHandle target) {
         if (ReflectionFactory.noInflation()) {
             // fast invoker
             var mhInvoker = newMethodHandleInvoker(ctor, target);
-            return new DirectConstructorHandleAccessorImpl(ctor, target, mhInvoker);
+            return new DirectConstructorHandleAccessor(ctor, target, mhInvoker);
         } else {
             // Default is the adaptive accessor method.
             return new AdaptiveConstructorHandleAccessor(ctor, target);
@@ -59,7 +59,7 @@ class DirectConstructorHandleAccessorImpl extends ConstructorAccessorImpl {
 
     @Stable protected final MethodHandle target;
     @Stable protected final MHInvoker invoker;
-    DirectConstructorHandleAccessorImpl(Constructor<?> ctor, MethodHandle target, MHInvoker invoker) {
+    DirectConstructorHandleAccessor(Constructor<?> ctor, MethodHandle target, MHInvoker invoker) {
         this.ctor = ctor;
         this.paramCount = ctor.getParameterCount();
         this.target = target;
@@ -96,7 +96,7 @@ class DirectConstructorHandleAccessorImpl extends ConstructorAccessorImpl {
     }
 
     private boolean isIllegalArgument(RuntimeException ex) {
-        return AccessorUtils.isIllegalArgument(DirectConstructorHandleAccessorImpl.class, ex);
+        return AccessorUtils.isIllegalArgument(DirectConstructorHandleAccessor.class, ex);
     }
 
     @Hidden
@@ -112,7 +112,7 @@ class DirectConstructorHandleAccessorImpl extends ConstructorAccessorImpl {
         };
     }
 
-    static class AdaptiveConstructorHandleAccessor extends DirectConstructorHandleAccessorImpl {
+    static class AdaptiveConstructorHandleAccessor extends DirectConstructorHandleAccessor {
         private @Stable MHInvoker fastInvoker;
         private int numInvocations;
         AdaptiveConstructorHandleAccessor(Constructor<?> ctor, MethodHandle target) {

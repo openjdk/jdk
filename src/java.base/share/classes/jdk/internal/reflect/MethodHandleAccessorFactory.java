@@ -71,7 +71,7 @@ final class MethodHandleAccessorFactory {
      */
     static MethodAccessorImpl newMethodAccessor(Method method, boolean callerSensitive) {
         if (useNativeAccessor(method)) {
-            return DirectMethodHandleAccessorImpl.nativeAccessor(method, callerSensitive);
+            return DirectMethodHandleAccessor.nativeAccessor(method, callerSensitive);
         }
 
         // ExceptionInInitializerError may be thrown during class initialization
@@ -83,14 +83,14 @@ final class MethodHandleAccessorFactory {
             if (callerSensitive) {
                 var dmh = findCallerSensitiveAdapter(method);
                 if (dmh != null) {
-                    return DirectMethodHandleAccessorImpl.callerSensitiveAdapter(method, dmh);
+                    return DirectMethodHandleAccessor.callerSensitiveAdapter(method, dmh);
                 }
             }
             var dmh = getDirectMethod(method, callerSensitive);
             if (callerSensitive) {
-                return DirectMethodHandleAccessorImpl.callerSensitiveMethodAccessor(method, dmh);
+                return DirectMethodHandleAccessor.callerSensitiveMethodAccessor(method, dmh);
             } else {
-                return DirectMethodHandleAccessorImpl.methodAccessor(method, dmh);
+                return DirectMethodHandleAccessor.methodAccessor(method, dmh);
             }
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
@@ -107,7 +107,7 @@ final class MethodHandleAccessorFactory {
      */
     static ConstructorAccessorImpl newConstructorAccessor(Constructor<?> ctor) {
         if (useNativeAccessor(ctor)) {
-            return DirectConstructorHandleAccessorImpl.nativeAccessor(ctor);
+            return DirectConstructorHandleAccessor.nativeAccessor(ctor);
         }
 
         // ExceptionInInitializerError may be thrown during class initialization
@@ -125,7 +125,7 @@ final class MethodHandleAccessorFactory {
                 target = target.asSpreader(Object[].class, paramCount);
             }
             target = target.asType(mtype);
-            return DirectConstructorHandleAccessorImpl.constructorAccessor(ctor, target);
+            return DirectConstructorHandleAccessor.constructorAccessor(ctor, target);
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
         }

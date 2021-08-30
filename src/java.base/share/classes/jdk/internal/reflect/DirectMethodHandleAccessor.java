@@ -44,7 +44,7 @@ import static java.lang.invoke.MethodType.genericMethodType;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.SPECIALIZED_PARAM_COUNT;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.newMethodHandleInvoker;
 
-class DirectMethodHandleAccessorImpl extends MethodAccessorImpl {
+class DirectMethodHandleAccessor extends MethodAccessorImpl {
     /**
      * Creates a MethodAccessorImpl for a non-native and non-caller-sensitive method.
      */
@@ -54,7 +54,7 @@ class DirectMethodHandleAccessorImpl extends MethodAccessorImpl {
         if (ReflectionFactory.noInflation()) {
             // fast invoker
             var mhInvoker = newMethodHandleInvoker(method, target, false);
-            return new DirectMethodHandleAccessorImpl(method, target, mhInvoker, false);
+            return new DirectMethodHandleAccessor(method, target, mhInvoker, false);
         } else {
             // Default is the adaptive accessor method.
             return new AdaptiveMethodHandleAccessor(method, target);
@@ -99,7 +99,7 @@ class DirectMethodHandleAccessorImpl extends MethodAccessorImpl {
     @Stable protected final MethodHandle target;
     @Stable protected final MHInvoker invoker;
 
-    DirectMethodHandleAccessorImpl(Method method, MethodHandle target, MHInvoker invoker, boolean hasCallerParameter) {
+    DirectMethodHandleAccessor(Method method, MethodHandle target, MHInvoker invoker, boolean hasCallerParameter) {
         this.method = method;
         this.paramCount = method.getParameterCount();
         this.hasCallerParameter = hasCallerParameter;
@@ -108,7 +108,7 @@ class DirectMethodHandleAccessorImpl extends MethodAccessorImpl {
         this.isStatic = Modifier.isStatic(method.getModifiers());
     }
 
-    DirectMethodHandleAccessorImpl(Method method, MethodHandle target, boolean hasCallerParameter) {
+    DirectMethodHandleAccessor(Method method, MethodHandle target, boolean hasCallerParameter) {
         this(method, target, new MHInvokerDelegate(target), hasCallerParameter);
     }
 
@@ -198,7 +198,7 @@ class DirectMethodHandleAccessorImpl extends MethodAccessorImpl {
     }
 
     boolean isIllegalArgument(RuntimeException ex) {
-        return AccessorUtils.isIllegalArgument(DirectMethodHandleAccessorImpl.class, ex);
+        return AccessorUtils.isIllegalArgument(DirectMethodHandleAccessor.class, ex);
     }
 
     void checkReceiver(Object o) {
@@ -208,7 +208,7 @@ class DirectMethodHandleAccessorImpl extends MethodAccessorImpl {
         }
     }
 
-    static class AdaptiveMethodHandleAccessor extends DirectMethodHandleAccessorImpl {
+    static class AdaptiveMethodHandleAccessor extends DirectMethodHandleAccessor {
         private @Stable MHInvoker fastInvoker;
         private int numInvocations;
 
@@ -275,7 +275,7 @@ class DirectMethodHandleAccessorImpl extends MethodAccessorImpl {
      * To use specialized target method handles (see MethodHandleAccessorFactory::makeSpecializedTarget)
      * it needs support in the injected invoker::reflect_invoke_V for different specialized forms.
      */
-    static class CallerSensitiveWithInvoker extends DirectMethodHandleAccessorImpl {
+    static class CallerSensitiveWithInvoker extends DirectMethodHandleAccessor {
         private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
         private CallerSensitiveWithInvoker(Method method, MethodHandle target) {
             super(method, target, null, false);
