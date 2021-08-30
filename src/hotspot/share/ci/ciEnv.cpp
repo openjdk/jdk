@@ -175,7 +175,30 @@ ciEnv::ciEnv(CompileTask* task)
   _dyno_name[0] = '\0';
 }
 
-class LocPusher {
+// Record components of a location descriptor string.  Components are appended by the constructor and
+// removed by the destructor, like a stack, so scope matters.  These location descriptors are used to
+// locate dynamic classes, and terminate at a Method* or oop field associated with dynamic/hidden class.
+//
+// Example use:
+//
+// {
+//   RecordLocation fp(this, "field1");
+//   // location: "field1"
+//   { RecordLocation fp(this, " field2"); // location: "field1 field2" }
+//   // location: "field1"
+//   { RecordLocation fp(this, " field3"); // location: "field1 field3" }
+//   // location: "field1"
+// }
+// // location: ""
+//
+// Examples of actual locations
+// @bci compiler/ciReplay/CiReplayBase$TestMain test (I)V 1 <appendix> argL0 ;
+// // resolve invokedynamic at bci 1 of TestMain.test, then read field "argL0" from appendix
+// @bci compiler/ciReplay/CiReplayBase$TestMain main ([Ljava/lang/String;)V 0 <appendix> form vmentry <vmtarget> ;
+// // resolve invokedynamic at bci 0 of TestMain.main, then read field "form.vmentry.method.vmtarget" from appendix
+// @cpi compiler/ciReplay/CiReplayBase$TestMain 56 form vmentry <vmtarget> ;
+// // resolve MethodHandle at cpi 56 of TestMain, then read field "vmentry.method.vmtarget" from resolved MethodHandle
+class RecordLocation {
 private:
   char* end;
 
@@ -196,8 +219,9 @@ public:
     assert(strlen(ci->_dyno_name) < (ARRAY_SIZE(ci->_dyno_name) - 1), "overflow");
   }
 
+  // append a new component
   ATTRIBUTE_PRINTF(3, 4)
-  LocPusher(ciEnv* ci, const char* fmt, ...) {
+  RecordLocation(ciEnv* ci, const char* fmt, ...) {
     end = ci->_dyno_name + strlen(ci->_dyno_name);
     va_list args;
     va_start(args, fmt);
@@ -206,7 +230,8 @@ public:
     va_end(args);
   }
 
-  ~LocPusher() {
+  // reset to previous state
+  ~RecordLocation() {
     *end = '\0';
   }
 };
@@ -1239,6 +1264,8 @@ ciInstance* ciEnv::unloaded_ciinstance() {
 // Replay support
 
 
+// Lookup location descriptor for the class, if any.
+// Returns false if not found.
 bool ciEnv::dyno_loc(const InstanceKlass* ik, const char *&loc) const {
   bool found = false;
   int pos = _dyno_klasses->find_sorted<const InstanceKlass*, klass_compare>(ik, found);
@@ -1249,6 +1276,7 @@ bool ciEnv::dyno_loc(const InstanceKlass* ik, const char *&loc) const {
   return found;
 }
 
+// Associate the current location descriptor with the given class and record for later lookup.
 void ciEnv::set_dyno_loc(const InstanceKlass* ik) {
   const char *loc = os::strdup(_dyno_name);
   bool found = false;
@@ -1261,6 +1289,9 @@ void ciEnv::set_dyno_loc(const InstanceKlass* ik) {
   }
 }
 
+// Associate the current location descriptor with the given class and record for later lookup.
+// If it turns out that there are multiple locations for the given class, that conflict should
+// be handled here.  Currently we choose the first location found.
 void ciEnv::record_best_dyno_loc(const InstanceKlass* ik) {
   if (!ik->is_hidden()) {
     return;
@@ -1277,6 +1308,7 @@ void ciEnv::record_best_dyno_loc(const InstanceKlass* ik) {
   }
 }
 
+// Look up the location descriptor for the given class and print it to the output stream.
 bool ciEnv::print_dyno_loc(outputStream* out, const InstanceKlass* ik) const {
   const char *loc;
   if (dyno_loc(ik, loc)) {
@@ -1287,6 +1319,8 @@ bool ciEnv::print_dyno_loc(outputStream* out, const InstanceKlass* ik) const {
   }
 }
 
+// Look up the location descriptor for the given class and return it as a string.
+// Returns NULL if no location is found.
 const char *ciEnv::dyno_name(const InstanceKlass* ik) const {
   if (ik->is_hidden()) {
     stringStream ss;
@@ -1299,6 +1333,8 @@ const char *ciEnv::dyno_name(const InstanceKlass* ik) const {
   return NULL;
 }
 
+// Look up the location descriptor for the given class and return it as a string.
+// Returns the class name as a fallback if no location is found.
 const char *ciEnv::replay_name(ciKlass* k) const {
   if (k->is_instance_klass()) {
     return replay_name(k->as_instance_klass()->get_instanceKlass());
@@ -1306,6 +1342,8 @@ const char *ciEnv::replay_name(ciKlass* k) const {
   return k->name()->as_quoted_ascii();
 }
 
+// Look up the location descriptor for the given class and return it as a string.
+// Returns the class name as a fallback if no location is found.
 const char *ciEnv::replay_name(const InstanceKlass* ik) const {
   const char* name = dyno_name(ik);
   if (name != NULL) {
@@ -1314,58 +1352,69 @@ const char *ciEnv::replay_name(const InstanceKlass* ik) const {
   return ik->name()->as_quoted_ascii();
 }
 
+// Process a java.lang.invoke.MemberName object and record any dynamic locations.
 void ciEnv::record_member(Thread* thread, oop member) {
   assert(java_lang_invoke_MemberName::is_instance(member), "!");
+  // Check MemberName.clazz field
   oop clazz = java_lang_invoke_MemberName::clazz(member);
   if (clazz->klass()->is_instance_klass()) {
-    LocPusher fp(this, "clazz");
+    RecordLocation fp(this, "clazz");
     InstanceKlass* ik = InstanceKlass::cast(clazz->klass());
     record_best_dyno_loc(ik);
   }
+  // Check MemberName.method.vmtarget field
   Method* vmtarget = java_lang_invoke_MemberName::vmtarget(member);
   if (vmtarget != NULL) {
-    LocPusher fp2(this, "<vmtarget>");
+    RecordLocation fp2(this, "<vmtarget>");
     InstanceKlass* ik = vmtarget->method_holder();
     record_best_dyno_loc(ik);
   }
 }
 
+// Read an object field.  Lookup is done by name only.
 static inline oop obj_field(oop obj, const char* name) {
     return ciReplay::obj_field(obj, name);
 }
 
+// Process a java.lang.invoke.LambdaForm object and record any dynamic locations.
 void ciEnv::record_lambdaform(Thread* thread, oop form) {
   assert(java_lang_invoke_LambdaForm::is_instance(form), "!");
 
   {
+    // Check LambdaForm.vmentry field
     oop member = java_lang_invoke_LambdaForm::vmentry(form);
-    LocPusher fp0(this, "vmentry");
+    RecordLocation fp0(this, "vmentry");
     record_member(thread, member);
   }
 
+  // Check LambdaForm.names array
   objArrayOop names = (objArrayOop)obj_field(form, "names");
   if (names != NULL) {
-    LocPusher lp0(this, "names");
+    RecordLocation lp0(this, "names");
     int len = names->length();
     for (int i = 0; i < len; ++i) {
       oop name = names->obj_at(i);
-      LocPusher lp1(this, "%d", i);
-      LocPusher lp2(this, "function");
+      RecordLocation lp1(this, "%d", i);
+     // Check LambdaForm.names[i].function field
+      RecordLocation lp2(this, "function");
       oop function = obj_field(name, "function");
       if (function != NULL) {
+        // Check LambdaForm.names[i].function.member field
         oop member = obj_field(function, "member");
         if (member != NULL) {
-          LocPusher lp3(this, "member");
+          RecordLocation lp3(this, "member");
           record_member(thread, member);
         }
+        // Check LambdaForm.names[i].function.resolvedHandle field
         oop mh = obj_field(function, "resolvedHandle");
         if (mh != NULL) {
-          LocPusher lp3(this, "resolvedHandle");
+          RecordLocation lp3(this, "resolvedHandle");
           record_mh(thread, mh);
         }
+        // Check LambdaForm.names[i].function.invoker field
         oop invoker = obj_field(function, "invoker");
         if (invoker != NULL) {
-          LocPusher lp3(this, "invoker");
+          RecordLocation lp3(this, "invoker");
           record_mh(thread, invoker);
         }
       }
@@ -1373,21 +1422,25 @@ void ciEnv::record_lambdaform(Thread* thread, oop form) {
   }
 }
 
+// Process a java.lang.invoke.MethodHandle object and record any dynamic locations.
 void ciEnv::record_mh(Thread* thread, oop mh) {
   {
+    // Check MethodHandle.form field
     oop form = java_lang_invoke_MethodHandle::form(mh);
-    LocPusher fp(this, "form");
+    RecordLocation fp(this, "form");
     record_lambdaform(thread, form);
   }
+  // Check DirectMethodHandle.member field
   if (java_lang_invoke_DirectMethodHandle::is_instance(mh)) {
     oop member = java_lang_invoke_DirectMethodHandle::member(mh);
-    LocPusher fp(this, "member");
+    RecordLocation fp(this, "member");
     record_member(thread, member);
   } else {
+    // Check <MethodHandle subclass>.argL0 field
     // Probably BoundMethodHandle.Species_L, but we only care if the field exists
     oop arg = obj_field(mh, "argL0");
     if (arg != NULL) {
-      LocPusher fp(this, "argL0");
+      RecordLocation fp(this, "argL0");
       if (arg->klass()->is_instance_klass()) {
         InstanceKlass* ik2 = InstanceKlass::cast(arg->klass());
         record_best_dyno_loc(ik2);
@@ -1396,6 +1449,9 @@ void ciEnv::record_mh(Thread* thread, oop mh) {
   }
 }
 
+// Process an object found at an invokedynamic/invokehandle call site and record any dynamic locations.
+// Types currently supported are MethodHandle and CallSite.
+// The object is typically the "appendix" object, or Bootstrap Method (BSM) object.
 void ciEnv::record_call_site_obj(Thread* thread, const constantPoolHandle& pool, const Handle obj)
 {
   if (obj.not_null()) {
@@ -1404,7 +1460,7 @@ void ciEnv::record_call_site_obj(Thread* thread, const constantPoolHandle& pool,
     } else if (java_lang_invoke_ConstantCallSite::is_instance(obj())) {
       oop target = java_lang_invoke_CallSite::target(obj());
       if (target->klass()->is_instance_klass()) {
-        LocPusher fp(this, "target");
+        RecordLocation fp(this, "target");
         InstanceKlass* ik = InstanceKlass::cast(target->klass());
         record_best_dyno_loc(ik);
       }
@@ -1412,37 +1468,42 @@ void ciEnv::record_call_site_obj(Thread* thread, const constantPoolHandle& pool,
   }
 }
 
+// Process an adapter Method* found at an invokedynamic/invokehandle call site and record any dynamic locations.
 void ciEnv::record_call_site_method(Thread* thread, const constantPoolHandle& pool, Method* adapter) {
   InstanceKlass* holder = adapter->method_holder();
   if (!holder->is_hidden()) {
     return;
   }
-  LocPusher fp(this, "<adapter>");
+  RecordLocation fp(this, "<adapter>");
   record_best_dyno_loc(holder);
 }
 
+// Process an invokedynamic call site and record any dynamic locations.
 void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, JavaThread* thread) {
   ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(indy_index);
   if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
+    // process the adapter
     Method* adapter = cp_cache_entry->f1_as_method();
     record_call_site_method(thread, cp, adapter);
+    // process the appendix
     Handle appendix(thread, cp_cache_entry->appendix_if_resolved(cp));
     {
-      LocPusher fp(this, "<appendix>");
+      RecordLocation fp(this, "<appendix>");
       record_call_site_obj(thread, cp, appendix);
     }
-    // BSM
+    // process the BSM
     int pool_index = cp_cache_entry->constant_pool_index();
     BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
     oop bsm_oop = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
     Handle bsm(thread, bsm_oop);
     {
-      LocPusher fp(this, "<bsm>");
+      RecordLocation fp(this, "<bsm>");
       record_call_site_obj(thread, cp, bsm);
     }
   }
 }
 
+// Process an invokehandle call site and record any dynamic locations.
 void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread) {
   const int holder_index = cp->klass_ref_index_at(index);
   if (!cp->tag_at(holder_index).is_klass()) {
@@ -1453,21 +1514,26 @@ void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaTh
   if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
     ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
     if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
+      // process the adapter
       Method* adapter = cp_cache_entry->f1_as_method();
       Handle appendix(thread, cp_cache_entry->appendix_if_resolved(cp));
       record_call_site_method(thread, cp, adapter);
+      // process the appendix
       {
-        LocPusher fp(this, "<appendix>");
+        RecordLocation fp(this, "<appendix>");
         record_call_site_obj(thread, cp, appendix);
       }
     }
   }
 }
 
+// Search the class hierarchy for dynamic classes reachable through dynamic call sites or
+// constant pool entries and record for future lookup.
 void ciEnv::find_dynamic_call_sites() {
   _dyno_klasses = new (arena()) GrowableArray<const InstanceKlass*>(arena(), 100, 0, NULL);
   _dyno_locs    = new (arena()) GrowableArray<const char *>(arena(), 100, 0, NULL);
 
+  // Iterate over the class hierarchy
   for (ClassHierarchyIterator iter(vmClasses::Object_klass()); !iter.done(); iter.next()) {
     Klass* sub = iter.klass();
     if (sub->is_instance_klass()) {
@@ -1482,6 +1548,7 @@ void ciEnv::find_dynamic_call_sites() {
       JavaThread* thread = JavaThread::current();
       const constantPoolHandle pool(thread, ik->constants());
 
+      // Look for invokedynamic/invokehandle call sites
       for (int i = 0; i < ik->methods()->length(); ++i) {
         Method* m = ik->methods()->at(i);
 
@@ -1492,7 +1559,7 @@ void ciEnv::find_dynamic_call_sites() {
           switch (opcode) {
           case Bytecodes::_invokedynamic:
           case Bytecodes::_invokehandle: {
-            LocPusher fp(this, "@bci %s %s %s %d",
+            RecordLocation fp(this, "@bci %s %s %s %d",
                          ik->name()->as_quoted_ascii(),
                          m->name()->as_quoted_ascii(), m->signature()->as_quoted_ascii(),
                          bcs.bci());
@@ -1512,14 +1579,15 @@ void ciEnv::find_dynamic_call_sites() {
         }
       }
 
-      LocPusher fp(this, "@cpi %s", ik->name()->as_quoted_ascii());
+      // Look for MethodHandle contant pool entries
+      RecordLocation fp(this, "@cpi %s", ik->name()->as_quoted_ascii());
       int len = pool->length();
       for (int i = 0; i < len; ++i) {
         if (pool->tag_at(i).is_method_handle()) {
           bool found_it;
           oop mh = pool->find_cached_constant_at(i, found_it, thread);
           if (mh != NULL) {
-            LocPusher fp(this, "%d", i);
+            RecordLocation fp(this, "%d", i);
             record_mh(thread, mh);
           }
         }

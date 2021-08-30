@@ -46,8 +46,7 @@ class ciEnv : StackObj {
   CI_PACKAGE_ACCESS_TO
   friend class CompileBroker;
   friend class Dependencies;  // for get_object, during logging
-  friend class LocPusher;
-  friend class FieldPusher;
+  friend class RecordLocation;
   friend class PrepareExtraDataClosure;
 
 private:
