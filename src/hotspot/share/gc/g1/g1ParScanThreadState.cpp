@@ -31,6 +31,7 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
+#include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -460,15 +461,13 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   assert(obj_ptr != NULL, "when we get here, allocation should have succeeded");
   assert(_g1h->is_in_reserved(obj_ptr), "Allocated memory should be in the heap");
 
-#ifndef PRODUCT
   // Should this evacuation fail?
-  if (_g1h->evacuation_should_fail()) {
+  if (_g1h->evac_failure_injector()->evacuation_should_fail()) {
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
     return handle_evacuation_failure_par(old, old_mark, word_sz);
   }
-#endif // !PRODUCT
 
   // We're going to allocate linearly, so might as well prefetch ahead.
   Prefetch::write(obj_ptr, PrefetchCopyIntervalInBytes);
