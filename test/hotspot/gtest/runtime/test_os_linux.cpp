@@ -435,7 +435,7 @@ TEST(os_linux, addr_to_function_valid) {
 
 #ifndef PRODUCT
 // Test valid address of method JNI_CreateJavaVM in jni.cpp. We should get "jni.cpp" in the buffer and a valid line number.
-TEST(os_linux, decoder_get_source_info_valid) {
+TEST_VM(os_linux, decoder_get_source_info_valid) {
   char buf[128] = "";
   int line = -1;
   address valid_function_pointer = (address)JNI_CreateJavaVM;
@@ -446,7 +446,7 @@ TEST(os_linux, decoder_get_source_info_valid) {
 
 // Same test as "decoder_get_source_info_valid" but with a too-small output buffer. Everything should work the same except
 // that the output buffer truncates "jni.cpp" such that we find "jni.cp" instead. The line number must be found as before.
-TEST(os_linux, decoder_get_source_info_valid_truncated) {
+TEST_VM(os_linux, decoder_get_source_info_valid_truncated) {
   char buf[128] = "";
   int line = -1;
   memset(buf, 'X', sizeof(buf));
@@ -459,13 +459,13 @@ TEST(os_linux, decoder_get_source_info_valid_truncated) {
 }
 
 // Test invalid addresses. Should not cause harm and output buffer and line must contain "" and -1, respectively.
-TEST(os_linux, decoder_get_source_info_invalid) {
+TEST_VM(os_linux, decoder_get_source_info_invalid) {
   char buf[128] = "";
   int line = -1;
   address invalid_function_pointers[] = { nullptr, (address)1, (address)&line };
 
   for (address addr : invalid_function_pointers) {
-    strcpy(buf, "blabla");
+    strcpy(buf, "somestring");
     line = 12;
     // We should return false but do not crash or fail in any way.
     ASSERT_FALSE(Decoder::get_source_info(addr, buf, sizeof(buf), &line));

@@ -62,13 +62,11 @@ endef
 
 # Setup _NT_SYMBOL_PATH on Windows, which points to our pdb files.
 ifeq ($(call isTargetOs, windows), true)
-  $(warning CH: 1)
   ifndef _NT_SYMBOL_PATH
     SYMBOL_PATH := $(call PathList, $(sort $(patsubst %/, %, $(dir $(wildcard \
         $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb))))))
     export _NT_SYMBOL_PATH := $(subst \\,\, $(call FixPath, \
         $(subst $(DQUOTE),, $(SYMBOL_PATH))))
-              $(warning CH: $(_NT_SYMBOL_PATH))
     $(call LogDebug, Setting _NT_SYMBOL_PATH to $(_NT_SYMBOL_PATH))
   endif
 endif
@@ -780,10 +778,8 @@ define SetupRunJtregTestBody
   # If running on Windows, propagate the _NT_SYMBOL_PATH to enable
   # symbol lookup in hserr files
   ifeq ($$(call isTargetOs, windows), true)
-          $(warning CH: E: $(_NT_SYMBOL_PATH))
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
   else ifeq ($$(call isTargetOs, linux), true)
-      $(warning CH: E: $(_JVM_DWARF_PATH))
       $1_JTREG_BASIC_OPTIONS += -e:_JVM_DWARF_PATH=$$(SYMBOLS_IMAGE_DIR)
   endif
 

@@ -34,7 +34,6 @@ if [ -z "$TOPDIR" ]; then
     exit 1
 fi
 
-echo blaaaaaaaaaaaaaaa
 # Make sure all shell commands are executed with the C locale
 export LC_ALL=C
 
@@ -689,7 +688,6 @@ compare_bin_file() {
 
     if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
         unset _NT_SYMBOL_PATH
-        echo yuuuuuuuuuuuuuuuuup
         if [ "$(uname -o)" = "Cygwin" ]; then
             THIS=$(cygpath -msa $THIS)
             OTHER=$(cygpath -msa $OTHER)

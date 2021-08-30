@@ -309,21 +309,17 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
   ResourceMark rm;
   // (1)
   if (!load_dwarf_file()) {
-    log_info(dwarf)("fail");
     // Some ELF libraries do not provide separate .debuginfo files. Check if the current ELF file has the required
     // DWARF sections. If so, treat the current ELF file as DWARF file.
     Elf_Shdr shdr;
     if (!is_valid_dwarf_file()) {
-      log_info(dwarf)("Failed to load DWARF file or find DWARF sections directly inside library %s ", _filepath);
+      log_info(dwarf)("Failed to load DWARF file for library %s or find DWARF sections directly inside it.", _filepath);
       return false;
     }
     log_info(dwarf)("No separate .debuginfo file for library %s. It already contains the required DWARF sections.", _filepath);
     _dwarf_file = new (std::nothrow) DwarfFile(_filepath);
   }
 
-  log_info(dwarf)("before get_filename_and_line");
-//  log_info(dwarf)(INTPTR_FORMAT, p2i(_dwarf_file));
-  log_info(dwarf)("before get_filename_and_line");
   if (!_dwarf_file->get_filename_and_line_number(offset_in_library, filename, filename_size, line, is_first_frame)) {
     log_warning(dwarf)("Failed to retrieve file and line number information for %s at offset: " PTR32_FORMAT, _filepath, offset_in_library);
     return false;
@@ -367,21 +363,26 @@ bool ElfFile::load_dwarf_file() {
   // Look in the same directory as the object.
   strcpy(last_slash + 1, debug_filename);
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
-    log_info(dwarf)("ret from same dir");
     return true;
   }
 
 #ifndef PRODUCT
   // For debug builds, additionally look in environmental variable _JVM_DWARF_PATH specified by user.
-  if (load_dwarf_file_from_env("/lib/server/", debug_filename, crc)) {
-    log_info(dwarf)("ret from dwarf env");
-    return true;
-  }
-  if (load_dwarf_file_from_env("/lib/", debug_filename, crc)) {
-    return true;
-  }
-  if (load_dwarf_file_from_env("/bin/", debug_filename, crc)) {
-    return true;
+  const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
+  if (dwarf_path != nullptr) {
+    log_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
+    if (load_dwarf_file_from_env("/lib/server/", debug_filename, crc)) {
+      return true;
+    }
+    if (load_dwarf_file_from_env("/lib/", debug_filename, crc)) {
+      return true;
+    }
+    if (load_dwarf_file_from_env("/bin/", debug_filename, crc)) {
+      return true;
+    }
+    if (load_dwarf_file_from_env("/", debug_filename, crc)) {
+      return true;
+    }
   }
 #endif
 
@@ -407,19 +408,12 @@ bool ElfFile::load_dwarf_file() {
 #ifndef PRODUCT
 bool ElfFile::load_dwarf_file_from_env(const char* folder, const char* debug_filename, const int crc) {
   const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
-  log_info(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
   if (dwarf_path != nullptr) {
     char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(dwarf_path) + strlen(folder) + strlen(debug_filename) + 2);
     strcpy(debug_pathname, dwarf_path);
     strcat(debug_pathname, folder);
-    log_info(dwarf)("%ld", strlen(debug_pathname));
-    log_info(dwarf)("1 %s", debug_pathname);
-    log_info(dwarf)("2 %s", debug_pathname);
     strcat(debug_pathname, debug_filename);
-    log_info(dwarf)("3 %s", debug_pathname);
-    log_info(dwarf)("4 %s", debug_filename);
     if (open_valid_debuginfo_file(debug_pathname, crc)) {
-      log_info(dwarf)("at return");
       return true;
     }
   }
@@ -542,7 +536,6 @@ static const uint32_t crc32_table[256] = {
 bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc) {
   if (_dwarf_file != nullptr) {
     // Return cached file.
-    log_info(dwarf)("cached");
     return true;
   }
 
@@ -575,7 +568,6 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
       log_info(dwarf)("Did not find required DWARF sections in %s", filepath);
       return false;
     }
-    log_info(dwarf)("done");
     return true;
   }
 
@@ -595,7 +587,6 @@ uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len) {
 
 // Starting point of reading line number and filename information from the DWARF file.
 bool DwarfFile::get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_first_frame) {
-  log_info(dwarf)("start");
   DebugAranges debug_aranges(this);
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
   if (!debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset)) {
