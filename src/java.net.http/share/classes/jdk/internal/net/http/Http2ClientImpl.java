@@ -237,8 +237,7 @@ class Http2ClientImpl {
 
         // The default is the max between the stream window size
         // and the connection window size.
-        int defaultValue = Math.min(Integer.MAX_VALUE,
-                Math.max(streamWindow, K*K*32));
+        int defaultValue = Math.max(streamWindow, K*K*32);
 
         return getParameter(
                 "jdk.httpclient.connectionWindowSize",

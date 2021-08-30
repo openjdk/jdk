@@ -19,43 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /**
  * @test
- * @bug 8272131
+ * @bug 8272570
+ * @summary crash in PhaseCFG::global_code_motion
  * @requires vm.compiler2.enabled
- * @summary ArrayCopy with negative index before infinite loop
- * @run main/othervm -Xbatch -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestIllegalArrayCopyBeforeInfiniteLoop::foo
- *                   compiler.arraycopy.TestIllegalArrayCopyBeforeInfiniteLoop
+ *
+ * @run main/othervm -Xbatch TestGCMRecalcPressureNodes
  */
 
-package compiler.arraycopy;
-
-import java.util.Arrays;
-
-public class TestIllegalArrayCopyBeforeInfiniteLoop {
-    private static char src[] = new char[10];
-    private static int count = 0;
-    private static final int iter = 20_000;
-
-    public static void main(String[] args) throws Exception {
-        for (int i = 0; i < iter; ++i) {
-            foo();
+public class TestGCMRecalcPressureNodes {
+    public boolean bo0;
+    public boolean bo1;
+    public void foo() {
+        int sh12 = 61;
+        for (int i = 0; i < 50; i++) {
+            sh12 *= 34;
         }
-        if (count != iter) {
-            throw new RuntimeException("test failed");
-        }
+        Math.tan(1.0);
+        bo0 = true;
+        bo1 = true;
     }
-
-    static void foo() {
-        try {
-            Arrays.copyOfRange(src, -1, 128);
-            do {
-            } while (true);
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            count++;
+    public static void main(String[] args) {
+        TestGCMRecalcPressureNodes instance = new TestGCMRecalcPressureNodes();
+        for (int i = 0; i < 50000; i++) {
+            instance.foo();
         }
     }
 }
+
