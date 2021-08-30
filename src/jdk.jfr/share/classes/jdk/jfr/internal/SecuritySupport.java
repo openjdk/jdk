@@ -77,7 +77,6 @@ public final class SecuritySupport {
     private static final Module JFR_MODULE = Event.class.getModule();
     public  static final SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
     public static final FileAccess PRIVILEGED = new Privileged();
-    static final SafePath USER_HOME = getPathInProperty("user.home", null);
     static final SafePath JAVA_IO_TMPDIR = getPathInProperty("java.io.tmpdir", null);
 
     static {
