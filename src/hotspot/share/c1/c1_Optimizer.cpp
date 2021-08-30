@@ -284,8 +284,8 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
           Value new_tval = t_compare_res == Constant::cond_true ? tval : fval;
           Value new_fval = f_compare_res == Constant::cond_true ? tval : fval;
 
-          _ifop_count++;
           if (new_tval == new_fval) {
+            _ifop_count++;
             return new_tval;
           } else {
             return new IfOp(x_ifop->x(), x_ifop_cond, x_ifop->y(), new_tval, new_fval);
