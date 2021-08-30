@@ -342,8 +342,8 @@ public class ObjectMethods {
         requireNonNull(getters);
         Arrays.stream(getters).forEach(Objects::requireNonNull);
         MethodType methodType;
-        if (type instanceof MethodType)
-            methodType = (MethodType) type;
+        if (type instanceof MethodType mt)
+            methodType = mt;
         else {
             methodType = null;
             if (!MethodHandle.class.equals(type))
