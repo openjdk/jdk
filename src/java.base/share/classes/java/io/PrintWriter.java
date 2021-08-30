@@ -499,7 +499,7 @@ public class PrintWriter extends Writer {
      *          cause the corresponding method of the underlying {@code Writer}
      *          to throw an {@code IndexOutOfBoundsException}
      */
-    public void write(char buf[], int off, int len) {
+    public void write(char[] buf, int off, int len) {
         try {
             synchronized (lock) {
                 ensureOpen();
@@ -519,7 +519,7 @@ public class PrintWriter extends Writer {
      * Writer class because it must suppress I/O exceptions.
      * @param buf Array of characters to be written
      */
-    public void write(char buf[]) {
+    public void write(char[] buf) {
         write(buf, 0, buf.length);
     }
 
@@ -668,7 +668,7 @@ public class PrintWriter extends Writer {
      *
      * @throws  NullPointerException  If {@code s} is {@code null}
      */
-    public void print(char s[]) {
+    public void print(char[] s) {
         write(s);
     }
 
@@ -801,7 +801,7 @@ public class PrintWriter extends Writer {
      *
      * @param x the array of {@code char} values to be printed
      */
-    public void println(char x[]) {
+    public void println(char[] x) {
         synchronized (lock) {
             print(x);
             println();

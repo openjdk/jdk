@@ -35,6 +35,8 @@ frame JavaThread::pd_last_frame() {
   address pc = _anchor.last_Java_pc();
 
   // Last_Java_pc ist not set, if we come here from compiled code.
+  // Assume spill slot for link register contains a suitable pc.
+  // Should have been filled by method entry code.
   if (pc == NULL) {
     pc = (address) *(sp + 2);
   }
@@ -61,6 +63,17 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 
     if (ret_frame.pc() == NULL) {
       // ucontext wasn't useful
+      return false;
+    }
+
+    if (ret_frame.fp() == NULL) {
+      // The found frame does not have a valid frame pointer.
+      // Bail out because this will create big trouble later on, either
+      //  - when using istate, calculated as (NULL - ijava_state_size) or
+      //  - when using fp() directly in safe_for_sender()
+      //
+      // There is no conclusive description (yet) how this could happen, but it does.
+      // For more details on what was observed, see thread_linux_s390.cpp
       return false;
     }
 

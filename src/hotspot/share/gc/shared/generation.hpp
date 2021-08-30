@@ -126,11 +126,6 @@ class Generation: public CHeapObj<mtGC> {
 
   virtual Generation::Name kind() { return Generation::Other; }
 
-  // This properly belongs in the collector, but for now this
-  // will do.
-  virtual bool refs_discovery_is_atomic() const { return true;  }
-  virtual bool refs_discovery_is_mt()     const { return false; }
-
   // Space inquiries (results in bytes)
   size_t initial_size();
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the

@@ -47,10 +47,14 @@ inline G1CardSetInlinePtr::CardSetPtr G1CardSetInlinePtr::merge(CardSetPtr orig_
 inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card, uint max_cards_in_inline_ptr) {
   assert(_value_addr != nullptr, "No value address available, cannot add to set.");
 
+  uint cur_idx = 0;
   while (true) {
     uint num_elems = num_cards_in(_value);
+    if (num_elems > 0) {
+      cur_idx = find(card_idx, bits_per_card, cur_idx, num_elems);
+    }
     // Check if the card is already stored in the pointer.
-    if (contains(card_idx, bits_per_card)) {
+    if (cur_idx < num_elems) {
       return Found;
     }
     // Check if there is actually enough space.
@@ -72,19 +76,29 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
   }
 }
 
-inline bool G1CardSetInlinePtr::contains(uint card_idx, uint bits_per_card) {
-  uint num_elems = num_cards_in(_value);
-  uintptr_t const card_mask = (1 << bits_per_card) - 1;
+inline uint G1CardSetInlinePtr::find(uint card_idx, uint bits_per_card, uint start_at, uint num_elems) {
+  assert(start_at < num_elems, "Precondition!");
 
-  uintptr_t value = ((uintptr_t)_value) >> card_pos_for(0, bits_per_card);
+  uintptr_t const card_mask = (1 << bits_per_card) - 1;
+  uintptr_t value = ((uintptr_t)_value) >> card_pos_for(start_at, bits_per_card);
+
   // Check if the card is already stored in the pointer.
-  for (uint cur_idx = 0; cur_idx < num_elems; cur_idx++) {
+  for (uint cur_idx = start_at; cur_idx < num_elems; cur_idx++) {
     if ((value & card_mask) == card_idx) {
-      return true;
+      return cur_idx;
     }
     value >>= bits_per_card;
   }
-  return false;
+  return num_elems;
+}
+
+inline bool G1CardSetInlinePtr::contains(uint card_idx, uint bits_per_card) {
+  uint num_elems = num_cards_in(_value);
+  if (num_elems == 0) {
+    return false;
+  }
+  uint cur_idx = find(card_idx, bits_per_card, 0, num_elems);
+  return cur_idx < num_elems;
 }
 
 template <class CardVisitor>

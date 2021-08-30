@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,13 @@ public class LockStringTest extends Thread {
 
     public static void main(String[] args) throws Exception {
 
-        if (wb.areSharedStringsIgnored()) {
-            System.out.println("The shared strings are ignored");
+        if (!wb.areSharedStringsMapped()) {
+            System.out.println("The shared strings are not mapped");
             System.out.println("LockStringTest: PASS");
             return;
         }
 
-        if (!wb.isShared(LockStringTest.class)) {
+        if (!wb.isSharedClass(LockStringTest.class)) {
             throw new RuntimeException("Failed: LockStringTest class is not shared.");
         }
 
@@ -57,7 +57,7 @@ public class LockStringTest extends Thread {
         lock = s;
         done = false;
 
-        if (!wb.isShared(lock)) {
+        if (!wb.isSharedInternedString(lock)) {
             throw new RuntimeException("Failed: String \"" + lock + "\" is not shared.");
         }
 

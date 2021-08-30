@@ -97,8 +97,8 @@ public class DumpClassList {
             .shouldNotContain("Preload Warning: Cannot find java/lang/invoke/LambdaForm")
             .shouldNotContain("Preload Warning: Cannot find boot/append/Foo")
             .shouldNotContain("Preload Warning: Cannot find jdk/jfr/NewClass")
-            .shouldMatch(".info..class,load *. boot.append.Foo")      // from -Xlog:class+load
-            .shouldMatch("cds,class.*boot  boot.append.Foo")          // from -Xlog:cds+class
-            .shouldNotMatch(".info..class,load *. jdk.jfr.NewClass"); // from -Xlog:class+load
+            .shouldMatch("class,load *. boot.append.Foo")      // from -Xlog:class+load
+            .shouldMatch("cds,class.*boot  boot.append.Foo")   // from -Xlog:cds+class
+            .shouldNotMatch("class,load *. jdk.jfr.NewClass"); // from -Xlog:class+load
     }
 }

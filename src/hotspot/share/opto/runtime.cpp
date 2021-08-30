@@ -955,6 +955,31 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
+//for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
+  // create input type (domain)
+  int num_args = 8;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL; // byte[] in + inOfs
+  fields[argp++] = TypeInt::INT;     // int len
+  fields[argp++] = TypePtr::NOTNULL; // byte[] ct + ctOfs
+  fields[argp++] = TypePtr::NOTNULL; // byte[] out + outOfs
+  fields[argp++] = TypePtr::NOTNULL; // byte[] key from AESCrypt obj
+  fields[argp++] = TypePtr::NOTNULL; // long[] state from GHASH obj
+  fields[argp++] = TypePtr::NOTNULL; // long[] subkeyHtbl from GHASH obj
+  fields[argp++] = TypePtr::NOTNULL; // byte[] counter from GCTR obj
+
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+  // returning cipher len (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 /*
  * void implCompress(byte[] buf, int ofs)
  */

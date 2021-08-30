@@ -43,6 +43,7 @@ Mutex*   Patching_lock                = NULL;
 Mutex*   CompiledMethod_lock          = NULL;
 Monitor* SystemDictionary_lock        = NULL;
 Mutex*   SharedDictionary_lock        = NULL;
+Monitor* ClassInitError_lock          = NULL;
 Mutex*   Module_lock                  = NULL;
 Mutex*   CompiledIC_lock              = NULL;
 Mutex*   InlineCacheBuffer_lock       = NULL;
@@ -73,7 +74,6 @@ Mutex*   NonJavaThreadsListSync_lock  = NULL;
 Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
 Monitor* G1OldGCCount_lock            = NULL;
-Mutex*   Shared_DirtyCardQ_lock       = NULL;
 Mutex*   G1DetachedRefinementStats_lock = NULL;
 Mutex*   MarkStackFreeList_lock       = NULL;
 Mutex*   MarkStackChunkList_lock      = NULL;
@@ -216,8 +216,6 @@ void mutex_init() {
   if (UseG1GC) {
     def(G1OldGCCount_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);
 
-    def(Shared_DirtyCardQ_lock     , PaddedMutex  , access + 1,  true,  _safepoint_check_never);
-
     def(G1DetachedRefinementStats_lock, PaddedMutex, leaf    ,   true, _safepoint_check_never);
 
     def(FreeList_lock              , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
@@ -228,7 +226,7 @@ void mutex_init() {
     def(MarkStackFreeList_lock     , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(MarkStackChunkList_lock    , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
 
-    def(MonitoringSupport_lock     , PaddedMutex  , native   ,   true,  _safepoint_check_never);      // used for serviceability monitoring support
+    def(MonitoringSupport_lock     , PaddedMutex  , service-1,   true,  _safepoint_check_never);      // used for serviceability monitoring support
   }
   def(StringDedup_lock             , PaddedMonitor, leaf,        true,  _safepoint_check_never);
   def(StringDedupIntern_lock       , PaddedMutex  , leaf,        true,  _safepoint_check_never);
@@ -243,11 +241,11 @@ void mutex_init() {
 
   def(Patching_lock                , PaddedMutex  , special,     true,  _safepoint_check_never);      // used for safepointing and code patching.
   def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  _safepoint_check_never);
-  def(MonitorDeflation_lock        , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for monitor deflation thread operations
-  def(Service_lock                 , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for service thread operations
+  def(MonitorDeflation_lock        , PaddedMonitor, special,     true,  _safepoint_check_never);      // used for monitor deflation thread operations
+  def(Service_lock                 , PaddedMonitor, service,     true,  _safepoint_check_never);      // used for service thread operations
 
   if (UseNotificationThread) {
-    def(Notification_lock            , PaddedMonitor, special,     true,  _safepoint_check_never);  // used for notification thread operations
+    def(Notification_lock          , PaddedMonitor, service,     true,  _safepoint_check_never);  // used for notification thread operations
   } else {
     Notification_lock = Service_lock;
   }
@@ -256,6 +254,7 @@ void mutex_init() {
 
   def(SystemDictionary_lock        , PaddedMonitor, leaf,        true,  _safepoint_check_always);
   def(SharedDictionary_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always);
+  def(ClassInitError_lock          , PaddedMonitor, leaf+1,      true,  _safepoint_check_always);
   def(Module_lock                  , PaddedMutex  , leaf+2,      false, _safepoint_check_always);
   def(InlineCacheBuffer_lock       , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(VMStatistic_lock             , PaddedMutex  , leaf,        false, _safepoint_check_always);
@@ -321,7 +320,7 @@ void mutex_init() {
   def(JfrMsg_lock                  , PaddedMonitor, leaf,        true,  _safepoint_check_always);
   def(JfrBuffer_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(JfrStream_lock               , PaddedMutex  , nonleaf + 1, false, _safepoint_check_never);
-  def(JfrStacktrace_lock           , PaddedMutex  , tty-2,       true,  _safepoint_check_never);
+  def(JfrStacktrace_lock           , PaddedMutex  , stackwatermark-1,  true,  _safepoint_check_never);
   def(JfrThreadSampler_lock        , PaddedMonitor, leaf,        true,  _safepoint_check_never);
 #endif
 
@@ -333,7 +332,7 @@ void mutex_init() {
   def(NMethodSweeperStats_lock     , PaddedMutex  , special,     true,  _safepoint_check_never);
   def(ThreadsSMRDelete_lock        , PaddedMonitor, special,     true,  _safepoint_check_never);
   def(ThreadIdTableCreate_lock     , PaddedMutex  , leaf,        false, _safepoint_check_always);
-  def(SharedDecoder_lock           , PaddedMutex  , native,      true,  _safepoint_check_never);
+  def(SharedDecoder_lock           , PaddedMutex  , tty-1,       true,  _safepoint_check_never);
   def(DCmdFactory_lock             , PaddedMutex  , leaf,        true,  _safepoint_check_never);
 #if INCLUDE_NMT
   def(NMTQuery_lock                , PaddedMutex  , max_nonleaf, false, _safepoint_check_always);

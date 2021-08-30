@@ -736,13 +736,6 @@ void CallGenerator::do_late_inline_helper() {
       C->set_default_node_notes(entry_nn);
     }
 
-    // Virtual call involves a receiver null check which can be made implicit.
-    if (is_virtual_late_inline()) {
-      GraphKit kit(jvms);
-      kit.null_check_receiver();
-      jvms = kit.transfer_exceptions_into_jvms();
-    }
-
     // Now perform the inlining using the synthesized JVMState
     JVMState* new_jvms = inline_cg()->generate(jvms);
     if (new_jvms == NULL)  return;  // no change

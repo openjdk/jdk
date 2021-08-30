@@ -112,6 +112,8 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   deallocate_stacks();
 
+  MarkSweep::_string_dedup_requests->flush();
+
   // If compaction completely evacuated the young generation then we
   // can clear the card table.  Otherwise, we must invalidate
   // it (consider all cards dirty).  In the future, we might consider doing
@@ -167,8 +169,7 @@ void GenMarkSweep::deallocate_stacks() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   gch->release_scratch();
 
-  _preserved_mark_stack.clear(true);
-  _preserved_oop_stack.clear(true);
+  _preserved_overflow_stack.clear(true);
   _marking_stack.clear();
   _objarray_stack.clear(true);
 }
