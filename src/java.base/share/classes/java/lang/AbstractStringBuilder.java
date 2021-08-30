@@ -579,7 +579,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
         int len = str.length();
         ensureCapacityInternal(count + len);
-        putStringAt(count, str, len);
+        putStringAt(count, str);
         count += len;
         return this;
     }
@@ -1000,7 +1000,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         ensureCapacityInternal(newCount);
         shift(end, newCount - count);
         this.count = newCount;
-        putStringAt(start, str, len);
+        putStringAt(start, str);
         return this;
     }
 
@@ -1172,7 +1172,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         ensureCapacityInternal(count + len);
         shift(offset, len);
         count += len;
-        putStringAt(offset, str, len);
+        putStringAt(offset, str);
         return this;
     }
 
@@ -1727,9 +1727,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         str.getBytes(value, off, index, coder, end - off);
     }
 
-    private void putStringAt(int index, String str, int len) {
+    private void putStringAt(int index, String str) {
         inflateIfNeededFor(str);
-        str.getBytes(value, 0, index, coder, len);
+        str.getBytes(value, index, coder);
     }
 
     private final void appendChars(char[] s, int off, int end) {
