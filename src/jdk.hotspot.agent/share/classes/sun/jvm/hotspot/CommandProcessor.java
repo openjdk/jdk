@@ -1393,7 +1393,7 @@ public class CommandProcessor {
                             pending.push(n);
                             n = n.getSuperclass();
                         }
-                        while (!pending.empty()) {
+                        while (!pending.isEmpty()) {
                             n = (Type)pending.pop();
                             dumpType(n);
                             emitted.add(n.getName());
