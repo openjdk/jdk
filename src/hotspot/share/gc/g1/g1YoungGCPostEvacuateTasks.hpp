@@ -48,8 +48,7 @@ class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedGangTask {
   class RemoveSelfForwardPtrsTask;
 
 public:
-  G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
-                                          G1RedirtyCardsQueueSet* rdcqs);
+  G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states);
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
@@ -114,10 +113,8 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedGangTask {
   class FreeCollectionSetTask;
 
 public:
-  G1PostEvacuateCollectionSetCleanupTask2(PreservedMarksSet* preserved_marks_set,
-                                          G1RedirtyCardsQueueSet* rdcqs,
-                                          G1EvacuationInfo* evacuation_info,
-                                          const size_t* surviving_young_words);
+  G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
+                                          G1EvacuationInfo* evacuation_info);
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask : public G1AbstractSubTask {
