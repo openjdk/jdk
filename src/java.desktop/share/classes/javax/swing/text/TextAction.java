@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,9 @@
 package javax.swing.text;
 
 import java.awt.event.ActionEvent;
-import java.awt.KeyboardFocusManager;
-import java.awt.Component;
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.HashMap;
 import javax.swing.Action;
 import javax.swing.AbstractAction;
-import javax.swing.KeyStroke;
 
 /**
  * An Action implementation useful for key bindings that are
@@ -104,7 +100,7 @@ public abstract class TextAction extends AbstractAction {
      * @return the augmented list
      */
     public static final Action[] augmentList(Action[] list1, Action[] list2) {
-        Hashtable<String, Action> h = new Hashtable<String, Action>();
+        HashMap<String, Action> h = new HashMap<String, Action>();
         for (Action a : list1) {
             String value = (String)a.getValue(Action.NAME);
             h.put((value!=null ? value:""), a);
@@ -113,11 +109,7 @@ public abstract class TextAction extends AbstractAction {
             String value = (String)a.getValue(Action.NAME);
             h.put((value!=null ? value:""), a);
         }
-        Action[] actions = new Action[h.size()];
-        int index = 0;
-        for (Enumeration<Action> e = h.elements() ; e.hasMoreElements() ;) {
-            actions[index++] = e.nextElement();
-        }
+        Action[] actions = h.values().toArray(new Action[0]);
         return actions;
     }
 

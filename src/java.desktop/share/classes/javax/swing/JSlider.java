@@ -39,6 +39,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 
 import javax.accessibility.Accessible;
@@ -981,14 +982,14 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                      e.getPropertyName().equals( "maximum" ) ) {
 
                     Enumeration<?> keys = getLabelTable().keys();
-                    Hashtable<Integer, JComponent> hashtable = new Hashtable<>();
+                    HashMap<Integer, JComponent> labels = new HashMap<>();
 
                     // Save the labels that were added by the developer
                     while ( keys.hasMoreElements() ) {
                         Integer key = (Integer) keys.nextElement();
                         JComponent value = (JComponent) labelTable.get(key);
                         if ( !(value instanceof LabelUIResource) ) {
-                            hashtable.put( key, value );
+                            labels.put( key, value );
                         }
                     }
 
@@ -996,11 +997,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                     createLabels();
 
                     // Add the saved labels
-                    keys = hashtable.keys();
-                    while ( keys.hasMoreElements() ) {
-                        Integer key = (Integer) keys.nextElement();
-                        put( key, hashtable.get( key ) );
-                    }
+                    this.putAll(labels);
 
                     ((JSlider)e.getSource()).setLabelTable( this );
                 }

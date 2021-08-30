@@ -1195,7 +1195,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @param actions the set of actions
      */
     public static void loadKeymap(Keymap map, KeyBinding[] bindings, Action[] actions) {
-        Hashtable<String, Action> h = new Hashtable<String, Action>();
+        HashMap<String, Action> h = new HashMap<String, Action>();
         for (Action a : actions) {
             String value = (String)a.getValue(Action.NAME);
             h.put((value!=null ? value:""), a);

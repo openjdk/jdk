@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,21 +44,17 @@ import java.awt.Font;
 
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedCharacterIterator.Attribute;
-import java.text.AttributedString;
 import java.text.Bidi;
 import java.text.BreakIterator;
 import java.text.CharacterIterator;
 
-import java.awt.font.FontRenderContext;
-
-import java.util.Hashtable;
+import java.util.Collections;
 import java.util.Map;
 
 import sun.font.AttributeValues;
 import sun.font.BidiUtils;
 import sun.font.TextLineComponent;
 import sun.font.TextLabelFactory;
-import sun.font.FontResolver;
 
 /**
  * The {@code TextMeasurer} class provides the primitive operations
@@ -247,8 +243,7 @@ public final class TextMeasurer implements Cloneable {
                 GraphicAttribute graphic = (GraphicAttribute)
                                 paragraphAttrs.get(TextAttribute.CHAR_REPLACEMENT);
                 fBaseline = TextLayout.getBaselineFromGraphic(graphic);
-                Hashtable<Attribute, ?> fmap = new Hashtable<>(5, (float)0.9);
-                Font dummyFont = new Font(fmap);
+                Font dummyFont = new Font(Collections.emptyMap());
                 LineMetrics lm = dummyFont.getLineMetrics(" ", 0, 1, fFrc);
                 fBaselineOffsets = lm.getBaselineOffsets();
             }
