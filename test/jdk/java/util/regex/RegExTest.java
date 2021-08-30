@@ -73,7 +73,6 @@ import org.testng.Assert;
 
 import jdk.test.lib.RandomFactory;
 
-//Asserts in JUnit5
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
@@ -81,7 +80,7 @@ import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-import static org.testng.Assert.expectThrows; //Replaced by assertThrows in JUnit5
+import static org.testng.Assert.expectThrows;
 
 /**
  * This is a test class created to check the operation of
