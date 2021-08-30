@@ -121,7 +121,7 @@ public class TransferTo {
         try (InputStream in = inputStreamProvider.input(inBytes);
                 OutputStream out = outputStreamProvider.output(recorder::set)) {
             // skip bytes till starting point
-            in.readNBytes(posIn);
+            in.skipNBytes(posIn);
             out.write(new byte[posOut]);
 
             long reported = in.transferTo(out);
