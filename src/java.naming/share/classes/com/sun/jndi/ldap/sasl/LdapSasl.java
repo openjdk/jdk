@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.jndi.ldap.sasl;
 
 import java.io.*;
 import java.security.cert.X509Certificate;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 
@@ -216,13 +216,13 @@ public final class LdapSasl {
       */
     private static String[] getSaslMechanismNames(String str) {
         StringTokenizer parser = new StringTokenizer(str);
-        Vector<String> mechs = new Vector<>(10);
+        ArrayList<String> mechs = new ArrayList<>(10);
         while (parser.hasMoreTokens()) {
-            mechs.addElement(parser.nextToken());
+            mechs.add(parser.nextToken());
         }
         String[] mechNames = new String[mechs.size()];
         for (int i = 0; i < mechs.size(); i++) {
-            mechNames[i] = mechs.elementAt(i);
+            mechNames[i] = mechs.get(i);
         }
         return mechNames;
     }

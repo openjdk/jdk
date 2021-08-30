@@ -55,7 +55,7 @@ public class InternalErrorTest {
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final int pageSize = WhiteBox.getWhiteBox().getVMPageSize();
-    private static final String expectedErrorMsg = "fault occurred in a recent unsafe memory access";
+    private static final String expectedErrorMsg = "fault occurred in an unsafe memory access";
     private static final String failureMsg1 = "InternalError not thrown";
     private static final String failureMsg2 = "Wrong InternalError: ";
 

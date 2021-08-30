@@ -117,7 +117,7 @@ public:
        if (_saved_state == _thread_in_Java) {
          ThreadStateTransition::transition_from_java(_jthread, _thread_in_native);
        } else {
-         ThreadStateTransition::transition(_jthread, _saved_state, _thread_in_native);
+         ThreadStateTransition::transition_from_vm(_jthread, _thread_in_native);
        }
     } else {
       _jthread = NULL;
