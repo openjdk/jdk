@@ -2305,6 +2305,11 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   // For match_option to return remaining or value part of option string
   const char* tail;
 
+  bool has_verbose_class = false;
+  bool has_verbose_module = false;
+  bool has_verbose_gc = false;
+  bool has_verbose_jni = false;
+
   // iterate over arguments
   for (int index = 0; index < args->nOptions; index++) {
     bool is_absolute_path = false;  // for -agentpath vs -agentlib
@@ -2326,15 +2331,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -verbose:[class/module/gc/jni]
     if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, load));
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, unload));
+        has_verbose_class = true;
       } else if (!strcmp(tail, ":module")) {
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, load));
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, unload));
+        has_verbose_module = true;
       } else if (!strcmp(tail, ":gc")) {
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
+        has_verbose_gc = true;
       } else if (!strcmp(tail, ":jni")) {
-        LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(jni, resolve));
+        has_verbose_jni = true;
       }
     // -da / -ea / -disableassertions / -enableassertions
     // These accept an optional class/package name separated by a colon, e.g.,
@@ -2950,6 +2953,37 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       return JNI_EINVAL;
     }
     LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
+  }
+
+  // This must be done after all options have been processed
+  // since -Xlog and -Xloggc override corresponding -verbose
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    if (ts->contains(LogTag::_gc) && ts->has_output_to_file()) {
+      has_verbose_gc = false;
+    }
+    if (ts->contains(LogTag::_class) && ts->has_output_to_file()) {
+      has_verbose_class = false;
+    }
+    if (ts->contains(LogTag::_jni) && ts->has_output_to_file()) {
+      has_verbose_jni = false;
+    }
+    if (ts->contains(LogTag::_module) && ts->has_output_to_file()) {
+      has_verbose_module = false;
+    }
+  }
+  if (has_verbose_gc && !_gc_log_filename) {
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
+  }
+  if (has_verbose_module) {
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, load));
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, unload));
+  }
+  if (has_verbose_jni) {
+    LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(jni, resolve));
+  }
+  if (has_verbose_class) {
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, load));
+    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, unload));
   }
 
   fix_appclasspath();

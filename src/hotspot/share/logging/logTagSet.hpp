@@ -119,6 +119,7 @@ class LogTagSet {
   void label(outputStream* st, const char* separator = ",") const;
   int label(char *buf, size_t len, const char* separator = ",") const;
   bool has_output(const LogOutput* output);
+  bool has_output_to_file();
 
   // The implementation of this function is put here to ensure
   // that it is inline:able by the log_is_enabled(level, ...) macro.
