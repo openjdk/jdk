@@ -58,7 +58,8 @@ public:
 };
 
 // Full GC Mark that holds GC id and CPU time trace. Needs to be separate
-// from the G1FullCollector and G1FullGCScope to get consistent logging.
+// from the G1FullCollector and G1FullGCScope to allow the Full GC logging
+// to have the same structure as the Young GC logging.
 class G1FullGCMark : StackObj {
   GCIdMark       _gc_id;
   GCTraceCPUTime _cpu_time;
