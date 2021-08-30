@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -732,7 +731,7 @@ final class CertificateRequest {
             }
 
             Collection<String> checkedKeyTypes = new HashSet<>();
-            LinkedHashSet<String> allAuths = new LinkedHashSet<>();
+            List<String> allAuths = new ArrayList<>();
             for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
                 if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -741,6 +740,7 @@ final class CertificateRequest {
                     }
                     continue;
                 }
+                checkedKeyTypes.add(ss.keyAlgorithm);
 
                 // Don't select a signature scheme unless we will be able to
                 // produce a CertificateVerify message later
@@ -754,7 +754,6 @@ final class CertificateRequest {
                             "Unable to produce CertificateVerify for " +
                             "signature scheme: " + ss.name);
                     }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
                     continue;
                 }
 
@@ -764,7 +763,6 @@ final class CertificateRequest {
                         SSLLogger.warning(
                             "Unsupported authentication scheme: " + ss.name);
                     }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
                     continue;
                 }
                 allAuths.add(ss.keyAlgorithm);
@@ -774,8 +772,7 @@ final class CertificateRequest {
                     .createPossession(hc, allAuths.toArray(String[]::new));
             if (pos == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.warning(
-                            "Unavailable authentication scheme: " + allAuths);
+                    SSLLogger.warning("No available authentication scheme");
                 }
             }
             return pos;
