@@ -55,7 +55,14 @@ public class SortClasslist {
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
             Matcher m = p.matcher(line);
-            if (m.find()) {
+            if (line.startsWith("#")) {
+                // Comments -- print them first without sorting. These appear only at the top
+                // of the file.
+                System.out.println(line);
+            } else if (line.startsWith("@")) {
+                // @lambda-form-invoker, @lambda-proxy, etc.
+                lambdas.add(line);
+            } else if (m.find()) {
                 // We found a pattern like this:
                 //
                 //    <beginning of line>java/lang/Object id: 0<end of line>
@@ -65,13 +72,6 @@ public class SortClasslist {
                 // classes, the ID is unused. Let's omit the ID, as it may be non-deterministic.
                 String className = m.group(1); // matches the (.*) part of the pattern.
                 classes.add(className);
-            } else if (line.startsWith("#")) {
-                // Comments -- print them first without sorting. These appear only at the top
-                // of the file.
-                System.out.println(line);
-            } else if (line.startsWith("@")) {
-                // @lambda-form-invoker, @lambda-proxy, etc.
-                lambdas.add(line);
             } else {
                 // HelloClasslist should not load classes in custom class loaders, or else
                 // we might end up with output like this:
