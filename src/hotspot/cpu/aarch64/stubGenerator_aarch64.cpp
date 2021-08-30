@@ -4868,7 +4868,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // exit from large loop when less than 64 bytes left to read or we're about
     // to prefetch memory behind array border
-    int largeLoopExitCondition = MAX(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
+    int largeLoopExitCondition = MAX2(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
 
     // before jumping to stub, pre-load 8 bytes already, so do comparison directly
     __ eor(rscratch2, tmp1, tmp2);
