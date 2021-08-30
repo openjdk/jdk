@@ -94,7 +94,7 @@ public class CustomLoaderTest {
                 throw new Error(e);
             }
         }
-        static AtomicInteger counter;
+        static AtomicInteger counter = new AtomicInteger(0);
 
         final Class<?> c;
         final Class<?> p;

@@ -71,7 +71,7 @@ final class MethodHandleAccessorFactory {
      */
     static MethodAccessorImpl newMethodAccessor(Method method, boolean callerSensitive) {
         if (useNativeAccessor(method)) {
-            return DirectMethodAccessorImpl.nativeAccessor(method, callerSensitive);
+            return DirectMethodHandleAccessorImpl.nativeAccessor(method, callerSensitive);
         }
 
         // ExceptionInInitializerError may be thrown during class initialization
@@ -83,14 +83,14 @@ final class MethodHandleAccessorFactory {
             if (callerSensitive) {
                 var dmh = findCallerSensitiveAdapter(method);
                 if (dmh != null) {
-                    return DirectMethodAccessorImpl.callerSensitiveAdapter(method, dmh);
+                    return DirectMethodHandleAccessorImpl.callerSensitiveAdapter(method, dmh);
                 }
             }
             var dmh = getDirectMethod(method, callerSensitive);
             if (callerSensitive) {
-                return DirectMethodAccessorImpl.callerSensitiveMethodAccessor(method, dmh);
+                return DirectMethodHandleAccessorImpl.callerSensitiveMethodAccessor(method, dmh);
             } else {
-                return DirectMethodAccessorImpl.methodAccessor(method, dmh);
+                return DirectMethodHandleAccessorImpl.methodAccessor(method, dmh);
             }
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
@@ -100,15 +100,14 @@ final class MethodHandleAccessorFactory {
     /**
      * Creates a ConstructorAccessor for the given reflected constructor.
      *
-     * If a given constructor is called before the java.lang.invoke initialization
-     * or the given constructor is native, it will use the native VM reflection
-     * support.
+     * If a given constructor is called before the java.lang.invoke initialization,
+     * it will use the native VM reflection support.
      *
      * Otherwise, it will use the direct method handle of the given constructor.
      */
     static ConstructorAccessorImpl newConstructorAccessor(Constructor<?> ctor) {
         if (useNativeAccessor(ctor)) {
-            return DirectConstructorAccessorImpl.nativeAccessor(ctor);
+            return DirectConstructorHandleAccessorImpl.nativeAccessor(ctor);
         }
 
         // ExceptionInInitializerError may be thrown during class initialization
@@ -126,7 +125,7 @@ final class MethodHandleAccessorFactory {
                 target = target.asSpreader(Object[].class, paramCount);
             }
             target = target.asType(mtype);
-            return DirectConstructorAccessorImpl.constructorAccessor(ctor, target);
+            return DirectConstructorHandleAccessorImpl.constructorAccessor(ctor, target);
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
         }
@@ -426,19 +425,19 @@ final class MethodHandleAccessorFactory {
     }
 
     private static byte[] spinByteCode(String cn, Field field) {
-        var builder = new ClassByteBuilder(cn, VarHandle.class);
+        var builder = new InvokerBuilder(cn, VarHandle.class);
         var bytes = builder.buildVarHandleInvoker(field);
         maybeDumpClassFile(cn, bytes);
         return bytes;
     }
     private static byte[] spinByteCode(String cn, Method method, MethodType mtype, boolean hasCallerParameter) {
-        var builder = new ClassByteBuilder(cn, MethodHandle.class);
+        var builder = new InvokerBuilder(cn, MethodHandle.class);
         var bytes = builder.buildMethodHandleInvoker(method, mtype, hasCallerParameter);
         maybeDumpClassFile(cn, bytes);
         return bytes;
     }
     private static byte[] spinByteCode(String cn, Constructor<?> ctor, MethodType mtype) {
-        var builder = new ClassByteBuilder(cn, MethodHandle.class);
+        var builder = new InvokerBuilder(cn, MethodHandle.class);
         var bytes = builder.buildMethodHandleInvoker(ctor, mtype);
         maybeDumpClassFile(cn, bytes);
         return bytes;

@@ -25,6 +25,7 @@
 
 package jdk.internal.reflect;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -39,7 +40,14 @@ import jdk.internal.misc.VM;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static java.lang.invoke.MethodType.*;
 
-public class ClassByteBuilder extends ClassWriter {
+/**
+ * InvokerBuilder generates the bytecode for a hidden class that implements
+ * MHInvoker or VHInvoker and it uses condy to load a MethodHandle
+ * or VarHandle from the class data.
+ * 
+ * @see java.lang.invoke.MethodHandles#classData(MethodHandles.Lookup, String, Class)
+ */
+class InvokerBuilder extends ClassWriter {
     private static final int CLASSFILE_VERSION = VM.classFileVersion();
     private static final String OBJECT_CLS = "java/lang/Object";
     private static final String MHS_CLS = "java/lang/invoke/MethodHandles";
@@ -57,7 +65,7 @@ public class ClassByteBuilder extends ClassWriter {
     /**
      * A builder to generate a class file to access class data
      */
-    public ClassByteBuilder(String classname, Class<?> classDataType) {
+    InvokerBuilder(String classname, Class<?> classDataType) {
         super(ClassWriter.COMPUTE_FRAMES);
         this.classname = classname;
         Handle bsm = new Handle(H_INVOKESTATIC, MHS_CLS, "classData",
@@ -66,7 +74,7 @@ public class ClassByteBuilder extends ClassWriter {
         this.classDataCondy = new ConstantDynamic("_", classDataType.descriptorString(), bsm);
     }
 
-    public byte[] buildVarHandleInvoker(Field field) {
+    byte[] buildVarHandleInvoker(Field field) {
         visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, VH_INVOKER_INTF);
         addConstructor();
 
@@ -79,7 +87,7 @@ public class ClassByteBuilder extends ClassWriter {
         return toByteArray();
     }
 
-    public byte[] buildMethodHandleInvoker(Method method, MethodType mtype, boolean hasCallerParameter) {
+    byte[] buildMethodHandleInvoker(Method method, MethodType mtype, boolean hasCallerParameter) {
         visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, MH_INVOKER_INTF);
         addConstructor();
 
@@ -95,7 +103,7 @@ public class ClassByteBuilder extends ClassWriter {
         return toByteArray();
     }
 
-    public byte[] buildMethodHandleInvoker(Constructor<?> ctor, MethodType mtype) {
+    byte[] buildMethodHandleInvoker(Constructor<?> ctor, MethodType mtype) {
         visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, MH_INVOKER_INTF);
         addConstructor();
 

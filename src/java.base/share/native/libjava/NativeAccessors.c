@@ -26,8 +26,8 @@
 #include "jvm.h"
 #include "jdk_internal_reflect_NativeConstructorAccessorImpl.h"
 #include "jdk_internal_reflect_NativeMethodAccessorImpl.h"
-#include "jdk_internal_reflect_DirectConstructorAccessorImpl_NativeAccessor.h"
-#include "jdk_internal_reflect_DirectMethodAccessorImpl_NativeAccessor.h"
+#include "jdk_internal_reflect_DirectMethodHandleAccessorImpl_NativeAccessor.h"
+#include "jdk_internal_reflect_DirectConstructorHandleAccessorImpl_NativeAccessor.h"
 
 JNIEXPORT jobject JNICALL Java_jdk_internal_reflect_NativeMethodAccessorImpl_invoke0
 (JNIEnv *env, jclass unused, jobject m, jobject obj, jobjectArray args)
@@ -41,12 +41,12 @@ JNIEXPORT jobject JNICALL Java_jdk_internal_reflect_NativeConstructorAccessorImp
     return JVM_NewInstanceFromConstructor(env, c, args);
 }
 
-JNIEXPORT jobject JNICALL Java_jdk_internal_reflect_DirectMethodAccessorImpl_00024NativeAccessor_invoke0
+JNIEXPORT jobject JNICALL Java_jdk_internal_reflect_DirectMethodHandleAccessorImpl_00024NativeAccessor_invoke0
 (JNIEnv *env, jclass unused, jobject m, jobject obj, jobjectArray args)
 {
     return JVM_InvokeMethod(env, m, obj, args);
 }
-JNIEXPORT jobject JNICALL Java_jdk_internal_reflect_DirectConstructorAccessorImpl_00024NativeAccessor_newInstance0
+JNIEXPORT jobject JNICALL Java_jdk_internal_reflect_DirectConstructorHandleAccessorImpl_00024NativeAccessor_newInstance0
 (JNIEnv *env, jclass unused, jobject c, jobjectArray args)
 {
     return JVM_NewInstanceFromConstructor(env, c, args);

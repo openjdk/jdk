@@ -28,7 +28,7 @@ package jdk.internal.reflect;
 import java.util.Set;
 
 /**
- * Utility methods used by DirectMethodAccessorImpl and DirectConstructorImpl
+ * Utility methods used by DirectMethodHandleAccessorImpl and DirectConstructorImpl
  */
 public class AccessorUtils {
     static boolean isIllegalArgument(Class<?> accessorType, RuntimeException e) {
@@ -62,10 +62,10 @@ public class AccessorUtils {
                 // exception thrown from java.base but not from reflection internals
                 return false;
             }
-            if ((accessorType == DirectMethodAccessorImpl.class
-                    && cname.startsWith(DirectConstructorAccessorImpl.class.getName()))
-                || (accessorType == DirectConstructorAccessorImpl.class &&
-                        cname.startsWith(DirectMethodAccessorImpl.class.getName()))) {
+            if ((accessorType == DirectMethodHandleAccessorImpl.class
+                    && cname.startsWith(DirectConstructorHandleAccessorImpl.class.getName()))
+                || (accessorType == DirectConstructorHandleAccessorImpl.class &&
+                        cname.startsWith(DirectMethodHandleAccessorImpl.class.getName()))) {
                 // thrown from another reflection accessor impl class
                 return false;
             }

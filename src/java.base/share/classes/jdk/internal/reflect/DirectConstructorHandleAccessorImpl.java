@@ -38,15 +38,15 @@ import java.lang.reflect.InvocationTargetException;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.SPECIALIZED_PARAM_COUNT;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.newMethodHandleInvoker;
 
-class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
+class DirectConstructorHandleAccessorImpl extends ConstructorAccessorImpl {
     static ConstructorAccessorImpl constructorAccessor(Constructor<?> ctor, MethodHandle target) {
         if (ReflectionFactory.noInflation()) {
             // fast invoker
             var mhInvoker = newMethodHandleInvoker(ctor, target);
-            return new DirectConstructorAccessorImpl(ctor, target, mhInvoker);
+            return new DirectConstructorHandleAccessorImpl(ctor, target, mhInvoker);
         } else {
             // Default is the adaptive accessor method.
-            return new AdaptiveConstructorAccessor(ctor, target);
+            return new AdaptiveConstructorHandleAccessor(ctor, target);
         }
     }
 
@@ -59,7 +59,7 @@ class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
 
     @Stable protected final MethodHandle target;
     @Stable protected final MHInvoker invoker;
-    DirectConstructorAccessorImpl(Constructor<?> ctor, MethodHandle target, MHInvoker invoker) {
+    DirectConstructorHandleAccessorImpl(Constructor<?> ctor, MethodHandle target, MHInvoker invoker) {
         this.ctor = ctor;
         this.paramCount = ctor.getParameterCount();
         this.target = target;
@@ -96,7 +96,7 @@ class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
     }
 
     private boolean isIllegalArgument(RuntimeException ex) {
-        return AccessorUtils.isIllegalArgument(DirectConstructorAccessorImpl.class, ex);
+        return AccessorUtils.isIllegalArgument(DirectConstructorHandleAccessorImpl.class, ex);
     }
 
     @Hidden
@@ -112,10 +112,10 @@ class DirectConstructorAccessorImpl extends ConstructorAccessorImpl {
         };
     }
 
-    static class AdaptiveConstructorAccessor extends DirectConstructorAccessorImpl {
+    static class AdaptiveConstructorHandleAccessor extends DirectConstructorHandleAccessorImpl {
         private @Stable MHInvoker fastInvoker;
         private int numInvocations;
-        AdaptiveConstructorAccessor(Constructor<?> ctor, MethodHandle target) {
+        AdaptiveConstructorHandleAccessor(Constructor<?> ctor, MethodHandle target) {
             super(ctor, target, new MHInvokerDelegate(target));
         }
 
