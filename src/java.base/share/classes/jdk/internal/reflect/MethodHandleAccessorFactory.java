@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -49,12 +50,29 @@ import sun.security.action.GetPropertyAction;
 
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
+import static jdk.internal.reflect.MethodHandleAccessorFactory.LazyStaticHolder.*;
 
 final class MethodHandleAccessorFactory {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
+    /**
+     * Creates a MethodAccessor for the given reflected method.
+     *
+     * If the given method is called before the java.lang.invoke initialization
+     * or the given method is a native method, it will use the native VM reflection
+     * support.
+     *
+     * If the given method is a caller-sensitive method and the corresponding
+     * caller-sensitive adapter with the caller class parameter is present,
+     * it will use the method handle of the caller-sensitive adapter.
+     *
+     * Otherwise, it will use the direct method handle of the given method.
+     *
+     * @see CallerSensitive
+     * @see CallerSensitiveAdapter
+     */
     static MethodAccessorImpl newMethodAccessor(Method method, boolean callerSensitive) {
-        assert VM.isJavaLangInvokeInited();
+        if (useNativeAccessor(method)) {
+            return DirectMethodAccessorImpl.nativeAccessor(method, callerSensitive);
+        }
 
         // ExceptionInInitializerError may be thrown during class initialization
         // Ensure class initialized outside the invocation of method handle
@@ -63,7 +81,7 @@ final class MethodHandleAccessorFactory {
 
         try {
             if (callerSensitive) {
-                var dmh = findDirectMethodWithCaller(method);
+                var dmh = findCallerSensitiveAdapter(method);
                 if (dmh != null) {
                     return DirectMethodAccessorImpl.callerSensitiveAdapter(method, dmh);
                 }
@@ -79,8 +97,19 @@ final class MethodHandleAccessorFactory {
         }
     }
 
+    /**
+     * Creates a ConstructorAccessor for the given reflected constructor.
+     *
+     * If a given constructor is called before the java.lang.invoke initialization
+     * or the given constructor is native, it will use the native VM reflection
+     * support.
+     *
+     * Otherwise, it will use the direct method handle of the given constructor.
+     */
     static ConstructorAccessorImpl newConstructorAccessor(Constructor<?> ctor) {
-        assert VM.isJavaLangInvokeInited();
+        if (useNativeAccessor(ctor)) {
+            return DirectConstructorAccessorImpl.nativeAccessor(ctor);
+        }
 
         // ExceptionInInitializerError may be thrown during class initialization
         // Ensure class initialized outside the invocation of method handle
@@ -103,8 +132,22 @@ final class MethodHandleAccessorFactory {
         }
     }
 
+    /**
+     * Creates a FieldAccessor for the given reflected field.
+     *
+     * Limitation: Field access via core reflection is only supported after
+     * java.lang.invoke completes initialization.
+     * java.lang.invoke initialization starts soon after System::initPhase1
+     * and method handles are ready for use when initPhase2 begins.
+     * During early VM startup (initPhase1), fields can be accessed directly
+     * from the VM or through JNI.
+     */
     static FieldAccessorImpl newFieldAccessor(Field field, boolean isReadOnly) {
-        assert VM.isJavaLangInvokeInited();
+        if (!VM.isJavaLangInvokeInited()) {
+            throw new InternalError(field.getDeclaringClass().getName() + "::" + field.getName() +
+                    " cannot be accessed reflectively before java.lang.invoke is initialized");
+        }
+
         try {
             // the declaring class of the field has been initialized
             var varHandle = JLIA.unreflectVarHandle(field);
@@ -146,7 +189,14 @@ final class MethodHandleAccessorFactory {
         return makeSpecializedTarget(dmh, isStatic, false);
     }
 
-    private static MethodHandle findDirectMethodWithCaller(Method method) throws IllegalAccessException {
+    /**
+     * Finds the method handle of a caller-sensitive adapter for the given
+     * caller-sensitive method.  It has the same name as the given method
+     * with a trailing caller class parameter.
+     *
+     * @see CallerSensitiveAdapter
+     */
+    private static MethodHandle findCallerSensitiveAdapter(Method method) throws IllegalAccessException {
         String name = method.getName();
         // append a Class parameter
         MethodType mtype = methodType(method.getReturnType(), method.getParameterTypes())
@@ -417,10 +467,44 @@ final class MethodHandleAccessorFactory {
         }
     }
 
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
-    private static final Path DUMP_CLASS_FILES;
+    /*
+     * Returns true if NativeAccessor should be used.
+     */
+    private static boolean useNativeAccessor(Executable member) {
+        if (!VM.isJavaLangInvokeInited())
+            return true;
 
+        if (Modifier.isNative(member.getModifiers()))
+            return true;
+
+        if (ReflectionFactory.isUseNativeAccessorOnly())  // for testing only
+            return true;
+
+        // MethodHandle::withVarargs on a member with varargs modifier bit set
+        // verifies that the last parameter of the member must be an array type.
+        // The JVMS does not require the last parameter descriptor of the method descriptor
+        // is an array type if the ACC_VARARGS flag is set in the access_flags item.
+        // Hence the reflection implementation does not check the last parameter type
+        // if ACC_VARARGS flag is set.  Workaround this by invoking through
+        // the native accessor.
+        int paramCount = member.getParameterCount();
+        if (member.isVarArgs() &&
+                (paramCount == 0 || !(member.getParameterTypes()[paramCount-1].isArray()))) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * Delay initializing these static fields until java.lang.invoke is fully initialized.
+     */
+    static class LazyStaticHolder {
+        static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+        static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
+    }
+
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final Path DUMP_CLASS_FILES;
     static {
         String dumpPath = GetPropertyAction.privilegedGetProperty("jdk.reflect.dumpClassPath");
         if (dumpPath != null) {

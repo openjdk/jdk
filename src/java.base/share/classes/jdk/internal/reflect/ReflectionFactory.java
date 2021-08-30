@@ -44,7 +44,6 @@ import java.util.Properties;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
-import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 
@@ -167,15 +166,6 @@ public class ReflectionFactory {
         boolean isFinal = Modifier.isFinal(field.getModifiers());
         boolean isReadOnly = isFinal && (!override || langReflectAccess.isTrustedFinalField(field));
         if (useDirectMethodHandle) {
-            // Core reflection is supported after java.lang.invoke completes initialization.
-            // java.lang.invoke initialization starts soon after System::initPhase1
-            // and method handles are ready for use when initPhase2 begins.
-            // During early VM startup (initPhase1), fields are accessed directly from
-            // the VM or through JNI.  It should avoid using core reflection.
-            if (!VM.isJavaLangInvokeInited()) {
-                throw new InternalError(field.getDeclaringClass().getName() + "::" + field.getName() +
-                        " cannot be accessed reflectively before java.lang.invoke is initialized");
-            }
             return MethodHandleAccessorFactory.newFieldAccessor(field, isReadOnly);
         } else {
             return UnsafeFieldAccessorFactory.newFieldAccessor(field, isReadOnly);
@@ -192,13 +182,9 @@ public class ReflectionFactory {
         }
 
         if (useDirectMethodHandle) {
-            if (useNativeAccessor(method)) {
-                return DirectMethodAccessorImpl.nativeAccessor(method, callerSensitive);
-            }
             return MethodHandleAccessorFactory.newMethodAccessor(method, callerSensitive);
         } else {
-            if (!useDirectMethodHandle && noInflation
-                    && !method.getDeclaringClass().isHidden()) {
+            if (noInflation && !method.getDeclaringClass().isHidden()) {
                 return generateMethodAccessor(method);
             } else {
                 NativeMethodAccessorImpl acc = new NativeMethodAccessorImpl(method);
@@ -242,9 +228,6 @@ public class ReflectionFactory {
         }
 
         if (useDirectMethodHandle) {
-            if (useNativeAccessor(c)) {
-                return DirectConstructorAccessorImpl.nativeAccessor(c);
-            }
             return MethodHandleAccessorFactory.newConstructorAccessor(c);
         } else {
             if (noInflation && !c.getDeclaringClass().isHidden()) {
@@ -266,34 +249,6 @@ public class ReflectionFactory {
                 return res;
             }
         }
-    }
-
-    /*
-     * Returns true if NativeAccessor should be used.
-     */
-    private static boolean useNativeAccessor(Executable member) {
-        if (!VM.isJavaLangInvokeInited())
-            return true;
-
-        if (Modifier.isNative(member.getModifiers()))
-            return true;
-
-        if (useNativeAccessorOnly)  // for testing only
-            return true;
-
-        // MethodHandle::withVarargs on a member with varargs modifier bit set
-        // verifies that the last parameter of the member must be an array type.
-        // The JVMS does not require the last parameter descriptor of the method descriptor
-        // is an array type if the ACC_VARARGS flag is set in the access_flags item.
-        // Hence the reflection implementation does not check the last parameter type
-        // if ACC_VARARGS flag is set.  Workaround this by invoking through
-        // the native accessor.
-        int paramCount = member.getParameterCount();
-        if (member.isVarArgs() &&
-                (paramCount == 0 || !(member.getParameterTypes()[paramCount-1].isArray()))) {
-            return true;
-        }
-        return false;
     }
 
     //--------------------------------------------------------------------------
@@ -673,6 +628,9 @@ public class ReflectionFactory {
 
     static boolean useDirectMethodHandle() {
         return useDirectMethodHandle;
+    }
+    static boolean isUseNativeAccessorOnly() {
+        return useNativeAccessorOnly;
     }
 
     /** We have to defer full initialization of this class until after
