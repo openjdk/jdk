@@ -198,6 +198,7 @@ tier1_gc = \
   :tier1_gc_2 \
   :tier1_gc_gcold \
   :tier1_gc_gcbasher \
+  :tier1_gc_epsilon \
   :tier1_gc_shenandoah
 
 hotspot_not_fast_gc = \
@@ -205,21 +206,27 @@ hotspot_not_fast_gc = \
   -:tier1_gc
 
 tier1_gc_1 = \
-  :gc_epsilon \
   gc/g1/ \
   -gc/g1/ihop/TestIHOPErgo.java
 
 tier1_gc_2 = \
   gc/ \
-  -:gc_epsilon \
+  -gc/CriticalNativeArgs.java \
   -gc/g1/ \
   -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
+  -gc/epsilon \
   -gc/shenandoah
 
-gc_epsilon = \
-  gc/epsilon/ \
+hotspot_gc_epsilon = \
+  :tier1_gc_epsilon \
+  :tier2_gc_epsilon
+
+tier1_gc_epsilon = \
+  gc/epsilon/
+
+tier2_gc_epsilon = \
   gc/CriticalNativeArgs.java \
   gc/stress/CriticalNativeStress.java
 
@@ -238,8 +245,7 @@ tier1_gc_shenandoah = \
   gc/shenandoah/compiler/ \
   gc/shenandoah/mxbeans/ \
   gc/shenandoah/TestSmallHeap.java \
-  gc/shenandoah/oom/ \
-  gc/CriticalNativeArgs.java
+  gc/shenandoah/oom/
 
 tier2_gc_shenandoah = \
   runtime/MemberName/MemberNameLeak.java \
@@ -261,9 +267,10 @@ tier2_gc_shenandoah = \
   gc/logging/TestUnifiedLoggingSwitchStress.java \
   runtime/Metaspace/DefineClass.java \
   gc/shenandoah/ \
+  gc/CriticalNativeArgs.java \
+  gc/stress/CriticalNativeStress.java \
   serviceability/sa/TestHeapDumpForInvokeDynamic.java \
   -gc/shenandoah/TestStringDedupStress.java \
-  -gc/stress/CriticalNativeStress.java \
   -:tier1_gc_shenandoah
 
 tier3_gc_shenandoah = \
@@ -272,7 +279,6 @@ tier3_gc_shenandoah = \
   gc/stress/gclocker/TestGCLockerWithShenandoah.java \
   gc/stress/systemgc/TestSystemGCWithShenandoah.java \
   gc/shenandoah/TestStringDedupStress.java \
-  gc/stress/CriticalNativeStress.java \
   -:tier2_gc_shenandoah
 
 hotspot_gc_shenandoah = \
