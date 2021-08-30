@@ -34,11 +34,11 @@
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/ticks.hpp"
 
-G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
-                                                                                 G1RedirtyCardsQueueSet* rdcqs) :
+G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states) :
   G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new MergePssTask(per_thread_states));
@@ -47,7 +47,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   if (RemoveSelfForwardPtrsTask::should_execute()) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(rdcqs));
+    add_parallel_task(new RemoveSelfForwardPtrsTask(per_thread_states->rdcqs()));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
 }
@@ -601,10 +601,8 @@ void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::do_work(uin
   cl.report_timing();
 }
 
-G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(PreservedMarksSet* preserved_marks_set,
-                                                                                 G1RedirtyCardsQueueSet* rdcqs,
-                                                                                 G1EvacuationInfo* evacuation_info,
-                                                                                 const size_t* surviving_young_words) :
+G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
+                                                                                 G1EvacuationInfo* evacuation_info) :
   G1BatchedGangTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new ResetHotCardCacheTask());
@@ -617,8 +615,8 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   }
 
   if (RestorePreservedMarksTask::should_execute()) {
-    add_parallel_task(new RestorePreservedMarksTask(preserved_marks_set));
+    add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
   }
-  add_parallel_task(new RedirtyLoggedCardsTask(rdcqs));
-  add_parallel_task(new FreeCollectionSetTask(evacuation_info, surviving_young_words));
+  add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs()));
+  add_parallel_task(new FreeCollectionSetTask(evacuation_info, per_thread_states->surviving_young_words()));
 }
