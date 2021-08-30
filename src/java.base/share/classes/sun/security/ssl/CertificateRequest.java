@@ -731,7 +731,7 @@ final class CertificateRequest {
             }
 
             Collection<String> checkedKeyTypes = new HashSet<>();
-            List<String> allAuths = new ArrayList<>();
+            List<String> supportedKeyTypes = new ArrayList<>();
             for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
                 if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -765,11 +765,11 @@ final class CertificateRequest {
                     }
                     continue;
                 }
-                allAuths.add(ss.keyAlgorithm);
+                supportedKeyTypes.add(ss.keyAlgorithm);
             }
 
             SSLPossession pos = X509Authentication
-                    .createPossession(hc, allAuths.toArray(String[]::new));
+                    .createPossession(hc, supportedKeyTypes.toArray(String[]::new));
             if (pos == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning("No available authentication scheme");
