@@ -368,10 +368,14 @@ class os: AllStatic {
   static void print_memory_mappings(outputStream* st);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
-  // to make the OS back the memory range with actual memory.
-  // Current implementation may not touch the last page if unaligned addresses
-  // are passed.
-  static void   pretouch_memory(void* start, void* end, size_t page_size = vm_page_size());
+  // to make the OS back the memory range with actual memory. pretouch_memory
+  // requires exclusive use of the memory range by the caller.  touch_memory
+  // permits concurrent use of the memory range by other threads, but may be
+  // slower than pretouch_memory.
+  // precondition: page_size is a power of 2.
+  // precondition: start <= end.
+  static void pretouch_memory(void* start, void* end, size_t page_size = vm_page_size());
+  static void touch_memory(void* start, void* end, size_t page_size = vm_page_size());
 
   enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
   static bool   protect_memory(char* addr, size_t bytes, ProtType prot,

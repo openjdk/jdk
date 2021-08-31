@@ -1823,13 +1823,66 @@ void os::print_memory_mappings(outputStream* st) {
   os::print_memory_mappings(nullptr, (size_t)-1, st);
 }
 
+static inline void check_touch_memory_args(void* start, void* end, size_t page_size) {
+  assert(is_power_of_2(page_size), "Invalid page size %zu", page_size);
+  assert(start <= end, "Invalid range " PTR_FORMAT " -> " PTR_FORMAT, p2i(start), p2i(end));
+}
+
+// Touching a page must perform a store.  On many OSes a load from freshly
+// committed memory will be satisfied from a single mapped page containing
+// all zeros.  We need to store something to a page to ensure it is backed
+// by its own memory.
+
+template<bool allow_concurrent_access>
+static void touch_memory_at(volatile void* p);
+
+template<>
+inline void touch_memory_at<false>(volatile void* p) {
+  // When pretouching (concurrent access disallowed), writing a zero value
+  // is sufficient.
+  *reinterpret_cast<volatile char*>(p) = 0;
+}
+
+template<>
+inline void touch_memory_at<true>(volatile void* p) {
+  assert(is_aligned(p, sizeof(int)), "precondition");
+  // For a touch while other threads may be using the memory, an atomic add
+  // of zero is used to perform a write operation without affecting the
+  // value in memory.
+  Atomic::add(reinterpret_cast<volatile int*>(p), 0, memory_order_relaxed);
+}
+
+template<bool allow_concurrent_access>
+static inline void touch_memory_impl(void* start, void* end, size_t page_size) {
+  if (start < end) {
+    // Touch up to the last page, ensuring final increment won't overflow.
+    void* last_page = align_down(reinterpret_cast<char*>(end) - 1, page_size);
+    for (char* p = reinterpret_cast<char*>(start); p < last_page; p += page_size) {
+      touch_memory_at<allow_concurrent_access>(p);
+    }
+    // Touch the last (possibly partial) page, which might also be the first.
+    touch_memory_at<allow_concurrent_access>(MAX2(start, last_page));
+  }
+}
+
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
-  for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
-    // Note: this must be a store, not a load. On many OSes loads from fresh
-    // memory would be satisfied from a single mapped page containing all zeros.
-    // We need to store something to each page to get them backed by their own
-    // memory, which is the effect we want here.
-    *p = 0;
+  check_touch_memory_args(start, end, page_size);
+  touch_memory_impl<false>(start, end, page_size);
+}
+
+void os::touch_memory(void* start, void* end, size_t page_size) {
+  check_touch_memory_args(start, end, page_size);
+  // We need to ensure the touched addresses are int-aligned because we're
+  // using "nop" atomic RMW operations to touch the pages.  This means there
+  // are a few edge cases with unaligned addresses where we won't touch some
+  // pages that overlap the original region.  Touching is a performance
+  // heuristic rather than a correctness issue, so covering every corner
+  // case isn't essential.  Requiring aligned arguments might add complexity
+  // to some callers without any significant benefit.
+  end = align_down(end, sizeof(int));
+  if (start < end) {
+    start = align_up(start, sizeof(int)); // Can't exceed end.
+    touch_memory_impl<true>(start, end, page_size);
   }
 }
 
