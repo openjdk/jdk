@@ -145,11 +145,11 @@ public class T7068451 {
             System.err.println("running Proc");
             try {
                 int len = filer.getResource(StandardLocation.SOURCE_OUTPUT, "p", "C.java").getCharContent(false).length();
-                messager.printMessage(Kind.NOTE, "C.java: found previous content of length " + len);
+                messager.printNote("C.java: found previous content of length " + len);
             } catch (FileNotFoundException | NoSuchFileException x) {
-                messager.printMessage(Kind.NOTE, "C.java: not previously there");
+                messager.printNote("C.java: not previously there");
             } catch (IOException x) {
-                messager.printMessage(Kind.ERROR, "while reading: " + x);
+                messager.printError("while reading: " + x);
             }
 
             try {
@@ -157,9 +157,9 @@ public class T7068451 {
                 Writer w = filer.createSourceFile("p.C").openWriter();
                 w.write(body);
                 w.close();
-                messager.printMessage(Kind.NOTE, "C.java: wrote new content: " + body);
+                messager.printNote("C.java: wrote new content: " + body);
             } catch (IOException x) {
-                messager.printMessage(Kind.ERROR, "while writing: " + x);
+                messager.printError("while writing: " + x);
             }
 
             return true;
@@ -171,4 +171,3 @@ public class T7068451 {
         }
     }
 }
-

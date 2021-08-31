@@ -76,12 +76,10 @@ public class TestContext extends JavacTestingAbstractProcessor {
     }
 
     <T> void check(T actual, T expected) {
-//        messager.printMessage(NOTE, "expect: " + expected);
-//        messager.printMessage(NOTE, "actual: " + actual);
-
         if (actual != expected) {
-            messager.printMessage(ERROR,
-                "round " + round + " unexpected value for " + expected.getClass().getName() + ": " + actual);
+            messager.printError("round " + round +
+                                " unexpected value for " + expected.getClass().getName() +
+                                ": " + actual);
         }
     }
 

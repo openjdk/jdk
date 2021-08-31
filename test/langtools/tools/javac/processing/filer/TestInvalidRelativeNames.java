@@ -91,12 +91,11 @@ public class TestInvalidRelativeNames extends JavacTestingAbstractProcessor {
             System.out.println("expected exception thrown: " + expected);
             return;
         } catch (Exception e) {
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "relative path: " + relative + ", kind: " + kind + ", unexpected exception: " + e);
+            messager.printError("relative path: " + relative + ", kind: " + kind +
+                                ", unexpected exception: " + e);
             return;
         }
-        messager.printMessage(Diagnostic.Kind.ERROR,
-                "relative path: " + relative + ", kind: " + kind + ", no exception thrown");
+        messager.printError("relative path: " + relative + ", kind: " + kind + ", no exception thrown");
     }
 }
 

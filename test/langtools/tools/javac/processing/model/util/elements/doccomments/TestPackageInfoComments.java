@@ -82,7 +82,7 @@ public class TestPackageInfoComments extends JavacTestingAbstractProcessor {
         @Override
         public Void visitPackage(PackageElement e, Void v) {
             if (elements.getDocComment(e) == null)
-                messager.printMessage(Diagnostic.Kind.ERROR, "doc comment is null", e);
+                messager.printError("doc comment is null", e);
             return v;
         }
     }

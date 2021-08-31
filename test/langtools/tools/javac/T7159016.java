@@ -77,7 +77,7 @@ public class T7159016 {
             if (roundEnv.processingOver() || written++ > 0) {
                 return false;
             }
-            messager.printMessage(Diagnostic.Kind.NOTE, "writing Generated.java");
+            messager.printNote("writing Generated.java");
             try {
                 Writer w = processingEnv.getFiler().createSourceFile("p.Generated").openWriter();
                 try {
@@ -86,7 +86,7 @@ public class T7159016 {
                     w.close();
                 }
             } catch (IOException x) {
-                messager.printMessage(Diagnostic.Kind.ERROR, x.toString());
+                messager.printError(x.toString());
             }
             return true;
         }

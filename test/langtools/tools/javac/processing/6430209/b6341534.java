@@ -48,7 +48,7 @@ public class b6341534 extends JavacTestingAbstractProcessor {
                     System.out.println("found " + e.toString() + " in dir1.");
             }
             catch(NullPointerException npe) {
-                messager.printMessage(ERROR,npe.toString());
+                messager.printError(npe.toString());
                 //npe.printStackTrace();
                 return false;
             }
@@ -56,9 +56,9 @@ public class b6341534 extends JavacTestingAbstractProcessor {
         // on round 1, expect errorRaised == false && processingOver == false
         // on round 2, expect errorRaised == true && processingOver == true
         if( renv.errorRaised() != renv.processingOver()) {
-            messager.printMessage(ERROR, "FAILED: round:" + r
-                + ", errorRaised:" + renv.errorRaised()
-                + ", processingOver:" + renv.processingOver());
+            messager.printError("FAILED: round:" + r
+                                + ", errorRaised:" + renv.errorRaised()
+                                + ", processingOver:" + renv.processingOver());
         }
         return true;
     }

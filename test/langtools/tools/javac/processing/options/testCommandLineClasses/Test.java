@@ -101,7 +101,7 @@ public class Test extends JavacTestingAbstractProcessor {
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
             for (TypeElement typeElt : ElementFilter.typesIn(roundEnv.getRootElements())) {
-                messager.printMessage(Diagnostic.Kind.NOTE, "processing " + typeElt);
+                messager.printNote("processing " + typeElt);
             }
         }
         return true;

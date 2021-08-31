@@ -149,7 +149,7 @@ public class ErrClassSymbolTypeFixed extends TestRunner {
                         out.write(B_JAVA);
                     }
                 } catch (IOException e) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "problem writing file: " + e);
+                    messager.printError("problem writing file: " + e);
                 }
             }
         }

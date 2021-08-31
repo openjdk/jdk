@@ -56,7 +56,7 @@ public class T6424358 extends JavacTestingAbstractProcessor {
                 System.err.println("Looking at " + e);
                 if ("values".contentEquals(e.getSimpleName()) &&
                     e.getModifiers().contains(Modifier.FINAL)) {
-                    log.printMessage(ERROR, "final modifier on values()", e);
+                    log.printError("final modifier on values()", e);
                     throw new AssertionError("final modifier on values()"); // See bug 6403468
                 }
                 return null;

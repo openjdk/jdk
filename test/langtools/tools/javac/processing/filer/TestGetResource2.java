@@ -128,14 +128,14 @@ public class TestGetResource2 {
                 FileObject resource = filer.getResource(StandardLocation.SOURCE_PATH, "resources", "file.txt");
                 try {
                     resource.openInputStream().close();
-                    messager.printMessage(Kind.NOTE, "found: " + resource.toUri());
+                    messager.printNote("found: " + resource.toUri());
                     return true;
                 } catch (IOException x) {
-                    messager.printMessage(Kind.ERROR, "could not read: " + resource.toUri());
+                    messager.printError("could not read: " + resource.toUri());
                     x.printStackTrace();
                 }
             } catch (IOException x) {
-                messager.printMessage(Kind.ERROR, "did not find resource");
+                messager.printError("did not find resource");
                 x.printStackTrace();
             }
 

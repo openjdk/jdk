@@ -150,10 +150,9 @@ public class T7031108 extends JavacTestingAbstractProcessor {
             List<? extends Element> elems = p.getEnclosedElements();
             System.err.println("contents of package p: " + elems);
             if (elems.size() != 1 || !elems.get(0).getSimpleName().contentEquals("C")) {
-                messager.printMessage(Diagnostic.Kind.ERROR, PACKAGE_CONTENT_ERROR);
+                messager.printError(PACKAGE_CONTENT_ERROR);
             }
         }
         return true;
     }
 }
-

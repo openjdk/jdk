@@ -104,26 +104,26 @@ public class T7068437 {
 
             boolean found;
             try {
-                messager.printMessage(Kind.NOTE, "found previous content of length " +
+                messager.printNote("found previous content of length " +
                         filer.getResource(StandardLocation.SOURCE_OUTPUT, "p", "C.java").getCharContent(false).length());
                 found = true;
             } catch (FileNotFoundException | NoSuchFileException x) {
-                messager.printMessage(Kind.NOTE, "not previously there");
+                messager.printNote("not previously there");
                 found = false;
             } catch (IOException x) {
-                messager.printMessage(Kind.ERROR, "while reading: " + x);
+                messager.printError("while reading: " + x);
                 found = false;
             }
 
             if (expectFile && !found) {
-                messager.printMessage(Kind.ERROR, "expected file but file not found");
+                messager.printError("expected file but file not found");
             }
 
             try {
                 Writer w = filer.createSourceFile("p.C").openWriter();
                 w.write("/* hello! */ package p; class C {}");
                 w.close();
-                messager.printMessage(Kind.NOTE, "wrote new content");
+                messager.printNote("wrote new content");
             } catch (IOException x) {
                 messager.printMessage(Kind.ERROR, "while writing: " + x);
             }

@@ -278,8 +278,8 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
                 f4.getNestingKind();
                 f4.getAccessLevel();
 
-                messager.printMessage(Diagnostic.Kind.NOTE, "informational note",
-                        roundEnv.getRootElements().iterator().next());
+                messager.printNote("informational note",
+                                   roundEnv.getRootElements().iterator().next());
 
             } catch (IOException e) {
                 throw new UserError(e);

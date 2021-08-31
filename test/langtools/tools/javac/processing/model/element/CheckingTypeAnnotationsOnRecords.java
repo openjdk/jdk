@@ -290,7 +290,7 @@ public class CheckingTypeAnnotationsOnRecords extends TestRunner {
         }
 
         private void error(String text) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, text);
+            processingEnv.getMessager().printError(text);
         }
     }
 }

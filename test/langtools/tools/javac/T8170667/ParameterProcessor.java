@@ -86,7 +86,7 @@ public class ParameterProcessor extends JavacTestingAbstractProcessor {
                         String.format(
                                 "bad parameter names for %s#%s; expected: %s, was: %s",
                                 element, element, expected, actual);
-                messager.printMessage(Kind.ERROR, message);
+                messager.printError(message);
             }
         }
         return false;

@@ -101,7 +101,7 @@ public class TestProcessor extends AbstractProcessor {
     /** Report an error to the annotation processing system. */
     void error(String msg) {
         Messager messager = processingEnv.getMessager();
-        messager.printMessage(Diagnostic.Kind.ERROR, msg);
+        messager.printError(msg);
     }
 
     /** Report an error to the annotation processing system. */
@@ -109,7 +109,7 @@ public class TestProcessor extends AbstractProcessor {
         // need better API for reporting tree position errors to the messager
         Messager messager = processingEnv.getMessager();
         String text = file.getName() + ":" + getLine(file, tree) + ": " + msg;
-        messager.printMessage(Diagnostic.Kind.ERROR, text);
+        messager.printError(text);
     }
 
     /** Get the line number for the primary position for a tree.

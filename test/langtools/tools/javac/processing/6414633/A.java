@@ -32,7 +32,7 @@ public class A extends JavacTestingAbstractProcessor {
         Messager m = processingEnv.getMessager();
         for (TypeElement anno: annotations) {
             for (Element e: roundEnv.getElementsAnnotatedWith(anno))
-                m.printMessage(Diagnostic.Kind.ERROR, "test", e);
+                m.printError("test", e);
 
         }
         return true;

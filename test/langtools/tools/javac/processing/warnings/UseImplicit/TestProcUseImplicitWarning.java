@@ -52,7 +52,7 @@ public class TestProcUseImplicitWarning extends JavacTestingAbstractProcessor {
         if (round == 1) {
             boolean error = options.containsKey("error");
             if (error)
-                messager.printMessage(ERROR, "error generated per option");
+                messager.printError("error generated per option");
         }
 
         return false;

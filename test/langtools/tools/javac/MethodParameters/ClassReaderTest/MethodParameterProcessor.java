@@ -52,7 +52,7 @@ public class MethodParameterProcessor extends JavacTestingAbstractProcessor {
         for (Element element : roundEnv.getElementsAnnotatedWith(ParameterNames.class)) {
             ExecutableElement exec = (ExecutableElement)element;
             String message = printNamesAndAnnotations(exec);
-            messager.printMessage(Kind.NOTE, message);
+            messager.printNote(message);
         }
         return false;
     }

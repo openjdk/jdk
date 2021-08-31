@@ -61,8 +61,7 @@ public class TestSourceVersionWarnings extends AbstractProcessor {
     public SourceVersion getSupportedSourceVersion() {
         String sourceVersion = processingEnv.getOptions().get("SourceVersion");
         if (sourceVersion == null) {
-            processingEnv.getMessager().printMessage(WARNING,
-                                                     "No SourceVersion option given");
+            processingEnv.getMessager().printWarning("No SourceVersion option given");
             return SourceVersion.RELEASE_8;
         } else {
             return SourceVersion.valueOf(sourceVersion);

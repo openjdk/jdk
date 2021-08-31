@@ -136,10 +136,10 @@ public class JavaxLangModelForRecords extends TestRunner {
 
             for (TypeElement clazz : ElementFilter.typesIn(roundEnv.getRootElements())) {
                 for (VariableElement field : ElementFilter.fieldsIn(clazz.getEnclosedElements())) {
-                    messager.printMessage(Kind.NOTE, "field: " + field.getSimpleName());
+                    messager.printNote("field: " + field.getSimpleName());
                 }
                 for (RecordComponentElement rc : ElementFilter.recordComponentsIn(clazz.getEnclosedElements())) {
-                    messager.printMessage(Kind.NOTE, "record component: " + rc.getSimpleName());
+                    messager.printNote("record component: " + rc.getSimpleName());
                 }
             }
 

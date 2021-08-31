@@ -46,7 +46,7 @@ public class HelloWorldAP extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv ) {
         boolean ret = true;
         if(!renv.processingOver() && !DONE) {
-            msgr.printMessage(NOTE, "running process to create HelloWorld.");
+            msgr.printNote("running process to create HelloWorld.");
             try {
                 Writer pw = filer.createSourceFile("HelloWorld").openWriter();
                 pw.write("public class HelloWorld {\n");
@@ -67,11 +67,11 @@ public class HelloWorldAP extends AbstractProcessor {
                 DONE=true;
             }
             catch (IOException ioe) {
-                msgr.printMessage(ERROR, ioe.getMessage());
+                msgr.printError(ioe.getMessage());
                 ret = false;
             }
             catch (Exception e) {
-                msgr.printMessage(ERROR, e.getMessage());
+                msgr.printError(e.getMessage());
                 ret = false;
             }
         }

@@ -42,7 +42,7 @@ public class NewlineOnlyDiagnostic extends JavacTestingAbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> types,RoundEnvironment rEnv) {
-        processingEnv.getMessager().printMessage(Kind.NOTE,"\n");
+        processingEnv.getMessager().printNote("\n");
         return true;
     }
 }

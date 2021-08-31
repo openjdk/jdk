@@ -83,12 +83,12 @@ public class TestReturnCode extends JavacTestingAbstractProcessor {
                               exceptionOnFirst,
                               exceptionOnLast);
             if (errorOnFirst)
-                messager.printMessage(ERROR, "Error on first round.");
+                messager.printError("Error on first round.");
             if (exceptionOnFirst)
                 throw new RuntimeException("Exception on first round.");
         } else {
             if (errorOnLast)
-                messager.printMessage(ERROR, "Error on last round.");
+                messager.printError("Error on last round.");
             if (exceptionOnLast)
                 throw new RuntimeException("Exception on last round.");
         }

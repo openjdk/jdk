@@ -48,7 +48,7 @@ public class StopAfterError extends JavacTestingAbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (roundEnv.processingOver()) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, "Stop!");
+            processingEnv.getMessager().printError("Stop!");
         }
         return false;
     }

@@ -72,9 +72,9 @@ public class MessagerDiags extends AbstractProcessor {
                            RoundEnvironment roundEnv) {
         Messager messager = processingEnv.getMessager();
         for (Element e : roundEnv.getRootElements()) {
-            messager.printMessage(WARNING, WRN_NO_SOURCE);
-            messager.printMessage(WARNING, WRN_WITH_SOURCE, e);
-            messager.printMessage(WARNING, WRN_NO_SOURCE);
+            messager.printWarning(WRN_NO_SOURCE);
+            messager.printWarning(WRN_WITH_SOURCE, e);
+            messager.printWarning(WRN_NO_SOURCE);
         }
         return false;
     }

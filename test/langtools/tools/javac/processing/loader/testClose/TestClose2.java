@@ -122,7 +122,7 @@ public class TestClose2 extends AbstractProcessor implements TaskListener {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Messager messager = processingEnv.getMessager();
-        messager.printMessage(Diagnostic.Kind.NOTE, "processing");
+        messager.printNote("processing");
         return true;
     }
 

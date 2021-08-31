@@ -36,7 +36,7 @@ public class TestProcessor extends JavacTestingAbstractProcessor {
    public boolean process(Set<? extends TypeElement> annotations,
                   RoundEnvironment roundEnv) {
         if (++round == 1) {
-            messager.printMessage(ERROR, "Deliberate Error");
+            messager.printError("Deliberate Error");
             Trees trees = Trees.instance(processingEnv);
             TreePath elPath = trees.getPath(roundEnv.getRootElements().iterator().next());
             trees.printMessage(ERROR, "Deliberate Error on Trees",

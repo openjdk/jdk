@@ -453,7 +453,7 @@ public class T6920317 {
         /** Report an error to the annotation processing system. */
         void error(String msg) {
             Messager messager = processingEnv.getMessager();
-            messager.printMessage(Diagnostic.Kind.ERROR, msg);
+            messager.printError(msg);
         }
 
         int round;

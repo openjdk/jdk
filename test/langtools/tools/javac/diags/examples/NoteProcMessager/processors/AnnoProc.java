@@ -31,8 +31,7 @@ import javax.tools.*;
 public class AnnoProc extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
         if (renv.processingOver()) {
-            Messager m = processingEnv.getMessager();
-            m.printMessage(Diagnostic.Kind.NOTE, "Note!");
+            processingEnv.getMessager().printNote("Note!");
         }
         return true;
     }

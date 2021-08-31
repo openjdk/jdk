@@ -40,7 +40,7 @@ public class AnnoProc extends AbstractProcessor {
                 out.write("class Gen { }");
                 out.close();
             } catch (IOException e) {
-                messager.printMessage(Diagnostic.Kind.ERROR, e.toString());
+                messager.printError(e.toString());
             }
         }
         return true;

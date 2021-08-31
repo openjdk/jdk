@@ -89,7 +89,7 @@ public class T6439826 extends AbstractProcessor {
             out.write("class Foo #"); // write a file that generates a scanner error
             out.close();
         } catch (IOException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, e.toString());
+            messager.printError(e.toString());
         }
     }
 

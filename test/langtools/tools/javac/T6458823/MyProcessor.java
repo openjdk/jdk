@@ -40,8 +40,7 @@ public class MyProcessor extends AbstractProcessor {
             for(TypeElement e : ElementFilter.typesIn(renv.getRootElements())) {
                 for (TypeParameterElement tp : e.getTypeParameters()) {
                     if (tp.getSimpleName().toString().length() > 1) {
-                        messager.printMessage(WARNING,
-                            "Type param names should be of length 1", tp);
+                        messager.printWarning("Type param names should be of length 1", tp);
                     }
                 }
             }

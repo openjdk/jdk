@@ -65,9 +65,8 @@ public class TestAnonSourceNames extends JavacTestingAbstractProcessor {
        public Void visitClass(ClassTree node, CompilationUnitTree cu) {
                      Element element = trees.getElement(trees.getPath(cu, node));
            if (element == null) {
-               processingEnv.getMessager().printMessage(ERROR,
-                                                        "No element retrieved for node named ''" +
-                                                        node.getSimpleName() + "''.");
+               processingEnv.getMessager().printError("No element retrieved for node named ''" +
+                                                      node.getSimpleName() + "''.");
            } else {
 
                System.out.println("\nVisiting class ``" + element.getSimpleName() +

@@ -90,7 +90,7 @@ public class OverwriteBetweenCompilations extends JavacTestingAbstractProcessor 
                 code = code.replace("NAME", "GeneratedSource");
                 out.write(code);
             } catch (IOException e) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.toString());
+                processingEnv.getMessager().printError(e.toString());
             }
             try (OutputStream out = filer.createClassFile("GeneratedClass").openOutputStream()) {
                 String code = pass != 2 ? GENERATED_INIT : GENERATED_UPDATE;
@@ -106,7 +106,7 @@ public class OverwriteBetweenCompilations extends JavacTestingAbstractProcessor 
 
                 out.write(mfm.getFileBytes(StandardLocation.CLASS_OUTPUT, "GeneratedClass"));
             } catch (IOException e) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.toString());
+                processingEnv.getMessager().printError(e.toString());
             }
         }
 

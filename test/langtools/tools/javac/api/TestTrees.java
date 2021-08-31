@@ -193,7 +193,7 @@ public class TestTrees extends AbstractProcessor {
         if (messager != null)
             // annotation processing will happen in a separate instance/classloader
             // so pass the message back to the calling instance.
-            messager.printMessage(Diagnostic.Kind.ERROR, msg);
+            messager.printError(msg);
         else {
             System.err.println(msg);
             errors++;

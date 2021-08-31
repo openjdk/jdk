@@ -43,7 +43,7 @@ public class AnnoProc extends AbstractProcessor {
                 FileObject fo2 = filer.createResource(
                     StandardLocation.CLASS_OUTPUT, "", "HelloWorld.txt");
             } catch (IOException e) {
-                messager.printMessage(Diagnostic.Kind.ERROR, e.toString());
+                messager.printError(e.toString());
             }
         }
         return false;

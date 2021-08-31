@@ -121,10 +121,9 @@ public class T7018098 extends JavacTestingAbstractProcessor {
 
     <T> void checkEqual(String label, T actual, T expected) {
         if (actual != expected)
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "Unexpected value for " + label
-                    + "; expected: " + expected
-                    + "; found: " + actual);
+            messager.printError("Unexpected value for " + label
+                                + "; expected: " + expected
+                                + "; found: " + actual);
     }
 
     int round = 0;

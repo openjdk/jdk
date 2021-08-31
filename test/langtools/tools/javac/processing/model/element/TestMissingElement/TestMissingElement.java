@@ -101,7 +101,7 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
             out.println("unexpected " + label + ": " + te + "\n"
                     + " found: " + found + "\n"
                     + "expect: " + expect);
-            messager.printMessage(ERROR, "unexpected " + label + " found: " + found + "; expected: " + expect, te);
+            messager.printError("unexpected " + label + " found: " + found + "; expected: " + expect, te);
         }
     }
 

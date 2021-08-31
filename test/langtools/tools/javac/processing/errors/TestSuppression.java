@@ -236,7 +236,7 @@ public class TestSuppression {
                 out.write(text);
                 out.close();
             } catch (IOException e) {
-                m.printMessage(Diagnostic.Kind.ERROR, e.toString());
+                m.printError(e.toString());
             }
         }
 

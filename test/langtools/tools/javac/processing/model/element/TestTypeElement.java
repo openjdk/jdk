@@ -48,7 +48,7 @@ public class TestTypeElement extends JavacTestingAbstractProcessor {
             for (Element element : roundEnv.getRootElements()) {
                 if (element.getKind().isClass() || element.getKind().isInterface()) {
                     if (element.getModifiers().contains(Modifier.DEFAULT))
-                        messager.printMessage(ERROR, "Modifier.DEFAULT not expected on classes/interfaces");
+                        messager.printError("Modifier.DEFAULT not expected on classes/interfaces");
                 }
             }
         }

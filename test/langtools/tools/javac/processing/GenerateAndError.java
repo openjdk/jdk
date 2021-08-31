@@ -50,7 +50,7 @@ public class GenerateAndError extends JavacTestingAbstractProcessor {
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
-            processingEnv.getMessager().printMessage(Kind.ERROR, "error");
+            processingEnv.getMessager().printError("error");
         }
         return false;
     }

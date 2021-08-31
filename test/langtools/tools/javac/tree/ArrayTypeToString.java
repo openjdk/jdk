@@ -67,7 +67,7 @@ public class ArrayTypeToString extends JavacTestingAbstractProcessor {
                 s = s.replaceAll("\\s", "");
 
                 // Expected: "@Foo(0)java.lang.String@Foo(3)[]@Foo(2)[]@Foo(1)[]"
-                processingEnv.getMessager().printMessage(Kind.NOTE, s);
+                processingEnv.getMessager().printNote(s);
             }
         }
         return true;

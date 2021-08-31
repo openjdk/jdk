@@ -87,7 +87,7 @@ public class Generator extends JavacTestingAbstractProcessor {
                 out.close();
             }
         } catch (IOException ex) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "problem writing file: " + ex);
+            messager.printError("problem writing file: " + ex);
         }
     }
 

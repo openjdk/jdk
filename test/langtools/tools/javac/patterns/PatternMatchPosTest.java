@@ -86,8 +86,7 @@ public class PatternMatchPosTest extends AbstractProcessor {
                         int start = (int) sp.getStartPosition(dataPath.getCompilationUnit(), tree);
                         int end = (int) sp.getEndPosition(dataPath.getCompilationUnit(), tree);
                         if (start != (-1) || end != (-1)) {
-                            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
-                                                                     text.substring(start, end));
+                            processingEnv.getMessager().printNote(text.substring(start, end));
                         }
                     }
                     return super.scan(tree, p);

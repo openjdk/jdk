@@ -122,7 +122,7 @@ public class ClassProcessor extends JavacTestingAbstractProcessor {
     }
 
     private void error(String msg) {
-        messager.printMessage(Kind.ERROR, msg);
+        messager.printError(msg);
     }
 }
 

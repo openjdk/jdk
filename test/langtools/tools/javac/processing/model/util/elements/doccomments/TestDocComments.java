@@ -255,10 +255,9 @@ public class TestDocComments extends JavacTestingAbstractProcessor {
             return;
 
         if (dc == null)
-            messager.printMessage(Diagnostic.Kind.ERROR, "doc comment is null", e);
+            messager.printError("doc comment is null", e);
         else {
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "unexpected comment: \"" + dc + "\", expected \"" + expect + "\"", e);
+            messager.printError("unexpected comment: \"" + dc + "\", expected \"" + expect + "\"", e);
         }
     }
 

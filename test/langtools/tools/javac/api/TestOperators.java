@@ -328,7 +328,7 @@ public class TestOperators extends JavacTestingAbstractProcessor {
                         testNode = returnNode.getExpression();
                     }
                     if (testNode.getKind() != kind) {
-                        log.printMessage(ERROR, testNode.getKind() + " != " + kind, e);
+                        log.printError(testNode.getKind() + " != " + kind, e);
                         throw new AssertionError(testNode);
                     }
                     System.err.format("OK: %32s %s%n", kind, testNode);

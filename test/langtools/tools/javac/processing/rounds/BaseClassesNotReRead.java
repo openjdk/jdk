@@ -93,7 +93,7 @@ public class BaseClassesNotReRead extends AbstractProcessor {
             out.write(code);
             out.close();
         } catch (IOException e) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.toString());
+            processingEnv.getMessager().printError(e.toString());
         }
     }
 

@@ -310,10 +310,10 @@ public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
     }
 
     private void error(String text) {
-        processingEnv.getMessager().printMessage(Kind.ERROR, text);
+        processingEnv.getMessager().printError(text);
     }
 
     private void note(String text) {
-        processingEnv.getMessager().printMessage(Kind.NOTE, text);
+        processingEnv.getMessager().printNote(text);
     }
 }

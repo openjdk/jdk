@@ -185,22 +185,20 @@ public class CheckingAccessorsOnLoadedRecordClasses extends TestRunner {
 
             if (recordComponents.isEmpty()) {
                 processingEnv.getMessager()
-                        .printMessage(Diagnostic.Kind.ERROR, "Record element " + recordElement.getQualifiedName()
-                                + " has no record components");
+                        .printError("Record element " + recordElement.getQualifiedName()
+                                    + " has no record components");
             } else {
                 for (RecordComponentElement recordComponent : recordComponents) {
                     ExecutableElement accessor = recordComponent.getAccessor();
                     if (accessor == null) {
                         processingEnv.getMessager()
-                                .printMessage(Diagnostic.Kind.ERROR,
-                                        "Record component " + recordComponent.getSimpleName() + " from record " + recordElement
-                                                .getQualifiedName() + " has no accessor");
+                                .printError("Record component " + recordComponent.getSimpleName() + " from record " + recordElement
+                                            .getQualifiedName() + " has no accessor");
                     }
                     if (!accessor.getSimpleName().equals(recordComponent.getSimpleName())) {
                         processingEnv.getMessager()
-                                .printMessage(Diagnostic.Kind.ERROR,
-                                        "Record component " + recordComponent.getSimpleName() + " from record " +
-                                                recordElement.getQualifiedName() + " has an accessor with name " + accessor.getSimpleName());
+                                .printError("Record component " + recordComponent.getSimpleName() + " from record " +
+                                            recordElement.getQualifiedName() + " has an accessor with name " + accessor.getSimpleName());
                     }
                 }
             }

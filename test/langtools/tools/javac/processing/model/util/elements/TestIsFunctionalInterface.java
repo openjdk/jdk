@@ -57,14 +57,13 @@ public class TestIsFunctionalInterface extends JavacTestingAbstractProcessor {
                 System.out.println(type);
                 if (elements.isFunctionalInterface(type) !=
                     type.getAnnotation(ExpectedIsFunInt.class).value()) {
-                    messager.printMessage(ERROR,
-                                          "Mismatch between expected and computed isFunctionalInterface",
-                                          type);
+                    messager.printError("Mismatch between expected and computed isFunctionalInterface",
+                                        type);
                 }
             }
         } else {
             if (count <= 0)
-                messager.printMessage(ERROR, "No types with ExpectedIsFunInt processed.");
+                messager.printError("No types with ExpectedIsFunInt processed.");
             }
     return true;
     }

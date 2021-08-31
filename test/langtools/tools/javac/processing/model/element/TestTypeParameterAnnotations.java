@@ -148,19 +148,19 @@ public class TestTypeParameterAnnotations<@Foo1 @Bar1 @Baz1 T1, T2, @Foo2 @Bar2 
     }
 
     void note(String msg) {
-        messager.printMessage(Diagnostic.Kind.NOTE, msg);
+        messager.printNote(msg);
     }
 
     void note(String msg, Element e) {
-        messager.printMessage(Diagnostic.Kind.NOTE, msg, e);
+        messager.printNote(msg, e);
     }
 
     void error(String msg, Element e) {
-        messager.printMessage(Diagnostic.Kind.ERROR, msg, e);
+        messager.printError(msg, e);
     }
 
     void error(String msg) {
-        messager.printMessage(Diagnostic.Kind.ERROR, msg);
+        messager.printError(msg);
     }
 
     Class<? extends Annotation>[] ALL_ANNOTATIONS = new Class[] {
