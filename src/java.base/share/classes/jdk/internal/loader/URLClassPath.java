@@ -333,6 +333,13 @@ public class URLClassPath {
                                      final boolean check) {
         return new Enumeration<>() {
             private int index = 0;
+            // the below three variables are kept in sync with index,
+            // and used by JarLoader with JarIndex
+            private boolean firstInLoader = true;
+            private HashSet<String> visitedInLoader = null;
+            private int[] indexCount = null;
+            private URL urlWithIndex = null;
+
             private URL url = null;
 
             private boolean next() {
@@ -340,10 +347,52 @@ public class URLClassPath {
                     return true;
                 } else {
                     Loader loader;
-                    while ((loader = getLoader(index++)) != null) {
-                        url = loader.findResource(name, check);
-                        if (url != null) {
-                            return true;
+                    while ((loader = getLoader(index)) != null) {
+                        if (loader instanceof JarLoader) {
+                            JarLoader jarLoader = (JarLoader) loader;
+                            JarIndex jarIndex = jarLoader.getIndex();
+                            if (jarIndex == null) {
+                                index++;
+                                url = loader.findResource(name, check);
+                                if (url != null) {
+                                    return true;
+                                }
+                            } else {
+                                if (firstInLoader) {
+                                    // Get resource from the jar file corresponding to the JarLoader
+                                    url = jarLoader.findResource(name, check, true);
+                                    visitedInLoader = new HashSet<>();
+                                    firstInLoader = false;
+                                    indexCount = new int[1];
+                                    indexCount[0] = 0;
+                                    if (url != null) {
+                                        urlWithIndex = url;
+                                        return true;
+                                    }
+                                }
+                                // Get resource through jarIndex
+                                url = jarLoader.findResource(name, check, visitedInLoader, indexCount);
+                                if (url != null) {
+                                    // ignore the jar with index
+                                    if (indexCount[0] == 1 && urlWithIndex != null && url.sameFile(urlWithIndex) == true) {
+                                        urlWithIndex = null;
+                                        continue;
+                                    }
+                                    return true;
+                                }
+                                index++;
+                                // reinitialize the below variables when using the new loader
+                                firstInLoader = true;
+                                indexCount = null;
+                                visitedInLoader = null;
+                                urlWithIndex = null;
+                            }
+                        } else {
+                            index++;
+                            url = loader.findResource(name, check);
+                            if (url != null) {
+                                return true;
+                            }
                         }
                     }
                     return false;
@@ -926,11 +975,31 @@ public class URLClassPath {
             return null;
         }
 
+        URL findResource(final String name, boolean check, boolean ignoreIndex) {
+            Resource rsc = getResource(name, check, ignoreIndex);
+            if (rsc != null) {
+                return rsc.getURL();
+            }
+            return null;
+        }
+
+        URL findResource(final String name, boolean check, Set<String> visited, int[] indexCount) {
+            Resource rsc = getResource(name, check, visited, true, indexCount);
+            if (rsc != null) {
+                return rsc.getURL();
+            }
+            return null;
+        }
         /*
          * Returns the JAR Resource for the specified name.
          */
         @Override
         Resource getResource(final String name, boolean check) {
+            return getResource(name, check, false);
+        }
+
+
+        Resource getResource(final String name, boolean check, boolean ignoreIndex) {
             try {
                 ensureOpen();
             } catch (IOException e) {
@@ -942,6 +1011,10 @@ public class URLClassPath {
 
             if (index == null)
                 return null;
+
+            if (ignoreIndex) {
+                return null;
+            }
 
             HashSet<String> visited = new HashSet<>();
             return getResource(name, check, visited);
@@ -957,9 +1030,15 @@ public class URLClassPath {
         @SuppressWarnings("removal")
         Resource getResource(final String name, boolean check,
                              Set<String> visited) {
+            return getResource(name, check, visited, false, null);
+        }
+
+        @SuppressWarnings("removal")
+        Resource getResource(final String name, boolean check,
+                             Set<String> visited, boolean noRecursion, int[] indexCount) {
             Resource res;
             String[] jarFiles;
-            int count = 0;
+            int count = indexCount != null ? indexCount[0] : 0;
             List<String> jarFilesList;
 
             /* If there no jar files in the index that can potential contain
@@ -1024,6 +1103,9 @@ public class URLClassPath {
                         }
                         final JarEntry entry = newLoader.jar.getJarEntry(name);
                         if (entry != null) {
+                            if (indexCount != null) {
+                                indexCount[0] = count;
+                            } 
                             return newLoader.checkResource(name, check, entry);
                         }
 
@@ -1043,7 +1125,7 @@ public class URLClassPath {
                      * and move on to the next loader.
                      */
                     if (visitedURL || newLoader == this ||
-                            newLoader.getIndex() == null) {
+                            newLoader.getIndex() == null || noRecursion) {
                         continue;
                     }
 
