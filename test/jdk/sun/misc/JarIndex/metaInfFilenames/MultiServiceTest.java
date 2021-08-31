@@ -52,7 +52,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * Verifies that multiple services are loaded with JarIndex 
+ * Verifies that multiple services are loaded with JarIndex
  *
  * 1) Compile the test sources:
  *   jarA:
@@ -131,7 +131,7 @@ public class MultiServiceTest {
         jar("-cf", testClassesDir + slash + "c.jar",
             "-C", testClassesDir, "my",
             "-C", testSrcDir + slash + "jarC", "META-INF");
-	jar("-cf", testClassesDir + slash + "d.jar",
+        jar("-cf", testClassesDir + slash + "d.jar",
             "-C", testClassesDir, "se",
             "-C", testSrcDir + slash + "jarD", "META-INF");
 

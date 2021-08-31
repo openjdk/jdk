@@ -44,8 +44,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 /**
- * Verifies the fix for 6957241: ClassLoader.getResources() returns only 1 
- * instance when using jar indexing 
+ * Verifies the fix for 6957241: ClassLoader.getResources() returns only 1
+ * instance when using jar indexing
  *
  * 1) Compile the test sources:
  *   jarE:
@@ -182,9 +182,9 @@ public class MultiSameFileTest {
                 while((line = reader.readLine()) != null)
                     output += line;
 
-		debug(output);
+                debug(output);
 
-		if (output.contains("There are 2 resouce files") == false) {
+                if (output.contains("There are 2 resouce files") == false) {
                     throw new RuntimeException("can't get the 2 instances.");
                 }
 

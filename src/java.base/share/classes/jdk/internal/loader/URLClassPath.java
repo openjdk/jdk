@@ -1105,7 +1105,7 @@ public class URLClassPath {
                         if (entry != null) {
                             if (indexCount != null) {
                                 indexCount[0] = count;
-                            } 
+                            }
                             return newLoader.checkResource(name, check, entry);
                         }
 
