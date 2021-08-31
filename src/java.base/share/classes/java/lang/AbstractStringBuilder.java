@@ -349,10 +349,11 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     @Override
     public char charAt(int index) {
+        checkIndex(index, count);
         if (isLatin1()) {
-            return StringLatin1.charAt(value, index);
+            return (char)(value[index] & 0xff);
         }
-        return StringUTF16.charAt(value, index);
+        return StringUTF16.getChar(value, index);
     }
 
     /**
@@ -602,9 +603,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
         int len = asb.length();
         ensureCapacityInternal(count + len);
-        if (getCoder() != asb.getCoder()) {
-            inflate();
-        }
+        inflateIfNeededFor(asb);
         asb.getBytes(value, count, coder);
         count += len;
         return this;
@@ -1711,15 +1710,26 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
     }
 
-    private void putStringAt(int index, String str, int off, int end) {
-        if (getCoder() != str.coder()) {
+    private void inflateIfNeededFor(String input) {
+        if (COMPACT_STRINGS && (coder != input.coder())) {
             inflate();
         }
+    }
+
+    private void inflateIfNeededFor(AbstractStringBuilder input) {
+        if (COMPACT_STRINGS && (coder != input.getCoder())) {
+            inflate();
+        }
+    }
+
+    private void putStringAt(int index, String str, int off, int end) {
+        inflateIfNeededFor(str);
         str.getBytes(value, off, index, coder, end - off);
     }
 
     private void putStringAt(int index, String str) {
-        putStringAt(index, str, 0, str.length());
+        inflateIfNeededFor(str);
+        str.getBytes(value, index, coder);
     }
 
     private final void appendChars(char[] s, int off, int end) {

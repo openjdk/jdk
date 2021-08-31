@@ -880,17 +880,16 @@ ciKlass* ciMethod::get_declared_method_holder_at_bci(int bci) {
 // invocation counts in methods.
 int ciMethod::scale_count(int count, float prof_factor) {
   if (count > 0 && method_data() != NULL) {
-    int counter_life;
+    int counter_life = method_data()->invocation_count();
     int method_life = interpreter_invocation_count();
-    // In tiered the MDO's life is measured directly, so just use the snapshotted counters
-    counter_life = MAX2(method_data()->invocation_count(), method_data()->backedge_count());
-
-    // counter_life due to backedge_counter could be > method_life
-    if (counter_life > method_life)
-      counter_life = method_life;
-    if (0 < counter_life && counter_life <= method_life) {
+    if (method_life < counter_life) { // may happen because of the snapshot timing
+      method_life = counter_life;
+    }
+    if (counter_life > 0) {
       count = (int)((double)count * prof_factor * method_life / counter_life + 0.5);
       count = (count > 0) ? count : 1;
+    } else {
+      count = 1;
     }
   }
   return count;

@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -48,16 +49,20 @@ public class Longs {
     @Param("500")
     private int size;
 
+    private String[] strings;
     private long[] longArraySmall;
     private long[] longArrayBig;
 
     @Setup
     public void setup() {
+        var random = ThreadLocalRandom.current();
+        strings = new String[size];
         longArraySmall = new long[size];
         longArrayBig = new long[size];
         for (int i = 0; i < size; i++) {
+            strings[i] = "" + (random.nextLong(10000) - 5000);
             longArraySmall[i] = 100L * i + i + 103L;
-            longArrayBig[i] = ((100L * i + i) << 32) + 4543 + i * 4;
+            longArrayBig[i] = ((100L * i + i) << 32) + 4543 + i * 4L;
         }
     }
 
@@ -66,6 +71,13 @@ public class Longs {
     public void toStringSmall(Blackhole bh) {
         for (long value : longArraySmall) {
             bh.consume(Long.toString(value));
+        }
+    }
+
+    @Benchmark
+    public void decode(Blackhole bh) {
+        for (String s : strings) {
+            bh.consume(Long.decode(s));
         }
     }
 

@@ -239,7 +239,7 @@ class PKIX {
             if (stores == null) {
                 // reorder CertStores so that local CertStores are tried first
                 stores = new ArrayList<>(params.getCertStores());
-                Collections.sort(stores, new CertStoreComparator());
+                stores.sort(new CertStoreComparator());
             }
             return stores;
         }

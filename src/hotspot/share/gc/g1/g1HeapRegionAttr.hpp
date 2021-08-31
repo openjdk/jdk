@@ -39,6 +39,8 @@ public:
 #else
   typedef int8_t region_type_t;
 #endif
+  // _needs_remset_update_t is essentially bool, but we need precise control
+  // on the size, and sizeof(bool) is implementation specific.
   typedef uint8_t needs_remset_update_t;
 
 private:

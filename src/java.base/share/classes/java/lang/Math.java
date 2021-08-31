@@ -1308,7 +1308,7 @@ public final class Math {
      * @param x the dividend
      * @param y the divisor
      * @return the largest (closest to positive infinity)
-     * {@code int} value that is less than or equal to the algebraic quotient.
+     * {@code long} value that is less than or equal to the algebraic quotient.
      * @throws ArithmeticException if the divisor {@code y} is zero
      * @see #floorMod(long, int)
      * @see #floor(double)
@@ -1394,7 +1394,7 @@ public final class Math {
     public static int floorMod(int x, int y) {
         int mod = x % y;
         // if the signs are different and modulo not zero, adjust result
-        if ((mod ^ y) < 0 && mod != 0) {
+        if ((x ^ y) < 0 && mod != 0) {
             mod += y;
         }
         return mod;

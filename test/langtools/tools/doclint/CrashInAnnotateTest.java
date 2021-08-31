@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8266082
  * @summary javac should not crash when seeing type annotations in links
- * @compile/fail/ref=CrashInAnnotateTest.out -Xdoclint -XDrawDiagnostics CrashInAnnotateTest.java
+ * @compile/fail/ref=CrashInAnnotateTest.out -Xdoclint:all,-missing -XDrawDiagnostics CrashInAnnotateTest.java
  */
 
 import java.util.List;
