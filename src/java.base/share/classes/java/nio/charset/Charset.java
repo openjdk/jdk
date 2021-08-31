@@ -210,9 +210,8 @@ import java.util.TreeMap;
  * <small>ZERO-WIDTH NON-BREAKING SPACE</small>.
  *
  * <p> Every instance of the Java virtual machine has a default charset, which
- * may or may not be one of the standard charsets.  The default charset is
- * determined during virtual-machine startup and typically depends upon the
- * locale and charset being used by the underlying operating system. </p>
+ * is {@code UTF-8} unless changed in an implementation specific manner. Refer to
+ * {@link #defaultCharset()} for more detail.
  *
  * <p> The {@link StandardCharsets} class defines constants for each of the
  * standard charsets.
@@ -592,11 +591,18 @@ public abstract class Charset
     /**
      * Returns the default charset of this Java virtual machine.
      *
-     * <p> The default charset is determined during virtual-machine startup and
-     * typically depends upon the locale and charset of the underlying
-     * operating system.
+     * <p> The default charset is {@code UTF-8}, unless changed in an
+     * implementation specific manner.
+     *
+     * @implNote An implementation may override the default charset with
+     * the system property {@code file.encoding} on the command line. If the
+     * value is {@code COMPAT}, the default charset is derived from
+     * the {@code native.encoding} system property, which typically depends
+     * upon the locale and charset of the underlying operating system.
      *
      * @return  A charset object for the default charset
+     * @see <a href="../../lang/System.html#file.encoding">file.encoding</a>
+     * @see <a href="../../lang/System.html#native.encoding">native.encoding</a>
      *
      * @since 1.5
      */

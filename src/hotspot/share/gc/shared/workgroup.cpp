@@ -266,13 +266,13 @@ void GangWorker::loop() {
 // *** WorkGangBarrierSync
 
 WorkGangBarrierSync::WorkGangBarrierSync()
-  : _monitor(Mutex::safepoint, "work gang barrier sync", true,
+  : _monitor(Mutex::safepoint, "work gang barrier sync",
              Monitor::_safepoint_check_never),
     _n_workers(0), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 
 WorkGangBarrierSync::WorkGangBarrierSync(uint n_workers, const char* name)
-  : _monitor(Mutex::safepoint, name, true, Monitor::_safepoint_check_never),
+  : _monitor(Mutex::safepoint, name, Monitor::_safepoint_check_never),
     _n_workers(n_workers), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 

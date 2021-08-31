@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "logging/logDecorators.hpp"
 #include "logging/logOutput.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
@@ -42,11 +43,15 @@ static LogFileStreamInitializer log_stream_initializer;
 class LogFileStreamOutput : public LogOutput {
  private:
   bool                _write_error_is_shown;
+
+  int write_internal(const char* msg);
  protected:
+  static const char* const FoldMultilinesOptionKey;
   FILE*               _stream;
   size_t              _decorator_padding[LogDecorators::Count];
+  bool                _fold_multilines;
 
-  LogFileStreamOutput(FILE *stream) : _write_error_is_shown(false), _stream(stream) {
+  LogFileStreamOutput(FILE *stream) : _write_error_is_shown(false), _stream(stream), _fold_multilines(false) {
     for (size_t i = 0; i < LogDecorators::Count; i++) {
       _decorator_padding[i] = 0;
     }

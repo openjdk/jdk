@@ -96,7 +96,7 @@ class JarVerifier {
     /** collect -DIGEST-MANIFEST values for deny list */
     private List<Object> manifestDigests;
 
-    public JarVerifier(String name, byte rawBytes[]) {
+    public JarVerifier(String name, byte[] rawBytes) {
         manifestName = name;
         manifestRawBytes = rawBytes;
         sigFileSigners = new Hashtable<>();
@@ -466,7 +466,7 @@ class JarVerifier {
             }
         }
 
-        public int read(byte b[], int off, int len) throws IOException {
+        public int read(byte[] b, int off, int len) throws IOException {
             ensureOpen();
             if ((numLeft > 0) && (numLeft < len)) {
                 len = (int)numLeft;

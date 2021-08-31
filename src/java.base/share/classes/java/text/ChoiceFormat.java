@@ -350,7 +350,7 @@ public class ChoiceFormat extends NumberFormat {
      * @throws    NullPointerException if {@code limits} or
      *            {@code formats} is {@code null}
      */
-    public void setChoices(double[] limits, String formats[]) {
+    public void setChoices(double[] limits, String[] formats) {
         if (limits.length != formats.length) {
             throw new IllegalArgumentException(
                 "Array and limit arrays must be of the same length.");

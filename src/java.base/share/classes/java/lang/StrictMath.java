@@ -1086,7 +1086,7 @@ public final class StrictMath {
      * @param x the dividend
      * @param y the divisor
      * @return the largest (closest to positive infinity)
-     * {@code int} value that is less than or equal to the algebraic quotient.
+     * {@code long} value that is less than or equal to the algebraic quotient.
      * @throws ArithmeticException if the divisor {@code y} is zero
      * @see Math#floorDiv(long, int)
      * @see Math#floor(double)
