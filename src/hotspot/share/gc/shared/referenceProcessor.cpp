@@ -424,33 +424,29 @@ void RefProcTask::process_discovered_list(uint worker_id,
                                           OopClosure* keep_alive) {
   ReferenceProcessor::RefProcSubPhases subphase;
   DiscoveredList* dl;
-  bool do_enqueue_and_clear;
   switch(ref_type) {
     case ReferenceType::REF_SOFT:
       subphase = ReferenceProcessor::ProcessSoftRefSubPhase;
       dl = _ref_processor._discoveredSoftRefs;
-      do_enqueue_and_clear = true;
       break;
     case ReferenceType::REF_WEAK:
       subphase = ReferenceProcessor::ProcessWeakRefSubPhase;
       dl = _ref_processor._discoveredWeakRefs;
-      do_enqueue_and_clear = true;
       break;
     case ReferenceType::REF_FINAL:
       subphase = ReferenceProcessor::ProcessFinalRefSubPhase;
       dl = _ref_processor._discoveredFinalRefs;
-      do_enqueue_and_clear = false;
       break;
     case ReferenceType::REF_PHANTOM:
       subphase = ReferenceProcessor::ProcessPhantomRefsSubPhase;
       dl = _ref_processor._discoveredPhantomRefs;
-      do_enqueue_and_clear = true;
       break;
     default:
       ShouldNotReachHere();
   }
 
-  assert(do_enqueue_and_clear != (ref_type == REF_FINAL), "Only Final refs are not enqueued");
+  // Only Final refs are not enqueued.
+  bool do_enqueue_and_clear = (ref_type != REF_FINAL);
 
   {
     RefProcSubPhasesWorkerTimeTracker tt(subphase, _phase_times, tracker_id(worker_id));
