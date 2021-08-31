@@ -47,7 +47,7 @@
  *      (because doing otherwise requires tracking load dependencies);
  *   c) the use of "Consume" is generally discouraged in current C++;
  *
- * ...Release-Acquire ordering might be considered.
+ * ...Release-Acquire ordering should be considered.
  *
  * It is beyond doubt that forwardee installations need to be "Release".
  * But doing "Acquire" on hot-path, especially on weakly-ordered architectures,
@@ -59,44 +59,38 @@
  *   2. Mutator code (through runtime/C++ barriers)
  *   3. Mutator code (through interpreter/assembly barriers)
  *
- * The problematic places in C++ GC code are:
- *   *) evacuation that performs contended CASes for fwdptr installation. The failing
- *      CAS should "Acquire" the see the other forwardee;
- *   *) update-refs that reads the forwardee, and needs to see it completely. But, that
- *      phase happens after all forwardee installations happened, an update-refs-start
- *      pause happened, and so it should not observe anything in flight. Therefore,
- *      "Relaxed" is good for that path;
+ * The problematic places in C++ GC code fall into two categories:
+ *   *) Concurrent with evacuation: these need to to see the concurrently installed
+ *      forwardee. This also affects the CAS for forwarding installation, as the failing
+ *      CAS should to see the other forwardee. Therefore, these paths use
+ *      "Acquire" in lieu of "Consume". This is also a default mode to get the forwardee,
+ *      for extra safety.
+ *   *) Happening past the evacuation: since all forwardee installations have happened,
+ *      and there was a coordination event (safepoint) from the last evacuation,
+ *      we should not observe anything in flight. That is a "stable" mode, and on
+ *      that path, "Relaxed" is enough. This usually matters for a heavy-weight update
+ *      heap operations.
  *
- * The mutator code can access the fwdptr at arbitrary point in the GC. Therefore,
+ * The mutator code can access the forwardee at arbitrary point during the GC. Therefore,
  * it can potentially race with the concurrent evacuation.
  *
- * The mutator runtime/C++ code accesses forwarded objects through the special method
+ * The mutator runtime/C++ code accesses forwardees through the default method
  * that does "Acquire" for additional safety. That path is taken by self-healing paths,
  * which are relatively rare, and already paid the significant cost of going to runtime.
  *
- * The mutator interpreter/runtime accesses use the hand-written arch-specific assembly
+ * The mutator interpreter/assembly accesses use the hand-written arch-specific assembly
  * code for barriers that is immune to C++ shenanigans, and does use data dependencies to
  * provide "Consume" semantics.
  *
- * The critical point where synchronization is needed are mark word accesses:
- *   1. markword loads by GC use "Relaxed";
- *   2. markword loads by mutator use "Acquire";
- *   3. markword load-stores (either by GC or mutator) use "Acquire" + "Release";
- *
- * TODO: When "Consume" is available, load mark words with "consume" for extra safety.
+ * TODO: When "Consume" is available, load mark words with "consume" everywhere,
+ * and drop the distinction between default and stable accessors.
  */
 
-inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
-  shenandoah_assert_in_heap(NULL, obj);
-  return get_forwardee_raw_unchecked(obj);
-}
-
-inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
+inline oop ShenandoahForwarding::decode_forwardee(oop obj, markWord mark) {
   // JVMTI and JFR code use mark words for marking objects for their needs.
   // On this path, we can encounter the "marked" object, but with NULL
   // fwdptr. That object is still not forwarded, and we need to return
   // the object itself.
-  markWord mark = obj->mark();
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
     if (fwdptr != NULL) {
@@ -106,25 +100,52 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
   return obj;
 }
 
+inline oop ShenandoahForwarding::decode_forwardee_mutator(oop obj, markWord mark) {
+  // Same as above, but mutator thread cannot ever see NULL forwardee.
+  if (mark.is_marked()) {
+    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
+    if (fwdptr != NULL) {
+      return cast_to_oop(fwdptr);
+    }
+  }
+  return obj;
+}
+
+inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
+  // Forwardee might be changing, acquire the mark
+  markWord mark = obj->mark_acquire();
+  return decode_forwardee(obj, mark);
+}
+
+inline oop ShenandoahForwarding::get_forwardee_stable_raw(oop obj) {
+  // Forwardee is stable, non-acquiring mark is enough.
+  markWord mark = obj->mark();
+  return decode_forwardee(obj, mark);
+}
+
 inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
   // Same as above, but mutator thread cannot ever see NULL forwardee.
   // It also performs the "acquire" read to coordinate with GC evacs.
   shenandoah_assert_correct(NULL, obj);
   assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
-
   markWord mark = obj->mark_acquire();
-  if (mark.is_marked()) {
-    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
-    assert(fwdptr != NULL, "Forwarding pointer is never null here");
-    return cast_to_oop(fwdptr);
-  } else {
-    return obj;
-  }
+  return decode_forwardee_mutator(obj, mark);
 }
 
 inline oop ShenandoahForwarding::get_forwardee(oop obj) {
   shenandoah_assert_correct(NULL, obj);
-  return get_forwardee_raw_unchecked(obj);
+  return get_forwardee_raw(obj);
+}
+
+inline oop ShenandoahForwarding::get_forwardee_maybe_null(oop obj) {
+  if (obj == NULL) return obj;
+  shenandoah_assert_correct(NULL, obj);
+  return get_forwardee_raw(obj);
+}
+
+inline oop ShenandoahForwarding::get_forwardee_stable(oop obj) {
+  shenandoah_assert_correct(NULL, obj);
+  return get_forwardee_stable_raw(obj);
 }
 
 inline bool ShenandoahForwarding::is_forwarded(oop obj) {

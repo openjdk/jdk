@@ -29,25 +29,30 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahForwarding {
+private:
+  static inline oop decode_forwardee(oop obj, markWord mark);
+  static inline oop decode_forwardee_mutator(oop obj, markWord mark);
+
 public:
   /* Gets forwardee from the given object.
+   * Stable versions are only safe when no evacs happen.
    */
   static inline oop get_forwardee(oop obj);
+  static inline oop get_forwardee_maybe_null(oop obj);
+  static inline oop get_forwardee_stable(oop obj);
 
   /* Gets forwardee from the given object. Only from mutator thread.
    */
   static inline oop get_forwardee_mutator(oop obj);
 
-  /* Returns the raw value from forwardee slot.
-   */
-  static inline oop get_forwardee_raw(oop obj);
-
   /* Returns the raw value from forwardee slot without any checks.
    * Used for quick verification.
+   * Stable versions are only safe when no evacs happen.
    */
-  static inline oop get_forwardee_raw_unchecked(oop obj);
+  static inline oop get_forwardee_raw(oop obj);
+  static inline oop get_forwardee_stable_raw(oop obj);
 
-  /**
+  /*
    * Returns true if the object is forwarded, false otherwise.
    */
   static inline bool is_forwarded(oop obj);

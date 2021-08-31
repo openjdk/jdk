@@ -44,7 +44,7 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+  obj = ShenandoahForwarding::get_forwardee(obj);
   shenandoah_assert_not_forwarded_if(NULL, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
   return _mark_context->is_marked(obj);
 }
@@ -122,7 +122,7 @@ void ShenandoahEvacuateUpdateMetadataClosure<MO>::do_oop_work(T* p) {
     if (_heap->in_collection_set(obj)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop resolved = ShenandoahForwarding::get_forwardee(obj);
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
@@ -157,7 +157,7 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p, Thread* t) {
     if (_heap->in_collection_set(obj)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop resolved = ShenandoahForwarding::get_forwardee(obj);
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, t);
       }

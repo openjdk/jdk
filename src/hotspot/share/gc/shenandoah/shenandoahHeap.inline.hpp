@@ -104,7 +104,7 @@ inline void ShenandoahHeap::update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try and update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee_stable(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Unconditionally store the update: no concurrent updates expected.
@@ -123,7 +123,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try CAS-update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee_stable(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Sanity check: we should not be updating the cset regions themselves,
@@ -291,7 +291,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   if (ShenandoahThreadLocalData::is_oom_during_evac(Thread::current())) {
     // This thread went through the OOM during evac protocol and it is safe to return
     // the forward pointer. It must not attempt to evacuate any more.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+    return ShenandoahForwarding::get_forwardee_maybe_null(p);
   }
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
@@ -326,7 +326,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
     _oom_evac_handler.handle_out_of_memory_during_evacuation();
 
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+    return ShenandoahForwarding::get_forwardee_maybe_null(p);
   }
 
   // Copy the object:

@@ -38,28 +38,12 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "oops/oop.inline.hpp"
 
-inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p) {
-  return ShenandoahForwarding::get_forwardee(p);
-}
-
-inline oop ShenandoahBarrierSet::resolve_forwarded(oop p) {
-  if (p != NULL) {
-    return resolve_forwarded_not_null(p);
-  } else {
-    return p;
-  }
-}
-
-inline oop ShenandoahBarrierSet::resolve_forwarded_not_null_mutator(oop p) {
-  return ShenandoahForwarding::get_forwardee_mutator(p);
-}
-
 template <class T>
 inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load_addr) {
   assert(ShenandoahLoadRefBarrier, "should be enabled");
   shenandoah_assert_in_cset(load_addr, obj);
 
-  oop fwd = resolve_forwarded_not_null_mutator(obj);
+  oop fwd = ShenandoahForwarding::get_forwardee_mutator(obj);
   if (obj == fwd) {
     assert(_heap->is_evacuation_in_progress(),
            "evac should be in progress");
@@ -83,7 +67,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   if (_heap->has_forwarded_objects() &&
       _heap->in_collection_set(obj)) { // Subsumes NULL-check
     assert(obj != NULL, "cset check must have subsumed NULL-check");
-    oop fwd = resolve_forwarded_not_null(obj);
+    oop fwd = ShenandoahForwarding::get_forwardee(obj);
     // TODO: It should not be necessary to check evac-in-progress here.
     // We do it for mark-compact, which may have forwarded objects,
     // and objects in cset and gets here via runtime barriers.
@@ -201,7 +185,8 @@ inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, o
     compare_value = expected;
     res = RawAccess<>::oop_atomic_cmpxchg(addr, compare_value, new_value);
     expected = res;
-  } while ((compare_value != expected) && (resolve_forwarded(compare_value) == resolve_forwarded(expected)));
+  } while ((compare_value != expected) &&
+           (ShenandoahForwarding::get_forwardee_maybe_null(compare_value) == ShenandoahForwarding::get_forwardee_maybe_null(expected)));
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
@@ -353,7 +338,9 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (HAS_FWD && cset->is_in(obj)) {
-        oop fwd = resolve_forwarded_not_null(obj);
+        oop fwd = EVAC ?
+                ShenandoahForwarding::get_forwardee(obj) :
+                ShenandoahForwarding::get_forwardee_stable(obj);
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, thread);
         }

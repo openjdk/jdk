@@ -49,7 +49,9 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (HAS_FWD && _cset->is_in(obj)) {
-        oop fwd = _bs->resolve_forwarded_not_null(obj);
+        oop fwd = EVAC ?
+                ShenandoahForwarding::get_forwardee(obj) :
+                ShenandoahForwarding::get_forwardee_stable(obj);
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, _thread);
         }

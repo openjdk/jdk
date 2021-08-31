@@ -81,10 +81,6 @@ public:
   virtual void on_thread_attach(Thread* thread);
   virtual void on_thread_detach(Thread* thread);
 
-  static inline oop resolve_forwarded_not_null(oop p);
-  static inline oop resolve_forwarded_not_null_mutator(oop p);
-  static inline oop resolve_forwarded(oop p);
-
   template <DecoratorSet decorators, typename T>
   inline void satb_barrier(T* field);
   inline void satb_enqueue(oop value);
