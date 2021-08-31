@@ -875,9 +875,9 @@ inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list
 
 inline bool ReferenceProcessor::set_discovered_link_st(HeapWord* discovered_addr,
                                                        oop next_discovered) {
-  assert(!_discovery_is_mt, "must be");
+  assert(!discovery_is_mt(), "must be");
 
-  if (_discovery_is_atomic) {
+  if (discovery_is_atomic()) {
     // Do a raw store here: the field will be visited later when processing
     // the discovered references.
     RawAccess<>::oop_store(discovered_addr, next_discovered);
@@ -890,11 +890,11 @@ inline bool ReferenceProcessor::set_discovered_link_st(HeapWord* discovered_addr
 
 inline bool ReferenceProcessor::set_discovered_link_mt(HeapWord* discovered_addr,
                                                        oop next_discovered) {
-  assert(_discovery_is_mt, "must be");
+  assert(discovery_is_mt(), "must be");
 
   // We must make sure this object is only enqueued once. Try to CAS into the discovered_addr.
   oop retest;
-  if (_discovery_is_atomic) {
+  if (discovery_is_atomic()) {
     // Try a raw store here, still making sure that we enqueue only once: the field
     // will be visited later when processing the discovered references.
     retest = RawAccess<>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
