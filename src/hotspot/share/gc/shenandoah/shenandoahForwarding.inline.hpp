@@ -53,19 +53,23 @@
  * We can recognize that C++ GC code hardly ever accesses the object contents after
  * the evacuation: the marking is done by the time evacuations happen, the evacuation
  * code only reads the contents of the from-copy (that is not protected by
- * synchronization anyhow), and update-refs only writes the object pointers themselves.
- * Therefore, "Relaxed" still works, "Consume" is good as the additional safety measure,
- * but the cost of "Acquire" is too high.
+ * synchronization anyhow). The "only" problematic place is update-refs that reads
+ * the forwardee, and needs to see it completely. But, that phase happens after
+ * all fwdptr installations happened, an update-refs-start pause happened, and so
+ * it should not observe anything in flight. Therefore, for this code "Relaxed" still
+ * works, "Consume" is good as the additional safety measure, but the cost of "Acquire"
+ * is too high.
  *
- * The mutator code accesses forwarded objects through runtime interface, which
- * among other things inhibits the problematic C++ optimizations that are otherwise
- * would require "Consume".
+ * The mutator code accesses forwarded objects through the special method that
+ * does "Acquire" for additional safety. That path is taken by self-healing paths,
+ * which are relatively rare, and already paid the significant cost of going to runtime.
  *
  * Hand-written arch-specific assembly code for barriers uses data dependencies to
  * provide "Consume" semantics that would not be affected by C++ compilers.
  *
  * The critical point where synchronization is needed are mark word accesses:
- *   1. markword loads are using the "relaxed" loads, due to the reasons above;
+ *   1. markword loads by GC are using the "relaxed" loads;
+ *   2. markword loads by mutator are using the "acquire" loads;
  *   2. markword stores that publish new forwardee are marked with "release";
  *
  * TODO: When "Consume" is available, load mark words with "consume" for extra safety.
@@ -96,7 +100,7 @@ inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
   shenandoah_assert_correct(NULL, obj);
   assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
 
-  markWord mark = obj->mark();
+  markWord mark = obj->mark_acquire();
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
     assert(fwdptr != NULL, "Forwarding pointer is never null here");
