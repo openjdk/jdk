@@ -33,6 +33,9 @@
 import java.net.*;
 import java.io.*;
 import jdk.test.lib.net.URIBuilder;
+import java.nio.ByteBuffer;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 public class KeepAliveStreamCloseWithWrongContentLength {
 
@@ -45,7 +48,8 @@ public class KeepAliveStreamCloseWithWrongContentLength {
         volatile Socket clientSocket;
 
         XServer (InetAddress address) throws IOException {
-            ServerSocket serversocket = new ServerSocket();
+            ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+            ServerSocket serversocket = serverSocketChannel.socket();
             serversocket.bind(new InetSocketAddress(address, 0));
             this.serverSocket = serversocket;
         }
@@ -90,7 +94,8 @@ public class KeepAliveStreamCloseWithWrongContentLength {
             catch (Exception e) {
                 e.printStackTrace();
             }
-            try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(clientSocket.getOutputStream())) {
+            try  {
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(clientSocket.getOutputStream());
                 outputStreamWriter.write("HTTP/1.0 200 OK\n");
 
                 // Note: The client expects 10 bytes.
@@ -104,6 +109,7 @@ public class KeepAliveStreamCloseWithWrongContentLength {
                 // Note: The (buggy) server only sends 9 bytes.
                 outputStreamWriter.write("123456789");
                 outputStreamWriter.flush();
+                clientSocket.getChannel().shutdownOutput();
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -113,13 +119,39 @@ public class KeepAliveStreamCloseWithWrongContentLength {
         @Override
         public void close() throws Exception {
             final var clientSocket = this.clientSocket;
-            if (clientSocket != null) {
-                clientSocket.close();
+            try {
+                long drained = drain(clientSocket.getChannel());
+                System.err.printf("Server drained %d bytes from the channel%n", drained);
+            } catch (Exception x) {
+                System.err.println("Server failed to drain client socket: " + x);
+                x.printStackTrace();
             }
             serverSocket.close();
         }
 
     }
+    
+    static long drain(SocketChannel channel) throws IOException {
+        if (!channel.isOpen()) return 0;
+        System.err.println("Not reading server: draining socket");
+        var blocking = channel.isBlocking();
+        if (blocking) channel.configureBlocking(false);
+        long count = 0;
+        try {
+            ByteBuffer buffer = ByteBuffer.allocateDirect(8 * 1024);
+            int read;
+            while ((read = channel.read(buffer)) > 0) {
+                count += read;
+                buffer.clear();
+            }
+            return count;
+        } finally {
+            if (blocking != channel.isBlocking()) {
+                channel.configureBlocking(blocking);
+            }
+        }
+    }
+
 
     public static void main (String[] args) throws Exception {
 
