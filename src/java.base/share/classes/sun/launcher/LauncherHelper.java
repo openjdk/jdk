@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,12 +405,23 @@ public final class LauncherHelper {
         limit = c.getMemoryAndSwapLimit();
         ostream.println(formatLimitString(limit, INDENT + "Memory & Swap Limit: ", longRetvalNotSupported));
 
+        limit = c.getPidsMax();
+        ostream.println(formatLimitString(limit, INDENT + "Maximum Processes Limit: ",
+                                          longRetvalNotSupported, false));
         ostream.println("");
     }
 
     private static String formatLimitString(long limit, String prefix, long unavailable) {
+        return formatLimitString(limit, prefix, unavailable, true);
+    }
+
+    private static String formatLimitString(long limit, String prefix, long unavailable, boolean scale) {
         if (limit >= 0) {
-            return prefix + SizePrefix.scaleValue(limit);
+            if (scale) {
+                return prefix + SizePrefix.scaleValue(limit);
+            } else {
+                return prefix + limit;
+            }
         } else if (limit == unavailable) {
             return prefix + "N/A";
         } else {

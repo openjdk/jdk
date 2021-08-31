@@ -384,6 +384,9 @@ class Dependencies: public ResourceObj {
   static bool is_concrete_method(Method* m, Klass* k);  // m is invocable
   static Klass* find_finalizable_subclass(InstanceKlass* ik);
 
+  static bool is_concrete_root_method(Method* uniqm, InstanceKlass* ctxk);
+  static Klass* find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepChange* changes = NULL);
+
   // These versions of the concreteness queries work through the CI.
   // The CI versions are allowed to skew sometimes from the VM
   // (oop-based) versions.  The cost of such a difference is a

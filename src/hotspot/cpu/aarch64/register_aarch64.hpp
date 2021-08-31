@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -242,6 +242,7 @@ class PRegisterImpl: public AbstractRegisterImpl {
  public:
   enum {
     number_of_registers = 16,
+    number_of_governing_registers = 8,
     max_slots_per_register = 1
   };
 
@@ -257,6 +258,7 @@ class PRegisterImpl: public AbstractRegisterImpl {
   int   encoding() const          { assert(is_valid(), "invalid register"); return (intptr_t)this; }
   int   encoding_nocheck() const  { return (intptr_t)this; }
   bool  is_valid() const          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
+  bool  is_governing() const      { return 0 <= (intptr_t)this && (intptr_t)this < number_of_governing_registers; }
   const char* name() const;
 };
 

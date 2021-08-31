@@ -6569,11 +6569,11 @@ JNIEXPORT void JNICALL
 Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
-    jclass inputEventClazz = env->FindClass("java/awt/event/InputEvent");
-    CHECK_NULL(inputEventClazz);
-    jmethodID getButtonDownMasksID = env->GetStaticMethodID(inputEventClazz, "getButtonDownMasks", "()[I");
-    CHECK_NULL(getButtonDownMasksID);
-    jintArray obj = (jintArray)env->CallStaticObjectMethod(inputEventClazz, getButtonDownMasksID);
+    jboolean ignoreException;
+    jintArray obj = (jintArray)JNU_CallStaticMethodByName(env, &ignoreException,
+                                                          "java/awt/event/InputEvent",
+                                                          "getButtonDownMasks", "()[I").l;
+    CHECK_NULL(obj);
     jint * tmp = env->GetIntArrayElements(obj, JNI_FALSE);
     CHECK_NULL(tmp);
     jsize len = env->GetArrayLength(obj);

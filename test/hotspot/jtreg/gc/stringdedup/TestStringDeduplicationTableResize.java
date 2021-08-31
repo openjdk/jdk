@@ -27,17 +27,70 @@ package gc.stringdedup;
  * @test TestStringDeduplicationTableResize
  * @summary Test string deduplication table resize
  * @bug 8029075
- * @requires vm.gc == "null" | vm.gc == "G1" | vm.gc == "Shenandoah"
+ * @requires vm.gc.Serial
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
- * @run driver gc.stringdedup.TestStringDeduplicationTableResize
+ * @run driver gc.stringdedup.TestStringDeduplicationTableResize Serial
+ */
+
+/*
+ * @test TestStringDeduplicationTableResize
+ * @summary Test string deduplication table resize
+ * @bug 8029075
+ * @requires vm.gc.G1
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationTableResize G1
+ */
+
+/*
+ * @test TestStringDeduplicationTableResize
+ * @summary Test string deduplication table resize
+ * @bug 8029075
+ * @requires vm.gc.Parallel
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationTableResize Parallel
+ */
+
+/*
+ * @test TestStringDeduplicationTableResize
+ * @summary Test string deduplication table resize
+ * @bug 8029075
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationTableResize Shenandoah
+ */
+
+/*
+ * @test TestStringDeduplicationTableResize
+ * @summary Test string deduplication table resize
+ * @bug 8029075
+ * @requires vm.gc.Z
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationTableResize Z
  */
 
 public class TestStringDeduplicationTableResize {
     public static void main(String[] args) throws Exception {
+        TestStringDeduplicationTools.selectGC(args);
         TestStringDeduplicationTools.testTableResize();
     }
 }

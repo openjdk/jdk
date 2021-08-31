@@ -54,6 +54,7 @@ import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,6 +62,7 @@ import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -326,6 +328,13 @@ public final class System {
     private static native void setOut0(PrintStream out);
     private static native void setErr0(PrintStream err);
 
+    private static class CallersHolder {
+        // Remember callers of setSecurityManager() here so that warning
+        // is only printed once for each different caller
+        final static Map<Class<?>, Boolean> callers
+            = Collections.synchronizedMap(new WeakHashMap<>());
+    }
+
     // Remember initial System.err. setSecurityManager() warning goes here
     private static volatile @Stable PrintStream initialErrStream;
 
@@ -378,19 +387,21 @@ public final class System {
     public static void setSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
         if (allowSecurityManager()) {
             var callerClass = Reflection.getCallerClass();
-            URL url = codeSource(callerClass);
-            final String source;
-            if (url == null) {
-                source = callerClass.getName();
-            } else {
-                source = callerClass.getName() + " (" + url + ")";
+            if (CallersHolder.callers.putIfAbsent(callerClass, true) == null) {
+                URL url = codeSource(callerClass);
+                final String source;
+                if (url == null) {
+                    source = callerClass.getName();
+                } else {
+                    source = callerClass.getName() + " (" + url + ")";
+                }
+                initialErrStream.printf("""
+                        WARNING: A terminally deprecated method in java.lang.System has been called
+                        WARNING: System::setSecurityManager has been called by %s
+                        WARNING: Please consider reporting this to the maintainers of %s
+                        WARNING: System::setSecurityManager will be removed in a future release
+                        """, source, callerClass.getName());
             }
-            initialErrStream.printf("""
-                    WARNING: A terminally deprecated method in java.lang.System has been called
-                    WARNING: System::setSecurityManager has been called by %s
-                    WARNING: Please consider reporting this to the maintainers of %s
-                    WARNING: System::setSecurityManager will be removed in a future release
-                    """, source, callerClass.getName());
             implSetSecurityManager(sm);
         } else {
             // security manager not allowed
@@ -786,6 +797,15 @@ public final class System {
      *     <td>The module name of the initial/main module</td></tr>
      * <tr><th scope="row">{@systemProperty jdk.module.main.class}</th>
      *     <td>The main class name of the initial module</td></tr>
+     * <tr><th scope="row">{@systemProperty file.encoding}</th>
+     *     <td>The name of the default charset, defaults to {@code UTF-8}.
+     *     The property may be set on the command line to the value
+     *     {@code UTF-8} or {@code COMPAT}. If set on the command line to
+     *     the value {@code COMPAT} then the value is replaced with the
+     *     value of the {@code native.encoding} property during startup.
+     *     Setting the property to a value other than {@code UTF-8} or
+     *     {@code COMPAT} leads to unspecified behavior.
+     *     </td></tr>
      * </tbody>
      * </table>
      *
@@ -1861,6 +1881,11 @@ public final class System {
      * There is no guarantee that this effort will recycle any particular
      * number of unused objects, reclaim any particular amount of space, or
      * complete at any particular time, if at all, before the method returns or ever.
+     * There is also no guarantee that this effort will determine
+     * the change of reachability in any particular number of objects,
+     * or that any particular number of {@link java.lang.ref.Reference Reference}
+     * objects will be cleared and enqueued.
+     *
      * <p>
      * The call {@code System.gc()} is effectively equivalent to the
      * call:
@@ -2096,9 +2121,9 @@ public final class System {
         setIn0(new BufferedInputStream(fdIn));
         // sun.stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encoding
-        // defaults to Charset.defaultCharset()
-        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
-        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
+        // defaults to native.encoding
+        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding", StaticProperty.nativeEncoding())));
+        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding", StaticProperty.nativeEncoding())));
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();

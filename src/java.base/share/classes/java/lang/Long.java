@@ -752,10 +752,8 @@ public final class Long extends Number
     public static long parseLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException("radix " + radix +
                     " less than Character.MIN_RADIX");
@@ -998,10 +996,8 @@ public final class Long extends Number
     public static long parseUnsignedLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         int start = beginIndex, len = endIndex - beginIndex;
 
         if (len > 0) {
@@ -1258,7 +1254,7 @@ public final class Long extends Number
         int radix = 10;
         int index = 0;
         boolean negative = false;
-        Long result;
+        long result;
 
         if (nm.isEmpty())
             throw new NumberFormatException("Zero length string");
@@ -1288,15 +1284,15 @@ public final class Long extends Number
             throw new NumberFormatException("Sign character in wrong position");
 
         try {
-            result = Long.valueOf(nm.substring(index), radix);
-            result = negative ? Long.valueOf(-result.longValue()) : result;
+            result = parseLong(nm, index, nm.length(), radix);
+            result = negative ? -result : result;
         } catch (NumberFormatException e) {
             // If number is Long.MIN_VALUE, we'll end up here. The next line
             // handles this case, and causes any genuine format error to be
             // rethrown.
             String constant = negative ? ("-" + nm.substring(index))
                                        : nm.substring(index);
-            result = Long.valueOf(constant, radix);
+            result = parseLong(constant, radix);
         }
         return result;
     }

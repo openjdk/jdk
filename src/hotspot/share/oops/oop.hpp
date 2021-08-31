@@ -59,6 +59,7 @@ class oopDesc {
 
  public:
   inline markWord  mark()          const;
+  inline markWord  mark_acquire()  const;
   inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
@@ -146,7 +147,6 @@ class oopDesc {
   void obj_field_put_volatile(int offset, oop value);
 
   Metadata* metadata_field(int offset) const;
-  Metadata* metadata_field_raw(int offset) const;
   void metadata_field_put(int offset, Metadata* value);
 
   Metadata* metadata_field_acquire(int offset) const;
@@ -164,7 +164,6 @@ class oopDesc {
   void bool_field_put_volatile(int offset, jboolean contents);
 
   jint int_field(int offset) const;
-  jint int_field_raw(int offset) const;
   void int_field_put(int offset, jint contents);
 
   jshort short_field(int offset) const;
@@ -247,7 +246,6 @@ class oopDesc {
   void verify_forwardee(oop forwardee) NOT_DEBUG_RETURN;
 
   inline void forward_to(oop p);
-  inline bool cas_forward_to(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
@@ -293,7 +291,6 @@ class oopDesc {
   // Checks if the mark word needs to be preserved
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
-  inline bool mark_must_be_preserved_for_promotion_failure(markWord m) const;
 
   static bool has_klass_gap();
 
