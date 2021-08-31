@@ -139,7 +139,7 @@ public:
     _alloc_count(),
     _dealloc_count()
   {
-    _lock = new Mutex(Monitor::leaf, "gtest-MetaspaceArenaTestBed-lock", false, Monitor::_safepoint_check_never);
+    _lock = new Mutex(Monitor::leaf, "gtest-MetaspaceArenaTestBed-lock", Monitor::_safepoint_check_never);
     // Lock during space creation, since this is what happens in the VM too
     //  (see ClassLoaderData::metaspace_non_null(), which we mimick here).
     MutexLocker ml(_lock,  Mutex::_no_safepoint_check_flag);

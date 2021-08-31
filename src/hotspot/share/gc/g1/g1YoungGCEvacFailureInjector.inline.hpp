@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,30 @@
  *
  */
 
-// no precompiled headers
-#include "memory/allocation.inline.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/osThread.hpp"
+#ifndef SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
+#define SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
 
-#include <signal.h>
+#include "gc/g1/g1_globals.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 
-void OSThread::pd_initialize() {
-  assert(this != NULL, "check");
-  _thread_id        = 0;
-  _pthread_id       = 0;
-  _siginfo = NULL;
-  _ucontext = NULL;
-  _expanding_stack = 0;
-  _alt_sig_stack = NULL;
+#ifndef PRODUCT
 
-  sigemptyset(&_caller_sigmask);
-
-  _startThread_lock = new Monitor(Mutex::event, "startThread_lock",
-                                  Monitor::_safepoint_check_never);
-  assert(_startThread_lock !=NULL, "check");
+inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail() {
+  if (!G1EvacuationFailureALot || !_inject_evacuation_failure_for_current_gc) {
+    return false;
+  }
+  // Injecting evacuation failures is in effect for current GC
+  // Access to _evacuation_failure_alot_count is not atomic;
+  // the value does not have to be exact.
+  if (++_evacuation_failure_object_count < G1EvacuationFailureALotCount) {
+    return false;
+  }
+  _evacuation_failure_object_count = 0;
+  return true;
 }
 
-void OSThread::pd_destroy() {
-  delete _startThread_lock;
-}
+#endif  // #ifndef PRODUCT
+
+#endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP */
+

@@ -47,6 +47,7 @@
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
+#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -135,7 +136,6 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
 };
 
 class G1CollectedHeap : public CollectedHeap {
-  friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1TryInitiateConcMark;
@@ -210,6 +210,8 @@ private:
 
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
+
+  G1YoungGCEvacFailureInjector _evac_failure_injector;
 
   // Manages all heap verification.
   G1HeapVerifier* _verifier;
@@ -562,6 +564,8 @@ public:
     return _allocator;
   }
 
+  G1YoungGCEvacFailureInjector* evac_failure_injector() { return &_evac_failure_injector; }
+
   G1HeapVerifier* verifier() {
     return _verifier;
   }
@@ -871,38 +875,9 @@ public:
   // Records for every region on the heap whether evacuation failed for it.
   CHeapBitMap _regions_failed_evacuation;
 
-#ifndef PRODUCT
-  // Support for forcing evacuation failures. Analogous to
-  // PromotionFailureALot for the other collectors.
-
-  // Records whether G1EvacuationFailureALot should be in effect
-  // for the current GC
-  bool _evacuation_failure_alot_for_current_gc;
-
-  // Used to record the GC number for interval checking when
-  // determining whether G1EvaucationFailureALot is in effect
-  // for the current GC.
-  size_t _evacuation_failure_alot_gc_number;
-
-  // Count of the number of evacuations between failures.
-  volatile size_t _evacuation_failure_alot_count;
-
-  // Set whether G1EvacuationFailureALot should be in effect
-  // for the current GC (based upon the type of GC and which
-  // command line flags are set);
-  inline bool evacuation_failure_alot_for_gc_type(bool for_young_gc,
-                                                  bool during_concurrent_start,
-                                                  bool mark_or_rebuild_in_progress);
-
-  inline void set_evacuation_failure_alot_for_current_gc();
-
-  // Return true if it's time to cause an evacuation failure.
-  inline bool evacuation_should_fail();
-
-  // Reset the G1EvacuationFailureALot counters.  Should be called at
-  // the end of an evacuation pause in which an evacuation failure occurred.
-  inline void reset_evacuation_should_fail();
-#endif // !PRODUCT
+  // Preserve the mark of "obj", if necessary, in preparation for its mark
+  // word being overwritten with a self-forwarding-pointer.
+  void preserve_mark_during_evac_failure(uint worker_id, oop obj, markWord m);
 
   // ("Weak") Reference processing support.
   //
@@ -1118,6 +1093,8 @@ public:
   // Perform a collection of the heap with the given cause.
   // Returns whether this collection actually executed.
   bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
+
+  void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;

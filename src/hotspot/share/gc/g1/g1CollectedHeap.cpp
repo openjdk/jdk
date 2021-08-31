@@ -68,6 +68,7 @@
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1UncommitRegionTask.hpp"
 #include "gc/g1/g1VMOperations.hpp"
+#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
@@ -1113,8 +1114,9 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
+  G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
 
   collector.prepare_collection();
   collector.collect();
@@ -1447,6 +1449,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _numa(G1NUMA::create()),
   _hrm(),
   _allocator(NULL),
+  _evac_failure_injector(),
   _verifier(NULL),
   _summary_bytes_used(0),
   _bytes_used_during_gc(0),
@@ -1477,11 +1480,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _task_queues(NULL),
   _num_regions_failed_evacuation(0),
   _regions_failed_evacuation(mtGC),
-#ifndef PRODUCT
-  _evacuation_failure_alot_for_current_gc(false),
-  _evacuation_failure_alot_gc_number(0),
-  _evacuation_failure_alot_count(0),
-#endif
   _ref_processor_stw(NULL),
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
@@ -1510,8 +1508,6 @@ G1CollectedHeap::G1CollectedHeap() :
     _task_queues->register_queue(i, q);
   }
 
-  // Initialize the G1EvacuationFailureALot counters and flags.
-  NOT_PRODUCT(reset_evacuation_should_fail();)
   _gc_tracer_stw->initialize();
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
@@ -1765,6 +1761,8 @@ jint G1CollectedHeap::initialize() {
   _collection_set.initialize(max_reserved_regions());
 
   _regions_failed_evacuation.resize(max_regions());
+
+  evac_failure_injector()->reset();
 
   G1InitLogger::print();
 
@@ -2235,6 +2233,18 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
                         cause);
     VMThread::execute(&op);
     return op.gc_succeeded();
+  }
+}
+
+void G1CollectedHeap::start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause) {
+  GCCauseSetter x(this, gc_cause);
+
+  // At this point we are supposed to start a concurrent cycle. We
+  // will do so if one is not already in progress.
+  bool should_start = policy()->force_concurrent_start_if_outside_cycle(gc_cause);
+  if (should_start) {
+    double pause_target = policy()->max_pause_time_ms();
+    do_collection_pause_at_safepoint(pause_target);
   }
 }
 
@@ -3048,10 +3058,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
   bool concurrent_operation_is_full_mark = false;
 
-  // Verification may use the gang workers, so they must be set up before.
-  // Individual parallel phases may override this.
-  set_young_collection_default_active_worker_threads();
-
   {
     // Do timing/tracing/statistics/pre- and post-logging/verification work not
     // directly related to the collection. They should not be accounted for in
@@ -3061,16 +3067,21 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     // determining collector state.
     G1YoungGCTraceTime tm(gc_cause());
 
-    // Young GC internal pause timing
-    G1YoungGCNotifyPauseMark npm;
     // JFR
     G1YoungGCJFRTracerMark jtm(_gc_timer_stw, _gc_tracer_stw, gc_cause());
     // JStat/MXBeans
     G1MonitoringScope ms(monitoring_support(),
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
-
+    // Create the heap printer before internal pause timing to have
+    // heap information printed as last part of detailed GC log.
     G1HeapPrinterMark hpm(this);
+    // Young GC internal pause timing
+    G1YoungGCNotifyPauseMark npm;
+
+    // Verification may use the gang workers, so they must be set up before.
+    // Individual parallel phases may override this.
+    set_young_collection_default_active_worker_threads();
 
     // Wait for root region scan here to make sure that it is done before any
     // use of the STW work gang to maximize cpu use (i.e. all cores are available
@@ -3568,20 +3579,12 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_i
   DerivedPointerTable::clear();
 #endif
 
-  // Concurrent start needs claim bits to keep track of the marked-through CLDs.
   if (collector_state()->in_concurrent_start_gc()) {
     concurrent_mark()->pre_concurrent_start(gc_cause());
-
-    double start_clear_claimed_marks = os::elapsedTime();
-
-    ClassLoaderDataGraph::clear_claimed_marks();
-
-    double recorded_clear_claimed_marks_time_ms = (os::elapsedTime() - start_clear_claimed_marks) * 1000.0;
-    phase_times()->record_clear_claimed_marks_time_ms(recorded_clear_claimed_marks_time_ms);
   }
 
   // Should G1EvacuationFailureALot be in effect for this GC?
-  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
+  evac_failure_injector()->arm_if_needed();
 }
 
 class G1EvacuateRegionsBaseTask : public AbstractGangTask {
@@ -4296,7 +4299,7 @@ void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
 void G1CollectedHeap::update_used_after_gc() {
   if (evacuation_failed()) {
     // Reset the G1EvacuationFailureALot counters and flags
-    NOT_PRODUCT(reset_evacuation_should_fail();)
+    evac_failure_injector()->reset();
 
     set_used(recalculate_used());
 
