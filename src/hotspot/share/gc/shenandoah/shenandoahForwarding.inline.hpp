@@ -47,30 +47,41 @@
  *      (because doing otherwise requires tracking load dependencies);
  *   c) the use of "Consume" is generally discouraged in current C++;
  *
- * ...Release-Acquire ordering might be considered. But, on weakly-ordered
- * architectures, doing "Acquire" on hot-path would significantly penalize users.
+ * ...Release-Acquire ordering might be considered.
  *
- * We can recognize that C++ GC code hardly ever accesses the object contents after
- * the evacuation: the marking is done by the time evacuations happen, the evacuation
- * code only reads the contents of the from-copy (that is not protected by
- * synchronization anyhow). The "only" problematic place is update-refs that reads
- * the forwardee, and needs to see it completely. But, that phase happens after
- * all fwdptr installations happened, an update-refs-start pause happened, and so
- * it should not observe anything in flight. Therefore, for this code "Relaxed" still
- * works, "Consume" is good as the additional safety measure, but the cost of "Acquire"
- * is too high.
+ * It is beyond doubt that forwardee installations need to be "Release".
+ * But doing "Acquire" on hot-path, especially on weakly-ordered architectures,
+ * would significantly penalize users. The rest of the discussion is about the
+ * need for "Acquire" on some paths.
  *
- * The mutator code accesses forwarded objects through the special method that
- * does "Acquire" for additional safety. That path is taken by self-healing paths,
+ * There are several distinct places from where the access happens:
+ *   1. C++ GC code
+ *   2. Mutator code (through runtime/C++ barriers)
+ *   3. Mutator code (through interpreter/assembly barriers)
+ *
+ * The problematic places in C++ GC code are:
+ *   *) evacuation that performs contended CASes for fwdptr installation. The failing
+ *      CAS should "Acquire" the see the other forwardee;
+ *   *) update-refs that reads the forwardee, and needs to see it completely. But, that
+ *      phase happens after all forwardee installations happened, an update-refs-start
+ *      pause happened, and so it should not observe anything in flight. Therefore,
+ *      "Relaxed" is good for that path;
+ *
+ * The mutator code can access the fwdptr at arbitrary point in the GC. Therefore,
+ * it can potentially race with the concurrent evacuation.
+ *
+ * The mutator runtime/C++ code accesses forwarded objects through the special method
+ * that does "Acquire" for additional safety. That path is taken by self-healing paths,
  * which are relatively rare, and already paid the significant cost of going to runtime.
  *
- * Hand-written arch-specific assembly code for barriers uses data dependencies to
- * provide "Consume" semantics that would not be affected by C++ compilers.
+ * The mutator interpreter/runtime accesses use the hand-written arch-specific assembly
+ * code for barriers that is immune to C++ shenanigans, and does use data dependencies to
+ * provide "Consume" semantics.
  *
  * The critical point where synchronization is needed are mark word accesses:
- *   1. markword loads by GC are using the "relaxed" loads;
- *   2. markword loads by mutator are using the "acquire" loads;
- *   2. markword stores that publish new forwardee are marked with "release";
+ *   1. markword loads by GC use "Relaxed";
+ *   2. markword loads by mutator use "Acquire";
+ *   3. markword load-stores (either by GC or mutator) use "Acquire" + "Release";
  *
  * TODO: When "Consume" is available, load mark words with "consume" for extra safety.
  */
@@ -97,6 +108,7 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
 
 inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
   // Same as above, but mutator thread cannot ever see NULL forwardee.
+  // It also performs the "acquire" read to coordinate with GC evacs.
   shenandoah_assert_correct(NULL, obj);
   assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
 
@@ -126,7 +138,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   }
 
   markWord new_mark = markWord::encode_pointer_as_mark(update);
-  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_release);
+  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_acq_rel);
   if (prev_mark == old_mark) {
     return update;
   } else {
