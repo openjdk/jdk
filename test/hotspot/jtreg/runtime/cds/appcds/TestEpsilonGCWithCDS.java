@@ -57,9 +57,9 @@ public class TestEpsilonGCWithCDS {
         test(false, true, true);
     }
 
-    static String G1 = "-XX:+UseG1GC";
-    static String Epsilon = "-XX:+UseEpsilonGC";
-    static String experiment = "-XX:+UnlockExperimentalVMOptions";
+    final static String G1 = "-XX:+UseG1GC";
+    final static String Epsilon = "-XX:+UseEpsilonGC";
+    final static String experiment = "-XX:+UnlockExperimentalVMOptions";
 
     static void test(boolean dumpWithEpsilon, boolean execWithEpsilon) throws Exception {
         test(dumpWithEpsilon, execWithEpsilon, false);

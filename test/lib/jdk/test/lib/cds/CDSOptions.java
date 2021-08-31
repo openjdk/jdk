@@ -131,10 +131,12 @@ public class CDSOptions {
 
     static ArrayList<String> disabledRuntimePrefixes = new ArrayList<>();
 
-    public static void disableRuntimePrefix(String s) {
+    // Do not use the command-line option s, even if it's specified in -Dtest.cds.runtime.options
+    private static void disableRuntimePrefix(String s) {
         disabledRuntimePrefixes.add(s);
     }
 
+    // Do not use the command-line option "-XX:+UseEpsilonGC", even if it's specified in -Dtest.cds.runtime.options
     public static void disableRuntimePrefixForEpsilonGC() {
         disableRuntimePrefix("-XX:+UseEpsilonGC");
     }

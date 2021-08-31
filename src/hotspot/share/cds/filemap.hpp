@@ -587,11 +587,12 @@ public:
   static size_t set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_size);
   static size_t write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_offset, char* buffer);
 
+  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
+
   // The starting address of spc, as calculated with CompressedOop::decode_non_null()
   address start_address_as_decoded_with_current_oop_encoding_mode(FileMapRegion* spc) {
     return decode_start_address(spc, true);
   }
-
 public:
   // The starting address of spc, as calculated with HeapShared::decode_from_archive()
   address start_address_as_decoded_from_archive(FileMapRegion* spc) {
@@ -599,7 +600,6 @@ public:
   }
 
 private:
-  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
 
 #if INCLUDE_JVMTI
   static ClassPathEntry** _classpath_entries_for_jvmti;

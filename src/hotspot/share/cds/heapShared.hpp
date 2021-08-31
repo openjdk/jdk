@@ -216,14 +216,15 @@ public:
   }
 
   static bool load_heap_regions(FileMapInfo* mapinfo);
-  static bool is_in_loaded_heap(uintptr_t o) {
-    return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
-  }
   static void assert_in_loaded_heap(uintptr_t o) {
     assert(is_in_loaded_heap(o), "must be");
   }
 
 private:
+  static bool is_in_loaded_heap(uintptr_t o) {
+    return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
+  }
+
   typedef ResourceHashtable<oop, oop,
       15889, // prime number
       ResourceObj::C_HEAP,
