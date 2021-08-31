@@ -285,8 +285,7 @@ Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check
   _safepoint_check_required = safepoint_check_required;
   _skip_rank_check = false;
 
-  assert(_rank < nonleaf || _safepoint_check_required == _safepoint_check_always ||
-         /*for now*/ _rank == Mutex::native,
+  assert(_rank < nonleaf || _safepoint_check_required == _safepoint_check_always,
          "higher than nonleaf should safepoint %s", name);
 
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
