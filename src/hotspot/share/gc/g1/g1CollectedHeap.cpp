@@ -3567,16 +3567,8 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_i
   DerivedPointerTable::clear();
 #endif
 
-  // Concurrent start needs claim bits to keep track of the marked-through CLDs.
   if (collector_state()->in_concurrent_start_gc()) {
     concurrent_mark()->pre_concurrent_start(gc_cause());
-
-    double start_clear_claimed_marks = os::elapsedTime();
-
-    ClassLoaderDataGraph::clear_claimed_marks();
-
-    double recorded_clear_claimed_marks_time_ms = (os::elapsedTime() - start_clear_claimed_marks) * 1000.0;
-    phase_times()->record_clear_claimed_marks_time_ms(recorded_clear_claimed_marks_time_ms);
   }
 
   // Should G1EvacuationFailureALot be in effect for this GC?
