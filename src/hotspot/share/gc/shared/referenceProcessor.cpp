@@ -847,6 +847,11 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   return list;
 }
 
+inline bool ReferenceProcessor::set_discovered_link(HeapWord* discovered_addr, oop next_discovered) {
+  return discovery_is_mt() ? set_discovered_link_mt(discovered_addr, next_discovered)
+                           : set_discovered_link_st(discovered_addr, next_discovered);
+}
+
 inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list,
                                                        oop obj,
                                                        HeapWord* discovered_addr) {
@@ -855,8 +860,7 @@ inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list
   // discovered field pointing to itself.
   oop next_discovered = (current_head != NULL) ? current_head : obj;
 
-  bool added = discovery_is_mt() ? set_discovered_link_mt(discovered_addr, next_discovered)
-                                 : set_discovered_link_st(discovered_addr, next_discovered);
+  bool added = set_discovered_link(discovered_addr, next_discovered);
   if (added) {
     // We can always add the object without synchronization: every thread has its
     // own list head.

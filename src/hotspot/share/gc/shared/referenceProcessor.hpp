@@ -329,6 +329,7 @@ private:
     return id;
   }
   DiscoveredList* get_discovered_list(ReferenceType rt);
+  inline bool set_discovered_link(HeapWord* discovered_addr, oop next_discovered);
   inline void add_to_discovered_list(DiscoveredList& refs_list, oop obj,
                                      HeapWord* discovered_addr);
   inline bool set_discovered_link_st(HeapWord* discovered_addr,
