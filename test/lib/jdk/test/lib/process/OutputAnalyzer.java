@@ -218,7 +218,9 @@ public final class OutputAnalyzer {
         String stderr = getStderr();
         if (!stdout.contains(expectedString) && !stderr.contains(expectedString)) {
             reportDiagnosticSummary();
-            throw new RuntimeException("'" + expectedString + "' missing from stdout/stderr \n");
+            int i = stdout.indexOf("markerName");
+            var xxx = stdout.substring(i, i+30);
+            throw new RuntimeException("'" + expectedString + "' missing from stdout/stderr " + xxx + "\n");
         }
         return this;
     }

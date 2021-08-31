@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,19 @@ import java.util.Arrays;
  * A helper class which prints the content of input streams to print streams.
  */
 public class PrintStreamPrinter {
+    private static final String nativeEncoding = System.getProperty("native.encoding");
 
     /**
-     * Reads characters in UTF-8 format from the input stream and prints them
+     * Reads characters in `native.encoding` from the input stream and prints them
      * with the given print stream. Closes the input stream before it returns.
      *
      * @return The number of printed characters.
      */
-    public static long drainUTF8(InputStream is, PrintStream ps) throws IOException {
+    public static long drainNative(InputStream is, PrintStream ps) throws IOException {
         long result = 0;
 
         try (BufferedInputStream bis = new BufferedInputStream(is);
-             InputStreamReader isr = new InputStreamReader(bis, "UTF-8")) {
+             InputStreamReader isr = new InputStreamReader(bis, nativeEncoding)) {
             char c[] = new char[256];
             int n;
 
