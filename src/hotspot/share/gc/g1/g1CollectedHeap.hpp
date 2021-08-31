@@ -1134,7 +1134,7 @@ public:
   // Returns whether this collection actually executed.
   bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
 
-  void initiate_conc_gc_for_metadata_allocation(GCCause::Cause gc_cause);
+  void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;

@@ -221,7 +221,7 @@ void VM_CollectForMetadataAllocation::doit() {
 
 #if INCLUDE_G1GC
   if (UseG1GC && ClassUnloadingWithConcurrentMark) {
-    G1CollectedHeap::heap()->initiate_conc_gc_for_metadata_allocation(_gc_cause);
+    G1CollectedHeap::heap()->start_concurrent_gc_for_metadata_allocation(_gc_cause);
     // For G1 expand since the collection is going to be concurrent.
     _result = _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
     if (_result != NULL) {

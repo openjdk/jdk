@@ -2245,7 +2245,7 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
   }
 }
 
-void G1CollectedHeap::initiate_conc_gc_for_metadata_allocation(GCCause::Cause gc_cause) {
+void G1CollectedHeap::start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause) {
   GCCauseSetter x(this, gc_cause);
 
   // At this point we are supposed to start a concurrent cycle. We
