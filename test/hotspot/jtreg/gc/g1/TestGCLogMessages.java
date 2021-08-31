@@ -286,6 +286,12 @@ public class TestGCLogMessages {
         output.shouldHaveExitValue(0);
     }
 
+    LogMessageWithLevel concurrentStartMessages[] = new LogMessageWithLevel[] {
+        new LogMessageWithLevel("Clear Claimed Marks", Level.DEBUG),
+        new LogMessageWithLevel("Reset Marking State", Level.DEBUG),
+        new LogMessageWithLevel("Note Start Of Mark", Level.DEBUG),
+    };
+
     private void testWithConcurrentStart() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                                   "-Xmx10M",
@@ -296,7 +302,7 @@ public class TestGCLogMessages {
                                                                   GCTestWithConcurrentStart.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Clear Claimed Marks");
+        checkMessagesAtLevel(output, concurrentStartMessages, Level.TRACE);
         output.shouldHaveExitValue(0);
     }
 
