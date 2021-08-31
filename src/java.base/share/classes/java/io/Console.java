@@ -29,6 +29,7 @@ import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
 import sun.security.action.GetPropertyAction;
@@ -572,22 +573,34 @@ public final class Console implements Flushable
 
     private static final Charset CHARSET;
     static {
-        String csname = encoding();
         Charset cs = null;
-        if (csname == null) {
-            csname = GetPropertyAction.privilegedGetProperty("sun.stdout.encoding");
+        boolean istty = istty();
+
+        if (istty) {
+            String csname = encoding();
+            if (csname == null) {
+                csname = GetPropertyAction.privilegedGetProperty("sun.stdout.encoding");
+            }
+            if (csname != null) {
+                try {
+                    cs = Charset.forName(csname);
+                } catch (Exception ignored) { }
+            }
         }
-        if (csname != null) {
+        if (cs == null) {
             try {
-                cs = Charset.forName(csname);
-            } catch (Exception ignored) { }
+                cs = Charset.forName(StaticProperty.nativeEncoding());
+            } catch (Exception ignored) {
+                cs = Charset.defaultCharset();
+            }
         }
-        CHARSET = cs == null ? Charset.defaultCharset() : cs;
+
+        CHARSET = cs;
 
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                if (istty()) {
+                if (istty) {
                     if (cons == null)
                         cons = new Console();
                     return cons;
