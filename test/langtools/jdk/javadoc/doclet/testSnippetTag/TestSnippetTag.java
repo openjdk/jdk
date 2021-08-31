@@ -235,93 +235,164 @@ public class TestSnippetTag extends JavadocTester {
     public void testBadTagSyntax(Path base) throws IOException {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
+
+        record TestCase(String input, String expectedError) { }
+
         final var badSnippets = List.of(
                 // No newline after `:`
-                """
-                {@snippet :}
-                """,
-                """
-                {@snippet : }
-                """,
-                """
-                {@snippet
-                : }
-                """,
-                """
-                {@snippet
-                 : }
-                """,
+                new TestCase("""
+                             {@snippet :}
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet :}
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet : }
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet : }
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet
+                             : }
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet
+                              : }
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet
+                                       ^
+                             """)
+                ,
                 // Attribute issues
-                """
-                {@snippet file="}
-                """,
-                """
-                {@snippet file="
-                }
-                """,
-                """
-                {@snippet file='}
-                """,
-                """
-                {@snippet file='
-                }
-                """,
-                """
-                {@snippet file='
-                    }
-                """,
-                """
-                {@snippet
-                file='
-                    }
-                """,
-                """
-                {@snippet
-                file='}
-                """,
+                new TestCase("""
+                             {@snippet file="}
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet file="}
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet file="
+                             }
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet file="
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet file='}
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet file='}
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet file='
+                             }
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet file='
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet file='
+                                 }
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet file='
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet
+                             file='
+                                 }
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet
+                                       ^
+                             """)
+                ,
+                new TestCase("""
+                             {@snippet
+                             file='}
+                             """,
+                             """
+                             error: unexpected content
+                                 /**   {@snippet
+                                       ^
+                             """)
+                ,
 // This is an interesting case: closing curly terminates the tag, leaving the
 // attribute value empty.
-                """
-                {@snippet
-                file=}
-                """
-// The below commented out cases are worth testing if only to fixate the result.
-// It's not that we can do a lot about them anyway.
-//                ,
-// A missing `:`
-//                """
-//                {@snippet
-//                  Hello  there
-//                }
-//                """
-// A missing `:`
-//                """
-//                {@snippet
-//                    List<String> strings = List.of();
-//                }
-//                """
+                new TestCase("""
+                             {@snippet
+                             file=}
+                             """,
+                             """
+                             error: illegal value for attribute "file": ""
+                             file=}
+                             ^
+                             """)
         );
         ClassBuilder classBuilder = new ClassBuilder(tb, "pkg.A")
                 .setModifiers("public", "class");
         forEachNumbered(badSnippets, (s, i) -> {
             classBuilder.addMembers(
-                    MethodBuilder.parse("public void case%s() { }".formatted(i)).setComments(s));
+                    MethodBuilder.parse("public void case%s() { }".formatted(i)).setComments(s.input));
         });
         classBuilder.write(srcDir);
         javadoc("-d", outDir.toString(),
                 "-sourcepath", srcDir.toString(),
                 "pkg");
         checkExit(Exit.ERROR);
-        // Not very specific, but good enough
-        long actual = Pattern.compile("error: ").matcher(getOutput(Output.OUT)).results().count();
-        checking("Number of errors");
-        int expected = badSnippets.size();
-        if (actual == expected) {
-            passed("");
-        } else {
-            failed(actual + " vs " + expected);
-        }
+        checkOrder(Output.OUT, badSnippets.stream().map(TestCase::expectedError).toArray(String[]::new));
         checkNoCrashes();
+    }
+
+    // TODO This is a temporary method; it should be removed after JavadocTester has provided similar functionality (JDK-8273154).
+    private void checkOrder(Output output, String... strings) {
+        String outputString = getOutput(output);
+        int prevIndex = -1;
+        for (String s : strings) {
+            int currentIndex = outputString.indexOf(s, prevIndex + 1);
+            checking("output: " + output + ": " + s + " at index " + currentIndex);
+            if (currentIndex == -1) {
+                failed(output + ": " + s + " not found.");
+                continue;
+            }
+            if (currentIndex > prevIndex) {
+                passed(output + ": " + " is in the correct order");
+            } else {
+                failed(output + ": " + " is in the wrong order.");
+            }
+            prevIndex = currentIndex;
+        }
     }
 
     /*
