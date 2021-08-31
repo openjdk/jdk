@@ -763,13 +763,13 @@ public class CSS implements Serializable {
 
         if (size != null) {
             if (size.startsWith("+")) {
-                relSize = Integer.valueOf(size.substring(1)).intValue();
+                relSize = Integer.parseInt(size.substring(1));
                 setBaseFontSize(baseFontSize + relSize);
             } else if (size.startsWith("-")) {
-                relSize = -Integer.valueOf(size.substring(1)).intValue();
+                relSize = -Integer.parseInt(size.substring(1));
                 setBaseFontSize(baseFontSize + relSize);
             } else {
-                setBaseFontSize(Integer.valueOf(size).intValue());
+                setBaseFontSize(Integer.parseInt(size));
             }
         }
     }
@@ -961,13 +961,13 @@ public class CSS implements Serializable {
         ss = getStyleSheet(ss);
         if (size != null) {
             if (size.startsWith("+")) {
-                relSize = Integer.valueOf(size.substring(1)).intValue();
+                relSize = Integer.parseInt(size.substring(1));
                 return getPointSize(baseFontSize + relSize, ss);
             } else if (size.startsWith("-")) {
-                relSize = -Integer.valueOf(size.substring(1)).intValue();
+                relSize = -Integer.parseInt(size.substring(1));
                 return getPointSize(baseFontSize + relSize, ss);
             } else {
-                absSize = Integer.valueOf(size).intValue();
+                absSize = Integer.parseInt(size);
                 return getPointSize(absSize, ss);
             }
         }
@@ -2137,11 +2137,11 @@ public class CSS implements Serializable {
                  */
                 int baseFontSize = getBaseFontSize();
                 if (value.charAt(0) == '+') {
-                    int relSize = Integer.valueOf(value.substring(1)).intValue();
+                    int relSize = Integer.parseInt(value.substring(1));
                     fs.value = baseFontSize + relSize;
                     fs.index = true;
                 } else if (value.charAt(0) == '-') {
-                    int relSize = -Integer.valueOf(value.substring(1)).intValue();
+                    int relSize = -Integer.parseInt(value.substring(1));
                     fs.value = baseFontSize + relSize;
                     fs.index = true;
                 } else {
@@ -2533,7 +2533,7 @@ public class CSS implements Serializable {
             LengthValue lv;
             try {
                 // Assume pixels
-                float absolute = Float.valueOf(value).floatValue();
+                float absolute = Float.parseFloat(value);
                 lv = new LengthValue();
                 lv.span = absolute;
             } catch (NumberFormatException nfe) {
