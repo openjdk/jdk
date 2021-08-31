@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,40 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
-#define SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
+/*
+ * @test
+ * @bug 8268894
+ * @summary Updating the type annotation position offset causes ArrayIndexOutOfBoundsException in ClassWriter
+ * @modules jdk.compiler/com.sun.tools.javac.tree
+ * @compile TypeAnnotationPositionProcessor.java
+ * @compile -processor TypeAnnotationPositionProcessor TypeAnnotationPositionTest.java
+ */
 
-#include "utilities/globalDefinitions.hpp"
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-class G1DirtyCardQueueSet;
+public class TypeAnnotationPositionTest {
+    TypeAnnotationPositionTest(char @MyTest [] bar) { }
 
-// A dirty card queue providing thread-safe enqueue.  A shared global
-// instance can be used for cases where a thread-local dirty card can't
-// be used.
-class G1SharedDirtyCardQueue {
-  G1DirtyCardQueueSet* const _qset;
-  void** _buffer;
-  size_t _index;
+    @Target({ElementType.TYPE_USE})
+    @interface MyTest {
+    }
 
-  NONCOPYABLE(G1SharedDirtyCardQueue);
-
-public:
-  G1SharedDirtyCardQueue(G1DirtyCardQueueSet* qset);
-  ~G1SharedDirtyCardQueue();    // flushes the queue.
-
-  // Thread-safe addition to shared logging buffer.
-  void enqueue(void* card_ptr);
-
-  // Flush any pending entries to the qset and remove the buffer.
-  // Not thread-safe.
-  void flush();
-
-  // Discard any pending entries.
-  // Not thread-safe.
-  void reset();
-};
-
-#endif // SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
+    TypeAnnotationPositionTest test() {
+        char @MyTest [] val = new char[]{'1'};
+        return new TypeAnnotationPositionTest(val);
+    }
+}

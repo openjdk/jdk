@@ -93,7 +93,7 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   _shadow_region_array = new (ResourceObj::C_HEAP, mtGC) GrowableArray<size_t >(10, mtGC);
 
   _shadow_region_monitor = new Monitor(Mutex::barrier, "CompactionManager monitor",
-                                       Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never);
+                                       Monitor::_safepoint_check_never);
 }
 
 void ParCompactionManager::reset_all_bitmap_query_caches() {

@@ -45,9 +45,12 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
@@ -188,7 +191,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     if (isNormalClass(p.getParentPath())) {
                         reportMissing("dc.default.constructor");
                     }
-                } else if (!isOverridingMethod) {
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous()) {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
@@ -1156,6 +1159,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private boolean isCheckedException(TypeMirror t) {
         return !(env.types.isAssignable(t, env.java_lang_Error)
                 || env.types.isAssignable(t, env.java_lang_RuntimeException));
+    }
+
+    private boolean isSynthetic() {
+        return env.elements.getOrigin(env.currElement) == Elements.Origin.SYNTHETIC;
+    }
+
+    private boolean isAnonymous() {
+        return (env.currElement instanceof TypeElement te)
+                && te.getNestingKind() == NestingKind.ANONYMOUS;
     }
 
     private boolean isDefaultConstructor() {

@@ -79,13 +79,17 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
 void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
   assert(!hr->is_pinned(), "Should be no pinned region in compaction queue");
   assert(!hr->is_humongous(), "Should be no humongous regions in compaction queue");
-  G1CompactRegionClosure compact(collector()->mark_bitmap());
-  hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
-  // Clear the liveness information for this region if necessary i.e. if we actually look at it
-  // for bitmap verification. Otherwise it is sufficient that we move the TAMS to bottom().
-  if (G1VerifyBitmaps) {
-    collector()->mark_bitmap()->clear_region(hr);
+
+  if (!collector()->is_free(hr->hrm_index())) {
+    G1CompactRegionClosure compact(collector()->mark_bitmap());
+    hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
+    // Clear the liveness information for this region if necessary i.e. if we actually look at it
+    // for bitmap verification. Otherwise it is sufficient that we move the TAMS to bottom().
+    if (G1VerifyBitmaps) {
+      collector()->mark_bitmap()->clear_region(hr);
+    }
   }
+
   hr->reset_compacted_after_full_gc();
 }
 

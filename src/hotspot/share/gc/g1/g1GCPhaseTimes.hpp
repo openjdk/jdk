@@ -87,6 +87,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 #endif
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
+    CLDClearClaimedMarks,
+    ResetMarkingState,
+    NoteStartOfMark,
     GCParPhasesSentinel
   };
 
@@ -180,12 +183,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_prepare_heap_roots_time_ms;
 
-  double _recorded_clear_claimed_marks_time_ms;
-
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
-
-  double _recorded_sample_collection_set_candidates_time_ms;
 
   double _recorded_preserve_cm_referents_time_ms;
 
@@ -255,7 +254,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   size_t get_thread_work_item(GCParPhases phase, uint worker_id, uint index = 0);
 
   // return the average time for a phase in milliseconds
-  double average_time_ms(GCParPhases phase);
+  double average_time_ms(GCParPhases phase) const;
 
   size_t sum_thread_work_items(GCParPhases phase, uint index = 0);
 
@@ -343,10 +342,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_non_young_cset_choice_time_ms = time_ms;
   }
 
-  void record_sample_collection_set_candidates_time_ms(double time_ms) {
-    _recorded_sample_collection_set_candidates_time_ms = time_ms;
-  }
-
   void record_preserve_cm_referents_time_ms(double time_ms) {
     _recorded_preserve_cm_referents_time_ms = time_ms;
   }
@@ -373,10 +368,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_prepare_heap_roots_time_ms(double recorded_prepare_heap_roots_time_ms) {
     _recorded_prepare_heap_roots_time_ms = recorded_prepare_heap_roots_time_ms;
-  }
-
-  void record_clear_claimed_marks_time_ms(double recorded_clear_claimed_marks_time_ms) {
-    _recorded_clear_claimed_marks_time_ms = recorded_clear_claimed_marks_time_ms;
   }
 
   double cur_collection_start_sec() {

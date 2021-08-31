@@ -777,7 +777,8 @@ HeapWord* OffsetTableContigSpace::cross_threshold(HeapWord* start, HeapWord* end
 OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
                                                MemRegion mr) :
   _offsets(sharedOffsetArray, mr),
-  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true)
+  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock",
+                  Mutex::_safepoint_check_always, true)
 {
   _offsets.set_contig_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
