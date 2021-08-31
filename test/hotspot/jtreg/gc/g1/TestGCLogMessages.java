@@ -140,7 +140,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Region Register", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
         new LogMessageWithLevel("Concatenate Dirty Card Logs", Level.DEBUG),
-        new LogMessageWithLevel("Sample Collection Set Candidates", Level.DEBUG),
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
