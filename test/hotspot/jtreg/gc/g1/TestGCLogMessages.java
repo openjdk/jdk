@@ -142,6 +142,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
         new LogMessageWithLevel("JNI Global Roots", Level.TRACE),
         new LogMessageWithLevel("VM Global Roots", Level.TRACE),
+        // Post Evacuate Collection Set
         // NMethod List Cleanup
         new LogMessageWithLevel("NMethod List Cleanup", Level.DEBUG),
         // Reference Processing
