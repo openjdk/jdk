@@ -30,99 +30,21 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/ostream.hpp"
 
-G1CardSetBuffer::G1CardSetBuffer(uint elem_size, uint num_instances, G1CardSetBuffer* next) :
-    _elem_size(elem_size), _num_elems(num_instances), _next(next), _next_allocate(0) {
-
-  _buffer = NEW_C_HEAP_ARRAY(char, (size_t)_num_elems * elem_size, mtGCCardSet);
-}
-
-G1CardSetBuffer::~G1CardSetBuffer() {
-  FREE_C_HEAP_ARRAY(mtGCCardSet, _buffer);
-}
-
-void* G1CardSetBuffer::get_new_buffer_elem() {
-  if (_next_allocate >= _num_elems) {
-    return nullptr;
-  }
-  uint result = Atomic::fetch_and_add(&_next_allocate, 1u, memory_order_relaxed);
-  if (result >= _num_elems) {
-    return nullptr;
-  }
-  void* r = _buffer + (uint)result * _elem_size;
-  return r;
-}
-
-void G1CardSetBufferList::bulk_add(G1CardSetBuffer& first, G1CardSetBuffer& last, size_t num, size_t mem_size) {
-  _list.prepend(first, last);
-  Atomic::add(&_num_buffers, num, memory_order_relaxed);
-  Atomic::add(&_mem_size, mem_size, memory_order_relaxed);
-}
-
-void G1CardSetBufferList::print_on(outputStream* out, const char* prefix) {
-  out->print_cr("%s: buffers %zu size %zu", prefix, Atomic::load(&_num_buffers), Atomic::load(&_mem_size));
-}
-
-G1CardSetBuffer* G1CardSetBufferList::get() {
-  GlobalCounter::CriticalSection cs(Thread::current());
-
-  G1CardSetBuffer* result = _list.pop();
-  if (result != nullptr) {
-    Atomic::dec(&_num_buffers, memory_order_relaxed);
-    Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
-  }
-  return result;
-}
-
-G1CardSetBuffer* G1CardSetBufferList::get_all(size_t& num_buffers, size_t& mem_size) {
-  GlobalCounter::CriticalSection cs(Thread::current());
-
-  G1CardSetBuffer* result = _list.pop_all();
-  num_buffers = Atomic::load(&_num_buffers);
-  mem_size = Atomic::load(&_mem_size);
-
-  if (result != nullptr) {
-    Atomic::sub(&_num_buffers, num_buffers, memory_order_relaxed);
-    Atomic::sub(&_mem_size, mem_size, memory_order_relaxed);
-  }
-  return result;
-}
-
-void G1CardSetBufferList::free_all() {
-  size_t num_freed = 0;
-  size_t mem_size_freed = 0;
-  G1CardSetBuffer* cur;
-
-  while ((cur = _list.pop()) != nullptr) {
-    mem_size_freed += cur->mem_size();
-    num_freed++;
-    delete cur;
-  }
-
-  Atomic::sub(&_num_buffers, num_freed, memory_order_relaxed);
-  Atomic::sub(&_mem_size, mem_size_freed, memory_order_relaxed);
-}
 
 template <class Elem>
 G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
                                              const G1CardSetAllocOptions& buffer_options,
                                              G1CardSetBufferList* free_buffer_list) :
-  _alloc_options(buffer_options),
-  _first(nullptr),
-  _last(nullptr),
-  _num_buffers(0),
-  _mem_size(0),
-  _free_buffer_list(free_buffer_list),
+  G1SegmentedArray<Elem, mtGCCardSet>(name, buffer_options, free_buffer_list),
   _transfer_lock(false),
   _free_nodes_list(),
   _pending_nodes_list(),
   _num_pending_nodes(0),
-  _num_free_nodes(0),
-  _num_allocated_nodes(0),
-  _num_available_nodes(0)
+  _num_free_nodes(0)
+  // _num_allocated_nodes(0)
+  // _num_available_nodes(0)
 {
-  assert(elem_size() >= sizeof(G1CardSetContainer), "Element instance size %u for allocator %s too small",
-         elem_size(), name);
-  assert(_free_buffer_list != nullptr, "precondition!");
+  // assert(elem_size() >= sizeof(G1CardSetContainer), "Element instance size %u for allocator %s too small", elem_size(), name);
 }
 
 template <class Elem>
@@ -164,7 +86,7 @@ bool G1CardSetAllocator<Elem>::try_transfer_pending() {
 template <class Elem>
 void G1CardSetAllocator<Elem>::free(Elem* elem) {
   assert(elem != nullptr, "precondition");
-  assert(elem_size() >= sizeof(G1CardSetContainer), "size mismatch");
+  // assert(elem_size() >= sizeof(G1CardSetContainer), "size mismatch");
   // Desired minimum transfer batch size.  There is relatively little
   // importance to the specific number.  It shouldn't be too big, else
   // we're wasting space when the release rate is low.  If the release
@@ -192,47 +114,18 @@ template <class Elem>
 void G1CardSetAllocator<Elem>::drop_all() {
   _free_nodes_list.pop_all();
   _pending_nodes_list.pop_all();
-  G1CardSetBuffer* cur = Atomic::load_acquire(&_first);
-
-  if (cur != nullptr) {
-    assert(_last != nullptr, "If there is at least one element, there must be a last one.");
-
-    G1CardSetBuffer* first = cur;
-#ifdef ASSERT
-    // Check list consistency.
-    G1CardSetBuffer* last = cur;
-    uint num_buffers = 0;
-    size_t mem_size = 0;
-    while (cur != nullptr) {
-      mem_size += cur->mem_size();
-      num_buffers++;
-
-      G1CardSetBuffer* next = cur->next();
-      last = cur;
-      cur = next;
-    }
-#endif
-    assert(num_buffers == _num_buffers, "Buffer count inconsistent %u %u", num_buffers, _num_buffers);
-    assert(mem_size == _mem_size, "Memory size inconsistent");
-    assert(last == _last, "Inconsistent last element");
-
-    _free_buffer_list->bulk_add(*first, *_last, _num_buffers, _mem_size);
-  }
-
-  _first = nullptr;
-  _last = nullptr;
-  _num_available_nodes = 0;
-  _num_allocated_nodes = 0;
+  // _num_available_nodes = 0;
+  // _num_allocated_nodes = 0;
   _num_pending_nodes = 0;
-  _num_buffers = 0;
-  _mem_size = 0;
   _num_free_nodes = 0;
+
+  G1SegmentedArray<Elem, mtGCCardSet>::drop_all();
 }
 
 template <class Elem>
 void G1CardSetAllocator<Elem>::print(outputStream* os) {
-  os->print("MA " PTR_FORMAT ": %u elems pending (allocated %u available %u) used %.3f highest %u buffers %u size %zu ",
-                p2i(this), _num_pending_nodes, _num_allocated_nodes, _num_available_nodes, percent_of(_num_allocated_nodes - _num_pending_nodes, _num_available_nodes), _first != nullptr ? _first->num_elems() : 0, _num_buffers, mem_size());
+  // os->print("MA " PTR_FORMAT ": %u elems pending (allocated %u available %u) used %.3f highest %u buffers %u size %zu ",
+  //               p2i(this), _num_pending_nodes, _num_allocated_nodes, _num_available_nodes, percent_of(_num_allocated_nodes - _num_pending_nodes, _num_available_nodes), _first != nullptr ? _first->num_elems() : 0, _num_buffers, mem_size());
 }
 
 G1CardSetMemoryStats::G1CardSetMemoryStats() {

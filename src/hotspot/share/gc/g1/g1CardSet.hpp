@@ -32,7 +32,6 @@
 #include "utilities/lockFreeStack.hpp"
 
 class G1CardSetAllocOptions;
-class G1CardSetBufferList;
 class G1CardSetHashTable;
 class G1CardSetHashTableValue;
 class G1CardSetMemoryManager;
