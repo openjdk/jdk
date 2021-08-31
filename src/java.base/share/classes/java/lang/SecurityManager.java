@@ -75,7 +75,7 @@ import sun.security.util.SecurityConstants;
  * manager routine simply returns if the operation is permitted, but
  * throws a {@code SecurityException} if the operation is not
  * permitted.
- * <p>
+ * <h2><a id="set-security-manager">Setting a Security Manager</a></h2>
  * Environments using a security manager will typically set the security
  * manager at startup. In the JDK implementation, this is done by setting the
  * system property {@systemProperty java.security.manager} on the command line
@@ -125,7 +125,7 @@ import sun.security.util.SecurityConstants;
  * <tr>
  *   <th scope="row">null</th>
  *   <td>None</td>
- *   <td>Always throws {@code UnsupportedOperationException}</td>
+ *   <td>Throws {@code UnsupportedOperationException}</td>
  * </tr>
  *
  * <tr>
@@ -145,7 +145,7 @@ import sun.security.util.SecurityConstants;
  * <tr>
  *   <th scope="row">"disallow"</th>
  *   <td>None</td>
- *   <td>Always throws {@code UnsupportedOperationException}</td>
+ *   <td>Throws {@code UnsupportedOperationException}</td>
  * </tr>
  *
  * <tr>
@@ -167,7 +167,7 @@ import sun.security.util.SecurityConstants;
  * <p>
  * The current security manager is returned by the
  * {@link System#getSecurityManager() getSecurityManager} method.
- * <p>
+ * <h2><a id="check-permission">Checking Permissions</a></h2>
  * The special method
  * {@link SecurityManager#checkPermission(java.security.Permission)}
  * determines whether an access request indicated by a specified
