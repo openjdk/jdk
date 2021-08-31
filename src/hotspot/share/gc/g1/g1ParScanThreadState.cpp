@@ -280,13 +280,11 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
 
-  // Same reason to use dest_attr.is_young() here as for the successfully evacuated
-  // regular object case. G1HeapRegionAttr::is_new_survivor() is not set in dest_attr
-  // as it originates from deciding into which generation the object should be
-  // evacuated. However, to_array must be in a survivor region (if dest_attr.is_young())
-  // or Old here.
-  // Assert this here as it is not immediately obvious.
-  assert(!dest_attr.is_young() || _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
+  // Skip the card enqueue iff the objective (to_array) is in survivor region.
+  // However, HeapRegion::is_survivor() is too expensive here.
+  // Instead, we use dest_attr.is_young() because the two values are always
+  // equal: successfully allocated young regions must be survivor regions.
+  assert(dest_attr.is_young() == _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
   G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
@@ -532,14 +530,11 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       _string_dedup_requests.add(old);
     }
 
-    // If dest_attr still refers to Young at this point, this object must be
-    // in a survivor region (evacuation succeeded), so we can use this for the
-    // G1SkipCardEnqueueSetter instead of re-evaluating the G1HeapRegionAttr of
-    // obj (dest_attr here is used to select the allocation generation, and this
-    // is either "Young" or "Old").
-    // The region of "obj" is the source region for this iteration.
-    // Assert this here although almost obvious.
-    assert(!dest_attr.is_young() || _g1h->heap_region_containing(obj)->is_survivor(), "must be");
+    // Skip the card enqueue iff the objective (obj) is in survivor region.
+    // However, HeapRegion::is_survivor() is too expensive here.
+    // Instead, we use dest_attr.is_young() because the two values are always
+    // equal: successfully allocated young regions must be survivor regions.
+    assert(dest_attr.is_young() == _g1h->heap_region_containing(obj)->is_survivor(), "must be");
     G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
     obj->oop_iterate_backwards(&_scanner, klass);
     return obj;
