@@ -41,13 +41,14 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static java.lang.invoke.MethodType.*;
 
 /**
- * InvokerBuilder generates the bytecode for a hidden class that implements
- * MHInvoker or VHInvoker and it uses condy to load a MethodHandle
- * or VarHandle from the class data.
- * 
+ * ReflectionInvokerBuilder generates the bytecode for a hidden class that
+ * implements MHInvoker or VHInvoker for fast invocation. It loads
+ * a MethodHandle or VarHandle from the class data as a constant for
+ * better JIT optimization.
+ *
  * @see java.lang.invoke.MethodHandles#classData(MethodHandles.Lookup, String, Class)
  */
-class InvokerBuilder extends ClassWriter {
+class ReflectionInvokerBuilder extends ClassWriter {
     private static final int CLASSFILE_VERSION = VM.classFileVersion();
     private static final String OBJECT_CLS = "java/lang/Object";
     private static final String MHS_CLS = "java/lang/invoke/MethodHandles";
@@ -65,7 +66,7 @@ class InvokerBuilder extends ClassWriter {
     /**
      * A builder to generate a class file to access class data
      */
-    InvokerBuilder(String classname, Class<?> classDataType) {
+    ReflectionInvokerBuilder(String classname, Class<?> classDataType) {
         super(ClassWriter.COMPUTE_FRAMES);
         this.classname = classname;
         Handle bsm = new Handle(H_INVOKESTATIC, MHS_CLS, "classData",

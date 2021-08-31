@@ -425,19 +425,19 @@ final class MethodHandleAccessorFactory {
     }
 
     private static byte[] spinByteCode(String cn, Field field) {
-        var builder = new InvokerBuilder(cn, VarHandle.class);
+        var builder = new ReflectionInvokerBuilder(cn, VarHandle.class);
         var bytes = builder.buildVarHandleInvoker(field);
         maybeDumpClassFile(cn, bytes);
         return bytes;
     }
     private static byte[] spinByteCode(String cn, Method method, MethodType mtype, boolean hasCallerParameter) {
-        var builder = new InvokerBuilder(cn, MethodHandle.class);
+        var builder = new ReflectionInvokerBuilder(cn, MethodHandle.class);
         var bytes = builder.buildMethodHandleInvoker(method, mtype, hasCallerParameter);
         maybeDumpClassFile(cn, bytes);
         return bytes;
     }
     private static byte[] spinByteCode(String cn, Constructor<?> ctor, MethodType mtype) {
-        var builder = new InvokerBuilder(cn, MethodHandle.class);
+        var builder = new ReflectionInvokerBuilder(cn, MethodHandle.class);
         var bytes = builder.buildMethodHandleInvoker(ctor, mtype);
         maybeDumpClassFile(cn, bytes);
         return bytes;
@@ -513,4 +513,3 @@ final class MethodHandleAccessorFactory {
         }
     }
 }
-

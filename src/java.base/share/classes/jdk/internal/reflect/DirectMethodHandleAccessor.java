@@ -456,4 +456,3 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
         }
     }
 }
-
