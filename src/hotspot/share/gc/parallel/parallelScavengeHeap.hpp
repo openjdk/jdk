@@ -50,6 +50,26 @@ class PSAdaptiveSizePolicy;
 class PSCardTable;
 class PSHeapSummary;
 
+// ParallelScavengeHeap is the implementation of CollectedHeap for Parallel GC.
+//
+// The heap is reserved up-front in a single contiguous block, split into two
+// parts, the old and young generation. The old generation resides at lower
+// addresses, the young generation at higher addresses. The boundary address
+// between the generations is fixed. Within a generation, committed memory
+// grows towards higher addresses.
+//
+//
+// low                                                                high
+//
+//                          +-- generation boundary (fixed after startup)
+//                          |
+// |<- old gen (reserved) ->|<-       young gen (reserved)             ->|
+// +---------------+--------+-----------------+--------+--------+--------+
+// |      old      |        |       eden      |  from  |   to   |        |
+// |               |        |                 |  (to)  | (from) |        |
+// +---------------+--------+-----------------+--------+--------+--------+
+// |<- committed ->|        |<-          committed            ->|
+//
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
  private:
@@ -138,6 +158,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Returns JNI_OK on success
   virtual jint initialize();
+
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
 
   void post_initialize();
   void update_counters();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1014,7 +1014,7 @@ inline ConcurrentHashTable<CONFIG, F>::
 {
   _stats_rate = TableRateStatistics();
   _resize_lock =
-    new Mutex(Mutex::leaf, "ConcurrentHashTable", true,
+    new Mutex(Mutex::leaf, "ConcurrentHashTable",
               Mutex::_safepoint_check_never);
   _table = new InternalTable(log2size);
   assert(log2size_limit >= log2size, "bad ergo");
