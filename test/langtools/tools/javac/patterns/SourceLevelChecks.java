@@ -76,7 +76,7 @@ public class SourceLevelChecks extends TestRunner {
                    }
                }
                """,
-               "Test.java:5:26: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
                "1 error");
     }
 

@@ -377,7 +377,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   // _finger set in set_non_marking_state
 
   _worker_id_offset(G1DirtyCardQueueSet::num_par_ids() + G1ConcRefinementThreads),
-  _max_num_tasks(ParallelGCThreads),
+  _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
   // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor
 
@@ -445,7 +445,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* task_queue = new G1CMTaskQueue();
-    task_queue->initialize();
     _task_queues->register_queue(i, task_queue);
 
     _tasks[i] = new G1CMTask(i, this, task_queue, _region_mark_stats);
@@ -582,29 +581,65 @@ public:
   static size_t chunk_size() { return M; }
 
 private:
-  // Heap region closure used for clearing the given mark bitmap.
+  // Heap region closure used for clearing the _next_mark_bitmap.
   class G1ClearBitmapHRClosure : public HeapRegionClosure {
   private:
-    G1CMBitMap* _bitmap;
     G1ConcurrentMark* _cm;
-  public:
-    G1ClearBitmapHRClosure(G1CMBitMap* bitmap, G1ConcurrentMark* cm) : HeapRegionClosure(), _bitmap(bitmap), _cm(cm) {
+    G1CMBitMap* _bitmap;
+    bool _suspendible; // If suspendible, do yield checks.
+
+    bool suspendible() {
+      return _suspendible;
     }
 
+    bool is_clear_concurrent_undo() {
+      return suspendible() && _cm->cm_thread()->in_undo_mark();
+    }
+
+    bool has_aborted() {
+      if (suspendible()) {
+        _cm->do_yield_check();
+        return _cm->has_aborted();
+      }
+      return false;
+    }
+
+    HeapWord* region_clear_limit(HeapRegion* r) {
+      // During a Concurrent Undo Mark cycle, the _next_mark_bitmap is  cleared
+      // without swapping with the _prev_mark_bitmap. Therefore, the per region
+      // next_top_at_mark_start and live_words data are current wrt
+      // _next_mark_bitmap. We use this information to only clear ranges of the
+      // bitmap that require clearing.
+      if (is_clear_concurrent_undo()) {
+        // No need to clear bitmaps for empty regions.
+        if (_cm->live_words(r->hrm_index()) == 0) {
+          assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
+          return r->bottom();
+        }
+        assert(_bitmap->get_next_marked_addr(r->next_top_at_mark_start(), r->end()) == r->end(), "Should not have marked bits above ntams");
+      }
+      return r->end();
+    }
+
+  public:
+    G1ClearBitmapHRClosure(G1ConcurrentMark* cm, bool suspendible) :
+      HeapRegionClosure(),
+      _cm(cm),
+      _bitmap(cm->next_mark_bitmap()),
+      _suspendible(suspendible)
+    { }
+
     virtual bool do_heap_region(HeapRegion* r) {
-      size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
+      if (has_aborted()) {
+        return true;
+      }
 
       HeapWord* cur = r->bottom();
-      HeapWord* const end = r->end();
+      HeapWord* const end = region_clear_limit(r);
+
+      size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
 
       while (cur < end) {
-        // Abort iteration if necessary.
-        if (_cm != NULL) {
-          _cm->do_yield_check();
-          if (_cm->has_aborted()) {
-            return true;
-          }
-        }
 
         MemRegion mr(cur, MIN2(cur + chunk_size_in_words, end));
         _bitmap->clear_range(mr);
@@ -615,10 +650,15 @@ private:
         // as asserts here to minimize their overhead on the product. However, we
         // will have them as guarantees at the beginning / end of the bitmap
         // clearing to get some checking in the product.
-        assert(_cm == NULL || _cm->cm_thread()->in_progress(), "invariant");
-        assert(_cm == NULL || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
+        assert(!suspendible() || _cm->cm_thread()->in_progress(), "invariant");
+        assert(!suspendible() || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
+
+        // Abort iteration if necessary.
+        if (has_aborted()) {
+          return true;
+        }
       }
-      assert(cur == end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
+      assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
 
       return false;
     }
@@ -629,9 +669,9 @@ private:
   bool _suspendible; // If the task is suspendible, workers must join the STS.
 
 public:
-  G1ClearBitMapTask(G1CMBitMap* bitmap, G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
+  G1ClearBitMapTask(G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
     AbstractGangTask("G1 Clear Bitmap"),
-    _cl(bitmap, suspendible ? cm : NULL),
+    _cl(cm, suspendible),
     _hr_claimer(n_workers),
     _suspendible(suspendible)
   { }
@@ -646,7 +686,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield) {
+void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
   size_t const num_bytes_to_clear = (HeapRegion::GrainBytes * _g1h->num_regions()) / G1CMBitMap::heap_map_factor();
@@ -654,7 +694,7 @@ void G1ConcurrentMark::clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool 
 
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
 
-  G1ClearBitMapTask cl(bitmap, this, num_workers, may_yield);
+  G1ClearBitMapTask cl(this, num_workers, may_yield);
 
   log_debug(gc, ergo)("Running %s with %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
   workers->run_task(&cl, num_workers);
@@ -672,7 +712,7 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   // is the case.
   guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 
-  clear_bitmap(_next_mark_bitmap, _concurrent_workers, true);
+  clear_next_bitmap(_concurrent_workers, true);
 
   // Repeat the asserts from above.
   guarantee(cm_thread()->in_progress(), "invariant");
@@ -686,7 +726,7 @@ void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers) {
   // as efficiently as possible the number of active workers are temporarily
   // increased to include all currently created workers.
   WithUpdatedActiveWorkers update(workers, workers->created_workers());
-  clear_bitmap(_next_mark_bitmap, workers, false);
+  clear_next_bitmap(workers, false);
 }
 
 class NoteStartOfMarkHRClosure : public HeapRegionClosure {
@@ -716,9 +756,7 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
 void G1ConcurrentMark::post_concurrent_mark_start() {
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = _g1h->ref_processor_cm();
-  // enable ("weak") refs discovery
-  rp->enable_discovery();
-  rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
+  rp->start_discovery(false /* always_clear */);
 
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   // This is the start of  the marking cycle, we're expected all
@@ -1125,7 +1163,7 @@ void G1ConcurrentMark::remark() {
 
   bool const mark_finished = !has_overflown();
   if (mark_finished) {
-    weak_refs_work(false /* clear_all_soft_refs */);
+    weak_refs_work();
 
     SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
     // We're done with marking.
@@ -1311,7 +1349,7 @@ void G1ConcurrentMark::compute_new_sizes() {
 
   // We reclaimed old regions so we should calculate the sizes to make
   // sure we update the old gen/space data.
-  _g1h->g1mm()->update_sizes();
+  _g1h->monitoring_support()->update_sizes();
 }
 
 void G1ConcurrentMark::cleanup() {
@@ -1492,7 +1530,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
+void G1ConcurrentMark::weak_refs_work() {
   ResourceMark rm;
 
   // Is alive closure.
@@ -1506,8 +1544,6 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // See the comment in G1CollectedHeap::ref_processing_init()
     // about how reference processing currently works in G1.
 
-    // Set the soft reference policy
-    rp->setup_policy(clear_all_soft_refs);
     assert(_global_mark_stack.is_empty(), "mark stack should be empty");
 
     // We need at least one active thread. If reference processing

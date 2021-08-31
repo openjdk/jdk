@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 /*
  * @test
  * @bug 4290801 4692419 4693631 5101540 5104960 6296410 6336600 6371531
- *    6488442 7036905 8008577 8039317 8074350 8074351 8150324 8167143
+ *      6488442 7036905 8008577 8039317 8074350 8074351 8150324 8167143
+ *      8264792
  * @summary Basic tests for Currency class.
  * @modules java.base/java.util:open
  *          jdk.localedata
@@ -104,7 +105,7 @@ public class CurrencyTest {
             int ctryLength = ctryCode.length();
             if (ctryLength == 0 ||
                 ctryLength == 3 || // UN M.49 code
-                ctryCode.matches("AA|Q[M-Z]|X[A-Z]|ZZ" + // user defined codes
+                ctryCode.matches("AA|Q[M-Z]|X[A-JL-Z]|ZZ" + // user defined codes, excluding "XK" (Kosovo)
                                  "AC|CP|DG|EA|EU|FX|IC|SU|TA|UK")) { // exceptional reservation codes
                 boolean gotException = false;
                 try {

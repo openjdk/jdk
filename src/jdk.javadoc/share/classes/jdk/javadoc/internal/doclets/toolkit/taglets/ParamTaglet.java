@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Given an array of <code>Parameter</code>s, return
-     * a name/rank number map.  If the array is null, then
-     * null is returned.
-     * @param params The array of parameters (from type or executable member) to
+     * Given a list of parameters, return a name/rank number map.
+     * If the list is null, then null is returned.
+     * @param params The list of parameters (from type or executable member) to
      *               check.
      * @return a name-rank number map.
      */
@@ -206,9 +205,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                     String lname = kind != ParamKind.TYPE_PARAMETER
                             ? utils.getSimpleName(e)
                             : utils.getTypeName(e.asType(), false);
-                    CommentHelper ch = utils.getCommentHelper(holder);
-                    ch.setOverrideElement(inheritedDoc.holder);
-                    Content content = processParamTag(holder, kind, writer,
+                    Content content = processParamTag(inheritedDoc.holder, kind, writer,
                             (ParamTree) inheritedDoc.holderTag,
                             lname,
                             alreadyDocumented.isEmpty());
@@ -247,28 +244,24 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
             for (ParamTree dt : paramTags) {
                 String name = ch.getParameterName(dt);
-                String paramName = kind != ParamKind.TYPE_PARAMETER
-                        ? name.toString()
-                        : "<" + name + ">";
+                String paramName = kind == ParamKind.TYPE_PARAMETER ? "<" + name + ">" : name;
                 if (!rankMap.containsKey(name)) {
-                    String key;
-                    switch (kind) {
-                        case PARAMETER:       key = "doclet.Parameters_warn" ; break;
-                        case TYPE_PARAMETER:  key = "doclet.TypeParameters_warn" ; break;
-                        case RECORD_COMPONENT: key = "doclet.RecordComponents_warn" ; break;
-                        default: throw new IllegalArgumentException(kind.toString());
-                }
+                    String key = switch (kind) {
+                        case PARAMETER        -> "doclet.Parameters_warn";
+                        case TYPE_PARAMETER   -> "doclet.TypeParameters_warn";
+                        case RECORD_COMPONENT -> "doclet.RecordComponents_warn";
+                        default -> throw new IllegalArgumentException(kind.toString());
+                    };
                     messages.warning(ch.getDocTreePath(dt), key, paramName);
                 }
                 String rank = rankMap.get(name);
                 if (rank != null && alreadyDocumented.contains(rank)) {
-                    String key;
-                    switch (kind) {
-                        case PARAMETER:       key = "doclet.Parameters_dup_warn" ; break;
-                        case TYPE_PARAMETER:  key = "doclet.TypeParameters_dup_warn" ; break;
-                        case RECORD_COMPONENT: key = "doclet.RecordComponents_dup_warn" ; break;
-                        default: throw new IllegalArgumentException(kind.toString());
-                }
+                    String key = switch (kind) {
+                        case PARAMETER        -> "doclet.Parameters_dup_warn";
+                        case TYPE_PARAMETER   -> "doclet.TypeParameters_dup_warn";
+                        case RECORD_COMPONENT -> "doclet.RecordComponents_dup_warn";
+                        default -> throw new IllegalArgumentException(kind.toString());
+                    };
                     messages.warning(ch.getDocTreePath(dt), key, paramName);
                 }
                 result.add(processParamTag(e, kind, writer, dt,

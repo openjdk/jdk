@@ -34,11 +34,14 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Native libraries are loaded via {@link System#loadLibrary(String)},
@@ -185,7 +188,8 @@ public final class NativeLibraries {
             throw new InternalError(fromClass.getName() + " not allowed to load library");
         }
 
-        synchronized (loadedLibraryNames) {
+        acquireNativeLibraryLock(name);
+        try {
             // find if this library has already been loaded and registered in this NativeLibraries
             NativeLibrary cached = libraries.get(name);
             if (cached != null) {
@@ -202,15 +206,14 @@ public final class NativeLibraries {
              * When a library is being loaded, JNI_OnLoad function can cause
              * another loadLibrary invocation that should succeed.
              *
-             * We use a static stack to hold the list of libraries we are
-             * loading because this can happen only when called by the
-             * same thread because this block is synchronous.
+             * Each thread maintains its own stack to hold the list of
+             * libraries it is loading.
              *
              * If there is a pending load operation for the library, we
-             * immediately return success; otherwise, we raise
-             * UnsatisfiedLinkError.
+             * immediately return success; if the pending load is from
+             * a different class loader, we raise UnsatisfiedLinkError.
              */
-            for (NativeLibraryImpl lib : nativeLibraryContext) {
+            for (NativeLibraryImpl lib : NativeLibraryContext.current()) {
                 if (name.equals(lib.name())) {
                     if (loader == lib.fromClass.getClassLoader()) {
                         return lib;
@@ -223,7 +226,7 @@ public final class NativeLibraries {
 
             NativeLibraryImpl lib = new NativeLibraryImpl(fromClass, name, isBuiltin, isJNI);
             // load the native library
-            nativeLibraryContext.push(lib);
+            NativeLibraryContext.push(lib);
             try {
                 if (!lib.open()) {
                     return null;    // fail to open the native library
@@ -242,12 +245,14 @@ public final class NativeLibraries {
                     CleanerFactory.cleaner().register(loader, lib.unloader());
                 }
             } finally {
-                nativeLibraryContext.pop();
+                NativeLibraryContext.pop();
             }
             // register the loaded native library
             loadedLibraryNames.add(name);
             libraries.put(name, lib);
             return lib;
+        } finally {
+            releaseNativeLibraryLock(name);
         }
     }
 
@@ -295,13 +300,16 @@ public final class NativeLibraries {
             throw new UnsupportedOperationException("explicit unloading cannot be used with auto unloading");
         }
         Objects.requireNonNull(lib);
-        synchronized (loadedLibraryNames) {
+        acquireNativeLibraryLock(lib.name());
+        try {
             NativeLibraryImpl nl = libraries.remove(lib.name());
             if (nl != lib) {
                 throw new IllegalArgumentException(lib.name() + " not loaded by this NativeLibraries instance");
             }
             // unload the native library and also remove from the global name registry
             nl.unloader().run();
+        } finally {
+            releaseNativeLibraryLock(lib.name());
         }
     }
 
@@ -415,17 +423,20 @@ public final class NativeLibraries {
 
         @Override
         public void run() {
-            synchronized (loadedLibraryNames) {
+            acquireNativeLibraryLock(name);
+            try {
                 /* remove the native library name */
                 if (!loadedLibraryNames.remove(name)) {
                     throw new IllegalStateException(name + " has already been unloaded");
                 }
-                nativeLibraryContext.push(UNLOADER);
+                NativeLibraryContext.push(UNLOADER);
                 try {
                     unload(name, isBuiltin, isJNI, handle);
                 } finally {
-                    nativeLibraryContext.pop();
+                    NativeLibraryContext.pop();
                 }
+            } finally {
+                releaseNativeLibraryLock(name);
             }
         }
     }
@@ -443,20 +454,123 @@ public final class NativeLibraries {
     }
 
     // All native libraries we've loaded.
-    // This also serves as the lock to obtain nativeLibraries
-    // and write to nativeLibraryContext.
-    private static final Set<String> loadedLibraryNames = new HashSet<>();
+    private static final Set<String> loadedLibraryNames =
+            ConcurrentHashMap.newKeySet();
+
+    // reentrant lock class that allows exact counting (with external synchronization)
+    @SuppressWarnings("serial")
+    private static final class CountedLock extends ReentrantLock {
+
+        private int counter = 0;
+
+        public void increment() {
+            if (counter == Integer.MAX_VALUE) {
+                // prevent overflow
+                throw new Error("Maximum lock count exceeded");
+            }
+            ++counter;
+        }
+
+        public void decrement() {
+            --counter;
+        }
+
+        public int getCounter() {
+            return counter;
+        }
+    }
+
+    // Maps native library name to the corresponding lock object
+    private static final Map<String, CountedLock> nativeLibraryLockMap =
+            new ConcurrentHashMap<>();
+
+    private static void acquireNativeLibraryLock(String libraryName) {
+        nativeLibraryLockMap.compute(libraryName,
+            new BiFunction<>() {
+                public CountedLock apply(String name, CountedLock currentLock) {
+                    if (currentLock == null) {
+                        currentLock = new CountedLock();
+                    }
+                    // safe as compute BiFunction<> is executed atomically
+                    currentLock.increment();
+                    return currentLock;
+                }
+            }
+        ).lock();
+    }
+
+    private static void releaseNativeLibraryLock(String libraryName) {
+        CountedLock lock = nativeLibraryLockMap.computeIfPresent(libraryName,
+            new BiFunction<>() {
+                public CountedLock apply(String name, CountedLock currentLock) {
+                    if (currentLock.getCounter() == 1) {
+                        // unlock and release the object if no other threads are queued
+                        currentLock.unlock();
+                        // remove the element
+                        return null;
+                    } else {
+                        currentLock.decrement();
+                        return currentLock;
+                    }
+                }
+            }
+        );
+        if (lock != null) {
+            lock.unlock();
+        }
+    }
 
     // native libraries being loaded
-    private static Deque<NativeLibraryImpl> nativeLibraryContext = new ArrayDeque<>(8);
+    private static final class NativeLibraryContext {
+
+        // Maps thread object to the native library context stack, maintained by each thread
+        private static Map<Thread, Deque<NativeLibraryImpl>> nativeLibraryThreadContext =
+                new ConcurrentHashMap<>();
+
+        // returns a context associated with the current thread
+        private static Deque<NativeLibraryImpl> current() {
+            return nativeLibraryThreadContext.computeIfAbsent(
+                    Thread.currentThread(),
+                    new Function<>() {
+                        public Deque<NativeLibraryImpl> apply(Thread t) {
+                            return new ArrayDeque<>(8);
+                        }
+                    });
+        }
+
+        private static NativeLibraryImpl peek() {
+            return current().peek();
+        }
+
+        private static void push(NativeLibraryImpl lib) {
+            current().push(lib);
+        }
+
+        private static void pop() {
+            // this does not require synchronization since each
+            // thread has its own context
+            Deque<NativeLibraryImpl> libs = current();
+            libs.pop();
+            if (libs.isEmpty()) {
+                // context can be safely removed once empty
+                nativeLibraryThreadContext.remove(Thread.currentThread());
+            }
+        }
+
+        private static boolean isEmpty() {
+            Deque<NativeLibraryImpl> context =
+                    nativeLibraryThreadContext.get(Thread.currentThread());
+            return (context == null || context.isEmpty());
+        }
+    }
 
     // Invoked in the VM to determine the context class in JNI_OnLoad
     // and JNI_OnUnload
     private static Class<?> getFromClass() {
-        if (nativeLibraryContext.isEmpty()) { // only default library
+        if (NativeLibraryContext.isEmpty()) { // only default library
             return Object.class;
         }
-        return nativeLibraryContext.peek().fromClass;
+        return NativeLibraryContext.peek().fromClass;
     }
 
     // JNI FindClass expects the caller class if invoked from JNI_OnLoad

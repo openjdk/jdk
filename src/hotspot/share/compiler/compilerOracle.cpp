@@ -341,7 +341,49 @@ bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCo
   return false;
 }
 
+static bool resolve_inlining_predicate(enum CompileCommand option, const methodHandle& method) {
+  assert(option == CompileCommand::Inline || option == CompileCommand::DontInline, "Sanity");
+  bool v1 = false;
+  bool v2 = false;
+  bool has_inline = CompilerOracle::has_option_value(method, CompileCommand::Inline, v1);
+  bool has_dnotinline = CompilerOracle::has_option_value(method, CompileCommand::DontInline, v2);
+  if (has_inline && has_dnotinline) {
+    if (v1 && v2) {
+      // Conflict options detected
+      // Find the last one for that method and return the predicate accordingly
+      // option_list lists options in reverse order. So the first option we find is the last which was specified.
+      enum CompileCommand last_one = CompileCommand::Unknown;
+      TypedMethodOptionMatcher* current = option_list;
+      while (current != NULL) {
+        last_one = current->option();
+        if (last_one == CompileCommand::Inline || last_one == CompileCommand::DontInline) {
+          if (current->matches(method)) {
+            return last_one == option;
+          }
+        }
+        current = current->next();
+      }
+      ShouldNotReachHere();
+      return false;
+    } else {
+      // No conflicts
+      return option == CompileCommand::Inline ? v1 : v2;
+    }
+  } else {
+    if (option == CompileCommand::Inline) {
+      return has_inline ? v1 : false;
+    } else {
+      return has_dnotinline ? v2 : false;
+    }
+  }
+}
+
 static bool check_predicate(enum CompileCommand option, const methodHandle& method) {
+  // Special handling for Inline and DontInline since conflict options may be specified
+  if (option == CompileCommand::Inline || option == CompileCommand::DontInline) {
+    return resolve_inlining_predicate(option, method);
+  }
+
   bool value = false;
   if (CompilerOracle::has_option_value(method, option, value)) {
     return value;

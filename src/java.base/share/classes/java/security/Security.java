@@ -653,14 +653,7 @@ public final class Security {
         if (candidates == null || candidates.isEmpty())
             return null;
 
-        Object[] candidatesArray = candidates.toArray();
-        Provider[] result = new Provider[candidatesArray.length];
-
-        for (int i = 0; i < result.length; i++) {
-            result[i] = (Provider)candidatesArray[i];
-        }
-
-        return result;
+        return candidates.toArray(new Provider[0]);
     }
 
     // Map containing cached Spi Class objects of the specified type

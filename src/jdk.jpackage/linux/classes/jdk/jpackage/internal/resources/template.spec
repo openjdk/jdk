@@ -39,6 +39,8 @@ Requires: PACKAGE_DEFAULT_DEPENDENCIES PACKAGE_CUSTOM_DEPENDENCIES
 %description
 APPLICATION_DESCRIPTION
 
+%global __os_install_post %{nil}
+
 %prep
 
 %build

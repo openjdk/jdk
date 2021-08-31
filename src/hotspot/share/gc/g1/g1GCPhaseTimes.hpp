@@ -154,7 +154,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_collection_initial_evac_time_ms;
   double _cur_optional_evac_time_ms;
-  double _cur_collection_code_root_fixup_time_ms;
+  double _cur_collection_nmethod_list_cleanup_time_ms;
 
   double _cur_merge_heap_roots_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
@@ -206,7 +206,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WeakProcessorTimes _weak_phase_times;
 
   double worker_time(GCParPhases phase, uint worker);
-  void note_gc_end();
   void reset();
 
   template <class T>
@@ -234,7 +233,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
  public:
   G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads);
-  void note_gc_start();
+  void record_gc_pause_start();
+  void record_gc_pause_end();
   void print();
   static const char* phase_name(GCParPhases phase);
 
@@ -283,8 +283,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_optional_evac_time_ms += ms;
   }
 
-  void record_or_add_code_root_fixup_time(double ms) {
-    _cur_collection_code_root_fixup_time_ms += ms;
+  void record_or_add_nmethod_list_cleanup_time(double ms) {
+    _cur_collection_nmethod_list_cleanup_time_ms += ms;
   }
 
   void record_merge_heap_roots_time(double ms) {

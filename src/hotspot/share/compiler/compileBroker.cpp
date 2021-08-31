@@ -140,6 +140,7 @@ CompileLog** CompileBroker::_compiler2_logs = NULL;
 // These counters are used to assign an unique ID to each compilation.
 volatile jint CompileBroker::_compilation_id     = 0;
 volatile jint CompileBroker::_osr_compilation_id = 0;
+volatile jint CompileBroker::_native_compilation_id = 0;
 
 // Performance counters
 PerfCounter* CompileBroker::_perf_total_compilation = NULL;
@@ -795,14 +796,8 @@ void CompileBroker::compilation_init_phase2() {
 }
 
 Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Handle string = java_lang_String::create_from_str(name, CHECK_NH);
-  Handle thread_group(THREAD, Universe::system_thread_group());
-  return JavaCalls::construct_new_instance(
-                       vmClasses::Thread_klass(),
-                       vmSymbols::threadgroup_string_void_signature(),
-                       thread_group,
-                       string,
-                       CHECK_NH);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK_NH);
+  return thread_oop;
 }
 
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
@@ -1594,7 +1589,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
     assert(!is_osr, "can't be osr");
     // Adapters, native wrappers and method handle intrinsics
     // should be generated always.
-    return Atomic::add(&_compilation_id, 1);
+    return Atomic::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
   } else if (CICountOSR && is_osr) {
     id = Atomic::add(&_osr_compilation_id, 1);
     if (CIStartOSR <= id && id < CIStopOSR) {
@@ -2131,8 +2126,6 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool
       fatal("Never compilable: %s", failure_reason);
     }
   }
-  // simulate crash during compilation
-  assert(task->compile_id() != CICrashAt, "just as planned");
 }
 
 static void post_compilation_event(EventCompilation& event, CompileTask* task) {
@@ -2480,6 +2473,8 @@ void CompileBroker::update_compile_perf_data(CompilerThread* thread, const metho
   int last_compile_type = normal_compile;
   if (CICountOSR && is_osr) {
     last_compile_type = osr_compile;
+  } else if (CICountNative && method->is_native()) {
+    last_compile_type = native_compile;
   }
 
   CompilerCounters* counters = thread->counters();

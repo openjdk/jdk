@@ -166,11 +166,6 @@
   #define JVMTI_STRUCTS(static_field)
 #endif // INCLUDE_JVMTI
 
-typedef HashtableEntry<intptr_t, mtInternal>  IntptrHashtableEntry;
-typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
-typedef Hashtable<InstanceKlass*, mtClass>       KlassHashtable;
-typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
-
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
 //
@@ -470,34 +465,12 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(Symbol,                      _vm_symbols[0],                                Symbol*)                               \
                                                                                                                                      \
   /*******************/                                                                                                              \
-  /* HashtableBucket */                                                                                                              \
-  /*******************/                                                                                                              \
-                                                                                                                                     \
-  nonstatic_field(HashtableBucket<mtInternal>, _entry,                                        BasicHashtableEntry<mtInternal>*)      \
-                                                                                                                                     \
-  /******************/                                                                                                               \
-  /* HashtableEntry */                                                                                                               \
-  /******************/                                                                                                               \
-                                                                                                                                     \
-  nonstatic_field(BasicHashtableEntry<mtInternal>, _next,                                     BasicHashtableEntry<mtInternal>*)      \
-  nonstatic_field(BasicHashtableEntry<mtInternal>, _hash,                                     unsigned int)                          \
-  nonstatic_field(IntptrHashtableEntry,            _literal,                                  intptr_t)                              \
-                                                                                                                                     \
-  /*************/                                                                                                                    \
-  /* Hashtable */                                                                                                                    \
-  /*************/                                                                                                                    \
-                                                                                                                                     \
-  nonstatic_field(BasicHashtable<mtInternal>,  _table_size,                                   int)                                   \
-  nonstatic_field(BasicHashtable<mtInternal>,  _buckets,                                      HashtableBucket<mtInternal>*)          \
-                                                                                                                                     \
-  /*******************/                                                                                                              \
   /* ClassLoaderData */                                                                                                              \
   /*******************/                                                                                                              \
   nonstatic_field(ClassLoaderData,             _class_loader,                                 OopHandle)                             \
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _has_class_mirror_holder,                      bool)                                  \
-  volatile_nonstatic_field(ClassLoaderData,    _dictionary,                                   Dictionary*)                           \
                                                                                                                                      \
   static_ptr_volatile_field(ClassLoaderDataGraph, _head,                                      ClassLoaderData*)                      \
                                                                                                                                      \
@@ -567,6 +540,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(StubRoutines,                _electronicCodeBook_encryptAESCrypt,           address)                               \
      static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,           address)                               \
      static_field(StubRoutines,                _counterMode_AESCrypt,                         address)                               \
+     static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                   address)                               \
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
      static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
@@ -1309,14 +1283,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* SystemDictionary */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(BasicHashtable<mtInternal>)                       \
-    declare_type(IntptrHashtable, BasicHashtable<mtInternal>)             \
-  declare_toplevel_type(BasicHashtable<mtSymbol>)                         \
-    declare_type(Dictionary, KlassHashtable)                              \
-  declare_toplevel_type(BasicHashtableEntry<mtInternal>)                  \
-  declare_type(IntptrHashtableEntry, BasicHashtableEntry<mtInternal>)     \
-    declare_type(DictionaryEntry, KlassHashtableEntry)                    \
-  declare_toplevel_type(HashtableBucket<mtInternal>)                      \
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \

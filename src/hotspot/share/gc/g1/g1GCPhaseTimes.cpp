@@ -154,7 +154,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 void G1GCPhaseTimes::reset() {
   _cur_collection_initial_evac_time_ms = 0.0;
   _cur_optional_evac_time_ms = 0.0;
-  _cur_collection_code_root_fixup_time_ms = 0.0;
+  _cur_collection_nmethod_list_cleanup_time_ms = 0.0;
   _cur_merge_heap_roots_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
@@ -192,7 +192,7 @@ void G1GCPhaseTimes::reset() {
   _weak_phase_times.reset();
 }
 
-void G1GCPhaseTimes::note_gc_start() {
+void G1GCPhaseTimes::record_gc_pause_start() {
   _gc_start_counter = os::elapsed_counter();
   reset();
 }
@@ -211,7 +211,7 @@ double G1GCPhaseTimes::worker_time(GCParPhases phase, uint worker) {
   return 0.0;
 }
 
-void G1GCPhaseTimes::note_gc_end() {
+void G1GCPhaseTimes::record_gc_pause_end() {
   _gc_pause_time_ms = TimeHelper::counter_to_millis(os::elapsed_counter() - _gc_start_counter);
 
   double uninitialized = WorkerDataArray<double>::uninitialized();
@@ -448,7 +448,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
 }
 
 double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
-  const double sum_ms = _cur_collection_code_root_fixup_time_ms +
+  const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
@@ -461,7 +461,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 
   info_time("Post Evacuate Collection Set", sum_ms);
 
-  debug_time("Code Roots Fixup", _cur_collection_code_root_fixup_time_ms);
+  debug_time("NMethod List Cleanup", _cur_collection_nmethod_list_cleanup_time_ms);
 
   debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
   _ref_phase_times.print_all_references(2, false);
@@ -519,8 +519,9 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
 }
 
 void G1GCPhaseTimes::print() {
-  note_gc_end();
-
+  // Check if some time has been recorded for verification and only then print
+  // the message. We do not use Verify*GC here to print because VerifyGCType
+  // further limits actual verification.
   if (_cur_verify_before_time_ms > 0.0) {
     debug_time("Verify Before", _cur_verify_before_time_ms);
   }
@@ -532,6 +533,7 @@ void G1GCPhaseTimes::print() {
   accounted_ms += print_post_evacuate_collection_set();
   print_other(accounted_ms);
 
+  // See above comment on the _cur_verify_before_time_ms check.
   if (_cur_verify_after_time_ms > 0.0) {
     debug_time("Verify After", _cur_verify_after_time_ms);
   }
