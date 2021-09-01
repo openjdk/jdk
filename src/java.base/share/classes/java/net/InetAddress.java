@@ -686,7 +686,7 @@ public class InetAddress implements java.io.Serializable {
                 }
             }
 
-            //XXX: if it looks a spoof just return the address?
+            //XXX: if it looks like a spoof just return the address?
             if (!ok) {
                 host = addr.getHostAddress();
                 return host;
