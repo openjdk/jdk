@@ -865,8 +865,7 @@ public abstract class MethodHandle implements Constable {
         if (at != null) {
             return at;
         }
-        at = asTypeUncached(newType);
-        return setAsTypeCache(at);
+        return setAsTypeCache(asTypeUncached(newType));
     }
 
     private MethodHandle asTypeCached(MethodType newType) {
@@ -949,13 +948,17 @@ public abstract class MethodHandle implements Constable {
         return loader;
     }
 
-    /* Determine whether {@code descendant} keeps {@code ancestor} alive through the loader delegation chain. */
-    private static boolean keepsAlive(ClassLoader ancestor, ClassLoader descendant) {
-        if (isSystemLoader(ancestor)) {
-            return true; // system loaders are always reachable
+    /* Determine whether {@code loader1} keeps {@code loader2} alive through the loader delegation chain or not. */
+    private static boolean keepsAlive(ClassLoader loader1, ClassLoader loader2) {
+        if (isBuiltinLoader(loader1)) {
+            return true; // built-in loaders are always reachable
         }
-        // Climb up the descendant chain until a system loader is found.
-        for (ClassLoader loader = descendant; !isSystemLoader(loader); loader = loader.getParent()) {
+        return isAncestorLoaderOf(loader1, loader2);
+    }
+
+    private static boolean isAncestorLoaderOf(ClassLoader ancestor, ClassLoader descendant) {
+        // Climb up the descendant chain until a built-in loader is found.
+        for (ClassLoader loader = descendant; !isBuiltinLoader(loader); loader = loader.getParent()) {
             if (loader == ancestor) {
                 return true;
             }
@@ -963,7 +966,7 @@ public abstract class MethodHandle implements Constable {
         return false; // no direct relation between loaders is found
     }
 
-    private static boolean isSystemLoader(ClassLoader loader) {
+    private static boolean isBuiltinLoader(ClassLoader loader) {
         return loader == null ||
                loader == ClassLoaders.platformClassLoader() ||
                loader == ClassLoaders.appClassLoader();
