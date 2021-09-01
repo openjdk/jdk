@@ -31,7 +31,7 @@
 class FreeCSetStats;
 
 class G1CollectedHeap;
-class G1EvacuationInfo;
+class G1EvacInfo;
 class G1ParScanThreadStateSet;
 class G1RedirtyCardsQueueSet;
 
@@ -114,7 +114,7 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedGangTask {
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
-                                          G1EvacuationInfo* evacuation_info);
+                                          G1EvacInfo* evacuation_info);
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask : public G1AbstractSubTask {
@@ -185,7 +185,7 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1AbstractSubTask {
   G1CollectedHeap*  _g1h;
-  G1EvacuationInfo* _evacuation_info;
+  G1EvacInfo* _evacuation_info;
   FreeCSetStats*    _worker_stats;
   HeapRegionClaimer _claimer;
   const size_t*     _surviving_young_words;
@@ -195,7 +195,7 @@ class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1
   void report_statistics();
 
 public:
-  FreeCollectionSetTask(G1EvacuationInfo* evacuation_info, const size_t* surviving_young_words);
+  FreeCollectionSetTask(G1EvacInfo* evacuation_info, const size_t* surviving_young_words);
   virtual ~FreeCollectionSetTask();
 
   double worker_cost() const override;

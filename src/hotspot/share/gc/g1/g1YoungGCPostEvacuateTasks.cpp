@@ -380,7 +380,7 @@ public:
     _regions_freed += other->_regions_freed;
   }
 
-  void report(G1CollectedHeap* g1h, G1EvacuationInfo* evacuation_info) {
+  void report(G1CollectedHeap* g1h, G1EvacInfo* evacuation_info) {
     evacuation_info->set_regions_freed(_regions_freed);
     evacuation_info->increment_collectionset_used_after(_after_used_bytes);
 
@@ -558,7 +558,7 @@ void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::report_stat
   total_stats.report(_g1h, _evacuation_info);
 }
 
-G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::FreeCollectionSetTask(G1EvacuationInfo* evacuation_info,
+G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::FreeCollectionSetTask(G1EvacInfo* evacuation_info,
                                                                                       const size_t* surviving_young_words) :
     G1AbstractSubTask(G1GCPhaseTimes::FreeCollectionSet),
     _g1h(G1CollectedHeap::heap()),
@@ -602,7 +602,7 @@ void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::do_work(uin
 }
 
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
-                                                                                 G1EvacuationInfo* evacuation_info) :
+                                                                                 G1EvacInfo* evacuation_info) :
   G1BatchedGangTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new ResetHotCardCacheTask());

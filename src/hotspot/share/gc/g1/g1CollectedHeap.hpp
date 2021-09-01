@@ -36,7 +36,7 @@
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1EvacuationInfo.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
@@ -807,7 +807,7 @@ private:
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
 
-  void calculate_collection_set(G1EvacuationInfo* evacuation_info, double target_pause_time_ms);
+  void calculate_collection_set(G1EvacInfo* evacuation_info, double target_pause_time_ms);
 
   // Actually do the work of evacuating the parts of the collection set.
   // The has_optional_evacuation_work flag for the initial collection set
@@ -833,8 +833,8 @@ private:
   void evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states);
 
 public:
-  void pre_evacuate_collection_set(G1EvacuationInfo* evacuation_info, G1ParScanThreadStateSet* pss);
-  void post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
+  void pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* pss);
+  void post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                     G1ParScanThreadStateSet* pss);
 
   void expand_heap_after_young_collection();
@@ -851,7 +851,7 @@ public:
 
   void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states);
   void post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
-                               G1EvacuationInfo* evacuation_info);
+                               G1EvacInfo* evacuation_info);
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
