@@ -454,7 +454,7 @@ abstract class DoublePipeline<E_IN>
                                },
                                (ll, rr) -> {
                                    Collectors.sumWithCompensation(ll, rr[0]);
-                                   //Negating this value because low-order bits are in negated form
+                                   // Subtract compensation bits
                                    Collectors.sumWithCompensation(ll, -rr[1]);
                                    ll[2] += rr[2];
                                });
@@ -498,7 +498,7 @@ abstract class DoublePipeline<E_IN>
                                },
                                (ll, rr) -> {
                                    Collectors.sumWithCompensation(ll, rr[0]);
-                                   //Negating this value because low-order bits are in negated form
+                                   // Subtract compensation bits
                                    Collectors.sumWithCompensation(ll, -rr[1]);
                                    ll[2] += rr[2];
                                    ll[3] += rr[3];

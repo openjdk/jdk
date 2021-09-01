@@ -157,7 +157,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
         simpleSum += other.simpleSum;
         sumWithCompensation(other.sum);
 
-        //Negating this value because low-order bits are in negated form
+        // Subtract compensation bits
         sumWithCompensation(-other.sumCompensation);
         min = Math.min(min, other.min);
         max = Math.max(max, other.max);

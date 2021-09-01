@@ -734,7 +734,7 @@ public final class Collectors {
                             a[2] += val;},
                 (a, b) -> { sumWithCompensation(a, b[0]);
                             a[2] += b[2];
-                            //Negating this value because low-order bits are in negated form
+                            // Subtract compensation bits
                             return sumWithCompensation(a, -b[1]); },
                 a -> computeFinalSum(a),
                 CH_NOID);
@@ -849,7 +849,7 @@ public final class Collectors {
                 (a, t) -> { double val = mapper.applyAsDouble(t); sumWithCompensation(a, val); a[2]++; a[3]+= val;},
                 (a, b) -> {
                     sumWithCompensation(a, b[0]);
-                    //Negating this value because low-order bits are in negated form
+                    // Subtract compensation bits
                     sumWithCompensation(a, -b[1]);
                     a[2] += b[2]; a[3] += b[3];
                     return a;
