@@ -176,7 +176,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="fotho" description="Faroe Islands" alias="Atlantic/Faeroe Atlantic/Faroe"/>
             <type name="frpar" description="Paris, France" alias="Europe/Paris"/>
             <type name="galbv" description="Libreville, Gabon" alias="Africa/Libreville"/>
-            <type name="gaza" description="Gaza Strip, Palestinian Territories" deprecated="true" alias="Asia/Gaza gazastrp"/>
+            <type name="gaza" description="Gaza Strip, Palestinian Territories" deprecated="true" preferred="gazastrp"/>
             <type name="gazastrp" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza"/>
             <type name="gblon" description="London, United Kingdom" alias="Europe/London Europe/Belfast GB GB-Eire"/>
             <type name="gdgnd" description="Grenada" alias="America/Grenada"/>
