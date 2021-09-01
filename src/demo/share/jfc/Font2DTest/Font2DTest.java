@@ -133,7 +133,7 @@ public final class Font2DTest extends JPanel
     private static boolean canDisplayCheck = true;
 
     /// Initialize GUI variables and its layouts
-    public Font2DTest( JFrame f, boolean isApplet ) {
+    public Font2DTest( JFrame f) {
         parent = f;
 
         rm = new RangeMenu( this, parent );
@@ -165,8 +165,8 @@ public final class Font2DTest extends JPanel
         contrastSlider.setPaintLabels(true);
         contrastSlider.addChangeListener(this);
         setupPanel();
-        setupMenu( isApplet );
-        setupDialog( isApplet );
+        setupMenu();
+        setupDialog();
 
         if(canDisplayCheck) {
             fireRangeChanged();
@@ -256,7 +256,7 @@ public final class Font2DTest extends JPanel
     }
 
     /// Sets up menu entries
-    private void setupMenu( boolean isApplet ) {
+    private void setupMenu() {
         JMenu fileMenu = new JMenu( "File" );
         JMenu optionMenu = new JMenu( "Option" );
 
@@ -268,11 +268,7 @@ public final class Font2DTest extends JPanel
         fileMenu.add( new MenuItemV2( "Page Setup...", this ));
         fileMenu.add( new MenuItemV2( "Print...", this ));
         fileMenu.addSeparator();
-        if ( !isApplet )
-          fileMenu.add( new MenuItemV2( "Exit", this ));
-        else
-          fileMenu.add( new MenuItemV2( "Close", this ));
-
+        fileMenu.add( new MenuItemV2( "Exit", this ));
         displayGridCBMI = new CheckboxMenuItemV2( "Display Grid", true, this );
         force16ColsCBMI = new CheckboxMenuItemV2( "Force 16 Columns", false, this );
         showFontInfoCBMI = new CheckboxMenuItemV2( "Display Font Info", false, this );
@@ -326,11 +322,8 @@ public final class Font2DTest extends JPanel
     }
 
     /// Sets up the all dialogs used in Font2DTest...
-    private void setupDialog( boolean isApplet ) {
-        if (!isApplet)
-                filePromptDialog = new JFileChooser( );
-        else
-                filePromptDialog = null;
+    private void setupDialog() {
+        filePromptDialog = new JFileChooser();
 
         /// Prepare user text dialog...
         userTextDialog = new JDialog( parent, "User Text", false );
@@ -432,8 +425,6 @@ public final class Font2DTest extends JPanel
 
     /// Changes the message on the status bar
     public void fireChangeStatus( String message, boolean error ) {
-        /// If this is not ran as an applet, use own status bar,
-        /// Otherwise, use the appletviewer/browser's status bar
         statusBar.setText( message );
         if ( error )
           fp.showingError = true;
@@ -1030,7 +1021,7 @@ public final class Font2DTest extends JPanel
 
         UIManager.put("swing.boldMetal", Boolean.FALSE);
         final JFrame f = new JFrame( "Font2DTest" );
-        final Font2DTest f2dt = new Font2DTest( f, false );
+        final Font2DTest f2dt = new Font2DTest( f);
         f.addWindowListener( new WindowAdapter() {
             public void windowOpening( WindowEvent e ) { f2dt.repaint(); }
             public void windowClosing( WindowEvent e ) { System.exit(0); }

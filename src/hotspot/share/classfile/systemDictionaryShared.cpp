@@ -26,6 +26,7 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/classListParser.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
@@ -262,6 +263,12 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (k->is_in_error_state()) {
     return warn_excluded(k, "In error state");
   }
+  if (k->is_scratch_class()) {
+    return warn_excluded(k, "A scratch class");
+  }
+  if (!k->is_loaded()) {
+    return warn_excluded(k, "Not in loaded state");
+  }
   if (has_been_redefined(k)) {
     return warn_excluded(k, "Has been redefined");
   }
@@ -283,36 +290,21 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     // support them and make CDS more complicated.
     return warn_excluded(k, "JFR event class");
   }
-  if (k->init_state() < InstanceKlass::linked) {
-    // In CDS dumping, we will attempt to link all classes. Those that fail to link will
-    // be recorded in DumpTimeClassInfo.
-    Arguments::assert_is_dumping_archive();
 
-    // TODO -- rethink how this can be handled.
-    // We should try to link ik, however, we can't do it here because
-    // 1. We are at VM exit
-    // 2. linking a class may cause other classes to be loaded, which means
-    //    a custom ClassLoader.loadClass() may be called, at a point where the
-    //    class loader doesn't expect it.
+  if (!k->is_linked()) {
     if (has_class_failed_verification(k)) {
       return warn_excluded(k, "Failed verification");
-    } else {
-      if (k->can_be_verified_at_dumptime()) {
-        return warn_excluded(k, "Not linked");
-      }
     }
-  }
-  if (DynamicDumpSharedSpaces && k->major_version() < 50 /*JAVA_6_VERSION*/) {
-    // In order to support old classes during dynamic dump, class rewriting needs to
-    // be reverted. This would result in more complex code and testing but not much gain.
-    ResourceMark rm;
-    log_warning(cds)("Pre JDK 6 class not supported by CDS: %u.%u %s",
-                     k->major_version(),  k->minor_version(), k->name()->as_C_string());
-    return true;
-  }
-
-  if (!k->can_be_verified_at_dumptime() && k->is_linked()) {
-    return warn_excluded(k, "Old class has been linked");
+  } else {
+    if (!k->can_be_verified_at_dumptime()) {
+      // We have an old class that has been linked (e.g., it's been executed during
+      // dump time). This class has been verified using the old verifier, which
+      // doesn't save the verification constraints, so check_verification_constraints()
+      // won't work at runtime.
+      // As a result, we cannot store this class. It must be loaded and fully verified
+      // at runtime.
+      return warn_excluded(k, "Old class has been linked");
+    }
   }
 
   if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
@@ -341,7 +333,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   return false; // false == k should NOT be excluded
 }
 
-bool SystemDictionaryShared::is_sharing_possible(ClassLoaderData* loader_data) {
+bool SystemDictionaryShared::is_builtin_loader(ClassLoaderData* loader_data) {
   oop class_loader = loader_data->class_loader();
   return (class_loader == NULL ||
           SystemDictionary::is_system_class_loader(class_loader) ||
@@ -433,8 +425,6 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
 class UnregisteredClassesTable : public ResourceHashtable<
   Symbol*, InstanceKlass*,
-  primitive_hash<Symbol*>,
-  primitive_equals<Symbol*>,
   15889, // prime number
   ResourceObj::C_HEAP> {};
 
@@ -444,7 +434,7 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   // We don't allow duplicated unregistered classes with the same name.
   // We only archive the first class with that name that succeeds putting
   // itself into the table.
-  Arguments::assert_is_dumping_archive();
+  assert(Arguments::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
   MutexLocker ml(current, UnregisteredClassesTable_lock);
   Symbol* name = klass->name();
   if (_unregistered_classes_table == NULL) {
@@ -558,7 +548,9 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
 }
 
 void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
-  remove_dumptime_info(klass);
+  if (Arguments::is_dumping_archive()) {
+    remove_dumptime_info(klass);
+  }
 
   if (_unregistered_classes_table != NULL) {
     // Remove the class from _unregistered_classes_table: keep the entry but
@@ -569,6 +561,11 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
     if (v != NULL) {
       *v = NULL;
     }
+  }
+
+  if (ClassListWriter::is_enabled()) {
+    ClassListWriter cw;
+    cw.handle_class_unloading((const InstanceKlass*)klass);
   }
 }
 
@@ -1663,7 +1660,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaPr
 }
 
 void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::open_archive_heap_region_mapped()) {
+  if (!HeapShared::open_regions_mapped()) {
     return;
   }
   if (MetaspaceShared::relocation_delta() == 0) {

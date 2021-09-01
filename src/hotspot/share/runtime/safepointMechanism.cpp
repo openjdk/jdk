@@ -76,29 +76,6 @@ void SafepointMechanism::default_initialize() {
   }
 }
 
-void SafepointMechanism::process(JavaThread *thread) {
-  bool need_rechecking;
-  do {
-    if (global_poll()) {
-      // Any load in ::block() must not pass the global poll load.
-      // Otherwise we might load an old safepoint counter (for example).
-      OrderAccess::loadload();
-      SafepointSynchronize::block(thread);
-    }
-
-    // The call to on_safepoint fixes the thread's oops and the first few frames.
-    //
-    // The call has been carefully placed here to cater to a few situations:
-    // 1) After we exit from block after a global poll
-    // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
-    // 3) Before the handshake code is run
-    StackWatermarkSet::on_safepoint(thread);
-
-    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self();
-
-  } while (need_rechecking);
-}
-
 uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_watermark) {
   if (armed) {
     log_debug(stackbarrier)("Computed armed for tid %d", Thread::current()->osthread()->thread_id());
@@ -134,12 +111,33 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   }
 }
 
-void SafepointMechanism::process_if_requested_slow(JavaThread *thread) {
+void SafepointMechanism::process(JavaThread *thread, bool allow_suspend) {
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
 
   // local poll already checked, if used.
-  process(thread);
+  bool need_rechecking;
+  do {
+    JavaThreadState state = thread->thread_state();
+    guarantee(SafepointSynchronize::is_a_block_safe_state(state), "Illegal threadstate encountered: %d", state);
+    if (global_poll()) {
+      // Any load in ::block() must not pass the global poll load.
+      // Otherwise we might load an old safepoint counter (for example).
+      OrderAccess::loadload();
+      SafepointSynchronize::block(thread);
+    }
+
+    // The call to on_safepoint fixes the thread's oops and the first few frames.
+    //
+    // The call has been carefully placed here to cater to a few situations:
+    // 1) After we exit from block after a global poll
+    // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
+    // 3) Before the handshake code is run
+    StackWatermarkSet::on_safepoint(thread);
+
+    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend);
+  } while (need_rechecking);
+
   update_poll_values(thread);
   OrderAccess::cross_modify_fence();
 }
