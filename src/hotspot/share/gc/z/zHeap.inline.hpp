@@ -144,7 +144,7 @@ inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
 
   // *Roots (including remset)*:
   //
-  //will never have double remap bit errors,
+  // will never have double remap bit errors,
   // and will never enter this path. The reason is that there's always a
   // phase that remaps all roots between all relocation phases:
   //
@@ -242,7 +242,7 @@ inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   // barrier, and all other barriers will take the fast-path. This is true until
   // the minor relocate starts.
   //
-  // After the minor relocate has started, the pointer becames minor remap
+  // After the minor relocate has started, the pointer became minor remap
   // bad, and maybe we even started a major relocate, and the pointer became
   // double remap bad. When the next load barrier triggers, it will self heal
   // with double remember bits, but *importantly* it will at the same time
