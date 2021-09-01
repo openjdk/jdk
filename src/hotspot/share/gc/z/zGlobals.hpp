@@ -35,9 +35,6 @@ const char* const ZName                         = "The Z Garbage Collector";
 const size_t      ZGranuleSizeShift             = ZPlatformGranuleSizeShift;
 const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift;
 
-// Number of heap views
-const size_t      ZHeapViews                    = ZPlatformHeapViews;
-
 // Virtual memory to physical memory ratio
 const size_t      ZVirtualToPhysicalRatio       = 16; // 16:1
 

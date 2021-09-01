@@ -117,7 +117,7 @@ void ZArguments::initialize() {
 }
 
 size_t ZArguments::heap_virtual_to_physical_ratio() {
-  return ZHeapViews * ZVirtualToPhysicalRatio;
+  return ZVirtualToPhysicalRatio;
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {

@@ -138,7 +138,7 @@ bool ZVirtualMemoryManager::reserve_contiguous(size_t size) {
 }
 
 bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
-  const size_t limit = MIN2(ZAddressOffsetMax, ZAddressSpaceLimit::heap_view());
+  const size_t limit = MIN2(ZAddressOffsetMax, ZAddressSpaceLimit::heap());
   const size_t size = MIN2(max_capacity * ZVirtualToPhysicalRatio, limit);
 
   size_t reserved = size;
@@ -155,8 +155,7 @@ bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
                        (contiguous ? "Contiguous" : "Discontiguous"),
                        (limit == ZAddressOffsetMax ? "Unrestricted" : "Restricted"),
                        (reserved == size ? "Complete" : "Degraded"));
-  log_info_p(gc, init)("Address Space Size: " SIZE_FORMAT "M x " SIZE_FORMAT " = " SIZE_FORMAT "M",
-                       reserved / M, ZHeapViews, (reserved * ZHeapViews) / M);
+  log_info_p(gc, init)("Address Space Size: " SIZE_FORMAT "M", reserved / M);
 
   return reserved >= max_capacity;
 }

@@ -27,7 +27,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 const size_t ZPlatformGranuleSizeShift = 21; // 2MB
-const size_t ZPlatformHeapViews        = 3;
 const size_t ZPlatformCacheLineSize    = 64;
 
 #endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
