@@ -215,7 +215,7 @@ void mutex_init() {
 
     def(FreeList_lock              , PaddedMutex  , leaf+2,      true,  _safepoint_check_never);
     def(OldSets_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
-    def(Uncommit_lock              , PaddedMutex  , leaf+1,      true,  _safepoint_check_never);
+    def(Uncommit_lock              , PaddedMutex  , leaf-2,      true,  _safepoint_check_never);
     def(RootRegionScan_lock        , PaddedMonitor, leaf-1,      true,  _safepoint_check_never);
 
     def(MarkStackFreeList_lock     , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
@@ -332,7 +332,7 @@ void mutex_init() {
 #if INCLUDE_JVMTI
   def(CDSClassFileStream_lock      , PaddedMutex  , max_nonleaf, false, _safepoint_check_always);
 #endif
-  def(DumpTimeTable_lock           , PaddedMutex  , leaf - 1,    true,  _safepoint_check_never);
+  def(DumpTimeTable_lock           , PaddedMutex  , leaf-1,      true,  _safepoint_check_never);
   def(CDSLambda_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(DumpRegion_lock              , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(ClassListFile_lock           , PaddedMutex  , leaf,        true,  _safepoint_check_never);
