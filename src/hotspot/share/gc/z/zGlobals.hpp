@@ -68,17 +68,6 @@ extern const int& ZObjectAlignmentSmall;
 extern int        ZObjectAlignmentMedium;
 const int         ZObjectAlignmentLarge         = 1 << ZObjectAlignmentLargeShift;
 
-//
-// Good/Bad mask states
-// --------------------
-//
-//                 GoodMask         BadMask          WeakGoodMask     WeakBadMask
-//                 --------------------------------------------------------------
-//  Marked0        001              110              101              010
-//  Marked1        010              101              110              001
-//  Remapped       100              011              100              011
-//
-
 // Good/bad masks
 extern uintptr_t  ZAddressLoadGoodMask;
 extern uintptr_t  ZAddressLoadBadMask;
@@ -110,7 +99,8 @@ extern uintptr_t  ZAddressHeapBaseShift;
 
 // The layout of a zpointer comprises address bits and two low order metadata bytes,
 // with the following layout:
-// RRRRmmMMFFrr0000
+//
+// RRRRMMmmFFrr0000
 // ****               : Used by load barrier
 // **********         : Used by mark barrier
 // ************       : Used by store barrier
@@ -125,9 +115,9 @@ extern uintptr_t  ZAddressHeapBaseShift;
 // +-------------+-------------------+--------------------------+
 // |     FF      | Finalizable bits  | Finalizable[0, 1]        |
 // +-------------+-------------------+--------------------------+
-// |     MM      | Marked major bits | MarkedMajor[0, 1]        |
-// +-------------+-------------------+--------------------------+
 // |     mm      | Marked minor bits | MarkedMinor[0, 1]        |
+// +-------------+-------------------+--------------------------+
+// |     MM      | Marked major bits | MarkedMajor[0, 1]        |
 // +-------------+-------------------+--------------------------+
 // |    RRRR     | Remapped bits     | Remapped[00, 01, 10, 11] |
 // +-------------+-------------------+--------------------------+
@@ -136,12 +126,16 @@ extern uintptr_t  ZAddressHeapBaseShift;
 // bits, depending on the remapped bit being set.
 //
 //             vvv- overlapping address and metadata zeros
-//    aaa...aaa0001mmMMFFrr0000 = Remapped00 zpointer
+//    aaa...aaa0001MMmmFFrr0000 = Remapped00 zpointer
+//
 //             vv-- overlapping address and metadata zeros
-//   aaa...aaa00010mmMMFFrr0000 = Remapped01 zpointer
+//   aaa...aaa00010MMmmFFrr0000 = Remapped01 zpointer
+//
 //             v--- overlapping address and metadata zero
-//  aaa...aaa000100mmMMFFrr0000 = Remapped10 zpointer
-// aaa...aaa0001000mmMMFFrr0000 = Remapped11 zpointer
+//  aaa...aaa000100MMmmFFrr0000 = Remapped10 zpointer
+//
+//             ---- no overlapping address and metadata zeros
+// aaa...aaa0001000MMmmFFrr0000 = Remapped11 zpointer
 //
 // The overlapping is performed because the JIT-compiled load barriers expect the
 // address bits to start right after the load-good bit. It allows combining the good
@@ -152,28 +146,33 @@ extern uintptr_t  ZAddressHeapBaseShift;
 // the load barrier is only compatible with bit patterns where there is a single zero in
 // its bits of operation (the load metadata bit mask). Instead, the single bit that we
 // set encodes the combined state of a conceptual RemappedMinor[0, 1] and
-// RemappedMajor[0, 1] bits. The encoding scheme is that the shift of the load good bit,
+// RemappedMajor[0, 1] pair. The encoding scheme is that the shift of the load good bit,
 // minus the shift of the load metadata bit start encodes the numbers 0, 1, 2 and 3.
 // These numbers in binary correspond to 00, 01, 10 and 11. The low order bit in said
 // numbers correspond to the simulated RemappedMinor[0, 1] value, and the high order bit
 // corresponds to the simulated RemappedMajor[0, 1] value.
+//
 // We decide the bit to be taken by having the RemappedMinorMask and RemappedMajorMask
 // variables, which alternate between what two bits they accept for their corresponding
 // major and minor phase. The Remapped bit is chosen by taking the intersection of those
 // two variables.
+//
 // RemappedMajorMask alternates between these two bit patterns:
-// RemappedMajor0 => 0011
-// RemappedMajor1 => 1100
+//
+//  RemappedMajor0 => 0011
+//  RemappedMajor1 => 1100
 //
 // RemappedMinorMask alternates between these two bit patterns:
-// RemappedMinor0 => 0101
-// RemappedMinor1 => 1010
+//
+//  RemappedMinor0 => 0101
+//  RemappedMinor1 => 1010
 //
 // The corresponding intersections look like this:
-// RemappedMajor0 & RemappedMinor0 = 0001 = Remapped00
-// RemappedMajor0 & RemappedMinor1 = 0010 = Remapped01
-// RemappedMajor1 & RemappedMinor0 = 0100 = Remapped10
-// RemappedMajor1 & RemappedMinor1 = 1000 = Remapped11
+//
+//  RemappedMajor0 & RemappedMinor0 = 0001 = Remapped00
+//  RemappedMajor0 & RemappedMinor1 = 0010 = Remapped01
+//  RemappedMajor1 & RemappedMinor0 = 0100 = Remapped10
+//  RemappedMajor1 & RemappedMinor1 = 1000 = Remapped11
 
 constexpr uintptr_t z_address_mask(size_t shift, size_t bits) {
   return (((uintptr_t)1 << bits) - 1) << shift;
