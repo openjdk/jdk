@@ -71,9 +71,6 @@ hotspot_native_sanity = \
 hotspot_containers = \
   containers
 
-hotspot_ir_transformations = \
-  ir_transformations
-
 hotspot_vector_1 = \
   compiler/c2/cr6340864 \
   compiler/codegen \
