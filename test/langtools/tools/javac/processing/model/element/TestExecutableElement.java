@@ -41,7 +41,6 @@ import java.util.regex.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import static javax.lang.model.util.ElementFilter.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Test some basic workings of javax.lang.element.ExecutableElement

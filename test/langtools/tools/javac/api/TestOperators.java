@@ -36,7 +36,6 @@ import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.Trees;

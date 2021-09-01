@@ -36,7 +36,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaCompiler.CompilationTask;
 
 public class TestGetResource2 {

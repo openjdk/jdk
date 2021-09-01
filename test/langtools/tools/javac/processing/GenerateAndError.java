@@ -38,7 +38,7 @@ import java.util.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import javax.tools.Diagnostic.Kind;
+
 
 public class GenerateAndError extends JavacTestingAbstractProcessor {
     int round = 0;

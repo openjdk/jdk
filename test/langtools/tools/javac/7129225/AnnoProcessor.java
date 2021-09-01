@@ -25,7 +25,6 @@ import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic.Kind;
 
 @SupportedAnnotationTypes("Anno")
 public class AnnoProcessor extends JavacTestingAbstractProcessor {

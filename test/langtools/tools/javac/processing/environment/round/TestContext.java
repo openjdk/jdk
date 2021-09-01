@@ -38,7 +38,6 @@ import java.io.*;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTrees;

@@ -26,7 +26,6 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.TypeElement;
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * First of several processors to run.

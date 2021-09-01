@@ -22,7 +22,6 @@
  */
 
 import javax.annotation.processing.*;
-import javax.tools.Diagnostic.Kind;
 import javax.lang.model.element.TypeElement;
 import java.util.Set;
 

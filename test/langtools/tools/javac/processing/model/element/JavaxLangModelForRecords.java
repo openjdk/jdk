@@ -49,7 +49,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementScanner14;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.*;
 
 import toolbox.JavacTask;

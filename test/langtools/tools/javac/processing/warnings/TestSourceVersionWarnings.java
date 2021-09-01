@@ -45,7 +45,7 @@ import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
-import static javax.tools.Diagnostic.Kind.*;
+
 
 /**
  * This processor returns the supported source level as indicated by

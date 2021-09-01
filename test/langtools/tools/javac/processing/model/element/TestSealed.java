@@ -46,8 +46,6 @@ import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 import java.time.*;
 
-import javax.tools.Diagnostic.Kind;
-
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.Mode;

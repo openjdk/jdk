@@ -44,7 +44,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic.Kind;
+
 
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 

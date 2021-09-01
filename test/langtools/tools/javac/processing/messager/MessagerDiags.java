@@ -50,7 +50,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
-import static javax.tools.Diagnostic.Kind.*;
 import static javax.tools.JavaFileObject.Kind.*;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)

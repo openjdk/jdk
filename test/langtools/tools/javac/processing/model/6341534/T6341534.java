@@ -42,7 +42,6 @@ import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
 import java.util.*;
 import java.util.Set;
-import static javax.tools.Diagnostic.Kind.*;
 
 public class T6341534 extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv)  {

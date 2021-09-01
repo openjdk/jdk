@@ -30,7 +30,6 @@ import javax.lang.model.util.*;
 import java.util.*;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Using the tree API, retrieve element representations of anonymous

@@ -26,7 +26,6 @@ import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.SourceVersion;
-import javax.tools.Diagnostic.Kind;
 
 /*
  * @test

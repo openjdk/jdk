@@ -36,7 +36,6 @@
 import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Verify that TypeElement for interfaces does not have Modifier.DEFAULT in getModifiers().

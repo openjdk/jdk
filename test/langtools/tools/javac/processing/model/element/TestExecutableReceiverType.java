@@ -36,7 +36,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Verify that proper type objects are returned from ExecutableElement.getReceiverType

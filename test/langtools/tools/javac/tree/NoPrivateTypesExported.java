@@ -53,7 +53,6 @@ import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
-import javax.tools.Diagnostic.Kind;
 
 public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
 
