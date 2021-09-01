@@ -140,7 +140,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Region Register", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
         new LogMessageWithLevel("Concatenate Dirty Card Logs", Level.DEBUG),
-        new LogMessageWithLevel("Sample Collection Set Candidates", Level.DEBUG),
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
@@ -156,6 +155,10 @@ public class TestGCLogMessages {
         // TLAB handling
         new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
         new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+
+        // NMethod List Cleanup
+        new LogMessageWithLevel("NMethod List Cleanup", Level.DEBUG),
+
         // Reference Processing
         new LogMessageWithLevel("Reference Processing", Level.DEBUG),
         // VM internal reference processing

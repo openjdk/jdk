@@ -26,6 +26,7 @@
  * @test
  * @summary Test locking on shared strings
  * @requires vm.cds.archived.java.heap
+ * @requires vm.gc == null
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @compile LockStringTest.java LockStringValueTest.java
  * @build sun.hotspot.WhiteBox

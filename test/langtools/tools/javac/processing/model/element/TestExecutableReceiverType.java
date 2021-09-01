@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8222369
+ * @bug 8222369 8225488
  * @summary Test behavior of ExecutableElement.getReceiverType
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestExecutableReceiverType
@@ -79,6 +79,21 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
                                   String.format("Unexpected TypeKind on receiver of %s:" +
                                                 " expected %s\t got %s%n",
                                                 executable, expectedKind, actualKind));
+        }
+
+        // Get kind from the type of the executable directly
+        TypeKind kindFromType = new TypeKindVisitor<TypeKind, Object>(null) {
+            @Override
+            public TypeKind visitExecutable(ExecutableType t, Object p) {
+                return t.getReceiverType().getKind();
+            }
+        }.visit(executable.asType());
+
+        if (kindFromType != expectedKind) {
+            messager.printMessage(ERROR,
+                                  String.format("Unexpected TypeKind on executable's asType() of %s:" +
+                                                " expected %s\t got %s%n",
+                                                executable, expectedKind, kindFromType));
         }
         return 1;
     }
