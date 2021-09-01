@@ -137,4 +137,9 @@ public class Candidate implements Comparable<Candidate> {
     public int compareTo(Candidate o) {
         return value.compareTo(o.value);
     }
+
+    @Override
+    public String toString() {
+        return "Candidate{" + value + "}";
+    }
 }

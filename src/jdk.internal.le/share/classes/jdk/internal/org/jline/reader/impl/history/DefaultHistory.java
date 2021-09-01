@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2021, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -84,7 +84,7 @@ public class DefaultHistory implements History {
                     try (BufferedReader reader = Files.newBufferedReader(path)) {
                         internalClear();
                         reader.lines().forEach(line -> addHistoryLine(path, line));
-                        setHistoryFileData(path, new HistoryFileData(items.size(), items.size()));
+                        setHistoryFileData(path, new HistoryFileData(items.size(), offset + items.size()));
                         maybeResize();
                     }
                 }
@@ -105,7 +105,7 @@ public class DefaultHistory implements History {
                     Log.trace("Reading history from: ", path);
                     try (BufferedReader reader = Files.newBufferedReader(path)) {
                         reader.lines().forEach(line -> addHistoryLine(path, line, incremental));
-                        setHistoryFileData(path, new HistoryFileData(items.size(), items.size()));
+                        setHistoryFileData(path, new HistoryFileData(items.size(), offset + items.size()));
                         maybeResize();
                     }
                 }
@@ -136,11 +136,7 @@ public class DefaultHistory implements History {
     private boolean isLineReaderHistory (Path path) throws IOException {
         Path lrp = getPath();
         if (lrp == null) {
-            if (path != null) {
-                return false;
-            } else {
-                return true;
-            }
+            return path == null;
         }
         return Files.isSameFile(lrp, path);
     }
@@ -226,7 +222,10 @@ public class DefaultHistory implements History {
     private void internalWrite(Path path, int from) throws IOException {
         if (path != null) {
             Log.trace("Saving history to: ", path);
-            Files.createDirectories(path.toAbsolutePath().getParent());
+            Path parent = path.toAbsolutePath().getParent();
+            if (!Files.exists(parent)) {
+                Files.createDirectories(parent);
+            }
             // Append new items to the history file
             try (BufferedWriter writer = Files.newBufferedWriter(path.toAbsolutePath(),
               StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
@@ -258,11 +257,11 @@ public class DefaultHistory implements History {
             });
         }
         // Remove duplicates
-        doTrimHistory(allItems, max);
+        List<Entry> trimmedItems = doTrimHistory(allItems, max);
         // Write history
         Path temp = Files.createTempFile(path.toAbsolutePath().getParent(), path.getFileName().toString(), ".tmp");
         try (BufferedWriter writer = Files.newBufferedWriter(temp, StandardOpenOption.WRITE)) {
-            for (Entry entry : allItems) {
+            for (Entry entry : trimmedItems) {
                 writer.append(format(entry));
             }
         }
@@ -270,8 +269,8 @@ public class DefaultHistory implements History {
         // Keep items in memory
         if (isLineReaderHistory(path)) {
             internalClear();
-            offset = allItems.get(0).index();
-            items.addAll(allItems);
+            offset = trimmedItems.get(0).index();
+            items.addAll(trimmedItems);
             setHistoryFileData(path, new HistoryFileData(items.size(), items.size()));
         } else {
             setEntriesInFile(path, allItems.size());
@@ -297,7 +296,7 @@ public class DefaultHistory implements History {
         items.clear();
     }
 
-    static void doTrimHistory(List<Entry> allItems, int max) {
+    static List<Entry> doTrimHistory(List<Entry> allItems, int max) {
         int idx = 0;
         while (idx < allItems.size()) {
             int ridx = allItems.size() - idx - 1;
@@ -314,6 +313,12 @@ public class DefaultHistory implements History {
         while (allItems.size() > max) {
             allItems.remove(0);
         }
+        int index = allItems.get(allItems.size() - 1).index() - allItems.size() + 1;
+        List<Entry> out = new ArrayList<>();
+        for (Entry e : allItems) {
+            out.add(new EntryImpl(index++, e.time(), e.line()));
+        }
+        return out;
     }
 
     public int size() {
@@ -338,7 +343,7 @@ public class DefaultHistory implements History {
 
     private String format(Entry entry) {
         if (reader.isSet(LineReader.Option.HISTORY_TIMESTAMPED)) {
-            return Long.toString(entry.time().toEpochMilli()) + ":" + escape(entry.line()) + "\n";
+            return entry.time().toEpochMilli() + ":" + escape(entry.line()) + "\n";
         }
         return escape(entry.line()) + "\n";
     }
@@ -398,6 +403,8 @@ public class DefaultHistory implements History {
                 sb.append('|');
             } else if (ch == '*') {
                 sb.append('.').append('*');
+            } else {
+                sb.append(ch);
             }
         }
         return line.matches(sb.toString());
@@ -441,7 +448,7 @@ public class DefaultHistory implements History {
     }
 
     public void resetIndex() {
-        index = index > items.size() ? items.size() : index;
+        index = Math.min(index, items.size());
     }
 
     protected static class EntryImpl implements Entry {
@@ -622,7 +629,7 @@ public class DefaultHistory implements History {
         return sb.toString();
     }
 
-    private class HistoryFileData {
+    private static class HistoryFileData {
         private int lastLoaded = 0;
         private int entriesInFile = 0;
 
