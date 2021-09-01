@@ -125,7 +125,7 @@ public class T7068437 {
                 w.close();
                 messager.printNote("wrote new content");
             } catch (IOException x) {
-                messager.printMessage(Kind.ERROR, "while writing: " + x);
+                messager.printError("while writing: " + x);
             }
 
             return true;

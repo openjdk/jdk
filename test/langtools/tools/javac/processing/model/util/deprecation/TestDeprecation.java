@@ -65,7 +65,7 @@ public class TestDeprecation extends JavacTestingAbstractProcessor {
             }
 
             if (failure)
-                processingEnv.getMessager().printMessage(ERROR, "Deprecation mismatch found!");
+                processingEnv.getMessager().printError("Deprecation mismatch found!");
         }
         return true;
     }
