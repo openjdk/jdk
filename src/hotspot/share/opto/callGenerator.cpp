@@ -516,8 +516,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   // Implicit receiver null checks introduce problems when exception states are combined.
   Node* receiver = jvms->map()->argument(jvms, 0);
   const Type* recv_type = C->initial_gvn()->type(receiver);
-  bool recv_can_be_null = TypePtr::NULL_PTR->higher_equal(recv_type);
-  if (recv_can_be_null) {
+  if (recv_type->maybe_null()) {
     return false;
   }
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
