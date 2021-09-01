@@ -287,16 +287,17 @@ getPlatformTimeZoneID()
      * from /etc/localtime.)
      */
     if (S_ISLNK(statbuf.st_mode)) {
-        char linkbuf[PATH_MAX+1];
-        int len;
-
-        if ((len = readlink(DEFAULT_ZONEINFO_FILE, linkbuf, sizeof(linkbuf)-1)) == -1) {
-            jio_fprintf(stderr, (const char *) "can't get a symlink of %s\n",
-                        DEFAULT_ZONEINFO_FILE);
+        /* canonicalize the path */
+        char resolvedpath[PATH_MAX + 1];
+        char *path = realpath(DEFAULT_ZONEINFO_FILE, resolvedpath);
+        if (path == NULL) {
+            if (errno != ENOTDIR) {
+                jio_fprintf(stderr, (const char *) "can't to get a symlink of %s\n",
+                              DEFAULT_ZONEINFO_FILE);
+            }
             return NULL;
         }
-        linkbuf[len] = '\0';
-        tz = getZoneName(linkbuf);
+        tz = getZoneName(resolvedpath);
         if (tz != NULL) {
             tz = strdup(tz);
             return tz;
