@@ -4070,11 +4070,12 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
   return true;
 }
 
-//----------------------needs_mem_bar-------------------------
-bool LibraryCallKit::needs_mem_bar(Node* base, Node* addr) {
+//----------------------has_wide_mem-------------------------
+bool LibraryCallKit::has_wide_mem(Node* addr, Node* base) {
   const Type* base_t = _gvn.type(base);
+
   bool in_native = (base_t == TypePtr::NULL_PTR);
-  bool in_heap = !TypePtr::NULL_PTR->higher_equal(base_t);
+  bool in_heap   = !TypePtr::NULL_PTR->higher_equal(base_t);
   bool is_mixed  = !in_heap && !in_native;
 
   bool is_array = _gvn.type(addr)->isa_aryptr();
@@ -4090,25 +4091,17 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
 
   C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
 
-  Node* src_ptr =         argument(1);   // type: oop
-  Node* src_off = ConvL2X(argument(2));  // type: long
-  Node* dst_ptr =         argument(4);   // type: oop
-  Node* dst_off = ConvL2X(argument(5));  // type: long
-  Node* size    = ConvL2X(argument(7));  // type: long
+  Node* src_base =         argument(1);   // type: oop
+  Node* src_off  = ConvL2X(argument(2));  // type: long
+  Node* dst_base =         argument(4);   // type: oop
+  Node* dst_off  = ConvL2X(argument(5));  // type: long
+  Node* size     = ConvL2X(argument(7));  // type: long
 
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
 
-  Node* src = make_unsafe_address(src_ptr, src_off);
-  Node* dst = make_unsafe_address(dst_ptr, dst_off);
-
-  bool needs_cpu_mem_bar = needs_mem_bar(src_ptr, src) ||
-                           needs_mem_bar(dst_ptr, dst);
-
-  if (needs_cpu_mem_bar) {
-    // Do not let writes of the copy source or destination float below the copy.
-    insert_mem_bar(Op_MemBarCPUOrder);
-  }
+  Node* src_addr = make_unsafe_address(src_base, src_off);
+  Node* dst_addr = make_unsafe_address(dst_base, dst_off);
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
   Node* doing_unsafe_access_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
@@ -4118,17 +4111,17 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   // update volatile field
   store_to_memory(control(), doing_unsafe_access_addr, intcon(1), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
 
-  // Adjust memory effects
-  const TypePtr* dst_type = TypeRawPtr::BOTTOM;
   int flags = RC_LEAF | RC_NO_FP;
-  if (!needs_cpu_mem_bar) {
-    dst_type = _gvn.type(dst)->is_ptr(); // narrow out memory
 
-    const TypePtr* src_type = _gvn.type(src)->is_ptr();
-    bool wide_out = (C->get_alias_index(dst_type) == Compile::AliasIdxBot);
-    bool has_narrow_mem = !wide_out && (C->get_alias_index(src_type) == C->get_alias_index(dst_type));
-    if (has_narrow_mem) {
-      flags |= RC_NARROW_MEM;
+  const TypePtr* dst_type = TypePtr::BOTTOM;
+
+  // Adjust memory effects
+  if (!has_wide_mem(src_addr, src_base) && !has_wide_mem(dst_addr, dst_base)) {
+    dst_type = _gvn.type(dst_addr)->is_ptr(); // narrow out memory
+
+    const TypePtr* src_type = _gvn.type(src_addr)->is_ptr();
+    if (C->get_alias_index(src_type) == C->get_alias_index(dst_type)) {
+      flags |= RC_NARROW_MEM; // narrow in memory
     }
   }
 
@@ -4138,14 +4131,9 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
                     StubRoutines::unsafe_arraycopy(),
                     "unsafe_arraycopy",
                     dst_type,
-                    src, dst, size XTOP);
+                    src_addr, dst_addr, size XTOP);
 
   store_to_memory(control(), doing_unsafe_access_addr, intcon(0), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
-
-  if (needs_cpu_mem_bar) {
-    // Do not let reads of the copy destination float above the copy.
-    insert_mem_bar(Op_MemBarCPUOrder);
-  }
 
   return true;
 }
