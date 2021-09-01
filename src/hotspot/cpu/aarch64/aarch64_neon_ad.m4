@@ -872,7 +872,7 @@ instruct vcmpD(vecD dst, vecD src1, vecD src2, immI cond)
   format %{ "vcmpD  $dst, $src1, $src2\t# vector compare " %}
   ins_cost(INSN_COST);
   ins_encode %{
-    BasicType bt = vector_element_basic_type(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
     assert(type2aelembytes(bt) != 8, "not supported");
     __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
                     as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ false);
@@ -887,7 +887,7 @@ instruct vcmpX(vecX dst, vecX src1, vecX src2, immI cond)
   format %{ "vcmpX  $dst, $src1, $src2\t# vector compare " %}
   ins_cost(INSN_COST);
   ins_encode %{
-    BasicType bt = vector_element_basic_type(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
     __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
                     as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ true);
   %}
@@ -2294,7 +2294,7 @@ ifelse($1, `_LT8B', `
     __ clz($dst$$Register, $dst$$Register);
     __ lsrw($dst$$Register, $dst$$Register, 3);dnl
 ifelse(`$1', `_LT8B', `
-    __ movw(rscratch1, vector_length(this, $src));
+    __ movw(rscratch1, Matcher::vector_length(this, $src));
     __ cmpw($dst$$Register, rscratch1);
     __ cselw($dst$$Register, rscratch1, $dst$$Register, Assembler::GE);')
   %}

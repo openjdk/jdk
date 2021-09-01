@@ -363,13 +363,20 @@ public abstract class Reference<T> {
      * @since 16
      */
     public final boolean refersTo(T obj) {
-        return refersTo0(obj);
+        return refersToImpl(obj);
     }
 
     /* Implementation of refersTo(), overridden for phantom references.
+     * This method exists only to avoid making refersTo0() virtual. Making
+     * refersTo0() virtual has the undesirable effect of C2 often preferring
+     * to call the native implementation over the intrinsic.
      */
+    boolean refersToImpl(T obj) {
+        return refersTo0(obj);
+    }
+
     @IntrinsicCandidate
-    native boolean refersTo0(Object o);
+    private native boolean refersTo0(Object o);
 
     /**
      * Clears this reference object.  Invoking this method will not cause this

@@ -1295,30 +1295,6 @@ public:
   };
 };
 
-  static inline BasicType vector_element_basic_type(const MachNode* n) {
-    const TypeVect* vt = n->bottom_type()->is_vect();
-    return vt->element_basic_type();
-  }
-
-  static inline BasicType vector_element_basic_type(const MachNode* use, const MachOper* opnd) {
-    int def_idx = use->operand_index(opnd);
-    Node* def = use->in(def_idx);
-    const TypeVect* vt = def->bottom_type()->is_vect();
-    return vt->element_basic_type();
-  }
-
-  static inline uint vector_length(const MachNode* n) {
-    const TypeVect* vt = n->bottom_type()->is_vect();
-    return vt->length();
-  }
-
-  static inline uint vector_length(const MachNode* use, const MachOper* opnd) {
-    int def_idx = use->operand_index(opnd);
-    Node* def = use->in(def_idx);
-    const TypeVect* vt = def->bottom_type()->is_vect();
-    return vt->length();
-  }
-
   bool is_CAS(int opcode, bool maybe_volatile);
 
   // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
@@ -2185,7 +2161,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         }
       } else if (dst_lo_rc == rc_float) { // fpr --> fpr copy
-          if (cbuf) {
+        if (is64) {
             __ fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         } else {
@@ -15016,12 +14992,12 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_pipe(pipe_class_memory);
 %}
 
-instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, Universe dummy, rFlagsReg cr)
+instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe dummy, rFlagsReg cr)
 %{
   predicate((uint64_t)n->in(2)->get_long()
             < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL base);
+  effect(TEMP temp, USE_KILL base, KILL cr);
 
   ins_cost(4 * INSN_COST);
   format %{ "ClearArray $cnt, $base" %}

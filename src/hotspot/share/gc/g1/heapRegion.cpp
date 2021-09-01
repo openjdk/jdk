@@ -233,7 +233,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::leaf, "HeapRegion par alloc lock", true),
+  _par_alloc_lock(Mutex::leaf, "HeapRegion par alloc lock", Mutex::_safepoint_check_always, true),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
   _hrm_index(hrm_index),
@@ -714,7 +714,8 @@ void HeapRegion::verify(VerifyOption vo,
     p += obj_size;
   }
 
-  if (!is_empty()) {
+  // Only regions in old generation contain valid BOT.
+  if (!is_empty() && !is_young()) {
     _bot_part.verify();
   }
 

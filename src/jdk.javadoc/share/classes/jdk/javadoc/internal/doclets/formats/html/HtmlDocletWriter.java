@@ -90,10 +90,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DocRootTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
@@ -1162,7 +1160,7 @@ public class HtmlDocletWriter {
     public void addInlineComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(tag);
-        addCommentTags(element, tag, description, false, false, false, htmltree);
+        addCommentTags(element, description, false, false, false, htmltree);
     }
 
     /**
@@ -1228,10 +1226,10 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Adds the inline comment.
+     * Adds the full-body content of the given element.
      *
-     * @param element the Element for which the inline comments will be generated
-     * @param htmltree the documentation tree to which the inline comments will be added
+     * @param element the element for which the content will be added
+     * @param htmltree the documentation tree to which the content will be added
      */
     public void addInlineComment(Element element, Content htmltree) {
         addCommentTags(element, utils.getFullBody(element), false, false, false, htmltree);
@@ -1248,22 +1246,6 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, List<? extends DocTree> tags, boolean depr,
-            boolean first, boolean inSummary, Content htmltree) {
-        addCommentTags(element, null, tags, depr, first, inSummary, htmltree);
-    }
-
-    /**
-     * Adds the comment tags.
-     *
-     * @param element for which the comment tags will be generated
-     * @param holderTag the block tag context for the inline tags
-     * @param tags the first sentence tags for the doc
-     * @param depr true if it is deprecated
-     * @param first true if the first sentence tags should be added
-     * @param inSummary true if the comment tags are added into the summary section
-     * @param htmltree the documentation tree to which the comment tags will be added
-     */
-    private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
             boolean first, boolean inSummary, Content htmltree) {
         if (options.noComment()) {
             return;
@@ -1846,8 +1828,8 @@ public class HtmlDocletWriter {
             HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
                                                      HtmlLinkInfo.Kind.ANNOTATION, annotationElement);
             Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = aDesc.getElementValues();
-            // If the annotation is synthesized, do not print the container.
-            if (utils.configuration.workArounds.isSynthesized(aDesc)) {
+            // If the annotation is mandated, do not print the container.
+            if (utils.configuration.workArounds.isMandated(aDesc)) {
                 for (ExecutableElement ee : pairs.keySet()) {
                     AnnotationValue annotationValue = pairs.get(ee);
                     List<AnnotationValue> annotationTypeValues = new ArrayList<>();

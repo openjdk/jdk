@@ -35,6 +35,7 @@
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -183,10 +184,6 @@ inline ThreadsList* ThreadsSMRSupport::xchg_java_thread_list(ThreadsList* new_li
 //
 class ThreadScanHashtable : public CHeapObj<mtThread> {
  private:
-  static bool ptr_equals(void * const& s1, void * const& s2) {
-    return s1 == s2;
-  }
-
   static unsigned int ptr_hash(void * const& s1) {
     // 2654435761 = 2^32 * Phi (golden ratio)
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
@@ -194,9 +191,9 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
 
   // ResourceHashtable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void *, int, &ThreadScanHashtable::ptr_hash,
-                            &ThreadScanHashtable::ptr_equals, 1031,
-                            ResourceObj::C_HEAP, mtThread> PtrTable;
+  typedef ResourceHashtable<void *, int, 1031,
+                            ResourceObj::C_HEAP, mtThread,
+                            &ThreadScanHashtable::ptr_hash> PtrTable;
   PtrTable * _ptrs;
 
  public:
@@ -632,6 +629,29 @@ static JavaThread* const* make_threads_list_data(int entries) {
   data[entries] = NULL;         // Make sure the final entry is NULL.
   return data;
 }
+
+#ifdef ASSERT
+
+ThreadsList::Iterator::Iterator() : _thread_ptr(nullptr), _list(nullptr) {}
+
+uint ThreadsList::Iterator::check_index(ThreadsList* list, uint i) {
+  assert(i <= list->length(), "invalid index %u", i);
+  return i;
+}
+
+void ThreadsList::Iterator::assert_not_singular() const {
+  assert(_list != nullptr, "singular iterator");
+}
+
+void ThreadsList::Iterator::assert_dereferenceable() const {
+  assert(_thread_ptr < (_list->threads() + _list->length()), "not dereferenceable");
+}
+
+void ThreadsList::Iterator::assert_same_list(Iterator i) const {
+  assert(_list == i._list, "iterators from different lists");
+}
+
+#endif // ASSERT
 
 ThreadsList::ThreadsList(int entries) :
   _magic(THREADS_LIST_MAGIC),

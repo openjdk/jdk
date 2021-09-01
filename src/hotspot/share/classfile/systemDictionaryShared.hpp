@@ -206,8 +206,7 @@ public:
 
   static void allocate_shared_data_arrays(int size, TRAPS);
 
-  // Check if sharing is supported for the class loader.
-  static bool is_sharing_possible(ClassLoaderData* loader_data);
+  static bool is_builtin_loader(ClassLoaderData* loader_data);
 
   static bool add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k);
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
