@@ -34,7 +34,6 @@ import java.io.Serial;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -346,7 +345,7 @@ public abstract class ShellFolder extends File {
                 if (commonParent instanceof ShellFolder) {
                     ((ShellFolder) commonParent).sortChildren(files);
                 } else {
-                    Collections.sort(files, FILE_COMPARATOR);
+                    files.sort(FILE_COMPARATOR);
                 }
 
                 return null;
@@ -359,7 +358,7 @@ public abstract class ShellFolder extends File {
         // synchronize the whole code of the sort method once
         invoke(new Callable<Void>() {
             public Void call() {
-                Collections.sort(files, FILE_COMPARATOR);
+                files.sort(FILE_COMPARATOR);
 
                 return null;
             }

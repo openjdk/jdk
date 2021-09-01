@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,59 +120,66 @@ public class DockerTestUtils {
         return true;
     }
 
-
-    /**
-     * Build a docker image that contains JDK under test.
-     * The jdk will be placed under the "/jdk/" folder inside the docker file system.
+     /**
+     * Build a container image that contains JDK under test.
+     * The jdk will be placed under the "/jdk/" folder inside the image/container file system.
      *
-     * @param imageName     name of the image to be created, including version tag
-     * @param dockerfile    name of the dockerfile residing in the test source;
-     *                      we check for a platform specific dockerfile as well
-     *                      and use this one in case it exists
-     * @param buildDirName  name of the docker build/staging directory, which will
-     *                      be created in the jtreg's scratch folder
+     * @param imageName name of the image to be created, including version tag
      * @throws Exception
      */
-    public static void
-        buildJdkDockerImage(String imageName, String dockerfile, String buildDirName)
-            throws Exception {
+    public static void buildJdkContainerImage(String imageName) throws Exception {
+        buildJdkContainerImage(imageName, null);
+    }
 
-        Path buildDir = Paths.get(".", buildDirName);
+     /**
+     * Build a container image that contains JDK under test.
+     * The jdk will be placed under the "/jdk/" folder inside the image/container file system.
+     *
+     * @param imageName         name of the image to be created, including version tag
+     * @param dockerfileContent content of the Dockerfile; use null to generate default content
+     * @throws Exception
+     */
+    public static void buildJdkContainerImage(String imageName, String dockerfileContent) throws Exception {
+        // image name may contain tag, hence replace ':'
+        String imageDirName = imageName.replace(":", "-");
+
+        // Create an image build/staging directory
+        Path buildDir = Paths.get(imageDirName);
         if (Files.exists(buildDir)) {
             throw new RuntimeException("The docker build directory already exists: " + buildDir);
         }
+        Files.createDirectories(buildDir);
 
-        Path jdkSrcDir = Paths.get(JDK_UNDER_TEST);
-        Path jdkDstDir = buildDir.resolve("jdk");
-
-        Files.createDirectories(jdkDstDir);
+        // Generate Dockerfile
+        if (dockerfileContent != null) {
+            Files.writeString(buildDir.resolve("Dockerfile"), dockerfileContent);
+        } else {
+            generateDockerFile(buildDir.resolve("Dockerfile"),
+                           DockerfileConfig.getBaseImageName(),
+                           DockerfileConfig.getBaseImageVersion());
+        }
 
         // Copy JDK-under-test tree to the docker build directory.
         // This step is required for building a docker image.
+        Path jdkSrcDir = Paths.get(JDK_UNDER_TEST);
+        Path jdkDstDir = buildDir.resolve("jdk");
+        Files.createDirectories(jdkDstDir);
         Files.walkFileTree(jdkSrcDir, new CopyFileVisitor(jdkSrcDir, jdkDstDir));
-        buildDockerImage(imageName, Paths.get(Utils.TEST_SRC, dockerfile), buildDir);
+
+        buildImage(imageName, buildDir);
     }
 
 
     /**
-     * Build a docker image based on given docker file and docker build directory.
+     * Build a container image based on image build directory.
      *
      * @param imageName  name of the image to be created, including version tag
-     * @param dockerfile  path to the Dockerfile to be used for building the docker
-     *        image. The specified dockerfile will be copied to the docker build
-     *        directory as 'Dockerfile'
-     * @param buildDir  build directory; it should already contain all the content
-     *        needed to build the docker image.
+     * @param buildDir   build directory; it should already contain all the content
+     *                   needed to build the image.
      * @throws Exception
      */
-    public static void
-        buildDockerImage(String imageName, Path dockerfile, Path buildDir) throws Exception {
-
-        generateDockerFile(buildDir.resolve("Dockerfile"),
-                           DockerfileConfig.getBaseImageName(),
-                           DockerfileConfig.getBaseImageVersion());
+    private static void buildImage(String imageName, Path buildDir) throws Exception {
         try {
-            // Build the docker
             execute(Container.ENGINE_COMMAND, "build", "--no-cache", "--tag", imageName, buildDir.toString())
                 .shouldHaveExitValue(0);
         } catch (Exception e) {

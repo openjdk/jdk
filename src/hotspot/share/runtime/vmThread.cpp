@@ -128,7 +128,7 @@ void VMThread::create() {
     assert(_timeout_task == NULL, "sanity");
   }
 
-  _terminate_lock = new Monitor(Mutex::safepoint, "VMThread::_terminate_lock", true,
+  _terminate_lock = new Monitor(Mutex::safepoint, "VMThread::_terminate_lock",
                                 Monitor::_safepoint_check_never);
 
   if (UsePerfData) {

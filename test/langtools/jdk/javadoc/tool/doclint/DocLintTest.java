@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -63,25 +62,21 @@ public class DocLintTest {
 
     final String code =
         /* 01 */    "/** Class comment. */\n" +
-        /* 02 */    "public class Test { /** */ Test() { }\n" +
+        /* 02 */    "public class Test { /** Constructor comment. */ Test() { }\n" +
         /* 03 */    "    /** Method comment. */\n" +
         /* 04 */    "    public void method() { }\n" +
         /* 05 */    "\n" +
         /* 06 */    "    /** Syntax < error. */\n" +
-        /* 07 */    """
-            \s   private void syntaxError() { }
-            """ +
+        /* 07 */    "    private void syntaxError() { }\n" +
         /* 08 */    "\n" +
-        /* 09 */    "    /** @see DoesNotExist */\n" +
-        /* 10 */    """
-            \s   protected void referenceError() { }
-            """ +
-        /* 11 */    "\n" +
-        /* 12 */    "    /** @return */\n" +
-        /* 13 */    """
-            \s   public int emptyReturn() { return 0; }
-            """ +
-        /* 14 */    "}\n";
+        /* 09 */    "    /** Description. \n" +
+        /* 10 */     "     * @see DoesNotExist */\n" +
+        /* 11 */    "    protected void referenceError() { }\n" +
+        /* 12 */    "\n" +
+        /* 13 */    "    /** Description. \n" +
+        /* 14 */    "     * @return */\n" +
+        /* 15 */    "    public int emptyReturn() { return 0; }\n" +
+        /* 16 */    "}\n";
 
     final String p1Code =
         /* 01 */    "package p1;\n" +
@@ -103,8 +98,8 @@ public class DocLintTest {
     private enum Message {
         // doclint messages
         DL_ERR6(ERROR, "Test.java:6:16: compiler.err.proc.messager: malformed HTML"),
-        DL_ERR9(ERROR, "Test.java:9:14: compiler.err.proc.messager: reference not found"),
-        DL_WRN12(WARNING, "Test.java:12:9: compiler.warn.proc.messager: no description for @return"),
+        DL_ERR10(ERROR, "Test.java:10:13: compiler.err.proc.messager: reference not found"),
+        DL_WRN14(WARNING, "Test.java:14:8: compiler.warn.proc.messager: no description for @return"),
 
         DL_ERR_P1TEST(ERROR, "P1Test.java:3:16: compiler.err.proc.messager: malformed HTML"),
         DL_ERR_P2TEST(ERROR, "P2Test.java:3:16: compiler.err.proc.messager: malformed HTML"),
@@ -112,12 +107,12 @@ public class DocLintTest {
         DL_WARN_P2TEST(WARNING, "P2Test.java:2:8: compiler.warn.proc.messager: no comment"),
 
         // doclint messages when -XDrawDiagnostics is not in effect
-        DL_ERR9A(ERROR, "Test.java:9: error: reference not found"),
-        DL_WRN12A(WARNING, "Test.java:12: warning: no description for @return"),
+        DL_ERR10A(ERROR, "Test.java:10: error: reference not found"),
+        DL_WRN14A(WARNING, "Test.java:14: warning: no description for @return"),
 
         // javadoc messages about bad content: these should only appear when doclint is disabled
         JD_WRN10(WARNING, "Test.java:10: warning: Tag @see: reference not found: DoesNotExist"),
-        JD_WRN13(WARNING, "Test.java:13: warning: @return tag has no arguments."),
+        JD_WRN14(WARNING, "Test.java:14: warning: @return tag has no arguments."),
 
         // javadoc messages for bad options
         OPT_BADARG(ERROR, "error: Invalid argument for -Xdoclint option"),
@@ -156,11 +151,11 @@ public class DocLintTest {
 
             test(List.of(htmlVersion),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR9A, Message.DL_WRN12A));
+                    EnumSet.of(Message.DL_ERR10A, Message.DL_WRN14A));
 
             test(List.of(htmlVersion, rawDiags),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR9, Message.DL_WRN12));
+                    EnumSet.of(Message.DL_ERR10, Message.DL_WRN14));
 
 //            test(List.of("-Xdoclint:none"),
 //                    Main.Result.OK,
@@ -168,7 +163,7 @@ public class DocLintTest {
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR9, Message.DL_WRN12));
+                    EnumSet.of(Message.DL_ERR10, Message.DL_WRN14));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:all/public"),
                     Main.Result.ERROR,
@@ -176,23 +171,23 @@ public class DocLintTest {
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:all", "-public"),
                     Main.Result.OK,
-                    EnumSet.of(Message.DL_WRN12));
+                    EnumSet.of(Message.DL_WRN14));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:missing"),
                     Main.Result.OK,
-                    EnumSet.of(Message.DL_WRN12));
+                    EnumSet.of(Message.DL_WRN14));
 
             test(List.of(htmlVersion, rawDiags, "-private"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR6, Message.DL_ERR9, Message.DL_WRN12));
+                    EnumSet.of(Message.DL_ERR6, Message.DL_ERR10, Message.DL_WRN14));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:missing,syntax", "-private"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR6, Message.DL_WRN12));
+                    EnumSet.of(Message.DL_ERR6, Message.DL_WRN14));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:reference"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR9));
+                    EnumSet.of(Message.DL_ERR10));
 
             test(List.of(htmlVersion, rawDiags, "-Xdoclint:badarg"),
                     Main.Result.ERROR,

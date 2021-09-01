@@ -45,7 +45,7 @@
 G1CardSet::CardSetPtr G1CardSet::FullCardSet = (G1CardSet::CardSetPtr)-1;
 
 G1CardSetConfiguration::G1CardSetConfiguration() :
-  _inline_ptr_bits_per_card(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift) {
+  _inline_ptr_bits_per_card(HeapRegion::LogCardsPerRegion) {
 
   // Array of Cards card set container size calculation
   _num_cards_in_array = G1RemSetArrayOfCardsEntries;
@@ -194,6 +194,8 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   class G1CardSetHashTableFound : public StackObj {
     G1CardSetHashTableValue* _value;
   public:
+    G1CardSetHashTableFound() : _value(nullptr) { }
+
     void operator()(G1CardSetHashTableValue* value) {
       _value = value;
     }
@@ -247,14 +249,12 @@ public:
     return found.value();
   }
 
-  CardSetPtr get(uint region_idx) {
+  G1CardSetHashTableValue* get(uint region_idx) {
     G1CardSetHashTableLookUp lookup(region_idx);
     G1CardSetHashTableFound found;
 
-    if (_table.get(Thread::current(), lookup, found)) {
-      return found.value()->_card_set;
-    }
-    return nullptr;
+    _table.get(Thread::current(), lookup, found);
+    return found.value();
   }
 
   void iterate_safepoint(G1CardSet::G1CardSetPtrIterator* cl2) {
@@ -611,8 +611,9 @@ void G1CardSet::transfer_cards_in_howl(CardSetPtr parent_card_set,
     G1CardSetHowl* howling_array = card_set_ptr<G1CardSetHowl>(parent_card_set);
     Atomic::add(&howling_array->_num_entries, diff, memory_order_relaxed);
 
-    bool should_grow_table = false;
-    G1CardSetHashTableValue* table_entry = get_or_add_card_set(card_region, &should_grow_table);
+    G1CardSetHashTableValue* table_entry = get_card_set(card_region);
+    assert(table_entry != nullptr, "Table entry not found for transferred cards");
+
     Atomic::add(&table_entry->_num_occupied, diff, memory_order_relaxed);
 
     Atomic::add(&_num_occupied, diff, memory_order_relaxed);
@@ -656,7 +657,7 @@ G1CardSetHashTableValue* G1CardSet::get_or_add_card_set(uint card_region, bool* 
   return _table->get_or_add(card_region, should_grow_table);
 }
 
-G1CardSet::CardSetPtr G1CardSet::get_card_set(uint card_region) {
+G1CardSetHashTableValue* G1CardSet::get_card_set(uint card_region) {
   return _table->get(card_region);
 }
 
@@ -709,10 +710,13 @@ bool G1CardSet::contains_card(uint card_region, uint card_in_region) {
 
   // Protect the card set from reclamation.
   GlobalCounter::CriticalSection cs(Thread::current());
-  CardSetPtr card_set = get_card_set(card_region);
-  if (card_set == nullptr) {
+  G1CardSetHashTableValue* table_entry = get_card_set(card_region);
+  if (table_entry == nullptr) {
     return false;
-  } else if (card_set == FullCardSet) {
+  }
+
+  CardSetPtr card_set = table_entry->_card_set;
+  if (card_set == FullCardSet) {
     // contains_card() is not a performance critical method so we do not hide that
     // case in the switch below.
     return true;
@@ -736,11 +740,14 @@ bool G1CardSet::contains_card(uint card_region, uint card_in_region) {
 }
 
 void G1CardSet::print_info(outputStream* st, uint card_region, uint card_in_region) {
-  CardSetPtr card_set = get_card_set(card_region);
-  if (card_set == nullptr) {
+  G1CardSetHashTableValue* table_entry = get_card_set(card_region);
+  if (table_entry == nullptr) {
     st->print("NULL card set");
     return;
-  } else if (card_set == FullCardSet) {
+  }
+
+  CardSetPtr card_set = table_entry->_card_set;
+  if (card_set == FullCardSet) {
     st->print("FULL card set)");
     return;
   }
