@@ -4418,19 +4418,22 @@ selected.
 \f[I]output\-options\f[R] is
 .RS
 .PP
-\f[CB]filecount=\f[R]\f[I]file\-count\f[R] \f[CB]filesize=\f[R]\f[I]<file size
-with optional K, M or G suffix>\f[R] \f[CB]foldmultilines=\f[R]\f[I]<true|false>\f[R]
+\f[CB]filecount=\f[R]\f[I]file\-count\f[R] \f[CB]filesize=\f[R]\f[I]file size
+with optional K, M or G suffix\f[R]
+\f[CB]foldmultilines=\f[R]\f[I]<true|false>\f[R]
 .RE
 .PP
-When \f[I]foldmultilines\f[R] is true, a log event that consists of
-multiple lines will be folded into a single line by replacing newline characters
-with the sequence '\\' and 'n' in the output.
-Existing single backslash characters will also be replaced with a sequence of
-two backslashes so that the conversion can be reversed.
-This option is safe to use with UTF-8 character encodings, but other encodings may not work.
-For example, it may incorrectly convert multi-byte sequences in Shift JIS and BIG5.
+When \f[CB]foldmultilines\f[R] is true, a log event that consists of
+multiple lines will be folded into a single line by replacing newline
+characters with the sequence \f[CB]\[aq]\\\[aq]\f[R] and
+\f[CB]\[aq]n\[aq]\f[R] in the output.
+Existing single backslash characters will also be replaced with a
+sequence of two backslashes so that the conversion can be reversed.
+This option is safe to use with UTF\-8 character encodings, but other
+encodings may not work.
+For example, it may incorrectly convert multi\-byte sequences in Shift
+JIS and BIG5.
 This option is available only for file outputs.
-.RE
 .RE
 .SS Default Configuration
 .PP

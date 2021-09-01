@@ -613,7 +613,10 @@ public class Attr extends JCTree.Visitor {
                 }
                 @Override
                 public void report(DiagnosticPosition pos, JCDiagnostic details) {
-                    if (pt == Type.recoveryType) {
+                    boolean needsReport = pt == Type.recoveryType ||
+                            (details.getDiagnosticPosition() != null &&
+                            details.getDiagnosticPosition().getTree().hasTag(LAMBDA));
+                    if (needsReport) {
                         chk.basicHandler.report(pos, details);
                     }
                 }
@@ -4183,15 +4186,9 @@ public class Attr extends JCTree.Visitor {
         }
         tree.sym = sym;
 
-        // (1) Also find the environment current for the class where
-        //     sym is defined (`symEnv').
-        // Only for pre-tiger versions (1.4 and earlier):
-        // (2) Also determine whether we access symbol out of an anonymous
-        //     class in a this or super call.  This is illegal for instance
-        //     members since such classes don't carry a this$n link.
-        //     (`noOuterThisPath').
+        // Also find the environment current for the class where
+        // sym is defined (`symEnv').
         Env<AttrContext> symEnv = env;
-        boolean noOuterThisPath = false;
         if (env.enclClass.sym.owner.kind != PCK && // we are in an inner class
             sym.kind.matches(KindSelector.VAL_MTH) &&
             sym.owner.kind == TYP &&
@@ -4200,8 +4197,6 @@ public class Attr extends JCTree.Visitor {
             // Find environment in which identifier is defined.
             while (symEnv.outer != null &&
                    !sym.isMemberOf(symEnv.enclClass.sym, types)) {
-                if ((symEnv.enclClass.sym.flags() & NOOUTERTHIS) != 0)
-                    noOuterThisPath = false;
                 symEnv = symEnv.outer;
             }
         }
@@ -4223,7 +4218,7 @@ public class Attr extends JCTree.Visitor {
         // In a constructor body,
         // if symbol is a field or instance method, check that it is
         // not accessed before the supertype constructor is called.
-        if ((symEnv.info.isSelfCall || noOuterThisPath) &&
+        if (symEnv.info.isSelfCall &&
             sym.kind.matches(KindSelector.VAL_MTH) &&
             sym.owner.kind == TYP &&
             (sym.flags() & STATIC) == 0) {
