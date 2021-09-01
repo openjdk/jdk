@@ -23,31 +23,32 @@
  */
 
 #include "precompiled.hpp"
-#include "g1EvacuationFailureRegions.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 
 
-G1EvacuationFailureRegions::G1EvacuationFailureRegions() :
+G1EvacFailureRegions::G1EvacFailureRegions() :
   _regions_failed_evacuation(mtGC) {
 }
 
-G1EvacuationFailureRegions::~G1EvacuationFailureRegions() {
+G1EvacFailureRegions::~G1EvacFailureRegions() {
   FREE_C_HEAP_ARRAY(uint, _evac_failure_regions);
 }
 
-void G1EvacuationFailureRegions::initialize() {
+void G1EvacFailureRegions::initialize(uint max_regions) {
   Atomic::store(&_evac_failure_regions_cur_length, 0u);
-  _max_regions = G1CollectedHeap::heap()->max_reserved_regions();
+  _max_regions = max_regions;
   _regions_failed_evacuation.resize(_max_regions);
   _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, _max_regions, mtGC);
 }
 
-void G1EvacuationFailureRegions::par_iterate(HeapRegionClosure* closure,
-                                             HeapRegionClaimer* _hrclaimer,
-                                             uint worker_id) {
+void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
+                                       HeapRegionClaimer* _hrclaimer,
+                                       uint worker_id) {
   assert_at_safepoint();
   size_t length = Atomic::load(&_evac_failure_regions_cur_length);
   if (length == 0) {
@@ -73,12 +74,12 @@ void G1EvacuationFailureRegions::par_iterate(HeapRegionClosure* closure,
   } while (cur_pos != start_pos);
 }
 
-void G1EvacuationFailureRegions::reset() {
+void G1EvacFailureRegions::reset() {
   Atomic::store(&_evac_failure_regions_cur_length, 0u);
   _regions_failed_evacuation.clear();
 }
 
-bool G1EvacuationFailureRegions::contains(uint region_idx) const {
+bool G1EvacFailureRegions::contains(uint region_idx) const {
   assert(region_idx < _max_regions, "must be");
   return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
 }

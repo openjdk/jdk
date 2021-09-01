@@ -1758,7 +1758,7 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_reserved_regions());
 
-  _evac_failure_regions.initialize();
+  _evac_failure_regions.initialize(max_reserved_regions());
 
   evac_failure_injector()->reset();
 
@@ -3131,12 +3131,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   }
 }
 
-void G1CollectedHeap::iterate_evacuation_failure_regions_par(HeapRegionClosure* closure,
-                                                             HeapRegionClaimer* claimer,
-                                                             uint worker_id) {
-  _evac_failure_regions.par_iterate(closure, claimer, worker_id);
-}
-
 bool G1ParEvacuateFollowersClosure::offer_termination() {
   EventGCPhaseParallel event;
   G1ParScanThreadState* const pss = par_scan_state();
@@ -3909,7 +3903,7 @@ void G1CollectedHeap::decrement_summary_bytes(size_t bytes) {
 void G1CollectedHeap::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {
   Ticks start = Ticks::now();
   {
-    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states);
+    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states, &_evac_failure_regions);
     run_batch_task(&cl);
   }
   phase_times()->record_post_evacuate_cleanup_task_1_time((Ticks::now() - start).seconds() * 1000.0);

@@ -27,6 +27,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
@@ -259,23 +260,20 @@ public:
   }
 };
 
-G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs) :
+G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs,
+                                                               G1EvacFailureRegions* evac_failure_regions) :
   AbstractGangTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _rdcqs(rdcqs),
   _hrclaimer(_g1h->workers()->active_workers()),
+  _evac_failure_regions(evac_failure_regions),
   _num_failed_regions(0) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id, &_num_failed_regions);
 
-  // We need to check all collection set regions whether they need self forward
-  // removals, not only the last collection set increment. The reason is that
-  // reference processing (e.g. finalizers) can make it necessary to resurrect an
-  // otherwise unreachable object at the very end of the collection. That object
-  // might cause an evacuation failure in any region in the collection set.
-  // _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
-  _g1h->iterate_evacuation_failure_regions_par(&rsfp_cl, &_hrclaimer, worker_id);
+  // Iterates through only the regions recorded as evacuation failure.
+  _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {

@@ -31,6 +31,7 @@
 class FreeCSetStats;
 
 class G1CollectedHeap;
+class G1EvacFailureRegions;
 class G1EvacuationInfo;
 class G1ParScanThreadStateSet;
 class G1RedirtyCardsQueueSet;
@@ -48,7 +49,8 @@ class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedGangTask {
   class RemoveSelfForwardPtrsTask;
 
 public:
-  G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states);
+  G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
+                                          G1EvacFailureRegions* evac_failure_regions);
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
@@ -83,7 +85,7 @@ class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : publi
   G1ParRemoveSelfForwardPtrsTask _task;
 
 public:
-  RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs);
+  RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions);
   ~RemoveSelfForwardPtrsTask();
 
   static bool should_execute();

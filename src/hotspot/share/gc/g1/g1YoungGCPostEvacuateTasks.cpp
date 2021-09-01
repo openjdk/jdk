@@ -38,7 +38,8 @@
 #include "jfr/jfrEvents.hpp"
 #include "utilities/ticks.hpp"
 
-G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states) :
+G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
+                                                                                 G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new MergePssTask(per_thread_states));
@@ -47,7 +48,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   if (RemoveSelfForwardPtrsTask::should_execute()) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(per_thread_states->rdcqs()));
+    add_parallel_task(new RemoveSelfForwardPtrsTask(per_thread_states->rdcqs(), evac_failure_regions));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
 }
@@ -99,8 +100,11 @@ bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::should_
   return G1CollectedHeap::heap()->evacuation_failed();
 }
 
-G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs) :
-  G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr), _task(rdcqs) { }
+G1PostEvacuateCollectionSetCleanupTask1::
+    RemoveSelfForwardPtrsTask::RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs,
+                                                         G1EvacFailureRegions* evac_failure_regions) :
+  G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
+  _task(rdcqs, evac_failure_regions) { }
 
 G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::~RemoveSelfForwardPtrsTask() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();

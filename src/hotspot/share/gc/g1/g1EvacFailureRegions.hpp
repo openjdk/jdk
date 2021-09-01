@@ -22,32 +22,34 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1EVACUATIONFAILUREREGIONS_HPP
-#define SHARE_GC_G1_G1EVACUATIONFAILUREREGIONS_HPP
+#ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
+#define SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
 
-#include "utilities/bitMap.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 class HeapRegionClosure;
 class HeapRegionClaimer;
 
-// This class
-//     1. records for every region on the heap whether evacuation failed for it.
-//     2. records for every evacuation failure region to speed up
-//        iteration of these regions in post evacuation phase.
-class G1EvacuationFailureRegions {
-
-private:
+// This class records for every region on the heap whether evacuation failed for it,
+// and records for every evacuation failure region to speed up iteration of these
+// regions in post evacuation phase.
+class G1EvacFailureRegions {
+  // Records for every region on the heap whether evacuation failed for it.
   CHeapBitMap _regions_failed_evacuation;
+  // Regions (index) of evacuation failed in the current collection.
   uint* _evac_failure_regions;
+  // Number of regions evacuation failed in the current collection.
   volatile uint _evac_failure_regions_cur_length;
+  // Maximum of regions number.
   uint _max_regions;
 
 public:
-  G1EvacuationFailureRegions();
-  ~G1EvacuationFailureRegions();
-  void initialize();
+  G1EvacFailureRegions();
+  ~G1EvacFailureRegions();
+  void initialize(uint max_regions);
+
   void reset();
+
   bool contains(uint region_idx) const;
   void par_iterate(HeapRegionClosure* closure,
                    HeapRegionClaimer* _hrclaimer,
@@ -69,5 +71,4 @@ public:
   }
 };
 
-
-#endif //SHARE_GC_G1_G1EVACUATIONFAILUREREGIONS_HPP
+#endif //SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
