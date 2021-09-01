@@ -46,11 +46,11 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   enum lock_types {
        event,
        tty            = event          +   3,
-       service        = tty            +   3,
+       service        = tty            +   6,
        stackwatermark = service        +   3,
        special        = stackwatermark +   3,
        oopstorage     = special        +   3,
-       leaf           = oopstorage     +   2,
+       leaf           = oopstorage     +  10,
        safepoint      = leaf           +  10,
        barrier        = safepoint      +   1,
        nonleaf        = barrier        +   1,
