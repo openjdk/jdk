@@ -24,17 +24,22 @@
 /*
  * @test
  * @bug 8214761
+ * @run testng NegativeCompensation
  * @summary When combining two DoubleSummaryStatistics, the compensation
  *          has to be subtracted.
  */
 
 import java.util.DoubleSummaryStatistics;
+import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class NegativeCompensation {
     static final double VAL = 1.000000001;
     static final int LOG_ITER = 21;
 
-    public static void main(String[] args) {
+    @Test
+    public static void testErrorComparision() {
         DoubleSummaryStatistics stat0 = new DoubleSummaryStatistics();
         DoubleSummaryStatistics stat1 = new DoubleSummaryStatistics();
         DoubleSummaryStatistics stat2 = new DoubleSummaryStatistics();
@@ -50,7 +55,6 @@ public class NegativeCompensation {
             stat2.combine(stat1);
         }
 
-        System.out.println("count: " + stat2.getCount());
         for (long i = 0, iend = stat2.getCount(); i < iend; ++i) {
             stat0.accept(VAL);
         }
@@ -62,11 +66,8 @@ public class NegativeCompensation {
 
         double absErrN = Math.abs(res - stat2.getSum());
         double absErr = Math.abs(stat0.getSum() - stat2.getSum());
-        System.out.println("serial sum: " + stat0.getSum());
-        System.out.println("combined sum: " + stat2.getSum());
-        System.out.println("abs error: " + absErr);
-        if (absErr == 0.0) {
-            throw new RuntimeException("Absolute error is too big: " + absErr);
-        }
+        assertTrue(absErrN >= absErr,
+                "Naive sum error is not greater than or equal to Summary sum");
+        assertEquals(absErr, 0.0, "Absolute error is not zero");
     }
 }
