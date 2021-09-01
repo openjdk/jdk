@@ -52,7 +52,6 @@ import java.security.Signature;
 
 public class SharedSecrets {
     private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
-    private static JavaAWTAccess javaAWTAccess;
     private static JavaAWTFontAccess javaAWTFontAccess;
     private static JavaBeansAccess javaBeansAccess;
     private static JavaLangAccess javaLangAccess;
@@ -294,16 +293,6 @@ public class SharedSecrets {
 
     public static void setJavaUtilZipFileAccess(JavaUtilZipFileAccess access) {
         javaUtilZipFileAccess = access;
-    }
-
-    public static void setJavaAWTAccess(JavaAWTAccess jaa) {
-        javaAWTAccess = jaa;
-    }
-
-    public static JavaAWTAccess getJavaAWTAccess() {
-        // this may return null in which case calling code needs to
-        // provision for.
-        return javaAWTAccess;
     }
 
     public static void setJavaAWTFontAccess(JavaAWTFontAccess jafa) {

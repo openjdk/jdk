@@ -44,8 +44,6 @@ import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.SoftReference;
 
-import jdk.internal.access.JavaAWTAccess;
-import jdk.internal.access.SharedSecrets;
 import sun.util.logging.PlatformLogger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -819,73 +817,6 @@ public final class AppContext {
             return new PropertyChangeListener[0];
         }
         return changeSupport.getPropertyChangeListeners(propertyName);
-    }
-
-    // Set up JavaAWTAccess in SharedSecrets
-    static {
-        SharedSecrets.setJavaAWTAccess(new JavaAWTAccess() {
-            @SuppressWarnings("removal")
-            private boolean hasRootThreadGroup(final AppContext ecx) {
-                return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                    @Override
-                    public Boolean run() {
-                        return ecx.threadGroup.getParent() == null;
-                    }
-                });
-            }
-
-            /**
-             * Returns the AppContext used for applet logging isolation, or null if
-             * the default global context can be used.
-             * If there's no applet, or if the caller is a stand alone application,
-             * or running in the main app context, returns null.
-             * Otherwise, returns the AppContext of the calling applet.
-             * @return null if the global default context can be used,
-             *         an AppContext otherwise.
-             **/
-            public Object getAppletContext() {
-                // There's no AppContext: return null.
-                // No need to call getAppContext() if numAppContext == 0:
-                // it means that no AppContext has been created yet, and
-                // we don't want to trigger the creation of a main app
-                // context since we don't need it.
-                if (numAppContexts.get() == 0) return null;
-
-                AppContext ecx = null;
-
-                // Not sure we really need to re-check numAppContexts here.
-                // If all applets have gone away then we could have a
-                // numAppContexts coming back to 0. So we recheck
-                // it here because we don't want to trigger the
-                // creation of a main AppContext in that case.
-                // This is probably not 100% MT-safe but should reduce
-                // the window of opportunity in which that issue could
-                // happen.
-                if (numAppContexts.get() > 0) {
-                    // Defaults to thread group caching.
-                    // This is probably not required as we only really need
-                    // isolation in a deployed applet environment, in which
-                    // case ecx will not be null when we reach here
-                    // However it helps emulate the deployed environment,
-                    // in tests for instance.
-                    ecx = ecx != null ? ecx : getAppContext();
-                }
-
-                // getAppletContext() may be called when initializing the main
-                // app context - in which case mainAppContext will still be
-                // null. To work around this issue we simply use
-                // AppContext.threadGroup.getParent() == null instead, since
-                // mainAppContext is the only AppContext which should have
-                // the root TG as its thread group.
-                // See: JDK-8023258
-                final boolean isMainAppContext = ecx == null
-                        || mainAppContext == ecx
-                        || mainAppContext == null && hasRootThreadGroup(ecx);
-
-                return isMainAppContext ? null : ecx;
-            }
-
-        });
     }
 
     public static <T> T getSoftReferenceValue(Object key,
