@@ -1191,8 +1191,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             removedElems[i] = bidiRoot.getElement(removeFromIndex+i);
         }
 
-        Element[] addedElems = new Element[ newElements.size() ];
-        newElements.toArray( addedElems );
+        Element[] addedElems = newElements.toArray(new Element[0]);
 
         // Update the change record.
         ElementEdit ee = new ElementEdit( bidiRoot, removeFromIndex,

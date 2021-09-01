@@ -4267,8 +4267,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                 }
             }
             if (keyStrokes != null) {
-                retValue = new KeyStroke[keyStrokes.size()];
-                keyStrokes.toArray(retValue);
+                retValue = keyStrokes.toArray(new KeyStroke[0]);
             }
             return retValue;
         }

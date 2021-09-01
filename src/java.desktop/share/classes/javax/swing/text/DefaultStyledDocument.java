@@ -2108,8 +2108,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 }
 
                 // install the children
-                Element[] c = new Element[children.size()];
-                children.toArray(c);
+                Element[] c = children.toArray(new Element[0]);
                 ((BranchElement)to).replace(0, 0, c);
                 return to;
             } else {

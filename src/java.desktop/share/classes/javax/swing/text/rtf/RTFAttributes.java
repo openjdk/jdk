@@ -125,10 +125,7 @@ class RTFAttributes
         a.add(new AssertiveAttribute(DOC, Constants.WidowControl,
                                             "widowctrl", True));
 
-
-        RTFAttribute[] attrs = new RTFAttribute[a.size()];
-        a.toArray(attrs);
-        attributes = attrs;
+        attributes = a.toArray(new RTFAttribute[0]);
     }
 
     static Dictionary<String, RTFAttribute> attributesByKeyword()

@@ -101,8 +101,7 @@ class RTFGenerator extends Object
             pair.character = textKeywordDictionary.get(pair.keyword).charAt(0);
             tempPairs.add(pair);
         }
-        textKeywords = new CharacterKeywordPair[tempPairs.size()];
-        tempPairs.toArray(textKeywords);
+        textKeywords = tempPairs.toArray(new CharacterKeywordPair[0]);
     }
 
     static final char[] hexdigits = { '0', '1', '2', '3', '4', '5', '6', '7',

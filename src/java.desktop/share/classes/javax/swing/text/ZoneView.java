@@ -302,8 +302,7 @@ public class ZoneView extends BoxView {
             zones.add(createZone(offs0, offs));
         } while (offs < offs1);
         View oldZone = getView(index);
-        View[] newZones = new View[zones.size()];
-        zones.toArray(newZones);
+        View[] newZones = zones.toArray(new View[0]);
         replace(index, 1, newZones);
     }
 

@@ -1336,8 +1336,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
                 break;
             }
         }
-        MenuElement[] me = new MenuElement[elements.size()];
-        elements.toArray(me);
+        MenuElement[] me = elements.toArray(new MenuElement[0]);
         return me;
     }
 

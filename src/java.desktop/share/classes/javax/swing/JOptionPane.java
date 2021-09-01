@@ -2349,10 +2349,7 @@ public class JOptionPane extends JComponent implements Accessible
                 if(options[counter] instanceof Serializable)
                     serOptions.add(options[counter]);
             if(serOptions.size() > 0) {
-                int             optionCount = serOptions.size();
-                Object[]        arrayOptions = new Object[optionCount];
-
-                serOptions.toArray(arrayOptions);
+                Object[] arrayOptions = serOptions.toArray(new Object[0]);
                 values.addElement("options");
                 values.addElement(arrayOptions);
             }

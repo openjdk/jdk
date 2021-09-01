@@ -235,8 +235,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                     }
                 }
             }
-            configs = new GraphicsConfiguration[v.size()];
-            v.toArray(configs);
+            configs = v.toArray(new GraphicsConfiguration[0]);
         }
         return configs.clone();
     }
