@@ -43,6 +43,7 @@
 class G1OopStarChunkedList;
 class G1PLABAllocator;
 class G1EvacuationRootClosures;
+class G1YoungCollector;
 class HeapRegion;
 class PreservedMarks;
 class PreservedMarksSet;
