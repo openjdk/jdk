@@ -629,7 +629,7 @@ public class ReflectionFactory {
     static boolean useDirectMethodHandle() {
         return useDirectMethodHandle;
     }
-    static boolean isUseNativeAccessorOnly() {
+    static boolean useNativeAccessorOnly() {
         return useNativeAccessorOnly;
     }
 

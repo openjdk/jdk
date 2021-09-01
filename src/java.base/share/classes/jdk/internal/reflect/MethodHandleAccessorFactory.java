@@ -476,7 +476,7 @@ final class MethodHandleAccessorFactory {
         if (Modifier.isNative(member.getModifiers()))
             return true;
 
-        if (ReflectionFactory.isUseNativeAccessorOnly())  // for testing only
+        if (ReflectionFactory.useNativeAccessorOnly())  // for testing only
             return true;
 
         // MethodHandle::withVarargs on a member with varargs modifier bit set

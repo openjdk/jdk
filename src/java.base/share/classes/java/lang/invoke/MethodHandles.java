@@ -66,6 +66,7 @@ import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.lang.invoke.MethodHandleStatics.newInternalError;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -127,7 +128,7 @@ public class MethodHandles {
     @CallerSensitiveAdapter
     private static Lookup lookup(Class<?> caller) {
         if (caller.getClassLoader() == null) {
-            throw newIllegalArgumentException("illegal lookupClass: "+caller);
+            throw newInternalError("calling lookup() reflectively is not supported: "+caller);
         }
         return new Lookup(caller);
     }

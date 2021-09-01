@@ -81,13 +81,19 @@ public class MethodInvokeTest {
     }
 
     void staticMethodCall() {
-        checkCaller(java.util.CSM.caller(), MethodInvokeTest.class);
-        checkCaller(java.util.CSM.callerNoAlternateImpl(), MethodInvokeTest.class);
+        checkCaller(java.util.CSM.caller(), MethodInvokeTest.class, true);
+        checkCaller(java.util.CSM.callerNoAlternateImpl(), MethodInvokeTest.class, false);
     }
 
     void reflectMethodCall() throws Throwable {
-        checkCaller(Caller1.invoke(CSM.class.getMethod(CALLER_METHOD)), Caller1.class);
-        checkCaller(Caller2.invoke(CSM.class.getMethod(CALLER_METHOD)), Caller2.class);
+        // zero-arg caller method
+        checkCaller(Caller1.invoke(CSM.class.getMethod(CALLER_METHOD)), Caller1.class, true);
+        checkCaller(Caller2.invoke(CSM.class.getMethod(CALLER_METHOD)), Caller2.class, true);
+        // 4-arg caller method
+        checkCaller(Caller1.invoke(CSM.class.getMethod(CALLER_METHOD, Object.class, Object.class, Object.class, Object.class),
+                                   new Object[] { null, null, null, null}), Caller1.class, true);
+        checkCaller(Caller2.invoke(CSM.class.getMethod(CALLER_METHOD, Object.class, Object.class, Object.class, Object.class),
+                                   new Object[] { null, null, null, null}), Caller2.class, true);
 
         // Reflection::getCallerClass will return the injected invoker class as the caller
         checkInjectedInvoker(Caller1.invoke(CSM.class.getMethod(CALLER_NO_ALT_METHOD)), Caller1.class);
@@ -95,8 +101,8 @@ public class MethodInvokeTest {
     }
 
     void invokeMethodHandle() throws Throwable {
-        checkCaller(Caller1.invokeExact(CALLER_METHOD), Caller1.class);
-        checkCaller(Caller2.invokeExact(CALLER_METHOD), Caller2.class);
+        checkCaller(Caller1.invokeExact(CALLER_METHOD), Caller1.class, true);
+        checkCaller(Caller2.invokeExact(CALLER_METHOD), Caller2.class, true);
 
         checkInjectedInvoker(Caller1.invokeExact(CALLER_NO_ALT_METHOD), Caller1.class);
         checkInjectedInvoker(Caller2.invokeExact(CALLER_NO_ALT_METHOD), Caller2.class);
@@ -114,6 +120,9 @@ public class MethodInvokeTest {
         static CSM invoke(Method csm) throws ReflectiveOperationException {
             return (CSM)csm.invoke(null);
         }
+        static CSM invoke(Method csm, Object[] args) throws ReflectiveOperationException {
+            return (CSM)csm.invoke(null, args);
+        }
         static CSM invokeExact(String methodName) throws Throwable {
             MethodHandle mh = MethodHandles.lookup().findStatic(java.util.CSM.class,
                     methodName, MethodType.methodType(CSM.class));
@@ -124,6 +133,9 @@ public class MethodInvokeTest {
     static class Caller2 {
         static CSM invoke(Method csm) throws ReflectiveOperationException {
             return (CSM)csm.invoke(null);
+        }
+        static CSM invoke(Method csm, Object[] args) throws ReflectiveOperationException {
+            return (CSM)csm.invoke(null, args);
         }
         static CSM invokeExact(String methodName) throws Throwable {
             MethodHandle mh = MethodHandles.lookup().findStatic(java.util.CSM.class,
@@ -153,8 +165,9 @@ public class MethodInvokeTest {
             assertTrue(cn.startsWith(LambdaTest.class.getName() + "$$Lambda$"), caller + " should be a lambda proxy class");
         }
     }
-    static void checkCaller(CSM csm, Class<?> expected) {
+    static void checkCaller(CSM csm, Class<?> expected, boolean adapter) {
         assertEquals(csm.caller, expected);
+        assertEquals(csm.adapter, adapter);
         // verify no invoker class injected
         for (StackFrame frame : csm.stackFrames) {
             Class<?> c = frame.getDeclaringClass();
@@ -173,6 +186,7 @@ public class MethodInvokeTest {
         Class<?> invoker = csm.caller;
         assertTrue(invoker.isHidden(), invoker + " should be a hidden class");
         assertEquals(invoker.getModule(), expected.getModule());
+        assertEquals(csm.adapter, false);
 
         int index = invoker.getName().indexOf('/');
         String cn = invoker.getName().substring(0, index);
