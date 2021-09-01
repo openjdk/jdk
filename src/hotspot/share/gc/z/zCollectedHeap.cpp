@@ -25,6 +25,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAbort.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCollector.inline.hpp"
@@ -92,6 +93,7 @@ public:
 };
 
 void ZCollectedHeap::stop() {
+  ZAbort::abort();
   ZStopConcurrentGCThreadClosure cl;
   gc_threads_do(&cl);
 }

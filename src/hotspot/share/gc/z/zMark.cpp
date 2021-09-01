@@ -510,6 +510,7 @@ bool ZMark::flush(bool gc_threads) {
 
 bool ZMark::try_terminate_flush() {
   Atomic::inc(&_work_nterminateflush);
+  _terminate.set_resurrected(false);
 
   ZStatTimer timer(ZSubPhaseConcurrentMarkTryFlush, _collector->timer());
   return flush(true /* gc_threads */) ||
@@ -545,6 +546,10 @@ bool ZMark::try_terminate() {
     // Idle to give the other threads
     // a chance to enter termination.
     idle();
+
+    if (ZAbort::should_abort()) {
+      return true;
+    }
 
     if (!_terminate.try_exit()) {
       // All workers entered, terminate
@@ -874,8 +879,7 @@ void ZMark::mark_follow() {
   do {
     ZMarkTask task(this);
     workers()->run(&task);
-    _terminate.set_resurrected(false);
-  } while (try_terminate_flush());
+  } while (!ZAbort::should_abort() && try_terminate_flush());
 }
 
 bool ZMark::try_end() {

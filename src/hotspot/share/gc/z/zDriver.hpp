@@ -36,11 +36,13 @@ private:
   bool           _active;
   bool           _blocked;
   bool           _await;
+  bool           _aborted;
 
   template <typename T> bool pause();
 
   void active();
   void inactive();
+  void aborted();
 
   void pause_mark_start();
   void concurrent_mark();
