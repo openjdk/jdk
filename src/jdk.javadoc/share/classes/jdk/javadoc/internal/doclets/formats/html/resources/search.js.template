@@ -291,6 +291,33 @@ function doSearch(request, response) {
     response(result);
 }
 $(function() {
+    var expanded = false;
+    function collapse() {
+        if (expanded) {
+            $("div#navbar-top").height("2.8em");
+            $("button#navbar-toggle-button")
+                .removeClass("expanded")
+                .attr("aria-expanded", "false");
+            expanded = false;
+        }
+    }
+    $("button#navbar-toggle-button").click(function (e) {
+        if (expanded) {
+            collapse();
+        } else {
+            $("div#navbar-top").height($("#navbar-top").prop("scrollHeight"));
+            $("button#navbar-toggle-button")
+                .addClass("expanded")
+                .attr("aria-expanded", "true");
+            expanded = true;
+        }
+    });
+    $("ul.sub-nav-list-small li a").click(collapse);
+    $("input#search-input").focus(collapse);
+    $("main").click(collapse);
+    $(window).on("orientationchange", collapse).on("resize", function() {
+        if ($(window).width() > 1000) collapse();
+    });
     $("#search-input").catcomplete({
         minLength: 1,
         delay: 300,
