@@ -74,7 +74,12 @@ public:
 
   size_t mem_size() const { return sizeof(*this) + (size_t)_num_elems * _elem_size; }
 
-  uint length() const { return _next_allocate; }
+  uint length() {
+    // _next_allocate might grow greater than _num_elems in multi-thread env,
+    // so, here we need to return the adjusted real length value.
+    _next_allocate = _next_allocate > _num_elems ? _num_elems : _next_allocate;
+    return _next_allocate;
+  }
 
   char* start() const { return _buffer; }
 
