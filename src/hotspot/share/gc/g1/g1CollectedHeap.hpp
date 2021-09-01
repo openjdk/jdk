@@ -780,7 +780,6 @@ private:
   // precondition: !is_gc_active()
   bool do_collection_pause_at_safepoint(double target_pause_time_ms);
 
-  void set_young_collection_default_active_worker_threads();
   // Helper for do_collection_pause_at_safepoint, containing the guts
   // of the incremental collection pause, executed by the vm thread.
   void do_collection_pause_at_safepoint_helper(double target_pause_time_ms);

@@ -123,7 +123,6 @@ class G1YoungCollector {
   void post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 
-  
 
 #if TASKQUEUE_STATS
   uint num_task_queues() const;

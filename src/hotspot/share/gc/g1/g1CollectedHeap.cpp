@@ -2837,14 +2837,6 @@ void G1CollectedHeap::retire_tlabs() {
   ensure_parsability(true);
 }
 
-void G1CollectedHeap::set_young_collection_default_active_worker_threads() {
-  uint active_workers = WorkerPolicy::calc_active_workers(workers()->total_workers(),
-                                                          workers()->active_workers(),
-                                                          Threads::number_of_non_daemon_threads());
-  active_workers = workers()->update_active_workers(active_workers);
-  log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
-}
-
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_pause_time_ms) {
   ResourceMark rm;
 
