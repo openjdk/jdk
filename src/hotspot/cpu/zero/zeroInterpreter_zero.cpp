@@ -200,9 +200,17 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
     }
     fixup_after_potential_safepoint();
 
-    // Notify the stack watermarks machinery that we are unwinding.
+    // If we are unwinding, notify the stack watermarks machinery.
     // Should do this before resetting the frame anchor.
-    stack_watermark_unwind_check(thread);
+    if (istate->msg() == BytecodeInterpreter::return_from_method ||
+        istate->msg() == BytecodeInterpreter::do_osr) {
+      stack_watermark_unwind_check(thread);
+    } else {
+      assert(istate->msg() == BytecodeInterpreter::call_method ||
+             istate->msg() == BytecodeInterpreter::more_monitors ||
+             istate->msg() == BytecodeInterpreter::throwing_exception,
+             "Should be one of these otherwise");
+    }
 
     // Clear the frame anchor
     thread->reset_last_Java_frame();
