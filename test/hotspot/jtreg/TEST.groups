@@ -456,6 +456,7 @@ tier2 = \
   :hotspot_tier2_runtime \
   :hotspot_tier2_runtime_platform_agnostic \
   :hotspot_tier2_serviceability \
+  :tier2_gc_epsilon \
   :tier2_gc_shenandoah
 
 tier3 = \
