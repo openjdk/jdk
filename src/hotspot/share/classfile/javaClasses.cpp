@@ -206,9 +206,6 @@ int java_lang_String::_flags_offset;
 
 bool java_lang_String::_initialized;
 
-bool java_lang_String::is_instance(oop obj) {
-  return is_instance_inlined(obj);
-}
 
 bool java_lang_String::test_and_set_flag(oop java_string, uint8_t flag_mask) {
   uint8_t* addr = flags_addr(java_string);
