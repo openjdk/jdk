@@ -54,7 +54,7 @@ public class TestEpsilonGCWithCDS {
 
         // We usually have 2 heap regions. To increase test coverage, we can have 3 heap regions
         // by using "-Xmx256m -XX:ObjectAlignmentInBytes=64"
-        test(false, true, true);
+        if (Platform.is64bit()) test(false, true, true);
     }
 
     final static String G1 = "-XX:+UseG1GC";
