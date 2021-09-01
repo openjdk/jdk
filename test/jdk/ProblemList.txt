@@ -564,7 +564,7 @@ java/lang/invoke/RicochetTest.java                              8251969 generic-
 java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all
 java/lang/instrument/RetransformBigClass.sh                     8065756 generic-all
 
-java/lang/instrument/BootClassPath/BootClassPathTest.sh         8273188 linux-x64,macosx-x64
+java/lang/instrument/BootClassPath/BootClassPathTest.sh         8273188 generic-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
