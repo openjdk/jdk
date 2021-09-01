@@ -157,7 +157,6 @@ private:
   size_t _min_capacity;
   size_t _max_capacity;
   size_t _soft_max_capacity;
-  size_t _current_max_capacity;
   size_t _capacity;
   size_t _used;
   size_t _used_high;

@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/z/c2/zBarrierSetC2.hpp"
 #include "gc/z/zBarrierSet.hpp"

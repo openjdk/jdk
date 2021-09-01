@@ -32,6 +32,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1

@@ -42,10 +42,16 @@ public:
   ZGlobalsForVMStructs();
 
   uintptr_t* _ZAddressOffsetMask;
-  uintptr_t* _ZPointerMetadataMask;
-  uintptr_t* _ZPointerMetadataFinalizable;
-  uintptr_t* _ZPointerGoodMask;
-  uintptr_t* _ZPointerBadMask;
+
+  uintptr_t* _ZPointerLoadGoodMask;
+  uintptr_t* _ZPointerLoadBadMask;
+  size_t*    _ZPointerLoadShift;
+
+  uintptr_t* _ZPointerMarkGoodMask;
+  uintptr_t* _ZPointerMarkBadMask;
+
+  uintptr_t* _ZPointerStoreGoodMask;
+  uintptr_t* _ZPointerStoreBadMask;
 
   const int* _ZObjectAlignmentSmallShift;
   const int* _ZObjectAlignmentSmall;
@@ -57,13 +63,17 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
 
 #define VM_STRUCTS_ZGC(nonstatic_field, volatile_nonstatic_field, static_field)                      \
   static_field(ZGlobalsForVMStructs,            _instance_p,          ZGlobalsForVMStructs*)         \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZAddressOffsetMask,  uintptr_t*)                    \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerMetadataMask, uintptr_t*)                   \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerMetadataFinalizable, uintptr_t*)            \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerGoodMask,    uintptr_t*)                    \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerBadMask,     uintptr_t*)                    \
+                                                                                                     \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZAddressOffsetMask,         uintptr_t*)             \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerLoadGoodMask,       uintptr_t*)             \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerLoadBadMask,        uintptr_t*)             \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerLoadShift,          size_t*)                \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerMarkGoodMask,       uintptr_t*)             \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerMarkBadMask,        uintptr_t*)             \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerStoreGoodMask,      uintptr_t*)             \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZPointerStoreBadMask,       uintptr_t*)             \
   nonstatic_field(ZGlobalsForVMStructs,         _ZObjectAlignmentSmallShift, const int*)             \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZObjectAlignmentSmall, const int*)                  \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZObjectAlignmentSmall,      const int*)             \
                                                                                                      \
   nonstatic_field(ZCollectedHeap,               _heap,                ZHeap)                         \
                                                                                                      \

@@ -24,10 +24,15 @@
 #include "precompiled.hpp"
 #include "gc/z/vmStructs_z.hpp"
 
-// TODO: Plug in more masks to SA
 ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
-    _ZPointerGoodMask(&ZPointerLoadGoodMask),
-    _ZPointerBadMask(&ZPointerLoadBadMask),
+    _ZAddressOffsetMask(&ZAddressOffsetMask),
+    _ZPointerLoadGoodMask(&ZPointerLoadGoodMask),
+    _ZPointerLoadBadMask(&ZPointerLoadBadMask),
+    _ZPointerLoadShift(&ZPointerLoadShift),
+    _ZPointerMarkGoodMask(&ZPointerMarkGoodMask),
+    _ZPointerMarkBadMask(&ZPointerMarkBadMask),
+    _ZPointerStoreGoodMask(&ZPointerStoreGoodMask),
+    _ZPointerStoreBadMask(&ZPointerStoreBadMask),
     _ZObjectAlignmentSmallShift(&ZObjectAlignmentSmallShift),
     _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {
 }
