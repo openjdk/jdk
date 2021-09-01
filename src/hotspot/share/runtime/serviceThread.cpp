@@ -92,16 +92,7 @@ void ServiceThread::initialize() {
   EXCEPTION_MARK;
 
   const char* name = "Service Thread";
-  Handle string = java_lang_String::create_from_str(name, CHECK);
-
-  // Initialize thread_oop to put it into the system threadGroup
-  Handle thread_group (THREAD, Universe::system_thread_group());
-  Handle thread_oop = JavaCalls::construct_new_instance(
-                          vmClasses::Thread_klass(),
-                          vmSymbols::threadgroup_string_void_signature(),
-                          thread_group,
-                          string,
-                          CHECK);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK);
 
   ServiceThread* thread = new ServiceThread(&service_thread_entry);
   JavaThread::vm_exit_on_osthread_failure(thread);

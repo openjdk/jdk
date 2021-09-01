@@ -681,14 +681,14 @@ struct SharedGlobals {
 static SharedGlobals GVars;
 
 static markWord read_stable_mark(oop obj) {
-  markWord mark = obj->mark();
+  markWord mark = obj->mark_acquire();
   if (!mark.is_being_inflated()) {
     return mark;       // normal fast-path return
   }
 
   int its = 0;
   for (;;) {
-    markWord mark = obj->mark();
+    markWord mark = obj->mark_acquire();
     if (!mark.is_being_inflated()) {
       return mark;    // normal fast-path return
     }
@@ -722,7 +722,7 @@ static markWord read_stable_mark(oop obj) {
         int YieldThenBlock = 0;
         assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
         gInflationLocks[ix]->lock();
-        while (obj->mark() == markWord::INFLATING()) {
+        while (obj->mark_acquire() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call current->_ParkEvent->park(1).
           // We use a mixed spin/yield/block mechanism.
@@ -1102,7 +1102,7 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
 
 // Fast path code shared by multiple functions
 void ObjectSynchronizer::inflate_helper(oop obj) {
-  markWord mark = obj->mark();
+  markWord mark = obj->mark_acquire();
   if (mark.has_monitor()) {
     ObjectMonitor* monitor = mark.monitor();
     markWord dmw = monitor->header();
@@ -1117,7 +1117,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
   EventJavaMonitorInflate event;
 
   for (;;) {
-    const markWord mark = object->mark();
+    const markWord mark = object->mark_acquire();
 
     // The mark can be in one of the following states:
     // *  Inflated     - just return

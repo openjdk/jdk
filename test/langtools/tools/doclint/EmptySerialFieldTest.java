@@ -12,9 +12,10 @@ import java.io.ObjectStreamField;
 import java.io.Serializable;
 
 /** . */
-public class EmptySerialFieldTest implements Serializable {
+public class EmptySerialFieldTest implements Serializable { /** . */ EmptySerialFieldTest() { }
 
     /**
+     * .
      * @serialField empty    String
      */
     private static final ObjectStreamField[] serialPersistentFields = {

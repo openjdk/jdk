@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8173302 8182765 8196202 8210047
+ * @bug 8173302 8182765 8196202 8210047 8264274
  * @summary make sure the overview-summary and module-summary pages don't
  *          don't have the See link, and the overview is copied correctly.
  * @library ../../lib
@@ -50,7 +50,7 @@ public class TestOverview extends JavadocTester {
                     "-sourcepath", testSrc("src"),
                     "p1", "p2");
         checkExit(Exit.OK);
-        checkOverview();
+        checkOverview("");
     }
 
     @Test
@@ -62,10 +62,10 @@ public class TestOverview extends JavadocTester {
                     "-sourcepath", testSrc("msrc"),
                     "p1", "p2");
         checkExit(Exit.OK);
-        checkOverview();
+        checkOverview("acme/");
     }
 
-    void checkOverview() {
+    void checkOverview(String modulePrefix) {
         checkOutput("index.html", true,
                 """
                     <main role="main">
@@ -73,6 +73,14 @@ public class TestOverview extends JavadocTester {
                     <h1 class="title">Document Title</h1>
                     </div>
                     <div class="block">This is line1. This is line 2.</div>
-                    """);
+                    <dl class="notes">
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="%sp1/C.html" title="class in p1"><code>C</code></a></li>
+                    </ul>
+                    </dd>
+                    </dl>
+                    """.formatted(modulePrefix)); // adapt expected reference URL to module context
     }
 }

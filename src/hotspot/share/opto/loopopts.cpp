@@ -233,8 +233,13 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
-  assert( iff->is_If(), "" );
-  assert(iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd || iff->Opcode() == Op_RangeCheck, "Check this code when new subtype is added");
+  assert(iff->is_If(), "must be");
+  assert(iff->Opcode() == Op_If ||
+         iff->Opcode() == Op_CountedLoopEnd ||
+         iff->Opcode() == Op_LongCountedLoopEnd ||
+         iff->Opcode() == Op_RangeCheck,
+        "Check this code when new subtype is added");
+
   int pop = prevdom->Opcode();
   assert( pop == Op_IfFalse || pop == Op_IfTrue, "" );
   if (flip) {
@@ -1430,12 +1435,16 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
+                            n->in(1)->bottom_type()->isa_rawptr() &&
+                            !n->bottom_type()->isa_rawptr();
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
+      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
       n->Opcode() != Op_Opaque4) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
@@ -2203,10 +2212,14 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
 
   // Step 1: Clone the loop body.  Make the old->new mapping.
   uint i;
-  for( i = 0; i < loop->_body.size(); i++ ) {
-    Node *old = loop->_body.at(i);
-    Node *nnn = old->clone();
-    old_new.map( old->_idx, nnn );
+  for (i = 0; i < loop->_body.size(); i++) {
+    Node* old = loop->_body.at(i);
+    Node* nnn = old->clone();
+    old_new.map(old->_idx, nnn);
+    if (old->is_reduction()) {
+      // Reduction flag is not copied by default. Copy it here when cloning the entire loop body.
+      nnn->add_flag(Node::Flag_is_reduction);
+    }
     if (C->do_vector_loop()) {
       cm.verify_insert_and_clone(old, nnn, cm.clone_idx());
     }

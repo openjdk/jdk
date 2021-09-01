@@ -183,8 +183,8 @@
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
-  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              intptr_t*)                             \
-  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              jlong)                                 \
+  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              jlong)                                 \
   nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
@@ -308,6 +308,7 @@
   static_field(StubRoutines,                _electronicCodeBook_encryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _counterMode_AESCrypt,                            address)                               \
+  static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                      address)                               \
   static_field(StubRoutines,                _base64_encodeBlock,                              address)                               \
   static_field(StubRoutines,                _base64_decodeBlock,                              address)                               \
   static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
@@ -495,13 +496,6 @@
   declare_constant(vmIntrinsics::LAST_MH_SIG_POLY)                        \
   declare_constant(vmIntrinsics::_invokeGeneric)                          \
   declare_constant(vmIntrinsics::_compiledLambdaForm)                     \
-                                                                          \
-  declare_constant(CollectedHeap::Serial)                                 \
-  declare_constant(CollectedHeap::Parallel)                               \
-  declare_constant(CollectedHeap::G1)                                     \
-  declare_constant(CollectedHeap::Epsilon)                                \
-  declare_constant(CollectedHeap::Z)                                      \
-  declare_constant(CollectedHeap::Shenandoah)                             \
                                                                           \
   declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \

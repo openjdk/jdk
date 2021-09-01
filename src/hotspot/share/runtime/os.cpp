@@ -64,6 +64,7 @@
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
+#include "services/nmtPreInit.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
@@ -469,26 +470,8 @@ void os::init_before_ergo() {
 void os::initialize_jdk_signal_support(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
-    const char thread_name[] = "Signal Dispatcher";
-    Handle string = java_lang_String::create_from_str(thread_name, CHECK);
-
-    // Initialize thread_oop to put it into the system threadGroup
-    Handle thread_group (THREAD, Universe::system_thread_group());
-    Handle thread_oop = JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
-                           vmSymbols::threadgroup_string_void_signature(),
-                           thread_group,
-                           string,
-                           CHECK);
-
-    Klass* group = vmClasses::ThreadGroup_klass();
-    JavaValue result(T_VOID);
-    JavaCalls::call_special(&result,
-                            thread_group,
-                            group,
-                            vmSymbols::add_method_name(),
-                            vmSymbols::thread_void_signature(),
-                            thread_oop,
-                            CHECK);
+    const char* name = "Signal Dispatcher";
+    Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, CHECK);
 
     JavaThread* thread = new JavaThread(&signal_thread_entry);
     JavaThread::vm_exit_on_osthread_failure(thread);
@@ -664,6 +647,15 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
+#if INCLUDE_NMT
+  {
+    void* rc = NULL;
+    if (NMTPreInit::handle_malloc(&rc, size)) {
+      return rc;
+    }
+  }
+#endif
+
   // Since os::malloc can be called when the libjvm.{dll,so} is
   // first loaded and we don't have a thread yet we must accept NULL also here.
   assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
@@ -723,6 +715,15 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
+#if INCLUDE_NMT
+  {
+    void* rc = NULL;
+    if (NMTPreInit::handle_realloc(&rc, memblock, size)) {
+      return rc;
+    }
+  }
+#endif
+
   // For the test flag -XX:MallocMaxTestWords
   if (has_reached_max_malloc_test_peak(size)) {
     return NULL;
@@ -773,6 +774,13 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
 // handles NULL pointers
 void  os::free(void *memblock) {
+
+#if INCLUDE_NMT
+  if (NMTPreInit::handle_free(memblock)) {
+    return;
+  }
+#endif
+
   NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
 #ifdef ASSERT
   if (memblock == NULL) return;
@@ -1007,7 +1015,9 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
       if (envvar != NULL) {
         st->print("%s", env_list[i]);
         st->print("=");
-        st->print_cr("%s", envvar);
+        st->print("%s", envvar);
+        // Use separate cr() printing to avoid unnecessary buffer operations that might cause truncation.
+        st->cr();
       }
     }
   }
@@ -1383,6 +1393,14 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   FREE_C_HEAP_ARRAY(char, base_classes);
 
   return false;
+}
+
+bool os::file_exists(const char* filename) {
+  struct stat statbuf;
+  if (filename == NULL || strlen(filename) == 0) {
+    return false;
+  }
+  return os::stat(filename, &statbuf) == 0;
 }
 
 // Splits a path, based on its separator, the number of

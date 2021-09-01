@@ -119,13 +119,14 @@ bool ConnectionGraph::compute_escape() {
   Unique_Node_List delayed_worklist;
   GrowableArray<Node*> alloc_worklist;
   GrowableArray<Node*> ptr_cmp_worklist;
-  GrowableArray<Node*> storestore_worklist;
-  GrowableArray<ArrayCopyNode*> arraycopy_worklist;
+  GrowableArray<MemBarStoreStoreNode*> storestore_worklist;
+  GrowableArray<ArrayCopyNode*>  arraycopy_worklist;
   GrowableArray<PointsToNode*>   ptnodes_worklist;
   GrowableArray<JavaObjectNode*> java_objects_worklist;
   GrowableArray<JavaObjectNode*> non_escaped_allocs_worklist;
   GrowableArray<FieldNode*>      oop_fields_worklist;
   GrowableArray<SafePointNode*>  sfn_worklist;
+  GrowableArray<MergeMemNode*>   mergemem_worklist;
   DEBUG_ONLY( GrowableArray<Node*> addp_worklist; )
 
   { Compile::TracePhase tp("connectionGraph", &Phase::timers[Phase::_t_connectionGraph]);
@@ -161,37 +162,51 @@ bool ConnectionGraph::compute_escape() {
         oop_fields_worklist.append(ptn->as_Field());
       }
     }
-    if (n->is_MergeMem()) {
-      // Collect all MergeMem nodes to add memory slices for
-      // scalar replaceable objects in split_unique_types().
-      _mergemem_worklist.append(n->as_MergeMem());
-    } else if (OptimizePtrCompare && n->is_Cmp() &&
-               (n->Opcode() == Op_CmpP || n->Opcode() == Op_CmpN)) {
-      // Collect compare pointers nodes.
-      ptr_cmp_worklist.append(n);
-    } else if (n->is_MemBarStoreStore()) {
-      // Collect all MemBarStoreStore nodes so that depending on the
-      // escape status of the associated Allocate node some of them
-      // may be eliminated.
-      storestore_worklist.append(n);
-    } else if (n->is_MemBar() && (n->Opcode() == Op_MemBarRelease) &&
-               (n->req() > MemBarNode::Precedent)) {
-      record_for_optimizer(n);
+    // Collect some interesting nodes for futher use.
+    switch (n->Opcode()) {
+      case Op_MergeMem:
+        // Collect all MergeMem nodes to add memory slices for
+        // scalar replaceable objects in split_unique_types().
+        mergemem_worklist.append(n->as_MergeMem());
+        break;
+      case Op_CmpP:
+      case Op_CmpN:
+        // Collect compare pointers nodes.
+        if (OptimizePtrCompare) {
+          ptr_cmp_worklist.append(n);
+        }
+        break;
+      case Op_MemBarStoreStore:
+        // Collect all MemBarStoreStore nodes so that depending on the
+        // escape status of the associated Allocate node some of them
+        // may be eliminated.
+        storestore_worklist.append(n->as_MemBarStoreStore());
+        break;
+      case Op_MemBarRelease:
+        if (n->req() > MemBarNode::Precedent) {
+          record_for_optimizer(n);
+        }
+        break;
 #ifdef ASSERT
-    } else if (n->is_AddP()) {
-      // Collect address nodes for graph verification.
-      addp_worklist.append(n);
+      case Op_AddP:
+        // Collect address nodes for graph verification.
+        addp_worklist.append(n);
+        break;
 #endif
-    } else if (n->is_ArrayCopy()) {
-      // Keep a list of ArrayCopy nodes so if one of its input is non
-      // escaping, we can record a unique type
-      arraycopy_worklist.append(n->as_ArrayCopy());
+      case Op_ArrayCopy:
+        // Keep a list of ArrayCopy nodes so if one of its input is non
+        // escaping, we can record a unique type
+        arraycopy_worklist.append(n->as_ArrayCopy());
+        break;
+      default:
+        // not interested now, ignore...
+        break;
     }
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* m = n->fast_out(i);   // Get user
       ideal_nodes.push(m);
     }
-    if (n-> is_SafePoint()) {
+    if (n->is_SafePoint()) {
       sfn_worklist.append(n->as_SafePoint());
     }
   }
@@ -302,7 +317,7 @@ bool ConnectionGraph::compute_escape() {
       C->AliasLevel() >= 3 && EliminateAllocations) {
     // Now use the escape information to create unique types for
     // scalar replaceable objects.
-    split_unique_types(alloc_worklist, arraycopy_worklist);
+    split_unique_types(alloc_worklist, arraycopy_worklist, mergemem_worklist);
     if (C->failing())  return false;
     C->print_method(PHASE_AFTER_EA, 2);
 
@@ -500,8 +515,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_DecodeN:
     case Op_EncodePKlass:
     case Op_DecodeNKlass: {
-      add_local_var_and_edge(n, PointsToNode::NoEscape,
-                             n->in(1), delayed_worklist);
+      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(1), delayed_worklist);
       break;
     }
     case Op_CMoveP: {
@@ -568,8 +582,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       // we are only interested in the oop result projection from a call
       if (n->as_Proj()->_con == TypeFunc::Parms && n->in(0)->is_Call() &&
           n->in(0)->as_Call()->returns_pointer()) {
-        add_local_var_and_edge(n, PointsToNode::NoEscape,
-                               n->in(0), delayed_worklist);
+        add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0), delayed_worklist);
       }
       break;
     }
@@ -578,8 +591,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       if (n->req() > TypeFunc::Parms &&
           igvn->type(n->in(TypeFunc::Parms))->isa_oopptr()) {
         // Treat Return value as LocalVar with GlobalEscape escape state.
-        add_local_var_and_edge(n, PointsToNode::GlobalEscape,
-                               n->in(TypeFunc::Parms), delayed_worklist);
+        add_local_var_and_edge(n, PointsToNode::GlobalEscape, n->in(TypeFunc::Parms), delayed_worklist);
       }
       break;
     }
@@ -624,17 +636,6 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
   return;
 }
 
-#ifdef ASSERT
-#define ELSE_FAIL(name)                               \
-      /* Should not be called for not pointer type. */  \
-      n->dump(1);                                       \
-      assert(false, name);                              \
-      break;
-#else
-#define ELSE_FAIL(name) \
-      break;
-#endif
-
 // Add final simple edges to graph.
 void ConnectionGraph::add_final_edges(Node *n) {
   PointsToNode* n_ptn = ptnode_adr(n->_idx);
@@ -669,8 +670,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_DecodeN:
     case Op_EncodePKlass:
     case Op_DecodeNKlass: {
-      add_local_var_and_edge(n, PointsToNode::NoEscape,
-                             n->in(1), NULL);
+      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(1), NULL);
       break;
     }
     case Op_CMoveP: {
@@ -694,72 +694,62 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_LoadPLocked: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
       // ThreadLocal has RawPtr type.
-      const Type* t = _igvn->type(n);
-      if (t->make_ptr() != NULL) {
-        Node* adr = n->in(MemNode::Address);
-        add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
-        break;
-      }
-      ELSE_FAIL("Op_LoadP");
+      assert(_igvn->type(n)->make_ptr() != NULL, "Unexpected node type");
+      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(MemNode::Address), NULL);
+      break;
     }
     case Op_Phi: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
       // ThreadLocal has RawPtr type.
-      const Type* t = n->as_Phi()->type();
-      if (t->make_ptr() != NULL) {
-        for (uint i = 1; i < n->req(); i++) {
-          Node* in = n->in(i);
-          if (in == NULL) {
-            continue;  // ignore NULL
-          }
-          Node* uncast_in = in->uncast();
-          if (uncast_in->is_top() || uncast_in == n) {
-            continue;  // ignore top or inputs which go back this node
-          }
-          PointsToNode* ptn = ptnode_adr(in->_idx);
-          assert(ptn != NULL, "node should be registered");
-          add_edge(n_ptn, ptn);
+      assert(n->as_Phi()->type()->make_ptr() != NULL, "Unexpected node type");
+      for (uint i = 1; i < n->req(); i++) {
+        Node* in = n->in(i);
+        if (in == NULL) {
+          continue;  // ignore NULL
         }
-        break;
+        Node* uncast_in = in->uncast();
+        if (uncast_in->is_top() || uncast_in == n) {
+          continue;  // ignore top or inputs which go back this node
+        }
+        PointsToNode* ptn = ptnode_adr(in->_idx);
+        assert(ptn != NULL, "node should be registered");
+        add_edge(n_ptn, ptn);
       }
-      ELSE_FAIL("Op_Phi");
+      break;
     }
     case Op_Proj: {
       // we are only interested in the oop result projection from a call
-      if (n->as_Proj()->_con == TypeFunc::Parms && n->in(0)->is_Call() &&
-          n->in(0)->as_Call()->returns_pointer()) {
-        add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0), NULL);
-        break;
-      }
-      ELSE_FAIL("Op_Proj");
+      assert(n->as_Proj()->_con == TypeFunc::Parms && n->in(0)->is_Call() &&
+             n->in(0)->as_Call()->returns_pointer(), "Unexpected node type");
+      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0), NULL);
+      break;
     }
     case Op_Rethrow: // Exception object escapes
     case Op_Return: {
-      if (n->req() > TypeFunc::Parms &&
-          _igvn->type(n->in(TypeFunc::Parms))->isa_oopptr()) {
-        // Treat Return value as LocalVar with GlobalEscape escape state.
-        add_local_var_and_edge(n, PointsToNode::GlobalEscape,
-                               n->in(TypeFunc::Parms), NULL);
-        break;
-      }
-      ELSE_FAIL("Op_Return");
+      assert(n->req() > TypeFunc::Parms && _igvn->type(n->in(TypeFunc::Parms))->isa_oopptr(),
+             "Unexpected node type");
+      // Treat Return value as LocalVar with GlobalEscape escape state.
+      add_local_var_and_edge(n, PointsToNode::GlobalEscape, n->in(TypeFunc::Parms), NULL);
+      break;
     }
-    case Op_StoreP:
-    case Op_StoreN:
-    case Op_StoreNKlass:
-    case Op_StorePConditional:
     case Op_CompareAndExchangeP:
     case Op_CompareAndExchangeN:
+    case Op_GetAndSetP:
+    case Op_GetAndSetN:{
+      assert(_igvn->type(n)->make_ptr() != NULL, "Unexpected node type");
+      add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(MemNode::Address), NULL);
+      // fall-through
+    }
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN:
     case Op_WeakCompareAndSwapP:
     case Op_WeakCompareAndSwapN:
-    case Op_GetAndSetP:
-    case Op_GetAndSetN: {
-      if (add_final_edges_unsafe_access(n, opcode)) {
-        break;
-      }
-      ELSE_FAIL("Op_StoreP");
+    case Op_StoreP:
+    case Op_StoreN:
+    case Op_StoreNKlass:
+    case Op_StorePConditional:{
+      add_final_edges_unsafe_access(n, opcode);
+      break;
     }
     case Op_AryEq:
     case Op_HasNegatives:
@@ -850,11 +840,6 @@ bool ConnectionGraph::add_final_edges_unsafe_access(Node* n, uint opcode) {
   }
 #endif
 
-  if (opcode == Op_GetAndSetP || opcode == Op_GetAndSetN ||
-      opcode == Op_CompareAndExchangeN || opcode == Op_CompareAndExchangeP) {
-    add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
-  }
-
   if (adr_type->isa_oopptr()
       || ((opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass)
            && adr_type == TypeRawPtr::NOTNULL
@@ -883,6 +868,10 @@ bool ConnectionGraph::add_final_edges_unsafe_access(Node* n, uint opcode) {
     }
     return true;
   }
+#ifdef ASSERT
+  n->dump(1);
+  assert(false, "not unsafe");
+#endif
   return false;
 }
 
@@ -1087,6 +1076,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "electronicCodeBook_encryptAESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "electronicCodeBook_decryptAESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "counterMode_AESCrypt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "galoisCounterMode_AESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "ghash_processBlocks") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "encodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "decodeBlock") == 0 ||
@@ -1973,7 +1963,7 @@ void ConnectionGraph::verify_connection_graph(
 
 // Optimize ideal graph.
 void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
-                                           GrowableArray<Node*>& storestore_worklist) {
+                                           GrowableArray<MemBarStoreStoreNode*>& storestore_worklist) {
   Compile* C = _compile;
   PhaseIterGVN* igvn = _igvn;
   if (EliminateLocks) {
@@ -2023,7 +2013,6 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
   // MemBarStoreStore node if the allocated object never escapes.
   for (int i = 0; i < storestore_worklist.length(); i++) {
     Node* storestore = storestore_worklist.at(i);
-    assert(storestore->is_MemBarStoreStore(), "");
     Node* alloc = storestore->in(MemBarNode::Precedent)->in(0);
     if (alloc->is_Allocate() && not_global_escape(alloc)) {
       MemBarNode* mb = MemBarNode::make(C, Op_MemBarCPUOrder, Compile::AliasIdxBot);
@@ -2038,6 +2027,7 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
 // Optimize objects compare.
 const TypeInt* ConnectionGraph::optimize_ptr_compare(Node* n) {
   assert(OptimizePtrCompare, "sanity");
+  assert(n->Opcode() == Op_CmpN || n->Opcode() == Op_CmpP, "must be");
   const TypeInt* EQ = TypeInt::CC_EQ; // [0] == ZERO
   const TypeInt* NE = TypeInt::CC_GT; // [1] == ONE
   const TypeInt* UNKNOWN = TypeInt::CC;    // [-1, 0,1]
@@ -3070,7 +3060,9 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
 //    90  LoadP    _ 120  30   ... alias_index=6
 //   100  LoadP    _  80  20   ... alias_index=4
 //
-void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist, GrowableArray<ArrayCopyNode*> &arraycopy_worklist) {
+void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
+                                         GrowableArray<ArrayCopyNode*> &arraycopy_worklist,
+                                         GrowableArray<MergeMemNode*> &mergemem_worklist) {
   GrowableArray<Node *>  memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
   PhaseIterGVN  *igvn = _igvn;
@@ -3309,13 +3301,13 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       } else if (use->is_Mem()) {
         assert(use->in(MemNode::Address) != n, "EA: missing allocation reference path");
       } else if (use->is_MergeMem()) {
-        assert(_mergemem_worklist.contains(use->as_MergeMem()), "EA: missing MergeMem node in the worklist");
+        assert(mergemem_worklist.contains(use->as_MergeMem()), "EA: missing MergeMem node in the worklist");
       } else if (use->is_SafePoint()) {
         // Look for MergeMem nodes for calls which reference unique allocation
         // (through CheckCastPP nodes) even for debug info.
         Node* m = use->in(TypeFunc::Memory);
         if (m->is_MergeMem()) {
-          assert(_mergemem_worklist.contains(m->as_MergeMem()), "EA: missing MergeMem node in the worklist");
+          assert(mergemem_worklist.contains(m->as_MergeMem()), "EA: missing MergeMem node in the worklist");
         }
       } else if (use->Opcode() == Op_EncodeISOArray) {
         if (use->in(MemNode::Memory) == n || use->in(3) == n) {
@@ -3448,7 +3440,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       } else if(use->is_Mem()) {
         assert(use->in(MemNode::Memory) != n, "EA: missing memory path");
       } else if (use->is_MergeMem()) {
-        assert(_mergemem_worklist.contains(use->as_MergeMem()), "EA: missing MergeMem node in the worklist");
+        assert(mergemem_worklist.contains(use->as_MergeMem()), "EA: missing MergeMem node in the worklist");
       } else if (use->Opcode() == Op_EncodeISOArray) {
         if (use->in(MemNode::Memory) == n || use->in(3) == n) {
           // EncodeISOArray overwrites destination array
@@ -3476,9 +3468,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   //  Phase 3:  Process MergeMem nodes from mergemem_worklist.
   //            Walk each memory slice moving the first node encountered of each
   //            instance type to the the input corresponding to its alias index.
-  uint length = _mergemem_worklist.length();
+  uint length = mergemem_worklist.length();
   for( uint next = 0; next < length; ++next ) {
-    MergeMemNode* nmm = _mergemem_worklist.at(next);
+    MergeMemNode* nmm = mergemem_worklist.at(next);
     assert(!visited.test_set(nmm->_idx), "should not be visited before");
     // Note: we don't want to use MergeMemStream here because we only want to
     // scan inputs which exist at the start, not ones we add during processing.

@@ -451,34 +451,8 @@ bool AttachListener::has_init_error(TRAPS) {
 void AttachListener::init() {
   EXCEPTION_MARK;
 
-  const char thread_name[] = "Attach Listener";
-  Handle string = java_lang_String::create_from_str(thread_name, THREAD);
-  if (has_init_error(THREAD)) {
-    set_state(AL_NOT_INITIALIZED);
-    return;
-  }
-
-  // Initialize thread_oop to put it into the system threadGroup
-  Handle thread_group (THREAD, Universe::system_thread_group());
-  Handle thread_oop = JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
-                       vmSymbols::threadgroup_string_void_signature(),
-                       thread_group,
-                       string,
-                       THREAD);
-  if (has_init_error(THREAD)) {
-    set_state(AL_NOT_INITIALIZED);
-    return;
-  }
-
-  Klass* group = vmClasses::ThreadGroup_klass();
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result,
-                        thread_group,
-                        group,
-                        vmSymbols::add_method_name(),
-                        vmSymbols::thread_void_signature(),
-                        thread_oop,
-                        THREAD);
+  const char* name = "Attach Listener";
+  Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, THREAD);
   if (has_init_error(THREAD)) {
     set_state(AL_NOT_INITIALIZED);
     return;

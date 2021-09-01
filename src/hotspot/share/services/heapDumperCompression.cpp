@@ -34,7 +34,7 @@
 char const* FileWriter::open_writer() {
   assert(_fd < 0, "Must not already be open");
 
-  _fd = os::create_binary_file(_path, false);    // don't replace existing file
+  _fd = os::create_binary_file(_path, _overwrite);
 
   if (_fd < 0) {
     return os::strerror(errno);
@@ -201,7 +201,7 @@ CompressionBackend::CompressionBackend(AbstractWriter* writer,
   _writer(writer),
   _compressor(compressor),
   _lock(new (std::nothrow) PaddedMonitor(Mutex::leaf, "HProf Compression Backend",
-    true, Mutex::_safepoint_check_never)) {
+    Mutex::_safepoint_check_never)) {
   if (_writer == NULL) {
     set_error("Could not allocate writer");
   } else if (_lock == NULL) {

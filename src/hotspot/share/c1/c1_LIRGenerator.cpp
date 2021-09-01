@@ -2122,10 +2122,10 @@ void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
     LIR_Opr offset = off.result();
 #endif
     LIR_Address* addr = new LIR_Address(src.result(), offset, type);
-    if (type == T_LONG || type == T_DOUBLE) {
-      __ unaligned_move(addr, result);
+    if (is_reference_type(type)) {
+      __ move_wide(addr, result);
     } else {
-      access_load(IN_NATIVE, type, LIR_OprFact::address(addr), result);
+      __ move(addr, result);
     }
   }
 }
@@ -2690,11 +2690,7 @@ void LIRGenerator::invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR
       if (addr->type() == T_OBJECT) {
         __ move_wide(param->result(), addr);
       } else
-        if (addr->type() == T_LONG || addr->type() == T_DOUBLE) {
-          __ unaligned_move(param->result(), addr);
-        } else {
-          __ move(param->result(), addr);
-        }
+        __ move(param->result(), addr);
     }
   }
 
@@ -3203,7 +3199,7 @@ void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
 }
 
 void LIRGenerator::increment_backedge_counter_conditionally(LIR_Condition cond, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info, int left_bci, int right_bci, int bci) {
-  if (compilation()->count_backedges()) {
+  if (compilation()->is_profiling()) {
 #if defined(X86) && !defined(_LP64)
     // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
     LIR_Opr left_copy = new_register(left->type());
@@ -3496,11 +3492,7 @@ LIR_Opr LIRGenerator::call_runtime(BasicTypeArray* signature, LIR_OprList* args,
 //             __ move(arg, tmp);
 //             arg = tmp;
 //           }
-      if (addr->type() == T_LONG || addr->type() == T_DOUBLE) {
-        __ unaligned_move(arg, addr);
-      } else {
-        __ move(arg, addr);
-      }
+      __ move(arg, addr);
     }
   }
 
@@ -3538,11 +3530,7 @@ LIR_Opr LIRGenerator::call_runtime(BasicTypeArray* signature, LIRItemList* args,
     } else {
       LIR_Address* addr = loc->as_address_ptr();
       arg->load_for_store(addr->type());
-      if (addr->type() == T_LONG || addr->type() == T_DOUBLE) {
-        __ unaligned_move(arg->result(), addr);
-      } else {
-        __ move(arg->result(), addr);
-      }
+      __ move(arg->result(), addr);
     }
   }
 
@@ -3589,12 +3577,5 @@ LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& 
   __ cmp(lir_cond_notEqual, layout, LIR_OprFact::intConst(0));
   __ cmove(lir_cond_notEqual, value_fixed, value, value_fixed, T_BYTE);
   value = value_fixed;
-  return value;
-}
-
-LIR_Opr LIRGenerator::maybe_mask_boolean(StoreIndexed* x, LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info) {
-  if (x->check_boolean()) {
-    value = mask_boolean(array, value, null_check_info);
-  }
   return value;
 }

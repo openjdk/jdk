@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ class ParHeapInspectTask : public AbstractGangTask {
       _filter(filter),
       _missed_count(0),
       _success(true),
-      _mutex(Mutex::leaf, "Parallel heap iteration data merge lock") {}
+      _mutex(Mutex::leaf, "ParHeapInspectTask_lock", Mutex::_safepoint_check_never) {}
 
   uintx missed_count() const {
     return _missed_count;
