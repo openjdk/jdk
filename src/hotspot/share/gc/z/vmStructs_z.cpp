@@ -26,8 +26,8 @@
 
 // TODO: Plug in more masks to SA
 ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
-    _ZAddressGoodMask(&ZAddressLoadGoodMask),
-    _ZAddressBadMask(&ZAddressLoadBadMask),
+    _ZPointerGoodMask(&ZPointerLoadGoodMask),
+    _ZPointerBadMask(&ZPointerLoadBadMask),
     _ZObjectAlignmentSmallShift(&ZObjectAlignmentSmallShift),
     _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {
 }

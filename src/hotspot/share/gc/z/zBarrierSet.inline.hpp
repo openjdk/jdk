@@ -117,7 +117,7 @@ inline zaddress ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::load_barrie
 }
 
 inline zpointer ZBarrierSet::store_good(oop obj) {
-  assert(ZAddressStoreGoodMask != 0, "sanity");
+  assert(ZPointerStoreGoodMask != 0, "sanity");
 
   zaddress addr = to_zaddress(obj);
   return ZAddress::store_good(addr);

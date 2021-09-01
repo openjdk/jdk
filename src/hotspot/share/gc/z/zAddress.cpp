@@ -33,35 +33,35 @@ size_t     ZAddressOffsetBits;
 uintptr_t  ZAddressOffsetMask;
 size_t     ZAddressOffsetMax;
 
-uintptr_t  ZAddressRemapped;
-uintptr_t  ZAddressRemappedMinorMask;
-uintptr_t  ZAddressRemappedMajorMask;
-uintptr_t  ZAddressMarkedMinor;
-uintptr_t  ZAddressMarkedMajor;
-uintptr_t  ZAddressFinalizable;
-uintptr_t  ZAddressRemembered;
+uintptr_t  ZPointerRemapped;
+uintptr_t  ZPointerRemappedMinorMask;
+uintptr_t  ZPointerRemappedMajorMask;
+uintptr_t  ZPointerMarkedMinor;
+uintptr_t  ZPointerMarkedMajor;
+uintptr_t  ZPointerFinalizable;
+uintptr_t  ZPointerRemembered;
 
-uintptr_t  ZAddressLoadGoodMask;
-uintptr_t  ZAddressLoadBadMask;
-size_t     ZAddressLoadShift;
+uintptr_t  ZPointerLoadGoodMask;
+uintptr_t  ZPointerLoadBadMask;
+size_t     ZPointerLoadShift;
 
-uintptr_t  ZAddressMarkGoodMask;
-uintptr_t  ZAddressMarkBadMask;
+uintptr_t  ZPointerMarkGoodMask;
+uintptr_t  ZPointerMarkBadMask;
 
-uintptr_t  ZAddressStoreGoodMask;
-uintptr_t  ZAddressStoreBadMask;
+uintptr_t  ZPointerStoreGoodMask;
+uintptr_t  ZPointerStoreBadMask;
 
-uintptr_t  ZAddressVectorLoadBadMask[8];
-uintptr_t  ZAddressVectorStoreBadMask[8];
-uintptr_t  ZAddressVectorUncolorMask[8];
-uintptr_t  ZAddressVectorStoreGoodMask[8];
+uintptr_t  ZPointerVectorLoadBadMask[8];
+uintptr_t  ZPointerVectorStoreBadMask[8];
+uintptr_t  ZPointerVectorUncolorMask[8];
+uintptr_t  ZPointerVectorStoreGoodMask[8];
 
-static uint32_t* ZAddressCalculateStoreGoodMaskLowOrderBitsAddr() {
-  const uintptr_t addr = reinterpret_cast<uintptr_t>(&ZAddressStoreGoodMask);
-  return reinterpret_cast<uint32_t*>(addr + ZAddressStoreGoodMaskLowOrderBitsOffset);
+static uint32_t* ZPointerCalculateStoreGoodMaskLowOrderBitsAddr() {
+  const uintptr_t addr = reinterpret_cast<uintptr_t>(&ZPointerStoreGoodMask);
+  return reinterpret_cast<uint32_t*>(addr + ZPointerStoreGoodMaskLowOrderBitsOffset);
 }
 
-uint32_t*  ZAddressStoreGoodMaskLowOrderBitsAddr = ZAddressCalculateStoreGoodMaskLowOrderBitsAddr();
+uint32_t*  ZPointerStoreGoodMaskLowOrderBitsAddr = ZPointerCalculateStoreGoodMaskLowOrderBitsAddr();
 
 static void set_vector_mask(uintptr_t vector_mask[], uintptr_t mask) {
   for (int i = 0; i < 8; ++i) {
@@ -70,25 +70,25 @@ static void set_vector_mask(uintptr_t vector_mask[], uintptr_t mask) {
 }
 
 void ZGlobalsPointers::set_good_masks() {
-  ZAddressRemapped = ZAddressRemappedMajorMask & ZAddressRemappedMinorMask;
+  ZPointerRemapped = ZPointerRemappedMajorMask & ZPointerRemappedMinorMask;
 
-  ZAddressLoadGoodMask  = ZAddressRemapped;
-  ZAddressMarkGoodMask  = ZAddressLoadGoodMask | ZAddressMarkedMinor | ZAddressMarkedMajor;
-  ZAddressStoreGoodMask = ZAddressMarkGoodMask | ZAddressRemembered;
+  ZPointerLoadGoodMask  = ZPointerRemapped;
+  ZPointerMarkGoodMask  = ZPointerLoadGoodMask | ZPointerMarkedMinor | ZPointerMarkedMajor;
+  ZPointerStoreGoodMask = ZPointerMarkGoodMask | ZPointerRemembered;
 
-  ZAddressLoadGoodMask  = ZAddressRemapped;
-  ZAddressMarkGoodMask  = ZAddressLoadGoodMask | ZAddressMarkedMinor | ZAddressMarkedMajor;
-  ZAddressStoreGoodMask = ZAddressMarkGoodMask | ZAddressRemembered;
+  ZPointerLoadGoodMask  = ZPointerRemapped;
+  ZPointerMarkGoodMask  = ZPointerLoadGoodMask | ZPointerMarkedMinor | ZPointerMarkedMajor;
+  ZPointerStoreGoodMask = ZPointerMarkGoodMask | ZPointerRemembered;
 
-  ZAddressLoadShift = ZPointer::load_shift_lookup(ZAddressLoadGoodMask);
+  ZPointerLoadShift = ZPointer::load_shift_lookup(ZPointerLoadGoodMask);
 
-  ZAddressLoadBadMask  = ZAddressLoadGoodMask  ^ ZAddressLoadMetadataMask;
-  ZAddressMarkBadMask  = ZAddressMarkGoodMask  ^ ZAddressMarkMetadataMask;
-  ZAddressStoreBadMask = ZAddressStoreGoodMask ^ ZAddressStoreMetadataMask;
+  ZPointerLoadBadMask  = ZPointerLoadGoodMask  ^ ZPointerLoadMetadataMask;
+  ZPointerMarkBadMask  = ZPointerMarkGoodMask  ^ ZPointerMarkMetadataMask;
+  ZPointerStoreBadMask = ZPointerStoreGoodMask ^ ZPointerStoreMetadataMask;
 
-  set_vector_mask(ZAddressVectorLoadBadMask, ZAddressLoadBadMask);
-  set_vector_mask(ZAddressVectorStoreBadMask, ZAddressStoreBadMask);
-  set_vector_mask(ZAddressVectorStoreGoodMask, ZAddressStoreGoodMask);
+  set_vector_mask(ZPointerVectorLoadBadMask, ZPointerLoadBadMask);
+  set_vector_mask(ZPointerVectorStoreBadMask, ZPointerStoreBadMask);
+  set_vector_mask(ZPointerVectorStoreGoodMask, ZPointerStoreGoodMask);
 }
 
 void ZGlobalsPointers::initialize() {
@@ -99,36 +99,36 @@ void ZGlobalsPointers::initialize() {
   ZAddressHeapBaseShift = ZPlatformAddressHeapBaseShift();
   ZAddressHeapBase = (uintptr_t)1 << ZAddressHeapBaseShift;
 
-  ZAddressRemappedMinorMask = ZAddressRemapped10 | ZAddressRemapped00;
-  ZAddressRemappedMajorMask = ZAddressRemapped01 | ZAddressRemapped00;
-  ZAddressMarkedMinor = ZAddressMarkedMinor0;
-  ZAddressMarkedMajor = ZAddressMarkedMajor0;
-  ZAddressFinalizable = ZAddressFinalizable0;
-  ZAddressRemembered = ZAddressRemembered0;
+  ZPointerRemappedMinorMask = ZPointerRemapped10 | ZPointerRemapped00;
+  ZPointerRemappedMajorMask = ZPointerRemapped01 | ZPointerRemapped00;
+  ZPointerMarkedMinor = ZPointerMarkedMinor0;
+  ZPointerMarkedMajor = ZPointerMarkedMajor0;
+  ZPointerFinalizable = ZPointerFinalizable0;
+  ZPointerRemembered = ZPointerRemembered0;
 
   set_good_masks();
-  set_vector_mask(ZAddressVectorUncolorMask, ~ZAddressAllMetadataMask);
+  set_vector_mask(ZPointerVectorUncolorMask, ~ZPointerAllMetadataMask);
 }
 
 void ZGlobalsPointers::flip_minor_mark_start() {
-  ZAddressMarkedMinor ^= (ZAddressMarkedMinor0 | ZAddressMarkedMinor1);
-  ZAddressRemembered ^= (ZAddressRemembered0 | ZAddressRemembered1);
+  ZPointerMarkedMinor ^= (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
+  ZPointerRemembered ^= (ZPointerRemembered0 | ZPointerRemembered1);
   set_good_masks();
 }
 
 void ZGlobalsPointers::flip_minor_relocate_start() {
-  ZAddressRemappedMinorMask ^= ZAddressRemappedMask;
+  ZPointerRemappedMinorMask ^= ZPointerRemappedMask;
   set_good_masks();
 }
 
 void ZGlobalsPointers::flip_major_mark_start() {
-  ZAddressMarkedMajor ^= (ZAddressMarkedMajor0 | ZAddressMarkedMajor1);
-  ZAddressFinalizable ^= (ZAddressFinalizable0 | ZAddressFinalizable1);
+  ZPointerMarkedMajor ^= (ZPointerMarkedMajor0 | ZPointerMarkedMajor1);
+  ZPointerFinalizable ^= (ZPointerFinalizable0 | ZPointerFinalizable1);
   set_good_masks();
 }
 
 void ZGlobalsPointers::flip_major_relocate_start() {
-  ZAddressRemappedMajorMask ^= ZAddressRemappedMask;
+  ZPointerRemappedMajorMask ^= ZPointerRemappedMask;
   set_good_masks();
 }
 

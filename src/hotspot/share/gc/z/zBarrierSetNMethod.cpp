@@ -72,7 +72,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
   uintptr_t prev_color = ZNMethod::color(nm);
-  uintptr_t new_color = *(int*)ZAddressStoreGoodMaskLowOrderBitsAddr;
+  uintptr_t new_color = *(int*)ZPointerStoreGoodMaskLowOrderBitsAddr;
   log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, new_color);
 
   // Disarm
@@ -82,7 +82,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 }
 
 int* ZBarrierSetNMethod::disarmed_value_address() const {
-  return (int*)ZAddressStoreGoodMaskLowOrderBitsAddr;
+  return (int*)ZPointerStoreGoodMaskLowOrderBitsAddr;
 }
 
 ByteSize ZBarrierSetNMethod::thread_disarmed_offset() const {

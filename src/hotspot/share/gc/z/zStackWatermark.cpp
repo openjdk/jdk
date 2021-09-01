@@ -52,13 +52,13 @@ ThreadLocalAllocStats& ZStackWatermark::stats() {
 }
 
 uint32_t ZStackWatermark::epoch_id() const {
-  return *ZAddressStoreGoodMaskLowOrderBitsAddr;
+  return *ZPointerStoreGoodMaskLowOrderBitsAddr;
 }
 
 ZStackWatermark::ZStackWatermark(JavaThread* jt) :
-    StackWatermark(jt, StackWatermarkKind::gc, *ZAddressStoreGoodMaskLowOrderBitsAddr),
+    StackWatermark(jt, StackWatermarkKind::gc, *ZPointerStoreGoodMaskLowOrderBitsAddr),
     // First watermark is fake and setup to be replaced at next phase shift
-    _old_watermarks{{ZAddressStoreBadMask, 1}, {0,}},
+    _old_watermarks{{ZPointerStoreBadMask, 1}, {0,}},
     _old_watermarks_newest(0),
     _stats() {}
 
@@ -105,7 +105,7 @@ void ZStackWatermark::save_old_watermark() {
   if (!prev_processing_started) {
     // Nothing was processed in the previous phase, so there's no need to save a watermark for it.
     // Must have been a remapped phase, the other phases are explicitly completed by the GC.
-    assert(prev_color & ZAddressRemapped != 0, "Unexpected color: " PTR_FORMAT, prev_color);
+    assert(prev_color & ZPointerRemapped != 0, "Unexpected color: " PTR_FORMAT, prev_color);
     return;
   }
 
@@ -189,12 +189,12 @@ void ZStackWatermark::start_processing_impl(void* context) {
   // The reason is that the exception oop is fiddled with during frame processing.
   // ZVerify::verify_thread_frames_bad(_jt);
 
-  // Update thread local address bad mask
-  ZThreadLocalData::set_address_load_bad_mask(_jt, ZAddressLoadBadMask);
-  ZThreadLocalData::set_address_load_good_mask(_jt, ZAddressLoadGoodMask);
-  ZThreadLocalData::set_address_mark_bad_mask(_jt, ZAddressMarkBadMask);
-  ZThreadLocalData::set_address_store_bad_mask(_jt, ZAddressStoreBadMask);
-  ZThreadLocalData::set_address_store_good_mask(_jt, ZAddressStoreGoodMask);
+  // Update thread-local masks
+  ZThreadLocalData::set_load_bad_mask(_jt, ZPointerLoadBadMask);
+  ZThreadLocalData::set_load_good_mask(_jt, ZPointerLoadGoodMask);
+  ZThreadLocalData::set_mark_bad_mask(_jt, ZPointerMarkBadMask);
+  ZThreadLocalData::set_store_bad_mask(_jt, ZPointerStoreBadMask);
+  ZThreadLocalData::set_store_good_mask(_jt, ZPointerStoreGoodMask);
 
   // Retire TLAB
   if (ZHeap::heap()->minor_collector()->is_phase_mark() || ZHeap::heap()->major_collector()->is_phase_mark()) {

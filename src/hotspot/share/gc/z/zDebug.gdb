@@ -14,12 +14,12 @@ define zpo
     set $obj = (oopDesc*)($arg0)
 
     printf "Oop:   0x%016llx\tState: ", (uintptr_t)$obj
-    if ((uintptr_t)$obj & (uintptr_t)ZAddressStoreGoodMask)
+    if ((uintptr_t)$obj & (uintptr_t)ZPointerStoreGoodMask)
         printf "Good "
-        if ((uintptr_t)$obj & (uintptr_t)ZAddressRemapped)
+        if ((uintptr_t)$obj & (uintptr_t)ZPointerRemapped)
             printf "(Remapped)"
         else
-            if ((uintptr_t)$obj & (uintptr_t)ZAddressMarkedMajor)
+            if ((uintptr_t)$obj & (uintptr_t)ZPointerMarkedMajor)
                 printf "(MarkedMajor)"
             else
                 printf "(Unknown)"
@@ -27,17 +27,17 @@ define zpo
         end
     else
         printf "Bad "
-        if ((uintptr_t)ZAddressStoreGoodMask & (uintptr_t)ZAddressMarkedMajor)
+        if ((uintptr_t)ZPointerStoreGoodMask & (uintptr_t)ZPointerMarkedMajor)
             # Should be marked
-            if ((uintptr_t)$obj & (uintptr_t)ZAddressRemapped)
+            if ((uintptr_t)$obj & (uintptr_t)ZPointerRemapped)
                 printf "(Not Marked, Remapped)"
             else
                 printf "(Not Marked, Not Remapped)"
             end
         else
-            if ((uintptr_t)ZAddressStoreGoodMask & (uintptr_t)ZAddressRemapped)
+            if ((uintptr_t)ZPointerStoreGoodMask & (uintptr_t)ZPointerRemapped)
                 # Should be remapped
-                if ((uintptr_t)$obj & (uintptr_t)ZAddressMarkedMajor)
+                if ((uintptr_t)$obj & (uintptr_t)ZPointerMarkedMajor)
                     printf "(Marked, Not Remapped)"
                 else
                     printf "(Not Marked, Not Remapped)"
@@ -174,11 +174,11 @@ define zph
     printf "     Page Size Small:   %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
     printf "     Page Size Medium:  %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium
     printf "Metadata Bits\n"
-    printf "     Good:              0x%016llx\n", ZAddressStoreGoodMask
-    printf "     Bad:               0x%016llx\n", ZAddressStoreBadMask
-    printf "     MarkedMinor:       0x%016llx\n", ZAddressMarkedMinor
-    printf "     MarkedMajor:       0x%016llx\n", ZAddressMarkedMajor
-    printf "     Remapped:          0x%016llx\n", ZAddressRemapped
+    printf "     Good:              0x%016llx\n", ZPointerStoreGoodMask
+    printf "     Bad:               0x%016llx\n", ZPointerStoreBadMask
+    printf "     MarkedMinor:       0x%016llx\n", ZPointerMarkedMinor
+    printf "     MarkedMajor:       0x%016llx\n", ZPointerMarkedMajor
+    printf "     Remapped:          0x%016llx\n", ZPointerRemapped
 end
 
 define print_bits
@@ -207,18 +207,18 @@ end
 # Print metadata information
 define zpm
     printf          "Metadata Load Bits  "
-    print_s_bits8 "\n     Mask:          " ZAddressLoadMetadataMask
-    print_s_bits8 "\n     Good:          " ZAddressLoadGoodMask
-    print_s_bits8 "\n     Remapped:      " ZAddressRemapped
-    print_s_bits8 "\n     Bad:           " ZAddressLoadBadMask
+    print_s_bits8 "\n     Mask:          " ZPointerLoadMetadataMask
+    print_s_bits8 "\n     Good:          " ZPointerLoadGoodMask
+    print_s_bits8 "\n     Remapped:      " ZPointerRemapped
+    print_s_bits8 "\n     Bad:           " ZPointerLoadBadMask
     printf        "\n                    "
     printf        "\nMetadata Store Bits "
-    print_s_bits8 "\n     Mask:          " ZAddressStoreMetadataMask
-    print_s_bits8 "\n     Good:          " ZAddressStoreGoodMask
-    print_s_bits8 "\n     Bad:           " ZAddressStoreBadMask
-    print_s_bits8 "\n     MarkedMinor:   " ZAddressMarkedMinor
-    print_s_bits8 "\n     MarkedMajor:   " ZAddressMarkedMajor
-    print_s_bits8 "\n     Finalizable:   " ZAddressFinalizable
+    print_s_bits8 "\n     Mask:          " ZPointerStoreMetadataMask
+    print_s_bits8 "\n     Good:          " ZPointerStoreGoodMask
+    print_s_bits8 "\n     Bad:           " ZPointerStoreBadMask
+    print_s_bits8 "\n     MarkedMinor:   " ZPointerMarkedMinor
+    print_s_bits8 "\n     MarkedMajor:   " ZPointerMarkedMajor
+    print_s_bits8 "\n     Finalizable:   " ZPointerFinalizable
     printf        "\n"
 end
 

@@ -83,7 +83,7 @@ inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
     return false;
   }
 
-  if ((value & ~ZAddressStoreMetadataMask) != 0) {
+  if ((value & ~ZPointerStoreMetadataMask) != 0) {
     const int index = ZPointer::load_shift_lookup_index(value);
     if (index != 0 && !is_power_of_2(index)) {
       report_is_valid_failure("Invalid remap bits");
@@ -102,17 +102,17 @@ inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
     }
   }
 
-  const uintptr_t load_metadata = value & ZAddressLoadMetadataMask;
+  const uintptr_t load_metadata = value & ZPointerLoadMetadataMask;
   if (!is_power_of_2(load_metadata)) {
     report_is_valid_failure("Must have exactly one load metadata bit");
     return false;
   }
 
-  const uintptr_t store_metadata = (value & (ZAddressStoreMetadataMask ^ ZAddressLoadMetadataMask));
-  const uintptr_t marked_minor_metadata = store_metadata & (ZAddressMarkedMinor0 | ZAddressMarkedMinor1);
-  const uintptr_t marked_major_metadata = store_metadata & (ZAddressMarkedMajor0 | ZAddressMarkedMajor1 |
-                                                            ZAddressFinalizable0 | ZAddressFinalizable1);
-  const uintptr_t remembered_metadata = store_metadata & (ZAddressRemembered0 | ZAddressRemembered1);
+  const uintptr_t store_metadata = (value & (ZPointerStoreMetadataMask ^ ZPointerLoadMetadataMask));
+  const uintptr_t marked_minor_metadata = store_metadata & (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
+  const uintptr_t marked_major_metadata = store_metadata & (ZPointerMarkedMajor0 | ZPointerMarkedMajor1 |
+                                                            ZPointerFinalizable0 | ZPointerFinalizable1);
+  const uintptr_t remembered_metadata = store_metadata & (ZPointerRemembered0 | ZPointerRemembered1);
   if (!is_power_of_2(marked_minor_metadata)) {
     report_is_valid_failure("Must have exactly one marked minor metadata bit");
     return false;
@@ -133,7 +133,7 @@ inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
     return false;
   }
 
-  if ((value & ZAddressReservedMask) != 0) {
+  if ((value & ZPointerReservedMask) != 0) {
     report_is_valid_failure("Dirty reserved bits");
     return false;
   }
@@ -167,7 +167,7 @@ inline bool is_null(zpointer ptr) {
 inline bool is_null_any(zpointer ptr) {
   assert_is_valid(ptr);
   uintptr_t raw_addr = untype(ptr);
-  return (raw_addr & ~ZAddressAllMetadataMask) == 0;
+  return (raw_addr & ~ZPointerAllMetadataMask) == 0;
 }
 
 // Is it null - colored or not?
@@ -203,8 +203,8 @@ inline bool is_valid(zaddress addr, bool assert_on_failure = false) {
     return false;
   }
 
-  const bool low_order_bits_set = (value & ZAddressAllMetadataMask) != 0;
-  const bool high_order_bits_set = (value & ~ZAddressAllMetadataMask) != 0;
+  const bool low_order_bits_set = (value & ZPointerAllMetadataMask) != 0;
+  const bool high_order_bits_set = (value & ~ZPointerAllMetadataMask) != 0;
   if (!high_order_bits_set && low_order_bits_set) {
     report_is_valid_failure("Colored null");
     return false;
@@ -341,12 +341,12 @@ inline zaddress_unsafe ZPointer::uncolor_unsafe(zpointer ptr) {
 inline zpointer ZPointer::set_remset_bits(zpointer ptr) {
   uintptr_t raw_addr = untype(ptr);
   assert(raw_addr != 0, "raw nulls should have been purged in promotion to old gen");
-  raw_addr |= ZAddressRemembered0 | ZAddressRemembered1;
+  raw_addr |= ZPointerRemembered0 | ZPointerRemembered1;
   return to_zpointer(raw_addr);
 }
 
 inline bool ZPointer::is_load_bad(zpointer ptr) {
-  return untype(ptr) & ZAddressLoadBadMask;
+  return untype(ptr) & ZPointerLoadBadMask;
 }
 
 inline bool ZPointer::is_load_good(zpointer ptr) {
@@ -368,16 +368,16 @@ inline bool ZPointer::is_load_good_or_null(zpointer ptr) {
 
 inline bool ZPointer::is_minor_load_good(zpointer ptr) {
   assert(!is_null(ptr), "not supported");
-  return (untype(ptr) & ZAddressRemappedMinorMask) != 0;
+  return (untype(ptr) & ZPointerRemappedMinorMask) != 0;
 }
 
 inline bool ZPointer::is_major_load_good(zpointer ptr) {
   assert(!is_null(ptr), "not supported");
-  return (untype(ptr) & ZAddressRemappedMajorMask) != 0;
+  return (untype(ptr) & ZPointerRemappedMajorMask) != 0;
 }
 
 inline bool ZPointer::is_mark_bad(zpointer ptr) {
-  return untype(ptr) & ZAddressMarkBadMask;
+  return untype(ptr) & ZPointerMarkBadMask;
 }
 
 inline bool ZPointer::is_mark_good(zpointer ptr) {
@@ -398,7 +398,7 @@ inline bool ZPointer::is_mark_good_or_null(zpointer ptr) {
 }
 
 inline bool ZPointer::is_store_bad(zpointer ptr) {
-  return untype(ptr) & ZAddressStoreBadMask;
+  return untype(ptr) & ZPointerStoreBadMask;
 }
 
 inline bool ZPointer::is_store_good(zpointer ptr) {
@@ -420,40 +420,40 @@ inline bool ZPointer::is_store_good_or_null(zpointer ptr) {
 
 inline bool ZPointer::is_marked_finalizable(zpointer ptr) {
   assert(!is_null(ptr), "must not be null");
-  return untype(ptr) & ZAddressFinalizable;
+  return untype(ptr) & ZPointerFinalizable;
 }
 
 inline bool ZPointer::is_marked_major(zpointer ptr) {
-  return untype(ptr) & (ZAddressMarkedMajor);
+  return untype(ptr) & (ZPointerMarkedMajor);
 }
 
 inline bool ZPointer::is_marked_minor(zpointer ptr) {
-  return untype(ptr) & (ZAddressMarkedMinor);
+  return untype(ptr) & (ZPointerMarkedMinor);
 }
 
 inline bool ZPointer::is_marked_any_major(zpointer ptr) {
-  return untype(ptr) & (ZAddressMarkedMajor |
-                        ZAddressFinalizable);
+  return untype(ptr) & (ZPointerMarkedMajor |
+                        ZPointerFinalizable);
 }
 
 inline bool ZPointer::is_remapped(zpointer ptr) {
   assert(!is_null(ptr), "must not be null");
-  return untype(ptr) & ZAddressRemapped;
+  return untype(ptr) & ZPointerRemapped;
 }
 
 inline bool ZPointer::is_remembered_exact(zpointer ptr) {
   assert(!is_null(ptr), "must not be null");
-  return (untype(ptr) & ZAddressRemembered) == ZAddressRemembered;
+  return (untype(ptr) & ZPointerRemembered) == ZPointerRemembered;
 }
 
 constexpr int ZPointer::load_shift_lookup_index(uintptr_t value) {
-  return (value >> ZAddressRemappedShift) & ((1 << ZAddressRemappedBits) - 1);
+  return (value >> ZPointerRemappedShift) & ((1 << ZPointerRemappedBits) - 1);
 }
 
 constexpr int ZPointer::load_shift_lookup(uintptr_t value) {
   const size_t index = load_shift_lookup_index(value);
   assert(index == 0 || is_power_of_2(index), "Incorrect load shift: " SIZE_FORMAT, index);
-  return ZAddressLoadShiftTable[index];
+  return ZPointerLoadShiftTable[index];
 }
 
 // ZAddress functions
@@ -471,7 +471,7 @@ inline zoffset ZAddress::offset(zaddress_unsafe addr) {
 }
 
 inline zpointer color_null() {
-  return ZAddress::color(zaddress::null, ZAddressStoreGoodMask | ZAddressRememberedMask);
+  return ZAddress::color(zaddress::null, ZPointerStoreGoodMask | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::load_good(zaddress addr, zpointer prev) {
@@ -479,9 +479,9 @@ inline zpointer ZAddress::load_good(zaddress addr, zpointer prev) {
     return color_null();
   }
 
-  const uintptr_t non_load_bits_mask = ZAddressLoadMetadataMask ^ ZAddressAllMetadataMask;
+  const uintptr_t non_load_bits_mask = ZPointerLoadMetadataMask ^ ZPointerAllMetadataMask;
   const uintptr_t non_load_prev_bits = untype(prev) & non_load_bits_mask;
-  return color(addr, ZAddressLoadGoodMask | non_load_prev_bits | ZAddressRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | non_load_prev_bits | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::finalizable_good(zaddress addr, zpointer prev) {
@@ -489,9 +489,9 @@ inline zpointer ZAddress::finalizable_good(zaddress addr, zpointer prev) {
     return color_null();
   }
 
-  const uintptr_t non_mark_bits_mask = ZAddressMarkMetadataMask ^ ZAddressAllMetadataMask;
+  const uintptr_t non_mark_bits_mask = ZPointerMarkMetadataMask ^ ZPointerAllMetadataMask;
   const uintptr_t non_mark_prev_bits = untype(prev) & non_mark_bits_mask;
-  return color(addr, ZAddressLoadGoodMask | ZAddressMarkedMinor | ZAddressFinalizable | non_mark_prev_bits | ZAddressRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedMinor | ZPointerFinalizable | non_mark_prev_bits | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::mark_good(zaddress addr, zpointer prev) {
@@ -499,9 +499,9 @@ inline zpointer ZAddress::mark_good(zaddress addr, zpointer prev) {
     return color_null();
   }
 
-  const uintptr_t non_mark_bits_mask = ZAddressMarkMetadataMask ^ ZAddressAllMetadataMask;
+  const uintptr_t non_mark_bits_mask = ZPointerMarkMetadataMask ^ ZPointerAllMetadataMask;
   const uintptr_t non_mark_prev_bits = untype(prev) & non_mark_bits_mask;
-  return color(addr, ZAddressLoadGoodMask | ZAddressMarkedMinor | ZAddressMarkedMajor | non_mark_prev_bits | ZAddressRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedMinor | ZPointerMarkedMajor | non_mark_prev_bits | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::mark_major_good(zaddress addr, zpointer prev) {
@@ -511,10 +511,10 @@ inline zpointer ZAddress::mark_major_good(zaddress addr, zpointer prev) {
 
   const uintptr_t prev_color = untype(prev);
 
-  const uintptr_t minor_marked_mask = ZAddressMarkedMinor0 | ZAddressMarkedMinor1;
+  const uintptr_t minor_marked_mask = ZPointerMarkedMinor0 | ZPointerMarkedMinor1;
   const uintptr_t minor_marked = prev_color & minor_marked_mask;
 
-  return color(addr, ZAddressLoadGoodMask | ZAddressMarkedMajor | minor_marked | ZAddressRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedMajor | minor_marked | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::mark_minor_good(zaddress addr, zpointer prev) {
@@ -524,14 +524,14 @@ inline zpointer ZAddress::mark_minor_good(zaddress addr, zpointer prev) {
 
   const uintptr_t prev_color = untype(prev);
 
-  const uintptr_t major_marked_mask = ZAddressMarkedMask ^ (ZAddressMarkedMinor0 | ZAddressMarkedMinor1);
+  const uintptr_t major_marked_mask = ZPointerMarkedMask ^ (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
   const uintptr_t major_marked = prev_color & major_marked_mask;
 
-  return color(addr, ZAddressLoadGoodMask | ZAddressMarkedMinor | major_marked | ZAddressRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedMinor | major_marked | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::store_good(zaddress addr) {
-  return color(addr, ZAddressStoreGoodMask);
+  return color(addr, ZPointerStoreGoodMask);
 }
 
 inline zpointer ZAddress::store_good_or_null(zaddress addr) {

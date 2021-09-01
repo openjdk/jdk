@@ -60,7 +60,7 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   Label done;
   Label check_oop;
   Label check_zaddress;
-  int color_bits = ZAddressRemappedShift + ZAddressRemappedBits;
+  int color_bits = ZPointerRemappedShift + ZPointerRemappedBits;
 
   uintptr_t shifted_base_start_mask = (UCONST64(1) << (ZAddressHeapBaseShift + color_bits + 1)) - 1;
   uintptr_t shifted_base_end_mask = (UCONST64(1) << (ZAddressHeapBaseShift + 1)) - 1;
@@ -83,9 +83,9 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ movq(tmp1, obj);
   __ mov64(tmp2, shifted_address_end_mask);
   __ andq(tmp1, tmp2);
-  __ shrq(tmp1, ZAddressRemappedShift);
-  __ andq(tmp1, (1 << ZAddressRemappedBits) - 1);
-  __ lea(tmp2, ExternalAddress((address)&ZAddressLoadShiftTable));
+  __ shrq(tmp1, ZPointerRemappedShift);
+  __ andq(tmp1, (1 << ZPointerRemappedBits) - 1);
+  __ lea(tmp2, ExternalAddress((address)&ZPointerLoadShiftTable));
 
   // Uncolor presumed zpointer
   assert(obj != rcx, "bad choice of register");
@@ -267,9 +267,9 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Test address bad mask
   if (on_non_strong) {
-    __ testptr(dst, address_mark_bad_mask_from_thread(r15_thread));
+    __ testptr(dst, mark_bad_mask_from_thread(r15_thread));
   } else {
-    __ testptr(dst, address_load_bad_mask_from_thread(r15_thread));
+    __ testptr(dst, load_bad_mask_from_thread(r15_thread));
   }
 
   __ jcc(Assembler::zero, uncolor);
@@ -291,12 +291,12 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   if (dst == rcx) {
     __ movptr(scratch, dst);
-    __ movptr(rcx, ExternalAddress((address)&ZAddressLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(scratch);
     __ movptr(dst, scratch);
   } else {
     __ push(rcx);
-    __ movptr(rcx, ExternalAddress((address)&ZAddressLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(dst);
     __ pop(rcx);
   }
@@ -348,7 +348,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
   } else {
     __ movzwq(rnew_zpointer, ref_addr);
-    __ cmpq(Address(r15_thread, ZThreadLocalData::address_store_good_mask_offset()), rnew_zpointer);
+    __ cmpq(Address(r15_thread, ZThreadLocalData::store_good_mask_offset()), rnew_zpointer);
     __ jcc(Assembler::notEqual, medium_path);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
@@ -358,10 +358,10 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     }
     assert_different_registers(rcx, rnew_zpointer);
     __ push(rcx);
-    __ movptr(rcx, ExternalAddress((address)&ZAddressLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shlq(rnew_zpointer);
     __ pop(rcx);
-    __ orq(rnew_zpointer, Address(r15_thread, ZThreadLocalData::address_store_good_mask_offset()));
+    __ orq(rnew_zpointer, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
 
@@ -425,7 +425,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
       __ lea(rcx, ref_addr);
       __ xorq(rax, rax);
-      __ movptr(rbx, Address(r15, ZThreadLocalData::address_store_good_mask_offset()));
+      __ movptr(rbx, Address(r15, ZThreadLocalData::store_good_mask_offset()));
 
       __ lock();
       __ cmpxchgq(rbx, Address(rcx, 0));
@@ -480,10 +480,10 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
         __ movptr(tmp1, src);
       }
       __ push(rcx);
-      __ movptr(rcx, ExternalAddress((address)&ZAddressLoadShift));
+      __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
       __ shlq(tmp1);
       __ pop(rcx);
-      __ orq(tmp1, Address(r15_thread, ZThreadLocalData::address_store_good_mask_offset()));
+      __ orq(tmp1, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
     } else {
       Label done;
       Label medium;
@@ -521,13 +521,13 @@ static void load_arraycopy_masks(MacroAssembler* masm) {
   // xmm3: store_bad_mask
   // xmm4: uncolor_mask
   // xmm5: store_good_mask
-  __ lea(r10, ExternalAddress((address)&ZAddressVectorLoadBadMask));
+  __ lea(r10, ExternalAddress((address)&ZPointerVectorLoadBadMask));
   __ vmovdqu(xmm2, Address(r10, 0));
-  __ lea(r10, ExternalAddress((address)&ZAddressVectorStoreBadMask));
+  __ lea(r10, ExternalAddress((address)&ZPointerVectorStoreBadMask));
   __ vmovdqu(xmm3, Address(r10, 0));
-  __ lea(r10, ExternalAddress((address)&ZAddressVectorUncolorMask));
+  __ lea(r10, ExternalAddress((address)&ZPointerVectorUncolorMask));
   __ vmovdqu(xmm4, Address(r10, 0));
-  __ lea(r10, ExternalAddress((address)&ZAddressVectorStoreGoodMask));
+  __ lea(r10, ExternalAddress((address)&ZPointerVectorStoreGoodMask));
   __ vmovdqu(xmm5, Address(r10, 0));
 }
 
@@ -710,7 +710,7 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 
   // Resolve global handle
   __ movptr(obj, Address(obj, -JNIHandles::global_tag_value));
-  __ testptr(obj, address_load_bad_mask_from_jni_env(jni_env));
+  __ testptr(obj, load_bad_mask_from_jni_env(jni_env));
   __ jcc(Assembler::notZero, slowpath);
   __ jmp(uncolor);
 
@@ -718,7 +718,7 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 
   // Resolve weak handle
   __ movptr(obj, Address(obj, -JNIHandles::weak_tag_value));
-  __ testptr(obj, address_mark_bad_mask_from_jni_env(jni_env));
+  __ testptr(obj, mark_bad_mask_from_jni_env(jni_env));
   __ jcc(Assembler::notZero, slowpath);
 
   __ bind(uncolor);
@@ -726,12 +726,12 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
   // Uncolor
   if (obj == rcx) {
     __ movptr(tmp, obj);
-    __ movptr(rcx, ExternalAddress((address)&ZAddressLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(tmp);
     __ movptr(obj, tmp);
   } else {
     __ push(rcx);
-    __ movptr(rcx, ExternalAddress((address)&ZAddressLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(obj);
     __ pop(rcx);
   }
@@ -1329,17 +1329,17 @@ static int patch_barrier_relocation_offset(int format) {
 static uint16_t patch_barrier_relocation_value(int format) {
   switch (format) {
   case ZBarrierRelocationFormatLoadGoodBeforeShl:
-    return (uint16_t)ZAddressLoadShift;
+    return (uint16_t)ZPointerLoadShift;
 
   case ZBarrierRelocationFormatMarkBadAfterTest:
-    return (uint16_t)ZAddressMarkBadMask;
+    return (uint16_t)ZPointerMarkBadMask;
 
   case ZBarrierRelocationFormatStoreGoodAfterCmp:
   case ZBarrierRelocationFormatStoreGoodAfterOr:
-    return (uint16_t)ZAddressStoreGoodMask;
+    return (uint16_t)ZPointerStoreGoodMask;
 
   case ZBarrierRelocationFormatStoreBadAfterTest:
-    return (uint16_t)ZAddressStoreBadMask;
+    return (uint16_t)ZPointerStoreBadMask;
 
   default:
     ShouldNotReachHere();

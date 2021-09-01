@@ -51,7 +51,7 @@
 #define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, untype(o), p2i(p)
 
 static bool z_is_null_relaxed(zpointer o) {
-  const uintptr_t color_mask = ZAddressAllMetadataMask | ZAddressReservedMask;
+  const uintptr_t color_mask = ZPointerAllMetadataMask | ZPointerReservedMask;
   return (untype(o) & ~color_mask) == 0;
 }
 
@@ -68,7 +68,7 @@ static void z_verify_old_oop(zpointer* p) {
       if (ZHeap::heap()->is_young(addr)) {
         assert(ZHeap::heap()->is_remembered(p) || ZStoreBarrierBuffer::is_in(p), "Must be remembered");
       } else {
-        assert(ZPointer::is_store_good(o) || (uintptr_t(o) & ZAddressRememberedMask) == ZAddressRememberedMask, "Must be remembered");
+        assert(ZPointer::is_store_good(o) || (uintptr_t(o) & ZPointerRememberedMask) == ZPointerRememberedMask, "Must be remembered");
       }
       guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
     }

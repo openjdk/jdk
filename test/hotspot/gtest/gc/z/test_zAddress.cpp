@@ -58,10 +58,10 @@ protected:
     case RemappedMinor0: {
       switch (remapped_major) {
       case RemappedMajor0:
-        color |= ZAddressRemapped00;
+        color |= ZPointerRemapped00;
         break;
       case RemappedMajor1:
-        color |= ZAddressRemapped10;
+        color |= ZPointerRemapped10;
         break;
       default:
         EXPECT_TRUE(false);
@@ -71,10 +71,10 @@ protected:
     case RemappedMinor1: {
       switch (remapped_major) {
       case RemappedMajor0:
-        color |= ZAddressRemapped01;
+        color |= ZPointerRemapped01;
         break;
       case RemappedMajor1:
-        color |= ZAddressRemapped11;
+        color |= ZPointerRemapped11;
         break;
       default:
         EXPECT_TRUE(false);
@@ -87,10 +87,10 @@ protected:
 
     switch (marked_minor) {
     case MarkedMinor0:
-      color |= ZAddressMarkedMinor0;
+      color |= ZPointerMarkedMinor0;
       break;
     case MarkedMinor1:
-      color |= ZAddressMarkedMinor1;
+      color |= ZPointerMarkedMinor1;
       break;
     default:
       EXPECT_TRUE(false);
@@ -98,16 +98,16 @@ protected:
 
     switch (marked_major) {
     case MarkedMajor0:
-      color |= ZAddressMarkedMajor0;
+      color |= ZPointerMarkedMajor0;
       break;
     case MarkedMajor1:
-      color |= ZAddressMarkedMajor1;
+      color |= ZPointerMarkedMajor1;
       break;
     case Finalizable0:
-      color |= ZAddressFinalizable0;
+      color |= ZPointerFinalizable0;
       break;
     case Finalizable1:
-      color |= ZAddressFinalizable1;
+      color |= ZPointerFinalizable1;
       break;
     default:
       EXPECT_TRUE(false);
@@ -115,13 +115,13 @@ protected:
 
     switch (remembered) {
     case Remembered0:
-      color |= ZAddressRemembered0;
+      color |= ZPointerRemembered0;
       break;
     case Remembered1:
-      color |= ZAddressRemembered1;
+      color |= ZPointerRemembered1;
       break;
     case Remembered11:
-      color |= ZAddressRemembered0 | ZAddressRemembered1;
+      color |= ZPointerRemembered0 | ZPointerRemembered1;
       break;
     default:
       EXPECT_TRUE(false);
@@ -148,31 +148,31 @@ protected:
   }
 
   static bool is_remapped_minor_odd(uintptr_t bits) {
-    return bits & (ZAddressRemapped01 | ZAddressRemapped11);
+    return bits & (ZPointerRemapped01 | ZPointerRemapped11);
   }
 
   static bool is_remapped_major_odd(uintptr_t bits) {
-    return bits & (ZAddressRemapped10 | ZAddressRemapped11);
+    return bits & (ZPointerRemapped10 | ZPointerRemapped11);
   }
 
   static bool is_marked_minor_odd(uintptr_t bits) {
-    return bits & ZAddressMarkedMinor1;
+    return bits & ZPointerMarkedMinor1;
   }
 
   static bool is_marked_major_odd(uintptr_t bits) {
-    return bits & (ZAddressMarkedMajor1 | ZAddressFinalizable1);
+    return bits & (ZPointerMarkedMajor1 | ZPointerFinalizable1);
   }
 
   static bool is_remembered(uintptr_t bits) {
-    return bits & (ZAddressRemembered0 | ZAddressRemembered1);
+    return bits & (ZPointerRemembered0 | ZPointerRemembered1);
   }
 
   static bool is_remembered_odd(uintptr_t bits) {
-    return bits & (ZAddressRemembered1);
+    return bits & (ZPointerRemembered1);
   }
 
   static bool is_remembered_even(uintptr_t bits) {
-    return bits & (ZAddressRemembered0);
+    return bits & (ZPointerRemembered0);
   }
 
   static void test_is_checks_on(uintptr_t value,
@@ -184,16 +184,16 @@ protected:
     const zpointer ptr = color(value, remembered, remapped_minor, remapped_major, marked_minor, marked_major);
     uintptr_t ptr_raw = untype(ptr);
 
-    EXPECT_TRUE(ZAddressLoadGoodMask != 0);
-    EXPECT_TRUE(ZAddressStoreGoodMask != 0);
+    EXPECT_TRUE(ZPointerLoadGoodMask != 0);
+    EXPECT_TRUE(ZPointerStoreGoodMask != 0);
 
     bool ptr_raw_null = ptr_raw == 0;
-    bool global_remapped_major_odd = is_remapped_major_odd(ZAddressLoadGoodMask);
-    bool global_remapped_minor_odd = is_remapped_minor_odd(ZAddressLoadGoodMask);
-    bool global_marked_major_odd = is_marked_major_odd(ZAddressStoreGoodMask);
-    bool global_marked_minor_odd = is_marked_minor_odd(ZAddressStoreGoodMask);
-    bool global_remembered_odd = is_remembered_odd(ZAddressStoreGoodMask);
-    bool global_remembered_even = is_remembered_even(ZAddressStoreGoodMask);
+    bool global_remapped_major_odd = is_remapped_major_odd(ZPointerLoadGoodMask);
+    bool global_remapped_minor_odd = is_remapped_minor_odd(ZPointerLoadGoodMask);
+    bool global_marked_major_odd = is_marked_major_odd(ZPointerStoreGoodMask);
+    bool global_marked_minor_odd = is_marked_minor_odd(ZPointerStoreGoodMask);
+    bool global_remembered_odd = is_remembered_odd(ZPointerStoreGoodMask);
+    bool global_remembered_even = is_remembered_even(ZPointerStoreGoodMask);
 
     if (ptr_raw_null) {
       EXPECT_FALSE(ZPointer::is_marked_any_major(ptr));
@@ -211,11 +211,11 @@ protected:
       bool ptr_remapped_minor_odd = is_remapped_minor_odd(ptr_raw);
       bool ptr_marked_major_odd = is_marked_major_odd(ptr_raw);
       bool ptr_marked_minor_odd = is_marked_minor_odd(ptr_raw);
-      bool ptr_final = ptr_raw & (ZAddressFinalizable0 | ZAddressFinalizable1);
-      bool ptr_remembered = is_power_of_2(ptr_raw & (ZAddressRemembered0 | ZAddressRemembered1));
+      bool ptr_final = ptr_raw & (ZPointerFinalizable0 | ZPointerFinalizable1);
+      bool ptr_remembered = is_power_of_2(ptr_raw & (ZPointerRemembered0 | ZPointerRemembered1));
       bool ptr_remembered_odd = is_remembered_odd(ptr_raw);
       bool ptr_remembered_even = is_remembered_even(ptr_raw);
-      bool ptr_colored_null = !ptr_raw_null && (ptr_raw & ~ZAddressAllMetadataMask) == 0;
+      bool ptr_colored_null = !ptr_raw_null && (ptr_raw & ~ZPointerAllMetadataMask) == 0;
 
       bool same_major_marking = global_marked_major_odd == ptr_marked_major_odd;
       bool same_minor_marking = global_marked_minor_odd == ptr_marked_minor_odd;

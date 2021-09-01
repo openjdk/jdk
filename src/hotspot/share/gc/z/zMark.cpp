@@ -691,10 +691,10 @@ public:
 
       // Disarm only the minor marking, not any potential major marking cycle
 
-      const uintptr_t major_marked_mask = ZAddressMarkedMask ^ (ZAddressMarkedMinor0 | ZAddressMarkedMinor1);
+      const uintptr_t major_marked_mask = ZPointerMarkedMask ^ (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
       const uintptr_t major_marked = prev_color & major_marked_mask;
 
-      const zpointer new_disarm_value_ptr = ZAddress::color(zaddress::null, ZAddressLoadGoodMask | ZAddressMarkedMinor | major_marked | ZAddressRemembered);
+      const zpointer new_disarm_value_ptr = ZAddress::color(zaddress::null, ZPointerLoadGoodMask | ZPointerMarkedMinor | major_marked | ZPointerRemembered);
 
       // Check if disarming for minor mark, completely disarms the nmethod entry barrier
       const bool complete_disarm = ZPointer::is_mark_good(new_disarm_value_ptr);

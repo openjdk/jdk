@@ -65,7 +65,7 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
     // of how many GC flips later it will arrive. That's why we OR in 11
     // in the remembered bits, similar to how forgotten old oops also have 11,
     // for the very same reason.
-    const uintptr_t fill_value = color_payload ? (ZAddressStoreGoodMask | ZAddressRememberedMask) : 0;
+    const uintptr_t fill_value = color_payload ? (ZPointerStoreGoodMask | ZPointerRememberedMask) : 0;
     std::fill_n(start, segment, fill_value);
     processed += segment;
 

@@ -34,23 +34,23 @@
 
 class ZThreadLocalData {
 private:
-  uintptr_t              _address_load_good_mask;
-  uintptr_t              _address_load_bad_mask;
-  uintptr_t              _address_mark_bad_mask;
-  uintptr_t              _address_store_good_mask;
-  uintptr_t              _address_store_bad_mask;
-  uintptr_t              _address_uncolor_mask;
+  uintptr_t              _load_good_mask;
+  uintptr_t              _load_bad_mask;
+  uintptr_t              _mark_bad_mask;
+  uintptr_t              _store_good_mask;
+  uintptr_t              _store_bad_mask;
+  uintptr_t              _uncolor_mask;
   ZStoreBarrierBuffer*   _store_barrier_buffer;
   ZMarkThreadLocalStacks _mark_stacks[2];
   oop*                   _invisible_root;
 
   ZThreadLocalData() :
-      _address_load_good_mask(0),
-      _address_load_bad_mask(0),
-      _address_mark_bad_mask(0),
-      _address_store_good_mask(0),
-      _address_store_bad_mask(0),
-      _address_uncolor_mask(0),
+      _load_good_mask(0),
+      _load_bad_mask(0),
+      _mark_bad_mask(0),
+      _store_good_mask(0),
+      _store_bad_mask(0),
+      _uncolor_mask(0),
       _store_barrier_buffer(new ZStoreBarrierBuffer()),
       _mark_stacks(),
       _invisible_root(NULL) {}
@@ -72,28 +72,28 @@ public:
     data(thread)->~ZThreadLocalData();
   }
 
-  static void set_address_load_bad_mask(Thread* thread, uintptr_t mask) {
-    data(thread)->_address_load_bad_mask = mask;
+  static void set_load_bad_mask(Thread* thread, uintptr_t mask) {
+    data(thread)->_load_bad_mask = mask;
   }
 
-  static void set_address_mark_bad_mask(Thread* thread, uintptr_t mask) {
-    data(thread)->_address_mark_bad_mask = mask;
+  static void set_mark_bad_mask(Thread* thread, uintptr_t mask) {
+    data(thread)->_mark_bad_mask = mask;
   }
 
-  static void set_address_store_bad_mask(Thread* thread, uintptr_t mask) {
-    data(thread)->_address_store_bad_mask = mask;
+  static void set_store_bad_mask(Thread* thread, uintptr_t mask) {
+    data(thread)->_store_bad_mask = mask;
   }
 
-  static void set_address_load_good_mask(Thread* thread, uintptr_t mask) {
-    data(thread)->_address_load_good_mask = mask;
+  static void set_load_good_mask(Thread* thread, uintptr_t mask) {
+    data(thread)->_load_good_mask = mask;
   }
 
-  static void set_address_store_good_mask(Thread* thread, uintptr_t mask) {
-    data(thread)->_address_store_good_mask = mask;
+  static void set_store_good_mask(Thread* thread, uintptr_t mask) {
+    data(thread)->_store_good_mask = mask;
   }
 
-  static void set_address_uncolor_mask(Thread* thread, uintptr_t mask) {
-    data(thread)->_address_uncolor_mask = mask;
+  static void set_uncolor_mask(Thread* thread, uintptr_t mask) {
+    data(thread)->_uncolor_mask = mask;
   }
 
   static ZMarkThreadLocalStacks* mark_stacks(Thread* thread, ZCollectorId collector_id) {
@@ -118,32 +118,32 @@ public:
     return data(thread)->_invisible_root;
   }
 
-  static ByteSize address_load_bad_mask_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _address_load_bad_mask);
+  static ByteSize load_bad_mask_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _load_bad_mask);
   }
 
-  static ByteSize address_mark_bad_mask_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _address_mark_bad_mask);
+  static ByteSize mark_bad_mask_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _mark_bad_mask);
   }
 
-  static ByteSize address_store_bad_mask_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _address_store_bad_mask);
+  static ByteSize store_bad_mask_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _store_bad_mask);
   }
 
-  static ByteSize address_load_good_mask_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _address_load_good_mask);
+  static ByteSize load_good_mask_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _load_good_mask);
   }
 
-  static ByteSize address_store_good_mask_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _address_store_good_mask);
+  static ByteSize store_good_mask_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _store_good_mask);
   }
 
-  static ByteSize address_uncolor_mask_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _address_uncolor_mask);
+  static ByteSize uncolor_mask_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _uncolor_mask);
   }
 
   static ByteSize nmethod_disarmed_offset() {
-    return address_store_good_mask_offset() + in_ByteSize(ZAddressStoreGoodMaskLowOrderBitsOffset);
+    return store_good_mask_offset() + in_ByteSize(ZPointerStoreGoodMaskLowOrderBitsOffset);
   }
 
   static ByteSize store_barrier_buffer_offset() {

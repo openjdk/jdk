@@ -55,8 +55,8 @@ ZStoreBarrierBuffer::ZStoreBarrierBuffer() :
 }
 
 void ZStoreBarrierBuffer::initialize() {
-  _last_processed_color = ZAddressStoreGoodMask;
-  _last_installed_color = ZAddressStoreGoodMask;
+  _last_processed_color = ZPointerStoreGoodMask;
+  _last_installed_color = ZPointerStoreGoodMask;
 }
 
 void ZStoreBarrierBuffer::clear() {
@@ -73,17 +73,17 @@ void ZStoreBarrierBuffer::install_base_pointers() {
   }
 
   ZLocker<ZLock> locker(&_base_pointer_lock);
-  uintptr_t last_installed_remap_bits = _last_installed_color & ZAddressRemappedMask;
-  if (last_installed_remap_bits == ZAddressRemapped || is_empty()) {
+  uintptr_t last_installed_remap_bits = _last_installed_color & ZPointerRemappedMask;
+  if (last_installed_remap_bits == ZPointerRemapped || is_empty()) {
     // Already installed or empty - nothing to do, but update installed color
-    _last_installed_color = ZAddressStoreGoodMask;
+    _last_installed_color = ZPointerStoreGoodMask;
     return;
   }
-  assert(last_installed_remap_bits == (_last_processed_color & ZAddressRemappedMask),
+  assert(last_installed_remap_bits == (_last_processed_color & ZPointerRemappedMask),
          "can't deal with two pending base pointer installations");
   for (size_t i = current(); i < _buffer_length; ++i) {
-    assert(((_last_installed_color) & ZAddressRemappedMinorMask) == 0 ||
-           ((_last_installed_color) & ZAddressRemappedMajorMask) == 0,
+    assert(((_last_installed_color) & ZPointerRemappedMinorMask) == 0 ||
+           ((_last_installed_color) & ZPointerRemappedMajorMask) == 0,
            "Should not have double bit errors");
     const ZStoreBarrierEntry& entry = _buffer[i];
     volatile zpointer* p = entry._p;
@@ -98,7 +98,7 @@ void ZStoreBarrierBuffer::install_base_pointers() {
       _base_pointers[i] = zaddress_unsafe::null;
     }
   }
-  _last_installed_color = ZAddressStoreGoodMask;
+  _last_installed_color = ZPointerStoreGoodMask;
 }
 
 static volatile zpointer* make_load_good(volatile zpointer* p, zaddress_unsafe p_base, uintptr_t color) {
@@ -113,8 +113,8 @@ static volatile zpointer* make_load_good(volatile zpointer* p, zaddress_unsafe p
 }
 
 void ZStoreBarrierBuffer::on_new_phase_relocate(int i) {
-  uintptr_t last_remap_bits = _last_processed_color & ZAddressRemappedMask;
-  if (last_remap_bits == ZAddressRemapped) {
+  uintptr_t last_remap_bits = _last_processed_color & ZPointerRemappedMask;
+  if (last_remap_bits == ZPointerRemapped) {
     // Nothing to process
     return;
   }
@@ -130,8 +130,8 @@ void ZStoreBarrierBuffer::on_new_phase_relocate(int i) {
 }
 
 void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
-  uintptr_t last_mark_minor_bits = _last_processed_color & (ZAddressMarkedMinor0 | ZAddressMarkedMinor1);
-  bool woke_up_in_minor_mark = last_mark_minor_bits != ZAddressMarkedMinor;
+  uintptr_t last_mark_minor_bits = _last_processed_color & (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
+  bool woke_up_in_minor_mark = last_mark_minor_bits != ZPointerMarkedMinor;
   ZStoreBarrierEntry& entry = _buffer[i];
   volatile zpointer* p = entry._p;
 
@@ -151,8 +151,8 @@ bool ZStoreBarrierBuffer::is_inside_marking_snapshot(volatile zpointer* p) {
     return false;
   }
 
-  uintptr_t last_mark_major_bits = _last_processed_color & (ZAddressMarkedMajor0 | ZAddressMarkedMajor1);
-  bool stored_during_major_marking = last_mark_major_bits == ZAddressMarkedMajor;
+  uintptr_t last_mark_major_bits = _last_processed_color & (ZPointerMarkedMajor0 | ZPointerMarkedMajor1);
+  bool stored_during_major_marking = last_mark_major_bits == ZPointerMarkedMajor;
 
   if (!stored_during_major_marking) {
     return false;
@@ -189,7 +189,7 @@ void ZStoreBarrierBuffer::on_new_phase() {
 
   clear();
 
-  _last_processed_color = ZAddressStoreGoodMask;
+  _last_processed_color = ZPointerStoreGoodMask;
   assert(_last_installed_color == _last_processed_color, "invariant");
 }
 
@@ -215,8 +215,8 @@ bool ZStoreBarrierBuffer::is_in(volatile zpointer* p) {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     ZStoreBarrierBuffer* buffer = ZThreadLocalData::store_barrier_buffer(jt);
 
-    uintptr_t last_remap_bits = buffer->_last_processed_color & ZAddressRemappedMask;
-    bool needs_remap = last_remap_bits != ZAddressRemapped;
+    uintptr_t last_remap_bits = buffer->_last_processed_color & ZPointerRemappedMask;
+    bool needs_remap = last_remap_bits != ZPointerRemapped;
 
     for (size_t i = buffer->current(); i < _buffer_length; ++i) {
       const ZStoreBarrierEntry& entry = buffer->_buffer[i];

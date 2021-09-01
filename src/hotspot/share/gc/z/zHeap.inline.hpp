@@ -119,8 +119,8 @@ inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   // Double remap bad - the pointer is neither major load good nor
   // minor load good. First the code ...
 
-  const uintptr_t remembered_bits = untype(ptr) & ZAddressRememberedMask;
-  const bool old_to_old_ptr = remembered_bits == ZAddressRememberedMask;
+  const uintptr_t remembered_bits = untype(ptr) & ZPointerRememberedMask;
+  const bool old_to_old_ptr = remembered_bits == ZPointerRememberedMask;
 
   if (old_to_old_ptr) {
     return &_major_collector;

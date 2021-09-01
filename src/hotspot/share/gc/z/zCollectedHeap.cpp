@@ -354,16 +354,16 @@ void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr(" Page Size Medium:   " SIZE_FORMAT "M", ZPageSizeMedium / M);
   st->cr();
   st->print_cr("ZGC Metadata Bits:");
-  st->print_cr(" LoadGood:           " PTR_FORMAT, ZAddressLoadGoodMask);
-  st->print_cr(" LoadBad:            " PTR_FORMAT, ZAddressLoadBadMask);
-  st->print_cr(" MarkGood:           " PTR_FORMAT, ZAddressMarkGoodMask);
-  st->print_cr(" MarkBad:            " PTR_FORMAT, ZAddressMarkBadMask);
-  st->print_cr(" StoreGood:          " PTR_FORMAT, ZAddressStoreGoodMask);
-  st->print_cr(" StoreBad:           " PTR_FORMAT, ZAddressStoreBadMask);
-  st->print_cr(" MarkedMinor:        " PTR_FORMAT, ZAddressMarkedMinor);
-  st->print_cr(" MarkedMajor:        " PTR_FORMAT, ZAddressMarkedMajor);
-  st->print_cr(" Remembered:         " PTR_FORMAT, ZAddressRemembered);
-  st->print_cr(" Remapped:           " PTR_FORMAT, ZAddressRemapped);
+  st->print_cr(" LoadGood:           " PTR_FORMAT, ZPointerLoadGoodMask);
+  st->print_cr(" LoadBad:            " PTR_FORMAT, ZPointerLoadBadMask);
+  st->print_cr(" MarkGood:           " PTR_FORMAT, ZPointerMarkGoodMask);
+  st->print_cr(" MarkBad:            " PTR_FORMAT, ZPointerMarkBadMask);
+  st->print_cr(" StoreGood:          " PTR_FORMAT, ZPointerStoreGoodMask);
+  st->print_cr(" StoreBad:           " PTR_FORMAT, ZPointerStoreBadMask);
+  st->print_cr(" MarkedMinor:        " PTR_FORMAT, ZPointerMarkedMinor);
+  st->print_cr(" MarkedMajor:        " PTR_FORMAT, ZPointerMarkedMajor);
+  st->print_cr(" Remembered:         " PTR_FORMAT, ZPointerRemembered);
+  st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
   st->cr();
   CollectedHeap::print_on_error(st);
 }

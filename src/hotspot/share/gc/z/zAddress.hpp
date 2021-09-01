@@ -117,107 +117,107 @@ extern size_t    ZAddressOffsetMax;
 //  RemappedMajor1 & RemappedMinor0 = 0100 = Remapped10
 //  RemappedMajor1 & RemappedMinor1 = 1000 = Remapped11
 
-constexpr uintptr_t z_address_mask(size_t shift, size_t bits) {
+constexpr uintptr_t z_pointer_mask(size_t shift, size_t bits) {
   return (((uintptr_t)1 << bits) - 1) << shift;
 }
 
-constexpr uintptr_t z_address_bit(size_t shift, size_t offset) {
+constexpr uintptr_t z_pointer_bit(size_t shift, size_t offset) {
   return (uintptr_t)1 << (shift + offset);
 }
 
 // Reserved bits
-const size_t      ZAddressReservedShift   = 0;
-const size_t      ZAddressReservedBits    = 4;
-const uintptr_t   ZAddressReservedMask    = z_address_mask(ZAddressReservedShift, ZAddressReservedBits);
+const size_t      ZPointerReservedShift   = 0;
+const size_t      ZPointerReservedBits    = 4;
+const uintptr_t   ZPointerReservedMask    = z_pointer_mask(ZPointerReservedShift, ZPointerReservedBits);
 
-const uintptr_t   ZAddressReserved0       = z_address_bit(ZAddressReservedShift, 0);
-const uintptr_t   ZAddressReserved1       = z_address_bit(ZAddressReservedShift, 1);
-const uintptr_t   ZAddressReserved2       = z_address_bit(ZAddressReservedShift, 2);
-const uintptr_t   ZAddressReserved3       = z_address_bit(ZAddressReservedShift, 3);
+const uintptr_t   ZPointerReserved0       = z_pointer_bit(ZPointerReservedShift, 0);
+const uintptr_t   ZPointerReserved1       = z_pointer_bit(ZPointerReservedShift, 1);
+const uintptr_t   ZPointerReserved2       = z_pointer_bit(ZPointerReservedShift, 2);
+const uintptr_t   ZPointerReserved3       = z_pointer_bit(ZPointerReservedShift, 3);
 
 // Remembered set bits
-const size_t      ZAddressRememberedShift = ZAddressReservedShift + ZAddressReservedBits;
-const size_t      ZAddressRememberedBits  = 2;
-const uintptr_t   ZAddressRememberedMask  = z_address_mask(ZAddressRememberedShift, ZAddressRememberedBits);
+const size_t      ZPointerRememberedShift = ZPointerReservedShift + ZPointerReservedBits;
+const size_t      ZPointerRememberedBits  = 2;
+const uintptr_t   ZPointerRememberedMask  = z_pointer_mask(ZPointerRememberedShift, ZPointerRememberedBits);
 
-const uintptr_t   ZAddressRemembered0     = z_address_bit(ZAddressRememberedShift, 0);
-const uintptr_t   ZAddressRemembered1     = z_address_bit(ZAddressRememberedShift, 1);
+const uintptr_t   ZPointerRemembered0     = z_pointer_bit(ZPointerRememberedShift, 0);
+const uintptr_t   ZPointerRemembered1     = z_pointer_bit(ZPointerRememberedShift, 1);
 
 // Marked bits
-const size_t      ZAddressMarkedShift     = ZAddressRememberedShift + ZAddressRememberedBits;
-const size_t      ZAddressMarkedBits      = 6;
-const uintptr_t   ZAddressMarkedMask      = z_address_mask(ZAddressMarkedShift, ZAddressMarkedBits);
+const size_t      ZPointerMarkedShift     = ZPointerRememberedShift + ZPointerRememberedBits;
+const size_t      ZPointerMarkedBits      = 6;
+const uintptr_t   ZPointerMarkedMask      = z_pointer_mask(ZPointerMarkedShift, ZPointerMarkedBits);
 
-const uintptr_t   ZAddressFinalizable0    = z_address_bit(ZAddressMarkedShift, 0);
-const uintptr_t   ZAddressFinalizable1    = z_address_bit(ZAddressMarkedShift, 1);
-const uintptr_t   ZAddressMarkedMinor0    = z_address_bit(ZAddressMarkedShift, 2);
-const uintptr_t   ZAddressMarkedMinor1    = z_address_bit(ZAddressMarkedShift, 3);
-const uintptr_t   ZAddressMarkedMajor0    = z_address_bit(ZAddressMarkedShift, 4);
-const uintptr_t   ZAddressMarkedMajor1    = z_address_bit(ZAddressMarkedShift, 5);
+const uintptr_t   ZPointerFinalizable0    = z_pointer_bit(ZPointerMarkedShift, 0);
+const uintptr_t   ZPointerFinalizable1    = z_pointer_bit(ZPointerMarkedShift, 1);
+const uintptr_t   ZPointerMarkedMinor0    = z_pointer_bit(ZPointerMarkedShift, 2);
+const uintptr_t   ZPointerMarkedMinor1    = z_pointer_bit(ZPointerMarkedShift, 3);
+const uintptr_t   ZPointerMarkedMajor0    = z_pointer_bit(ZPointerMarkedShift, 4);
+const uintptr_t   ZPointerMarkedMajor1    = z_pointer_bit(ZPointerMarkedShift, 5);
 
 // Remapped bits
-const size_t      ZAddressRemappedShift   = ZAddressMarkedShift + ZAddressMarkedBits;
-const size_t      ZAddressRemappedBits    = 4;
-const uintptr_t   ZAddressRemappedMask    = z_address_mask(ZAddressRemappedShift, ZAddressRemappedBits);
+const size_t      ZPointerRemappedShift   = ZPointerMarkedShift + ZPointerMarkedBits;
+const size_t      ZPointerRemappedBits    = 4;
+const uintptr_t   ZPointerRemappedMask    = z_pointer_mask(ZPointerRemappedShift, ZPointerRemappedBits);
 
-const uintptr_t   ZAddressRemapped00      = z_address_bit(ZAddressRemappedShift, 0);
-const uintptr_t   ZAddressRemapped01      = z_address_bit(ZAddressRemappedShift, 1);
-const uintptr_t   ZAddressRemapped10      = z_address_bit(ZAddressRemappedShift, 2);
-const uintptr_t   ZAddressRemapped11      = z_address_bit(ZAddressRemappedShift, 3);
+const uintptr_t   ZPointerRemapped00      = z_pointer_bit(ZPointerRemappedShift, 0);
+const uintptr_t   ZPointerRemapped01      = z_pointer_bit(ZPointerRemappedShift, 1);
+const uintptr_t   ZPointerRemapped10      = z_pointer_bit(ZPointerRemappedShift, 2);
+const uintptr_t   ZPointerRemapped11      = z_pointer_bit(ZPointerRemappedShift, 3);
 
 // The shift table is tightly coupled with the zpointer layout given above
-constexpr int     ZAddressLoadShiftTable[] = {
-  ZAddressRemappedShift + ZAddressRemappedShift, // [0] NULL
-  ZAddressRemappedShift + 1,                     // [1] Remapped00
-  ZAddressRemappedShift + 2,                     // [2] Remapped01
+constexpr int     ZPointerLoadShiftTable[] = {
+  ZPointerRemappedShift + ZPointerRemappedShift, // [0] NULL
+  ZPointerRemappedShift + 1,                     // [1] Remapped00
+  ZPointerRemappedShift + 2,                     // [2] Remapped01
   0,
-  ZAddressRemappedShift + 3,                     // [4] Remapped10
+  ZPointerRemappedShift + 3,                     // [4] Remapped10
   0,
   0,
   0,
-  ZAddressRemappedShift + 4                      // [8] Remapped11
+  ZPointerRemappedShift + 4                      // [8] Remapped11
 };
 
 // Barrier metadata masks
-const uintptr_t   ZAddressLoadMetadataMask  = ZAddressRemappedMask;
-const uintptr_t   ZAddressMarkMetadataMask  = ZAddressLoadMetadataMask | ZAddressMarkedMask;
-const uintptr_t   ZAddressStoreMetadataMask = ZAddressMarkMetadataMask | ZAddressRememberedMask;
-const uintptr_t   ZAddressAllMetadataMask   = ZAddressStoreMetadataMask;
+const uintptr_t   ZPointerLoadMetadataMask  = ZPointerRemappedMask;
+const uintptr_t   ZPointerMarkMetadataMask  = ZPointerLoadMetadataMask | ZPointerMarkedMask;
+const uintptr_t   ZPointerStoreMetadataMask = ZPointerMarkMetadataMask | ZPointerRememberedMask;
+const uintptr_t   ZPointerAllMetadataMask   = ZPointerStoreMetadataMask;
 
 // The current expected bit
-extern uintptr_t  ZAddressRemapped;
-extern uintptr_t  ZAddressMarkedMajor;
-extern uintptr_t  ZAddressMarkedMinor;
-extern uintptr_t  ZAddressFinalizable;
-extern uintptr_t  ZAddressRemembered;
+extern uintptr_t  ZPointerRemapped;
+extern uintptr_t  ZPointerMarkedMajor;
+extern uintptr_t  ZPointerMarkedMinor;
+extern uintptr_t  ZPointerFinalizable;
+extern uintptr_t  ZPointerRemembered;
 
 // The current expected remap bit for the minor (or major) collection is either of two bits.
 // The other collection alternates the bits, so we need to use a mask.
-extern uintptr_t  ZAddressRemappedMinorMask;
-extern uintptr_t  ZAddressRemappedMajorMask;
+extern uintptr_t  ZPointerRemappedMinorMask;
+extern uintptr_t  ZPointerRemappedMajorMask;
 
 // Good/bad masks
-extern uintptr_t  ZAddressLoadGoodMask;
-extern uintptr_t  ZAddressLoadBadMask;
-extern size_t     ZAddressLoadShift;
+extern uintptr_t  ZPointerLoadGoodMask;
+extern uintptr_t  ZPointerLoadBadMask;
+extern size_t     ZPointerLoadShift;
 
-extern uintptr_t  ZAddressMarkGoodMask;
-extern uintptr_t  ZAddressMarkBadMask;
+extern uintptr_t  ZPointerMarkGoodMask;
+extern uintptr_t  ZPointerMarkBadMask;
 
-extern uintptr_t  ZAddressStoreGoodMask;
-extern uintptr_t  ZAddressStoreBadMask;
+extern uintptr_t  ZPointerStoreGoodMask;
+extern uintptr_t  ZPointerStoreBadMask;
 
-extern uintptr_t  ZAddressVectorLoadBadMask[8];
-extern uintptr_t  ZAddressVectorStoreBadMask[8];
-extern uintptr_t  ZAddressVectorUncolorMask[8];
-extern uintptr_t  ZAddressVectorStoreGoodMask[8];
+extern uintptr_t  ZPointerVectorLoadBadMask[8];
+extern uintptr_t  ZPointerVectorStoreBadMask[8];
+extern uintptr_t  ZPointerVectorUncolorMask[8];
+extern uintptr_t  ZPointerVectorStoreGoodMask[8];
 
 // The bad mask is 64 bit. Its low order 32 bits contain all possible value combinations
 // that this mask will have. Therefore, the memory where the 32 low order bits are stored
 // can be used as a 32 bit GC epoch counter, that has a different bit pattern every time
 // the bad mask is flipped. This provides a pointer to such 32 bits.
-extern uint32_t*  ZAddressStoreGoodMaskLowOrderBitsAddr;
-const int         ZAddressStoreGoodMaskLowOrderBitsOffset = LITTLE_ENDIAN_ONLY(0) BIG_ENDIAN_ONLY(4);
+extern uint32_t*  ZPointerStoreGoodMaskLowOrderBitsAddr;
+const int         ZPointerStoreGoodMaskLowOrderBitsOffset = LITTLE_ENDIAN_ONLY(0) BIG_ENDIAN_ONLY(4);
 
 // Offsets
 // - Virtual address range offsets
