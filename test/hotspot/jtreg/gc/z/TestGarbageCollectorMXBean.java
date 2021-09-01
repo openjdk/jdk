@@ -113,7 +113,7 @@ public class TestGarbageCollectorMXBean {
                     log("ERROR: MemoryUsageBeforeGC.max");
                     errors.incrementAndGet();
                 }
-            } else if (name.equals("ZGC Minor Pauses") || name.equals("ZGC Minor Pauses")) {
+            } else if (name.equals("ZGC Major Pauses") || name.equals("ZGC Minor Pauses")) {
                 pauses.incrementAndGet();
 
                 if (!action.equals("end of GC pause")) {
