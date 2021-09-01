@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package ir_transformations;
+package compiler.c2.irTests.loopOpts;
 
 import compiler.lib.ir_framework.*;
 
@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @summary Test that Ideal transformations of CountedLoopNode* are being performed as expected.
  * @library /test/lib /
- * @run driver ir_transformations.LoopIdealizationTests
+ * @run driver compiler.c2.irTests.loopOpts.LoopIdealizationTests
  */
 public class LoopIdealizationTests {
     public static void main(String[] args) {

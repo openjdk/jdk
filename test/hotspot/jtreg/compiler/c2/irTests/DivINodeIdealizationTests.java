@@ -20,15 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package ir_transformations;
+package compiler.c2.irTests;
 
+import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 
 /*
  * @test
  * @summary Test that Ideal transformations of DivINode* are being performed as expected.
  * @library /test/lib /
- * @run driver ir_transformations.DivINodeIdealizationTests
+ * @run driver compiler.c2.irTests.DivINodeIdealizationTests
  */
 public class DivINodeIdealizationTests {
     public static void main(String[] args) {
@@ -55,7 +56,7 @@ public class DivINodeIdealizationTests {
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     // Checks x / (c / c) => x
-    public int identity1(int x) {
+    public int identityAgain(int x) {
         return x / (13 / 13);
     }
 
@@ -63,7 +64,7 @@ public class DivINodeIdealizationTests {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     // Checks x / (y / y) => x
-    public int identity2(int x, int y) {
+    public int identityThird(int x, int y) {
         return x / (y / y);
     }
 
@@ -88,7 +89,6 @@ public class DivINodeIdealizationTests {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     @IR(counts = {IRNode.AND, "1",
                   IRNode.RSHIFT, "1",
@@ -99,8 +99,19 @@ public class DivINodeIdealizationTests {
         return (x & -4) / 2;
     }
 
+    @Run(test = "divByPow2And")
+    public void runDivByPow2And() {
+        int x = RunInfo.getRandom().nextInt();
+        Asserts.assertEQ(((x & -4) / 2), divByPow2And(x));
+
+        x = Integer.MIN_VALUE;
+        Asserts.assertEQ(((x & -4) / 2), divByPow2And(x));
+
+        x = Integer.MAX_VALUE;
+        Asserts.assertEQ(((x & -4) / 2), divByPow2And(x));
+    }
+
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB, IRNode.AND})
     @IR(counts = {IRNode.RSHIFT, "1"})
     // Checks (x & -(2^c0)) / 2^c0 => x >> c0
@@ -109,8 +120,19 @@ public class DivINodeIdealizationTests {
         return (x & -2) / 2;
     }
 
+    @Run(test = "divByPow2And1")
+    public void runDivByPow2And1() {
+        int x = RunInfo.getRandom().nextInt();
+        Asserts.assertEQ(((x & -2) / 2), divByPow2And1(x));
+
+        x = Integer.MIN_VALUE;
+        Asserts.assertEQ(((x & -2) / 2), divByPow2And1(x));
+
+        x = Integer.MAX_VALUE;
+        Asserts.assertEQ(((x & -2) / 2), divByPow2And1(x));
+    }
+
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.URSHIFT, "1",
                   IRNode.RSHIFT, "2",
@@ -123,8 +145,19 @@ public class DivINodeIdealizationTests {
         return x / 8;
     }
 
+    @Run(test = "divByPow2")
+    public void runDivByPow2() {
+        int x = RunInfo.getRandom().nextInt();
+        Asserts.assertEQ((x / 8), divByPow2(x));
+
+        x = Integer.MIN_VALUE;
+        Asserts.assertEQ((x / 8), divByPow2(x));
+
+        x = Integer.MAX_VALUE;
+        Asserts.assertEQ((x / 8), divByPow2(x));
+    }
+
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV})
     @IR(counts = {IRNode.URSHIFT, "1",
                   IRNode.RSHIFT, "2",
@@ -139,8 +172,19 @@ public class DivINodeIdealizationTests {
         return x / -8;
     }
 
+    @Run(test = "divByNegPow2")
+    public void runDivByNegPow2() {
+        int x = RunInfo.getRandom().nextInt();
+        Asserts.assertEQ((x / -8), divByNegPow2(x));
+
+        x = Integer.MIN_VALUE;
+        Asserts.assertEQ((x / -8), divByNegPow2(x));
+
+        x = Integer.MAX_VALUE;
+        Asserts.assertEQ((x / -8), divByNegPow2(x));
+    }
+
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.URSHIFT})
     @IR(counts = {IRNode.SUB, "1",
                   IRNode.MUL, "1",
@@ -153,5 +197,17 @@ public class DivINodeIdealizationTests {
     // "shift constant"
     public int magicDiv(int x) {
         return x / 13;
+    }
+
+    @Run(test = "magicDiv")
+    public void runMagicDiv() {
+        int x = RunInfo.getRandom().nextInt();
+        Asserts.assertEQ((x / 13), magicDiv(x));
+
+        x = Integer.MIN_VALUE;
+        Asserts.assertEQ((x / 13), magicDiv(x));
+
+        x = Integer.MAX_VALUE;
+        Asserts.assertEQ((x / 13), magicDiv(x));
     }
 }

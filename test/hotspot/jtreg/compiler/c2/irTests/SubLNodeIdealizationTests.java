@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package ir_transformations;
+package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
 
@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @summary Test that Ideal transformations of SubLNode* are being performed as expected.
  * @library /test/lib /
- * @run driver ir_transformations.SubLNodeIdealizationTests
+ * @run driver compiler.c2.irTests.SubLNodeIdealizationTests
  */
 public class SubLNodeIdealizationTests {
     public static void main(String[] args) {
@@ -40,7 +40,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.ADD, "1"})
     // Checks (x - c0) => x + (-c0)
-    public long simpleOne(long x) {
+    public long test1(long x) {
         return (x - 1);
     }
 
@@ -51,7 +51,7 @@ public class SubLNodeIdealizationTests {
                   IRNode.SUB, "1"
                  })
     // Checks (x + c0) - y => (x - y) + c0
-    public long simpleTwo(long x, long y) {
+    public long test2(long x, long y) {
         return (x + 1) - y;
     }
 
@@ -62,7 +62,7 @@ public class SubLNodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks x - (y + c0) => (x - y) + (-c0)
-    public long simpleThree(long x, long y) {
+    public long test3(long x, long y) {
         return x - (y + 2021);
     }
 
@@ -71,7 +71,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks x - (x + y) => 0 - y
-    public long simpleFour(long x, long y) {
+    public long test4(long x, long y) {
         return x - (x + y);
     }
 
@@ -80,7 +80,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks x - (y + x) => 0 - y
-    public long simpleSix(long x, long y) {
+    public long test5(long x, long y) {
         return x - (y + x);
     }
 
@@ -89,7 +89,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks 0 - (x - y) => y - x
-    public long simpleSeven(long x, long y) {
+    public long test6(long x, long y) {
         return 0 - (x - y);
     }
 
@@ -98,7 +98,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks 0 - (x + 2021) => -2021 - x
-    public long simpleEight(long x, long y) {
+    public long test7(long x, long y) {
         return 0 - (x + 2021);
     }
 
@@ -107,7 +107,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (x + a) - (x + b) => a - b;
-    public long simpleNine(long x, long a, long b) {
+    public long test8(long x, long a, long b) {
         return (x + a) - (x + b);
     }
 
@@ -116,7 +116,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (a + x) - (b + x) => a - b
-    public long simpleTen(long x, long a, long b) {
+    public long test9(long x, long a, long b) {
         return (a + x) - (b + x);
     }
 
@@ -125,7 +125,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (a + x) - (x + b) => a - b
-    public long simpleEleven(long x, long a, long b) {
+    public long test10(long x, long a, long b) {
         return (a + x) - (x + b);
     }
 
@@ -134,7 +134,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (x + a) - (b + x) => a - b
-    public long simpleTwelve(long x, long a, long b) {
+    public long test11(long x, long a, long b) {
         return (x + a) - (b + x);
     }
 
@@ -145,7 +145,7 @@ public class SubLNodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks a - (b - c) => (a + c) - b
-    public long simpleThirteen(long a, long b, long c) {
+    public long test12(long a, long b, long c) {
         return a - (b - c);
     }
 
@@ -153,7 +153,7 @@ public class SubLNodeIdealizationTests {
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.ADD})
     // Checks 0 - (a >> 63) => a >>> 63
-    public long simpleFourteen(long a) {
+    public long test13(long a) {
         return 0 - (a >> 63);
     }
 
@@ -161,7 +161,39 @@ public class SubLNodeIdealizationTests {
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.ADD})
     // Checks 0 - (0 - x) => x
-    public long simpleFifteen(long x) {
+    public long test14(long x) {
         return 0 - (0 - x);
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.ADD})
+    // Checks "a*b-a*c => a*(b-c)
+    public long test15(long a, long b, long c) {
+        return a*b - a*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.ADD})
+    // Checks a*b-b*c => b*(a-c)
+    public long test16(long a, long b, long c) {
+        return a*b - b*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.ADD})
+    // Checks a*c-b*c => (a-b)*c
+    public long test17(long a, long b, long c) {
+        return a*c - b*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.ADD})
+    // Checks a*b-c*a => a*(b-c)
+    public long test18(long a, long b, long c) {
+        return a*b - c*a;
     }
 }

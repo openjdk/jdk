@@ -20,15 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package ir_transformations;
+package compiler.c2.irTests;
 
+import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 
 /*
  * @test
  * @summary Test that Ideal transformations of DivLNode* are being performed as expected.
  * @library /test/lib /
- * @run driver ir_transformations.DivLNodeIdealizationTests
+ * @run driver compiler.c2.irTests.DivLNodeIdealizationTests
  */
 public class DivLNodeIdealizationTests {
     public static void main(String[] args) {
@@ -55,7 +56,7 @@ public class DivLNodeIdealizationTests {
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     // Checks x / (c / c) => x
-    public long identity1(long x) {
+    public long identityAgain(long x) {
         return x / (13L / 13L);
     }
 
@@ -63,7 +64,7 @@ public class DivLNodeIdealizationTests {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     // Checks x / (y / y) => x
-    public long identity2(long x, long y) {
+    public long identityThird(long x, long y) {
         return x / (y / y);
     }
 
@@ -88,7 +89,6 @@ public class DivLNodeIdealizationTests {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     @IR(counts = {IRNode.AND, "1",
                   IRNode.RSHIFT, "1",
@@ -100,8 +100,19 @@ public class DivLNodeIdealizationTests {
         return (x & -4L) / 2L;
     }
 
+    @Run(test = "divByPow2And")
+    public void runDivByPow2And() {
+        long x = RunInfo.getRandom().nextLong();
+        Asserts.assertEQ(((x & -4L) / 2L), divByPow2And(x));
+
+        x = Long.MIN_VALUE;
+        Asserts.assertEQ(((x & -4L) / 2L), divByPow2And(x));
+
+        x = Long.MAX_VALUE;
+        Asserts.assertEQ(((x & -4L) / 2L), divByPow2And(x));
+    }
+
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB, IRNode.AND})
     @IR(counts = {IRNode.RSHIFT, "1"})
     // Checks (x & -(2^c0)) / 2^c0 => x >> c0
@@ -111,8 +122,19 @@ public class DivLNodeIdealizationTests {
         return (x & -2L) / 2L;
     }
 
+    @Run(test = "divByPow2And1")
+    public void runDivByPow2And1() {
+        long x = RunInfo.getRandom().nextLong();
+        Asserts.assertEQ(((x & -2L) / 2L), divByPow2And1(x));
+
+        x = Long.MIN_VALUE;
+        Asserts.assertEQ(((x & -2L) / 2L), divByPow2And1(x));
+
+        x = Long.MAX_VALUE;
+        Asserts.assertEQ(((x & -2L) / 2L), divByPow2And1(x));
+    }
+
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.URSHIFT, "1",
                   IRNode.RSHIFT, "2",
@@ -127,8 +149,19 @@ public class DivLNodeIdealizationTests {
         return x / 8L;
     }
 
+    @Run(test = "divByPow2")
+    public void runDivByPow2() {
+        long x = RunInfo.getRandom().nextLong();
+        Asserts.assertEQ((x / 8L), divByPow2(x));
+
+        x = Long.MIN_VALUE;
+        Asserts.assertEQ((x / 8L), divByPow2(x));
+
+        x = Long.MAX_VALUE;
+        Asserts.assertEQ((x / 8L), divByPow2(x));
+    }
+
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV})
     @IR(counts = {IRNode.URSHIFT, "1",
                   IRNode.RSHIFT, "2",
@@ -141,5 +174,17 @@ public class DivLNodeIdealizationTests {
     // to account for the negative.
     public long divByNegPow2(long x) {
         return x / -8L;
+    }
+
+    @Run(test = "divByNegPow2")
+    public void runDivByNegPow2() {
+        long x = RunInfo.getRandom().nextLong();
+        Asserts.assertEQ((x / -8L), divByNegPow2(x));
+
+        x = Long.MIN_VALUE;
+        Asserts.assertEQ((x / -8L), divByNegPow2(x));
+
+        x = Long.MAX_VALUE;
+        Asserts.assertEQ((x / -8L), divByNegPow2(x));
     }
 }

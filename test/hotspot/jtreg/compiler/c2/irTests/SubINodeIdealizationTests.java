@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package ir_transformations;
+package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
 
@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @summary Test that Ideal transformations of SubINode* are being performed as expected.
  * @library /test/lib /
- * @run driver ir_transformations.SubINodeIdealizationTests
+ * @run driver compiler.c2.irTests.SubINodeIdealizationTests
  */
 public class SubINodeIdealizationTests {
     public static void main(String[] args) {
@@ -40,7 +40,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.ADD, "1"})
     // Checks (x - c0) => x + (-c0)
-    public int simpleOne(int x) {
+    public int test1(int x) {
         return (x - 1);
     }
 
@@ -51,7 +51,7 @@ public class SubINodeIdealizationTests {
                   IRNode.SUB, "1"
                  })
     // Checks (x + c0) - y => (x - y) + c0
-    public int simpleTwo(int x, int y) {
+    public int test2(int x, int y) {
         return (x + 1) - y;
     }
 
@@ -62,7 +62,7 @@ public class SubINodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks x - (y + c0) => (x - y) + (-c0)
-    public int simpleThree(int x, int y) {
+    public int test3(int x, int y) {
         return x - (y + 2021);
     }
 
@@ -71,7 +71,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks x - (x + y) => -y
-    public int simpleFour(int x, int y) {
+    public int test4(int x, int y) {
         return x - (x + y);
     }
 
@@ -80,7 +80,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (x - y) - x => -y
-    public int simpleFive(int x, int y) {
+    public int test5(int x, int y) {
         return (x - y) - x;
     }
 
@@ -89,7 +89,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks x - (y + x) => -y
-    public int simpleSix(int x, int y) {
+    public int test6(int x, int y) {
         return x - (y + x);
     }
 
@@ -98,7 +98,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks 0 - (x - y) => y - x
-    public int simpleSeven(int x, int y) {
+    public int test7(int x, int y) {
         return 0 - (x - y);
     }
 
@@ -107,7 +107,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks 0 - (x + 2021) => -2021 - x
-    public int simpleEight(int x, int y) {
+    public int test8(int x, int y) {
         return 0 - (x + 2021);
     }
 
@@ -116,7 +116,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (x + a) - (x + b) => a - b;
-    public int simpleNine(int x, int a, int b) {
+    public int test9(int x, int a, int b) {
         return (x + a) - (x + b);
     }
 
@@ -125,7 +125,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (a + x) - (b + x) => a - b
-    public int simpleTen(int x, int a, int b) {
+    public int test10(int x, int a, int b) {
         return (a + x) - (b + x);
     }
 
@@ -134,7 +134,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (a + x) - (x + b) => a - b
-    public int simpleEleven(int x, int a, int b) {
+    public int test11(int x, int a, int b) {
         return (a + x) - (x + b);
     }
 
@@ -143,7 +143,7 @@ public class SubINodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (x + a) - (b + x) => a - b
-    public int simpleTwelve(int x, int a, int b) {
+    public int test12(int x, int a, int b) {
         return (x + a) - (b + x);
     }
 
@@ -154,7 +154,7 @@ public class SubINodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks a - (b - c) => (a + c) - b
-    public int simpleThirteen(int a, int b, int c) {
+    public int test13(int a, int b, int c) {
         return a - (b - c);
     }
 
@@ -162,7 +162,7 @@ public class SubINodeIdealizationTests {
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.ADD})
     // Checks 0 - (a >> 31) => a >> 31
-    public int simpleFourteen(int a) {
+    public int test14(int a) {
         return 0 - (a >> 31);
     }
 
@@ -170,7 +170,7 @@ public class SubINodeIdealizationTests {
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.ADD})
     // Checks 0 - (0 - x) => x
-    public int simpleFifteen(int x) {
+    public int test15(int x) {
         return 0 - (0 - x);
     }
 
@@ -178,7 +178,7 @@ public class SubINodeIdealizationTests {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.ADD})
     // Checks (x + y) - y => y
-    public int simpleSixteen(int x, int y) {
+    public int test16(int x, int y) {
         return (x + y) - y;
     }
 
@@ -186,7 +186,39 @@ public class SubINodeIdealizationTests {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.ADD})
     // Checks (x + y) - x => y
-    public int simpleSeventeen(int x, int y) {
+    public int test17(int x, int y) {
         return (x + y) - x;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.ADD})
+    // Checks "a*b-a*c => a*(b-c)
+    public int test18(int a, int b, int c) {
+        return a*b - a*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.ADD})
+    // Checks a*b-b*c => b*(a-c)
+    public int test19(int a, int b, int c) {
+        return a*b - b*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.ADD})
+    // Checks a*c-b*c => (a-b)*c
+    public int test20(int a, int b, int c) {
+        return a*c - b*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.ADD})
+    // Checks a*b-c*a => a*(b-c)
+    public int test21(int a, int b, int c) {
+        return a*b - c*a;
     }
 }

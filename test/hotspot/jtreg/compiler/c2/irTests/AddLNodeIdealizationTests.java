@@ -20,15 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package ir_transformations;
+package compiler.c2.irTests;
 
+import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 
 /*
  * @test
  * @summary Test that Ideal transformations of AddLNode* are being performed as expected.
  * @library /test/lib /
- * @run driver ir_transformations.AddLNodeIdealizationTests
+ * @run driver compiler.c2.irTests.AddLNodeIdealizationTests
  */
 public class AddLNodeIdealizationTests {
     public static void main(String[] args) {
@@ -36,20 +37,42 @@ public class AddLNodeIdealizationTests {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.ADD, "2"})
-    // Checks
-    public long simpleZero(long x) {
+    // Checks (x + x) + (x + x) => a=(x + x); r=a+a
+    public long additions(long x) {
         return (x + x) + (x + x);
     }
 
+    @Run(test = "additions")
+    public void runAdditions() {
+        long x = RunInfo.getRandom().nextLong();
+        Asserts.assertEQ(((x+x) + (x+x)), additions(x));
+
+        x = Long.MIN_VALUE;
+        Asserts.assertEQ(((x+x) + (x+x)), additions(x));
+
+        x = Long.MAX_VALUE;
+        Asserts.assertEQ(((x+x) + (x+x)), additions(x));
+    }
+
     @Test
-    @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB, IRNode.SUB})
     // Checks (x - x) => 0 and 0 - 0 => 0
-    public long simpleZeroSub(long x) {
+    public long xMinusX(long x) {
         return (x - x) + (x - x);
+    }
+
+    @Run(test = "xMinusX")
+    public void runXMinusX() {
+        long x = RunInfo.getRandom().nextLong();
+        Asserts.assertEQ(0L, xMinusX(x));
+
+        x = Long.MIN_VALUE;
+        Asserts.assertEQ(0L, xMinusX(x));
+
+        x = Long.MAX_VALUE;
+        Asserts.assertEQ(0L, xMinusX(x));
     }
 
     @Test
@@ -57,7 +80,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.ADD, "1"})
     // Checks (x + c1) + c2 => x + c3 where c3 = c1 + c2
-    public long simpleOne(long x) {
+    public long test1(long x) {
         return (x + 1) + 2;
     }
 
@@ -66,7 +89,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.ADD, "2"})
     // Checks (x + c1) + y => (x + y) + c1
-    public long simpleTwo(long x, long y) {
+    public long test2(long x, long y) {
         return (x + 2021) + y;
     }
 
@@ -75,7 +98,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.ADD, "2"})
     // Checks x + (y + c1) => (x + y) + c1
-    public long simpleThree(long x, long y) {
+    public long test3(long x, long y) {
         return x + (y + 2021);
     }
 
@@ -84,7 +107,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (c1 - x) + c2 => c3 - x where c3 = c1 + c2
-    public long simpleFour(long x) {
+    public long test4(long x) {
         return (1 - x) + 2;
     }
 
@@ -95,7 +118,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.ADD, "2",
                  })
     // Checks (a - b) + (c - d) => (a + c) - (b + d)
-    public long simpleFive(long a, long b, long c, long d) {
+    public long test5(long a, long b, long c, long d) {
         return (a - b) + (c - d);
     }
 
@@ -104,7 +127,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.ADD, "1"})
     // Checks (a - b) + (b + c) => (a + c)
-    public long simpleSix(long a, long b, long c) {
+    public long test6(long a, long b, long c) {
         return (a - b) + (b + c);
     }
 
@@ -113,7 +136,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.SUB})
     @IR(counts = {IRNode.ADD, "1"})
     // Checks (a - b) + (c + b) => (a + c)
-    public long simpleSeven(long a, long b, long c) {
+    public long test7(long a, long b, long c) {
         return (a - b) + (c + b);
     }
 
@@ -122,7 +145,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (a - b) + (c - a) => (c - b)
-    public long simpleNine(long a, long b, long c) {
+    public long test8(long a, long b, long c) {
         return (a - b) + (c - a);
     }
 
@@ -131,7 +154,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks x + (0 - y) => (x - y)
-    public long simpleTen(long x, long y) {
+    public long test9(long x, long y) {
         return x + (0 - y);
     }
 
@@ -140,7 +163,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (0 - y) + x => (x - y)
-    public long simpleEleven(long x, long y) {
+    public long test10(long x, long y) {
         return (0 - y) + x;
     }
 
@@ -148,7 +171,7 @@ public class AddLNodeIdealizationTests {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     // Checks (x - y) + y => x
-    public long simpleTwelve(long x, long y) {
+    public long test11(long x, long y) {
         return (x - y) + y;
     }
 
@@ -156,7 +179,7 @@ public class AddLNodeIdealizationTests {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     // Checks y + (x - y) => x
-    public long simpleThirteen(long x, long y) {
+    public long test12(long x, long y) {
         return y + (x - y);
     }
 
@@ -164,7 +187,7 @@ public class AddLNodeIdealizationTests {
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     // Checks x + 0 => x
-    public long simpleFourteen(long x) {
+    public long test13(long x) {
         return x + 0;
     }
 
@@ -172,7 +195,43 @@ public class AddLNodeIdealizationTests {
     @Arguments(Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.SUB})
     // Checks 0 + x => x
-    public long simpleFifteen(long x) {
+    public long test14(long x) {
         return 0 + x;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.SUB})
+    @IR(counts = {IRNode.MUL, "1", IRNode.ADD, "1"})
+    // Checks "a*b + a*c => a*(b+c)
+    public long test15(long a, long b, long c) {
+        return a*b + a*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.SUB})
+    @IR(counts = {IRNode.MUL, "1", IRNode.ADD, "1"})
+    // Checks a*b + b*c => b*(a+c)
+    public long test16(long a, long b, long c) {
+        return a*b + b*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.SUB})
+    @IR(counts = {IRNode.MUL, "1", IRNode.ADD, "1"})
+    // Checks a*c + b*c => (a+b)*c
+    public long test17(long a, long b, long c) {
+        return a*c + b*c;
+    }
+
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.DIV, IRNode.SUB})
+    @IR(counts = {IRNode.MUL, "1", IRNode.ADD, "1"})
+    // Checks a*b + c*a => a*(b+c)
+    public long test18(long a, long b, long c) {
+        return a*b + c*a;
     }
 }

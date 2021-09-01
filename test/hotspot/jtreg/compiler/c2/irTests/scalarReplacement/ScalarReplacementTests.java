@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package ir_transformations;
+package compiler.c2.irTests.scalarReplacement;
 
 import compiler.lib.ir_framework.*;
 
@@ -28,9 +28,9 @@ import compiler.lib.ir_framework.*;
  * @test
  * @summary Tests that Escape Analisys and Scalar Replacement is able to handle some simple cases.
  * @library /test/lib /
- * @run driver ir_transformations.EscapeAnalysisAndScalarReplacement
+ * @run driver compiler.c2.irTests.scalarReplacement.ScalarReplacementTests
  */
-public class EscapeAnalysisAndScalarReplacement {
+public class ScalarReplacementTests {
     private class Person {
         private String name;
         private int age;
@@ -47,15 +47,11 @@ public class EscapeAnalysisAndScalarReplacement {
 
         public String getName() { return name; }
         public int getAge() { return age; }
-        public String toString() { return "Name: " + name + " \t Age: " + age; }
     }
 
     public static void main(String[] args) {
         TestFramework.run();
     }
-
-    @DontInline
-    private void blackhole(Person p) { }
 
     @Test
     @Arguments(Argument.RANDOM_EACH)
@@ -98,20 +94,6 @@ public class EscapeAnalysisAndScalarReplacement {
         Person p = new Person(
                         new Person("Java", age1).getName(),
                         new Person("Java", age2).getAge());
-        return p.getAge();
-    }
-
-    @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(failOn = {IRNode.LOAD, IRNode.STORE, IRNode.FIELD_ACCESS})
-    @IR(counts = {IRNode.TRAP, "1"})
-    public int infrequentEscape(int age1, int age2) {
-        Person p = new Person("Java", age1);
-
-        if (age1 == age2) {
-            this.blackhole(p);
-        }
-
         return p.getAge();
     }
 }
