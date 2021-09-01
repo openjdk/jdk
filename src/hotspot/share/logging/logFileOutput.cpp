@@ -92,11 +92,6 @@ static size_t parse_value(const char* value_str) {
   return value;
 }
 
-static bool file_exists(const char* filename) {
-  struct stat dummy_stat;
-  return os::stat(filename, &dummy_stat) == 0;
-}
-
 static uint number_of_digits(uint number) {
   return number < 10 ? 1 : (number < 100 ? 2 : 3);
 }
@@ -139,7 +134,7 @@ static uint next_file_number(const char* filename,
     assert(ret > 0 && static_cast<size_t>(ret) == len - 1,
            "incorrect buffer length calculation");
 
-    if (file_exists(archive_name) && !is_regular_file(archive_name)) {
+    if (os::file_exists(archive_name) && !is_regular_file(archive_name)) {
       // We've encountered something that's not a regular file among the
       // possible file rotation targets. Fail immediately to prevent
       // problems later.
@@ -150,7 +145,7 @@ static uint next_file_number(const char* filename,
     }
 
     // Stop looking if we find an unused file name
-    if (!file_exists(archive_name)) {
+    if (!os::file_exists(archive_name)) {
       next_num = i;
       found = true;
       break;
@@ -195,7 +190,17 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
     char* value_str = equals_pos + 1;
     *equals_pos = '\0';
 
-    if (strcmp(FileCountOptionKey, key) == 0) {
+    if (strcmp(FoldMultilinesOptionKey, key) == 0) {
+      if (strcmp(value_str, "true") == 0) {
+        _fold_multilines = true;
+      } else if (strcmp(value_str, "false") == 0) {
+        _fold_multilines = false;
+      } else {
+        errstream->print_cr("Invalid option '%s' for %s.", value_str, FoldMultilinesOptionKey);
+        success = false;
+        break;
+      }
+    } else if (strcmp(FileCountOptionKey, key) == 0) {
       size_t value = parse_value(value_str);
       if (value > MaxRotationFileCount) {
         errstream->print_cr("Invalid option: %s must be in range [0, %u]",
@@ -233,7 +238,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
     return false;
   }
 
-  bool file_exist = file_exists(_file_name);
+  bool file_exist = os::file_exists(_file_name);
   if (file_exist && _is_default_file_count && is_fifo_file(_file_name)) {
     _file_count = 0; // Prevent file rotation for fifo's such as named pipes.
   }
