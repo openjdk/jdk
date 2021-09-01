@@ -36,9 +36,9 @@ class ElapsedCounterSource {
   static uint64_t frequency();
   static Type now();
   static double seconds(Type value);
-  static uint64_t milliseconds(Type value);
-  static uint64_t microseconds(Type value);
-  static uint64_t nanoseconds(Type value);
+  static double milliseconds(Type value);
+  static double microseconds(Type value);
+  static double nanoseconds(Type value);
 };
 
 // Not guaranteed to be synchronized across hardware threads and
@@ -52,9 +52,9 @@ class FastUnorderedElapsedCounterSource {
   static uint64_t frequency();
   static Type now();
   static double seconds(Type value);
-  static uint64_t milliseconds(Type value);
-  static uint64_t microseconds(Type value);
-  static uint64_t nanoseconds(Type value);
+  static double milliseconds(Type value);
+  static double microseconds(Type value);
+  static double nanoseconds(Type value);
 };
 
 template <typename T1, typename T2>
@@ -101,9 +101,9 @@ class CompositeElapsedCounterSource {
   static uint64_t frequency();
   static Type now();
   static double seconds(Type value);
-  static uint64_t milliseconds(Type value);
-  static uint64_t microseconds(Type value);
-  static uint64_t nanoseconds(Type value);
+  static double milliseconds(Type value);
+  static double microseconds(Type value);
+  static double nanoseconds(Type value);
 };
 
 template <typename TimeSource>
@@ -142,13 +142,13 @@ class Representation {
   double seconds() const {
     return TimeSource::seconds(_rep);
   }
-  uint64_t milliseconds() const {
+  double milliseconds() const {
     return TimeSource::milliseconds(_rep);
   }
-  uint64_t microseconds() const {
+  double microseconds() const {
     return TimeSource::microseconds(_rep);
   }
-  uint64_t nanoseconds() const {
+  double nanoseconds() const {
     return TimeSource::nanoseconds(_rep);
   }
 };

@@ -50,16 +50,16 @@ double ElapsedCounterSource::seconds(Type value) {
   return conversion<ElapsedCounterSource, 1>(value);
 }
 
-uint64_t ElapsedCounterSource::milliseconds(Type value) {
-  return (uint64_t)conversion<ElapsedCounterSource, MILLIUNITS>(value);
+double ElapsedCounterSource::milliseconds(Type value) {
+  return conversion<ElapsedCounterSource, MILLIUNITS>(value);
 }
 
-uint64_t ElapsedCounterSource::microseconds(Type value) {
-  return (uint64_t)conversion<ElapsedCounterSource, MICROUNITS>(value);
+double ElapsedCounterSource::microseconds(Type value) {
+  return conversion<ElapsedCounterSource, MICROUNITS>(value);
 }
 
-uint64_t ElapsedCounterSource::nanoseconds(Type value) {
-  return (uint64_t)conversion<ElapsedCounterSource, NANOUNITS>(value);
+double ElapsedCounterSource::nanoseconds(Type value) {
+  return conversion<ElapsedCounterSource, NANOUNITS>(value);
 }
 
 uint64_t FastUnorderedElapsedCounterSource::frequency() {
@@ -88,16 +88,16 @@ double FastUnorderedElapsedCounterSource::seconds(Type value) {
   return conversion<FastUnorderedElapsedCounterSource, 1>(value);
 }
 
-uint64_t FastUnorderedElapsedCounterSource::milliseconds(Type value) {
-  return (uint64_t)conversion<FastUnorderedElapsedCounterSource, MILLIUNITS>(value);
+double FastUnorderedElapsedCounterSource::milliseconds(Type value) {
+  return conversion<FastUnorderedElapsedCounterSource, MILLIUNITS>(value);
 }
 
-uint64_t FastUnorderedElapsedCounterSource::microseconds(Type value) {
-  return (uint64_t)conversion<FastUnorderedElapsedCounterSource, MICROUNITS>(value);
+double FastUnorderedElapsedCounterSource::microseconds(Type value) {
+  return conversion<FastUnorderedElapsedCounterSource, MICROUNITS>(value);
 }
 
-uint64_t FastUnorderedElapsedCounterSource::nanoseconds(Type value) {
-  return (uint64_t)conversion<FastUnorderedElapsedCounterSource, NANOUNITS>(value);
+double FastUnorderedElapsedCounterSource::nanoseconds(Type value) {
+  return conversion<FastUnorderedElapsedCounterSource, NANOUNITS>(value);
 }
 
 uint64_t CompositeElapsedCounterSource::frequency() {
@@ -125,14 +125,14 @@ double CompositeElapsedCounterSource::seconds(Type value) {
   return conversion<ElapsedCounterSource, 1>(value.val1);
 }
 
-uint64_t CompositeElapsedCounterSource::milliseconds(Type value) {
-  return (uint64_t)conversion<ElapsedCounterSource, MILLIUNITS>(value.val1);
+double CompositeElapsedCounterSource::milliseconds(Type value) {
+  return conversion<ElapsedCounterSource, MILLIUNITS>(value.val1);
 }
 
-uint64_t CompositeElapsedCounterSource::microseconds(Type value) {
-  return (uint64_t)conversion<ElapsedCounterSource, MICROUNITS>(value.val1);
+double CompositeElapsedCounterSource::microseconds(Type value) {
+  return conversion<ElapsedCounterSource, MICROUNITS>(value.val1);
 }
 
-uint64_t CompositeElapsedCounterSource::nanoseconds(Type value) {
-  return (uint64_t)conversion<ElapsedCounterSource, NANOUNITS>(value.val1);
+double CompositeElapsedCounterSource::nanoseconds(Type value) {
+  return conversion<ElapsedCounterSource, NANOUNITS>(value.val1);
 }
