@@ -381,8 +381,12 @@ class DirectMethodHandle extends MethodHandle {
     }
     private static boolean checkInitialized(MemberName member) {
         Class<?> defc = member.getDeclaringClass();
-        UNSAFE.ensureClassInitialized(defc); // initialization barrier; blocks unless called by the initializing thread
-        return !UNSAFE.shouldBeInitialized(defc); // keep the barrier if the initialization is still in progress
+        UNSAFE.ensureClassInitialized(defc);
+        // Once we get here either defc was fully initialized by another thread, or
+        // defc was already being initialized by the current thread. In the latter case
+        // the barrier must remain. We can detect this simply by checking if initialization
+        // is still needed.
+        return !UNSAFE.shouldBeInitialized(defc);
     }
 
     /*non-public*/
