@@ -30,9 +30,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @compile shared/AbstractGenerator.java shared/AccessCheck.java shared/AccessType.java
- *          shared/Caller.java shared/ExecutorGenerator.java shared/Utils.java
- *          shared/ByteArrayClassLoader.java shared/Checker.java shared/GenericClassGenerator.java
  * @compile invokespecial/Checker.java invokespecial/ClassGenerator.java invokespecial/Generator.java
  *
  * @run driver/timeout=1800 invocationC1Tests special
@@ -46,9 +43,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @compile shared/AbstractGenerator.java shared/AccessCheck.java shared/AccessType.java
- *          shared/Caller.java shared/ExecutorGenerator.java shared/Utils.java
- *          shared/ByteArrayClassLoader.java shared/Checker.java shared/GenericClassGenerator.java
  * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
  *
  * @run driver/timeout=1800 invocationC1Tests virtual
@@ -62,9 +56,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @compile shared/AbstractGenerator.java shared/AccessCheck.java shared/AccessType.java
- *          shared/Caller.java shared/ExecutorGenerator.java shared/Utils.java
- *          shared/ByteArrayClassLoader.java shared/Checker.java shared/GenericClassGenerator.java
  * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java invokeinterface/Generator.java
  *
  * @run driver/timeout=1800 invocationC1Tests interface
