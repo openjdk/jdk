@@ -136,7 +136,6 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
 };
 
 class G1CollectedHeap : public CollectedHeap {
-  friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1TryInitiateConcMark;
@@ -1094,6 +1093,8 @@ public:
   // Perform a collection of the heap with the given cause.
   // Returns whether this collection actually executed.
   bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
+
+  void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;
