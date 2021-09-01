@@ -21,13 +21,12 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
-#define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+#ifndef CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP
+#define CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
-const size_t ZPlatformGranuleSizeShift = 21; // 2MB
-const size_t ZPlatformHeapViews        = 3;
-const size_t ZPlatformCacheLineSize    = 64;
+size_t ZPlatformAddressOffsetBits();
+size_t ZPlatformAddressHeapBaseShift();
 
-#endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+#endif // CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP

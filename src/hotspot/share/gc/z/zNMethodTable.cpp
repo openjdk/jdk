@@ -27,7 +27,6 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/z/zGlobals.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethodData.hpp"

@@ -62,7 +62,7 @@ inline bool ZPageTableIterator::next(ZPage** page) {
 
 inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table) :
     _table(table),
-    _index_distributor(int(ZAddressOffsetMaxSize >> ZGranuleSizeShift)) {}
+    _index_distributor(int(ZAddressOffsetMax >> ZGranuleSizeShift)) {}
 
 template <typename Function>
 inline void ZPageTableParallelIterator::do_pages(Function function) {

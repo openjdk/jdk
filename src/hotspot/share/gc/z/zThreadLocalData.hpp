@@ -24,9 +24,9 @@
 #ifndef SHARE_GC_Z_ZTHREADLOCALDATA_HPP
 #define SHARE_GC_Z_ZTHREADLOCALDATA_HPP
 
-#include "gc/z/zMarkStack.hpp"
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zCollectorId.hpp"
-#include "gc/z/zGlobals.hpp"
+#include "gc/z/zMarkStack.hpp"
 #include "gc/z/zStoreBarrierBuffer.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"

@@ -34,7 +34,7 @@
 #include "utilities/debug.hpp"
 
 inline ZForwardingTable::ZForwardingTable() :
-    _map(ZAddressOffsetMaxSize) {}
+    _map(ZAddressOffsetMax) {}
 
 inline ZForwarding* ZForwardingTable::at(size_t index) const {
   return _map.at(index);
@@ -63,7 +63,7 @@ inline void ZForwardingTable::remove(ZForwarding* forwarding) {
 
 inline ZForwardingTableParallelIterator::ZForwardingTableParallelIterator(const ZForwardingTable* table) :
     _table(table),
-    _index_distributor(int(ZAddressOffsetMaxSize >> ZGranuleSizeShift)) {}
+    _index_distributor(int(ZAddressOffsetMax >> ZGranuleSizeShift)) {}
 
 template <typename Function>
 inline void ZForwardingTableParallelIterator::do_forwardings(Function function) {

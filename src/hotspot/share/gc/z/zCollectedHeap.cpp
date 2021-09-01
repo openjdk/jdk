@@ -347,9 +347,9 @@ void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr(" Minor Phase/SeqNum: %s/%u", ZHeap::heap()->minor_collector()->phase_to_string(), ZHeap::heap()->minor_collector()->seqnum());
   st->print_cr(" Major Phase/SeqNum: %s/%u", ZHeap::heap()->major_collector()->phase_to_string(), ZHeap::heap()->major_collector()->seqnum());
   st->print_cr(" Offset Max:         " SIZE_FORMAT "%s (" PTR_FORMAT ")",
-               byte_size_in_exact_unit(ZAddressOffsetMaxSize),
-               exact_unit_for_byte_size(ZAddressOffsetMaxSize),
-               ZAddressOffsetMaxSize);
+               byte_size_in_exact_unit(ZAddressOffsetMax),
+               exact_unit_for_byte_size(ZAddressOffsetMax),
+               ZAddressOffsetMax);
   st->print_cr(" Page Size Small:    " SIZE_FORMAT "M", ZPageSizeSmall / M);
   st->print_cr(" Page Size Medium:   " SIZE_FORMAT "M", ZPageSizeMedium / M);
   st->cr();

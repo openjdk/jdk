@@ -26,7 +26,6 @@
 
 #include "gc/z/zAddress.hpp"
 
-#include "gc/z/zGlobals.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
@@ -63,7 +62,7 @@ inline zoffset operator-(zoffset offset, size_t size) {
 
 inline size_t operator-(zoffset left, zoffset right) {
   size_t diff = untype(left) - untype(right);
-  assert(diff < ZAddressOffsetMaxSize, "Underflow");
+  assert(diff < ZAddressOffsetMax, "Underflow");
   return diff;
 }
 

@@ -24,13 +24,44 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zGlobals.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-size_t    ZAddressOffsetBits;
-uintptr_t ZAddressOffsetMask;
-zoffset   ZAddressOffsetMax;
-size_t    ZAddressOffsetMaxSize;
+size_t     ZAddressHeapBaseShift;
+size_t     ZAddressHeapBase;
+
+size_t     ZAddressOffsetBits;
+uintptr_t  ZAddressOffsetMask;
+size_t     ZAddressOffsetMax;
+
+uintptr_t  ZAddressRemapped;
+uintptr_t  ZAddressRemappedMinorMask;
+uintptr_t  ZAddressRemappedMajorMask;
+uintptr_t  ZAddressMarkedMinor;
+uintptr_t  ZAddressMarkedMajor;
+uintptr_t  ZAddressFinalizable;
+uintptr_t  ZAddressRemembered;
+
+uintptr_t  ZAddressLoadGoodMask;
+uintptr_t  ZAddressLoadBadMask;
+size_t     ZAddressLoadShift;
+
+uintptr_t  ZAddressMarkGoodMask;
+uintptr_t  ZAddressMarkBadMask;
+
+uintptr_t  ZAddressStoreGoodMask;
+uintptr_t  ZAddressStoreBadMask;
+
+uintptr_t  ZAddressVectorLoadBadMask[8];
+uintptr_t  ZAddressVectorStoreBadMask[8];
+uintptr_t  ZAddressVectorUncolorMask[8];
+uintptr_t  ZAddressVectorStoreGoodMask[8];
+
+static uint32_t* ZAddressCalculateStoreGoodMaskLowOrderBitsAddr() {
+  const uintptr_t addr = reinterpret_cast<uintptr_t>(&ZAddressStoreGoodMask);
+  return reinterpret_cast<uint32_t*>(addr + ZAddressStoreGoodMaskLowOrderBitsOffset);
+}
+
+uint32_t*  ZAddressStoreGoodMaskLowOrderBitsAddr = ZAddressCalculateStoreGoodMaskLowOrderBitsAddr();
 
 static void set_vector_mask(uintptr_t vector_mask[], uintptr_t mask) {
   for (int i = 0; i < 8; ++i) {
@@ -63,8 +94,7 @@ void ZGlobalsPointers::set_good_masks() {
 void ZGlobalsPointers::initialize() {
   ZAddressOffsetBits = ZPlatformAddressOffsetBits();
   ZAddressOffsetMask = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
-  ZAddressOffsetMaxSize = (uintptr_t)1 << ZAddressOffsetBits;
-  ZAddressOffsetMax = zoffset(ZAddressOffsetMaxSize);
+  ZAddressOffsetMax = (uintptr_t)1 << ZAddressOffsetBits;
 
   ZAddressHeapBaseShift = ZPlatformAddressHeapBaseShift();
   ZAddressHeapBase = (uintptr_t)1 << ZAddressHeapBaseShift;

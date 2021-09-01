@@ -239,7 +239,7 @@ public:
 ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _visit_weaks(visit_weaks),
     _timer_disable(),
-    _bitmaps(ZAddressOffsetMaxSize),
+    _bitmaps(ZAddressOffsetMax),
     _bitmaps_lock(),
     _queues(nworkers),
     _array_queues(nworkers),

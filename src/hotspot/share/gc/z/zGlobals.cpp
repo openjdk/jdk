@@ -34,36 +34,3 @@ int        ZObjectAlignmentMediumShift;
 
 const int& ZObjectAlignmentSmall       = MinObjAlignmentInBytes;
 int        ZObjectAlignmentMedium;
-
-uintptr_t  ZAddressLoadGoodMask;
-uintptr_t  ZAddressLoadBadMask;
-size_t     ZAddressLoadShift;
-
-uintptr_t  ZAddressMarkGoodMask;
-uintptr_t  ZAddressMarkBadMask;
-
-uintptr_t  ZAddressStoreGoodMask;
-uintptr_t  ZAddressStoreBadMask;
-
-uintptr_t  ZAddressVectorLoadBadMask[8];
-uintptr_t  ZAddressVectorStoreBadMask[8];
-uintptr_t  ZAddressVectorUncolorMask[8];
-uintptr_t  ZAddressVectorStoreGoodMask[8];
-
-static uint32_t* ZAddressCalculateStoreGoodMaskLowOrderBitsAddr() {
-  const uintptr_t addr = reinterpret_cast<uintptr_t>(&ZAddressStoreGoodMask);
-  return reinterpret_cast<uint32_t*>(addr + ZAddressStoreGoodMaskLowOrderBitsOffset);
-}
-
-uint32_t*  ZAddressStoreGoodMaskLowOrderBitsAddr = ZAddressCalculateStoreGoodMaskLowOrderBitsAddr();
-
-size_t     ZAddressHeapBaseShift;
-size_t     ZAddressHeapBase;
-
-uintptr_t  ZAddressRemapped;
-uintptr_t  ZAddressRemappedMinorMask;
-uintptr_t  ZAddressRemappedMajorMask;
-uintptr_t  ZAddressMarkedMinor;
-uintptr_t  ZAddressMarkedMajor;
-uintptr_t  ZAddressFinalizable;
-uintptr_t  ZAddressRemembered;

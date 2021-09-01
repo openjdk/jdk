@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,21 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
-#define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
-
+#include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/z/zAddress.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
-const size_t ZPlatformGranuleSizeShift = 21; // 2MB
-const size_t ZPlatformHeapViews        = 3;
-const size_t ZPlatformCacheLineSize    = 64;
+size_t ZPlatformAddressOffsetBits() {
+  const size_t min_address_offset_bits = 42; // 4TB
+  const size_t max_address_offset_bits = 44; // 16TB
+  const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
+  const size_t address_offset_bits = log2i_exact(address_offset);
+  return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
+}
 
-#endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+size_t ZPlatformAddressHeapBaseShift() {
+  return ZPlatformAddressOffsetBits();
+}
