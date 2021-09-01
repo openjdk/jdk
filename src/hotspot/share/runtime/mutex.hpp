@@ -50,7 +50,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
        tty            = stackwatermark +   3,
        special        = tty            +   3,
        oopstorage     = special        +   3,
-       leaf           = oopstorage     +   2,
+       leaf           = oopstorage     +   4,
        safepoint      = leaf           +  10,
        barrier        = safepoint      +   1,
        nonleaf        = barrier        +   1,

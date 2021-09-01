@@ -383,20 +383,18 @@ void Mutex::check_rank(Thread* thread) {
     }
   }
 
-  bool check_can_be_skipped = SafepointSynchronize::is_at_safepoint();
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);
     // We enforce not holding locks of rank special or lower while waiting.
     // Also "this" should be the monitor with lowest rank owned by this thread.
-    if (least != NULL && (least->rank() <= special ||
-        (least->rank() <= this->rank() && !check_can_be_skipped))) {
+    if (least != NULL && (least->rank() <= special || least->rank() <= this->rank())) {
       assert(false, "Attempting to wait on monitor %s/%d while holding lock %s/%d -- "
              "possible deadlock. %s", name(), rank(), least->name(), least->rank(),
              least->rank() <= this->rank() ? "Should wait on the least ranked monitor from "
              "all owned locks." : "Should not block(wait) while holding a lock of rank special.");
     }
-  } else if (!check_can_be_skipped) {
+  } else {
     // lock()/lock_without_safepoint_check()/try_lock() case
     Mutex* least = get_least_ranked_lock(locks_owned);
     // Deadlock prevention rules require us to acquire Mutexes only in

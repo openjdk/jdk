@@ -211,12 +211,12 @@ void mutex_init() {
   if (UseG1GC) {
     def(G1OldGCCount_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);
 
-    def(G1DetachedRefinementStats_lock, PaddedMutex, leaf    ,   true, _safepoint_check_never);
+    def(G1DetachedRefinementStats_lock, PaddedMutex, special-2,   true, _safepoint_check_never);
 
     def(FreeList_lock              , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(OldSets_lock               , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(Uncommit_lock              , PaddedMutex  , leaf + 1 ,   true,  _safepoint_check_never);
-    def(RootRegionScan_lock        , PaddedMonitor, leaf     ,   true,  _safepoint_check_never);
+    def(RootRegionScan_lock        , PaddedMonitor, special-1,   true,  _safepoint_check_never);
 
     def(MarkStackFreeList_lock     , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(MarkStackChunkList_lock    , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
@@ -267,7 +267,7 @@ void mutex_init() {
   def(PerfDataManager_lock         , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for synchronized access to PerfDataManager resources
 
   def(Threads_lock                 , PaddedMonitor, barrier,     true,  _safepoint_check_always);  // Used for safepoint protocol.
-  def(NonJavaThreadsList_lock      , PaddedMutex,   barrier,     true,  _safepoint_check_never);
+  def(NonJavaThreadsList_lock      , PaddedMutex,   special-1,   true,  _safepoint_check_never);
   def(NonJavaThreadsListSync_lock  , PaddedMutex,   leaf,        true,  _safepoint_check_never);
 
   def(VMOperation_lock             , PaddedMonitor, nonleaf,     true,  _safepoint_check_always);  // VM_thread allowed to block on these
@@ -302,7 +302,7 @@ void mutex_init() {
   def(PeriodicTask_lock            , PaddedMonitor, nonleaf+5,   true,  _safepoint_check_always);
   def(RedefineClasses_lock         , PaddedMonitor, nonleaf+5,   true,  _safepoint_check_always);
   def(Verify_lock                  , PaddedMutex,   nonleaf+5,   true,  _safepoint_check_always);
-  def(Zip_lock                     , PaddedMonitor, leaf,        true,  _safepoint_check_never);
+  def(Zip_lock                     , PaddedMonitor, leaf-2,      true,  _safepoint_check_never);
 
   if (WhiteBoxAPI) {
     def(Compilation_lock           , PaddedMonitor, leaf,        true,  _safepoint_check_never);
