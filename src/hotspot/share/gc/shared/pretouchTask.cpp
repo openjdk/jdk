@@ -29,70 +29,99 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 
-PretouchTask::PretouchTask(const char* task_name,
-                           char* start_address,
-                           char* end_address,
-                           size_t page_size,
-                           size_t chunk_size) :
-    AbstractGangTask(task_name),
-    _cur_addr(start_address),
-    _start_addr(start_address),
-    _end_addr(end_address),
-    _page_size(page_size),
-    _chunk_size(chunk_size) {
-
-  assert(chunk_size >= page_size,
-         "Chunk size " SIZE_FORMAT " is smaller than page size " SIZE_FORMAT,
-         chunk_size, page_size);
-}
-
-size_t PretouchTask::chunk_size() {
-  return PreTouchParallelChunkSize;
-}
-
-void PretouchTask::work(uint worker_id) {
-  while (true) {
-    char* touch_addr = Atomic::fetch_and_add(&_cur_addr, _chunk_size);
-    if (touch_addr < _start_addr || touch_addr >= _end_addr) {
-      break;
-    }
-
-    char* end_addr = touch_addr + MIN2(_chunk_size, pointer_delta(_end_addr, touch_addr, sizeof(char)));
-
-    os::pretouch_memory(touch_addr, end_addr, _page_size);
-  }
-}
-
-void PretouchTask::pretouch(const char* task_name, char* start_address, char* end_address,
-                            size_t page_size, WorkGang* pretouch_gang) {
-  // Chunk size should be at least (unmodified) page size as using multiple threads
-  // pretouch on a single page can decrease performance.
-  size_t chunk_size = MAX2(PretouchTask::chunk_size(), page_size);
-#ifdef LINUX
-  // When using THP we need to always pre-touch using small pages as the OS will
+static size_t adjusted_page_size(size_t page_size) {
+  // When using THP we need to always touch using small pages as the OS will
   // initially always use small pages.
-  page_size = UseTransparentHugePages ? (size_t)os::vm_page_size() : page_size;
-#endif
-
-  PretouchTask task(task_name, start_address, end_address, page_size, chunk_size);
-  size_t total_bytes = pointer_delta(end_address, start_address, sizeof(char));
-
-  if (total_bytes == 0) {
-    return;
-  }
-
-  if (pretouch_gang != NULL) {
-    size_t num_chunks = (total_bytes + chunk_size - 1) / chunk_size;
-
-    uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_gang->total_workers());
-    log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
-                        task.name(), num_workers, num_chunks, total_bytes);
-
-    pretouch_gang->run_task(&task, num_workers);
+  if (LINUX_ONLY(UseTransparentHugePages ||) false) {
+    return os::vm_page_size();
   } else {
-    log_debug(gc, heap)("Running %s pre-touching " SIZE_FORMAT "B.",
-                        task.name(), total_bytes);
-    task.work(0);
+    return page_size;
   }
 }
 
+static size_t adjusted_chunk_size(size_t page_size) {
+  // Chunk size should be at least page size to avoid having multiple
+  // threads touching a single page.
+  return MAX2(PreTouchParallelChunkSize, page_size);
+}
+
+BasicTouchTask::BasicTouchTask(const char* name,
+                               void* start,
+                               void* end,
+                               size_t page_size) :
+  AbstractGangTask(name),
+  _cur(reinterpret_cast<char*>(start)),
+  _end(end),
+  _page_size(adjusted_page_size(page_size)),
+  _chunk_size(adjusted_chunk_size(_page_size))
+{
+  assert(start <= end,
+         "Invalid range: " PTR_FORMAT " -> " PTR_FORMAT, p2i(start), p2i(end));
+}
+
+void BasicTouchTask::work(uint worker_id) {
+  while (true) {
+    char* cur_start = Atomic::load(&_cur);
+    char* cur_end = cur_start + MIN2(_chunk_size, pointer_delta(_end, cur_start, 1));
+    if (cur_start >= cur_end) {
+      break;
+    } else if (cur_start == Atomic::cmpxchg(&_cur, cur_start, cur_end)) {
+      do_touch(cur_start, cur_end, _page_size);
+    } // Else chunk claim failed, so try again.
+  }
+}
+
+void BasicTouchTask::touch_impl(WorkGang* gang) {
+  size_t total_bytes = pointer_delta(_end, Atomic::load(&_cur), 1);
+  if ((gang == nullptr) || (total_bytes <= _chunk_size)) {
+    log_debug(gc, heap)("Running %s pre-touching %zuB", name(), total_bytes);
+    work(0);
+  } else {
+    assert(total_bytes > 0, "invariant");
+    size_t num_chunks = ((total_bytes - 1) / _chunk_size) + 1;
+    uint num_workers = (uint)MIN2(num_chunks, (size_t)gang->total_workers());
+    log_debug(gc, heap)("Running %s with %u workers for %zu chunks touching %zuB",
+                        name(), num_workers, num_chunks, total_bytes);
+    gang->run_task(this, num_workers);
+  }
+}
+
+PretouchTask::PretouchTask(const char* task_name,
+                           void* start,
+                           void* end,
+                           size_t page_size) :
+  BasicTouchTask(task_name, start, end, page_size)
+{}
+
+void PretouchTask::do_touch(void* start, void* end, size_t page_size) {
+  os::pretouch_memory(start, end, page_size);
+}
+
+void PretouchTask::pretouch(const char* task_name,
+                            void* start,
+                            void* end,
+                            size_t page_size,
+                            WorkGang* pretouch_gang) {
+  PretouchTask task{task_name, start, end, page_size};
+  task.touch_impl(pretouch_gang);
+}
+
+TouchTask::TouchTask(const char* task_name,
+                     void* start,
+                     void* end,
+                     size_t page_size) :
+  BasicTouchTask(task_name, start, end, page_size)
+{}
+
+void TouchTask::do_touch(void* start, void* end, size_t page_size) {
+  os::touch_memory(start, end, page_size);
+}
+
+void TouchTask::touch(const char* task_name,
+                      void* start,
+                      void* end,
+                      size_t page_size,
+                      WorkGang* touch_gang) {
+  TouchTask task{task_name, start, end, page_size};
+  task.touch_impl(touch_gang);
+}

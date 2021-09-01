@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,52 @@
 #define SHARE_GC_SHARED_PRETOUCH_HPP
 
 #include "gc/shared/workgroup.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class PretouchTask : public AbstractGangTask {
-  char* volatile _cur_addr;
-  char* const _start_addr;
-  char* const _end_addr;
-  size_t _page_size;
-  size_t _chunk_size;
+class BasicTouchTask : public AbstractGangTask {
+  char* volatile _cur;
+  void* const _end;
+  size_t const _page_size;
+  size_t const _chunk_size;
+
+  NONCOPYABLE(BasicTouchTask);
+
+protected:
+  BasicTouchTask(const char* name, void* start, void* end, size_t page_size);
+  ~BasicTouchTask() = default;
+
+  virtual void do_touch(void* start, void* end, size_t page_size) = 0;
+
+  void touch_impl(WorkGang* gang);
 
 public:
-  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size);
+  void work(uint worker_id) override;
+};
 
-  virtual void work(uint worker_id);
+class PretouchTask : public BasicTouchTask {
+  PretouchTask(const char* name, void* start, void* end, size_t page_size);
 
-  static size_t chunk_size();
+  void do_touch(void* start, void* end, size_t page_size) override;
 
-  static void pretouch(const char* task_name, char* start_address, char* end_address,
-                       size_t page_size, WorkGang* pretouch_gang);
+public:
+  static void pretouch(const char* task_name,
+                       void* start,
+                       void* end,
+                       size_t page_size,
+                       WorkGang* pretouch_gang);
+};
 
+class TouchTask : public BasicTouchTask {
+  TouchTask(const char* name, void* start, void* end, size_t page_size);
+
+  void do_touch(void* start, void* end, size_t page_size) override;
+
+public:
+  static void touch(const char* task_name,
+                    void* start,
+                    void* end,
+                    size_t page_size,
+                    WorkGang* touch_gang);
 };
 
 #endif // SHARE_GC_SHARED_PRETOUCH_HPP
