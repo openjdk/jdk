@@ -3544,11 +3544,11 @@ void nmethod::print_statistics() {
 
 #if INCLUDE_JVMCI
 void nmethod::update_speculation(JavaThread* thread) {
-  jlong speculation = thread->pending_failed_speculation();
+  jlong speculation = thread->jvmci().pending_failed_speculation();
   if (speculation != 0) {
     guarantee(jvmci_nmethod_data() != NULL, "failed speculation in nmethod without failed speculation list");
     jvmci_nmethod_data()->add_failed_speculation(this, speculation);
-    thread->set_pending_failed_speculation(0);
+    thread->jvmci().set_pending_failed_speculation(0);
   }
 }
 

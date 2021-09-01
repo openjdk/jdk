@@ -841,102 +841,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 
 // ======= JavaThread ========
 
-#if INCLUDE_JVMCI
-
-jlong* JavaThread::_jvmci_old_thread_counters;
-
-bool jvmci_counters_include(JavaThread* thread) {
-  return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
-}
-
-void JavaThread::collect_counters(jlong* array, int length) {
-  assert(length == JVMCICounterSize, "wrong value");
-  for (int i = 0; i < length; i++) {
-    array[i] = _jvmci_old_thread_counters[i];
-  }
-  for (JavaThread* tp : ThreadsListHandle()) {
-    if (jvmci_counters_include(tp)) {
-      for (int i = 0; i < length; i++) {
-        array[i] += tp->_jvmci_counters[i];
-      }
-    }
-  }
-}
-
-// Attempt to enlarge the array for per thread counters.
-jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
-  jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
-  if (new_counters == NULL) {
-    return NULL;
-  }
-  if (old_counters == NULL) {
-    old_counters = new_counters;
-    memset(old_counters, 0, sizeof(jlong) * new_size);
-  } else {
-    for (int i = 0; i < MIN2((int) current_size, new_size); i++) {
-      new_counters[i] = old_counters[i];
-    }
-    if (new_size > current_size) {
-      memset(new_counters + current_size, 0, sizeof(jlong) * (new_size - current_size));
-    }
-    FREE_C_HEAP_ARRAY(jlong, old_counters);
-  }
-  return new_counters;
-}
-
-// Attempt to enlarge the array for per thread counters.
-bool JavaThread::resize_counters(int current_size, int new_size) {
-  jlong* new_counters = resize_counters_array(_jvmci_counters, current_size, new_size);
-  if (new_counters == NULL) {
-    return false;
-  } else {
-    _jvmci_counters = new_counters;
-    return true;
-  }
-}
-
-class VM_JVMCIResizeCounters : public VM_Operation {
- private:
-  int _new_size;
-  bool _failed;
-
- public:
-  VM_JVMCIResizeCounters(int new_size) : _new_size(new_size), _failed(false) { }
-  VMOp_Type type()                  const        { return VMOp_JVMCIResizeCounters; }
-  bool allow_nested_vm_operations() const        { return true; }
-  void doit() {
-    // Resize the old thread counters array
-    jlong* new_counters = resize_counters_array(JavaThread::_jvmci_old_thread_counters, JVMCICounterSize, _new_size);
-    if (new_counters == NULL) {
-      _failed = true;
-      return;
-    } else {
-      JavaThread::_jvmci_old_thread_counters = new_counters;
-    }
-
-    // Now resize each threads array
-    for (JavaThread* tp : ThreadsListHandle()) {
-      if (!tp->resize_counters(JVMCICounterSize, _new_size)) {
-        _failed = true;
-        break;
-      }
-    }
-    if (!_failed) {
-      JVMCICounterSize = _new_size;
-    }
-  }
-
-  bool failed() { return _failed; }
-};
-
-bool JavaThread::resize_all_jvmci_counters(int new_size) {
-  VM_JVMCIResizeCounters op(new_size);
-  VMThread::execute(&op);
-  return !op.failed();
-}
-
-#endif // INCLUDE_JVMCI
-
 #ifdef ASSERT
 // Checks safepoint allowed and clears unhandled oops at potential safepoints.
 void JavaThread::check_possible_safepoint() {
@@ -1007,18 +911,6 @@ JavaThread::JavaThread() :
   _doing_unsafe_access(false),
   _do_not_unlock_if_synchronized(false),
   _jni_attach_state(_not_attaching_via_jni),
-#if INCLUDE_JVMCI
-  _pending_deoptimization(-1),
-  _pending_monitorenter(false),
-  _pending_transfer_to_interpreter(false),
-  _in_retryable_allocation(false),
-  _pending_failed_speculation(0),
-  _jvmci{nullptr},
-  _jvmci_counters(nullptr),
-  _jvmci_reserved0(0),
-  _jvmci_reserved1(0),
-  _jvmci_reserved_oop0(nullptr),
-#endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
   _exception_pc(0),
@@ -1052,9 +944,9 @@ JavaThread::JavaThread() :
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
-  assert(_jvmci._implicit_exception_pc == nullptr, "must be");
+  assert(jvmci()._jvmci._implicit_exception_pc == nullptr, "must be");
   if (JVMCICounterSize > 0) {
-    resize_counters(0, (int) JVMCICounterSize);
+    JVMCI::resize_counters(this, 0, (int) JVMCICounterSize);
   }
 #endif // INCLUDE_JVMCI
 
@@ -1202,9 +1094,7 @@ JavaThread::~JavaThread() {
   if (_thread_stat != NULL) delete _thread_stat;
 
 #if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
-  }
+  JVMCI::free_counters(this);
 #endif // INCLUDE_JVMCI
 }
 
@@ -1462,13 +1352,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   }
 
 #if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    if (jvmci_counters_include(this)) {
-      for (int i = 0; i < JVMCICounterSize; i++) {
-        _jvmci_old_thread_counters[i] += _jvmci_counters[i];
-      }
-    }
-  }
+  JVMCI::accumulate_counters(this);
 #endif // INCLUDE_JVMCI
 
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
@@ -1971,7 +1855,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   f->do_oop((oop*) &_exception_oop);
   f->do_oop((oop*) &_pending_async_exception);
 #if INCLUDE_JVMCI
-  f->do_oop((oop*) &_jvmci_reserved_oop0);
+  f->do_oop((oop*) &_jvmci_state._jvmci_reserved_oop0);
 #endif
 
   if (jvmti_thread_state() != NULL) {
@@ -2777,12 +2661,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   vm_init_globals();
 
 #if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    JavaThread::_jvmci_old_thread_counters = NEW_C_HEAP_ARRAY(jlong, JVMCICounterSize, mtJVMCI);
-    memset(JavaThread::_jvmci_old_thread_counters, 0, sizeof(jlong) * JVMCICounterSize);
-  } else {
-    JavaThread::_jvmci_old_thread_counters = NULL;
-  }
+  JVMCI::init_counters();
 #endif // INCLUDE_JVMCI
 
   // Initialize OopStorage for threadObj
@@ -3429,9 +3308,7 @@ void Threads::destroy_vm() {
   delete thread;
 
 #if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(jlong, JavaThread::_jvmci_old_thread_counters);
-  }
+  JVMCI::free_counters();
 #endif
 
   LogConfiguration::finalize();

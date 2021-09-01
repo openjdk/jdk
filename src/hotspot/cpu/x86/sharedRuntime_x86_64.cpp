@@ -852,11 +852,11 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
     // check if this call should be routed towards a specific entry point
-    __ cmpptr(Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())), 0);
+    __ cmpptr(Address(r15_thread, in_bytes(JVMCIThreadState::jvmci_alternate_call_target_offset())), 0);
     Label no_alternative_target;
     __ jcc(Assembler::equal, no_alternative_target);
-    __ movptr(r11, Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
-    __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())), 0);
+    __ movptr(r11, Address(r15_thread, in_bytes(JVMCIThreadState::jvmci_alternate_call_target_offset())));
+    __ movptr(Address(r15_thread, in_bytes(JVMCIThreadState::jvmci_alternate_call_target_offset())), 0);
     __ bind(no_alternative_target);
   }
 #endif // INCLUDE_JVMCI
@@ -2528,8 +2528,8 @@ void SharedRuntime::generate_deopt_blob() {
   if (EnableJVMCI) {
     implicit_exception_uncommon_trap_offset = __ pc() - start;
 
-    __ pushptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-    __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())), (int32_t)NULL_WORD);
+    __ pushptr(Address(r15_thread, in_bytes(JVMCIThreadState::jvmci_implicit_exception_pc_offset())));
+    __ movptr(Address(r15_thread, in_bytes(JVMCIThreadState::jvmci_implicit_exception_pc_offset())), (int32_t)NULL_WORD);
 
     uncommon_trap_offset = __ pc() - start;
 
@@ -2538,8 +2538,8 @@ void SharedRuntime::generate_deopt_blob() {
     // fetch_unroll_info needs to call last_java_frame()
     __ set_last_Java_frame(noreg, noreg, NULL);
 
-    __ movl(c_rarg1, Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())));
-    __ movl(Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())), -1);
+    __ movl(c_rarg1, Address(r15_thread, in_bytes(JVMCIThreadState::pending_deoptimization_offset())));
+    __ movl(Address(r15_thread, in_bytes(JVMCIThreadState::pending_deoptimization_offset())), -1);
 
     __ movl(r14, (int32_t)Deoptimization::Unpack_reexecute);
     __ mov(c_rarg0, r15_thread);

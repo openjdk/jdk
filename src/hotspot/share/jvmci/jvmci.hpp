@@ -163,6 +163,115 @@ class JVMCI : public AllStatic {
   static void event2(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
   static void event3(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
   static void event4(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+
+  static jlong* _jvmci_old_thread_counters;
+  static void collect_counters(jlong* array, int length);
+
+  static bool resize_counters(JavaThread* thread, int current_size, int new_size);
+
+  static bool resize_all_jvmci_counters(int new_size);
+
+  static void free_counters(JavaThread* thread);
+
+  static void accumulate_counters(JavaThread* thread);
+
+  static void init_counters();
+
+  static void free_counters();
+};
+
+
+
+class JVMCIThreadState {
+ public:
+  JVMCIThreadState();
+
+ private:
+  friend class JavaThread;
+  friend class JVMCI;
+  friend class JVMCIVMStructs;
+
+  // The _pending_* fields below are used to communicate extra information
+  // from an uncommon trap in JVMCI compiled code to the uncommon trap handler.
+
+  // Communicates the DeoptReason and DeoptAction of the uncommon trap
+  int       _pending_deoptimization;
+
+  // Specifies whether the uncommon trap is to bci 0 of a synchronized method
+  // before the monitor has been acquired.
+  bool      _pending_monitorenter;
+
+  // Specifies if the DeoptReason for the last uncommon trap was Reason_transfer_to_interpreter
+  bool      _pending_transfer_to_interpreter;
+
+  // True if in a runtime call from compiled code that will deoptimize
+  // and re-execute a failed heap allocation in the interpreter.
+  bool      _in_retryable_allocation;
+
+  // An id of a speculation that JVMCI compiled code can use to further describe and
+  // uniquely identify the speculative optimization guarded by an uncommon trap.
+  // See JVMCINMethodData::SPECULATION_LENGTH_BITS for further details.
+  jlong     _pending_failed_speculation;
+
+  // These fields are mutually exclusive in terms of live ranges.
+  union {
+    // Communicates the pc at which the most recent implicit exception occurred
+    // from the signal handler to a deoptimization stub.
+    address   _implicit_exception_pc;
+
+    // Communicates an alternative call target to an i2c stub from a JavaCall .
+    address   _alternate_call_target;
+  } _union;
+
+  // Support for high precision, thread sensitive counters in JVMCI compiled code.
+  jlong*    _jvmci_counters;
+
+  // Fast thread locals for use by JVMCI
+  jlong      _jvmci_reserved0;
+  jlong      _jvmci_reserved1;
+  oop        _jvmci_reserved_oop0;
+
+ public:
+  int  pending_deoptimization() const             { return _pending_deoptimization; }
+  jlong pending_failed_speculation() const        { return _pending_failed_speculation; }
+  bool has_pending_monitorenter() const           { return _pending_monitorenter; }
+  void set_pending_monitorenter(bool b)           { _pending_monitorenter = b; }
+  void set_pending_deoptimization(int reason)     { _pending_deoptimization = reason; }
+  void set_pending_failed_speculation(jlong failed_speculation) { _pending_failed_speculation = failed_speculation; }
+  void set_pending_transfer_to_interpreter(bool b) { _pending_transfer_to_interpreter = b; }
+  void set_jvmci_alternate_call_target(address a) { assert(_union._alternate_call_target == NULL, "must be"); _union._alternate_call_target = a; }
+  void set_jvmci_implicit_exception_pc(address a) { assert(_union._implicit_exception_pc == NULL, "must be"); _union._implicit_exception_pc = a; }
+  void set_in_retryable_allocation(bool b)        { _in_retryable_allocation = b; }
+  bool in_retryable_allocation() const            { return _in_retryable_allocation; }
+
+  void set_jvmci_reserved_oop0(oop value) {
+    _jvmci_reserved_oop0 = value;
+  }
+
+  oop get_jvmci_reserved_oop0() {
+    return _jvmci_reserved_oop0;
+  }
+
+  void set_jvmci_reserved0(jlong value) {
+    _jvmci_reserved0 = value;
+  }
+
+  jlong get_jvmci_reserved0() {
+    return _jvmci_reserved0;
+  }
+
+  void set_jvmci_reserved1(jlong value) {
+    _jvmci_reserved1 = value;
+  }
+
+  jlong get_jvmci_reserved1() {
+    return _jvmci_reserved1;
+  }
+
+  static ByteSize pending_deoptimization_offset();
+  static ByteSize pending_monitorenter_offset();
+  static ByteSize jvmci_alternate_call_target_offset();
+  static ByteSize jvmci_implicit_exception_pc_offset();
 };
 
 // JVMCI event macros.

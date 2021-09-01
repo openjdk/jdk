@@ -263,10 +263,10 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   // only occur on method entry so emit it only for vtos with step 0.
   if (EnableJVMCI && state == vtos && step == 0) {
     Label L;
-    __ cmpb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
+    __ cmpb(Address(thread, JVMCIThreadState::pending_monitorenter_offset()), 0);
     __ jcc(Assembler::zero, L);
     // Clear flag.
-    __ movb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
+    __ movb(Address(thread, JVMCIThreadState::pending_monitorenter_offset()), 0);
     // Satisfy calling convention for lock_method().
     __ get_method(rbx);
     // Take lock.
@@ -276,7 +276,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 #ifdef ASSERT
     if (EnableJVMCI) {
       Label L;
-      __ cmpb(Address(r15_thread, JavaThread::pending_monitorenter_offset()), 0);
+      __ cmpb(Address(r15_thread, JVMCIThreadState::pending_monitorenter_offset()), 0);
       __ jcc(Assembler::zero, L);
       __ stop("unexpected pending monitor in deopt entry");
       __ bind(L);

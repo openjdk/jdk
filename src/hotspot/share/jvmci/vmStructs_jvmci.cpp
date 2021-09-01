@@ -44,7 +44,7 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
-#define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
+#define VM_STRUCTS(nonstatic_field, nonstatic_field_alias, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
   static_field(CompilerToVM::Data,             Klass_vtable_start_offset,              int)                                          \
   static_field(CompilerToVM::Data,             Klass_vtable_length_offset,             int)                                          \
                                                                                                                                      \
@@ -179,13 +179,13 @@
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
   volatile_nonstatic_field(JavaThread,         _doing_unsafe_access,                          bool)                                  \
   nonstatic_field(JavaThread,                  _osthread,                                     OSThread*)                             \
-  nonstatic_field(JavaThread,                  _pending_deoptimization,                       int)                                   \
-  nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \
-  nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
-  nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
-  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              jlong)                                 \
-  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              jlong)                                 \
-  nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
+  nonstatic_field_alias(JavaThread,            _jvmci_state._pending_deoptimization,          _pending_deoptimization,          int)    \
+  nonstatic_field_alias(JavaThread,            _jvmci_state._pending_failed_speculation,      _pending_failed_speculation,      jlong)  \
+  nonstatic_field_alias(JavaThread,            _jvmci_state._pending_transfer_to_interpreter, _pending_transfer_to_interpreter, bool)   \
+  nonstatic_field_alias(JavaThread,            _jvmci_state._jvmci_counters,                  _jvmci_counters,                  jlong*) \
+  nonstatic_field_alias(JavaThread,            _jvmci_state._jvmci_reserved0,                 _jvmci_reserved0,                 jlong)  \
+  nonstatic_field_alias(JavaThread,            _jvmci_state._jvmci_reserved1,                 _jvmci_reserved1,                 jlong)  \
+  nonstatic_field_alias(JavaThread,            _jvmci_state._jvmci_reserved_oop0,             _jvmci_reserved_oop0,             oop)    \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
@@ -788,6 +788,7 @@
 // as long as class VMStructs is a friend
 VMStructEntry JVMCIVMStructs::localHotSpotVMStructs[] = {
   VM_STRUCTS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
+             GENERATE_NONSTATIC_VM_STRUCT_ENTRY_ALIAS,
              GENERATE_STATIC_VM_STRUCT_ENTRY,
              GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_NONSTATIC_VM_STRUCT_ENTRY)
@@ -901,6 +902,7 @@ JNIEXPORT VMAddressEntry* jvmciHotSpotVMAddresses = JVMCIVMStructs::localHotSpot
 // to ensure that all of the field types are present.
 void JVMCIVMStructs::init() {
   VM_STRUCTS(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
+             CHECK_NONSTATIC_VM_STRUCT_ENTRY_ALIAS,
              CHECK_STATIC_VM_STRUCT_ENTRY,
              CHECK_NO_OP,
              CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY);

@@ -596,11 +596,11 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
     // check if this call should be routed towards a specific entry point
-    __ ldr(rscratch2, Address(rthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ ldr(rscratch2, Address(rthread, in_bytes(JVMCIThreadState::jvmci_alternate_call_target_offset())));
     Label no_alternative_target;
     __ cbz(rscratch2, no_alternative_target);
     __ mov(rscratch1, rscratch2);
-    __ str(zr, Address(rthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ str(zr, Address(rthread, in_bytes(JVMCIThreadState::jvmci_alternate_call_target_offset())));
     __ bind(no_alternative_target);
   }
 #endif // INCLUDE_JVMCI
@@ -2249,8 +2249,8 @@ void SharedRuntime::generate_deopt_blob() {
   if (EnableJVMCI) {
     implicit_exception_uncommon_trap_offset = __ pc() - start;
 
-    __ ldr(lr, Address(rthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-    __ str(zr, Address(rthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ ldr(lr, Address(rthread, in_bytes(JVMCIThreadState::jvmci_implicit_exception_pc_offset())));
+    __ str(zr, Address(rthread, in_bytes(JVMCIThreadState::jvmci_implicit_exception_pc_offset())));
 
     uncommon_trap_offset = __ pc() - start;
 
@@ -2260,9 +2260,9 @@ void SharedRuntime::generate_deopt_blob() {
     Label retaddr;
     __ set_last_Java_frame(sp, noreg, retaddr, rscratch1);
 
-    __ ldrw(c_rarg1, Address(rthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ ldrw(c_rarg1, Address(rthread, in_bytes(JVMCIThreadState::pending_deoptimization_offset())));
     __ movw(rscratch1, -1);
-    __ strw(rscratch1, Address(rthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ strw(rscratch1, Address(rthread, in_bytes(JVMCIThreadState::pending_deoptimization_offset())));
 
     __ movw(rcpool, (int32_t)Deoptimization::Unpack_reexecute);
     __ mov(c_rarg0, rthread);

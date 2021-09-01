@@ -1102,7 +1102,7 @@ C2V_VMENTRY_NULL(jlongArray, collectCounters, (JNIEnv* env, jobject))
   JVMCIPrimitiveArray array = JVMCIENV->new_longArray(JVMCICounterSize, JVMCI_CHECK_NULL);
   if (JVMCICounterSize > 0) {
     jlong* temp_array = NEW_RESOURCE_ARRAY(jlong, JVMCICounterSize);
-    JavaThread::collect_counters(temp_array, JVMCICounterSize);
+    JVMCI::collect_counters(temp_array, JVMCICounterSize);
     JVMCIENV->copy_longs_from(temp_array, array, 0, JVMCICounterSize);
   }
   return (jlongArray) JVMCIENV->get_jobject(array);
@@ -1113,7 +1113,7 @@ C2V_VMENTRY_0(jint, getCountersSize, (JNIEnv* env, jobject))
 C2V_END
 
 C2V_VMENTRY_0(jboolean, setCountersSize, (JNIEnv* env, jobject, jint new_size))
-  return JavaThread::resize_all_jvmci_counters(new_size);
+  return JVMCI::resize_all_jvmci_counters(new_size);
 C2V_END
 
 C2V_VMENTRY_0(jint, allocateCompileId, (JNIEnv* env, jobject, jobject jvmci_method, int entry_bci))
@@ -2632,7 +2632,7 @@ C2V_VMENTRY(void, notifyCompilerInliningEvent, (JNIEnv* env, jobject, jint compi
 C2V_VMENTRY(void, setThreadLocalObject, (JNIEnv* env, jobject, jint id, jobject value))
   requireInHotSpot("setThreadLocalObject", JVMCI_CHECK);
   if (id == 0) {
-    thread->set_jvmci_reserved_oop0(JNIHandles::resolve(value));
+    thread->jvmci().set_jvmci_reserved_oop0(JNIHandles::resolve(value));
     return;
   }
   THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
@@ -2642,7 +2642,7 @@ C2V_VMENTRY(void, setThreadLocalObject, (JNIEnv* env, jobject, jint id, jobject 
 C2V_VMENTRY_NULL(jobject, getThreadLocalObject, (JNIEnv* env, jobject, jint id))
   requireInHotSpot("getThreadLocalObject", JVMCI_CHECK_NULL);
   if (id == 0) {
-    return JNIHandles::make_local(thread->get_jvmci_reserved_oop0());
+    return JNIHandles::make_local(thread->jvmci().get_jvmci_reserved_oop0());
   }
   THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
               err_msg("%d is not a valid thread local id", id));
@@ -2651,9 +2651,9 @@ C2V_VMENTRY_NULL(jobject, getThreadLocalObject, (JNIEnv* env, jobject, jint id))
 C2V_VMENTRY(void, setThreadLocalLong, (JNIEnv* env, jobject, jint id, jlong value))
   requireInHotSpot("setThreadLocalLong", JVMCI_CHECK);
   if (id == 0) {
-    thread->set_jvmci_reserved0(value);
+    thread->jvmci().set_jvmci_reserved0(value);
   } else if (id == 1) {
-    thread->set_jvmci_reserved1(value);
+    thread->jvmci().set_jvmci_reserved1(value);
   } else {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               err_msg("%d is not a valid thread local id", id));
@@ -2663,9 +2663,9 @@ C2V_VMENTRY(void, setThreadLocalLong, (JNIEnv* env, jobject, jint id, jlong valu
 C2V_VMENTRY_0(jlong, getThreadLocalLong, (JNIEnv* env, jobject, jint id))
   requireInHotSpot("getThreadLocalLong", JVMCI_CHECK_0);
   if (id == 0) {
-    return thread->get_jvmci_reserved0();
+    return thread->jvmci().get_jvmci_reserved0();
   } else if (id == 1) {
-    return thread->get_jvmci_reserved1();
+    return thread->jvmci().get_jvmci_reserved1();
   } else {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("%d is not a valid thread local id", id));

@@ -35,6 +35,8 @@
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/threadSMR.inline.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
@@ -290,3 +292,160 @@ void JVMCI::event3(const char* format, ...) LOG_TRACE(3)
 void JVMCI::event4(const char* format, ...) LOG_TRACE(4)
 
 #undef LOG_TRACE
+
+jlong* JVMCI::_jvmci_old_thread_counters;
+
+bool jvmci_counters_include(JavaThread* thread) {
+  return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
+}
+
+void JVMCI::collect_counters(jlong* array, int length) {
+  assert(length == JVMCICounterSize, "wrong value");
+  for (int i = 0; i < length; i++) {
+    array[i] = _jvmci_old_thread_counters[i];
+  }
+  for (JavaThread* tp : ThreadsListHandle()) {
+    if (jvmci_counters_include(tp)) {
+      for (int i = 0; i < length; i++) {
+        array[i] += tp->jvmci()._jvmci_counters[i];
+      }
+    }
+  }
+}
+
+// Attempt to enlarge the array for per thread counters.
+jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
+  jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
+  if (new_counters == NULL) {
+    return NULL;
+  }
+  if (old_counters == NULL) {
+    old_counters = new_counters;
+    memset(old_counters, 0, sizeof(jlong) * new_size);
+  } else {
+    for (int i = 0; i < MIN2((int) current_size, new_size); i++) {
+      new_counters[i] = old_counters[i];
+    }
+    if (new_size > current_size) {
+      memset(new_counters + current_size, 0, sizeof(jlong) * (new_size - current_size));
+    }
+    FREE_C_HEAP_ARRAY(jlong, old_counters);
+  }
+  return new_counters;
+}
+
+// Attempt to enlarge the array for per thread counters.
+bool JVMCI::resize_counters(JavaThread* thread, int current_size, int new_size) {
+  jlong* new_counters = resize_counters_array(thread->jvmci()._jvmci_counters, current_size, new_size);
+  if (new_counters == NULL) {
+    return false;
+  } else {
+    thread->jvmci()._jvmci_counters = new_counters;
+    return true;
+  }
+}
+
+class VM_JVMCIResizeCounters : public VM_Operation {
+ private:
+  int _new_size;
+  bool _failed;
+
+ public:
+  VM_JVMCIResizeCounters(int new_size) : _new_size(new_size), _failed(false) { }
+  VMOp_Type type()                  const        { return VMOp_JVMCIResizeCounters; }
+  bool allow_nested_vm_operations() const        { return true; }
+  void doit() {
+    // Resize the old thread counters array
+    jlong* new_counters = resize_counters_array(JVMCI::_jvmci_old_thread_counters, JVMCICounterSize, _new_size);
+    if (new_counters == NULL) {
+      _failed = true;
+      return;
+    } else {
+      JVMCI::_jvmci_old_thread_counters = new_counters;
+    }
+
+    // Now resize each threads array
+    for (JavaThread* tp : ThreadsListHandle()) {
+      if (!JVMCI::resize_counters(tp, JVMCICounterSize, _new_size)) {
+        _failed = true;
+        break;
+      }
+    }
+    if (!_failed) {
+      JVMCICounterSize = _new_size;
+    }
+  }
+
+  bool failed() { return _failed; }
+};
+
+bool JVMCI::resize_all_jvmci_counters(int new_size) {
+  VM_JVMCIResizeCounters op(new_size);
+  VMThread::execute(&op);
+  return !op.failed();
+}
+
+
+void JVMCI::free_counters(JavaThread* thread) {
+  if (JVMCICounterSize > 0) {
+    FREE_C_HEAP_ARRAY(jlong, thread->jvmci()._jvmci_counters);
+  }
+}
+
+void JVMCI::accumulate_counters(JavaThread* thread) {
+  if (JVMCICounterSize > 0) {
+    if (jvmci_counters_include(thread)) {
+      for (int i = 0; i < JVMCICounterSize; i++) {
+        _jvmci_old_thread_counters[i] += thread->jvmci()._jvmci_counters[i];
+      }
+    }
+  }
+}
+
+
+void JVMCI::init_counters() {
+  if (JVMCICounterSize > 0) {
+    JVMCI::_jvmci_old_thread_counters = NEW_C_HEAP_ARRAY(jlong, JVMCICounterSize, mtJVMCI);
+    memset(JVMCI::_jvmci_old_thread_counters, 0, sizeof(jlong) * JVMCICounterSize);
+  } else {
+    JVMCI::_jvmci_old_thread_counters = NULL;
+  }
+}
+
+
+void JVMCI::free_counters() {
+  if (JVMCICounterSize > 0) {
+    FREE_C_HEAP_ARRAY(jlong, JVMCI::_jvmci_old_thread_counters);
+  }
+}
+
+
+ByteSize JVMCIThreadState::pending_deoptimization_offset() {
+ return JavaThread::jvmci_state_offset() + byte_offset_of(JVMCIThreadState, _pending_deoptimization);
+}
+
+ByteSize JVMCIThreadState::pending_monitorenter_offset() {
+ return JavaThread::jvmci_state_offset() + byte_offset_of(JVMCIThreadState, _pending_monitorenter);
+}
+
+ByteSize JVMCIThreadState::jvmci_alternate_call_target_offset() {
+ return JavaThread::jvmci_state_offset() + byte_offset_of(JVMCIThreadState, _union._alternate_call_target);
+}
+
+ByteSize JVMCIThreadState::jvmci_implicit_exception_pc_offset() {
+ return JavaThread::jvmci_state_offset() + byte_offset_of(JVMCIThreadState, _union._implicit_exception_pc);
+}
+
+JVMCIThreadState::JVMCIThreadState():
+  _pending_deoptimization(-1),
+  _pending_monitorenter(false),
+  _pending_transfer_to_interpreter(false),
+  _in_retryable_allocation(false),
+  _pending_failed_speculation(0),
+  _union{nullptr},
+  _jvmci_counters(nullptr),
+  _jvmci_reserved0(0),
+  _jvmci_reserved1(0),
+  _jvmci_reserved_oop0(nullptr)
+{
+}

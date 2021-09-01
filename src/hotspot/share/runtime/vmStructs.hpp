@@ -159,6 +159,11 @@ private:
 #define GENERATE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)              \
  { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offset_of(typeName, fieldName), NULL },
 
+// This macro generates a VMStructEntry line for a nonstatic field
+#define GENERATE_NONSTATIC_VM_STRUCT_ENTRY_ALIAS(typeName, fieldName, fieldAliasName, type) \
+ { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offset_of(typeName, fieldName), NULL }, \
+ { QUOTE(typeName), QUOTE(fieldAliasName), QUOTE(type), 0, offset_of(typeName, fieldName), NULL },
+
 // This macro generates a VMStructEntry line for a static field
 #define GENERATE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
  { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, &typeName::fieldName },
@@ -189,6 +194,10 @@ private:
 
 // This macro checks the type of a VMStructEntry by comparing pointer types
 #define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
+ {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
+  assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); }
+
+#define CHECK_NONSTATIC_VM_STRUCT_ENTRY_ALIAS(typeName, fieldName, fieldAliasName, type) \
  {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
   assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); }
 

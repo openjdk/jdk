@@ -585,7 +585,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
 #if INCLUDE_JVMCI
   if (current->frames_to_pop_failed_realloc() > 0) {
-    current->set_pending_monitorenter(false);
+    current->jvmci().set_pending_monitorenter(false);
   }
 #endif
 
@@ -1860,7 +1860,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     methodHandle    trap_method(current, trap_scope->method());
     int             trap_bci    = trap_scope->bci();
 #if INCLUDE_JVMCI
-    jlong           speculation = current->pending_failed_speculation();
+    jlong           speculation = current->jvmci().pending_failed_speculation();
     if (nm->is_compiled_by_jvmci()) {
       nm->as_nmethod()->update_speculation(current);
     } else {
@@ -1869,11 +1869,11 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     if (trap_bci == SynchronizationEntryBCI) {
       trap_bci = 0;
-      current->set_pending_monitorenter(true);
+      current->jvmci().set_pending_monitorenter(true);
     }
 
     if (reason == Deoptimization::Reason_transfer_to_interpreter) {
-      current->set_pending_transfer_to_interpreter(true);
+      current->jvmci().set_pending_transfer_to_interpreter(true);
     }
 #endif
 

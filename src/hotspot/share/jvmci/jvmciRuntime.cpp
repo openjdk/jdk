@@ -95,14 +95,14 @@ class RetryableAllocationMark: public StackObj {
     if (activate) {
       assert(!thread->in_retryable_allocation(), "retryable allocation scope is non-reentrant");
       _thread = thread;
-      _thread->set_in_retryable_allocation(true);
+      _thread->jvmci().set_in_retryable_allocation(true);
     } else {
       _thread = NULL;
     }
   }
   ~RetryableAllocationMark() {
     if (_thread != NULL) {
-      _thread->set_in_retryable_allocation(false);
+      _thread->jvmci().set_in_retryable_allocation(false);
       JavaThread* THREAD = _thread; // For exception macros.
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;

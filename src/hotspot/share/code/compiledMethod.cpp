@@ -723,9 +723,9 @@ address CompiledMethod::continuation_for_implicit_exception(address pc, bool for
 #if INCLUDE_JVMCI
     Deoptimization::DeoptReason deopt_reason = for_div0_check ? Deoptimization::Reason_div0_check : Deoptimization::Reason_null_check;
     JavaThread *thread = JavaThread::current();
-    thread->set_jvmci_implicit_exception_pc(pc);
-    thread->set_pending_deoptimization(Deoptimization::make_trap_request(deopt_reason,
-                                                                         Deoptimization::Action_reinterpret));
+    thread->jvmci().set_jvmci_implicit_exception_pc(pc);
+    thread->jvmci().set_pending_deoptimization(Deoptimization::make_trap_request(deopt_reason,
+                                                                                 Deoptimization::Action_reinterpret));
     return (SharedRuntime::deopt_blob()->implicit_exception_uncommon_trap());
 #else
     ShouldNotReachHere();
