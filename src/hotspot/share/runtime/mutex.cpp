@@ -274,8 +274,8 @@ Mutex::~Mutex() {
   os::free(const_cast<char*>(_name));
 }
 
-Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) : _owner(NULL) {
+Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check_required,
+             bool allow_vm_block) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != NULL, "Mutex requires a name");
   _name = os::strdup(name, mtInternal);
@@ -285,16 +285,20 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
   _safepoint_check_required = safepoint_check_required;
   _skip_rank_check = false;
 
+  assert(_rank < nonleaf || _safepoint_check_required == _safepoint_check_always,
+         "higher than nonleaf should safepoint %s", name);
+
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
          "Special locks or below should never safepoint");
+
+  // The allow_vm_block also includes allowing other non-Java threads to block or
+  // allowing Java threads to block in native.
+  assert(_safepoint_check_required == _safepoint_check_always || _allow_vm_block,
+         "Safepoint check never locks should always allow the vm to block");
 
   assert(_rank >= 0, "Bad lock rank");
 #endif
 }
-
-Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) :
-  Mutex(Rank, name, allow_vm_block, safepoint_check_required) {}
 
 bool Mutex::owned_by_self() const {
   return owner() == Thread::current();
