@@ -668,7 +668,9 @@ void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start,
   collector->stat_mark()->print();
   ZStatNMethods::print();
   ZStatMetaspace::print();
-  ZStatReferences::print();
+  if (collector->is_major()) {
+    ZStatReferences::print();
+  }
   collector->stat_relocation()->print();
   collector->stat_heap()->print();
 
