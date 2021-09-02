@@ -1149,7 +1149,8 @@ public final class Unsafe {
      *
      * The call returns when either class {@code c} is fully initialized or
      * class {@code c} is being initialized and the call is performed from
-     * the initializing thread.
+     * the initializing thread. In the latter case a subsequent call to
+     * {@link #shouldBeInitialized} will return {@code true}.
      */
     public void ensureClassInitialized(Class<?> c) {
         if (c == null) {
