@@ -150,7 +150,7 @@ class FinalizerTableConfig : public AllStatic {
   // We use default allocation/deallocation but counted
   static void* allocate_node(void* context, size_t size, Value const& value) {
     added();
-    return AllocateHeap(size, mtClass);
+    return AllocateHeap(size, mtStatistics);
   }
   static void free_node(void* context, void* memory, Value const& value) {
     // We get here because some threads lost a race to insert a newly created FinalizerEntry
