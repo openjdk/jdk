@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class ConfigFileWarning {
 
             pb = ProcessTools.createJavaProcessBuilder("-version");
             output = new OutputAnalyzer(pb.start());
+            output.shouldHaveExitValue(0);
             output.shouldContain("warning: .hotspotrc file is present but has been ignored.  Run with -XX:Flags=.hotspotrc to load the file.");
         }
     }

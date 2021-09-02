@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,43 @@
 
 /*
  * @test
- * @bug 6910473
+ * @bug 6910473 8272541
  * @summary Test that bitLength() is not negative
  * @author Dmitry Nadezhin
  */
 import java.math.BigInteger;
+import java.util.function.Supplier;
 
 public class BitLengthOverflow {
-
-    public static void main(String[] args) {
+    private static void test(Supplier<BigInteger> s) {
         try {
-            BigInteger x = BigInteger.ONE.shiftLeft(Integer.MAX_VALUE); // x = pow(2,Integer.MAX_VALUE)
-            if (x.bitLength() != (1L << 31)) {
-                throw new RuntimeException("Incorrect bitLength() " + x.bitLength());
-            }
-            System.out.println("Surprisingly passed with correct bitLength() " + x.bitLength());
+            BigInteger x = s.get();
+            System.out.println("Surprisingly passed with correct bitLength() " +
+                               x.bitLength());
         } catch (ArithmeticException e) {
             // expected
-            System.out.println("Overflow is reported by ArithmeticException, as expected");
+            System.out.println("Overflow reported by ArithmeticException, as expected");
         } catch (OutOfMemoryError e) {
             // possible
             System.err.println("BitLengthOverflow skipped: OutOfMemoryError");
             System.err.println("Run jtreg with -javaoption:-Xmx8g");
         }
+    }
+
+    public static void main(String[] args) {
+        test(() -> {
+            // x = pow(2,Integer.MAX_VALUE)
+            BigInteger x = BigInteger.ONE.shiftLeft(Integer.MAX_VALUE);
+            if (x.bitLength() != (1L << 31)) {
+                throw new RuntimeException("Incorrect bitLength() " +
+                                           x.bitLength());
+            }
+            return x;
+        });
+        test(() -> {
+            BigInteger a = BigInteger.ONE.shiftLeft(1073742825);
+            BigInteger b = BigInteger.ONE.shiftLeft(1073742825);
+            return a.multiply(b);
+        });
     }
 }

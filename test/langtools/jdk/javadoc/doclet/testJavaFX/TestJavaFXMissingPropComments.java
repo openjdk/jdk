@@ -92,10 +92,18 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">boolean</span>&nbsp;<span class="element-name">getValue</span\
                     >()</div>
-                    <div class="block">Gets the value of the property value.</div>
+                    <div class="block">Gets the value of the property <code>value</code>.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>The value property (property method comment).</dd>
+                    <dt>Returns:</dt>
+                    <dd>the value of the property <code>value</code></dd>
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#valueProperty()"><code>valueProperty()</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>
                     </section>"""
                 );
@@ -148,10 +156,18 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">boolean</span>&nbsp;<span class="element-name">getValue</span\
                     >()</div>
-                    <div class="block">Gets the value of the property value.</div>
+                    <div class="block">Gets the value of the property <code>value</code>.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>The value property (field comment).</dd>
+                    <dt>Returns:</dt>
+                    <dd>the value of the property <code>value</code></dd>
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#valueProperty()"><code>valueProperty()</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>
                     </section>"""
         );
