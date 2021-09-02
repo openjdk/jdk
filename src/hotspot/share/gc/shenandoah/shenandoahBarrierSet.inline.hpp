@@ -54,7 +54,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
 
   if (load_addr != NULL && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
-    ShenandoahForwarding::update_with_forwarded(fwd, load_addr, obj);
+    ShenandoahForwarding::update_with_forwarded(obj, load_addr, fwd);
   }
 
   return fwd;
@@ -114,7 +114,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   oop fwd = load_reference_barrier(obj);
   if (ShenandoahSelfFixing && load_addr != NULL && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
-    ShenandoahForwarding::update_with_forwarded(fwd, load_addr, obj);
+    ShenandoahForwarding::update_with_forwarded(obj, load_addr, fwd);
   }
 
   return fwd;
@@ -346,9 +346,9 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         }
         assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
         if (EVAC) {
-          ShenandoahForwarding::update_with_forwarded(fwd, elem_ptr, o);
+          ShenandoahForwarding::update_with_forwarded(o, elem_ptr, fwd);
         } else {
-          ShenandoahForwarding::update_with_forwarded_stable(fwd, elem_ptr, o);
+          ShenandoahForwarding::update_with_forwarded_stable(o, elem_ptr, fwd);
         }
         obj = fwd;
       }

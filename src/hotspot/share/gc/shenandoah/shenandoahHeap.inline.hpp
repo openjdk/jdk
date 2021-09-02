@@ -132,7 +132,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
 
       // Either we succeed in updating the reference, or something else gets in our way.
       // We don't care if that is another concurrent GC update, or another mutator update.
-      ShenandoahForwarding::update_with_forwarded_stable(fwd, p, obj);
+      ShenandoahForwarding::update_with_forwarded_stable(obj, p, fwd);
     }
   }
 }

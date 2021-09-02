@@ -221,48 +221,48 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
 // provide the "stable" fast-path versions of these in the next section.
 //
 
-inline void ShenandoahForwarding::update_with_forwarded(oop update, oop* addr, oop compare) {
+inline void ShenandoahForwarding::update_with_forwarded(oop obj, oop* addr, oop update) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  Atomic::cmpxchg(addr, compare, update, memory_order_release);
+  Atomic::cmpxchg(addr, obj, update, memory_order_release);
 }
 
-inline void ShenandoahForwarding::update_with_forwarded(oop update, narrowOop* addr, oop compare) {
+inline void ShenandoahForwarding::update_with_forwarded(oop obj, narrowOop* addr, oop update) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  narrowOop c = CompressedOops::encode(compare);
+  narrowOop o = CompressedOops::encode(obj);
   narrowOop u = CompressedOops::encode(update);
-  Atomic::cmpxchg(addr, c, u, memory_order_release);
+  Atomic::cmpxchg(addr, o, u, memory_order_release);
 }
 
-inline void ShenandoahForwarding::update_with_forwarded(oop update, narrowOop* addr, narrowOop compare) {
+inline void ShenandoahForwarding::update_with_forwarded(narrowOop obj, narrowOop* addr, oop update) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop u = CompressedOops::encode(update);
-  Atomic::cmpxchg(addr, compare, u, memory_order_release);
+  Atomic::cmpxchg(addr, obj, u, memory_order_release);
 }
 
 /*
  * Stable versions of the above.
  *
  * These do not need any special memory semantics, as these are only called when no
- * forwardings are being installed. This is usually happens outside of evacuation,
- * during the bulk heap updates.
+ * forwardings are being installed concurrently. This is usually happens outside of
+ * evacuation, during the bulk heap updates.
  */
 
-inline void ShenandoahForwarding::update_with_forwarded_stable(oop update, oop* addr, oop compare) {
+inline void ShenandoahForwarding::update_with_forwarded_stable(oop obj, oop* addr, oop update) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  Atomic::cmpxchg(addr, compare, update, memory_order_relaxed);
+  Atomic::cmpxchg(addr, obj, update, memory_order_relaxed);
 }
 
-inline void ShenandoahForwarding::update_with_forwarded_stable(oop update, narrowOop* addr, oop compare) {
+inline void ShenandoahForwarding::update_with_forwarded_stable(oop obj, narrowOop* addr, oop update) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  narrowOop c = CompressedOops::encode(compare);
+  narrowOop o = CompressedOops::encode(obj);
   narrowOop u = CompressedOops::encode(update);
-  Atomic::cmpxchg(addr, c, u, memory_order_relaxed);
+  Atomic::cmpxchg(addr, o, u, memory_order_relaxed);
 }
 
-inline void ShenandoahForwarding::update_with_forwarded_stable(oop update, narrowOop* addr, narrowOop compare) {
+inline void ShenandoahForwarding::update_with_forwarded_stable(narrowOop obj, narrowOop* addr, oop update) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop u = CompressedOops::encode(update);
-  Atomic::cmpxchg(addr, compare, u, memory_order_relaxed);
+  Atomic::cmpxchg(addr, obj, u, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP

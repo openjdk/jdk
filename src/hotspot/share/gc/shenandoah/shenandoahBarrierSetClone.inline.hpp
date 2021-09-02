@@ -57,9 +57,9 @@ private:
         }
         assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
         if (EVAC) {
-          ShenandoahForwarding::update_with_forwarded(fwd, p, o);
+          ShenandoahForwarding::update_with_forwarded(o, p, fwd);
         } else {
-          ShenandoahForwarding::update_with_forwarded_stable(fwd, p, o);
+          ShenandoahForwarding::update_with_forwarded_stable(o, p, fwd);
         }
         obj = fwd;
       }
