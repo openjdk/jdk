@@ -120,8 +120,17 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // Continue concurrent mark, do not reset regions, do not mark roots, do not collect $200.
   _allow_preemption.set();
   entry_mark();
-  _allow_preemption.unset();
-  if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark)) return false;
+  if (!_allow_preemption.try_unset()) {
+    // The regulator thread has unset the preemption guard. That thread will shortly cancel
+    // the gc, but the control thread is now racing it. Wait until this thread sees the cancellation.
+    while (!heap->cancelled_gc()) {
+      SpinPause();
+    }
+  }
+
+  if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark)) {
+    return false;
+  }
 
   // Complete marking under STW
   vmop_entry_final_mark();

@@ -522,7 +522,7 @@ void ShenandoahControlThread::resume_concurrent_old_cycle(ShenandoahGeneration* 
   if (heap->cancelled_gc()) {
     // It's possible the gc cycle was cancelled after the last time
     // the collection checked for cancellation. In which case, the
-    // old gc cycle is still completed and we have to deal with this
+    // old gc cycle is still completed, and we have to deal with this
     // cancellation. We set the degeneration point to be outside
     // the cycle because if this is an allocation failure, that is
     // what must be done (there is no degenerated old cycle). If the
@@ -746,7 +746,7 @@ void ShenandoahControlThread::notify_control_thread() {
 }
 
 bool ShenandoahControlThread::preempt_old_marking(GenerationMode generation) {
-  return generation == YOUNG && _allow_old_preemption.is_set();
+  return generation == YOUNG && _allow_old_preemption.try_unset();
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
