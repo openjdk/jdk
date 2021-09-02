@@ -1070,9 +1070,12 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
 
     distribute_slices(worker_slices);
 
-    size_t num_workers = heap->workers()->total_workers();
-    size_t old_used[num_workers];
-    size_t young_used[num_workers];
+    size_t num_workers = heap->max_workers();
+
+    ResourceMark rm;
+    size_t* old_used   = NEW_RESOURCE_ARRAY(size_t, num_workers);
+    size_t* young_used = NEW_RESOURCE_ARRAY(size_t, num_workers);
+
     ShenandoahPrepareForCompactionTask task(_preserved_marks, worker_slices, num_workers, old_used, young_used);
     heap->workers()->run_task(&task);
 
@@ -1082,6 +1085,9 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
       heap->young_generation()->increase_used(task.young_used());
       heap->old_generation()->increase_used(task.old_used());
     }
+
+    FREE_RESOURCE_ARRAY(size_t, old_used, num_workers);
+    FREE_RESOURCE_ARRAY(size_t, young_used, num_workers);
   }
 
   // Compute the new addresses for humongous objects
