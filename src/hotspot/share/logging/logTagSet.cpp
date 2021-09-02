@@ -72,15 +72,6 @@ bool LogTagSet::has_output(const LogOutput* output) {
   return false;
 }
 
-bool LogTagSet::has_output_to_file() {
-  for (LogOutputList::Iterator it = _output_list.iterator(); it != _output_list.end(); it++) {
-    if (strncmp((*it)->name(), "file=", 5) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void LogTagSet::log(LogLevelType level, const char* msg) {
   // Increasing the atomic reader counter in iterator(level) must
   // happen before the creation of LogDecorations instance so
