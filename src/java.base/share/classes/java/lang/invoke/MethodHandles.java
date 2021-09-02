@@ -2783,12 +2783,11 @@ assertEquals("[x, y, z]", pb.command().toString());
          *
          * <p>
          * This method returns when {@code targetClass} is fully initialized, or
-         * when {@code targetClass} is being initialized if this method is called
-         * by the initializing thread.
+         * when {@code targetClass} is being initialized by the current thread.
          *
          * @param targetClass the class to be initialized
          * @return {@code targetClass} that has been initialized, or that is being
-         *         initialized if this method is called by the initializing thread.
+         *         initialized by the current thread.
          *
          * @throws  IllegalArgumentException if {@code targetClass} is a primitive type or {@code void}
          *          or array class
