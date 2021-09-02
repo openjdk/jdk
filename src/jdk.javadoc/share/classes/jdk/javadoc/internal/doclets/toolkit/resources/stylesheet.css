@@ -171,11 +171,11 @@ ul.sub-nav-list-small {
 .sub-nav div {
     clear:left;
     float:left;
-    padding:0 0 5px 6px;
+    padding:6px;
     text-transform:uppercase;
 }
-.sub-nav .nav-list {
-    padding-top:5px;
+.sub-nav .sub-nav-list {
+    padding-top:4px;
 }
 ul.nav-list {
     display:block;
@@ -195,19 +195,15 @@ ul.nav-list li {
 }
 .sub-nav .nav-list-search {
     float:right;
-    margin:0 0 0 0;
-    padding:5px 6px;
+    margin:0;
+    padding:6px;
     clear:none;
-    text-align: right;
-}
-.nav-list-search label {
+    text-align:right;
     position:relative;
-    right:-16px;
 }
 ul.sub-nav-list li {
     list-style:none;
     float:left;
-    padding-top:10px;
 }
 .top-nav a:link, .top-nav a:active, .top-nav a:visited {
     color:#ffffff;
@@ -631,23 +627,22 @@ ul.ui-autocomplete  li {
     background-repeat:no-repeat;
     background-position:2px 3px;
     padding-left:20px;
-    position:relative;
-    right:-18px;
-    width:400px;
+    width: 250px;
+    margin: 0;
 }
 #reset-button {
-    background-color: rgb(255,255,255);
+    background-color: transparent;
     background-image:url('resources/x.png');
-    background-position:center;
     background-repeat:no-repeat;
-    background-size:12px;
-    border:0 none;
-    width:16px;
-    height:16px;
-    position:relative;
-    left:-4px;
-    top:-4px;
-    font-size:0px;
+    background-size:contain;
+    border:0;
+    border-radius:0;
+    width:12px;
+    height:12px;
+    position:absolute;
+    right:12px;
+    top:10px;
+    font-size:0;
 }
 .watermark {
     color:#545454;
@@ -814,10 +809,7 @@ table.striped > tbody > tr > th {
 /**
  * Tweak style for small screens.
  */
-@media screen and (max-width: 1060px) {
-    #search-input {
-        width: 500px;
-    }
+@media screen and (max-width: 900px) {
     div#navbar-top {
         height: 2.8em;
         transition: height 0.35s ease;
@@ -869,7 +861,7 @@ table.striped > tbody > tr > th {
     ul.sub-nav-list-small li p {
         margin: 5px 0;
     }
-    ul.sub-nav-list {
+    div#navbar-sub-list {
         display: none;
     }
     .top-nav a:link, .top-nav a:active, .top-nav a:visited {
@@ -892,7 +884,7 @@ table.striped > tbody > tr > th {
         height: 3px;
         margin: 2px 0 4px 0;
         border-radius: 2px;
-        transition: all 0.1s ease;
+        transition: all 0.1s;
         background-color: #ffffff;
     }
     button#navbar-toggle-button.expanded span.nav-bar-toggle-icon:nth-child(1) {
@@ -910,12 +902,6 @@ table.striped > tbody > tr > th {
     }
 }
 @media screen and (max-width: 800px) {
-    .nav-list-search {
-        width: 95%;
-    }
-    #search-input {
-       width: 64%;
-    }
     .about-language {
         padding-right: 16px;
     }
@@ -942,9 +928,20 @@ table.striped > tbody > tr > th {
         padding-right: 12px;
     }
 }
-@media screen and (max-width: 300px) {
+@media screen and (max-width: 400px) {
+    .nav-list-search {
+        width: 94%;
+    }
+    #search-input {
+        width: 70%;
+    }
+}
+@media screen and (max-width: 320px) {
     .nav-list-search > label {
         display: none;
+    }
+    .nav-list-search {
+        width: 90%;
     }
     #search-input {
         width: 80%;

@@ -315,9 +315,7 @@ $(function() {
     $("ul.sub-nav-list-small li a").click(collapse);
     $("input#search-input").focus(collapse);
     $("main").click(collapse);
-    $(window).on("orientationchange", collapse).on("resize", function() {
-        if ($(window).width() > 1000) collapse();
-    });
+    $(window).on("orientationchange", collapse).on("resize", collapse);
     $("#search-input").catcomplete({
         minLength: 1,
         delay: 300,

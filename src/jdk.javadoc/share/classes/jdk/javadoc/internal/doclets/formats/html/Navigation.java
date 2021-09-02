@@ -652,7 +652,7 @@ public class Navigation {
 
         HtmlTree subDiv = new HtmlTree(TagName.DIV).setStyle(HtmlStyle.subNav);
 
-        HtmlTree div = new HtmlTree(TagName.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV).setId(HtmlIds.NAVBAR_SUB_LIST);
         // Add the summary links if present.
         HtmlTree ulNavSummary = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
         addSummaryLinks(ulNavSummary, false);
