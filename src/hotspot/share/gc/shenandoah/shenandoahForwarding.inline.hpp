@@ -155,15 +155,17 @@ inline bool ShenandoahForwarding::is_forwarded(oop obj) {
 inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   markWord old_mark = obj->mark();
   if (old_mark.is_marked()) {
-    return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
+    // Already forwarded, don't try to overwrite. Re-read with acquire semantics.
+    return get_forwardee_raw(obj);
   }
 
   markWord new_mark = markWord::encode_pointer_as_mark(update);
-  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_acq_rel);
+  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_release);
   if (prev_mark == old_mark) {
     return update;
   } else {
-    return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
+    // Lost the race. Re-read with acquire semantics.
+    return get_forwardee_raw(obj);
   }
 }
 
