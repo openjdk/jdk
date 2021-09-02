@@ -294,7 +294,7 @@ $(function() {
     var expanded = false;
     function collapse() {
         if (expanded) {
-            $("div#navbar-top").height("2.8em");
+            $("div#navbar-top").removeAttr("style");
             $("button#navbar-toggle-button")
                 .removeClass("expanded")
                 .attr("aria-expanded", "false");

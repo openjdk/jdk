@@ -901,7 +901,7 @@ table.striped > tbody > tr > th {
         width: 26px;
     }
 }
-@media screen and (max-width: 800px) {
+@media screen and (max-width: 920px) {
     .about-language {
         padding-right: 16px;
     }
