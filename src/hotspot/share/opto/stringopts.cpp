@@ -279,8 +279,9 @@ void StringConcat::eliminate_unneeded_control() {
       C->gvn_replace_by(n->in(0)->as_If()->proj_out(false), C->top());
     } else if (n->is_Region()) {
       Node* iff = n->in(1)->in(0);
+      assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
       assert(iff->is_If(), "no if for the diamond");
-      Node* bol = iff->in(1);;
+      Node* bol = iff->in(1);
       assert(bol->is_Bool(), "unexpected if shape");
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
