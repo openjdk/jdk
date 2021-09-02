@@ -75,6 +75,8 @@ public class AquaMenuPainter {
         kUCapsLockGlyph = 0x21EA;
 
     static final int ALT_GRAPH_MASK = 1 << 5; // New to Java2
+    static Icon disabledIcon = null;
+
     @SuppressWarnings("deprecation")
     static final int sUnsupportedModifiersMask =
             ~(InputEvent.CTRL_MASK | InputEvent.ALT_MASK | InputEvent.SHIFT_MASK
@@ -158,7 +160,7 @@ public class AquaMenuPainter {
         selectedMenuItemPainter.get().paintBorder(null, g, 0, 0, width, height);
     }
 
-    protected void paintMenuItem(final Client client, final Graphics g, final JComponent c, final Icon checkIcon, Icon arrowIcon, final Color background, final Color foreground, final Color disabledForeground, final Color selectionForeground, final int defaultTextIconGap, final Font acceleratorFont) {
+    protected void paintMenuItem(final Client client, final Graphics g, final JComponent c, final Icon checkIcon, final Icon arrowIcon, final Color background, final Color foreground, final Color disabledForeground, final Color selectionForeground, final int defaultTextIconGap, final Font acceleratorFont) {
         final JMenuItem b = (JMenuItem)c;
         final ButtonModel model = b.getModel();
 
@@ -295,10 +297,6 @@ public class AquaMenuPainter {
 
         // Paint the Arrow
         if (arrowIcon != null) {
-            if (!isEnabled && (arrowIcon instanceof ImageIcon)) {
-                arrowIcon = new ImageIconUIResource(GrayFilter.
-                        createDisabledImage(((ImageIcon)arrowIcon).getImage()));
-            }
             paintArrow(g, b, model, arrowIcon, arrowIconRect);
         }
 
@@ -410,7 +408,15 @@ public class AquaMenuPainter {
         if (c instanceof JMenu && (model.isArmed() || model.isSelected()) && arrowIcon instanceof InvertableIcon) {
             ((InvertableIcon)arrowIcon).getInvertedIcon().paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
         } else {
-            arrowIcon.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
+            if (!c.isEnabled() && arrowIcon instanceof ImageIcon) {
+                if (disabledIcon == null) {
+                    disabledIcon = new ImageIconUIResource(GrayFilter.
+                            createDisabledImage(((ImageIcon) arrowIcon).getImage()));
+                }
+                disabledIcon.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
+            } else {
+                arrowIcon.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
+            }
         }
     }
 
