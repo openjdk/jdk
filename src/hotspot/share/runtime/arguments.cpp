@@ -72,7 +72,6 @@ char** Arguments::_jvm_args_array               = NULL;
 int    Arguments::_num_jvm_args                 = 0;
 char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
-const char*  Arguments::_gc_log_filename        = NULL;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
@@ -92,6 +91,8 @@ bool   Arguments::_enable_preview               = false;
 
 char*  Arguments::SharedArchivePath             = NULL;
 char*  Arguments::SharedDynamicArchivePath      = NULL;
+
+LegacyGCLogging Arguments::_legacyGCLogging     = { 0 };
 
 AgentLibraryList Arguments::_libraryList;
 AgentLibraryList Arguments::_agentList;
@@ -2305,11 +2306,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   // For match_option to return remaining or value part of option string
   const char* tail;
 
-  bool has_verbose_class = false;
-  bool has_verbose_module = false;
-  bool has_verbose_gc = false;
-  bool has_verbose_jni = false;
-
   // iterate over arguments
   for (int index = 0; index < args->nOptions; index++) {
     bool is_absolute_path = false;  // for -agentpath vs -agentlib
@@ -2331,13 +2327,17 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -verbose:[class/module/gc/jni]
     if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
-        has_verbose_class = true;
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, load));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, unload));
       } else if (!strcmp(tail, ":module")) {
-        has_verbose_module = true;
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, load));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, unload));
       } else if (!strcmp(tail, ":gc")) {
-        has_verbose_gc = true;
+        if (_legacyGCLogging.lastFlag == 0) {
+          _legacyGCLogging.lastFlag = 1;
+        }
       } else if (!strcmp(tail, ":jni")) {
-        has_verbose_jni = true;
+        LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(jni, resolve));
       }
     // -da / -ea / -disableassertions / -enableassertions
     // These accept an optional class/package name separated by a colon, e.g.,
@@ -2742,7 +2742,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);
-      _gc_log_filename = os::strdup_check_oom(tail);
+      _legacyGCLogging.lastFlag = 2;
+      _legacyGCLogging.file = os::strdup_check_oom(tail);
     } else if (match_option(option, "-Xlog", &tail)) {
       bool ret = false;
       if (strcmp(tail, ":help") == 0) {
@@ -2953,37 +2954,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       return JNI_EINVAL;
     }
     LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
-  }
-
-  // This must be done after all options have been processed
-  // since -Xlog and -Xloggc override corresponding -verbose
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-    if (ts->contains(LogTag::_gc) && ts->has_output_to_file()) {
-      has_verbose_gc = false;
-    }
-    if (ts->contains(LogTag::_class) && ts->has_output_to_file()) {
-      has_verbose_class = false;
-    }
-    if (ts->contains(LogTag::_jni) && ts->has_output_to_file()) {
-      has_verbose_jni = false;
-    }
-    if (ts->contains(LogTag::_module) && ts->has_output_to_file()) {
-      has_verbose_module = false;
-    }
-  }
-  if (has_verbose_gc && !_gc_log_filename) {
-    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
-  }
-  if (has_verbose_module) {
-    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, load));
-    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, unload));
-  }
-  if (has_verbose_jni) {
-    LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(jni, resolve));
-  }
-  if (has_verbose_class) {
-    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, load));
-    LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, unload));
   }
 
   fix_appclasspath();
@@ -3761,14 +3731,14 @@ bool Arguments::handle_deprecated_print_gc_flags() {
     log_warning(gc)("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
   }
 
-  if (_gc_log_filename != NULL) {
+  if (_legacyGCLogging.lastFlag == 2) {
     // -Xloggc was used to specify a filename
     const char* gc_conf = PrintGCDetails ? "gc*" : "gc";
 
     LogTarget(Error, logging) target;
     LogStream errstream(target);
-    return LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, &errstream);
-  } else if (PrintGC || PrintGCDetails) {
+    return LogConfiguration::parse_log_arguments(_legacyGCLogging.file, gc_conf, NULL, NULL, &errstream);
+  } else if (PrintGC || PrintGCDetails || (_legacyGCLogging.lastFlag == 1)) {
     LogConfiguration::configure_stdout(LogLevel::Info, !PrintGCDetails, LOG_TAGS(gc));
   }
   return true;
