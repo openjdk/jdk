@@ -621,7 +621,7 @@ class Invariance : public StackObj {
 // Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
 // Note: this function is particularly designed for loop predication. We require load_range
 //       and offset to be loop invariant computed on the fly by "invar"
-bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar, ProjNode *predicate_proj) const {
+bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
   if (!is_loop_exit(iff)) {
     return false;
   }
@@ -662,7 +662,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
   if (offset && !invar.is_invariant(offset)) { // offset must be invariant
     return false;
   }
-#ifndef PRODUCT
+#ifdef ASSERT
   if (offset && phase->has_ctrl(offset)) {
     Node* offset_ctrl = phase->get_ctrl(offset);
     if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
@@ -672,7 +672,8 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
       // Previously promoted loop predication is in the same loop of predication
       // point.
       // This situation can occur when pinning nodes too conservatively - can we do better?
-      assert(false, "cyclic dependency prevents range check elimination");
+      assert(false, "cyclic dependency prevents range check elimination, idx: offset %d, offset_ctrl %d, predicate_proj %d",
+             offset->_idx, offset_ctrl->_idx, predicate_proj->_idx);
     }
   }
 #endif
@@ -1155,7 +1156,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
       loop->dump_head();
     }
 #endif
-  } else if (cl != NULL && loop->is_range_check_if(iff, this, invar, predicate_proj)) {
+  } else if (cl != NULL && loop->is_range_check_if(iff, this, invar DEBUG_ONLY(COMMA predicate_proj))) {
     // Range check for counted loops
     const Node*    cmp    = bol->in(1)->as_Cmp();
     Node*          idx    = cmp->in(1);
