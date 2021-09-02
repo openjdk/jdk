@@ -205,15 +205,15 @@ void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread
 void mutex_init() {
   def(tty_lock                     , PaddedMutex  , tty,         true,  _safepoint_check_never);      // allow to lock in VM
 
-  def(CGC_lock                     , PaddedMonitor, leaf,        true,  _safepoint_check_never);      // coordinate between fore- and background GC
   def(STS_lock                     , PaddedMonitor, leaf,        true,  _safepoint_check_never);
 
   if (UseG1GC) {
+    def(CGC_lock                   , PaddedMonitor, leaf,        true,  _safepoint_check_never);
     def(G1OldGCCount_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);
 
     def(G1DetachedRefinementStats_lock, PaddedMutex, leaf-2,     true, _safepoint_check_never);
 
-    def(FreeList_lock              , PaddedMutex  , leaf+2,      true,  _safepoint_check_never);
+    def(FreeList_lock              , PaddedMutex  , leaf,        true,  _safepoint_check_never);
     def(OldSets_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
     def(Uncommit_lock              , PaddedMutex  , leaf-2,      true,  _safepoint_check_never);
     def(RootRegionScan_lock        , PaddedMonitor, leaf-1,      true,  _safepoint_check_never);
@@ -231,7 +231,7 @@ void mutex_init() {
   def(RawMonitor_lock              , PaddedMutex  , special,     true,  _safepoint_check_never);
   def(OopMapCacheAlloc_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for oop_map_cache allocation.
 
-  def(Metaspace_lock               , PaddedMutex  , leaf-1,      true,  _safepoint_check_never);
+  def(Metaspace_lock               , PaddedMutex  , leaf-3,      true,  _safepoint_check_never);
   def(ClassLoaderDataGraph_lock    , PaddedMutex  , nonleaf,     false, _safepoint_check_always);
 
   def(Patching_lock                , PaddedMutex  , special,     true,  _safepoint_check_never);      // used for safepointing and code patching.
@@ -274,7 +274,7 @@ void mutex_init() {
   def(RetData_lock                 , PaddedMutex  , nonleaf,     false, _safepoint_check_always);
   def(Terminator_lock              , PaddedMonitor, nonleaf,     true,  _safepoint_check_always);
   def(InitCompleted_lock           , PaddedMonitor, leaf,        true,  _safepoint_check_never);
-  def(VtableStubs_lock             , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+  def(VtableStubs_lock             , PaddedMutex  , leaf-2,      true,  _safepoint_check_never);
   def(Notify_lock                  , PaddedMonitor, nonleaf,     true,  _safepoint_check_always);
   def(JNICritical_lock             , PaddedMonitor, nonleaf,     true,  _safepoint_check_always); // used for JNI critical regions
   def(AdapterHandlerLibrary_lock   , PaddedMutex  , nonleaf,     true,  _safepoint_check_always);
