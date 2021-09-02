@@ -945,10 +945,9 @@ search:
                 }
 
                 if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
-                    byte[] bytes = bos.toByteArray();
                     String sourceEncoding = DataFlavorUtil.getTextCharset(flavor);
                     return translateTransferableString(
-                               new String(bytes, sourceEncoding),
+                               bos.toString(sourceEncoding),
                                format);
                 }
                 theByteArray = bos.toByteArray();
