@@ -389,7 +389,7 @@ GetJavaProperties(JNIEnv* env)
             GetVersionEx((OSVERSIONINFO *) &ver);
             majorVersion = ver.dwMajorVersion;
             minorVersion = ver.dwMinorVersion;
-            /* distinguish Windows Server 2016 and 2019 by build number */
+            /* distinguish Windows Server 2016+ by build number */
             buildNumber = ver.dwBuildNumber;
             is_workstation = (ver.wProductType == VER_NT_WORKSTATION);
             platformId = ver.dwPlatformId;

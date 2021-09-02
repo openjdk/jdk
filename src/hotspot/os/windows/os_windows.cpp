@@ -1866,9 +1866,10 @@ void os::win32::print_windows_version(outputStream* st) {
     if (is_workstation) {
       st->print("10");
     } else {
-      // distinguish Windows Server 2016, 2019 and 2022 by build number
-      // Windows server 2019 GA 10/2018 build number is 17763
-      // Windows server 2022 build number is 20348
+      // distinguish Windows Server by build number
+      // - 2016 GA 10/2016 build: 14393
+      // - 2019 GA 11/2018 build: 17763
+      // - 2022 GA 08/2021 build: 20348
       if (build_number > 20347) {
         st->print("Server 2022");
       } else if (build_number > 17762) {
