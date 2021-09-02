@@ -821,10 +821,6 @@ public:
 void ZDriverMajor::gc(const ZDriverRequest& request) {
   ZDriverMajorGCScope scope(request);
 
-  if (ZAbort::should_abort()) {
-    return;
-  }
-
   // Phase 1: Pause Mark Starts
   pause_mark_start();
 
@@ -905,7 +901,9 @@ void ZDriverMajor::run_service() {
     stop_aggressive_promotion();
 
     // Run GC
-    gc(request);
+    if (!ZAbort::should_abort()) {
+      gc(request);
+    }
 
     // Notify GC completed
     _port.ack();
