@@ -70,7 +70,7 @@ void ZForwarding::in_place_relocation_start() {
 void ZForwarding::in_place_relocation_finish() {
   assert(_in_place, "Must be an in-place relocated page");
 
-  _page->log_msg(err_msg(" In-place reloc finish - top at start: " PTR_FORMAT, untype(_in_place_top_at_start)));
+  _page->log_msg(" In-place reloc finish - top at start: " PTR_FORMAT, untype(_in_place_top_at_start));
 
   if (_age_from == ZPageAge::old && _age_to == ZPageAge::old) {
     // The old to old relocation reused the ZPage
@@ -98,13 +98,13 @@ bool ZForwarding::in_place_relocation_is_below_top_at_start(zoffset offset) cons
 void ZForwarding::in_place_relocation_clear_remset_up_to(uintptr_t local_offset) const {
   const size_t size = local_offset - _in_place_clear_remset_watermark;
   if (size > 0) {
-    _page->log_msg(err_msg(" In-place clear  : " PTR_FORMAT, untype(_page->start() + local_offset)));
+    _page->log_msg(" In-place clear  : " PTR_FORMAT, untype(_page->start() + local_offset));
     _page->clear_remset_range_non_par(_in_place_clear_remset_watermark, size);
   }
 }
 
 void ZForwarding::in_place_relocation_set_clear_remset_watermark(uintptr_t local_offset) {
-  _page->log_msg(err_msg(" In-place cleared: " PTR_FORMAT, untype(_page->start() + local_offset)));
+  _page->log_msg(" In-place cleared: " PTR_FORMAT, untype(_page->start() + local_offset));
   _in_place_clear_remset_watermark = local_offset;
 }
 

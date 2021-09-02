@@ -202,9 +202,15 @@ void ZPage::clear_previous_remembered() {
  _remember_set.clear_previous();
 }
 
-void ZPage::log_msg(const char* msg) const {
-  LogStreamHandle(Debug, gc, reloc) handle;
-  print_on_msg(&handle, msg);
+void ZPage::log_msg(const char* msg_format, ...) const {
+  LogTarget(Trace, gc, page) target;
+  if (target.is_enabled()) {
+    va_list argp;
+    va_start(argp, msg_format);
+    LogStream stream(target);
+    print_on_msg(&stream, err_msg(FormatBufferDummy(), msg_format, argp));
+    va_end(argp);
+  }
 }
 
 void ZPage::print_on_msg(outputStream* out, const char* msg) const {
