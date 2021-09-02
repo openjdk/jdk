@@ -317,10 +317,12 @@ public final class ECUtil {
      *
      * @param prv the private key to be checked.
      *
+     * @return the private key that was evaluated.
+     *
      * @throws InvalidKeyException if the key's scalar value is not within
      *      the range 1 <= x < n where n is the order of the generator.
      */
-    public static void checkPrivateKey(ECPrivateKey prv)
+    public static ECPrivateKey checkPrivateKey(ECPrivateKey prv)
             throws InvalidKeyException {
         // The private key itself cannot be null, but if the private
         // key doesn't divulge the parameters or more importantly the S value
@@ -334,13 +336,15 @@ public final class ECUtil {
             BigInteger sVal = prv.getS();
 
             if (order != null && sVal != null) {
-                if (sVal.compareTo(BigInteger.ONE) < 0 ||
+                if (sVal.compareTo(BigInteger.ZERO) <= 0 ||
                         sVal.compareTo(order) >= 0) {
                     throw new InvalidKeyException("The private key must be " +
                             "within the range [1, n - 1]");
                 }
             }
         }
+
+        return prv;
     }
 
     private ECUtil() {}
