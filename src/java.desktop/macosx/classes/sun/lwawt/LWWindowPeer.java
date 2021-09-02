@@ -289,6 +289,10 @@ public class LWWindowPeer
         updateFocusableWindowState();
         super.setVisibleImpl(visible);
         // TODO: update graphicsConfig, see 4868278
+        if (visible) {
+            // Set correct background for a window before making it visible
+            platformWindow.setOpaque(!isTranslucent());
+        }
         platformWindow.setVisible(visible);
         if (isSimpleWindow()) {
             KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
