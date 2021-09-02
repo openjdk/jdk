@@ -50,8 +50,9 @@ void ConcurrentGCThread::run() {
 
   run_service();
 
-  // Wait for signal to terminate
   MonitorLocker ml(Terminator_lock, Monitor::_no_safepoint_check_flag);
+
+  // Wait for signal to terminate
   while (!_should_terminate) {
     ml.wait();
   }
