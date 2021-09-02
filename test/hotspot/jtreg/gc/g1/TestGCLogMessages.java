@@ -121,6 +121,11 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
         // Evacuate Collection Set
         new LogMessageWithLevel("Ext Root Scanning", Level.DEBUG),
+        new LogMessageWithLevel("Thread Roots", Level.TRACE),
+        new LogMessageWithLevel("CLDG Roots", Level.TRACE),
+        new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
+        new LogMessageWithLevel("JNI Global Roots", Level.TRACE),
+        new LogMessageWithLevel("VM Global Roots", Level.TRACE),
         // Scan Heap Roots
         new LogMessageWithLevel("Scan Heap Roots", Level.DEBUG),
         new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
@@ -136,12 +141,6 @@ public class TestGCLogMessages {
         // Termination
         new LogMessageWithLevel("Termination", Level.DEBUG),
         new LogMessageWithLevel("Termination Attempts", Level.DEBUG),
-        // Ext Root Scan
-        new LogMessageWithLevel("Thread Roots", Level.TRACE),
-        new LogMessageWithLevel("CLDG Roots", Level.TRACE),
-        new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
-        new LogMessageWithLevel("JNI Global Roots", Level.TRACE),
-        new LogMessageWithLevel("VM Global Roots", Level.TRACE),
         // Post Evacuate Collection Set
         // NMethod List Cleanup
         new LogMessageWithLevel("NMethod List Cleanup", Level.DEBUG),
