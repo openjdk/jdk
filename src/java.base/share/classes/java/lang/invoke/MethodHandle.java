@@ -911,6 +911,25 @@ public abstract class MethodHandle implements Constable {
         return keepsAlive(newType, loader);
     }
 
+    /**
+     * Tries to find the most specific {@code ClassLoader} which keeps all the classes mentioned in {@code mt} alive.
+     * In the worst case, returns a {@code ClassLoader} which relates to some of the classes mentioned in {@code mt}.
+     */
+    private static ClassLoader getApproximateCommonClassLoader(MethodType mt) {
+        ClassLoader loader = mt.rtype().getClassLoader();
+        for (Class<?> ptype : mt.ptypes()) {
+            ClassLoader ploader = ptype.getClassLoader();
+            if (isAncestorLoaderOf(loader, ploader)) {
+                loader = ploader; // pick more specific loader
+            } else {
+                // Either loader is a descendant of ploader or loaders are unrelated. Ignore both cases.
+                // When loaders are not related, just pick one and proceed. It reduces the precision of keepsAlive, but
+                // doesn't compromise correctness.
+            }
+        }
+        return loader;
+    }
+
     /* Returns true when {@code loader} keeps {@code mt} either directly or indirectly through the loader delegation chain. */
     private static boolean keepsAlive(MethodType mt, ClassLoader loader) {
         for (Class<?> ptype : mt.ptypes()) {
@@ -923,41 +942,19 @@ public abstract class MethodHandle implements Constable {
 
     /* Returns true when {@code loader} keeps {@code cls} either directly or indirectly through the loader delegation chain. */
     private static boolean keepsAlive(Class<?> cls, ClassLoader loader) {
-        return keepsAlive(cls.getClassLoader(), loader);
-    }
-
-    /**
-     * Tries to find the most specific {@code ClassLoader} which keeps all the classes mentioned in {@code mt} alive.
-     * In the worst case, returns a {@code ClassLoader} which relates to some of the classes mentioned in {@code mt}.
-     */
-    private static ClassLoader getApproximateCommonClassLoader(MethodType mt) {
-        ClassLoader loader = ClassLoaders.appClassLoader();
-        if (keepsAlive(mt.rtype().getClassLoader(), loader)) {
-            loader = mt.rtype().getClassLoader();
-        }
-        for (Class<?> ptype : mt.ptypes()) {
-            ClassLoader ploader = ptype.getClassLoader();
-            if (loader != ploader && keepsAlive(loader, ploader)) {
-                loader = ploader;
-            } else {
-                // Either loader is a descendant of ploader or loaders are unrelated. Ignore both cases.
-                // When loaders are not related, just pick one and proceed. It reduces the precision of keepsAlive, but
-                // doesn't compromise correctness.
-            }
-        }
-        return loader;
-    }
-
-    /* Determine whether {@code loader1} keeps {@code loader2} alive through the loader delegation chain or not. */
-    private static boolean keepsAlive(ClassLoader loader1, ClassLoader loader2) {
-        if (isBuiltinLoader(loader1)) {
+        ClassLoader defLoader = cls.getClassLoader();
+        if (isBuiltinLoader(defLoader)) {
             return true; // built-in loaders are always reachable
         }
-        return isAncestorLoaderOf(loader1, loader2);
+        return isAncestorLoaderOf(defLoader, loader);
     }
 
     private static boolean isAncestorLoaderOf(ClassLoader ancestor, ClassLoader descendant) {
-        // Climb up the descendant chain until a built-in loader is found.
+        // Assume built-in loaders are interchangeable and all custom loaders delegate to one of them.
+        if (isBuiltinLoader(ancestor)) {
+            return true;
+        }
+        // Climb up the descendant chain until a built-in loader is encountered.
         for (ClassLoader loader = descendant; !isBuiltinLoader(loader); loader = loader.getParent()) {
             if (loader == ancestor) {
                 return true;
