@@ -161,7 +161,7 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p, Thread* t) {
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, t);
       }
-      ShenandoahHeap::atomic_update_oop(resolved, p, o);
+      ShenandoahForwarding::update_with_forwarded(resolved, p, o);
     }
   }
 }

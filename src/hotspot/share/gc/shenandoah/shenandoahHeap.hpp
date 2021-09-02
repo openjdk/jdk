@@ -635,10 +635,6 @@ public:
   template <class T>
   inline void update_with_forwarded(T* p);
 
-  static inline void atomic_update_oop(oop update,       oop* addr,       oop compare);
-  static inline void atomic_update_oop(oop update, narrowOop* addr,       oop compare);
-  static inline void atomic_update_oop(oop update, narrowOop* addr, narrowOop compare);
-
   static inline bool atomic_update_oop_check(oop update,       oop* addr,       oop compare);
   static inline bool atomic_update_oop_check(oop update, narrowOop* addr,       oop compare);
   static inline bool atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare);

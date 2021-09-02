@@ -67,6 +67,16 @@ public:
    */
   static inline oop try_update_forwardee(oop obj, oop update);
 
+  /*
+   * Tries to atomically update the heap address to object's forwardee.
+   * Stable versions are only safe when no evacs happen.
+   */
+  static inline void update_with_forwarded(oop update, oop* addr,             oop compare);
+  static inline void update_with_forwarded(oop update, narrowOop* addr,       oop compare);
+  static inline void update_with_forwarded(oop update, narrowOop* addr, narrowOop compare);
+  static inline void update_with_forwarded_stable(oop update, oop* addr,             oop compare);
+  static inline void update_with_forwarded_stable(oop update, narrowOop* addr,       oop compare);
+  static inline void update_with_forwarded_stable(oop update, narrowOop* addr, narrowOop compare);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

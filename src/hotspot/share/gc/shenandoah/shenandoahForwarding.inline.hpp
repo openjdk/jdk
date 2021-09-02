@@ -28,7 +28,10 @@
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/markWord.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/thread.hpp"
 
 /*
@@ -167,6 +170,99 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
     // Lost the race. Re-read with acquire semantics.
     return get_forwardee_raw(obj);
   }
+}
+
+// Atomic updates of object with their forwardees. The reason why we need stronger-than-relaxed
+// memory ordering has to do with coordination with GC barriers and mutator accesses.
+//
+// In essence, stronger CAS access is required to maintain the transitive chains that mutator
+// accesses build by themselves. To illustrate this point, consider the following example.
+//
+// Suppose "o" is the object that has a field "x" and the reference to "o" is stored
+// to field at "addr", which happens to be Java volatile field. Normally, the accesses to volatile
+// field at "addr" would be matched with release/acquire barriers. This changes when GC moves
+// the object under mutator feet.
+//
+// Thread 1 (Java)
+//         // --- previous access starts here
+//         ...
+//   T1.1: store(&o.x, 1, mo_relaxed)
+//   T1.2: store(&addr, o, mo_release) // volatile store
+//
+//         // --- new access starts here
+//         // LRB: copy and install the new copy to fwdptr
+//   T1.3: var copy = copy(o)
+//   T1.4: cas(&fwd, t, copy, mo_release) // pointer-mediated publication
+//         <access continues>
+//
+// Thread 2 (GC updater)
+//   T2.1: var f = load(&fwd, mo_{consume|acquire}) // pointer-mediated acquisition
+//   T2.2: cas(&addr, o, f, mo_release) // this method
+//
+// Thread 3 (Java)
+//   T3.1: var o = load(&addr, mo_acquire) // volatile read
+//   T3.2: if (o != null)
+//   T3.3:   var r = load(&o.x, mo_relaxed)
+//
+// r is guaranteed to contain "1".
+//
+// Without GC involvement, there is synchronizes-with edge from T1.2 to T3.1,
+// which guarantees this. With GC involvement, when LRB copies the object and
+// another thread updates the reference to it, we need to have the transitive edge
+// from T1.4 to T2.1 (that one is guaranteed by forwarding accesses), plus the edge
+// from T2.2 to T3.1 (which is brought by this CAS).
+//
+// Note that we do not need to "acquire" in these methods, because we do not read the
+// failure witnesses contents on any path, and "release" is enough.
+//
+// Note: this derivation is valid under quite weak C++ memory model. Real hardware can
+// provide the stronger consistency model that would obviate the need for "release" here.
+// Instead of relaxing everywhere based on specific hardware knowledge, we instead
+// provide the "stable" fast-path versions of these in the next section.
+//
+
+inline void ShenandoahForwarding::update_with_forwarded(oop update, oop* addr, oop compare) {
+  assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  Atomic::cmpxchg(addr, compare, update, memory_order_release);
+}
+
+inline void ShenandoahForwarding::update_with_forwarded(oop update, narrowOop* addr, oop compare) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  narrowOop c = CompressedOops::encode(compare);
+  narrowOop u = CompressedOops::encode(update);
+  Atomic::cmpxchg(addr, c, u, memory_order_release);
+}
+
+inline void ShenandoahForwarding::update_with_forwarded(oop update, narrowOop* addr, narrowOop compare) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  narrowOop u = CompressedOops::encode(update);
+  Atomic::cmpxchg(addr, compare, u, memory_order_release);
+}
+
+/*
+ * Stable versions of the above.
+ *
+ * These do not need any special memory semantics, as these are only called when no
+ * forwardings are being installed. This is usually happens outside of evacuation,
+ * during the bulk heap updates.
+ */
+
+inline void ShenandoahForwarding::update_with_forwarded_stable(oop update, oop* addr, oop compare) {
+  assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  Atomic::cmpxchg(addr, compare, update, memory_order_relaxed);
+}
+
+inline void ShenandoahForwarding::update_with_forwarded_stable(oop update, narrowOop* addr, oop compare) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  narrowOop c = CompressedOops::encode(compare);
+  narrowOop u = CompressedOops::encode(update);
+  Atomic::cmpxchg(addr, c, u, memory_order_relaxed);
+}
+
+inline void ShenandoahForwarding::update_with_forwarded_stable(oop update, narrowOop* addr, narrowOop compare) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  narrowOop u = CompressedOops::encode(update);
+  Atomic::cmpxchg(addr, compare, u, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP

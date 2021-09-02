@@ -692,7 +692,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
-      ShenandoahHeap::atomic_update_oop(resolved, p, obj);
+      ShenandoahForwarding::update_with_forwarded(resolved, p, obj);
       assert(_heap->cancelled_gc() ||
              _mark_context->is_marked(resolved) && !_heap->in_collection_set(resolved),
              "Sanity");
