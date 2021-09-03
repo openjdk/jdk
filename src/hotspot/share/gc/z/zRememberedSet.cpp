@@ -23,66 +23,66 @@
 
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zRememberSet.hpp"
+#include "gc/z/zRememberedSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-int ZRememberSet::_current = 0;
+int ZRememberedSet::_current = 0;
 
-void ZRememberSet::flip() {
+void ZRememberedSet::flip() {
   _current ^= 1;
 }
 
-ZRememberSet::ZRememberSet(size_t page_size) :
+ZRememberedSet::ZRememberedSet(size_t page_size) :
     _bitmap() {
   resize(page_size);
 }
 
-void ZRememberSet::resize(size_t page_size) {
+void ZRememberedSet::resize(size_t page_size) {
   const BitMap::idx_t size_in_bits = page_size / oopSize;
   _bitmap[0].reinitialize(size_in_bits, false /* clear */);
   _bitmap[1].reinitialize(size_in_bits, false /* clear */);
 }
 
-void ZRememberSet::reset() {
+void ZRememberedSet::reset() {
   clear_current();
   clear_previous();
 }
 
-void ZRememberSet::clear_current() {
+void ZRememberedSet::clear_current() {
   current()->clear_large();
 }
 
-void ZRememberSet::clear_current(uintptr_t local_offset) {
+void ZRememberedSet::clear_current(uintptr_t local_offset) {
   current()->clear_range(0, local_offset / oopSize);
 }
 
-void ZRememberSet::clear_previous() {
+void ZRememberedSet::clear_previous() {
   previous()->clear_large();
 }
 
-ZRememberSetReverseIterator ZRememberSet::iterator_reverse() {
-  return ZRememberSetReverseIterator(previous());
+ZRememberedSetReverseIterator ZRememberedSet::iterator_reverse() {
+  return ZRememberedSetReverseIterator(previous());
 }
 
-ZRememberSetIterator ZRememberSet::iterator_current_limited(uintptr_t local_offset, size_t size) {
+ZRememberedSetIterator ZRememberedSet::iterator_current_limited(uintptr_t local_offset, size_t size) {
   const size_t index = local_offset / oopSize;
   const size_t bit_size = size / oopSize;
 
-  return ZRememberSetIterator(current(), index, index + bit_size);
+  return ZRememberedSetIterator(current(), index, index + bit_size);
 }
 
-ZRememberSetIterator::ZRememberSetIterator(BitMap* bitmap) :
-    ZRememberSetIterator(bitmap, 0, bitmap->size() - 1) {}
+ZRememberedSetIterator::ZRememberedSetIterator(BitMap* bitmap) :
+    ZRememberedSetIterator(bitmap, 0, bitmap->size() - 1) {}
 
-ZRememberSetIterator::ZRememberSetIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end) :
+ZRememberedSetIterator::ZRememberedSetIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end) :
     _bitmap(bitmap),
     _pos(start),
     _end(end) {}
 
-bool ZRememberSetIterator::next(size_t* index) {
+bool ZRememberedSetIterator::next(size_t* index) {
   BitMap::idx_t res = _bitmap->get_next_one_offset(_pos, _end);
   if (res == _end) {
     return false;
@@ -94,24 +94,24 @@ bool ZRememberSetIterator::next(size_t* index) {
   return true;
 }
 
-ZRememberSetReverseIterator::ZRememberSetReverseIterator(BitMap* bitmap) :
-    ZRememberSetReverseIterator(bitmap, 0, bitmap->size() - 1) {}
+ZRememberedSetReverseIterator::ZRememberedSetReverseIterator(BitMap* bitmap) :
+    ZRememberedSetReverseIterator(bitmap, 0, bitmap->size() - 1) {}
 
-ZRememberSetReverseIterator::ZRememberSetReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end) :
+ZRememberedSetReverseIterator::ZRememberedSetReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end) :
     _bitmap(bitmap),
     _start(start),
     _pos(end) {}
 
-void ZRememberSetReverseIterator::reset(BitMap::idx_t start, BitMap::idx_t end) {
+void ZRememberedSetReverseIterator::reset(BitMap::idx_t start, BitMap::idx_t end) {
   _start = start;
   _pos = end;
 }
 
-void ZRememberSetReverseIterator::reset(BitMap::idx_t end) {
+void ZRememberedSetReverseIterator::reset(BitMap::idx_t end) {
   _pos = end;
 }
 
-bool ZRememberSetReverseIterator::next(size_t* index) {
+bool ZRememberedSetReverseIterator::next(size_t* index) {
   BitMap::idx_t res = _bitmap->get_prev_one_offset(_start, _pos);
   if (res == size_t(-1)) {
     return false;
@@ -124,22 +124,22 @@ bool ZRememberSetReverseIterator::next(size_t* index) {
   return true;
 }
 
-size_t ZRememberSetContainingIterator::to_index(zaddress_unsafe addr) {
+size_t ZRememberedSetContainingIterator::to_index(zaddress_unsafe addr) {
   zoffset offset = ZAddress::offset(addr);
   return (offset - _page->start()) / oopSize;
 }
 
-zaddress_unsafe ZRememberSetContainingIterator::to_addr(size_t index) {
+zaddress_unsafe ZRememberedSetContainingIterator::to_addr(size_t index) {
   return ZOffset::address_unsafe(_page->start() + index * oopSize);
 }
 
-ZRememberSetContainingIterator::ZRememberSetContainingIterator(ZPage* page) :
+ZRememberedSetContainingIterator::ZRememberedSetContainingIterator(ZPage* page) :
     _page(page),
     _remset_iter(page->remset_reverse_iterator()),
     _obj(zaddress_unsafe::null),
     _obj_remset_iter(page->remset_reverse_iterator()) {}
 
-bool ZRememberSetContainingIterator::next(ZRememberSetContaining* containing) {
+bool ZRememberedSetContainingIterator::next(ZRememberedSetContaining* containing) {
   // Note: to skip having to read the contents of the heap, when collecting the
   // containing information, this code doesn't read the size of the objects and
   // therefore doesn't filter out remset bits that belong to dead objects.
@@ -190,7 +190,7 @@ bool ZRememberSetContainingIterator::next(ZRememberSetContaining* containing) {
   return false;
 }
 
-ZRememberSetContainingInLiveIterator::ZRememberSetContainingInLiveIterator(ZPage* page) :
+ZRememberedSetContainingInLiveIterator::ZRememberedSetContainingInLiveIterator(ZPage* page) :
     _iter(page),
     _addr(zaddress::null),
     _addr_size(0),
@@ -198,8 +198,8 @@ ZRememberSetContainingInLiveIterator::ZRememberSetContainingInLiveIterator(ZPage
     _count_skipped(0),
     _page(page) {}
 
-bool ZRememberSetContainingInLiveIterator::next(ZRememberSetContaining* containing) {
-  ZRememberSetContaining local;
+bool ZRememberedSetContainingInLiveIterator::next(ZRememberedSetContaining* containing) {
+  ZRememberedSetContaining local;
   while (_iter.next(&local)) {
     zaddress local_addr = safe(local._addr);
     if (local_addr != _addr) {
@@ -222,6 +222,6 @@ bool ZRememberSetContainingInLiveIterator::next(ZRememberSetContaining* containi
   return false;
 }
 
-void ZRememberSetContainingInLiveIterator::print_statistics() const {
+void ZRememberedSetContainingInLiveIterator::print_statistics() const {
   _page->log_msg(" (remembered iter count: " SIZE_FORMAT " skipped: " SIZE_FORMAT ")", _count, _count_skipped);
 }

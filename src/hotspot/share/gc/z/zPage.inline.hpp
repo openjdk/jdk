@@ -32,7 +32,7 @@
 #include "gc/z/zLiveMap.inline.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
-#include "gc/z/zRememberSet.inline.hpp"
+#include "gc/z/zRememberedSet.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -314,34 +314,33 @@ inline size_t ZPage::live_bytes() const {
 inline void ZPage::remember(volatile zpointer* p) {
   const zaddress addr = to_zaddress((uintptr_t)p);
   const uintptr_t l_offset = local_offset(addr);
-  _remember_set.set(l_offset);
+  _remembered_set.set(l_offset);
 }
 
 inline void ZPage::clear_remset_non_par(uintptr_t l_offset) {
-  _remember_set.unset_non_par(l_offset);
+  _remembered_set.unset_non_par(l_offset);
 }
 
 inline void ZPage::clear_remset_range_non_par(uintptr_t l_offset, size_t size) {
-  _remember_set.unset_range_non_par(l_offset, size);
+  _remembered_set.unset_range_non_par(l_offset, size);
 }
 
 inline BitMap* ZPage::remset_bitmap() {
-  return _remember_set.previous();
+  return _remembered_set.previous();
 }
 
-inline ZRememberSetReverseIterator ZPage::remset_reverse_iterator() {
-  return _remember_set.iterator_reverse();
+inline ZRememberedSetReverseIterator ZPage::remset_reverse_iterator() {
+  return _remembered_set.iterator_reverse();
 }
 
-inline ZRememberSetIterator ZPage::remset_iterator_current_limited(uintptr_t l_offset, size_t size) {
-  // FIXME: Make it explicit that this is visiting the current() bitmaps
-  return _remember_set.iterator_current_limited(l_offset, size);
+inline ZRememberedSetIterator ZPage::remset_iterator_current_limited(uintptr_t l_offset, size_t size) {
+  return _remembered_set.iterator_current_limited(l_offset, size);
 }
 
 inline bool ZPage::is_remembered(volatile zpointer* p) {
   const zaddress addr = to_zaddress((uintptr_t)p);
   const uintptr_t l_offset = local_offset(addr);
-  return _remember_set.get(l_offset);
+  return _remembered_set.get(l_offset);
 }
 
 inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
@@ -358,7 +357,7 @@ inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
 
 template <typename Function>
 inline void ZPage::oops_do_remembered(Function function) {
-  _remember_set.oops_do_function(function, start());
+  _remembered_set.oops_do_function(function, start());
 }
 
 template <typename Function>
@@ -367,8 +366,8 @@ inline void ZPage::oops_do_remembered_in_live(Function function) {
   assert(!ZHeap::heap()->major_collector()->is_phase_mark(), "Must have liveness information");
   assert(is_marked(), "Must have liveness information");
 
-  ZRememberSetContainingInLiveIterator iter(this);
-  for (ZRememberSetContaining containing; iter.next(&containing);) {
+  ZRememberedSetContainingInLiveIterator iter(this);
+  for (ZRememberedSetContaining containing; iter.next(&containing);) {
     function((volatile zpointer*)containing._field_addr);
   }
 
@@ -377,7 +376,7 @@ inline void ZPage::oops_do_remembered_in_live(Function function) {
 
 template <typename Function>
 inline void ZPage::oops_do_current_remembered(Function function) {
-  _remember_set.oops_do_current_function(function, start());
+  _remembered_set.oops_do_current_function(function, start());
 }
 
 inline zaddress ZPage::alloc_object(size_t size) {

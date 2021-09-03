@@ -531,7 +531,7 @@ private:
     // could have been overwritten during in-place relocation.
     const size_t size = ZUtils::object_size(to_addr);
 
-    ZRememberSetIterator iter = from_page->remset_iterator_current_limited(from_local_offset, size);
+    ZRememberedSetIterator iter = from_page->remset_iterator_current_limited(from_local_offset, size);
     for (size_t index; iter.next(&index);) {
       const uintptr_t field_local_offset = index * oopSize;
 

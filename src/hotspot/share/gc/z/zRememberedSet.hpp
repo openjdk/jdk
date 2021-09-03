@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZREMEMBERSET_HPP
-#define SHARE_GC_Z_ZREMEMBERSET_HPP
+#ifndef SHARE_GC_Z_ZREMEMBEREDSET_HPP
+#define SHARE_GC_Z_ZREMEMBEREDSET_HPP
 
 #include "gc/z/zAddress.hpp"
 #include "utilities/bitMap.hpp"
@@ -30,28 +30,28 @@
 class OopClosure;
 class ZPage;
 
-class ZRememberSetIterator {
+class ZRememberedSetIterator {
 private:
   BitMap* const _bitmap;
   BitMap::idx_t _pos;
   BitMap::idx_t _end;
 
 public:
-  ZRememberSetIterator(BitMap* bitmap);
-  ZRememberSetIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+  ZRememberedSetIterator(BitMap* bitmap);
+  ZRememberedSetIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
 
   bool next(size_t* index);
 };
 
-class ZRememberSetReverseIterator {
+class ZRememberedSetReverseIterator {
 private:
   BitMap* const _bitmap;
   BitMap::idx_t _start;
   BitMap::idx_t _pos;
 
 public:
-  ZRememberSetReverseIterator(BitMap* bitmap);
-  ZRememberSetReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+  ZRememberedSetReverseIterator(BitMap* bitmap);
+  ZRememberedSetReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
 
   void reset(BitMap::idx_t start, BitMap::idx_t end);
   void reset(BitMap::idx_t end);
@@ -59,46 +59,46 @@ public:
   bool next(size_t* index);
 };
 
-struct ZRememberSetContaining {
+struct ZRememberedSetContaining {
   zaddress_unsafe _field_addr;
   zaddress_unsafe _addr;
 };
 
-class ZRememberSetContainingIterator {
+class ZRememberedSetContainingIterator {
 private:
-  ZPage* const                _page;
-  ZRememberSetReverseIterator _remset_iter;
+  ZPage* const                  _page;
+  ZRememberedSetReverseIterator _remset_iter;
 
-  zaddress_unsafe             _obj;
-  ZRememberSetReverseIterator _obj_remset_iter;
+  zaddress_unsafe               _obj;
+  ZRememberedSetReverseIterator _obj_remset_iter;
 
   size_t to_index(zaddress_unsafe addr);
   zaddress_unsafe to_addr(size_t index);
 
 public:
-  ZRememberSetContainingIterator(ZPage* page);
+  ZRememberedSetContainingIterator(ZPage* page);
 
-  bool next(ZRememberSetContaining* containing);
+  bool next(ZRememberedSetContaining* containing);
 };
 
-class ZRememberSetContainingInLiveIterator {
+class ZRememberedSetContainingInLiveIterator {
 private:
-  ZRememberSetContainingIterator _iter;
-  zaddress                       _addr;
-  size_t                         _addr_size;
-  size_t                         _count;
-  size_t                         _count_skipped;
-  ZPage* const                   _page;
+  ZRememberedSetContainingIterator _iter;
+  zaddress                         _addr;
+  size_t                           _addr_size;
+  size_t                           _count;
+  size_t                           _count_skipped;
+  ZPage* const                     _page;
 
 public:
-  ZRememberSetContainingInLiveIterator(ZPage* page);
+  ZRememberedSetContainingInLiveIterator(ZPage* page);
 
-  bool next(ZRememberSetContaining* containing);
+  bool next(ZRememberedSetContaining* containing);
 
   void print_statistics() const;
 };
 
-class ZRememberSet {
+class ZRememberedSet {
 private:
   static int _current;
 
@@ -110,7 +110,7 @@ private:
 public:
   static void flip();
 
-  ZRememberSet(size_t page_size);
+  ZRememberedSet(size_t page_size);
 
   CHeapBitMap* previous();
 
@@ -132,8 +132,8 @@ public:
   void clear_current(uintptr_t local_offset);
   void clear_previous();
 
-  ZRememberSetReverseIterator iterator_reverse();
-  ZRememberSetIterator iterator_current_limited(uintptr_t local_offset, size_t size);
+  ZRememberedSetReverseIterator iterator_reverse();
+  ZRememberedSetIterator iterator_current_limited(uintptr_t local_offset, size_t size);
 };
 
-#endif // SHARE_GC_Z_ZREMEMBERSET_HPP
+#endif // SHARE_GC_Z_ZREMEMBEREDSET_HPP

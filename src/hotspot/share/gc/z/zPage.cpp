@@ -26,7 +26,7 @@
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
-#include "gc/z/zRememberSet.inline.hpp"
+#include "gc/z/zRememberedSet.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "logging/logStream.hpp"
 #include "utilities/align.hpp"
@@ -46,7 +46,7 @@ ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pm
     _virtual(vmem),
     _top(start()),
     _livemap(object_max_count()),
-    _remember_set(size()),
+    _remembered_set(size()),
     _last_used(0),
     _physical(pmem),
     _node() {
@@ -69,7 +69,7 @@ ZPage::ZPage(const ZPage& other) :
     _virtual(other._virtual),
     _top(other._top),
     _livemap(other._livemap),
-    _remember_set(size()),
+    _remembered_set(size()),
     _last_used(other._last_used),
     _physical(other._physical),
     _node() {}
@@ -96,9 +96,9 @@ void ZPage::reset(ZGenerationId generation_id, ZPageAge age, ZPage::ZPageResetTy
     if (type == InPlaceReset && prev_age == ZPageAge::old) {
       // Current bits are needed to copy the remset incrementally. It will get
       // cleared later on.
-      _remember_set.clear_previous();
+      _remembered_set.clear_previous();
     } else {
-      _remember_set.reset();
+      _remembered_set.reset();
     }
   }
 
@@ -134,7 +134,7 @@ ZPage* ZPage::split(uint8_t type, size_t split_of_size) {
   _type = type_from_size(_virtual.size());
   _top = start();
   _livemap.resize(object_max_count());
-  _remember_set.resize(size());
+  _remembered_set.resize(size());
 
   // Create new page, inherit _seqnum and _last_used
   ZPage* const page = new ZPage(type, vmem, pmem);
@@ -166,7 +166,7 @@ ZPage* ZPage::split_committed() {
   _type = type_from_size(_virtual.size());
   _top = start();
   _livemap.resize(object_max_count());
-  _remember_set.resize(size());
+  _remembered_set.resize(size());
 
   // Create new page
   return new ZPage(vmem, pmem);
@@ -195,11 +195,11 @@ public:
 };
 
 void ZPage::clear_current_remembered() {
- _remember_set.clear_current();
+ _remembered_set.clear_current();
 }
 
 void ZPage::clear_previous_remembered() {
- _remember_set.clear_previous();
+ _remembered_set.clear_previous();
 }
 
 void ZPage::log_msg(const char* msg_format, ...) const {

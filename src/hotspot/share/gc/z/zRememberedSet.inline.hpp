@@ -21,46 +21,46 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZREMEMBERSET_INLINE_HPP
-#define SHARE_GC_Z_ZREMEMBERSET_INLINE_HPP
+#ifndef SHARE_GC_Z_ZREMEMBEREDSET_INLINE_HPP
+#define SHARE_GC_Z_ZREMEMBEREDSET_INLINE_HPP
 
-#include "gc/z/zRememberSet.hpp"
+#include "gc/z/zRememberedSet.hpp"
 
-inline CHeapBitMap* ZRememberSet::current() {
+inline CHeapBitMap* ZRememberedSet::current() {
   return &_bitmap[_current];
 }
 
-inline const CHeapBitMap* ZRememberSet::current() const {
+inline const CHeapBitMap* ZRememberedSet::current() const {
   return &_bitmap[_current];
 }
 
-inline CHeapBitMap* ZRememberSet::previous() {
+inline CHeapBitMap* ZRememberedSet::previous() {
   return &_bitmap[_current ^ 1];
 }
 
-inline bool ZRememberSet::get(uintptr_t local_offset) const {
+inline bool ZRememberedSet::get(uintptr_t local_offset) const {
   const size_t index = local_offset / oopSize;
   return current()->at(index);
 }
 
-inline bool ZRememberSet::set(uintptr_t local_offset) {
+inline bool ZRememberedSet::set(uintptr_t local_offset) {
   const size_t index = local_offset / oopSize;
   return current()->par_set_bit(index);
 }
 
-inline void ZRememberSet::unset_non_par(uintptr_t local_offset) {
+inline void ZRememberedSet::unset_non_par(uintptr_t local_offset) {
   const size_t index = local_offset / oopSize;
   current()->clear_bit(index);
 }
 
-inline void ZRememberSet::unset_range_non_par(uintptr_t local_offset, size_t size) {
+inline void ZRememberedSet::unset_range_non_par(uintptr_t local_offset, size_t size) {
   const size_t index = local_offset / oopSize;
   const size_t size_in_bits = size / oopSize;
   current()->clear_range(index, index + size_in_bits);
 }
 
 template <typename Function>
-void ZRememberSet::oops_do_function(Function function, zoffset page_start) {
+void ZRememberedSet::oops_do_function(Function function, zoffset page_start) {
   previous()->iterate_f([&](BitMap::idx_t index) {
     const size_t local_offset = index * oopSize;
     const zoffset offset = page_start + local_offset;
@@ -73,7 +73,7 @@ void ZRememberSet::oops_do_function(Function function, zoffset page_start) {
 }
 
 template <typename Function>
-void ZRememberSet::oops_do_current_function(Function function, zoffset page_start) {
+void ZRememberedSet::oops_do_current_function(Function function, zoffset page_start) {
   current()->iterate_f([&](BitMap::idx_t index) {
     const size_t local_offset = index * oopSize;
     const zoffset offset = page_start + local_offset;
@@ -85,4 +85,4 @@ void ZRememberSet::oops_do_current_function(Function function, zoffset page_star
   });
 }
 
-#endif // SHARE_GC_Z_ZREMEMBERSET_INLINE_HPP
+#endif // SHARE_GC_Z_ZREMEMBEREDSET_INLINE_HPP

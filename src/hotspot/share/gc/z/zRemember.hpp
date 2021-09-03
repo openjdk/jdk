@@ -29,7 +29,7 @@
 class OopClosure;
 class ZForwarding;
 class ZPageTable;
-class ZRememberSetContaining;
+class ZRememberedSetContaining;
 template <typename T> class GrowableArrayView;
 
 class ZRemember {
@@ -44,7 +44,7 @@ private:
   void oops_do_forwarded(ZForwarding* forwarding, Function function) const;
 
   template <typename Function>
-  void oops_do_forwarded_via_containing(GrowableArrayView<ZRememberSetContaining>* array, Function function) const;
+  void oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const;
 
   void scan_page(ZPage* page) const;
   void scan_forwarding(ZForwarding* forwarding, void* context) const;

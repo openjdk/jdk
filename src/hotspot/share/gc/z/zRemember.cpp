@@ -27,7 +27,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
 #include "gc/z/zRemember.inline.hpp"
-#include "gc/z/zRememberSet.hpp"
+#include "gc/z/zRememberedSet.hpp"
 #include "gc/z/zTask.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
@@ -46,17 +46,17 @@ void ZRemember::remember_fields(zaddress addr) const {
 }
 
 void ZRemember::flip() const {
-  ZRememberSet::flip();
+  ZRememberedSet::flip();
 }
 
 template <typename Function>
-void ZRemember::oops_do_forwarded_via_containing(GrowableArrayView<ZRememberSetContaining>* array, Function function) const {
+void ZRemember::oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const {
   // The array contains duplicated from_addr values. Cache expensive operations.
   zaddress_unsafe from_addr = zaddress_unsafe::null;
   zaddress to_addr = zaddress::null;
   size_t object_size = 0;
 
-  for (ZRememberSetContaining containing: *array) {
+  for (ZRememberedSetContaining containing: *array) {
     if (from_addr != containing._addr) {
       from_addr = containing._addr;
 
@@ -111,12 +111,12 @@ void ZRemember::scan_page(ZPage* page) const {
   }
 }
 
-static void fill_containing(GrowableArrayCHeap<ZRememberSetContaining, mtGC>* array, ZPage* page) {
+static void fill_containing(GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* array, ZPage* page) {
   page->log_msg(" (fill_remembered_containing)");
 
-  ZRememberSetContainingIterator iter(page);
+  ZRememberedSetContainingIterator iter(page);
 
-  for (ZRememberSetContaining containing; iter.next(&containing);) {
+  for (ZRememberedSetContaining containing; iter.next(&containing);) {
     array->push(containing);
   }
 }
@@ -130,7 +130,7 @@ void ZRemember::scan_forwarding(ZForwarding* forwarding, void* context) const {
 
   if (forwarding->retain_page()) {
     // Collect all remset info while the page is retained
-    GrowableArrayCHeap<ZRememberSetContaining, mtGC>* array = (GrowableArrayCHeap<ZRememberSetContaining, mtGC>*)context;
+    GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* array = (GrowableArrayCHeap<ZRememberedSetContaining, mtGC>*)context;
     array->clear();
     fill_containing(array, forwarding->page());
     forwarding->release_page();
@@ -160,7 +160,7 @@ public:
       _remember(remember) {}
 
   virtual void work() {
-    GrowableArrayCHeap<ZRememberSetContaining, mtGC> containing_array;
+    GrowableArrayCHeap<ZRememberedSetContaining, mtGC> containing_array;
 
     _iterator.do_forwardings([&](ZForwarding* forwarding) {
       _remember.scan_forwarding(forwarding, &containing_array);

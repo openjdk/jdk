@@ -764,12 +764,12 @@ public:
   }
 };
 
-class ZMarkRememberSetIterator {
+class ZMarkRememberedSetIterator {
 private:
   bool _task_taken;
 
 public:
-  ZMarkRememberSetIterator() : _task_taken(false) {}
+  ZMarkRememberedSetIterator() : _task_taken(false) {}
 
   void apply(OopClosure* cl) {
     // FIXME: Only visited by one thread at the moment
@@ -780,7 +780,7 @@ public:
 
 class ZExtraYoungRootsIterator {
 private:
-  ZParallelApply<ZMarkRememberSetIterator> _remember_set;
+  ZParallelApply<ZMarkRememberedSetIterator> _remember_set;
 
 public:
   void apply(OopClosure* cl) {

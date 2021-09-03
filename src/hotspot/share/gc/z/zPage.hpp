@@ -29,7 +29,7 @@
 #include "gc/z/zLiveMap.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPhysicalMemory.hpp"
-#include "gc/z/zRememberSet.hpp"
+#include "gc/z/zRememberedSet.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
 
@@ -48,7 +48,7 @@ private:
   ZVirtualMemory   _virtual;
   volatile zoffset _top;
   ZLiveMap         _livemap;
-  ZRememberSet     _remember_set;
+  ZRememberedSet   _remembered_set;
   uint64_t         _last_used;
   ZPhysicalMemory  _physical;
   ZListNode<ZPage> _node;
@@ -146,8 +146,8 @@ public:
   void clear_remset_range_non_par(uintptr_t l_offset, size_t size);
 
   BitMap* remset_bitmap();
-  ZRememberSetReverseIterator remset_reverse_iterator();
-  ZRememberSetIterator remset_iterator_current_limited(uintptr_t l_offset, size_t size);
+  ZRememberedSetReverseIterator remset_reverse_iterator();
+  ZRememberedSetIterator remset_iterator_current_limited(uintptr_t l_offset, size_t size);
 
   zaddress_unsafe find_base(volatile zpointer* p);
 
