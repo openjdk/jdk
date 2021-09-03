@@ -1207,6 +1207,15 @@ public:
     collection_set_iterate_increment_from(blk, NULL, worker_id);
   }
   void collection_set_iterate_increment_from(HeapRegionClosure *blk, HeapRegionClaimer* hr_claimer, uint worker_id);
+  // Iterate the part of a regions array given by the offset and length applying the given
+  // HeapRegionClosure. The worker_id will determine where in the part to start the iteration
+  // to allow for more efficient parallel iteration.
+  void par_iterate_regions_array_part_from(HeapRegionClosure* cl,
+                                   HeapRegionClaimer* hr_claimer,
+                                   const uint* regions,
+                                   size_t offset,
+                                   size_t length,
+                                   uint worker_id) const;
 
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>

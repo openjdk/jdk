@@ -2307,11 +2307,41 @@ void G1CollectedHeap::collection_set_iterate_all(HeapRegionClosure* cl) {
 }
 
 void G1CollectedHeap::collection_set_par_iterate_all(HeapRegionClosure* cl, HeapRegionClaimer* hr_claimer, uint worker_id) {
-  _collection_set.par_iterate(cl, hr_claimer, worker_id, workers()->active_workers());
+  _collection_set.par_iterate(cl, hr_claimer, worker_id);
 }
 
 void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *cl, HeapRegionClaimer* hr_claimer, uint worker_id) {
-  _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id, workers()->active_workers());
+  _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id);
+}
+
+void G1CollectedHeap::par_iterate_regions_array_part_from(HeapRegionClosure* cl,
+                                        HeapRegionClaimer* hr_claimer,
+                                        const uint* regions,
+                                        size_t offset,
+                                        size_t length,
+                                        uint worker_id) const {
+  assert_at_safepoint();
+  if (length == 0) {
+    return;
+  }
+  uint total_workers = workers()->active_workers();
+
+  size_t start_pos = (worker_id * length) / total_workers;
+  size_t cur_pos = start_pos;
+
+  do {
+    uint region_idx = regions[cur_pos + offset];
+    if (hr_claimer == NULL || hr_claimer->claim_region(region_idx)) {
+      HeapRegion* r = region_at(region_idx);
+      bool result = cl->do_heap_region(r);
+      guarantee(!result, "Must not cancel iteration");
+    }
+
+    cur_pos++;
+    if (cur_pos == length) {
+      cur_pos = 0;
+    }
+  } while (cur_pos != start_pos);
 }
 
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {

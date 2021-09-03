@@ -49,29 +49,12 @@ void G1EvacFailureRegions::initialize(uint max_regions) {
 void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                        HeapRegionClaimer* _hrclaimer,
                                        uint worker_id) {
-  assert_at_safepoint();
-  size_t length = Atomic::load(&_evac_failure_regions_cur_length);
-  if (length == 0) {
-    return;
-  }
-
-  uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-  size_t start_pos = (worker_id * length) / total_workers;
-  size_t cur_pos = start_pos;
-
-  do {
-    uint region_idx = _evac_failure_regions[cur_pos];
-    if (_hrclaimer == NULL || _hrclaimer->claim_region(region_idx)) {
-      HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
-      bool result = closure->do_heap_region(r);
-      guarantee(!result, "Must not cancel iteration");
-    }
-
-    cur_pos++;
-    if (cur_pos == length) {
-      cur_pos = 0;
-    }
-  } while (cur_pos != start_pos);
+  G1CollectedHeap::heap()->par_iterate_regions_array_part_from(closure,
+                                                        _hrclaimer,
+                                                        _evac_failure_regions,
+                                                        0,
+                                                        Atomic::load(&_evac_failure_regions_cur_length),
+                                                        worker_id);
 }
 
 void G1EvacFailureRegions::reset() {
