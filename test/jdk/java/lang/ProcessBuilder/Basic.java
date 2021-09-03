@@ -2448,7 +2448,9 @@ public class Basic {
             final Process p = new ProcessBuilder(childArgs).start();
             long start = System.nanoTime();
 
-            p.waitFor(10, TimeUnit.MILLISECONDS);
+            if (p.waitFor(10, TimeUnit.MILLISECONDS)) {
+                System.out.println("WaitFor didn't wait long enough: " + (System.nanoTime() - start));
+            };
 
             long end = System.nanoTime();
             if ((end - start) < TimeUnit.MILLISECONDS.toNanos(10))
@@ -2609,7 +2611,13 @@ public class Basic {
             DelegatingProcess p = new DelegatingProcess(proc);
             long start = System.nanoTime();
 
-            p.waitFor(1000, TimeUnit.MILLISECONDS);
+            if (p.waitFor(1000, TimeUnit.MILLISECONDS)) {
+                // Unexpected early exit
+                long early = System.nanoTime();
+                System.out.println("Process exited too soon (" + (early - start) + "ns)" +
+                        ", exitValue: " + p.exitValue());
+                fail("Process exited too soon, exitValue: " + p.exitValue());
+            }
 
             long end = System.nanoTime();
             if ((end - start) < 500000000)
@@ -2635,14 +2643,17 @@ public class Basic {
         if (Windows.is() && TEST_NATIVEPATH != null) {
             // exeBasicSleep is equivalent to sleep on Unix
             Path exePath = Path.of(TEST_NATIVEPATH).resolve("BasicSleep.exe");
-            if (exePath.toFile().canExecute()) {
+            if (Files.isExecutable(exePath)) {
                 return exePath;
             }
         }
 
-        Path exePath = Path.of("/bin").resolve("sleep");
-        if (exePath.toFile().canExecute()) {
-            return exePath;
+        List<String> binPaths = List.of("/bin", "/usr/bin");
+        for (String dir : binPaths) {
+            Path exePath = Path.of(dir).resolve("sleep");
+            if (Files.isExecutable(exePath)) {
+                return exePath;
+            }
         }
         return null;
     }
@@ -2657,15 +2668,12 @@ public class Basic {
         if (SLEEP_PATH != null) {
             childArgs = List.of(SLEEP_PATH.toString(), "600");
         } else {
-            // Fallback to the JavaChild sleep does a sleep for 10 minutes.
+            // Fallback to the JavaChild ; its 'sleep' command is for 10 minutes.
             // The fallback the Java$Child is used if the test is run without building
             // the BasicSleep native executable (for Windows).
-
-            Path exePath = Path.of(TEST_NATIVEPATH).resolve("BasicSleep.exe");
-            System.out.println("exePath: " + exePath + ", canExec: " + exePath.toFile().canExecute());
             childArgs = new ArrayList<>(javaChildArgs);
             childArgs.add("sleep");
-            System.out.println("Using fallback to JavaChild: " + childArgs);
+            System.out.println("Sleep not found, fallback to JavaChild: " + childArgs);
         }
         return childArgs;
     }

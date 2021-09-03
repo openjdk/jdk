@@ -34,7 +34,7 @@
  * Actual time sleeping may vary if interrupted, the remaining time
  * returned from sleep has limited accuracy.
  *
- * Note: the file name prefix "exe" identifies the source should be built into SleepMillis(.exe).
+ * Note: the file name prefix "exe" identifies the source should be built into BasicSleep(.exe).
  */
 int main(int argc, char** argv) {
     int seconds;
