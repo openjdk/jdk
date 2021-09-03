@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  public:
   CompileTask() : _failure_reason(NULL), _failure_reason_on_C_heap(false) {
-    _lock = new Monitor(Mutex::nonleaf+2, "CompileTaskLock");
+    _lock = new Monitor(Mutex::nonleaf+2, "CompileTaskLock", Mutex::_safepoint_check_always);
   }
 
   void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
