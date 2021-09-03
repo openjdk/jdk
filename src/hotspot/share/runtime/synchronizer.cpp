@@ -977,7 +977,7 @@ void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure, JavaThread* t
   while (iter.has_next()) {
     ObjectMonitor* mid = iter.next();
     if (mid->owner() != thread) {
-      return;
+      continue;
     }
     if (!mid->is_being_async_deflated() && mid->object_peek() != NULL) {
       // Only process with closure if the object is set.
