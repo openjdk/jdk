@@ -361,6 +361,11 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     return false; // not supported
   }
 
+  bool is_rotate = VectorNode::is_vector_rotate(sopc);
+  if (is_rotate && !Matcher::match_rule_supported_vector(sopc, num_elem, elem_bt)) {
+    return false;
+  }
+
   Node* opd1 = NULL; Node* opd2 = NULL; Node* opd3 = NULL;
   switch (n) {
     case 3: {
@@ -1585,6 +1590,11 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     }
     return false; // not supported
   }
+
+  if (is_rotate && !Matcher::match_rule_supported_vector(sopc, num_elem, elem_bt)) {
+    return false;
+  }
+
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   Node* opd2 = NULL;
   if (is_shift) {
