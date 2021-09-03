@@ -35,8 +35,8 @@
 
 static const char* replace_addr_expr(const char* str)
 {
-    // Remove any  address expression  "0x0123456789abcdef" found in  order to
-    // aid string comparison. Also remove  any trailing printout from a padded
+    // Remove any address expression "0x0123456789abcdef" found in order to
+    // aid string comparison. Also remove any trailing printout from a padded
     // buffer.
 
     std::basic_string<char> tmp = std::regex_replace(str, std::regex("0x[0-9a-fA-F]+"), "<addr>");
@@ -211,8 +211,8 @@ static void buffer_blob_test()
     ASSERT_FALSE(cbuf.insts()->has_locs());
 
     // The x86-64 version of 'stop' will use relocation info. that will result
-    // in tainting  the location start and  limit if no location  info. buffer
-    // is present.
+    // in tainting the location start and limit if no location info. buffer is
+    // present.
     static uint8_t s_loc_buf[BUF_SZ];  // Raw memory buffer used for relocInfo.
     cbuf.insts()->initialize_shared_locs((relocInfo*)&s_loc_buf[0], BUF_SZ);
 

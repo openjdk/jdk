@@ -79,7 +79,7 @@ class InterpreterCodelet: public Stub {
   Bytecodes::Code bytecode() const               { return _bytecode; }
 #ifndef PRODUCT
  ~InterpreterCodelet() {
-    // InterpreterCodelets reside in the StubQueue  and should not be deleted,
+    // InterpreterCodelets reside in the StubQueue and should not be deleted,
     // nor are they ever finalized (see above).
     ShouldNotCallThis();
   }

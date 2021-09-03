@@ -278,9 +278,9 @@ class CodeSection {
 class AsmRemarkCollection;
 class DbgStringCollection;
 
-// The assumption made  here is that most code remarks  (or comments) added to
-// the generated assembly  code are unique, i.e. there is  very little gain in
-// trying to  share the  strings between  the different  offsets tracked  in a
+// The assumption made here is that most code remarks (or comments) added to
+// the generated assembly code are unique, i.e. there is very little gain in
+// trying to share the strings between the different offsets tracked in a
 // buffer (or blob).
 
 class AsmRemarks {
@@ -303,7 +303,7 @@ private:
   AsmRemarkCollection* _remarks;
 };
 
-// The assumption made here is that the  number of debug strings (with a fixed
+// The assumption made here is that the number of debug strings (with a fixed
 // address requirement) is a rather small set per compilation unit.
 
 class DbgStrings {

@@ -127,7 +127,7 @@ CodeBuffer::~CodeBuffer() {
   verify_section_allocation();
 
   // If we allocated our code buffer from the CodeCache via a BufferBlob, and
-  // it's not  permanent, then free the  BufferBlob.  The rest of  the memory
+  // it's not permanent, then free the BufferBlob.  The rest of the memory
   // will be freed when the ResourceObj is released.
   for (CodeBuffer* cb = this; cb != NULL; cb = cb->before_expand()) {
     // Previous incarnations of this buffer are held live, so that internal
@@ -1080,7 +1080,7 @@ class AsmRemarkCollection : public CHeapObj<mtCode> {
   uint  _ref_cnt;
   Cell* _remarks;
   // Using a 'mutable' iteration pointer to allow 'const' on lookup/next (that
-  // does not  change the state  of the list  per se), supportig  a simplistic
+  // does not change the state of the list per se), supportig a simplistic
   // iteration scheme.
   mutable Cell* _next;
 };
@@ -1126,7 +1126,7 @@ class DbgStringCollection : public CHeapObj<mtCode> {
 
 // ----- AsmRemarks ------------------------------------------------------------
 //
-// Acting as interface to reference  counted mapping [offset -> remark], where
+// Acting as interface to reference counted mapping [offset -> remark], where
 // offset is a byte offset into an instruction stream (CodeBuffer, CodeBlob or
 // other memory buffer) and remark is a string (comment).
 //
