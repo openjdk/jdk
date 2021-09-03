@@ -74,7 +74,6 @@ public class AquaMenuPainter {
         kUCapsLockGlyph = 0x21EA;
 
     static final int ALT_GRAPH_MASK = 1 << 5; // New to Java2
-
     @SuppressWarnings("deprecation")
     static final int sUnsupportedModifiersMask =
             ~(InputEvent.CTRL_MASK | InputEvent.ALT_MASK | InputEvent.SHIFT_MASK
