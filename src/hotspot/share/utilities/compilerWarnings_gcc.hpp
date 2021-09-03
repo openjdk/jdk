@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,9 @@
 #if !defined(__clang_major__) && (__GNUC__ >= 8)
 #define PRAGMA_STRINGOP_TRUNCATION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-truncation")
 #endif
+
+#define PRAGMA_NONNULL_IGNORED \
+  PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
 #if defined(__clang_major__) && \
       (__clang_major__ >= 4 || \

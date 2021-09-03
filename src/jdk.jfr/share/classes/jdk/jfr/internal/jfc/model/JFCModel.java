@@ -26,7 +26,6 @@ package jdk.jfr.internal.jfc.model;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 // Holds the structure of a .jfc file similar to an XML DOM.
 public final class JFCModel {
@@ -120,8 +121,18 @@ public final class JFCModel {
         return configuration;
     }
 
+    public LinkedHashMap<String, String> getSettings() {
+        LinkedHashMap<String, String> result = new LinkedHashMap<>();
+        for (XmlEvent event : configuration.getEvents()) {
+            for (XmlSetting setting : event.getSettings()) {
+                result.put(event.getName() + "#" + setting.getName(), setting.getContent());
+            }
+        }
+        return result;
+    }
+
     public void saveToFile(SafePath path) throws IOException {
-        try (PrintWriter p = new PrintWriter(path.toFile(), Charset.forName("UTF-8"))) {
+        try (PrintWriter p = new PrintWriter(path.toFile(), UTF_8)) {
             PrettyPrinter pp = new PrettyPrinter(p);
             pp.print(configuration);
             if (p.checkError()) {

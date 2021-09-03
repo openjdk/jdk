@@ -25,11 +25,14 @@
 
 package com.sun.management.internal;
 
+import java.util.concurrent.TimeUnit;
+import java.util.function.DoubleSupplier;
+import java.util.function.LongSupplier;
+import java.util.function.ToDoubleFunction;
+
 import jdk.internal.platform.Metrics;
 import sun.management.BaseOperatingSystemImpl;
 import sun.management.VMManagement;
-
-import java.util.concurrent.TimeUnit;
 /**
  * Implementation class for the operating system.
  * Standard and committed hotspot-specific metrics if any.
@@ -42,6 +45,137 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
     private static final int MAX_ATTEMPTS_NUMBER = 10;
     private final Metrics containerMetrics;
+    private ContainerCpuTicks systemLoadTicks = new SystemCpuTicks();
+    private ContainerCpuTicks processLoadTicks = new ProcessCpuTicks();
+
+    private abstract class ContainerCpuTicks {
+        private long usageTicks = 0;
+        private long totalTicks = 0;
+
+        private double getUsageDividesTotal(long usageTicks, long totalTicks) {
+            // If cpu quota or cpu shares are in effect. Calculate the cpu load
+            // based on the following formula (similar to how
+            // getCpuLoad0() is being calculated):
+            //
+            //   | usageTicks - usageTicks' |
+            //  ------------------------------
+            //   | totalTicks - totalTicks' |
+            //
+            // where usageTicks' and totalTicks' are historical values
+            // retrieved via an earlier call of this method.
+            if (usageTicks < 0 || totalTicks <= 0) {
+                return -1;
+            }
+            long distance = usageTicks - this.usageTicks;
+            this.usageTicks = usageTicks;
+            long totalDistance = totalTicks - this.totalTicks;
+            this.totalTicks = totalTicks;
+            double systemLoad = 0.0;
+            if (distance > 0 && totalDistance > 0) {
+                systemLoad = ((double)distance) / totalDistance;
+            }
+            // Ensure the return value is in the range 0.0 -> 1.0
+            systemLoad = Math.max(0.0, systemLoad);
+            systemLoad = Math.min(1.0, systemLoad);
+            return systemLoad;
+        }
+
+        public double getContainerCpuLoad() {
+            assert(containerMetrics != null);
+            long quota = containerMetrics.getCpuQuota();
+            long share = containerMetrics.getCpuShares();
+            if (quota > 0) {
+                long numPeriods = containerMetrics.getCpuNumPeriods();
+                long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
+                return getUsageDividesTotal(cpuUsageSupplier().getAsLong(), quotaNanos);
+            } else if (share > 0) {
+                long hostTicks = getHostTotalCpuTicks0();
+                int totalCPUs = getHostOnlineCpuCount0();
+                int containerCPUs = getAvailableProcessors();
+                // scale the total host load to the actual container cpus
+                hostTicks = hostTicks * containerCPUs / totalCPUs;
+                return getUsageDividesTotal(cpuUsageSupplier().getAsLong(), hostTicks);
+            } else {
+                // If CPU quotas and shares are not active then find the average load for
+                // all online CPUs that are allowed to run this container.
+
+                // If the cpuset is the same as the host's one there is no need to iterate over each CPU
+                if (isCpuSetSameAsHostCpuSet()) {
+                    return defaultCpuLoadSupplier().getAsDouble();
+                } else {
+                    int[] cpuSet = containerMetrics.getEffectiveCpuSetCpus();
+                    // in case the effectiveCPUSetCpus are not available, attempt to use just cpusets.cpus
+                    if (cpuSet == null || cpuSet.length <= 0) {
+                        cpuSet = containerMetrics.getCpuSetCpus();
+                    }
+                    if (cpuSet == null) {
+                        // cgroups is mounted, but CPU resource is not limited.
+                        // We can assume the VM is run on the host CPUs.
+                        return defaultCpuLoadSupplier().getAsDouble();
+                    } else if (cpuSet.length > 0) {
+                        return cpuSetCalc().applyAsDouble(cpuSet);
+                    }
+                    return -1;
+                }
+            }
+        }
+
+        protected abstract DoubleSupplier defaultCpuLoadSupplier();
+        protected abstract ToDoubleFunction<int[]> cpuSetCalc();
+        protected abstract LongSupplier cpuUsageSupplier();
+    }
+
+    private class ProcessCpuTicks extends ContainerCpuTicks {
+
+        @Override
+        protected DoubleSupplier defaultCpuLoadSupplier() {
+            return () -> getProcessCpuLoad0();
+        }
+
+        @Override
+        protected ToDoubleFunction<int[]> cpuSetCalc() {
+            return (int[] cpuSet) -> {
+                int totalCPUs = getHostOnlineCpuCount0();
+                int containerCPUs = getAvailableProcessors();
+                return Math.min(1.0, getProcessCpuLoad0() * totalCPUs / containerCPUs);
+            };
+        }
+
+        @Override
+        protected LongSupplier cpuUsageSupplier() {
+            return () ->  getProcessCpuTime();
+        }
+
+    }
+
+    private class SystemCpuTicks extends ContainerCpuTicks {
+
+        @Override
+        protected DoubleSupplier defaultCpuLoadSupplier() {
+            return () -> getCpuLoad0();
+        }
+
+        @Override
+        protected ToDoubleFunction<int[]> cpuSetCalc() {
+            return (int[] cpuSet) -> {
+                double systemLoad = 0.0;
+                for (int cpu : cpuSet) {
+                    double cpuLoad = getSingleCpuLoad0(cpu);
+                    if (cpuLoad < 0) {
+                        return -1;
+                    }
+                    systemLoad += cpuLoad;
+                }
+                return systemLoad / cpuSet.length;
+            };
+        }
+
+        @Override
+        protected LongSupplier cpuUsageSupplier() {
+            return () -> containerMetrics.getCpuUsage();
+        }
+
+    }
 
     OperatingSystemImpl(VMManagement vm) {
         super(vm);
@@ -134,56 +268,15 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
     public double getCpuLoad() {
         if (containerMetrics != null) {
-            long quota = containerMetrics.getCpuQuota();
-            if (quota > 0) {
-                long periodLength = containerMetrics.getCpuPeriod();
-                long numPeriods = containerMetrics.getCpuNumPeriods();
-                long usageNanos = containerMetrics.getCpuUsage();
-                if (periodLength > 0 && numPeriods > 0 && usageNanos > 0) {
-                    long elapsedNanos = TimeUnit.MICROSECONDS.toNanos(periodLength * numPeriods);
-                    double systemLoad = (double) usageNanos / elapsedNanos;
-                    // Ensure the return value is in the range 0.0 -> 1.0
-                    systemLoad = Math.max(0.0, systemLoad);
-                    systemLoad = Math.min(1.0, systemLoad);
-                    return systemLoad;
-                }
-                return -1;
-            } else {
-                // If CPU quotas are not active then find the average system load for
-                // all online CPUs that are allowed to run this container.
-
-                // If the cpuset is the same as the host's one there is no need to iterate over each CPU
-                if (isCpuSetSameAsHostCpuSet()) {
-                    return getCpuLoad0();
-                } else {
-                    int[] cpuSet = containerMetrics.getEffectiveCpuSetCpus();
-                    // in case the effectiveCPUSetCpus are not available, attempt to use just cpusets.cpus
-                    if (cpuSet == null || cpuSet.length <= 0) {
-                        cpuSet = containerMetrics.getCpuSetCpus();
-                    }
-                    if (cpuSet == null) {
-                        // cgroups is mounted, but CPU resource is not limited.
-                        // We can assume the VM is run on the host CPUs.
-                        return getCpuLoad0();
-                    } else if (cpuSet.length > 0) {
-                        double systemLoad = 0.0;
-                        for (int cpu : cpuSet) {
-                            double cpuLoad = getSingleCpuLoad0(cpu);
-                            if (cpuLoad < 0) {
-                                return -1;
-                            }
-                            systemLoad += cpuLoad;
-                        }
-                        return systemLoad / cpuSet.length;
-                    }
-                    return -1;
-                }
-            }
+            return systemLoadTicks.getContainerCpuLoad();
         }
         return getCpuLoad0();
     }
 
     public double getProcessCpuLoad() {
+        if (containerMetrics != null) {
+            return processLoadTicks.getContainerCpuLoad();
+        }
         return getProcessCpuLoad0();
     }
 
@@ -208,6 +301,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private native double getSingleCpuLoad0(int cpuNum);
     private native int getHostConfiguredCpuCount0();
     private native int getHostOnlineCpuCount0();
+    // CPU ticks since boot in nanoseconds
+    private native long getHostTotalCpuTicks0();
 
     static {
         initialize0();

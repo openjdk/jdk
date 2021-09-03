@@ -31,6 +31,7 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.MulticastChannel;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Objects;
 import java.util.Set;
 import sun.net.NetProperties;
 import sun.nio.ch.DefaultSelectorProvider;
@@ -1151,6 +1152,7 @@ public class DatagramSocket implements java.io.Closeable {
         if (factory != null) {
             throw new SocketException("factory already defined");
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();
@@ -1337,13 +1339,6 @@ public class DatagramSocket implements java.io.Closeable {
 
     // Temporary solution until JDK-8237352 is addressed
     private static final SocketAddress NO_DELEGATE = new SocketAddress() {};
-    private static final boolean USE_PLAINDATAGRAMSOCKET = usePlainDatagramSocketImpl();
-
-    private static boolean usePlainDatagramSocketImpl() {
-        PrivilegedAction<String> pa = () -> NetProperties.get("jdk.net.usePlainDatagramSocketImpl");
-        String s = AccessController.doPrivileged(pa);
-        return (s != null) && (s.isEmpty() || s.equalsIgnoreCase("true"));
-    }
 
     /**
      * Best effort to convert an {@link IOException}
@@ -1396,14 +1391,11 @@ public class DatagramSocket implements java.io.Closeable {
         boolean initialized = false;
         try {
             DatagramSocketImplFactory factory = DatagramSocket.factory;
-            if (USE_PLAINDATAGRAMSOCKET || factory != null) {
+            if (factory != null) {
                 // create legacy DatagramSocket delegate
-                DatagramSocketImpl impl;
-                if (factory != null) {
-                    impl = factory.createDatagramSocketImpl();
-                } else {
-                    impl = DefaultDatagramSocketImplFactory.createDatagramSocketImpl(multicast);
-                }
+                DatagramSocketImpl impl = factory.createDatagramSocketImpl();
+                Objects.requireNonNull(impl,
+                        "Implementation returned by installed DatagramSocketImplFactory is null");
                 delegate = new NetMulticastSocket(impl);
                 ((NetMulticastSocket) delegate).getImpl(); // ensure impl.create() is called.
             } else {

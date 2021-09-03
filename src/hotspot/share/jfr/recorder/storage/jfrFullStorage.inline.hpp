@@ -25,8 +25,9 @@
 #ifndef SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEFULLLIST_INLINE_HPP
 #define SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEFULLLIST_INLINE_HPP
 
-#include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/recorder/storage/jfrFullStorage.hpp"
+
+#include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/utilities/jfrConcurrentQueue.inline.hpp"
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>

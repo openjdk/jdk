@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahParallelCleaning.hpp"
+
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahParallelCleaning.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/safepoint.hpp"

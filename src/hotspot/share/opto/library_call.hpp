@@ -305,6 +305,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_fma(vmIntrinsics::ID id);
   bool inline_character_compare(vmIntrinsics::ID id);
   bool inline_fp_min_max(vmIntrinsics::ID id);
+  bool inline_galoisCounterMode_AESCrypt();
+  Node* inline_galoisCounterMode_AESCrypt_predicate();
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
@@ -314,6 +316,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_broadcast_coerced();
   bool inline_vector_shuffle_to_vector();
   bool inline_vector_shuffle_iota();
+  bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
   bool inline_vector_gather_scatter(bool is_scatter);
   bool inline_vector_reduction();
@@ -325,6 +328,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
+  Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
     VecMaskUseLoad,
@@ -334,6 +338,7 @@ class LibraryCallKit : public GraphKit {
   };
 
   bool arch_supports_vector(int op, int num_elem, BasicType type, VectorMaskUseType mask_use_type, bool has_scalar_args = false);
+  bool arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt, bool has_scalar_args = false);
 
   void clear_upper_avx() {
 #ifdef X86

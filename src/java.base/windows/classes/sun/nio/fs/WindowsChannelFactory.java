@@ -293,6 +293,7 @@ class WindowsChannelFactory {
 
         // permission check
         if (pathToCheck != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 if (flags.read)

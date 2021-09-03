@@ -55,7 +55,7 @@ import java.util.logging.Logger;
  *          reproduce intermittent issues can be a good idea.
  * @modules java.logging
  *          java.management
- * @run main/othervm TestLoggerBundleSync
+ * @run main/othervm -Djava.security.manager=allow TestLoggerBundleSync
  * @author danielfuchs
  */
 public class TestLoggerBundleSync {

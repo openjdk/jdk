@@ -84,7 +84,6 @@ public class SummaryAPIListBuilder {
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             summaryMap.put(kind, createSummarySet());
         }
-        buildSummaryAPIInfo();
     }
 
     public boolean isEmpty() {
@@ -96,22 +95,22 @@ public class SummaryAPIListBuilder {
      * Build separate lists for summary modules, packages, classes, constructors,
      * methods and fields.
      */
-    private void buildSummaryAPIInfo() {
+    protected void buildSummaryAPIInfo() {
         SortedSet<ModuleElement> modules = configuration.modules;
         SortedSet<Element> mset = summaryMap.get(SummaryElementKind.MODULE);
         for (Element me : modules) {
             if (belongsToSummary.test(me)) {
                 mset.add(me);
+                handleElement(me);
             }
-            handleElement(me);
         }
         SortedSet<PackageElement> packages = configuration.packages;
         SortedSet<Element> pset = summaryMap.get(SummaryElementKind.PACKAGE);
         for (Element pe : packages) {
             if (belongsToSummary.test(pe)) {
                 pset.add(pe);
+                handleElement(pe);
             }
-            handleElement(pe);
         }
         for (Element e : configuration.getIncludedTypeElements()) {
             TypeElement te = (TypeElement)e;
@@ -145,8 +144,8 @@ public class SummaryAPIListBuilder {
                         eset.add(e);
                     }
                 }
+                handleElement(te);
             }
-            handleElement(te);
             composeSummaryList(summaryMap.get(SummaryElementKind.FIELD),
                     utils.getFields(te));
             composeSummaryList(summaryMap.get(SummaryElementKind.METHOD),
@@ -184,8 +183,8 @@ public class SummaryAPIListBuilder {
         for (Element member : members) {
             if (belongsToSummary.test(member)) {
                 sset.add(member);
+                handleElement(member);
             }
-            handleElement(member);
         }
     }
 
@@ -209,7 +208,7 @@ public class SummaryAPIListBuilder {
     }
 
     /**
-     * Additional extra processing of an analyzed element.
+     * Additional extra processing of an included element.
      *
      * @param e element to process
      */

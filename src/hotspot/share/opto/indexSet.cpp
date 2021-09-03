@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ void IndexSet::populate_free_list() {
   Compile *compile = Compile::current();
   BitBlock *free = (BitBlock*)compile->indexSet_free_block_list();
 
-  char *mem = (char*)arena()->Amalloc_4(sizeof(BitBlock) *
+  char *mem = (char*)arena()->AmallocWords(sizeof(BitBlock) *
                                         bitblock_alloc_chunk_size + 32);
 
   // Align the pointer to a 32 bit boundary.
@@ -233,7 +233,7 @@ IndexSet::IndexSet (IndexSet *set) {
     _blocks = _preallocated_block_list;
   } else {
     _blocks =
-      (IndexSet::BitBlock**) arena()->Amalloc_4(sizeof(IndexSet::BitBlock**) * _max_blocks);
+      (IndexSet::BitBlock**) arena()->AmallocWords(sizeof(IndexSet::BitBlock**) * _max_blocks);
   }
   for (uint i = 0; i < _max_blocks; i++) {
     BitBlock *block = set->_blocks[i];
@@ -263,7 +263,7 @@ void IndexSet::initialize(uint max_elements) {
   if (_max_blocks <= preallocated_block_list_size) {
     _blocks = _preallocated_block_list;
   } else {
-    _blocks = (IndexSet::BitBlock**) arena()->Amalloc_4(sizeof(IndexSet::BitBlock*) * _max_blocks);
+    _blocks = (IndexSet::BitBlock**) arena()->AmallocWords(sizeof(IndexSet::BitBlock*) * _max_blocks);
   }
   for (uint i = 0; i < _max_blocks; i++) {
     set_block(i, &_empty_block);
@@ -288,7 +288,7 @@ void IndexSet::initialize(uint max_elements, Arena *arena) {
   if (_max_blocks <= preallocated_block_list_size) {
     _blocks = _preallocated_block_list;
   } else {
-    _blocks = (IndexSet::BitBlock**) arena->Amalloc_4(sizeof(IndexSet::BitBlock*) * _max_blocks);
+    _blocks = (IndexSet::BitBlock**) arena->AmallocWords(sizeof(IndexSet::BitBlock*) * _max_blocks);
   }
   for (uint i = 0; i < _max_blocks; i++) {
     set_block(i, &_empty_block);

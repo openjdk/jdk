@@ -874,21 +874,19 @@ instruct reduce_min4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX tmp, rFlag
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_max2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecX tmp, rFlagsReg cr)
+instruct reduce_max2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD tmp, rFlagsReg cr)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (MaxReductionV isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  format %{ "dup   $tmp, T2D, $vsrc\n\t"
-            "smaxv $tmp, T4S, $tmp\n\t"
+  format %{ "smaxp $tmp, T2S, $vsrc, $vsrc\n\t"
             "umov  $dst, $tmp, S, 0\n\t"
             "cmpw  $dst, $isrc\n\t"
             "cselw $dst, $dst, $isrc GT\t# max reduction2I"
   %}
   ins_encode %{
-    __ dup(as_FloatRegister($tmp$$reg), __ T2D, as_FloatRegister($vsrc$$reg));
-    __ smaxv(as_FloatRegister($tmp$$reg), __ T4S, as_FloatRegister($tmp$$reg));
+    __ smaxp(as_FloatRegister($tmp$$reg), __ T2S, as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));
     __ umov(as_Register($dst$$reg), as_FloatRegister($tmp$$reg), __ S, 0);
     __ cmpw(as_Register($dst$$reg), as_Register($isrc$$reg));
     __ cselw(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($isrc$$reg), Assembler::GT);
@@ -896,21 +894,19 @@ instruct reduce_max2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecX tmp, rFlag
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_min2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecX tmp, rFlagsReg cr)
+instruct reduce_min2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD tmp, rFlagsReg cr)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (MinReductionV isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  format %{ "dup   $tmp, T2D, $vsrc\n\t"
-            "sminv $tmp, T4S, $tmp\n\t"
+  format %{ "sminp $tmp, T2S, $vsrc, $vsrc\n\t"
             "umov  $dst, $tmp, S, 0\n\t"
             "cmpw  $dst, $isrc\n\t"
             "cselw $dst, $dst, $isrc LT\t# min reduction2I"
   %}
   ins_encode %{
-    __ dup(as_FloatRegister($tmp$$reg), __ T2D, as_FloatRegister($vsrc$$reg));
-    __ sminv(as_FloatRegister($tmp$$reg), __ T4S, as_FloatRegister($tmp$$reg));
+    __ sminp(as_FloatRegister($tmp$$reg), __ T2S, as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));
     __ umov(as_Register($dst$$reg), as_FloatRegister($tmp$$reg), __ S, 0);
     __ cmpw(as_Register($dst$$reg), as_Register($isrc$$reg));
     __ cselw(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($isrc$$reg), Assembler::LT);
@@ -1847,922 +1843,31 @@ instruct extract2D(vRegD dst, vecX src, immI idx)
 
 // ------------------------------ Vector comparison ---------------------------------
 
-instruct vcmeq8B(vecD dst, vecD src1, vecD src2, immI cond)
+instruct vcmpD(vecD dst, vecD src1, vecD src2, immI cond)
 %{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  predicate(n->as_Vector()->length_in_bytes() == 8);
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T8B, $src1, $src2\t# vector cmp (8B)" %}
+  format %{ "vcmpD  $dst, $src1, $src2\t# vector compare " %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T8B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(type2aelembytes(bt) != 8, "not supported");
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ false);
   %}
   ins_pipe(vdop64);
 %}
 
-instruct vcmeq16B(vecX dst, vecX src1, vecX src2, immI cond)
+instruct vcmpX(vecX dst, vecX src1, vecX src2, immI cond)
 %{
-  predicate(n->as_Vector()->length() == 16 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  predicate(n->as_Vector()->length_in_bytes() == 16);
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T16B, $src1, $src2\t# vector cmp (16B)" %}
+  format %{ "vcmpX  $dst, $src1, $src2\t# vector compare " %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T16B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmeq4S(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T4H, $src1, $src2\t# vector cmp (4S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T4H,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmeq8S(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T8H, $src1, $src2\t# vector cmp (8S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T8H,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmeq2I(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T2S, $src1, $src2\t# vector cmp (2I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmeq4I(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T4S, $src1, $src2\t# vector cmp (4I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmeq2L(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T2D, $src1, $src2\t# vector cmp (2L)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmeq2F(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmeq  $dst, T2S, $src1, $src2\t# vector cmp (2F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmeq(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmeq4F(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmeq  $dst, T4S, $src1, $src2\t# vector cmp (4F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmeq(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmeq2D(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::eq &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmeq  $dst, T2D, $src1, $src2\t# vector cmp (2D)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmeq(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmgt8B(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T8B, $src1, $src2\t# vector cmp (8B)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T8B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmgt16B(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 16 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T16B, $src1, $src2\t# vector cmp (16B)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T16B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmgt4S(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T4H, $src1, $src2\t# vector cmp (4S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T4H,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmgt8S(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T8H, $src1, $src2\t# vector cmp (8S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T8H,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmgt2I(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T2S, $src1, $src2\t# vector cmp (2I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmgt4I(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T4S, $src1, $src2\t# vector cmp (4I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmgt2L(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T2D, $src1, $src2\t# vector cmp (2L)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmgt2F(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmgt  $dst, T2S, $src1, $src2\t# vector cmp (2F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmgt(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmgt4F(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmgt  $dst, T4S, $src1, $src2\t# vector cmp (4F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmgt(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmgt2D(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::gt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmgt  $dst, T2D, $src1, $src2\t# vector cmp (2D)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmgt(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmge8B(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T8B, $src1, $src2\t# vector cmp (8B)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T8B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmge16B(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 16 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T16B, $src1, $src2\t# vector cmp (16B)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T16B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmge4S(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T4H, $src1, $src2\t# vector cmp (4S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T4H,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmge8S(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T8H, $src1, $src2\t# vector cmp (8S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T8H,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmge2I(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T2S, $src1, $src2\t# vector cmp (2I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmge4I(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T4S, $src1, $src2\t# vector cmp (4I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmge2L(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T2D, $src1, $src2\t# vector cmp (2L)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmge2F(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmge  $dst, T2S, $src1, $src2\t# vector cmp (2F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmge(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmge4F(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmge  $dst, T4S, $src1, $src2\t# vector cmp (4F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmge(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmge2D(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ge &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmge  $dst, T2D, $src1, $src2\t# vector cmp (2D)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmge(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmne8B(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T8B, $src1, $src2\n\t# vector cmp (8B)"
-            "not   $dst, T8B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T8B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne16B(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 16 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T16B, $src1, $src2\n\t# vector cmp (16B)"
-            "not   $dst, T16B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T16B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne4S(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T4H, $src1, $src2\n\t# vector cmp (4S)"
-            "not   $dst, T8B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T4H,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne8S(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T8H, $src1, $src2\n\t# vector cmp (8S)"
-            "not   $dst, T16B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T8H,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne2I(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T2S, $src1, $src2\n\t# vector cmp (2I)"
-            "not   $dst, T8B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne4I(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T4S, $src1, $src2\n\t# vector cmp (4I)"
-            "not   $dst, T16B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne2L(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmeq  $dst, T2D, $src1, $src2\n\t# vector cmp (2L)"
-            "not   $dst, T16B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmeq(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne2F(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmeq  $dst, T2S, $src1, $src2\n\t# vector cmp (2F)"
-            "not   $dst, T8B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmeq(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne4F(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmeq  $dst, T4S, $src1, $src2\n\t# vector cmp (4F)"
-            "not   $dst, T16B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmeq(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmne2D(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::ne &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmeq  $dst, T2D, $src1, $src2\n\t# vector cmp (2D)"
-            "not   $dst, T16B, $dst\t" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmeq(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmlt8B(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T8B, $src2, $src1\t# vector cmp (8B)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T8B,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmlt16B(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 16 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T16B, $src2, $src1\t# vector cmp (16B)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T16B,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmlt4S(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T4H, $src2, $src1\t# vector cmp (4S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T4H,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmlt8S(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T8H, $src2, $src1\t# vector cmp (8S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T8H,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmlt2I(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T2S, $src2, $src1\t# vector cmp (2I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmlt4I(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T4S, $src2, $src1\t# vector cmp (4I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmlt2L(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmgt  $dst, T2D, $src2, $src1\t# vector cmp (2L)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmgt(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmlt2F(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmgt  $dst, T2S, $src2, $src1\t# vector cmp (2F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmgt(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmlt4F(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmgt  $dst, T4S, $src2, $src1\t# vector cmp (4F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmgt(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmlt2D(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::lt &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmgt  $dst, T2D, $src2, $src1\t# vector cmp (2D)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmgt(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmle8B(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T8B, $src2, $src1\t# vector cmp (8B)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T8B,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmle16B(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 16 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T16B, $src2, $src1\t# vector cmp (16B)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T16B,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmle4S(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T4H, $src2, $src1\t# vector cmp (4S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T4H,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmle8S(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 8 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T8H, $src2, $src1\t# vector cmp (8S)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T8H,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmle2I(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T2S, $src2, $src1\t# vector cmp (2I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmle4I(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T4S, $src2, $src1\t# vector cmp (4I)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmle2L(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "cmge  $dst, T2D, $src2, $src1\t# vector cmp (2L)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ cmge(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmle2F(vecD dst, vecD src1, vecD src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmge  $dst, T2S, $src2, $src1\t# vector cmp (2F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmge(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop64);
-%}
-
-instruct vcmle4F(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 4 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmge  $dst, T4S, $src2, $src1\t# vector cmp (4F)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmge(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
-  %}
-  ins_pipe(vdop128);
-%}
-
-instruct vcmle2D(vecX dst, vecX src1, vecX src2, immI cond)
-%{
-  predicate(n->as_Vector()->length() == 2 &&
-            n->as_VectorMaskCmp()->get_predicate() == BoolTest::le &&
-            n->in(1)->in(1)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  format %{ "fcmge  $dst, T2D, $src2, $src1\t# vector cmp (2D)" %}
-  ins_cost(INSN_COST);
-  ins_encode %{
-    __ fcmge(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ true);
   %}
   ins_pipe(vdop128);
 %}
@@ -4053,22 +3158,21 @@ instruct replicate2D(vecX dst, vRegD src)
 
 // ====================REDUCTION ARITHMETIC====================================
 
-instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp, iRegINoSp tmp2)
+instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD vtmp, iRegINoSp itmp)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI isrc vsrc));
   ins_cost(INSN_COST);
-  effect(TEMP tmp, TEMP tmp2);
-  format %{ "umov  $tmp, $vsrc, S, 0\n\t"
-            "umov  $tmp2, $vsrc, S, 1\n\t"
-            "addw  $tmp, $isrc, $tmp\n\t"
-            "addw  $dst, $tmp, $tmp2\t# add reduction2I"
+  effect(TEMP vtmp, TEMP itmp);
+  format %{ "addpv  $vtmp, T2S, $vsrc, $vsrc\n\t"
+            "umov  $itmp, $vtmp, S, 0\n\t"
+            "addw  $dst, $itmp, $isrc\t# add reduction2I"
   %}
   ins_encode %{
-    __ umov($tmp$$Register, as_FloatRegister($vsrc$$reg), __ S, 0);
-    __ umov($tmp2$$Register, as_FloatRegister($vsrc$$reg), __ S, 1);
-    __ addw($tmp$$Register, $isrc$$Register, $tmp$$Register);
-    __ addw($dst$$Register, $tmp$$Register, $tmp2$$Register);
+    __ addpv(as_FloatRegister($vtmp$$reg), __ T2S,
+             as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));
+    __ umov($itmp$$Register, as_FloatRegister($vtmp$$reg), __ S, 0);
+    __ addw($dst$$Register, $itmp$$Register, $isrc$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6191,4 +5295,173 @@ instruct vpopcount2I(vecD dst, vecD src) %{
               as_FloatRegister($dst$$reg));
   %}
   ins_pipe(pipe_class_default);
+%}
+
+// vector mask reductions
+
+instruct vmask_truecount8B(iRegINoSp dst, vecD src, vecD tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskTrueCount src));
+  effect(TEMP tmp);
+  ins_cost(2 * INSN_COST);
+  format %{ "addv $tmp, $src\n\t"
+            "umov $dst, $tmp, B, 0\t# vector (8B)" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as bytes with
+    // 0x00/0x01 as element values.
+    __ addv(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src$$reg));
+    __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_truecount16B(iRegINoSp dst, vecX src, vecX tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskTrueCount src));
+  effect(TEMP tmp);
+  ins_cost(2 * INSN_COST);
+  format %{ "addv $tmp, $src\n\t"
+            "umov $dst, $tmp, B, 0\t# vector (16B)" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as bytes with
+    // 0x00/0x01 as element values.
+    __ addv(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src$$reg));
+    __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_firsttrue_LT8B(iRegINoSp dst, vecD src, rFlagsReg cr) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN &&
+            n->in(1)->bottom_type()->is_vect()->length() < 8);
+  match(Set dst (VectorMaskFirstTrue src));
+  effect(KILL cr);
+  ins_cost(7 * INSN_COST);
+  format %{ "vmask_firsttrue $dst, $src\t# vector (4I/4S/2I)" %}
+  ins_encode %{
+    // Returns the index of the first active lane of the
+    // vector mask, or VLENGTH if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    //
+    // Computed by reversing the bits and counting the leading
+    // zero bytes.
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    __ lsrw($dst$$Register, $dst$$Register, 3);
+    __ movw(rscratch1, Matcher::vector_length(this, $src));
+    __ cmpw($dst$$Register, rscratch1);
+    __ cselw($dst$$Register, rscratch1, $dst$$Register, Assembler::GE);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_firsttrue8B(iRegINoSp dst, vecD src) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN &&
+            n->in(1)->bottom_type()->is_vect()->length() == 8);
+  match(Set dst (VectorMaskFirstTrue src));
+  ins_cost(4 * INSN_COST);
+  format %{ "vmask_firsttrue $dst, $src\t# vector (8B)" %}
+  ins_encode %{
+    // Returns the index of the first active lane of the
+    // vector mask, or VLENGTH if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    //
+    // Computed by reversing the bits and counting the leading
+    // zero bytes.
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    __ lsrw($dst$$Register, $dst$$Register, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_firsttrue16B(iRegINoSp dst, vecX src) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskFirstTrue src));
+  ins_cost(6 * INSN_COST);
+  format %{ "vmask_firsttrue $dst, $src\t# vector (16B)" %}
+  ins_encode %{
+    // Returns the index of the first active lane of the
+    // vector mask, or 16 (VLENGTH) if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+
+    Label FIRST_TRUE_INDEX;
+
+    // Try to compute the result from lower 64 bits.
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ movw(rscratch1, zr);
+    __ cbnz($dst$$Register, FIRST_TRUE_INDEX);
+
+    // Compute the result from the higher 64 bits.
+    __ fmovhid($dst$$Register, as_FloatRegister($src$$reg));
+    __ movw(rscratch1, 8);
+
+    // Reverse the bits and count the leading zero bytes.
+    __ bind(FIRST_TRUE_INDEX);
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    __ addw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_lasttrue8B(iRegINoSp dst, vecD src) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskLastTrue src));
+  ins_cost(4 * INSN_COST);
+  format %{ "vmask_lasttrue $dst, $src\t# vector (8B)" %}
+  ins_encode %{
+    // Returns the index of the last active lane of the
+    // vector mask, or -1 if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    //
+    // Computed by counting the leading zero bytes and
+    // substracting it by 7 (VLENGTH - 1).
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ clz($dst$$Register, $dst$$Register);
+    __ movw(rscratch1, 7);
+    __ subw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_lasttrue16B(iRegINoSp dst, vecX src) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskLastTrue src));
+  ins_cost(5 * INSN_COST);
+  format %{ "vmask_lasttrue $dst, $src\t# vector (16B)" %}
+  ins_encode %{
+    // Returns the index of the last active lane of the
+    // vector mask, or -1 if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+
+    Label LAST_TRUE_INDEX;
+
+    // Try to compute the result from higher 64 bits.
+    __ fmovhid($dst$$Register, as_FloatRegister($src$$reg));
+    __ movw(rscratch1, 16 - 1);
+    __ cbnz($dst$$Register, LAST_TRUE_INDEX);
+
+    // Compute the result from the lower 64 bits.
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ movw(rscratch1, 8 - 1);
+
+    // Count the leading zero bytes and substract it by 15 (VLENGTH - 1).
+    __ bind(LAST_TRUE_INDEX);
+    __ clz($dst$$Register, $dst$$Register);
+    __ subw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
 %}

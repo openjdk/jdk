@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -331,7 +331,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
   } else {
     LIR_Opr reg = rlock(x);
     LIR_Opr tmp = LIR_OprFact::illegalOpr;
-    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), x->is_strictfp(), tmp);
+    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), tmp);
     set_result(x, reg);
   }
 }

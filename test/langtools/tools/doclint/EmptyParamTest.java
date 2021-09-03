@@ -9,7 +9,10 @@
  */
 
 /** . */
-public class EmptyParamTest {
-    /** @param i */
+public class EmptyParamTest { /** . */ EmptyParamTest() { }
+    /**
+     * .
+     * @param i
+     */
     void emptyParam(int i) { }
 }

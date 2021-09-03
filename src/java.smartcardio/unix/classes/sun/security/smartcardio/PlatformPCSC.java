@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,6 @@ class PlatformPCSC {
 
     static final Debug debug = Debug.getInstance("pcsc");
 
-    static final Throwable initException;
-
     private final static String PROP_NAME = "sun.security.smartcardio.library";
 
     private final static String LIB1 = "/usr/$LIBISA/libpcsclite.so";
@@ -56,23 +54,23 @@ class PlatformPCSC {
         // empty
     }
 
-    static {
-        initException = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
-            public Throwable run() {
-                try {
-                    System.loadLibrary("j2pcsc");
-                    String library = getLibraryName();
-                    if (debug != null) {
-                        debug.println("Using PC/SC library: " + library);
-                    }
-                    initialize(library);
-                    return null;
-                } catch (Throwable e) {
-                    return e;
+    @SuppressWarnings("removal")
+    static final Throwable initException
+            = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
+        public Throwable run() {
+            try {
+                System.loadLibrary("j2pcsc");
+                String library = getLibraryName();
+                if (debug != null) {
+                    debug.println("Using PC/SC library: " + library);
                 }
+                initialize(library);
+                return null;
+            } catch (Throwable e) {
+                return e;
             }
-        });
-    }
+        }
+    });
 
     // expand $LIBISA to the system specific directory name for libraries
     private static String expand(String lib) {

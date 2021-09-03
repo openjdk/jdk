@@ -62,7 +62,9 @@ public class BootLoader {
     private static final String JAVA_HOME = StaticProperty.javaHome();
 
     static {
-        UNNAMED_MODULE = SharedSecrets.getJavaLangAccess().defineUnnamedModule(null);
+        JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+        UNNAMED_MODULE = jla.defineUnnamedModule(null);
+        jla.addEnableNativeAccess(UNNAMED_MODULE);
         setBootLoaderUnnamedModule0(UNNAMED_MODULE);
     }
 
@@ -141,6 +143,7 @@ public class BootLoader {
     /**
      * Loads a native library from the system library path.
      */
+    @SuppressWarnings("removal")
     public static void loadLibrary(String name) {
         if (System.getSecurityManager() == null) {
             BootLoader.getNativeLibraries().loadLibrary(name);
@@ -291,6 +294,7 @@ public class BootLoader {
         /**
          * Returns URL if the given location is a regular file path.
          */
+        @SuppressWarnings("removal")
         private static URL toFileURL(String location) {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                 public URL run() {
@@ -309,6 +313,7 @@ public class BootLoader {
          * Returns the Manifest if the given location is a JAR file
          * containing a manifest.
          */
+        @SuppressWarnings("removal")
         private static Manifest getManifest(String location) {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Manifest run() {

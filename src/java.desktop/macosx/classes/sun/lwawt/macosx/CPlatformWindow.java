@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -67,6 +68,7 @@ import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.LWWindowPeer.PeerType;
 import sun.lwawt.PlatformWindow;
+import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 
 public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
@@ -85,6 +87,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeRevalidateNSWindowShadow(long nsWindowPtr);
     private static native void nativeSetNSWindowMinimizedIcon(long nsWindowPtr, long nsImage);
     private static native void nativeSetNSWindowRepresentedFilename(long nsWindowPtr, String representedFilename);
+    private static native void nativeSetAllowAutomaticTabbingProperty(boolean allowAutomaticWindowTabbing);
     private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
     private static native void nativeSynthesizeMouseEnteredExitedEvents();
     private static native void nativeSynthesizeMouseEnteredExitedEvents(long nsWindowPtr, int eventType);
@@ -123,6 +126,12 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_FULL_CONTENT = "apple.awt.fullWindowContent";
     public static final String WINDOW_TRANSPARENT_TITLE_BAR = "apple.awt.transparentTitleBar";
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
+
+    // This system property is named as jdk.* because it is not specific to AWT
+    // and it is also used in JavaFX
+    @SuppressWarnings("removal")
+    public static final String MAC_OS_TABBED_WINDOW = AccessController.doPrivileged(
+            new GetPropertyAction("jdk.allowMacOSTabbedWindows"));
 
     // Yeah, I know. But it's easier to deal with ints from JNI
     static final int MODELESS = 0;
@@ -185,6 +194,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     static boolean IS(final int bits, final int mask) {
         return (bits & mask) != 0;
+    }
+
+    static {
+        nativeSetAllowAutomaticTabbingProperty(Boolean.parseBoolean(MAC_OS_TABBED_WINDOW));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -350,7 +363,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         });
         setPtr(ref.get());
-
+        if (peer != null) { // Not applicable to CWarningWindow
+            peer.setTextured(IS(TEXTURED, styleBits));
+        }
         if (target instanceof javax.swing.RootPaneContainer) {
             final javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer)target).getRootPane();
             if (rootpane != null) rootpane.addPropertyChangeListener("ancestor", new PropertyChangeListener() {
@@ -516,8 +531,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 styleBits = SET(styleBits, IS_MODAL, true);
             }
         }
-
-        peer.setTextured(IS(TEXTURED, styleBits));
 
         return styleBits;
     }
@@ -915,6 +928,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     @Override
     public void setOpaque(boolean isOpaque) {
+        contentView.setWindowLayerOpaque(isOpaque);
         execute(ptr -> CWrapper.NSWindow.setOpaque(ptr, isOpaque));
         boolean isTextured = (peer == null) ? false : peer.isTextured();
         if (!isTextured) {

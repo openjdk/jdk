@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,7 @@ public class SctpChannelImpl extends SctpChannel
                         SctpNet.throwAlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
+                    @SuppressWarnings("removal")
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null) {
                         sm.checkListen(isa.getPort());
@@ -357,6 +358,7 @@ public class SctpChannelImpl extends SctpChannel
             synchronized (sendLock) {
                 ensureOpenAndUnconnected();
                 InetSocketAddress isa = Net.checkAddress(endpoint);
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null)
                     sm.checkConnect(isa.getAddress().getHostAddress(),
@@ -639,6 +641,7 @@ public class SctpChannelImpl extends SctpChannel
                 return;
             if (state == ChannelState.UNINITIALIZED) {
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
                 return;
             }
             assert !isOpen() && !isRegistered();
@@ -646,8 +649,8 @@ public class SctpChannelImpl extends SctpChannel
             /* Postpone the kill if there is a waiting reader
              * or writer thread. */
             if (receiverThread == 0 && senderThread == 0) {
-                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
             } else {
                 state = ChannelState.KILLPENDING;
             }
@@ -1088,6 +1091,11 @@ public class SctpChannelImpl extends SctpChannel
             boolean unordered, int ppid) throws IOException;
 
     static {
+        loadSctpLibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadSctpLibrary() {
         IOUtil.load();   /* loads nio & net native libraries */
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {

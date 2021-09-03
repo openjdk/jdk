@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6361283
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6361283
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6361283
  * @run testng/othervm parsers.Bug6361283
  * @summary Test SAXParser returns version as 1.1 for XML 1.1 document.
  */

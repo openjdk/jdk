@@ -83,6 +83,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private static boolean fxAppThreadIsDispatchThread;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AWTAccessor.setDefaultKeyboardFocusManagerAccessor(
             new AWTAccessor.DefaultKeyboardFocusManagerAccessor() {
                 public void consumeNextKeyTyped(DefaultKeyboardFocusManager dkfm, KeyEvent e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,6 +40,25 @@ short Assembler::SIMD_Size_in_bytes[] = {
   // T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q
        8,   16,   8,  16,   8,  16,   8,  16,  16
 };
+
+Assembler::SIMD_Arrangement Assembler::_esize2arrangement_table[9][2] = {
+  // esize        isQ:false             isQ:true
+  /*   0  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   1  */      {T8B,                 T16B},
+  /*   2  */      {T4H,                 T8H},
+  /*   3  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   4  */      {T2S,                 T4S},
+  /*   5  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   6  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   7  */      {INVALID_ARRANGEMENT, INVALID_ARRANGEMENT},
+  /*   8  */      {T1D,                 T2D}
+  };
+
+
+Assembler::SIMD_Arrangement Assembler::esize2arrangement(int esize, bool isQ) {
+    guarantee(esize == 1 || esize == 2 || esize == 4 || esize == 8, "unsupported element size");
+    return _esize2arrangement_table[esize][isQ];
+}
 
 void Assembler::emit_data64(jlong data,
                             relocInfo::relocType rtype,
@@ -115,7 +134,16 @@ void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) 
 
 #undef __
 
-#define starti Instruction_aarch64 do_not_use(this); set_current(&do_not_use)
+#define starti Instruction_aarch64 current_insn(this);
+
+#define f current_insn.f
+#define sf current_insn.sf
+#define rf current_insn.rf
+#define srf current_insn.srf
+#define zrf current_insn.zrf
+#define prf current_insn.prf
+#define pgrf current_insn.pgrf
+#define fixed current_insn.fixed
 
   void Assembler::adr(Register Rd, address adr) {
     intptr_t offset = adr - pc();
@@ -136,6 +164,53 @@ void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) 
     f(1, 31), f(offset_lo, 30, 29), f(0b10000, 28, 24), sf(offset, 23, 5);
     rf(Rd, 0);
   }
+
+// An "all-purpose" add/subtract immediate, per ARM documentation:
+// A "programmer-friendly" assembler may accept a negative immediate
+// between -(2^24 -1) and -1 inclusive, causing it to convert a
+// requested ADD operation to a SUB, or vice versa, and then encode
+// the absolute value of the immediate as for uimm24.
+void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
+                                  Register Rd, Register Rn, unsigned uimm, int op,
+                                  int negated_op) {
+  bool sets_flags = op & 1;   // this op sets flags
+  union {
+    unsigned u;
+    int imm;
+  };
+  u = uimm;
+  bool shift = false;
+  bool neg = imm < 0;
+  if (neg) {
+    imm = -imm;
+    op = negated_op;
+  }
+  assert(Rd != sp || imm % 16 == 0, "misaligned stack");
+  if (imm >= (1 << 11)
+      && ((imm >> 12) << 12 == imm)) {
+    imm >>= 12;
+    shift = true;
+  }
+  f(op, 31, 29), f(0b10001, 28, 24), f(shift, 23, 22), f(imm, 21, 10);
+
+  // add/subtract immediate ops with the S bit set treat r31 as zr;
+  // with S unset they use sp.
+  if (sets_flags)
+    zrf(Rd, 0);
+  else
+    srf(Rd, 0);
+
+  srf(Rn, 5);
+}
+
+#undef f
+#undef sf
+#undef rf
+#undef srf
+#undef zrf
+#undef prf
+#undef pgrf
+#undef fixed
 
 #undef starti
 
@@ -239,43 +314,6 @@ void Assembler::wrap_label(Label &L, prfop op, prefetch_insn insn) {
     L.add_patch_at(code(), locator());
     (this->*insn)(pc(), op);
   }
-}
-
-// An "all-purpose" add/subtract immediate, per ARM documentation:
-// A "programmer-friendly" assembler may accept a negative immediate
-// between -(2^24 -1) and -1 inclusive, causing it to convert a
-// requested ADD operation to a SUB, or vice versa, and then encode
-// the absolute value of the immediate as for uimm24.
-void Assembler::add_sub_immediate(Register Rd, Register Rn, unsigned uimm, int op,
-                                  int negated_op) {
-  bool sets_flags = op & 1;   // this op sets flags
-  union {
-    unsigned u;
-    int imm;
-  };
-  u = uimm;
-  bool shift = false;
-  bool neg = imm < 0;
-  if (neg) {
-    imm = -imm;
-    op = negated_op;
-  }
-  assert(Rd != sp || imm % 16 == 0, "misaligned stack");
-  if (imm >= (1 << 11)
-      && ((imm >> 12) << 12 == imm)) {
-    imm >>= 12;
-    shift = true;
-  }
-  f(op, 31, 29), f(0b10001, 28, 24), f(shift, 23, 22), f(imm, 21, 10);
-
-  // add/subtract immediate ops with the S bit set treat r31 as zr;
-  // with S unset they use sp.
-  if (sets_flags)
-    zrf(Rd, 0);
-  else
-    srf(Rd, 0);
-
-  srf(Rn, 5);
 }
 
 bool Assembler::operand_valid_for_add_sub_immediate(int64_t imm) {

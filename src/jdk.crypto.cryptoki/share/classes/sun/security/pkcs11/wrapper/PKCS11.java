@@ -82,7 +82,8 @@ public class PKCS11 {
         // cannot use LoadLibraryAction because that would make the native
         // library available to the bootclassloader, but we run in the
         // extension classloader.
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 System.loadLibrary(PKCS11_WRAPPER);
                 return null;

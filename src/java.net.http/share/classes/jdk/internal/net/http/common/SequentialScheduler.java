@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package jdk.internal.net.http.common;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.Objects.requireNonNull;
 
@@ -173,6 +175,36 @@ public final class SequentialScheduler {
         protected void run() {
             synchronized(lock) {
                 mainLoop.run();
+            }
+        }
+    }
+
+    /**
+     * A task that runs its main loop within a  block protected by a lock to provide
+     * memory visibility between runs. Since the main loop can't run concurrently,
+     * the lock shouldn't be contended and no deadlock should ever be possible.
+     */
+    public static final class LockingRestartableTask
+            extends CompleteRestartableTask {
+
+        private final Runnable mainLoop;
+        private final Lock lock = new ReentrantLock();
+
+        public LockingRestartableTask(Runnable mainLoop) {
+            this.mainLoop = mainLoop;
+        }
+
+        @Override
+        protected void run() {
+            // The logics of the sequential scheduler should ensure that
+            // the restartable task is running in only one thread at
+            // a given time: there should never be contention.
+            boolean locked = lock.tryLock();
+            assert locked : "contention detected in SequentialScheduler";
+            try {
+                mainLoop.run();
+            } finally {
+                if (locked) lock.unlock();
             }
         }
     }
@@ -358,5 +390,21 @@ public final class SequentialScheduler {
      */
     public static SequentialScheduler synchronizedScheduler(Runnable mainLoop) {
         return new SequentialScheduler(new SynchronizedRestartableTask(mainLoop));
+    }
+
+    /**
+     * Returns a new {@code SequentialScheduler} that executes the provided
+     * {@code mainLoop} from within a {@link LockingRestartableTask}.
+     *
+     * @apiNote This is equivalent to calling
+     * {@code new SequentialScheduler(new LockingRestartableTask(mainLoop))}
+     * The main loop must not perform any blocking operation.
+     *
+     * @param mainLoop The main loop of the new sequential scheduler
+     * @return a new {@code SequentialScheduler} that executes the provided
+     * {@code mainLoop} from within a {@link LockingRestartableTask}.
+     */
+    public static SequentialScheduler lockingScheduler(Runnable mainLoop) {
+        return new SequentialScheduler(new LockingRestartableTask(mainLoop));
     }
 }

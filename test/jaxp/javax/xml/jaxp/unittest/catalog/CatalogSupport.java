@@ -43,7 +43,7 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 8158084 8162438 8162442 8166220 8166398
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogSupport
  * @run testng/othervm catalog.CatalogSupport
  * @summary verifies the use of Catalog in SAX/DOM/StAX/Validation/Transform.
  * The two main scenarios for all processors are:

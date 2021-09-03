@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.EntitiesTest.EntityTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.EntitiesTest.EntityTest
  * @run testng/othervm stream.EntitiesTest.EntityTest
  * @summary Test StAX parses entity.
  */

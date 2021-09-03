@@ -83,6 +83,7 @@ public class MacOSFlags {
         return false;
     }
 
+    @SuppressWarnings("removal")
     private static void initJavaFlags() {
         java.security.AccessController.doPrivileged(
                 (PrivilegedAction<Object>) () -> {

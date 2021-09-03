@@ -132,11 +132,11 @@ public:
     }
   }
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     SymbolTable::item_added();
     return AllocateHeap(size, mtSymbol);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     // We get here because #1 some threads lost a race to insert a newly created Symbol
     // or #2 we're cleaning up unused symbol.
     // If #1, then the symbol can be either permanent,

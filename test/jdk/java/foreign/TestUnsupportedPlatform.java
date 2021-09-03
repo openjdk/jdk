@@ -26,21 +26,12 @@
  * @test
  * @requires !(((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64")
  * @modules jdk.incubator.foreign/jdk.internal.foreign
- * @run testng/othervm -Dforeign.restricted=permit TestUnsupportedPlatform
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestUnsupportedPlatform
  */
 
 import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.NativeScope;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-
-import static jdk.incubator.foreign.MemoryAddress.NULL;
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_BYTE;
 import static org.testng.Assert.assertNull;
 
 // tests run on 32-bit platforms, which are currently not supported

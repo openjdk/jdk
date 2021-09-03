@@ -32,14 +32,19 @@
  * Implementation of the accessibility peer for the slider role
  */
 @implementation SliderAccessibility
-- (nullable NSString *)accessibilityLabel
+- (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-    return [self accessibilityTitleAttribute];
+    return NSAccessibilitySliderRole;
 }
 
-- (nullable id)accessibilityValue
+- (NSString * _Nullable)accessibilityLabel
 {
-    return [self accessibilityValueAttribute];
+    return [super accessibilityLabel];
+}
+
+- (id _Nullable)accessibilityValue
+{
+    return [super accessibilityValue];
 }
 
 - (BOOL)accessibilityPerformIncrement
@@ -50,6 +55,16 @@
 - (BOOL)accessibilityPerformDecrement
 {
     return [self performAccessibleAction:DECREMENT];
+}
+
+- (NSRect)accessibilityFrame
+{
+    return [super accessibilityFrame];
+}
+
+- (id)accessibilityParent
+{
+    return [super accessibilityParent];
 }
 
 @end

@@ -33,7 +33,7 @@ import org.w3c.dom.ProcessingInstruction;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.PITest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.PITest
  * @run testng/othervm org.w3c.dom.ptests.PITest
  * @summary Test for the methods of Processing Instruction
  */

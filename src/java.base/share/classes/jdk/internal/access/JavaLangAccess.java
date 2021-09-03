@@ -132,7 +132,7 @@ public interface JavaLangAccess {
      * Returns a new Thread with the given Runnable and an
      * inherited AccessControlContext.
      */
-    Thread newThreadWithAcc(Runnable target, AccessControlContext acc);
+    Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc);
 
     /**
      * Invokes the finalize method of the given object.
@@ -257,6 +257,21 @@ public interface JavaLangAccess {
     boolean isReflectivelyOpened(Module module, String pn, Module other);
 
     /**
+     * Updates module m to allow access to restricted methods.
+     */
+    Module addEnableNativeAccess(Module m);
+
+    /**
+     * Updates all unnamed modules to allow access to restricted methods.
+     */
+    void addEnableNativeAccessAllUnnamed();
+
+    /**
+     * Returns true if module m can access restricted methods.
+     */
+    boolean isEnableNativeAccess(Module m);
+
+    /**
      * Returns the ServicesCatalog for the given Layer.
      */
     ServicesCatalog getServicesCatalog(ModuleLayer layer);
@@ -378,4 +393,12 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
+
+    long findNative(ClassLoader loader, String entry);
+
+    /**
+     * Direct access to Shutdown.exit to avoid security manager checks
+     * @param statusCode the status code
+     */
+    void exit(int statusCode);
 }

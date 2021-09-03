@@ -1486,6 +1486,7 @@ public class SwingUtilities2 {
    public static boolean canAccessSystemClipboard() {
        boolean canAccess = false;
        if (!GraphicsEnvironment.isHeadless()) {
+           @SuppressWarnings("removal")
            SecurityManager sm = System.getSecurityManager();
            if (sm == null) {
                canAccess = true;
@@ -1591,6 +1592,7 @@ public class SwingUtilities2 {
      *
      * @param modifiers a set of modifiers
      */
+    @SuppressWarnings("removal")
     public static void checkAccess(int modifiers) {
         if (System.getSecurityManager() != null
                 && !Modifier.isPublic(modifiers)) {
@@ -1616,6 +1618,7 @@ public class SwingUtilities2 {
      * details
      *
      */
+    @SuppressWarnings("removal")
     private static boolean isTrustedContext() {
         return (System.getSecurityManager() == null)
             || (AppContext.getAppContext().
@@ -1711,6 +1714,7 @@ public class SwingUtilities2 {
                                   final String imageFile,
                                   final boolean enablePrivileges) {
         return (UIDefaults.LazyValue) (table) -> {
+            @SuppressWarnings("removal")
             byte[] buffer = enablePrivileges ? AccessController.doPrivileged(
                     (PrivilegedAction<byte[]>) ()
                     -> getIconBytes(baseClass, rootClass, imageFile))

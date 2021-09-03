@@ -47,7 +47,7 @@ import java.util.logging.LogManager;
  * @bug 8025690
  * @summary tests that an empty or null pattern always result in an exception.
  * @run main/othervm FileHandlerPatternExceptions UNSECURE
- * @run main/othervm FileHandlerPatternExceptions SECURE
+ * @run main/othervm -Djava.security.manager=allow FileHandlerPatternExceptions SECURE
  * @author danielfuchs
  * @key randomness
  */

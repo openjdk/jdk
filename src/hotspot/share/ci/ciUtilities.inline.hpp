@@ -26,6 +26,7 @@
 #define SHARE_CI_CIUTILITIES_INLINE_HPP
 
 #include "ci/ciUtilities.hpp"
+
 #include "runtime/interfaceSupport.inline.hpp"
 
 // Add a ci native entry wrapper?

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -75,6 +75,7 @@ public final class ObjectFactory {
      * Figure out which ClassLoader to use.  For JDK 1.2 and later use
      * the context ClassLoader.
      */
+    @SuppressWarnings("removal")
     public static ClassLoader findClassLoader()
         throws ConfigurationError
     {
@@ -137,6 +138,7 @@ public final class ObjectFactory {
      * Create an instance of a class using the same classloader for the ObjectFactory by default
      * or bootclassloader when Security Manager is in place
      */
+    @SuppressWarnings("removal")
     public static Object newInstance(String className, boolean doFallback)
         throws ConfigurationError
     {
@@ -191,6 +193,7 @@ public final class ObjectFactory {
     {
         //throw security exception if the calling thread is not allowed to access the package
         //restrict the access to package as speicified in java.security policy
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (className.startsWith(JAXP_INTERNAL) ||

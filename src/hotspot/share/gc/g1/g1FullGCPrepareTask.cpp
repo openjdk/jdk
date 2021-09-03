@@ -47,8 +47,8 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapReg
   } else {
     _g1h->free_region(hr, nullptr);
   }
+  _collector->set_free(hr->hrm_index());
   prepare_for_compaction(hr);
-  _collector->set_invalid(hr->hrm_index());
 }
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
@@ -84,7 +84,7 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
         // lack BOT information for performance reasons.
         // Recreate BOT information of high live ratio young regions here to keep expected
         // performance during scanning their card tables in the collection pauses later.
-        update_bot(hr);
+        hr->update_bot();
       }
       log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
@@ -146,22 +146,6 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion*
   return live_words <= live_words_threshold;
 }
 
-void G1FullGCPrepareTask::G1CalculatePointersClosure::update_bot(HeapRegion* hr) {
-  HeapWord* const limit = hr->top();
-  HeapWord* next_addr = hr->bottom();
-  HeapWord* threshold = hr->initialize_threshold();
-  HeapWord* prev_addr;
-  while (next_addr < limit) {
-    prev_addr = next_addr;
-    next_addr = _bitmap->get_next_marked_addr(next_addr + 1, limit);
-
-    if (next_addr > threshold) {
-      threshold = hr->cross_threshold(prev_addr, next_addr);
-    }
-  }
-  assert(next_addr == limit, "Should stop the scan at the limit.");
-}
-
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
   hr->rem_set()->clear();
   hr->clear_cardtable();
@@ -198,9 +182,11 @@ size_t G1FullGCPrepareTask::G1RePrepareClosure::apply(oop obj) {
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction_work(G1FullGCCompactionPoint* cp,
                                                                                   HeapRegion* hr) {
-  G1PrepareCompactLiveClosure prepare_compact(cp);
   hr->set_compaction_top(hr->bottom());
-  hr->apply_to_marked_objects(_bitmap, &prepare_compact);
+  if (!_collector->is_free(hr->hrm_index())) {
+    G1PrepareCompactLiveClosure prepare_compact(cp);
+    hr->apply_to_marked_objects(_bitmap, &prepare_compact);
+  }
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(HeapRegion* hr) {

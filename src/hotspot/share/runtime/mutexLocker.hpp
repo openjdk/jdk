@@ -35,6 +35,7 @@ extern Mutex*   Patching_lock;                   // a lock used to guard code pa
 extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
+extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
 extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
@@ -67,9 +68,6 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
-extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
-                                                 // queue shared by
-                                                 // non-Java threads.
 extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
@@ -95,9 +93,6 @@ extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize acc
 #ifndef PRODUCT
 extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT safe
 #endif // PRODUCT
-extern Mutex*   Debug1_lock;                     // A bunch of pre-allocated locks that can be used for tracing
-extern Mutex*   Debug2_lock;                     // down synchronization related bugs!
-extern Mutex*   Debug3_lock;
 
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data
@@ -132,13 +127,13 @@ extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::find
 extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
+extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable
 extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
-extern Mutex*   JfrStream_lock;                  // protects JFR stream access
 extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
 #endif
 

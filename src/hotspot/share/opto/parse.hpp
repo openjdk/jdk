@@ -502,8 +502,6 @@ class Parse : public GraphKit {
   void modd();
   void l2f();
 
-  void do_irem();
-
   // implementation of _get* and _put* bytecodes
   void do_getstatic() { do_field_access(true,  false); }
   void do_getfield () { do_field_access(true,  true); }
@@ -544,7 +542,6 @@ class Parse : public GraphKit {
                                 Node* val, const Type* tval);
   void    maybe_add_predicate_after_if(Block* path);
   IfNode* jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float prob, float cnt);
-  Node*   jump_if_join(Node* iffalse, Node* iftrue);
   void    jump_if_true_fork(IfNode *ifNode, int dest_bci_if_true, bool unc);
   void    jump_if_false_fork(IfNode *ifNode, int dest_bci_if_false, bool unc);
   void    jump_if_always_fork(int dest_bci_if_true, bool unc);

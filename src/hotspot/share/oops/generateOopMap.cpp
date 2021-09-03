@@ -34,7 +34,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/relocator.hpp"
@@ -907,18 +906,12 @@ void GenerateOopMap::monitor_push(CellTypeState cts) {
 // Interpretation handling methods
 //
 
-void GenerateOopMap::do_interpretation(Thread* thread)
+void GenerateOopMap::do_interpretation()
 {
+  // "i" is just for debugging, so we can detect cases where this loop is
+  // iterated more than once.
   int i = 0;
   do {
-    if (i != 0 && thread->is_Java_thread()) {
-      JavaThread* jt = thread->as_Java_thread();
-      if (jt->thread_state() == _thread_in_vm) {
-        // Since this JavaThread has looped at least once and is _thread_in_vm,
-        // we honor any pending blocking request.
-        ThreadBlockInVM tbivm(jt);
-      }
-    }
 #ifndef PRODUCT
     if (TraceNewOopMapGeneration) {
       tty->print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
@@ -2136,7 +2129,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
 
   // Step 3: Calculate stack maps
   if (!_got_error)
-    do_interpretation(current);
+    do_interpretation();
 
   // Step 4:Return results
   if (!_got_error && report_results())
@@ -2159,7 +2152,7 @@ void GenerateOopMap::error_work(const char *format, va_list ap) {
   os::snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
   Thread* current = Thread::current();
   if (current->can_call_java()) {
-    _exception = Exceptions::new_exception(current->as_Java_thread(),
+    _exception = Exceptions::new_exception(JavaThread::cast(current),
                                            vmSymbols::java_lang_LinkageError(),
                                            msg_buffer2);
   } else {

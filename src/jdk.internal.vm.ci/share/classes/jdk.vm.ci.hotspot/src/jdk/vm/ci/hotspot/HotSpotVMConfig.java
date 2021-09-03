@@ -75,7 +75,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
 
-    final int prototypeMarkWordOffset = getFieldOffset("Klass::_prototype_header", Integer.class, "markWord");
     final int subklassOffset = getFieldOffset("Klass::_subklass", Integer.class, "Klass*");
     final int superOffset = getFieldOffset("Klass::_super", Integer.class, "Klass*");
     final int nextSiblingOffset = getFieldOffset("Klass::_next_sibling", Integer.class, "Klass*");
@@ -152,7 +151,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     /**
      * See {@code markWord::prototype()}.
      */
-    long arrayPrototypeMarkWord() {
+    long prototypeMarkWord() {
         return markWordNoHashInPlace | markWordNoLockInPlace;
     }
 
@@ -362,6 +361,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int codeInstallResultDependenciesFailed = getConstant("JVMCI::dependencies_failed", Integer.class);
     final int codeInstallResultCacheFull = getConstant("JVMCI::cache_full", Integer.class);
     final int codeInstallResultCodeTooLarge = getConstant("JVMCI::code_too_large", Integer.class);
+    final int codeInstallResultNMethodReclaimed = getConstant("JVMCI::nmethod_reclaimed", Integer.class);
+    final int codeInstallResultFirstPermanentBailout = getConstant("JVMCI::first_permanent_bailout", Integer.class);
 
     String getCodeInstallResultDescription(int codeInstallResult) {
         if (codeInstallResult == codeInstallResultOk) {
@@ -375,6 +376,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
         }
         if (codeInstallResult == codeInstallResultCodeTooLarge) {
             return "code is too large";
+        }
+        if (codeInstallResult == codeInstallResultNMethodReclaimed) {
+            return "nmethod reclaimed";
         }
         assert false : codeInstallResult;
         return "unknown";

@@ -324,29 +324,12 @@ static bool is_classloader_klass_allowed(const Klass* k) {
 }
 
 static void do_classloaders() {
-  Stack<const Klass*, mtTracing> mark_stack;
-  mark_stack.push(vmClasses::ClassLoader_klass()->subklass());
-
-  while (!mark_stack.is_empty()) {
-    const Klass* const current = mark_stack.pop();
-    assert(current != NULL, "null element in stack!");
-    if (is_classloader_klass_allowed(current)) {
-      do_loader_klass(current);
-    }
-
-    // subclass (depth)
-    const Klass* next_klass = current->subklass();
-    if (next_klass != NULL) {
-      mark_stack.push(next_klass);
-    }
-
-    // siblings (breadth)
-    next_klass = current->next_sibling();
-    if (next_klass != NULL) {
-      mark_stack.push(next_klass);
+  for (ClassHierarchyIterator iter(vmClasses::ClassLoader_klass()); !iter.done(); iter.next()) {
+    Klass* subk = iter.klass();
+    if (is_classloader_klass_allowed(subk)) {
+      do_loader_klass(subk);
     }
   }
-  assert(mark_stack.is_empty(), "invariant");
 }
 
 static int primitives_count = 9;
@@ -445,8 +428,6 @@ static void do_previous_epoch_artifact(JfrArtifactClosure* callback, T* value) {
   assert(value != NULL, "invariant");
   if (USED_PREVIOUS_EPOCH(value)) {
     callback->do_artifact(value);
-    assert(IS_NOT_SERIALIZED(value), "invariant");
-    return;
   }
   if (IS_SERIALIZED(value)) {
     CLEAR_SERIALIZED(value);
@@ -880,12 +861,11 @@ class MethodIteratorHost {
   bool operator()(KlassPtr klass) {
     if (_method_used_predicate(klass)) {
       const InstanceKlass* ik = InstanceKlass::cast(klass);
-      const int len = ik->methods()->length();
-      Filter filter(ik->previous_versions() != NULL ? len : 0);
       while (ik != NULL) {
+        const int len = ik->methods()->length();
         for (int i = 0; i < len; ++i) {
           MethodPtr method = ik->methods()->at(i);
-          if (_method_flag_predicate(method) && filter(i)) {
+          if (_method_flag_predicate(method)) {
             _method_cb(method);
           }
         }
@@ -1121,6 +1101,10 @@ void JfrTypeSet::clear() {
 }
 
 size_t JfrTypeSet::on_unloading_classes(JfrCheckpointWriter* writer) {
+  // JfrTraceIdEpoch::has_changed_tag_state_no_reset() is a load-acquire we issue to see side-effects (i.e. tags).
+  // The JfrRecorderThread does this as part of normal processing, but with concurrent class unloading, which can
+  // happen in arbitrary threads, we invoke it explicitly.
+  JfrTraceIdEpoch::has_changed_tag_state_no_reset();
   if (JfrRecorder::is_recording()) {
     return serialize(writer, NULL, true, false);
   }

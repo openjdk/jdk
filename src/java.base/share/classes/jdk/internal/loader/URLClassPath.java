@@ -54,7 +54,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -133,6 +132,7 @@ public class URLClassPath {
     /* The context to be used when loading classes and resources.  If non-null
      * this is the context that was captured during the creation of the
      * URLClassLoader. null implies no additional security restrictions. */
+    @SuppressWarnings("removal")
     private final AccessControlContext acc;
 
     /**
@@ -149,7 +149,7 @@ public class URLClassPath {
      */
     public URLClassPath(URL[] urls,
                         URLStreamHandlerFactory factory,
-                        AccessControlContext acc) {
+                        @SuppressWarnings("removal") AccessControlContext acc) {
         ArrayList<URL> path = new ArrayList<>(urls.length);
         ArrayDeque<URL> unopenedUrls = new ArrayDeque<>(urls.length);
         for (URL url : urls) {
@@ -170,7 +170,7 @@ public class URLClassPath {
             this.acc = acc;
     }
 
-    public URLClassPath(URL[] urls, AccessControlContext acc) {
+    public URLClassPath(URL[] urls, @SuppressWarnings("removal") AccessControlContext acc) {
         this(urls, null, acc);
     }
 
@@ -218,7 +218,7 @@ public class URLClassPath {
         if (closed) {
             return Collections.emptyList();
         }
-        List<IOException> result = new LinkedList<>();
+        List<IOException> result = new ArrayList<>();
         for (Loader loader : loaders) {
             try {
                 loader.close();
@@ -473,6 +473,7 @@ public class URLClassPath {
     /*
      * Returns the Loader for the specified base URL.
      */
+    @SuppressWarnings("removal")
     private Loader getLoader(final URL url) throws IOException {
         try {
             return AccessController.doPrivileged(
@@ -543,6 +544,7 @@ public class URLClassPath {
      * Called internally within this file.
      */
     public static void check(URL url) throws IOException {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             URLConnection urlConnection = url.openConnection();
@@ -707,6 +709,7 @@ public class URLClassPath {
         private JarIndex index;
         private URLStreamHandler handler;
         private final HashMap<String, Loader> lmap;
+        @SuppressWarnings("removal")
         private final AccessControlContext acc;
         private boolean closed = false;
         private static final JavaUtilZipFileAccess zipAccess =
@@ -718,7 +721,7 @@ public class URLClassPath {
          */
         private JarLoader(URL url, URLStreamHandler jarHandler,
                           HashMap<String, Loader> loaderMap,
-                          AccessControlContext acc)
+                          @SuppressWarnings("removal") AccessControlContext acc)
             throws IOException
         {
             super(new URL("jar", "", -1, url + "!/", jarHandler));
@@ -749,6 +752,7 @@ public class URLClassPath {
             return "file".equals(url.getProtocol());
         }
 
+        @SuppressWarnings("removal")
         private void ensureOpen() throws IOException {
             if (jar == null) {
                 try {
@@ -792,6 +796,7 @@ public class URLClassPath {
         }
 
         /* Throws if the given jar file is does not start with the correct LOC */
+        @SuppressWarnings("removal")
         static JarFile checkJar(JarFile jar) throws IOException {
             if (System.getSecurityManager() != null && !DISABLE_JAR_CHECKING
                 && !zipAccess.startsWithLocHeader(jar)) {
@@ -859,7 +864,7 @@ public class URLClassPath {
                 // throw new IllegalArgumentException("name");
             } catch (IOException e) {
                 return null;
-            } catch (AccessControlException e) {
+            } catch (@SuppressWarnings("removal") AccessControlException e) {
                 return null;
             }
 
@@ -949,12 +954,13 @@ public class URLClassPath {
          * uses it to avoid going into an infinite loop, looking for a
          * non-existent resource.
          */
+        @SuppressWarnings("removal")
         Resource getResource(final String name, boolean check,
                              Set<String> visited) {
             Resource res;
             String[] jarFiles;
             int count = 0;
-            LinkedList<String> jarFilesList = null;
+            List<String> jarFilesList;
 
             /* If there no jar files in the index that can potential contain
              * this resource then return immediately.

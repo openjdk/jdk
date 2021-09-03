@@ -25,8 +25,9 @@
 #ifndef SHARE_MEMORY_ITERATOR_INLINE_HPP
 #define SHARE_MEMORY_ITERATOR_INLINE_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
+
+#include "classfile/classLoaderData.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"

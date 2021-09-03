@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,6 @@
  */
 
  /*
- * "Lets Encrypt Authority X1" intermediate CA is retired.
- * Test certs should be chained through "Lets Encrypt Authority X3" CA.
- *
  * Obtain TLS test artifacts for Let's Encrypt CA from:
  *
  * Valid TLS Certificates:
@@ -42,120 +39,121 @@
  * Revoked TLS Certificates:
  * https://revoked-isrgrootx1.letsencrypt.org/
  *
- * Test artifacts don't have CRLs listed.
+ * Test artifacts don't have CRLs listed and intermediate cert doesn't have OCSP.
  */
 public class LetsEncryptCA {
 
-    // Owner: CN=Let's Encrypt Authority X3, O=Let's Encrypt, C=US
-    // Issuer: CN=ISRG Root X1, O=Internet Security Research Group, C=US
-    private static final String INT = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIFjTCCA3WgAwIBAgIRANOxciY0IzLc9AUoUSrsnGowDQYJKoZIhvcNAQELBQAw\n"
-            + "TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\n"
-            + "cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTYxMDA2MTU0MzU1\n"
-            + "WhcNMjExMDA2MTU0MzU1WjBKMQswCQYDVQQGEwJVUzEWMBQGA1UEChMNTGV0J3Mg\n"
-            + "RW5jcnlwdDEjMCEGA1UEAxMaTGV0J3MgRW5jcnlwdCBBdXRob3JpdHkgWDMwggEi\n"
-            + "MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCc0wzwWuUuR7dyXTeDs2hjMOrX\n"
-            + "NSYZJeG9vjXxcJIvt7hLQQWrqZ41CFjssSrEaIcLo+N15Obzp2JxunmBYB/XkZqf\n"
-            + "89B4Z3HIaQ6Vkc/+5pnpYDxIzH7KTXcSJJ1HG1rrueweNwAcnKx7pwXqzkrrvUHl\n"
-            + "Npi5y/1tPJZo3yMqQpAMhnRnyH+lmrhSYRQTP2XpgofL2/oOVvaGifOFP5eGr7Dc\n"
-            + "Gu9rDZUWfcQroGWymQQ2dYBrrErzG5BJeC+ilk8qICUpBMZ0wNAxzY8xOJUWuqgz\n"
-            + "uEPxsR/DMH+ieTETPS02+OP88jNquTkxxa/EjQ0dZBYzqvqEKbbUC8DYfcOTAgMB\n"
-            + "AAGjggFnMIIBYzAOBgNVHQ8BAf8EBAMCAYYwEgYDVR0TAQH/BAgwBgEB/wIBADBU\n"
-            + "BgNVHSAETTBLMAgGBmeBDAECATA/BgsrBgEEAYLfEwEBATAwMC4GCCsGAQUFBwIB\n"
-            + "FiJodHRwOi8vY3BzLnJvb3QteDEubGV0c2VuY3J5cHQub3JnMB0GA1UdDgQWBBSo\n"
-            + "SmpjBH3duubRObemRWXv86jsoTAzBgNVHR8ELDAqMCigJqAkhiJodHRwOi8vY3Js\n"
-            + "LnJvb3QteDEubGV0c2VuY3J5cHQub3JnMHIGCCsGAQUFBwEBBGYwZDAwBggrBgEF\n"
-            + "BQcwAYYkaHR0cDovL29jc3Aucm9vdC14MS5sZXRzZW5jcnlwdC5vcmcvMDAGCCsG\n"
-            + "AQUFBzAChiRodHRwOi8vY2VydC5yb290LXgxLmxldHNlbmNyeXB0Lm9yZy8wHwYD\n"
-            + "VR0jBBgwFoAUebRZ5nu25eQBc4AIiMgaWPbpm24wDQYJKoZIhvcNAQELBQADggIB\n"
-            + "ABnPdSA0LTqmRf/Q1eaM2jLonG4bQdEnqOJQ8nCqxOeTRrToEKtwT++36gTSlBGx\n"
-            + "A/5dut82jJQ2jxN8RI8L9QFXrWi4xXnA2EqA10yjHiR6H9cj6MFiOnb5In1eWsRM\n"
-            + "UM2v3e9tNsCAgBukPHAg1lQh07rvFKm/Bz9BCjaxorALINUfZ9DD64j2igLIxle2\n"
-            + "DPxW8dI/F2loHMjXZjqG8RkqZUdoxtID5+90FgsGIfkMpqgRS05f4zPbCEHqCXl1\n"
-            + "eO5HyELTgcVlLXXQDgAWnRzut1hFJeczY1tjQQno6f6s+nMydLN26WuU4s3UYvOu\n"
-            + "OsUxRlJu7TSRHqDC3lSE5XggVkzdaPkuKGQbGpny+01/47hfXXNB7HntWNZ6N2Vw\n"
-            + "p7G6OfY+YQrZwIaQmhrIqJZuigsrbe3W+gdn5ykE9+Ky0VgVUsfxo52mwFYs1JKY\n"
-            + "2PGDuWx8M6DlS6qQkvHaRUo0FMd8TsSlbF0/v965qGFKhSDeQoMpYnwcmQilRh/0\n"
-            + "ayLThlHLN81gSkJjVrPI0Y8xCVPB4twb1PFUd2fPM3sA1tJ83sZ5v8vgFv2yofKR\n"
-            + "PB0t6JzUA81mSqM3kxl5e+IZwhYAyO0OTg3/fs8HqGTNKd9BqoUwSRBzp06JMg5b\n"
-            + "rUCGwbCUDI0mxadJ3Bz4WxR6fyNpBK2yAinWEsikxqEt\n"
-            + "-----END CERTIFICATE-----";
+     // Owner: CN=R3, O=Let's Encrypt, C=US
+     // Issuer: CN=ISRG Root X1, O=Internet Security Research Group, C=US
+     // Serial number: 912b084acf0c18a753f6d62e25a75f5a
+     // Valid from: Thu Sep 03 17:00:00 PDT 2020 until: Mon Sep 15 09:00:00 PDT 2025
+    private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFFjCCAv6gAwIBAgIRAJErCErPDBinU/bWLiWnX1owDQYJKoZIhvcNAQELBQAw\n" +
+            "TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\n" +
+            "cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMjAwOTA0MDAwMDAw\n" +
+            "WhcNMjUwOTE1MTYwMDAwWjAyMQswCQYDVQQGEwJVUzEWMBQGA1UEChMNTGV0J3Mg\n" +
+            "RW5jcnlwdDELMAkGA1UEAxMCUjMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n" +
+            "AoIBAQC7AhUozPaglNMPEuyNVZLD+ILxmaZ6QoinXSaqtSu5xUyxr45r+XXIo9cP\n" +
+            "R5QUVTVXjJ6oojkZ9YI8QqlObvU7wy7bjcCwXPNZOOftz2nwWgsbvsCUJCWH+jdx\n" +
+            "sxPnHKzhm+/b5DtFUkWWqcFTzjTIUu61ru2P3mBw4qVUq7ZtDpelQDRrK9O8Zutm\n" +
+            "NHz6a4uPVymZ+DAXXbpyb/uBxa3Shlg9F8fnCbvxK/eG3MHacV3URuPMrSXBiLxg\n" +
+            "Z3Vms/EY96Jc5lP/Ooi2R6X/ExjqmAl3P51T+c8B5fWmcBcUr2Ok/5mzk53cU6cG\n" +
+            "/kiFHaFpriV1uxPMUgP17VGhi9sVAgMBAAGjggEIMIIBBDAOBgNVHQ8BAf8EBAMC\n" +
+            "AYYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMBIGA1UdEwEB/wQIMAYB\n" +
+            "Af8CAQAwHQYDVR0OBBYEFBQusxe3WFbLrlAJQOYfr52LFMLGMB8GA1UdIwQYMBaA\n" +
+            "FHm0WeZ7tuXkAXOACIjIGlj26ZtuMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcw\n" +
+            "AoYWaHR0cDovL3gxLmkubGVuY3Iub3JnLzAnBgNVHR8EIDAeMBygGqAYhhZodHRw\n" +
+            "Oi8veDEuYy5sZW5jci5vcmcvMCIGA1UdIAQbMBkwCAYGZ4EMAQIBMA0GCysGAQQB\n" +
+            "gt8TAQEBMA0GCSqGSIb3DQEBCwUAA4ICAQCFyk5HPqP3hUSFvNVneLKYY611TR6W\n" +
+            "PTNlclQtgaDqw+34IL9fzLdwALduO/ZelN7kIJ+m74uyA+eitRY8kc607TkC53wl\n" +
+            "ikfmZW4/RvTZ8M6UK+5UzhK8jCdLuMGYL6KvzXGRSgi3yLgjewQtCPkIVz6D2QQz\n" +
+            "CkcheAmCJ8MqyJu5zlzyZMjAvnnAT45tRAxekrsu94sQ4egdRCnbWSDtY7kh+BIm\n" +
+            "lJNXoB1lBMEKIq4QDUOXoRgffuDghje1WrG9ML+Hbisq/yFOGwXD9RiX8F6sw6W4\n" +
+            "avAuvDszue5L3sz85K+EC4Y/wFVDNvZo4TYXao6Z0f+lQKc0t8DQYzk1OXVu8rp2\n" +
+            "yJMC6alLbBfODALZvYH7n7do1AZls4I9d1P4jnkDrQoxB3UqQ9hVl3LEKQ73xF1O\n" +
+            "yK5GhDDX8oVfGKF5u+decIsH4YaTw7mP3GFxJSqv3+0lUFJoi5Lc5da149p90Ids\n" +
+            "hCExroL1+7mryIkXPeFM5TgO9r0rvZaBFOvV2z0gp35Z0+L4WPlbuEjN/lxPFin+\n" +
+            "HlUjr8gRsI3qfJOQFy/9rKIJR0Y/8Omwt/8oTWgy1mdeHmmjk7j1nYsvC9JSQ6Zv\n" +
+            "MldlTTKB3zhThV1+XWYp6rjd5JW1zbVWEkLNxE7GJThEUG3szgBVGP7pSWTUTsqX\n" +
+            "nLRbwHOoq7hHwg==\n" +
+            "-----END CERTIFICATE-----";
 
     // Owner: CN=valid-isrgrootx1.letsencrypt.org
-    // Issuer: CN=Let's Encrypt Authority X3, O=Let's Encrypt, C=US
-    // Serial number: 36916d6db9151ad4428d458a32eae518671
-    // Valid from: Wed Nov 08 07:00:24 PST 2017 until: Tue Feb 06 07:00:24 PST 2018
-    private static final String VALID = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIFIzCCBAugAwIBAgISA2kW1tuRUa1EKNRYoy6uUYZxMA0GCSqGSIb3DQEBCwUA\n"
-            + "MEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD\n"
-            + "ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xNzExMDgxNTAwMjRaFw0x\n"
-            + "ODAyMDYxNTAwMjRaMCsxKTAnBgNVBAMTIHZhbGlkLWlzcmdyb290eDEubGV0c2Vu\n"
-            + "Y3J5cHQub3JnMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyugIOCxl\n"
-            + "4p0Rrs4aggnzKGYezhMyyvqlBgVBkf3DJV5uHbz/B/CxcoFo2rZzIetJEsb7Qnt1\n"
-            + "U8L2O5BKnBeOsI5eFv6WUAQs96VayQ09+xCV3jSNjVpbmKKp1TNWboF/V+EDFq6f\n"
-            + "fxK9h+b88RhBn4gfe+BorPnVTmZZQHgcZCjMGyzlXt68r45dXmZOuh0855Y7z6Et\n"
-            + "wCHTT8k/7VC0DTIs0+veKv+yblUqwGD0htdOh7POkQGfBeJ432FsCCcLCDjg2Jj2\n"
-            + "oYQNpLao55ZnVJGXfP8dJpHqJvuEQVuNT1TbHTs4x7IMftqGcPuhXKhA5FCVf0Hb\n"
-            + "osbVmZ/b2b/WswIDAQABo4ICIDCCAhwwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQW\n"
-            + "MBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBQZ\n"
-            + "Mod3QzNPUL56tDMtELpCiwkQOTAfBgNVHSMEGDAWgBSoSmpjBH3duubRObemRWXv\n"
-            + "86jsoTBvBggrBgEFBQcBAQRjMGEwLgYIKwYBBQUHMAGGImh0dHA6Ly9vY3NwLmlu\n"
-            + "dC14My5sZXRzZW5jcnlwdC5vcmcwLwYIKwYBBQUHMAKGI2h0dHA6Ly9jZXJ0Lmlu\n"
-            + "dC14My5sZXRzZW5jcnlwdC5vcmcvMCsGA1UdEQQkMCKCIHZhbGlkLWlzcmdyb290\n"
-            + "eDEubGV0c2VuY3J5cHQub3JnMIH+BgNVHSAEgfYwgfMwCAYGZ4EMAQIBMIHmBgsr\n"
-            + "BgEEAYLfEwEBATCB1jAmBggrBgEFBQcCARYaaHR0cDovL2Nwcy5sZXRzZW5jcnlw\n"
-            + "dC5vcmcwgasGCCsGAQUFBwICMIGeDIGbVGhpcyBDZXJ0aWZpY2F0ZSBtYXkgb25s\n"
-            + "eSBiZSByZWxpZWQgdXBvbiBieSBSZWx5aW5nIFBhcnRpZXMgYW5kIG9ubHkgaW4g\n"
-            + "YWNjb3JkYW5jZSB3aXRoIHRoZSBDZXJ0aWZpY2F0ZSBQb2xpY3kgZm91bmQgYXQg\n"
-            + "aHR0cHM6Ly9sZXRzZW5jcnlwdC5vcmcvcmVwb3NpdG9yeS8wDQYJKoZIhvcNAQEL\n"
-            + "BQADggEBAFBiwKeCZfIh8a7x0Y5QEqGwejil/BY6MOVuIU9FRIJKmhJGdh6lI6ln\n"
-            + "zlBbMZBAjZ+TqDxU0pvM1AsRDyCqt8GbCAC2xQsGyATLdCjedLQ7U7ORm7pBZdbe\n"
-            + "cT7h9Sblj53o5MKa1yFeS89WGjI4UueUemGxp7EQjat0NeAvbnpU+YmuevNYKX2M\n"
-            + "kK33reMC+rgD+wKet1CXcB/ZYl3fDzVH3SwkT/bKW5bsuwxBuD2noScnKCitRgiv\n"
-            + "Ew7YjwqNOm2naki/xr2sfJirR+lJtZ9KC3H8xWeEHrD8Cf7pnmMYqV59uR+hJwMP\n"
-            + "YsjjDbDFCmNN9FBqDwvXs7g86ttkdC8=\n"
-            + "-----END CERTIFICATE-----";
+    // Issuer: CN=R3, O=Let's Encrypt, C=US
+    // Serial number: 46326744d1c2f3feeca7148ed59353144a6
+    // Valid from: Wed Jun 02 08:00:18 PDT 2021 until: Tue Aug 31 08:00:18 PDT 2021
+    private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFSDCCBDCgAwIBAgISBGMmdE0cLz/uynFI7Vk1MUSmMA0GCSqGSIb3DQEBCwUA\n" +
+            "MDIxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MQswCQYDVQQD\n" +
+            "EwJSMzAeFw0yMTA2MDIxNTAwMThaFw0yMTA4MzExNTAwMThaMCsxKTAnBgNVBAMT\n" +
+            "IHZhbGlkLWlzcmdyb290eDEubGV0c2VuY3J5cHQub3JnMIIBIjANBgkqhkiG9w0B\n" +
+            "AQEFAAOCAQ8AMIIBCgKCAQEAmdx7jlaUZ0MgEvqzYWXItAFxVAOmR3KF+79vU195\n" +
+            "O5X54Go1+GU+eyFAeTqr6W1gC/MIrSA9LO4neJUx5AWCYaLq7IE7/YnmXTT6BB0x\n" +
+            "WFN3V1OJg9bAqpcEclQp6fbQS6DjdQvUUaEvVIwPzaen6Hmtw6LuHOYOdLk4fUSm\n" +
+            "zadWiyNlMm0/ts+MLHY5iQd9ypGhJED7KBDQ4d4wvyMYo/MYKOUQ+dTXcIegh7p4\n" +
+            "0OVtbrkdCuGJL+cEw1IUtSNQD+MnvUIu1je7Yb6iZ6Qd3iopNLykHYZb8YemakGX\n" +
+            "SDdC54yi35NU+Y+l23vycbVmRd8vK1sizhjRSE+ufmEqXQIDAQABo4ICXTCCAlkw\n" +
+            "DgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAM\n" +
+            "BgNVHRMBAf8EAjAAMB0GA1UdDgQWBBR300bKVFG2auzS0mO4+E57SN6QLzAfBgNV\n" +
+            "HSMEGDAWgBQULrMXt1hWy65QCUDmH6+dixTCxjBVBggrBgEFBQcBAQRJMEcwIQYI\n" +
+            "KwYBBQUHMAGGFWh0dHA6Ly9yMy5vLmxlbmNyLm9yZzAiBggrBgEFBQcwAoYWaHR0\n" +
+            "cDovL3IzLmkubGVuY3Iub3JnLzArBgNVHREEJDAigiB2YWxpZC1pc3Jncm9vdHgx\n" +
+            "LmxldHNlbmNyeXB0Lm9yZzBMBgNVHSAERTBDMAgGBmeBDAECATA3BgsrBgEEAYLf\n" +
+            "EwEBATAoMCYGCCsGAQUFBwIBFhpodHRwOi8vY3BzLmxldHNlbmNyeXB0Lm9yZzCC\n" +
+            "AQYGCisGAQQB1nkCBAIEgfcEgfQA8gB3APZclC/RdzAiFFQYCDCUVo7jTRMZM7/f\n" +
+            "DC8gC8xO8WTjAAABec10PpUAAAQDAEgwRgIhAPDWvnP5mA0RhPa9oiTlE21Ppcez\n" +
+            "eF1+wU0MeoQcjq/7AiEAsox8kMGpWXq0ZVPweTpw1So/sNOZTsSPyBUdbLwjf+MA\n" +
+            "dwBvU3asMfAxGdiZAKRRFf93FRwR2QLBACkGjbIImjfZEwAAAXnNdD7rAAAEAwBI\n" +
+            "MEYCIQCYBSmmb5P+DZGANyYTPHlEbmqOBkEOblkEHq5Lf+wtkQIhAO2HhwOm3wns\n" +
+            "ZTsXjUCcfQA0lKBI2TKkg9tJKFs3uuKDMA0GCSqGSIb3DQEBCwUAA4IBAQBJJ47x\n" +
+            "ZhKN3QRBYVROpoYDSh0a/JW7zPGRCxK5fnDY9UT8m4gEh3yhDTkycX+vo8TReK6W\n" +
+            "fEYareTSTq71MYgtKDYEARm10DuL7Vdig9Tf5DpjXLHaba+wqPz24lwhiJgoKRRr\n" +
+            "8by3wXPFCGSuQyDo1ZUNrAJVYKO4hPMob1ZE8z9IYW63GvzBjEla/HxoVa9iTkv+\n" +
+            "31rsKzpSbMJpnQ7WcgkUPdpoDo4JElGCyf7VZHNicumipAiCmKu0Q6TRCPOXxlKE\n" +
+            "/BIyDey3rXVw3wzOlxmVF6t/V3vGtbgVvN/feUe/ytyv4vLfRR4udi2XxWt3x1la\n" +
+            "7R3zuWdRQhh21p1H\n" +
+            "-----END CERTIFICATE-----";
 
     // Owner: CN=revoked-isrgrootx1.letsencrypt.org
-    // Issuer: CN=Let's Encrypt Authority X3, O=Let's Encrypt, C=US
-    // Serial number: 3ddd39c0755648d6687a5d8ded37775657e
-    // Valid from: Wed Nov 08 07:00:32 PST 2017 until: Tue Feb 06 07:00:32 PST 2018
-    private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIFJzCCBA+gAwIBAgISA93TnAdVZI1mh6XY3tN3dWV+MA0GCSqGSIb3DQEBCwUA\n"
-            + "MEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD\n"
-            + "ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xNzExMDgxNTAwMzJaFw0x\n"
-            + "ODAyMDYxNTAwMzJaMC0xKzApBgNVBAMTInJldm9rZWQtaXNyZ3Jvb3R4MS5sZXRz\n"
-            + "ZW5jcnlwdC5vcmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC5qlZ0\n"
-            + "jslNLn/1uICdZPwflcvsoA2S2Nk+O7cPNew+KQmSIf+LK9AbaWHCkABKx1GdMtfN\n"
-            + "4Q/nKBtzqZ5jX1V1XbPqPd1eeyJo0rNaDFk/gEUHw/zIYi1AtsxVHztMqOXRcsw+\n"
-            + "6QHRKU2XFVsfSctMv+MKnMTEJZARyhr5ur9bQ4/LmxPMhrlHAst97hiSsXKXeyMK\n"
-            + "DWPHmUDn1vz/1mwLMaeYYmuhuRP5HNwYq+LdYvjMV580i6LHY72TwQCfVgOHfqI0\n"
-            + "larISk2p4q6DmTEEiAzJB3yEYaxDn0kEXbKhL9efDC+eirVFa0ta2OnH87s9L8z9\n"
-            + "fm9JIiSFM9ATQ16/AgMBAAGjggIiMIICHjAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0l\n"
-            + "BBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYE\n"
-            + "FP64lxiV8KwkkzoNaM7iuwX8UBG/MB8GA1UdIwQYMBaAFKhKamMEfd265tE5t6ZF\n"
-            + "Ze/zqOyhMG8GCCsGAQUFBwEBBGMwYTAuBggrBgEFBQcwAYYiaHR0cDovL29jc3Au\n"
-            + "aW50LXgzLmxldHNlbmNyeXB0Lm9yZzAvBggrBgEFBQcwAoYjaHR0cDovL2NlcnQu\n"
-            + "aW50LXgzLmxldHNlbmNyeXB0Lm9yZy8wLQYDVR0RBCYwJIIicmV2b2tlZC1pc3Jn\n"
-            + "cm9vdHgxLmxldHNlbmNyeXB0Lm9yZzCB/gYDVR0gBIH2MIHzMAgGBmeBDAECATCB\n"
-            + "5gYLKwYBBAGC3xMBAQEwgdYwJgYIKwYBBQUHAgEWGmh0dHA6Ly9jcHMubGV0c2Vu\n"
-            + "Y3J5cHQub3JnMIGrBggrBgEFBQcCAjCBngyBm1RoaXMgQ2VydGlmaWNhdGUgbWF5\n"
-            + "IG9ubHkgYmUgcmVsaWVkIHVwb24gYnkgUmVseWluZyBQYXJ0aWVzIGFuZCBvbmx5\n"
-            + "IGluIGFjY29yZGFuY2Ugd2l0aCB0aGUgQ2VydGlmaWNhdGUgUG9saWN5IGZvdW5k\n"
-            + "IGF0IGh0dHBzOi8vbGV0c2VuY3J5cHQub3JnL3JlcG9zaXRvcnkvMA0GCSqGSIb3\n"
-            + "DQEBCwUAA4IBAQCBiokogdgIZxwuPSr43S4GZ9FwrpZNMHADMEZB8ykuotJBGyr1\n"
-            + "QLWDVeoAJ8OIi1AzjcdwKFQks/MKUJwxJ9hYmm9aM14d5lMKGTyoLSI/Z/Vrpx8w\n"
-            + "0GpktSK0WfPeLBHuSpMdrIMWyziSu/bdZtiOIIvMasFwyRhDgII++CIdsnboWXF+\n"
-            + "DZcwy0Yd6XzirXuwENwaWrkrbZPr/JB0xLFmydqXAnA1VFTudwL87q4CTlEo8EiD\n"
-            + "ucKZ/vAhD+ip3/kQFXg90om+9TdHo8D8GxTC1CLZteJt+nqWFRj0e/7eCXIZuUBE\n"
-            + "aSsFCd5RNTHs6tioN9vYJqLojObgF75MgIAC\n"
-            + "-----END CERTIFICATE-----";
+    // Issuer: CN=R3, O=Let's Encrypt, C=US
+    // Serial number: 4f1333011635d76d6356c5f1fb8a7273617
+    // Valid from: Fri Jun 25 08:18:10 PDT 2021 until: Thu Sep 23 08:18:09 PDT 2021
+    private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFSTCCBDGgAwIBAgISBPEzMBFjXXbWNWxfH7inJzYXMA0GCSqGSIb3DQEBCwUA\n" +
+            "MDIxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MQswCQYDVQQD\n" +
+            "EwJSMzAeFw0yMTA2MjUxNTE4MTBaFw0yMTA5MjMxNTE4MDlaMC0xKzApBgNVBAMT\n" +
+            "InJldm9rZWQtaXNyZ3Jvb3R4MS5sZXRzZW5jcnlwdC5vcmcwggEiMA0GCSqGSIb3\n" +
+            "DQEBAQUAA4IBDwAwggEKAoIBAQCkCp4fq7FnN5lfAWX0vhCcyC5WO9TuU6ckuYYj\n" +
+            "8/wQ8GQ/FIl+vXCAmHIfIX14irQN8TISeVdMOP0C7sa73d3GSawX7qMaRhddXn7V\n" +
+            "EL+4CbHQ6qit5YkakwhHz9tKbYX16wPj+inn22kJVwi8iLbhYB9WWSvv7OyiNSHv\n" +
+            "nmlYUkMv8+9UhgPT4yCKF1OEI5ajUOuecjOKc+EzsT/JqPRErvBOIKn3PRn4h8UM\n" +
+            "0BJDrDtZMpkvD4/lyRs3g/BLsf3DQjlEgKit0hvc72yyhiDbKd41EmBoQC5rNF7o\n" +
+            "B0CnBXhDLHbC/YRunVrYGsF0h2J9hw4055BdaXbS2BJnPEFnAgMBAAGjggJcMIIC\n" +
+            "WDAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMC\n" +
+            "MAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYEFJBkf3Z/ICoCTUx3JCgrBeoMyedQMB8G\n" +
+            "A1UdIwQYMBaAFBQusxe3WFbLrlAJQOYfr52LFMLGMFUGCCsGAQUFBwEBBEkwRzAh\n" +
+            "BggrBgEFBQcwAYYVaHR0cDovL3IzLm8ubGVuY3Iub3JnMCIGCCsGAQUFBzAChhZo\n" +
+            "dHRwOi8vcjMuaS5sZW5jci5vcmcvMC0GA1UdEQQmMCSCInJldm9rZWQtaXNyZ3Jv\n" +
+            "b3R4MS5sZXRzZW5jcnlwdC5vcmcwTAYDVR0gBEUwQzAIBgZngQwBAgEwNwYLKwYB\n" +
+            "BAGC3xMBAQEwKDAmBggrBgEFBQcCARYaaHR0cDovL2Nwcy5sZXRzZW5jcnlwdC5v\n" +
+            "cmcwggEDBgorBgEEAdZ5AgQCBIH0BIHxAO8AdQCUILwejtWNbIhzH4KLIiwN0dpN\n" +
+            "XmxPlD1h204vWE2iwgAAAXpD9t6nAAAEAwBGMEQCIHwF9NcPqsovYp56lhqFkWYj\n" +
+            "QCATATrLzzxgUoLDYRwgAiBBecqe5Ub32I+q9oqH1nbK/s8QadcafIL3bkrRVbFB\n" +
+            "TAB2AH0+8viP/4hVaCTCwMqeUol5K8UOeAl/LmqXaJl+IvDXAAABekP23sYAAAQD\n" +
+            "AEcwRQIgGli/1mmKKnZ0uxDIX7ySqAyD2C7FTf+y3py2S0Xcv4YCIQCZve3cqKZ2\n" +
+            "lrEyyaMeLZA+PIxUMniHx3gDkro0sKLzOzANBgkqhkiG9w0BAQsFAAOCAQEAle42\n" +
+            "p58OTusm7DAOcdK4ld+pJu2bz9F940Wrnql08rciRjGIVpp5PhMNFm9AOaptKPNY\n" +
+            "h62V2GEOVaLxmvr9/8EDFcCCPAGV1DNYrG9aTKaiXk7IzO4UxKbzox4iUcuop/zB\n" +
+            "uofxT8uBLmT4XYZrQXXKj1KdfJGzgeoXqBv5PPCiP3hmBQixoJnSKImnUIXWh4O8\n" +
+            "kBtmgII5ug0q+jI3LvpJuv7xQsaNYFBcmFiQQ7YRt4W99GMdbYGjhzT8iBDEH7nG\n" +
+            "MsqWuwB5TN5vIuw2aWxcfaqKayq7UPA4rJePWdD/5RzKlQKLQx0BA3AL+3Nnj1fT\n" +
+            "NEKwCWWylIND6z/9Xw==\n" +
+            "-----END CERTIFICATE-----";
 
     public static void main(String[] args) throws Exception {
 
-        ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
+            ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
             pathValidator.enableCRLCheck();
 
             // Validate int, EE certs don't have CRLs
@@ -163,19 +161,20 @@ public class LetsEncryptCA {
                     ValidatePathWithParams.Status.GOOD, null, System.out);
 
             return;
-        } else {
-            // OCSP check by default
-            pathValidator.enableOCSPCheck();
         }
 
+        // OCSP check by default
+        // intermediate cert R3 doesn't specify OCSP responder
+        ValidatePathWithParams pathValidator = new ValidatePathWithParams(new String[]{INT});
+        pathValidator.enableOCSPCheck();
+
         // Validate valid
-        pathValidator.validate(new String[]{VALID, INT},
+        pathValidator.validate(new String[]{VALID},
                 ValidatePathWithParams.Status.GOOD, null, System.out);
 
         // Validate Revoked
-        pathValidator.validate(new String[]{REVOKED, INT},
+        pathValidator.validate(new String[]{REVOKED},
                 ValidatePathWithParams.Status.REVOKED,
-                "Wed Nov 08 08:00:35 PST 2017", System.out);
-
+                "Fri Jun 25 09:18:12 PDT 2021", System.out);
     }
 }

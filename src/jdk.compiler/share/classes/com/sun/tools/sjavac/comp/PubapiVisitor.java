@@ -52,7 +52,6 @@ import com.sun.tools.sjavac.pubapi.TypeDesc;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-@SuppressWarnings("preview")
 public class PubapiVisitor extends ElementScanner14<Void, Void> {
 
     private PubApi collectedApi = new PubApi();
@@ -124,7 +123,6 @@ public class PubapiVisitor extends ElementScanner14<Void, Void> {
         return null;
     }
 
-    @SuppressWarnings("preview")
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Void visitRecordComponent(RecordComponentElement e, Void p) {
         PubVar v = new PubVar(e.getModifiers(),

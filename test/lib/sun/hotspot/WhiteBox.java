@@ -32,8 +32,9 @@ import java.util.function.Function;
 import java.security.BasicPermission;
 import java.util.Objects;
 
-import sun.hotspot.parser.DiagnosticCommand;
+import jdk.test.whitebox.parser.DiagnosticCommand;
 
+@Deprecated
 public class WhiteBox {
   @SuppressWarnings("serial")
   public static class WhiteBoxPermission extends BasicPermission {
@@ -55,9 +56,10 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
+    @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
+      throw new SecurityException("can't use old whitebox with SecurityManager, please switch to jdk.test.whitebox.WhiteBox");
     }
     return instance;
   }
@@ -309,7 +311,7 @@ public class WhiteBox {
     makeMethodNotCompilable0(method, compLevel, isOsr);
   }
   public        int     getMethodCompilationLevel(Executable method) {
-    return getMethodCompilationLevel(method, false /*not ost*/);
+    return getMethodCompilationLevel(method, false /*not osr*/);
   }
   private native int     getMethodCompilationLevel0(Executable method, boolean isOsr);
   public         int     getMethodCompilationLevel(Executable method, boolean isOsr) {
@@ -590,7 +592,8 @@ public class WhiteBox {
   public native boolean isSharingEnabled();
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
-  public native boolean areSharedStringsIgnored();
+  public native boolean areSharedStringsMapped();
+  public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
   public native boolean isJavaHeapArchiveSupported();
@@ -604,7 +607,10 @@ public class WhiteBox {
 
   // Handshakes
   public native int handshakeWalkStack(Thread t, boolean all_threads);
+  public native boolean handshakeReadMonitors(Thread t);
   public native void asyncHandshakeWalkStack(Thread t);
+
+  public native void lockAndBlock(boolean suspender);
 
   // Returns true on linux if library has the noexecstack flag set.
   public native boolean checkLibSpecifiesNoexecstack(String libfilename);
@@ -634,7 +640,7 @@ public class WhiteBox {
   public native String getLibcName();
 
   // Walk stack frames of current thread
-  public native void verifyFrames(boolean log);
+  public native void verifyFrames(boolean log, boolean updateRegisterMap);
 
   public native boolean isJVMTIIncluded();
 

@@ -295,7 +295,7 @@ public class ClassBuilder extends AbstractBuilder {
      * @param classInfoTree the content tree to which the documentation will be added
      */
     protected void buildClassSignature(Content classInfoTree) {
-        writer.addClassSignature(utils.modifiersToString(typeElement, true), classInfoTree);
+        writer.addClassSignature(classInfoTree);
     }
 
     /**
@@ -450,7 +450,6 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elem the record element
      */
 
-    @SuppressWarnings("preview")
     private void setRecordDocumentation(TypeElement elem) {
         CommentUtils cmtUtils = configuration.cmtUtils;
         Set<Name> componentNames = elem.getRecordComponents().stream()

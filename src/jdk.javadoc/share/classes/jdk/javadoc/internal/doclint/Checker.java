@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,12 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
@@ -184,9 +187,25 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             }
         } else {
             if (tree == null) {
-                if (!isSynthetic() && !isOverridingMethod)
+                if (isDefaultConstructor()) {
+                    if (isNormalClass(p.getParentPath())) {
+                        reportMissing("dc.default.constructor");
+                    }
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous()) {
                     reportMissing("dc.missing.comment");
+                }
                 return null;
+            } else if (tree.getFirstSentence().isEmpty() && !isOverridingMethod) {
+                if (tree.getBlockTags().isEmpty()) {
+                    reportMissing("dc.empty.comment");
+                    return null;
+                } else {
+                    // Don't report an empty description if the comment contains @deprecated,
+                    // because javadoc will use the content of that tag in summary tables.
+                    if (tree.getBlockTags().stream().allMatch(t -> t.getKind() != DocTree.Kind.DEPRECATED)) {
+                        env.messages.report(MISSING, Kind.WARNING, tree, "dc.empty.description");
+                    }
+                }
             }
         }
 
@@ -383,11 +402,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
                 }
             }
-        }
 
-        // check for self closing tags, such as <a id="name"/>
-        if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
-            env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            // check for self closing tags, such as <a id="name"/>
+            if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
+                env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            }
         }
 
         try {
@@ -591,14 +610,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     void warnIfEmpty(TagStackItem tsi, DocTree endTree) {
-        if (tsi.tag != null && tsi.tree instanceof StartElementTree) {
+        if (tsi.tag != null && tsi.tree instanceof StartElementTree startTree) {
             if (tsi.tag.flags.contains(HtmlTag.Flag.EXPECT_CONTENT)
                     && !tsi.flags.contains(Flag.HAS_TEXT)
                     && !tsi.flags.contains(Flag.HAS_ELEMENT)
                     && !tsi.flags.contains(Flag.HAS_INLINE_TAG)
                     && !(tsi.tag.elemKind == ElemKind.HTML4)) {
-                DocTree tree = (endTree != null) ? endTree : tsi.tree;
-                Name treeName = ((StartElementTree) tsi.tree).getName();
+                DocTree tree = (endTree != null) ? endTree : startTree;
+                Name treeName = startTree.getName();
                 env.messages.warning(HTML, tree, "dc.tag.empty", treeName);
             }
         }
@@ -1143,6 +1162,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private boolean isSynthetic() {
+        return env.elements.getOrigin(env.currElement) == Elements.Origin.SYNTHETIC;
+    }
+
+    private boolean isAnonymous() {
+        return (env.currElement instanceof TypeElement te)
+                && te.getNestingKind() == NestingKind.ANONYMOUS;
+    }
+
+    private boolean isDefaultConstructor() {
         switch (env.currElement.getKind()) {
             case CONSTRUCTOR:
                 // A synthetic default constructor has the same pos as the
@@ -1151,6 +1179,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 return env.getPos(p) == env.getPos(p.getParentPath());
         }
         return false;
+    }
+
+    private boolean isNormalClass(TreePath p) {
+        return switch (p.getLeaf().getKind()) {
+            case ENUM, RECORD -> false;
+            case CLASS -> true;
+            default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
+        };
     }
 
     void markEnclosingTag(Flag flag) {

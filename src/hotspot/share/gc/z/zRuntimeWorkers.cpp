@@ -59,27 +59,23 @@ public:
 
 ZRuntimeWorkers::ZRuntimeWorkers() :
     _workers("RuntimeWorker",
-             nworkers(),
+             ParallelGCThreads,
              false /* are_GC_task_threads */,
              false /* are_ConcurrentGC_threads */) {
 
-  log_info_p(gc, init)("Runtime Workers: %u parallel", nworkers());
+  log_info_p(gc, init)("Runtime Workers: %u", _workers.total_workers());
 
   // Initialize worker threads
   _workers.initialize_workers();
-  _workers.update_active_workers(nworkers());
-  if (_workers.active_workers() != nworkers()) {
+  _workers.update_active_workers(_workers.total_workers());
+  if (_workers.active_workers() != _workers.total_workers()) {
     vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
   }
 
   // Execute task to reduce latency in early safepoints,
   // which otherwise would have to take on any warmup costs.
-  ZRuntimeWorkersInitializeTask task(nworkers());
+  ZRuntimeWorkersInitializeTask task(_workers.total_workers());
   _workers.run_task(&task);
-}
-
-uint ZRuntimeWorkers::nworkers() const {
-  return ParallelGCThreads;
 }
 
 WorkGang* ZRuntimeWorkers::workers() {

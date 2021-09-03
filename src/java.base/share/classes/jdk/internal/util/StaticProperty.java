@@ -47,8 +47,10 @@ public final class StaticProperty {
     private static final String JAVA_LIBRARY_PATH;
     private static final String SUN_BOOT_LIBRARY_PATH;
     private static final String JDK_SERIAL_FILTER;
+    private static final String JDK_SERIAL_FILTER_FACTORY;
     private static final String JAVA_IO_TMPDIR;
     private static final String NATIVE_ENCODING;
+    private static final String FILE_ENCODING;
 
     private StaticProperty() {}
 
@@ -62,7 +64,9 @@ public final class StaticProperty {
         JAVA_LIBRARY_PATH = getProperty(props, "java.library.path", "");
         SUN_BOOT_LIBRARY_PATH = getProperty(props, "sun.boot.library.path", "");
         JDK_SERIAL_FILTER = getProperty(props, "jdk.serialFilter", null);
+        JDK_SERIAL_FILTER_FACTORY = getProperty(props, "jdk.serialFilterFactory", null);
         NATIVE_ENCODING = getProperty(props, "native.encoding");
+        FILE_ENCODING = getProperty(props, "file.encoding");
     }
 
     private static String getProperty(Properties props, String key) {
@@ -184,6 +188,20 @@ public final class StaticProperty {
         return JDK_SERIAL_FILTER;
     }
 
+
+    /**
+     * Return the {@code jdk.serialFilterFactory} system property.
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @return the {@code jdk.serialFilterFactory} system property
+     */
+    public static String jdkSerialFilterFactory() {
+        return JDK_SERIAL_FILTER_FACTORY;
+    }
+
     /**
      * Return the {@code native.encoding} system property.
      *
@@ -195,5 +213,18 @@ public final class StaticProperty {
      */
     public static String nativeEncoding() {
         return NATIVE_ENCODING;
+    }
+
+    /**
+     * Return the {@code file.encoding} system property.
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @return the {@code file.encoding} system property
+     */
+    public static String fileEncoding() {
+        return FILE_ENCODING;
     }
 }

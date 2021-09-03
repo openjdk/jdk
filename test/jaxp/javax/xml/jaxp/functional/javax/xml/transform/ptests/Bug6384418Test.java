@@ -44,7 +44,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 6384418
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.Bug6384418Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.transform.ptests.Bug6384418Test
  * @run testng/othervm javax.xml.transform.ptests.Bug6384418Test
  * @summary verify the transforming won't throw any exception
  */

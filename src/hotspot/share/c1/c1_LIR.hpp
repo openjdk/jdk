@@ -888,7 +888,6 @@ enum LIR_Code {
   , begin_op0
       , lir_label
       , lir_nop
-      , lir_backwardbranch_target
       , lir_std_entry
       , lir_osr_entry
       , lir_fpop_raw
@@ -931,9 +930,7 @@ enum LIR_Code {
       , lir_add
       , lir_sub
       , lir_mul
-      , lir_mul_strictfp
       , lir_div
-      , lir_div_strictfp
       , lir_rem
       , lir_sqrt
       , lir_abs
@@ -1021,7 +1018,6 @@ enum LIR_PatchCode {
 enum LIR_MoveKind {
   lir_move_normal,
   lir_move_volatile,
-  lir_move_unaligned,
   lir_move_wide,
   lir_move_max_flag
 };
@@ -2076,9 +2072,6 @@ class LIR_List: public CompilationResourceObj {
   // result is a stack location for old backend and vreg for UseLinearScan
   // stack_loc_temp is an illegal register for old backend
   void roundfp(LIR_Opr reg, LIR_Opr stack_loc_temp, LIR_Opr result) { append(new LIR_OpRoundFP(reg, stack_loc_temp, result)); }
-  void unaligned_move(LIR_Address* src, LIR_Opr dst) { append(new LIR_Op1(lir_move, LIR_OprFact::address(src), dst, dst->type(), lir_patch_none, NULL, lir_move_unaligned)); }
-  void unaligned_move(LIR_Opr src, LIR_Address* dst) { append(new LIR_Op1(lir_move, src, LIR_OprFact::address(dst), src->type(), lir_patch_none, NULL, lir_move_unaligned)); }
-  void unaligned_move(LIR_Opr src, LIR_Opr dst) { append(new LIR_Op1(lir_move, src, dst, dst->type(), lir_patch_none, NULL, lir_move_unaligned)); }
   void move(LIR_Opr src, LIR_Opr dst, CodeEmitInfo* info = NULL) { append(new LIR_Op1(lir_move, src, dst, dst->type(), lir_patch_none, info)); }
   void move(LIR_Address* src, LIR_Opr dst, CodeEmitInfo* info = NULL) { append(new LIR_Op1(lir_move, LIR_OprFact::address(src), dst, src->type(), lir_patch_none, info)); }
   void move(LIR_Opr src, LIR_Address* dst, CodeEmitInfo* info = NULL) { append(new LIR_Op1(lir_move, src, LIR_OprFact::address(dst), dst->type(), lir_patch_none, info)); }
@@ -2156,9 +2149,9 @@ class LIR_List: public CompilationResourceObj {
   void add (LIR_Opr left, LIR_Opr right, LIR_Opr res)      { append(new LIR_Op2(lir_add, left, right, res)); }
   void sub (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL) { append(new LIR_Op2(lir_sub, left, right, res, info)); }
   void mul (LIR_Opr left, LIR_Opr right, LIR_Opr res) { append(new LIR_Op2(lir_mul, left, right, res)); }
-  void mul_strictfp (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_mul_strictfp, left, right, res, tmp)); }
+  void mul (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_mul, left, right, res, tmp)); }
   void div (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL)      { append(new LIR_Op2(lir_div, left, right, res, info)); }
-  void div_strictfp (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_div_strictfp, left, right, res, tmp)); }
+  void div (LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_div, left, right, res, tmp)); }
   void rem (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL)      { append(new LIR_Op2(lir_rem, left, right, res, info)); }
 
   void volatile_load_mem_reg(LIR_Address* address, LIR_Opr dst, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);

@@ -596,7 +596,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
 
 ArrayCopyNode* MemNode::find_array_copy_clone(PhaseTransform* phase, Node* ld_alloc, Node* mem) const {
   if (mem->is_Proj() && mem->in(0) != NULL && (mem->in(0)->Opcode() == Op_MemBarStoreStore ||
-                                                 mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
+                                               mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
     if (ld_alloc != NULL) {
       // Check if there is an array copy for a clone
       Node* mb = mem->in(0);
@@ -1061,7 +1061,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   // This is more general than load from boxing objects.
   if (skip_through_membars(atp, tp, phase->C->eliminate_boxing())) {
     uint alias_idx = atp->index();
-    bool final = !atp->is_rewritable();
     Node* result = NULL;
     Node* current = st;
     // Skip through chains of MemBarNodes checking the MergeMems for
@@ -1069,17 +1068,19 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     // kind of node is encountered.  Loads from final memory can skip
     // through any kind of MemBar but normal loads shouldn't skip
     // through MemBarAcquire since the could allow them to move out of
-    // a synchronized region.
+    // a synchronized region. It is not safe to step over MemBarCPUOrder,
+    // because alias info above them may be inaccurate (e.g., due to
+    // mixed/mismatched unsafe accesses).
+    bool is_final_mem = !atp->is_rewritable();
     while (current->is_Proj()) {
       int opc = current->in(0)->Opcode();
-      if ((final && (opc == Op_MemBarAcquire ||
-                     opc == Op_MemBarAcquireLock ||
-                     opc == Op_LoadFence)) ||
+      if ((is_final_mem && (opc == Op_MemBarAcquire ||
+                            opc == Op_MemBarAcquireLock ||
+                            opc == Op_LoadFence)) ||
           opc == Op_MemBarRelease ||
           opc == Op_StoreFence ||
           opc == Op_MemBarReleaseLock ||
-          opc == Op_MemBarStoreStore ||
-          opc == Op_MemBarCPUOrder) {
+          opc == Op_MemBarStoreStore) {
         Node* mem = current->in(0)->in(TypeFunc::Memory);
         if (mem->is_MergeMem()) {
           MergeMemNode* merge = mem->as_MergeMem();
@@ -1754,7 +1755,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // try to optimize our memory input
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
-      set_req(MemNode::Memory, opt_mem);
+      set_req_X(MemNode::Memory, opt_mem, phase);
       if (phase->type( opt_mem ) == Type::TOP) return NULL;
       return this;
     }
@@ -1829,16 +1830,9 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // just return a prior value, which is done by Identity calls.
     if (can_see_stored_value(prev_mem, phase)) {
       // Make ready for step (d):
-      set_req(MemNode::Memory, prev_mem);
+      set_req_X(MemNode::Memory, prev_mem, phase);
       return this;
     }
-  }
-
-  AllocateNode* alloc = is_new_object_mark_load(phase);
-  if (alloc != NULL && alloc->Opcode() == Op_Allocate && UseBiasedLocking) {
-    InitializeNode* init = alloc->initialization();
-    Node* control = init->proj_out(0);
-    return alloc->make_ideal_mark(phase, address, control, mem);
   }
 
   return progress ? this : NULL;
@@ -2103,7 +2097,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   }
 
   Node* alloc = is_new_object_mark_load(phase);
-  if (alloc != NULL && !(alloc->Opcode() == Op_Allocate && UseBiasedLocking)) {
+  if (alloc != NULL) {
     return TypeX::make(markWord::prototype().value());
   }
 
@@ -3313,7 +3307,8 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
   if (outcnt() != 2) {
-    return;
+    assert(Opcode() == Op_Initialize, "Only seen when there are no use of init memory");
+    assert(outcnt() == 1, "Only control then");
   }
   if (trailing_store() || trailing_load_store()) {
     MemBarNode* leading = leading_membar();
@@ -3322,8 +3317,12 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
       leading->remove(igvn);
     }
   }
-  igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
-  igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+  if (proj_out_or_null(TypeFunc::Memory) != NULL) {
+    igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
+  }
+  if (proj_out_or_null(TypeFunc::Control) != NULL) {
+    igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+  }
 }
 
 //------------------------------Ideal------------------------------------------

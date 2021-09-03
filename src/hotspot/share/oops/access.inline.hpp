@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_ACCESS_INLINE_HPP
 #define SHARE_OOPS_ACCESS_INLINE_HPP
 
+#include "oops/access.hpp"
+
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/barrierSetConfig.inline.hpp"
-#include "oops/access.hpp"
 #include "oops/accessBackend.inline.hpp"
 
 // This file outlines the last 2 steps of the template pipeline of accesses going through
@@ -199,13 +200,6 @@ namespace AccessInternal {
     }
   };
 
-  template <class GCBarrierType, DecoratorSet decorators>
-  struct PostRuntimeDispatch<GCBarrierType, BARRIER_RESOLVE, decorators>: public AllStatic {
-    static oop access_barrier(oop obj) {
-      return GCBarrierType::resolve(obj);
-    }
-  };
-
   // Resolving accessors with barriers from the barrier set happens in two steps.
   // 1. Expand paths with runtime-decorators, e.g. is UseCompressedOops on or off.
   // 2. Expand paths for each BarrierSet available in the system.
@@ -352,13 +346,6 @@ namespace AccessInternal {
     func_t function = BarrierResolver<decorators, func_t, BARRIER_CLONE>::resolve_barrier();
     _clone_func = function;
     function(src, dst, size);
-  }
-
-  template <DecoratorSet decorators, typename T>
-  oop RuntimeDispatch<decorators, T, BARRIER_RESOLVE>::resolve_init(oop obj) {
-    func_t function = BarrierResolver<decorators, func_t, BARRIER_RESOLVE>::resolve_barrier();
-    _resolve_func = function;
-    return function(obj);
   }
 }
 

@@ -41,50 +41,59 @@ struct Pointer : public AllStatic {
   static uintx get_hash(const Value& value, bool* dead_hash) {
     return (uintx)value;
   }
-  static void* allocate_node(size_t size, const Value& value) {
+  static void* allocate_node(void* context, size_t size, const Value& value) {
     return ::malloc(size);
   }
-  static void free_node(void* memory, const Value& value) {
+  static void free_node(void* context, void* memory, const Value& value) {
     ::free(memory);
+  }
+};
+
+struct Allocator {
+  struct TableElement{
+    TableElement * volatile _next;
+    uintptr_t _value;
+  };
+
+  const uint nelements = 5;
+  TableElement* elements;
+  uint cur_index;
+
+  Allocator() : cur_index(0) {
+    elements = (TableElement*)::malloc(nelements * sizeof(TableElement));
+  }
+
+  void* allocate_node() {
+    return (void*)&elements[cur_index++];
+  }
+
+  void free_node(void* value) { /* Arena allocator. Ignore freed nodes*/ }
+
+  void reset() {
+    cur_index = 0;
+  }
+
+  ~Allocator() {
+    ::free(elements);
   }
 };
 
 struct Config : public AllStatic {
   typedef uintptr_t Value;
-  struct TableElement{
-    TableElement * volatile _next;
-    Value _value;
-  };
-
-  static const uint nelements = 5;
-  static TableElement* elements;
-  static uint cur_index;
 
   static uintx get_hash(const Value& value, bool* dead_hash) {
     return (uintx)value;
   }
-  static void initialize() {
-    elements = (TableElement*)::malloc(nelements * sizeof(TableElement));
-  }
-  static void* allocate_node(size_t size, const Value& value) {
-    return (void*)&elements[cur_index++];
+  static void* allocate_node(void* context, size_t size, const Value& value) {
+    Allocator* mm = (Allocator*)context;
+    return mm->allocate_node();
   }
 
-  static void free_node(void* memory, const Value& value) {
-    return;
-  }
-
-  static void reset() {
-    cur_index = 0;
-  }
-
-  static void bulk_free() {
-    ::free(elements);
+  static void free_node(void* context, void* memory, const Value& value) {
+    Allocator* mm = (Allocator*)context;
+    mm->free_node(memory);
   }
 };
-
-Config::TableElement* Config::elements = nullptr;
-uint Config::cur_index = 0;
 
 typedef ConcurrentHashTable<Pointer, mtInternal> SimpleTestTable;
 typedef ConcurrentHashTable<Pointer, mtInternal>::MultiGetHandle SimpleTestGetHandle;
@@ -280,15 +289,16 @@ static void cht_reset_shrink(Thread* thr) {
   uintptr_t val3 = 3;
   SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
 
-  Config::initialize();
-  CustomTestTable* cht = new CustomTestTable();
+  Allocator mem_allocator;
+  const uint initial_log_table_size = 4;
+  CustomTestTable* cht = new CustomTestTable(&mem_allocator);
 
   cht_insert_and_find(thr, cht, val1);
   cht_insert_and_find(thr, cht, val2);
   cht_insert_and_find(thr, cht, val3);
 
   cht->unsafe_reset();
-  Config::reset();
+  mem_allocator.reset();
 
   EXPECT_EQ(cht_get_copy(cht, thr, stl1), (uintptr_t)0) << "Table should have been reset";
   // Re-inserted values should not be considered duplicates; table was reset.
@@ -296,8 +306,8 @@ static void cht_reset_shrink(Thread* thr) {
   cht_insert_and_find(thr, cht, val2);
   cht_insert_and_find(thr, cht, val3);
 
+  cht->unsafe_reset();
   delete cht;
-  Config::bulk_free();
 }
 
 static void cht_scope(Thread* thr) {
@@ -506,10 +516,10 @@ public:
   static uintx get_hash(const Value& value, bool* dead_hash) {
     return (uintx)(value + 18446744073709551557ul) * 18446744073709551557ul;
   }
-  static void* allocate_node(size_t size, const Value& value) {
+  static void* allocate_node(void* context, size_t size, const Value& value) {
     return AllocateHeap(size, mtInternal);
   }
-  static void free_node(void* memory, const Value& value) {
+  static void free_node(void* context, void* memory, const Value& value) {
     FreeHeap(memory);
   }
 };
@@ -1055,13 +1065,21 @@ TEST_VM(ConcurrentHashTable, concurrent_get_insert_bulk_delete) {
 
 class MT_BD_Thread : public JavaTestThread {
   TestTable::BulkDeleteTask* _bd;
+  Semaphore run;
+
   public:
-  MT_BD_Thread(Semaphore* post, TestTable::BulkDeleteTask* bd)
-    : JavaTestThread(post), _bd(bd){}
+  MT_BD_Thread(Semaphore* post)
+    : JavaTestThread(post) {}
   virtual ~MT_BD_Thread() {}
   void main_run() {
+    run.wait();
     MyDel del;
     while(_bd->do_task(this, *this, del));
+  }
+
+  void set_bd_task(TestTable::BulkDeleteTask* bd) {
+    _bd = bd;
+    run.signal();
   }
 
   bool operator()(uintptr_t* val) {
@@ -1088,13 +1106,19 @@ public:
       TestLookup tl(v);
       EXPECT_TRUE(cht->insert(this, tl, v)) << "Inserting an unique value should work.";
     }
+
+    // Must create and start threads before acquiring mutex inside BulkDeleteTask.
+    MT_BD_Thread* tt[4];
+    for (int i = 0; i < 4; i++) {
+      tt[i] = new MT_BD_Thread(&done);
+      tt[i]->doit();
+    }
+
     TestTable::BulkDeleteTask bdt(cht, true /* mt */ );
     EXPECT_TRUE(bdt.prepare(this)) << "Uncontended prepare must work.";
 
-    MT_BD_Thread* tt[4];
     for (int i = 0; i < 4; i++) {
-      tt[i] = new MT_BD_Thread(&done, &bdt);
-      tt[i]->doit();
+      tt[i]->set_bd_task(&bdt);
     }
 
     for (uintptr_t v = 1; v < 99999; v++ ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,20 @@
 #ifndef SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP
 #define SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP
 
+#include "utilities/concurrentHashTable.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "utilities/concurrentHashTable.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
 
 // 2^30 = 1G buckets
 #define SIZE_BIG_LOG2 30
-// 2^5  = 32 buckets
-#define SIZE_SMALL_LOG2 5
+// 2^2  = 4 buckets
+#define SIZE_SMALL_LOG2 2
 
 // Number from spinYield.hpp. In some loops SpinYield would be unfair.
 #define SPINPAUSES_PER_YIELD 8192
@@ -364,7 +365,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
     while (node != NULL) {
       Node* free_node = node;
       node = node->next();
-      Node::destroy_node(free_node);
+      Node::destroy_node(_context, free_node);
     }
   }
 }
@@ -469,7 +470,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   // Publish the deletion.
   GlobalCounter::write_synchronize();
   delete_f(rem_n->value());
-  Node::destroy_node(rem_n);
+  Node::destroy_node(_context, rem_n);
   JFR_ONLY(_stats_rate.remove();)
   return true;
 }
@@ -518,7 +519,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
     }
     for (size_t node_it = 0; node_it < nd; node_it++) {
       del_f(ndel[node_it]->value());
-      Node::destroy_node(ndel[node_it]);
+      Node::destroy_node(_context, ndel[node_it]);
       JFR_ONLY(_stats_rate.remove();)
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
@@ -557,7 +558,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   if (dels > 0) {
     GlobalCounter::write_synchronize();
     for (size_t node_it = 0; node_it < dels; node_it++) {
-      Node::destroy_node(ndel[node_it]);
+      Node::destroy_node(_context, ndel[node_it]);
       JFR_ONLY(_stats_rate.remove();)
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
@@ -686,7 +687,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
     // chain.
     write_synchonize_on_visible_epoch(thread);
     if (delete_me != NULL) {
-      Node::destroy_node(delete_me);
+      Node::destroy_node(_context, delete_me);
       delete_me = NULL;
     }
   }
@@ -816,10 +817,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   }
 
   _new_table = new InternalTable(_table->_log2_size + 1);
-
-  if (_new_table->_log2_size == _log2_size_limit) {
-    _size_limit_reached = true;
-  }
+  _size_limit_reached = _new_table->_log2_size == _log2_size_limit;
 
   return true;
 }
@@ -891,7 +889,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   size_t loops = 0;
   size_t i = 0;
   uintx hash = lookup_f.get_hash();
-  Node* new_node = Node::create_node(value, NULL);
+  Node* new_node = Node::create_node(_context, value, NULL);
 
   while (true) {
     {
@@ -926,7 +924,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
 
   if (new_node != NULL) {
     // CAS failed and a duplicate was inserted, we must free this node.
-    Node::destroy_node(new_node);
+    Node::destroy_node(_context, new_node);
   } else if (i == 0 && clean) {
     // We only do cleaning on fast inserts.
     Bucket* bucket = get_bucket_locked(thread, lookup_f.get_hash());
@@ -953,6 +951,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
 {
   Node* current_node = bucket->first();
   while (current_node != NULL) {
+    Prefetch::read(current_node->next(), 0);
     if (!visitor_f(current_node->value())) {
       return false;
     }
@@ -1007,15 +1006,15 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 // Constructor
 template <typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<CONFIG, F>::
-  ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint)
-    : _new_table(NULL), _log2_size_limit(log2size_limit),
-       _log2_start_size(log2size), _grow_hint(grow_hint),
-       _size_limit_reached(false), _resize_lock_owner(NULL),
-       _invisible_epoch(0)
+  ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, void* context)
+    : _context(context), _new_table(NULL), _log2_size_limit(log2size_limit),
+      _log2_start_size(log2size), _grow_hint(grow_hint),
+      _size_limit_reached(false), _resize_lock_owner(NULL),
+      _invisible_epoch(0)
 {
   _stats_rate = TableRateStatistics();
   _resize_lock =
-    new Mutex(Mutex::leaf, "ConcurrentHashTable", true,
+    new Mutex(Mutex::leaf, "ConcurrentHashTable",
               Mutex::_safepoint_check_never);
   _table = new InternalTable(log2size);
   assert(log2size_limit >= log2size, "bad ergo");
@@ -1029,6 +1028,14 @@ inline ConcurrentHashTable<CONFIG, F>::
   delete _resize_lock;
   free_nodes();
   delete _table;
+}
+
+template <typename CONFIG, MEMFLAGS F>
+inline size_t ConcurrentHashTable<CONFIG, F>::
+  get_mem_size(Thread* thread)
+{
+  ScopedCS cs(thread, this);
+  return sizeof(*this) + _table->get_mem_size();
 }
 
 template <typename CONFIG, MEMFLAGS F>
@@ -1091,7 +1098,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   InternalTable* table = get_table();
   Bucket* bucket = get_bucket_in(table, hash);
   assert(!bucket->have_redirect() && !bucket->is_locked(), "bad");
-  Node* new_node = Node::create_node(value, bucket->first());
+  Node* new_node = Node::create_node(_context, value, bucket->first());
   if (!bucket->cas_first(new_node, bucket->first())) {
     assert(false, "bad");
   }
@@ -1134,8 +1141,6 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // We only allow this method to be used during a safepoint.
   assert(SafepointSynchronize::is_at_safepoint(),
          "must only be called in a safepoint");
-  assert(Thread::current()->is_VM_thread(),
-         "should be in vm thread");
 
   // Here we skip protection,
   // thus no other thread may use this table at the same time.

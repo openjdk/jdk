@@ -116,6 +116,7 @@ class Field extends AccessibleObject implements Member {
     /**
      * Package-private constructor
      */
+    @SuppressWarnings("deprecation")
     Field(Class<?> declaringClass,
           String name,
           Class<?> type,

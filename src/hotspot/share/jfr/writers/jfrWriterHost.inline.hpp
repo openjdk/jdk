@@ -25,11 +25,12 @@
 #ifndef SHARE_JFR_WRITERS_JFRWRITERHOST_INLINE_HPP
 #define SHARE_JFR_WRITERS_JFRWRITERHOST_INLINE_HPP
 
+#include "jfr/writers/jfrWriterHost.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/writers/jfrEncoding.hpp"
-#include "jfr/writers/jfrWriterHost.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"
@@ -273,22 +274,22 @@ void WriterHost<BE, IE, WriterPolicyImpl>::write(const Symbol* symbol) {
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const Ticks& time) {
-  write((uintptr_t)JfrTime::is_ft_enabled() ? time.ft_value() : time.value());
+  write(JfrTime::is_ft_enabled() ? time.ft_value() : time.value());
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const Tickspan& time) {
-  write((uintptr_t)JfrTime::is_ft_enabled() ? time.ft_value() : time.value());
+  write(JfrTime::is_ft_enabled() ? time.ft_value() : time.value());
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const JfrTicks& time) {
-  write((uintptr_t)time.value());
+  write(time.value());
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const JfrTickspan& time) {
-  write((uintptr_t)time.value());
+  write(time.value());
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>

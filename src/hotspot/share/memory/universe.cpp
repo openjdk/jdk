@@ -242,7 +242,7 @@ void Universe::serialize(SerializeClosure* f) {
           _mirrors[i] = OopHandle(vm_global(), mirror_oop);
         }
       } else {
-        if (HeapShared::is_heap_object_archiving_allowed()) {
+        if (HeapShared::can_write()) {
           mirror_oop = _mirrors[i].resolve();
         } else {
           mirror_oop = NULL;
@@ -433,9 +433,9 @@ void Universe::genesis(TRAPS) {
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
     if (UseSharedSpaces &&
-        HeapShared::open_archive_heap_region_mapped() &&
+        HeapShared::are_archived_mirrors_available() &&
         _mirrors[T_INT].resolve() != NULL) {
-      assert(HeapShared::is_heap_object_archiving_allowed(), "Sanity");
+      assert(HeapShared::can_use(), "Sanity");
 
       // check that all mirrors are mapped also
       for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
@@ -514,24 +514,14 @@ oop Universe::swap_reference_pending_list(oop list) {
 #undef assert_pll_locked
 #undef assert_pll_ownership
 
-static void reinitialize_vtable_of(Klass* ko) {
-  // init vtable of k and all subclasses
-  ko->vtable().initialize_vtable();
-  if (ko->is_instance_klass()) {
-    for (Klass* sk = ko->subklass();
-         sk != NULL;
-         sk = sk->next_sibling()) {
-      reinitialize_vtable_of(sk);
-    }
-  }
-}
-
 static void reinitialize_vtables() {
   // The vtables are initialized by starting at java.lang.Object and
   // initializing through the subclass links, so that the super
   // classes are always initialized first.
-  Klass* ok = vmClasses::Object_klass();
-  reinitialize_vtable_of(ok);
+  for (ClassHierarchyIterator iter(vmClasses::Object_klass()); !iter.done(); iter.next()) {
+    Klass* sub = iter.klass();
+    sub->vtable().initialize_vtable();
+  }
 }
 
 
@@ -779,6 +769,9 @@ jint universe_init() {
     // currently mapped regions.
     MetaspaceShared::initialize_shared_spaces();
     StringTable::create_table();
+    if (HeapShared::is_loaded()) {
+      StringTable::transfer_shared_strings_to_local_table();
+    }
   } else
 #endif
   {

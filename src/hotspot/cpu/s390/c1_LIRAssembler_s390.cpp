@@ -879,7 +879,7 @@ Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
-                            CodeEmitInfo* info, bool wide, bool unaligned) {
+                            CodeEmitInfo* info, bool wide) {
 
   assert(type != T_METADATA, "load of metadata ptr not supported");
   LIR_Address* addr = src_opr->as_address_ptr();
@@ -1079,7 +1079,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 
 void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
-                            bool wide, bool unaligned) {
+                            bool wide) {
   assert(type != T_METADATA, "store of metadata ptr not supported");
   LIR_Address* addr = dest_opr->as_address_ptr();
 
@@ -1610,9 +1610,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ z_aebr(lreg, rreg);  break;
         case lir_sub: __ z_sebr(lreg, rreg);  break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ z_meebr(lreg, rreg); break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ z_debr(lreg, rreg);  break;
         default: ShouldNotReachHere();
       }
@@ -1620,9 +1618,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ z_aeb(lreg, raddr);  break;
         case lir_sub: __ z_seb(lreg, raddr);  break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ z_meeb(lreg, raddr);  break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ z_deb(lreg, raddr);  break;
         default: ShouldNotReachHere();
       }
@@ -1645,9 +1641,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ z_adbr(lreg, rreg); break;
         case lir_sub: __ z_sdbr(lreg, rreg); break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ z_mdbr(lreg, rreg); break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ z_ddbr(lreg, rreg); break;
         default: ShouldNotReachHere();
       }
@@ -1655,9 +1649,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add: __ z_adb(lreg, raddr); break;
         case lir_sub: __ z_sdb(lreg, raddr); break;
-        case lir_mul_strictfp: // fall through
         case lir_mul: __ z_mdb(lreg, raddr); break;
-        case lir_div_strictfp: // fall through
         case lir_div: __ z_ddb(lreg, raddr); break;
         default: ShouldNotReachHere();
       }

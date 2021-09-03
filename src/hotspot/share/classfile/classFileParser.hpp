@@ -333,9 +333,6 @@ class ClassFileParser {
                                       const u1* const record_attribute_start,
                                       TRAPS);
 
-  bool supports_sealed_types();
-  bool supports_records();
-
   void parse_classfile_attributes(const ClassFileStream* const cfs,
                                   ConstantPool* cp,
                                   ClassAnnotationCollector* parsed_annotations,
@@ -465,6 +462,9 @@ class ClassFileParser {
   int  verify_legal_method_signature(const Symbol* methodname,
                                      const Symbol* signature,
                                      TRAPS) const;
+  void verify_legal_name_with_signature(const Symbol* name,
+                                        const Symbol* signature,
+                                        TRAPS) const;
 
   void verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS);
 

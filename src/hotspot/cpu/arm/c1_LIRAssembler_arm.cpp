@@ -247,7 +247,7 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R0_opr);
     stub = new MonitorExitStub(FrameMap::R0_opr, true, 0);
-    __ unlock_object(R2, R1, R0, Rtemp, *stub->entry());
+    __ unlock_object(R2, R1, R0, *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -494,8 +494,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
 
 void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
-                            bool pop_fpu_stack, bool wide,
-                            bool unaligned) {
+                            bool pop_fpu_stack, bool wide) {
   LIR_Address* to_addr = dest->as_address_ptr();
   Register base_reg = to_addr->base()->as_pointer_register();
   const bool needs_patching = (patch_code != lir_patch_none);
@@ -695,7 +694,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 
 void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
-                            bool wide, bool unaligned) {
+                            bool wide) {
   assert(src->is_address(), "should not call otherwise");
   assert(dest->is_register(), "should not call otherwise");
   LIR_Address* addr = src->as_address_ptr();
@@ -1628,9 +1627,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     switch (code) {
       case lir_add: __ add_float(res, lreg, rreg); break;
       case lir_sub: __ sub_float(res, lreg, rreg); break;
-      case lir_mul_strictfp: // fall through
       case lir_mul: __ mul_float(res, lreg, rreg); break;
-      case lir_div_strictfp: // fall through
       case lir_div: __ div_float(res, lreg, rreg); break;
       default: ShouldNotReachHere();
     }
@@ -1643,9 +1640,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     switch (code) {
       case lir_add: __ add_double(res, lreg, rreg); break;
       case lir_sub: __ sub_double(res, lreg, rreg); break;
-      case lir_mul_strictfp: // fall through
       case lir_mul: __ mul_double(res, lreg, rreg); break;
-      case lir_div_strictfp: // fall through
       case lir_div: __ div_double(res, lreg, rreg); break;
       default: ShouldNotReachHere();
     }
@@ -2433,19 +2428,17 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_pointer_register();
   Register hdr = op->hdr_opr()->as_pointer_register();
   Register lock = op->lock_opr()->as_pointer_register();
-  Register tmp = op->scratch_opr()->is_illegal() ? noreg :
-                 op->scratch_opr()->as_pointer_register();
 
   if (!UseFastLocking) {
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
   } else if (op->code() == lir_unlock) {
-    __ unlock_object(hdr, obj, lock, tmp, *op->stub()->entry());
+    __ unlock_object(hdr, obj, lock, *op->stub()->entry());
   } else {
     ShouldNotReachHere();
   }

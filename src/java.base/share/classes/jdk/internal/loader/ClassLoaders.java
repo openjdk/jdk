@@ -176,6 +176,7 @@ public class ClassLoaders {
         {
             // for compatibility reasons, say where restricted package list has
             // been updated to list API packages in the unnamed module.
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 int i = cn.lastIndexOf('.');

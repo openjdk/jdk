@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -106,6 +106,7 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.Document;
@@ -130,7 +131,7 @@ import org.xml.sax.XMLReader;
  * @author Neil Graham, IBM
  * @author Pavani Mukthipudi, Sun Microsystems
  *
- * @LastModified: Apr 2019
+ * @LastModified: May 2021
  */
 @SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class XSDHandler {
@@ -225,7 +226,7 @@ public class XSDHandler {
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-        Constants.XML_SECURITY_PROPERTY_MANAGER;
+        JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     protected static final boolean DEBUG_NODE_POOL = false;
 
@@ -2214,7 +2215,7 @@ public class XSDHandler {
                     if ((!schemaSource.isCreatedByResolver()) &&
                             (referType == XSDDescription.CONTEXT_IMPORT || referType == XSDDescription.CONTEXT_INCLUDE
                             || referType == XSDDescription.CONTEXT_REDEFINE)) {
-                        String accessError = SecuritySupport.checkAccess(schemaId, fAccessExternalSchema, Constants.ACCESS_EXTERNAL_ALL);
+                        String accessError = SecuritySupport.checkAccess(schemaId, fAccessExternalSchema, JdkConstants.ACCESS_EXTERNAL_ALL);
                         if (accessError != null) {
                             reportSchemaFatalError("schema_reference.access",
                                     new Object[] { SecuritySupport.sanitizePath(schemaId), accessError },
@@ -3665,9 +3666,9 @@ public class XSDHandler {
         fAccessExternalSchema = fSecurityPropertyMgr.getValue(
                 XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
 
-        fOverrideDefaultParser = componentManager.getFeature(JdkXmlUtils.OVERRIDE_PARSER);
-        fSchemaParser.setFeature(JdkXmlUtils.OVERRIDE_PARSER, fOverrideDefaultParser);
-        fEntityManager.setFeature(JdkXmlUtils.OVERRIDE_PARSER, fOverrideDefaultParser);
+        fOverrideDefaultParser = componentManager.getFeature(JdkConstants.OVERRIDE_PARSER);
+        fSchemaParser.setFeature(JdkConstants.OVERRIDE_PARSER, fOverrideDefaultParser);
+        fEntityManager.setFeature(JdkConstants.OVERRIDE_PARSER, fOverrideDefaultParser);
         // Passing the Catalog settings to the parser
         fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG);
         fSchemaParser.setFeature(XMLConstants.USE_CATALOG, fUseCatalog);
@@ -3685,10 +3686,10 @@ public class XSDHandler {
                     componentManager.getProperty(f.getPropertyName()));
         }
 
-        fSchemaParser.setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE,
-                componentManager.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE));
-        fEntityManager.setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE,
-                componentManager.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE));
+        fSchemaParser.setProperty(JdkConstants.CDATA_CHUNK_SIZE,
+                componentManager.getProperty(JdkConstants.CDATA_CHUNK_SIZE));
+        fEntityManager.setProperty(JdkConstants.CDATA_CHUNK_SIZE,
+                componentManager.getProperty(JdkConstants.CDATA_CHUNK_SIZE));
     } // reset(XMLComponentManager)
 
 
@@ -4013,8 +4014,7 @@ public class XSDHandler {
                     ","+oldName:currSchema.fTargetNamespace+","+oldName;
             int attGroupRefsCount = changeRedefineGroup(processedBaseName, componentType, newName, child, currSchema);
             if (attGroupRefsCount > 1) {
-                reportSchemaError("src-redefine.7.1",
-                        new Object []{attGroupRefsCount}, child);
+                reportSchemaError("src-redefine.7.1", new Object []{attGroupRefsCount}, child);
             }
             else if (attGroupRefsCount == 1) {
                 //                return true;

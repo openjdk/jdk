@@ -25,15 +25,16 @@
 /*
  * @test
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @run testng/othervm -Dforeign.restricted=permit TestVarArgs
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestVarArgs
  */
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -50,26 +51,32 @@ import static org.testng.Assert.assertEquals;
 
 public class TestVarArgs {
 
-    static final MemoryLayout ML_CallInfo = MemoryLayout.ofStruct(
+    static final MemoryLayout ML_CallInfo = MemoryLayout.structLayout(
             C_POINTER.withName("writeback"), // writeback
             C_POINTER.withName("argIDs")); // arg ids
 
     static final VarHandle VH_CallInfo_writeback = ML_CallInfo.varHandle(long.class, groupElement("writeback"));
     static final VarHandle VH_CallInfo_argIDs = ML_CallInfo.varHandle(long.class, groupElement("argIDs"));
 
-    static final VarHandle VH_IntArray = MemoryLayout.ofSequence(C_INT).varHandle(int.class, sequenceElement());
+    static final VarHandle VH_IntArray = MemoryLayout.sequenceLayout(C_INT).varHandle(int.class, sequenceElement());
 
     static final CLinker abi = CLinker.getInstance();
-    static final LibraryLookup.Symbol varargsAddr = LibraryLookup.ofLibrary("VarArgs")
-            .lookup("varargs").get();
+    static {
+        System.loadLibrary("VarArgs");
+    }
+
+    static final MemoryAddress VARARGS_ADDR =
+            SymbolLookup.loaderLookup()
+                    .lookup("varargs").get();
 
     static final int WRITEBACK_BYTES_PER_ARG = 8;
 
     @Test(dataProvider = "args")
     public void testVarArgs(List<VarArg> args) throws Throwable {
-        try (MemorySegment writeBack = MemorySegment.allocateNative(args.size() * WRITEBACK_BYTES_PER_ARG);
-            MemorySegment callInfo = MemorySegment.allocateNative(ML_CallInfo);
-            MemorySegment argIDs = MemorySegment.allocateNative(MemoryLayout.ofSequence(args.size(), C_INT))) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment writeBack = MemorySegment.allocateNative(args.size() * WRITEBACK_BYTES_PER_ARG, WRITEBACK_BYTES_PER_ARG, scope);
+            MemorySegment callInfo = MemorySegment.allocateNative(ML_CallInfo, scope);
+            MemorySegment argIDs = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(args.size(), C_INT), scope);
 
             MemoryAddress callInfoPtr = callInfo.address();
 
@@ -94,7 +101,7 @@ public class TestVarArgs {
 
             MethodType mt = MethodType.methodType(void.class, carriers);
 
-            MethodHandle downcallHandle = abi.downcallHandle(varargsAddr, mt, desc);
+            MethodHandle downcallHandle = abi.downcallHandle(VARARGS_ADDR, mt, desc);
 
             List<Object> argValues = new ArrayList<>();
             argValues.add(callInfoPtr); // call info

@@ -54,7 +54,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.StreamResultTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.transform.ptests.StreamResultTest
  * @run testng/othervm javax.xml.transform.ptests.StreamResultTest
  */
 @Listeners({jaxp.library.FilePolicy.class})

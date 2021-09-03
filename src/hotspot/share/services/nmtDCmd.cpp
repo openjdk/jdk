@@ -35,7 +35,7 @@ NMTDCmd::NMTDCmd(outputStream* output,
   bool heap): DCmdWithParser(output, heap),
   _summary("summary", "request runtime to report current memory summary, " \
            "which includes total reserved and committed memory, along " \
-           "with memory usage summary by each subsytem.",
+           "with memory usage summary by each subsystem.",
            "BOOLEAN", false, "false"),
   _detail("detail", "request runtime to report memory allocation >= "
            "1K by each callsite.",

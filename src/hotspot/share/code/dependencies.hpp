@@ -382,7 +382,10 @@ class Dependencies: public ResourceObj {
   // and abstract (as defined by the Java language and VM).
   static bool is_concrete_klass(Klass* k);    // k is instantiable
   static bool is_concrete_method(Method* m, Klass* k);  // m is invocable
-  static Klass* find_finalizable_subclass(Klass* k);
+  static Klass* find_finalizable_subclass(InstanceKlass* ik);
+
+  static bool is_concrete_root_method(Method* uniqm, InstanceKlass* ctxk);
+  static Klass* find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepChange* changes = NULL);
 
   // These versions of the concreteness queries work through the CI.
   // The CI versions are allowed to skew sometimes from the VM

@@ -325,15 +325,9 @@ final class Long256Vector extends LongVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Long> toShuffle() {
-        long[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Long256Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -565,31 +559,43 @@ final class Long256Vector extends LongVector {
             return (Long256Vector) super.toVectorTemplate();  // specialize
         }
 
-        @Override
+        /**
+         * Helper function for lane-wise mask conversions.
+         * This function kicks in after intrinsic failure.
+         */
         @ForceInline
-        public <E> VectorMask<E> cast(VectorSpecies<E> s) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) s;
-            if (length() != species.laneCount())
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            if (length() != dsp.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte256Vector.Byte256Mask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short256Vector.Short256Mask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new Int256Vector.Int256Mask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long256Vector.Long256Mask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float256Vector.Float256Mask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double256Vector.Double256Mask(maskArray).check(species);
-            }
+            return  dsp.maskFactory(maskArray).check(dsp);
+        }
 
-            // Should not reach here.
-            throw new AssertionError(species);
+        @Override
+        @ForceInline
+        public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
+            if (VSIZE == species.vectorBitSize()) {
+                Class<?> dtype = species.elementType();
+                Class<?> dmtype = species.maskType();
+                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                    this.getClass(), ETYPE, VLENGTH,
+                    dmtype, dtype, VLENGTH,
+                    this, species,
+                    Long256Mask::defaultMaskCast);
+            }
+            return this.defaultMaskCast(species);
+        }
+
+        @Override
+        @ForceInline
+        public Long256Mask eq(VectorMask<Long> mask) {
+            Objects.requireNonNull(mask);
+            Long256Mask m = (Long256Mask)mask;
+            return xor(m.not());
         }
 
         // Unary operations
@@ -630,6 +636,29 @@ final class Long256Vector extends LongVector {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Long256Mask.class, long.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Long256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Long256Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Long256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Long256Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Long256Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Long256Mask)m).getBits()));
         }
 
         // Reductions
@@ -711,24 +740,7 @@ final class Long256Vector extends LongVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte256Vector.Byte256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short256Vector.Short256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int256Vector.Int256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long256Vector.Long256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float256Vector.Float256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double256Vector.Double256Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -756,6 +768,8 @@ final class Long256Vector extends LongVector {
     LongVector fromArray0(long[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ public class ServiceLoaderTest {
         CDSTestUtils.createArchiveAndCheck(opts);
 
         // Some mach5 tiers run with -vmoptions:-Xlog:cds=debug. This would cause the outputs to mismatch.
-        // Force -Xlog:cds=warning to supress the CDS logs.
+        // Force the log level to warning for all tags to supressed the CDS logs. Also disable the timestamp.
         opts.setUseVersion(false);
-        opts.addSuffix("-showversion", "-Xlog:cds=warning", "ServiceLoaderApp");
+        opts.addSuffix("-showversion", "-Xlog:all=warning::level,tags", "ServiceLoaderApp");
         OutputAnalyzer out1 = CDSTestUtils.runWithArchive(opts);
 
         opts.setXShareMode("off");

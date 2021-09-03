@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"destroyJFR", (char*)"()Z", (void*)jfr_destroy_jfr,
       (char*)"emitEvent", (char*)"(JJJ)Z", (void*)jfr_emit_event,
       (char*)"getAllEventClasses", (char*)"()Ljava/util/List;", (void*)jfr_get_all_event_classes,
-      (char*)"getClassIdNonIntrinsic", (char*)"(Ljava/lang/Class;)J", (void*)jfr_class_id,
+      (char*)"getClassId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_class_id,
       (char*)"getPid", (char*)"()Ljava/lang/String;", (void*)jfr_get_pid,
       (char*)"getStackTraceId", (char*)"(I)J", (void*)jfr_stacktrace_id,
       (char*)"getThreadId", (char*)"(Ljava/lang/Thread;)J", (void*)jfr_id_for_thread,

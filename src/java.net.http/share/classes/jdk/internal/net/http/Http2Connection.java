@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,6 @@ class Http2Connection  {
 
     static private final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
     static private final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
-    static private final int BUFFER = 8; // added as an upper bound
 
     /**
      * Flag set when no more streams to be opened on this connection.
@@ -468,9 +467,12 @@ class Http2Connection  {
         Function<String, CompletableFuture<Void>> checkAlpnCF = (alpn) -> {
             CompletableFuture<Void> cf = new MinimalFuture<>();
             SSLEngine engine = aconn.getEngine();
-            assert Objects.equals(alpn, engine.getApplicationProtocol());
-
-            DEBUG_LOGGER.log("checkSSLConfig: alpn: %s", alpn );
+            String engineAlpn = engine.getApplicationProtocol();
+            DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s', engine: '%s'", alpn, engineAlpn);
+            if (alpn == null && engineAlpn != null) {
+                alpn = engineAlpn;
+            }
+            DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s'", alpn );
 
             if (alpn == null || !alpn.equals("h2")) {
                 String msg;
@@ -493,6 +495,8 @@ class Http2Connection  {
                 cf.completeExceptionally(new ALPNException(msg, aconn));
                 return cf;
             }
+            assert Objects.equals(alpn, engineAlpn)
+                    : "alpn: %s, engine: %s".formatted(alpn, engineAlpn);
             cf.complete(null);
             return cf;
         };
@@ -1292,7 +1296,7 @@ class Http2Connection  {
         private final ConcurrentLinkedQueue<ByteBuffer> queue
                 = new ConcurrentLinkedQueue<>();
         private final SequentialScheduler scheduler =
-                SequentialScheduler.synchronizedScheduler(this::processQueue);
+                SequentialScheduler.lockingScheduler(this::processQueue);
         private final HttpClientImpl client;
 
         Http2TubeSubscriber(HttpClientImpl client) {

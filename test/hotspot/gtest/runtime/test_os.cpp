@@ -26,6 +26,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -368,11 +369,11 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   // ... re-reserve in the same spot multiple areas...
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
-    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len);
-    EXPECT_NE(q, (address)NULL);
     // Commit, alternatingly with or without exec permission,
     //  to prevent kernel from folding these mappings.
     const bool executable = stripe % 2 == 0;
+    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
+    EXPECT_NE(q, (address)NULL);
     EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
   }
   return p;
@@ -412,11 +413,17 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-#if defined(__APPLE__) && defined(AARCH64)
-TEST_VM(os, DISABLED_release_multi_mappings) {
+#if defined(__APPLE__) && !defined(AARCH64)  // See JDK-8267341.
+  TEST_VM(os, DISABLED_release_multi_mappings) {
 #else
-TEST_VM(os, release_multi_mappings) {
+  TEST_VM(os, release_multi_mappings) {
 #endif
+
+  // With NMT enabled, this will trigger JDK-8263464. For now disable the test if NMT=on.
+  if (MemTracker::tracking_level() > NMT_off) {
+    return;
+  }
+
   // Test that we can release an area created with multiple reservation calls
   const size_t stripe_len = 4 * M;
   const int num_stripes = 4;

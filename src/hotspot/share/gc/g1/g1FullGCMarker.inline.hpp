@@ -25,12 +25,13 @@
 #ifndef SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 #define SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 
+#include "gc/g1/g1FullGCMarker.hpp"
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
-#include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
@@ -63,7 +64,7 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
 
   // Check if deduplicatable string.
   if (StringDedup::is_enabled() &&
-      java_lang_String::is_instance_inlined(obj) &&
+      java_lang_String::is_instance(obj) &&
       G1StringDedup::is_candidate_from_mark(obj)) {
     _string_dedup_requests.add(obj);
   }

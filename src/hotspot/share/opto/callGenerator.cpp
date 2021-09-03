@@ -418,8 +418,9 @@ class LateInlineMHCallGenerator : public LateInlineCallGenerator {
 bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms) {
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
-  CallGenerator* cg = for_method_handle_inline(jvms, _caller, method(), allow_inline, _input_not_const);
-  assert(!_input_not_const, "sanity"); // shouldn't have been scheduled for inlining in the first place
+  bool input_not_const = true;
+  CallGenerator* cg = for_method_handle_inline(jvms, _caller, method(), allow_inline, input_not_const);
+  assert(!input_not_const, "sanity"); // shouldn't have been scheduled for inlining in the first place
 
   if (cg != NULL) {
     assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline, "we're doing late inlining");
@@ -512,8 +513,18 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   // Method handle linker case is handled in CallDynamicJavaNode::Ideal().
   // Unless inlining is performed, _override_symbolic_info bit will be set in DirectCallGenerator::generate().
 
+  // Implicit receiver null checks introduce problems when exception states are combined.
+  Node* receiver = jvms->map()->argument(jvms, 0);
+  const Type* recv_type = C->initial_gvn()->type(receiver);
+  if (recv_type->maybe_null()) {
+    return false;
+  }
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
+  if (!allow_inline && _callee->holder()->is_interface()) {
+    // Don't convert the interface call to a direct call guarded by an interface subtype check.
+    return false;
+  }
   CallGenerator* cg = C->call_generator(_callee,
                                         vtable_index(),
                                         false /*call_does_dispatch*/,
@@ -731,13 +742,6 @@ void CallGenerator::do_late_inline_helper() {
       C->set_default_node_notes(entry_nn);
     }
 
-    // Virtual call involves a receiver null check which can be made implicit.
-    if (is_virtual_late_inline()) {
-      GraphKit kit(jvms);
-      kit.null_check_receiver();
-      jvms = kit.transfer_exceptions_into_jvms();
-    }
-
     // Now perform the inlining using the synthesized JVMState
     JVMState* new_jvms = inline_cg()->generate(jvms);
     if (new_jvms == NULL)  return;  // no change
@@ -952,12 +956,12 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   }
 
   if (kit.stopped()) {
-    // Instance exactly does not matches the desired type.
+    // Instance does not match the predicted type.
     kit.set_jvms(slow_jvms);
     return kit.transfer_exceptions_into_jvms();
   }
 
-  // fall through if the instance exactly matches the desired type
+  // Fall through if the instance matches the desired type.
   kit.replace_in_map(receiver, casted_receiver);
 
   // Make the hot call:
@@ -1054,10 +1058,11 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
 
 class NativeCallGenerator : public CallGenerator {
 private:
+  address _call_addr;
   ciNativeEntryPoint* _nep;
 public:
-  NativeCallGenerator(ciMethod* m, ciNativeEntryPoint* nep)
-   : CallGenerator(m), _nep(nep) {}
+  NativeCallGenerator(ciMethod* m, address call_addr, ciNativeEntryPoint* nep)
+   : CallGenerator(m), _call_addr(call_addr), _nep(nep) {}
 
   virtual JVMState* generate(JVMState* jvms);
 };
@@ -1065,13 +1070,12 @@ public:
 JVMState* NativeCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
 
-  Node* call = kit.make_native_call(tf(), method()->arg_size(), _nep); // -fallback, - nep
+  Node* call = kit.make_native_call(_call_addr, tf(), method()->arg_size(), _nep); // -fallback, - nep
   if (call == NULL) return NULL;
 
   kit.C->print_inlining_update(this);
-  address addr = _nep->entry_point();
   if (kit.C->log() != NULL) {
-    kit.C->log()->elem("l2n_intrinsification_success bci='%d' entry_point='" INTPTR_FORMAT "'", jvms->bci(), p2i(addr));
+    kit.C->log()->elem("l2n_intrinsification_success bci='%d' entry_point='" INTPTR_FORMAT "'", jvms->bci(), p2i(_call_addr));
   }
 
   return kit.transfer_exceptions_into_jvms();
@@ -1146,7 +1150,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
           const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
           if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-            const Type* recv_type = arg_type->join_speculative(sig_type); // keep speculative part
+            const Type* recv_type = arg_type->filter_speculative(sig_type); // keep speculative part
             Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, recv_type));
             kit.set_argument(0, cast_obj);
           }
@@ -1159,7 +1163,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
             const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
             if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-              const Type* narrowed_arg_type = arg_type->join_speculative(sig_type); // keep speculative part
+              const Type* narrowed_arg_type = arg_type->filter_speculative(sig_type); // keep speculative part
               Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, narrowed_arg_type));
               kit.set_argument(receiver_skip + j, cast_obj);
             }
@@ -1204,12 +1208,16 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
 
     case vmIntrinsics::_linkToNative:
     {
-      Node* nep = kit.argument(callee->arg_size() - 1);
-      if (nep->Opcode() == Op_ConP) {
+      Node* addr_n = kit.argument(1); // target address
+      Node* nep_n = kit.argument(callee->arg_size() - 1); // NativeEntryPoint
+      // This check needs to be kept in sync with the one in CallStaticJavaNode::Ideal
+      if (addr_n->Opcode() == Op_ConL && nep_n->Opcode() == Op_ConP) {
         input_not_const = false;
-        const TypeOopPtr* oop_ptr = nep->bottom_type()->is_oopptr();
-        ciNativeEntryPoint* nep = oop_ptr->const_oop()->as_native_entry_point();
-        return new NativeCallGenerator(callee, nep);
+        const TypeLong* addr_t = addr_n->bottom_type()->is_long();
+        const TypeOopPtr* nep_t = nep_n->bottom_type()->is_oopptr();
+        address addr = (address) addr_t->get_con();
+        ciNativeEntryPoint* nep = nep_t->const_oop()->as_native_entry_point();
+        return new NativeCallGenerator(callee, addr, nep);
       } else {
         print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
                                "NativeEntryPoint not constant");

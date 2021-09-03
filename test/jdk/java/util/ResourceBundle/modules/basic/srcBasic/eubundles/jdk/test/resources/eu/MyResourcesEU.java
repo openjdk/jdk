@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,6 @@ import jdk.test.resources.spi.MyResourcesProvider;
 public class MyResourcesEU extends MyResourcesProvider {
     public MyResourcesEU() {
         super("java.class", "eu",
-              Locale.GERMAN, Locale.FRENCH, new Locale("es"));
+              Locale.GERMAN, Locale.FRENCH, new Locale("es"), new Locale("yi"));
     }
 }
