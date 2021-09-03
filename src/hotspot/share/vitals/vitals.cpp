@@ -1193,7 +1193,7 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
-  g_vitals_lock = new Mutex(Mutex::leaf, "Vitals Lock", true, Mutex::_safepoint_check_never);
+  g_vitals_lock = new Mutex(Mutex::leaf, "Vitals Lock", Mutex::_safepoint_check_never);
 
   if (!ColumnList::initialize()) {
     return false;
