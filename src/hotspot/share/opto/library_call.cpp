@@ -4072,14 +4072,16 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
 
 //----------------------has_wide_mem-------------------------
 bool LibraryCallKit::has_wide_mem(Node* addr, Node* base) {
-  const Type* base_t = _gvn.type(base);
+  const TypeAryPtr* addr_t = _gvn.type(addr)->isa_aryptr();
+  const Type*       base_t = _gvn.type(base);
 
   bool in_native = (base_t == TypePtr::NULL_PTR);
   bool in_heap   = !TypePtr::NULL_PTR->higher_equal(base_t);
   bool is_mixed  = !in_heap && !in_native;
 
-  bool is_array = _gvn.type(addr)->isa_aryptr();
-  return is_mixed || (in_heap && !is_array);
+  bool is_prim_array = (addr_t != NULL) && (addr_t->elem() != Type::BOTTOM);
+
+  return is_mixed || (in_heap && !is_prim_array);
 }
 
 //----------------------inline_unsafe_copyMemory-------------------------
@@ -4091,11 +4093,11 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
 
   C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
 
-  Node* src_base =         argument(1);   // type: oop
-  Node* src_off  = ConvL2X(argument(2));  // type: long
-  Node* dst_base =         argument(4);   // type: oop
-  Node* dst_off  = ConvL2X(argument(5));  // type: long
-  Node* size     = ConvL2X(argument(7));  // type: long
+  Node* src_base =         argument(1);  // type: oop
+  Node* src_off  = ConvL2X(argument(2)); // type: long
+  Node* dst_base =         argument(4);  // type: oop
+  Node* dst_off  = ConvL2X(argument(5)); // type: long
+  Node* size     = ConvL2X(argument(7)); // type: long
 
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");

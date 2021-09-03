@@ -73,7 +73,7 @@ public class UnsafeCopyMemory {
         dstArr[writeIdx] = v2;
 
         UNSAFE.copyMemory(srcArr, Unsafe.ARRAY_INT_BASE_OFFSET,
-                dstArr, Unsafe.ARRAY_INT_BASE_OFFSET, 4);
+                          dstArr, Unsafe.ARRAY_INT_BASE_OFFSET, 4);
         int r = resArr[0]; // snapshot
 
         srcArr[readIdx]  = v3;
@@ -88,7 +88,7 @@ public class UnsafeCopyMemory {
         dstArr[writeIdx] = v2;
 
         UNSAFE.copyMemory(srcObj, Unsafe.ARRAY_INT_BASE_OFFSET,
-                dstObj, Unsafe.ARRAY_INT_BASE_OFFSET, 4); // mixed
+                          dstObj, Unsafe.ARRAY_INT_BASE_OFFSET, 4); // mixed
         int r = resArr[0]; // snapshot
 
         srcArr[readIdx]  = v3;
@@ -103,7 +103,7 @@ public class UnsafeCopyMemory {
         dstArrL[writeIdx] = v2;
 
         UNSAFE.copyMemory(srcArr,  Unsafe.ARRAY_INT_BASE_OFFSET,
-                dstArrL, Unsafe.ARRAY_LONG_BASE_OFFSET, 4); // mismatched
+                          dstArrL, Unsafe.ARRAY_LONG_BASE_OFFSET, 4); // mismatched
         long r = resArrL[0]; // snapshot
 
         srcArr[readIdx]  = v3;
@@ -120,7 +120,7 @@ public class UnsafeCopyMemory {
         dstArr[writeIdx] = v2;
 
         UNSAFE.copyMemory(srcArrLocal, Unsafe.ARRAY_INT_BASE_OFFSET,
-                dstArr,      Unsafe.ARRAY_INT_BASE_OFFSET, 4);
+                          dstArr,      Unsafe.ARRAY_INT_BASE_OFFSET, 4);
         int r = resArr[0]; // snapshot
 
         srcArrLocal[0] = v3;
@@ -137,11 +137,58 @@ public class UnsafeCopyMemory {
         dstArrLocal[0] = v2;
 
         UNSAFE.copyMemory(srcArr,      Unsafe.ARRAY_INT_BASE_OFFSET,
-                dstArrLocal, Unsafe.ARRAY_INT_BASE_OFFSET, 4);
+                          dstArrLocal, Unsafe.ARRAY_INT_BASE_OFFSET, 4);
         int r = dstArrLocal[0]; // snapshot
 
         srcArr[readIdx] = v3;
         dstArrLocal[0] = v4;
+
+        return r;
+    }
+
+    static int testHeapToHeapLocalSrcMismatched(int v1, int v2, int v3, int v4, int writeIdx, boolean flag) {
+        // assert(writeIdx == 0);
+        // assert(b == true);
+        int[]  srcArrIntLocal  = new int[1];
+        long[] srcArrLongLocal = new long[1];
+
+        Object srcArrLocal = (flag ? srcArrIntLocal               : srcArrLongLocal);
+        long   srcOffset   = (flag ? Unsafe.ARRAY_INT_BASE_OFFSET : Unsafe.ARRAY_LONG_BASE_OFFSET);
+
+        srcArrIntLocal[0]  = v1;
+        srcArrLongLocal[0] = v1;
+        dstArr[writeIdx] = v2;
+
+        UNSAFE.copyMemory(srcArrLocal, srcOffset,
+                          dstArr,      Unsafe.ARRAY_INT_BASE_OFFSET, 4);
+        int r = resArr[0]; // snapshot
+
+        srcArrIntLocal[0]  = v3;
+        srcArrLongLocal[0] = v3;
+        dstArr[writeIdx] = v4;
+
+        return r;
+    }
+
+    static int testHeapToHeapLocalDstMismatched(int v1, int v2, int v3, int v4, int readIdx, boolean flag) {
+        // assert(readIdx == 0);
+        int[]  dstArrIntLocal  = new int[1];
+        long[] dstArrLongLocal = new long[1];
+
+        Object dstArrLocal = (flag ? dstArrIntLocal               : dstArrLongLocal);
+        long   dstOffset   = (flag ? Unsafe.ARRAY_INT_BASE_OFFSET : Unsafe.ARRAY_LONG_BASE_OFFSET);
+
+        srcArr[readIdx] = v1;
+        dstArrIntLocal[0]  = v2;
+        dstArrLongLocal[0] = v2;
+
+        UNSAFE.copyMemory(srcArr,     Unsafe.ARRAY_INT_BASE_OFFSET,
+                         dstArrLocal, dstOffset, 4);
+        int r = UNSAFE.getInt(dstArrLocal, dstOffset); // snapshot
+
+        srcArr[readIdx] = v3;
+        dstArrIntLocal[0]  = v4;
+        dstArrLongLocal[0] = v4;
 
         return r;
     }
@@ -156,8 +203,7 @@ public class UnsafeCopyMemory {
         UNSAFE.putInt(null, DST_BASE, v2);
 
         UNSAFE.copyMemory(srcArr, Unsafe.ARRAY_INT_BASE_OFFSET,
-                null, DST_BASE,
-                4);
+                          null, DST_BASE, 4);
         int r = UNSAFE.getInt(RES_BASE); // snapshot
 
         srcArr[readIdx]  = v3;
@@ -171,7 +217,8 @@ public class UnsafeCopyMemory {
         srcArr[readIdx]  = v1;
         UNSAFE.putInt(null, DST_BASE, v2);
 
-        UNSAFE.copyMemory(srcObj, Unsafe.ARRAY_INT_BASE_OFFSET, null, DST_BASE, 4); // mixed
+        UNSAFE.copyMemory(srcObj, Unsafe.ARRAY_INT_BASE_OFFSET,
+                          null, DST_BASE, 4); // mixed
         int r = UNSAFE.getInt(RES_BASE); // snapshot
 
         srcArr[readIdx]  = v3;
@@ -189,7 +236,8 @@ public class UnsafeCopyMemory {
         UNSAFE.putInt(null, SRC_BASE, v1);
         dstArr[writeIdx] = v2;
 
-        UNSAFE.copyMemory(null, SRC_BASE, dstArr, Unsafe.ARRAY_INT_BASE_OFFSET, 4);
+        UNSAFE.copyMemory(null, SRC_BASE,
+                          dstArr, Unsafe.ARRAY_INT_BASE_OFFSET, 4);
         int r = resArr[0]; // snapshot
 
         UNSAFE.putInt(null, SRC_BASE, v3);
@@ -203,7 +251,8 @@ public class UnsafeCopyMemory {
         UNSAFE.putInt(null, SRC_BASE, v1);
         dstArr[writeIdx] = v2;
 
-        UNSAFE.copyMemory(null, SRC_BASE, dstObj, Unsafe.ARRAY_INT_BASE_OFFSET, 4); // mixed dst
+        UNSAFE.copyMemory(null, SRC_BASE,
+                          dstObj, Unsafe.ARRAY_INT_BASE_OFFSET, 4); // mixed dst
         int r = resArr[0]; // snapshot
 
         UNSAFE.putInt(null, SRC_BASE, v3);
@@ -220,7 +269,8 @@ public class UnsafeCopyMemory {
         UNSAFE.putInt(null, SRC_BASE, v1);
         UNSAFE.putInt(null, DST_BASE, v2);
 
-        UNSAFE.copyMemory(null, SRC_BASE, null, DST_BASE, 4);
+        UNSAFE.copyMemory(null, SRC_BASE,
+                          null, DST_BASE, 4);
         int r = UNSAFE.getInt(RES_BASE); // snapshot
 
         UNSAFE.putInt(null, SRC_BASE, v3);
@@ -234,7 +284,8 @@ public class UnsafeCopyMemory {
         UNSAFE.putInt(null, SRC_BASE, v1);
         UNSAFE.putInt(null, DST_BASE, v2);
 
-        UNSAFE.copyMemory(base, SRC_BASE, base, DST_BASE, 4); // mixed
+        UNSAFE.copyMemory(base, SRC_BASE,
+                          base, DST_BASE, 4); // mixed
         int r = UNSAFE.getInt(RES_BASE); // snapshot
 
         UNSAFE.putInt(null, SRC_BASE, v3);
@@ -305,6 +356,23 @@ public class UnsafeCopyMemory {
         }
         {
             reset();
+            int r1 = testHeapToHeapLocalSrcMismatched(v1, v2, v3, v4, writeIdx0, flag);
+            int r2 = resArr[0];
+            if (print) {
+                System.out.println("testHeapToHeapLocalSrcMismatched: " + r1 + " " + r2);
+            }
+            assertEQ(r1, v1); assertEQ(r2, v4);
+        }
+        {
+            reset();
+            int r = testHeapToHeapLocalDstMismatched(v1, v2, v3, v4, readIdx0, flag);
+            if (print) {
+                System.out.println("testHeapToHeapLocalDstMismatched: " + r);
+            }
+            assertEQ(r, v1);
+        }
+        {
+            reset();
             int r1 = testHeapToNative(v1, v2, v3, v4, readIdx0);
             int r2 = UNSAFE.getInt(null, RES_BASE);
             if (print) {
@@ -361,9 +429,12 @@ public class UnsafeCopyMemory {
         }
     }
 
+    static boolean flag = false;
+
     public static void main(String[] args) {
         runTests("INTERPRETED");
         for (int i = 0; i < 20_000; i++) {
+            flag = (i % 2 == 0);
             runTests(null);
         }
         runTests("COMPILED");
