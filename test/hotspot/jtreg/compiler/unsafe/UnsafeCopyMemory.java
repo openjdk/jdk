@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.misc
  *
  * @run main/othervm -Xbatch -XX:CompileCommand=dontinline,compiler.unsafe.UnsafeCopyMemory::test*
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+StressLCM
  *                   compiler.unsafe.UnsafeCopyMemory
  */
 
