@@ -2566,6 +2566,13 @@ public class ObjectInputStream
             throw new InternalError();
         }
         clear();
+        // Check that an object follows the TC_EXCEPTION typecode
+        byte tc = bin.peekByte();
+        if (tc != TC_OBJECT &&
+            tc != TC_REFERENCE) {
+            throw new StreamCorruptedException(
+                    String.format("invalid type code: %02X", tc));
+        }
         return (IOException) readObject0(Object.class, false);
     }
 
