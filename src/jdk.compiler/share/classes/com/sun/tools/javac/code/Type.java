@@ -879,7 +879,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         public boolean isUnbound() {
             // is it `?` or `? extends Object`?
             return kind == UNBOUND ||
-                    (kind == EXTENDS && type.hasTag(CLASS) && ((ClassType)type).supertype_field == Type.noType);
+                    (kind == EXTENDS && type.tsym.flatName() == type.tsym.name.table.names.java_lang_Object);
         }
 
         @Override

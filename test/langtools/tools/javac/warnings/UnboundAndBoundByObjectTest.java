@@ -25,7 +25,7 @@
  * @test
  * @bug 8268148
  * @summary unchecked warnings handle ? and ? extends Object differently
- * @compile -Xlint:all UnboundAndBoundByObjectTest.java
+ * @compile -Xlint:all -Werror UnboundAndBoundByObjectTest.java
  */
 
 import java.util.List;
