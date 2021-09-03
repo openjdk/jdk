@@ -128,17 +128,17 @@ button {
  * Styles for navigation bar.
  */
 @media screen {
-    .flex-box {
+    div.flex-box {
         position:fixed;
         display:flex;
         flex-direction:column;
         height: 100%;
         width: 100%;
     }
-    .flex-header {
+    header.flex-header {
         flex: 0 0 auto;
     }
-    .flex-content {
+    div.flex-content {
         flex: 1 1 auto;
         overflow-y: auto;
     }
@@ -810,6 +810,10 @@ table.striped > tbody > tr > th {
  * Tweak style for small screens.
  */
 @media screen and (max-width: 920px) {
+    header.flex-header {
+        max-height: 100vh;
+        overflow-y: auto;
+    }
     div#navbar-top {
         height: 2.8em;
         transition: height 0.35s ease;

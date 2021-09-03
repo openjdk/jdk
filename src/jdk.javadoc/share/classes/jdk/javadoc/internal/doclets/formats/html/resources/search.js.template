@@ -292,6 +292,7 @@ function doSearch(request, response) {
 }
 $(function() {
     var expanded = false;
+    var windowWidth;
     function collapse() {
         if (expanded) {
             $("div#navbar-top").removeAttr("style");
@@ -310,12 +311,15 @@ $(function() {
                 .addClass("expanded")
                 .attr("aria-expanded", "true");
             expanded = true;
+            windowWidth = window.innerWidth;
         }
     });
     $("ul.sub-nav-list-small li a").click(collapse);
     $("input#search-input").focus(collapse);
     $("main").click(collapse);
-    $(window).on("orientationchange", collapse).on("resize", collapse);
+    $(window).on("orientationchange", collapse).on("resize", function(e) {
+        if (expanded && windowWidth !== window.innerWidth) collapse();
+    });
     $("#search-input").catcomplete({
         minLength: 1,
         delay: 300,
