@@ -79,10 +79,16 @@ public class TestObjectSize {
                 recording.start();
 
                 for (int i = 0; i < 1000; i++) {
-                    switch (rand.nextInt(3)) {
-                    case 0: leak.add(new Leak1()); break;
-                    case 1: leak.add(new Leak2()); break;
-                    case 2: leak.add(new Leak3()); break;
+                    if (sizeLeak1 == -1) {
+                        leak.add(new Leak1());
+                        continue;
+                    }
+                    if (sizeLeak2 == -1) {
+                        leak.add(new Leak2());
+                        continue;
+                    }
+                    if (sizeLeak3 == -1) {
+                        leak.add(new Leak3());
                     }
                 }
 
