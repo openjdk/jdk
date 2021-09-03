@@ -33,7 +33,6 @@ import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
-import sun.swing.ImageIconUIResource;
 import sun.swing.SwingUtilities2;
 
 import apple.laf.JRSUIConstants.*;
@@ -75,7 +74,6 @@ public class AquaMenuPainter {
         kUCapsLockGlyph = 0x21EA;
 
     static final int ALT_GRAPH_MASK = 1 << 5; // New to Java2
-    static Icon disabledIcon = null;
 
     @SuppressWarnings("deprecation")
     static final int sUnsupportedModifiersMask =
