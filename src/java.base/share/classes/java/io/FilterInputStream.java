@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,26 @@ public class FilterInputStream extends InputStream {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * This method simply performs {@code in.readAllBytes()}
+     * and returns the result.
+     */
+    public byte[] readAllBytes() throws IOException {
+        return in.readAllBytes();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method simply performs {@code in.readAllBytes(len)}
+     * and returns the result.
+     */
+    public byte[] readNBytes(int len) throws IOException {
+        return in.readNBytes(len);
+    }
+
+    /**
      * Skips over and discards {@code n} bytes of data from the
      * input stream. The {@code skip} method may, for a variety of
      * reasons, end up skipping over some smaller number of bytes,
@@ -147,6 +167,15 @@ public class FilterInputStream extends InputStream {
      */
     public long skip(long n) throws IOException {
         return in.skip(n);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method simply performs {@code in.skip(n)}.
+     */
+    public void skipNBytes(long n) throws IOException {
+        in.skipNBytes(n);
     }
 
     /**
@@ -240,4 +269,15 @@ public class FilterInputStream extends InputStream {
     public boolean markSupported() {
         return in.markSupported();
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method simply performs {@code in.transferTo(out)}
+     * and returns the result.
+     */
+    public long transferTo(OutputStream out) throws IOException {
+        return in.transferTo(out);
+    }
+
 }
