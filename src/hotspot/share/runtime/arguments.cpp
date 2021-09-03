@@ -92,7 +92,7 @@ bool   Arguments::_enable_preview               = false;
 char*  Arguments::SharedArchivePath             = NULL;
 char*  Arguments::SharedDynamicArchivePath      = NULL;
 
-LegacyGCLogging Arguments::_legacyGCLogging     = { 0 };
+LegacyGCLogging Arguments::_legacyGCLogging     = { 0, 0 };
 
 AgentLibraryList Arguments::_libraryList;
 AgentLibraryList Arguments::_agentList;
