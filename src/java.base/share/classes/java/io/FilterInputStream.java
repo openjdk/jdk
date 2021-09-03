@@ -69,9 +69,9 @@ public class FilterInputStream extends InputStream {
      * {@code -1} is returned. This method blocks until input data
      * is available, the end of the stream is detected, or an exception
      * is thrown.
-     * <p>
-     * This method
-     * simply performs {@code in.read()} and returns the result.
+     *
+     * @implSpec
+     * This method simply performs {@code in.read()} and returns the result.
      *
      * @return     the next byte of data, or {@code -1} if the end of the
      *             stream is reached.
@@ -86,7 +86,8 @@ public class FilterInputStream extends InputStream {
      * Reads up to {@code b.length} bytes of data from this
      * input stream into an array of bytes. This method blocks until some
      * input is available.
-     * <p>
+     *
+     * @implSpec
      * This method simply performs the call
      * {@code read(b, 0, b.length)} and returns
      * the  result. It is important that it does
@@ -111,7 +112,8 @@ public class FilterInputStream extends InputStream {
      * into an array of bytes. If {@code len} is not zero, the method
      * blocks until some input is available; otherwise, no
      * bytes are read and {@code 0} is returned.
-     * <p>
+     *
+     * @implSpec
      * This method simply performs {@code in.read(b, off, len)}
      * and returns the result.
      *
@@ -134,7 +136,8 @@ public class FilterInputStream extends InputStream {
 
     /**
      * {@inheritDoc}
-     * <p>
+     *
+     * @implSpec
      * This method simply performs {@code in.readAllBytes()}
      * and returns the result.
      */
@@ -144,7 +147,8 @@ public class FilterInputStream extends InputStream {
 
     /**
      * {@inheritDoc}
-     * <p>
+     *
+     * @implSpec
      * This method simply performs {@code in.readAllBytes(len)}
      * and returns the result.
      */
@@ -158,7 +162,8 @@ public class FilterInputStream extends InputStream {
      * reasons, end up skipping over some smaller number of bytes,
      * possibly {@code 0}. The actual number of bytes skipped is
      * returned.
-     * <p>
+     *
+     * @implSpec
      * This method simply performs {@code in.skip(n)}.
      *
      * @param      n   the number of bytes to be skipped.
@@ -171,7 +176,8 @@ public class FilterInputStream extends InputStream {
 
     /**
      * {@inheritDoc}
-     * <p>
+     *
+     * @implSpec
      * This method simply performs {@code in.skip(n)}.
      */
     public void skipNBytes(long n) throws IOException {
@@ -198,8 +204,9 @@ public class FilterInputStream extends InputStream {
     /**
      * Closes this input stream and releases any system resources
      * associated with the stream.
-     * This
-     * method simply performs {@code in.close()}.
+     *
+     * @implSpec
+     * This method simply performs {@code in.close()}.
      *
      * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#in
@@ -216,7 +223,8 @@ public class FilterInputStream extends InputStream {
      * The {@code readlimit} argument tells this input stream to
      * allow that many bytes to be read before the mark position gets
      * invalidated.
-     * <p>
+     *
+     * @implSpec
      * This method simply performs {@code in.mark(readlimit)}.
      *
      * @param   readlimit   the maximum limit of bytes that can be read before
@@ -232,9 +240,6 @@ public class FilterInputStream extends InputStream {
      * Repositions this stream to the position at the time the
      * {@code mark} method was last called on this input stream.
      * <p>
-     * This method
-     * simply performs {@code in.reset()}.
-     * <p>
      * Stream marks are intended to be used in
      * situations where you need to read ahead a little to see what's in
      * the stream. Often this is most easily done by invoking some
@@ -243,6 +248,9 @@ public class FilterInputStream extends InputStream {
      * that type, the parser should toss an exception when it fails.
      * If this happens within readlimit bytes, it allows the outer
      * code to reset the stream and try another parser.
+     *
+     * @implSpec
+     * This method simply performs {@code in.reset()}.
      *
      * @throws     IOException  if the stream has not been marked or if the
      *               mark has been invalidated.
@@ -256,8 +264,9 @@ public class FilterInputStream extends InputStream {
     /**
      * Tests if this input stream supports the {@code mark}
      * and {@code reset} methods.
-     * This method
-     * simply performs {@code in.markSupported()}.
+     *
+     * @implSpec
+     * This method simply performs {@code in.markSupported()}.
      *
      * @return  {@code true} if this stream type supports the
      *          {@code mark} and {@code reset} method;
@@ -272,7 +281,8 @@ public class FilterInputStream extends InputStream {
 
     /**
      * {@inheritDoc}
-     * <p>
+     *
+     * @implSpec
      * This method simply performs {@code in.transferTo(out)}
      * and returns the result.
      */
