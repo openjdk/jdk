@@ -183,7 +183,7 @@ public class UnsafeCopyMemory {
         dstArrLongLocal[0] = v2;
 
         UNSAFE.copyMemory(srcArr,     Unsafe.ARRAY_INT_BASE_OFFSET,
-                         dstArrLocal, dstOffset, 4);
+                          dstArrLocal, dstOffset, 4);
         int r = UNSAFE.getInt(dstArrLocal, dstOffset); // snapshot
 
         srcArr[readIdx] = v3;
