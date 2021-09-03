@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.io.*;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTrees;
@@ -76,12 +75,10 @@ public class TestContext extends JavacTestingAbstractProcessor {
     }
 
     <T> void check(T actual, T expected) {
-//        messager.printMessage(NOTE, "expect: " + expected);
-//        messager.printMessage(NOTE, "actual: " + actual);
-
         if (actual != expected) {
-            messager.printMessage(ERROR,
-                "round " + round + " unexpected value for " + expected.getClass().getName() + ": " + actual);
+            messager.printError("round " + round +
+                                " unexpected value for " + expected.getClass().getName() +
+                                ": " + actual);
         }
     }
 

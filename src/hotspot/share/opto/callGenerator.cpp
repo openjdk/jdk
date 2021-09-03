@@ -513,6 +513,12 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   // Method handle linker case is handled in CallDynamicJavaNode::Ideal().
   // Unless inlining is performed, _override_symbolic_info bit will be set in DirectCallGenerator::generate().
 
+  // Implicit receiver null checks introduce problems when exception states are combined.
+  Node* receiver = jvms->map()->argument(jvms, 0);
+  const Type* recv_type = C->initial_gvn()->type(receiver);
+  if (recv_type->maybe_null()) {
+    return false;
+  }
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
   if (!allow_inline && _callee->holder()->is_interface()) {
