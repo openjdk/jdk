@@ -5300,9 +5300,16 @@ public class Attr extends JCTree.Visitor {
 
             if (sealedSupers.isEmpty()) {
                 if ((c.flags_field & Flags.NON_SEALED) != 0) {
-                    boolean hasErrorSuper = types.directSupertypes(c.type)
-                                                 .stream()
-                                                 .anyMatch(s -> s.tsym.kind == Kind.ERR);
+                    boolean hasErrorSuper = false;
+
+                    hasErrorSuper |= types.directSupertypes(c.type)
+                                          .stream()
+                                          .anyMatch(s -> s.tsym.kind == Kind.ERR);
+
+                    ClassType ct = (ClassType) c.type;
+
+                    hasErrorSuper |= !ct.isCompound() && ct.interfaces_field != ct.all_interfaces_field;
+
                     if (!hasErrorSuper) {
                         log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.NonSealedWithNoSealedSupertype(c));
                     }
