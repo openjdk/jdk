@@ -235,7 +235,7 @@ class JVMCIThreadState {
   jlong _jvmci_reserved1;
   oop _jvmci_reserved_oop0;
 
- public :
+ public:
   int  pending_deoptimization() const             { return _pending_deoptimization; }
   jlong pending_failed_speculation() const        { return _pending_failed_speculation; }
   bool has_pending_monitorenter() const           { return _pending_monitorenter; }
