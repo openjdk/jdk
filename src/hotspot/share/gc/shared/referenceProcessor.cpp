@@ -264,6 +264,7 @@ void DiscoveredListIterator::remove() {
 }
 
 void DiscoveredListIterator::make_referent_alive() {
+  assert(referent() != nullptr, "precondition");
   HeapWord* addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
   if (UseCompressedOops) {
     _keep_alive->do_oop((narrowOop*)addr);
@@ -287,6 +288,15 @@ void DiscoveredListIterator::complete_enqueue() {
     // discovered to what we read from the pending list.
     oop old = Universe::swap_reference_pending_list(_refs_list.head());
     _enqueue->enqueue(_prev_discovered, old);
+  }
+}
+
+inline void log_preclean_ref(const DiscoveredListIterator& iter, const char* reason) {
+  if (log_develop_is_enabled(Trace, gc, ref)) {
+    ResourceMark rm;
+    log_develop_trace(gc, ref)("Precleaning %s reference " PTR_FORMAT ": %s",
+                               reason, p2i(iter.obj()),
+                               iter.obj()->klass()->internal_name());
   }
 }
 
@@ -1126,13 +1136,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
 }
 
 // Walk the given discovered ref list, and remove all reference objects
-// whose referents are still alive, whose referents are NULL or which
-// are not active (have a non-NULL next field). NOTE: When we are
-// thus precleaning the ref lists (which happens single-threaded today),
-// we do not disable refs discovery to honor the correct semantics of
-// java.lang.Reference. As a result, we need to be careful below
-// that ref removal steps interleave safely with ref discovery steps
-// (in this thread).
+// whose referents are still alive or NULL.
 bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
                                                      BoolObjectClosure* is_alive,
                                                      OopClosure*        keep_alive,
@@ -1145,11 +1149,12 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
       return true;
     }
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
-    if (iter.referent() == NULL || iter.is_referent_alive()) {
-      // The referent has been cleared, or is alive; we need to trace
-      // and mark its cohort.
-      log_develop_trace(gc, ref)("Precleaning Reference (" INTPTR_FORMAT ": %s)",
-                                 p2i(iter.obj()), iter.obj()->klass()->internal_name());
+    if (iter.referent() == nullptr) {
+      log_preclean_ref(iter, "cleared");
+      iter.remove();
+      iter.move_to_next();
+    } else if (iter.is_referent_alive()) {
+      log_preclean_ref(iter, "reachable");
       // Remove Reference object from list
       iter.remove();
       // Keep alive its cohort.
