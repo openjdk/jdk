@@ -11312,9 +11312,11 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      *
      * }</blockquote>
      *
-     * The name returned by this method does not follow the naming
-     * scheme defined in the "Unicode Name Property" section in the Unicode
-     * Standard.
+     * For the {@code codePoint}s in the <i>UnicodeData</i> file, the name
+     * returned by this method follows the naming scheme in the
+     * "Unicode Name Property" section of the Unicode Standard. For other
+     * code points, such as Hangul/Ideographs, The name generation rule above
+     * differs from the one defined in the Unicode Standard.
      *
      * @param  codePoint the character (Unicode code point)
      *
@@ -11363,9 +11365,11 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * The {@code name} matching is case insensitive, with any leading and
      * trailing whitespace character removed.
      *
-     * This method recognizes the character name generated with
-     * {@link #getName(int)}, which differs from the name defined in the
-     * "Unicode Name Property" section in the Unicode Standard.
+     * For the code points in the <i>UnicodeData</i> file, this method
+     * recognizes the name which conforms to the name defined in the
+     * "Unicode Name Property" section in the Unicode Standard. For other
+     * code points, this method recognizes the name generated with
+     * {@link #getName(int)} method.
      *
      * @param  name the character name
      *
