@@ -100,7 +100,9 @@ public class bug6186488 {
     }
 
     private static void createAndShowTestDialog() {
-        String testInstruction = "This test verify that software Java Syntesizer processed non-ShortMessage-derived messages. \n" +
+        String testInstruction = "This test verify that software Java Syntesizer processed non-ShortMessage-derived messages.\n" +
+                "Close all other programs that may use the sound card.\n" +
+                "Make sure that the speakers are connected and the volume is up.\n" +
                 "Click on 'Start Test' button. If you listen a sound then test pass else test fail.";
 
         final JDialog dialog = new JDialog();
