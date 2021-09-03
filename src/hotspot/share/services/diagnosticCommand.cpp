@@ -521,10 +521,10 @@ void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
   uint parallel_thread_num = num == 0
-      ? MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8)
+      ? Universe::heap()->safepoint_workers()->active_workers()
       : num;
   VM_GC_HeapInspection heapop(output(),
-                              !_all.value(), /* request full gc if false */
+                              !_all.value(), /* request_full_gc */
                               parallel_thread_num);
   VMThread::execute(&heapop);
 }

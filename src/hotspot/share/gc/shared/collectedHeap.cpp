@@ -549,7 +549,7 @@ void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
     ResourceMark rm;
     LogStream ls(lt);
     uint parallel_thread_num = safepoint_workers()->active_workers();
-    VM_GC_HeapInspection inspector(&ls, false /* request full gc */, parallel_thread_num);
+    VM_GC_HeapInspection inspector(&ls, false /* request_full_gc */, parallel_thread_num);
     inspector.doit();
   }
 }
