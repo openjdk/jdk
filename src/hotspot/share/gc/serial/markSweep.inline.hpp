@@ -40,7 +40,7 @@
 
 inline void MarkSweep::mark_object(oop obj) {
   if (StringDedup::is_enabled() &&
-      java_lang_String::is_instance_inlined(obj) &&
+      java_lang_String::is_instance(obj) &&
       SerialStringDedup::is_candidate_from_mark(obj)) {
     _string_dedup_requests->add(obj);
   }

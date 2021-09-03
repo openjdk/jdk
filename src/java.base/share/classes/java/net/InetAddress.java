@@ -657,46 +657,46 @@ public class InetAddress implements java.io.Serializable {
      */
     private static String getHostFromNameService(InetAddress addr, boolean check) {
         String host = null;
-            try {
-                // first lookup the hostname
-                host = nameService.getHostByAddr(addr.getAddress());
+        try {
+            // first lookup the hostname
+            host = nameService.getHostByAddr(addr.getAddress());
 
-                /* check to see if calling code is allowed to know
-                 * the hostname for this IP address, ie, connect to the host
-                 */
-                if (check) {
-                    @SuppressWarnings("removal")
-                    SecurityManager sec = System.getSecurityManager();
-                    if (sec != null) {
-                        sec.checkConnect(host, -1);
-                    }
+            /* check to see if calling code is allowed to know
+             * the hostname for this IP address, ie, connect to the host
+             */
+            if (check) {
+                @SuppressWarnings("removal")
+                SecurityManager sec = System.getSecurityManager();
+                if (sec != null) {
+                    sec.checkConnect(host, -1);
                 }
-
-                /* now get all the IP addresses for this hostname,
-                 * and make sure one of them matches the original IP
-                 * address. We do this to try and prevent spoofing.
-                 */
-
-                InetAddress[] arr = InetAddress.getAllByName0(host, check);
-                boolean ok = false;
-
-                if(arr != null) {
-                    for(int i = 0; !ok && i < arr.length; i++) {
-                        ok = addr.equals(arr[i]);
-                    }
-                }
-
-                //XXX: if it looks a spoof just return the address?
-                if (!ok) {
-                    host = addr.getHostAddress();
-                    return host;
-                }
-            } catch (SecurityException e) {
-                host = addr.getHostAddress();
-            } catch (UnknownHostException e) {
-                host = addr.getHostAddress();
-                // let next provider resolve the hostname
             }
+
+            /* now get all the IP addresses for this hostname,
+             * and make sure one of them matches the original IP
+             * address. We do this to try and prevent spoofing.
+             */
+
+            InetAddress[] arr = InetAddress.getAllByName0(host, check);
+            boolean ok = false;
+
+            if (arr != null) {
+                for (int i = 0; !ok && i < arr.length; i++) {
+                    ok = addr.equals(arr[i]);
+                }
+            }
+
+            //XXX: if it looks like a spoof just return the address?
+            if (!ok) {
+                host = addr.getHostAddress();
+                return host;
+            }
+        } catch (SecurityException e) {
+            host = addr.getHostAddress();
+        } catch (UnknownHostException e) {
+            host = addr.getHostAddress();
+            // let next provider resolve the hostname
+        }
         return host;
     }
 
@@ -1136,7 +1136,7 @@ public class InetAddress implements java.io.Serializable {
 
         // create name service
         nameService = createNameService();
-        }
+    }
 
     /**
      * Create an instance of the NameService interface based on
@@ -1510,21 +1510,19 @@ public class InetAddress implements java.io.Serializable {
     }
 
     static InetAddress[] getAddressesFromNameService(String host, InetAddress reqAddr)
-        throws UnknownHostException
-    {
+            throws UnknownHostException {
         InetAddress[] addresses = null;
         UnknownHostException ex = null;
 
-            try {
-                addresses = nameService.lookupAllHostAddr(host);
-            } catch (UnknownHostException uhe) {
-                if (host.equalsIgnoreCase("localhost")) {
-                    addresses = new InetAddress[] { impl.loopbackAddress() };
-                }
-                else {
-                    ex = uhe;
-                }
+        try {
+            addresses = nameService.lookupAllHostAddr(host);
+        } catch (UnknownHostException uhe) {
+            if (host.equalsIgnoreCase("localhost")) {
+                addresses = new InetAddress[]{impl.loopbackAddress()};
+            } else {
+                ex = uhe;
             }
+        }
 
         if (addresses == null) {
             throw ex == null ? new UnknownHostException(host) : ex;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.InputStream;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Hashtable;
-import java.util.Vector;
 import java.util.StringTokenizer;
 
 import java.lang.reflect.Proxy;
@@ -205,13 +205,13 @@ final class Obj {
         } else {
             StringTokenizer parser =
                 new StringTokenizer((String)codebaseAttr.get());
-            Vector<String> vec = new Vector<>(10);
+            ArrayList<String> list = new ArrayList<>(10);
             while (parser.hasMoreTokens()) {
-                vec.addElement(parser.nextToken());
+                list.add(parser.nextToken());
             }
-            String[] answer = new String[vec.size()];
+            String[] answer = new String[list.size()];
             for (int i = 0; i < answer.length; i++) {
-                answer[i] = vec.elementAt(i);
+                answer[i] = list.get(i);
             }
             return answer;
         }
@@ -409,11 +409,10 @@ final class Obj {
             ClassLoader cl = helper.getURLClassLoader(codebases);
 
             /*
-             * Temporary Vector for decoded RefAddr addresses - used to ensure
+             * Temporary array for decoded RefAddr addresses - used to ensure
              * unordered addresses are correctly re-ordered.
              */
-            Vector<RefAddr> refAddrList = new Vector<>();
-            refAddrList.setSize(attr.size());
+            RefAddr[] refAddrList = new RefAddr[attr.size()];
 
             for (NamingEnumeration<?> vals = attr.getAll(); vals.hasMore(); ) {
 
@@ -464,7 +463,7 @@ final class Obj {
                 // extract content
                 if (start == val.length()) {
                     // Empty content
-                    refAddrList.setElementAt(new StringRefAddr(type, null), posn);
+                    refAddrList[posn] = new StringRefAddr(type, null);
                 } else if (val.charAt(start) == separator) {
                     // Double separators indicate a non-StringRefAddr
                     // Content is a Base64-encoded serialized RefAddr
@@ -480,17 +479,17 @@ final class Obj {
                             decoder.decode(val.substring(start).getBytes()),
                             cl);
 
-                    refAddrList.setElementAt(ra, posn);
+                    refAddrList[posn] = ra;
                 } else {
                     // Single separator indicates a StringRefAddr
-                    refAddrList.setElementAt(new StringRefAddr(type,
-                        val.substring(start)), posn);
+                    refAddrList[posn] = new StringRefAddr(type,
+                        val.substring(start));
                 }
             }
 
             // Copy to real reference
-            for (int i = 0; i < refAddrList.size(); i++) {
-                ref.add(refAddrList.elementAt(i));
+            for (int i = 0; i < refAddrList.length; i++) {
+                ref.add(refAddrList[i]);
             }
         }
 

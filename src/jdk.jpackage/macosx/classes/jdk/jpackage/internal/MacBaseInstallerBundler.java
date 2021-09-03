@@ -139,7 +139,7 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
                 // if signing bundle with app-image, warn user if app-image
-                // is not allready signed.
+                // is not already signed.
                 try {
                     if (!(AppImageFile.load(applicationImage).isSigned())) {
                         Log.info(MessageFormat.format(I18N.getString(

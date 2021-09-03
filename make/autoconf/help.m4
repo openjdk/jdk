@@ -274,7 +274,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 
   printf "\n"
   printf "Build performance summary:\n"
-  printf "* Cores to use:   $JOBS\n"
+  printf "* Build jobs:     $JOBS\n"
   printf "* Memory limit:   $MEMORY_SIZE MB\n"
   if test "x$CCACHE_STATUS" != "x"; then
     printf "* ccache status:  $CCACHE_STATUS\n"

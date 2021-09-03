@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
+
+const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
 
 static bool initialized;
 static union {
@@ -117,6 +119,30 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
+int LogFileStreamOutput::write_internal(const char* msg) {
+  int written = 0;
+  if (!_fold_multilines) {
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+  } else {
+    char *dupstr = os::strdup_check_oom(msg, mtLogging);
+    char *cur = dupstr;
+    char *next;
+    do {
+      next = strpbrk(cur, "\n\\");
+      if (next == NULL) {
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", cur), written);
+      } else {
+        const char *found = (*next == '\n') ? "\\n" : "\\\\";
+        *next = '\0';
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s%s", cur, found), written);
+        cur = next + 1;
+      }
+    } while (next != NULL);
+    os::free(dupstr);
+  }
+  return written;
+}
+
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
   const bool use_decorations = !_decorators.is_empty();
 
@@ -126,7 +152,7 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
     WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
   }
-  WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+  written += write_internal(msg);
 
   return flush() ? written : -1;
 }
@@ -141,7 +167,7 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
       WRITE_LOG_WITH_RESULT_CHECK(write_decorations(msg_iterator.decorations()), written);
       WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
     }
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg_iterator.message()), written);
+    written += write_internal(msg_iterator.message());
   }
 
   return flush() ? written : -1;
