@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 8025692
+ * @requires vm.flavor != "zero"
+ * @bug 8025692 8273333
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @library /test/lib
