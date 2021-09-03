@@ -25,7 +25,7 @@
  * @bug 8234805 8235193
  * @summary Test DatagramChannel send/receive and that receive returns the expected
  *     sender address
- * @run main ManySourcesAndTargets
+ * @run main/othervm ManySourcesAndTargets
  * @run main/othervm -Djava.net.preferIPv4Stack=true ManySourcesAndTargets
  */
 
