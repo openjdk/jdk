@@ -873,9 +873,10 @@ public abstract class MethodHandle implements Constable {
         if (atc != null && newType == atc.type) {
             return atc; // cache hit
         }
-        if (asTypeSoftCache != null) {
-            atc = asTypeSoftCache.get();
-            if (newType == atc.type) {
+        SoftReference<MethodHandle> softCache = asTypeSoftCache;
+        if (softCache != null) {
+            atc = softCache.get();
+            if (atc != null && newType == atc.type) {
                 return atc; // soft cache hit
             }
         }
@@ -930,7 +931,7 @@ public abstract class MethodHandle implements Constable {
         return loader;
     }
 
-    /* Returns true when {@code loader} keeps {@code mt} either directly or indirectly through the loader delegation chain. */
+    /* Returns true when {@code loader} keeps components of {@code mt} reachable either directly or indirectly through the loader delegation chain. */
     private static boolean keepsAlive(MethodType mt, ClassLoader loader) {
         for (Class<?> ptype : mt.ptypes()) {
             if (!keepsAlive(ptype, loader)) {
