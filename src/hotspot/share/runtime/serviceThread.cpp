@@ -229,7 +229,7 @@ void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   assert(_instance != NULL, "cannot enqueue events before the service thread runs");
   _jvmti_service_queue.enqueue(*event);
   Service_lock->notify_all();
- }
+}
 
 void ServiceThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   JavaThread::oops_do_no_frames(f, cf);
@@ -238,9 +238,14 @@ void ServiceThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   if (_jvmti_event != NULL) {
     _jvmti_event->oops_do(f, cf);
   }
-  // Requires a lock, because threads can be adding to this queue.
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  _jvmti_service_queue.oops_do(f, cf);
+  // Requires a lock, because threads can be adding to this queue, but only at a safepoint.
+  // At a safepoint G1 takes out all sorts of other locks that are higher than Service_lock.
+  if (SafepointSynchronize::is_at_safepoint()) {
+    _jvmti_service_queue.oops_do(f, cf);
+  } else {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    _jvmti_service_queue.oops_do(f, cf);
+  }
 }
 
 void ServiceThread::nmethods_do(CodeBlobClosure* cf) {
@@ -249,9 +254,14 @@ void ServiceThread::nmethods_do(CodeBlobClosure* cf) {
     if (_jvmti_event != NULL) {
       _jvmti_event->nmethods_do(cf);
     }
-    // Requires a lock, because threads can be adding to this queue.
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-    _jvmti_service_queue.nmethods_do(cf);
+    // Requires a lock, because threads can be adding to this queue, but only at a safepoint.
+    // At a safepoint G1 takes out all sorts of other locks that are higher than Service_lock.
+    if (SafepointSynchronize::is_at_safepoint()) {
+      _jvmti_service_queue.nmethods_do(cf);
+    } else {
+      MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+      _jvmti_service_queue.nmethods_do(cf);
+    }
   }
 }
 
