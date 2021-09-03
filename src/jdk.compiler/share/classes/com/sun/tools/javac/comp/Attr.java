@@ -1546,7 +1546,7 @@ public class Attr extends JCTree.Visitor {
                     // Check the return type of the method iterator().
                     // This is the bare minimum we need to verify to make sure code generation doesn't crash.
                     Symbol iterSymbol = rs.resolveInternalMethod(tree.pos(),
-                            loopEnv, exprType, names.iterator, List.nil(), List.nil());
+                            loopEnv, types.skipTypeVars(exprType, false), names.iterator, List.nil(), List.nil());
                     if (types.asSuper(iterSymbol.type.getReturnType(), syms.iteratorType.tsym) == null) {
                         log.error(tree.pos(),
                                 Errors.ForeachNotApplicableToType(exprType, Fragments.TypeReqArrayOrIterable));
