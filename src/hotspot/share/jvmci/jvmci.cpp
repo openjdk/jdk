@@ -385,7 +385,6 @@ bool JVMCI::resize_all_jvmci_counters(int new_size) {
   return !op.failed();
 }
 
-
 void JVMCI::free_counters(JavaThread* thread) {
   if (JVMCICounterSize > 0) {
     FREE_C_HEAP_ARRAY(jlong, thread->jvmci()._jvmci_counters);
@@ -402,7 +401,6 @@ void JVMCI::accumulate_counters(JavaThread* thread) {
   }
 }
 
-
 void JVMCI::init_counters() {
   if (JVMCICounterSize > 0) {
     JVMCI::_jvmci_old_thread_counters = NEW_C_HEAP_ARRAY(jlong, JVMCICounterSize, mtJVMCI);
@@ -412,13 +410,11 @@ void JVMCI::init_counters() {
   }
 }
 
-
 void JVMCI::free_counters() {
   if (JVMCICounterSize > 0) {
     FREE_C_HEAP_ARRAY(jlong, JVMCI::_jvmci_old_thread_counters);
   }
 }
-
 
 ByteSize JVMCIThreadState::pending_deoptimization_offset() {
  return JavaThread::jvmci_state_offset() + byte_offset_of(JVMCIThreadState, _pending_deoptimization);

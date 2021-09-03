@@ -944,7 +944,7 @@ JavaThread::JavaThread() :
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
-  assert(jvmci()._jvmci._implicit_exception_pc == nullptr, "must be");
+  assert(jvmci().implicit_exception_pc() == nullptr, "must be");
   if (JVMCICounterSize > 0) {
     JVMCI::resize_counters(this, 0, (int) JVMCICounterSize);
   }
@@ -1855,7 +1855,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   f->do_oop((oop*) &_exception_oop);
   f->do_oop((oop*) &_pending_async_exception);
 #if INCLUDE_JVMCI
-  f->do_oop((oop*) &_jvmci_state._jvmci_reserved_oop0);
+  f->do_oop((oop*) _jvmci_state.jvmci_reserved_oop0_addr());
 #endif
 
   if (jvmti_thread_state() != NULL) {

@@ -49,6 +49,7 @@ typedef struct _jmetadata *jmetadata;
 class JVMCI : public AllStatic {
   friend class JVMCIRuntime;
   friend class JVMCIEnv;
+  friend class VM_JVMCIResizeCounters;
 
  private:
   // Access to the HotSpotJVMCIRuntime used by the CompileBroker.
@@ -93,6 +94,9 @@ class JVMCI : public AllStatic {
 
   // Gets the Thread* value for the current thread or NULL if it's not available.
   static Thread* current_thread_or_null();
+
+  // Accumulated counters for threads which have exited.
+  static jlong* _jvmci_old_thread_counters;
 
  public:
   enum CodeInstallResult {
@@ -156,7 +160,6 @@ class JVMCI : public AllStatic {
   // Traces an event to tty if JVMCITraceLevel >= `level`
   static void vtrace(int level, const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
 
- public:
   // Log/trace a JVMCI event
   static void event(int level, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
   static void event1(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
@@ -164,20 +167,22 @@ class JVMCI : public AllStatic {
   static void event3(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
   static void event4(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
 
-  static jlong* _jvmci_old_thread_counters;
-  static void collect_counters(jlong* array, int length);
-
-  static bool resize_counters(JavaThread* thread, int current_size, int new_size);
-
+  // Manage shared global counter storage
+  static void init_counters();
+  static void free_counters();
   static bool resize_all_jvmci_counters(int new_size);
 
-  static void free_counters(JavaThread* thread);
+  // Return the total of the counters from all live and exited threads
+  static void collect_counters(jlong* array, int length);
 
+  // Accumulate the counters of this exiting thread into the global counts
   static void accumulate_counters(JavaThread* thread);
 
-  static void init_counters();
+  // Release the storage for the per thread counters
+  static void free_counters(JavaThread* thread);
 
-  static void free_counters();
+  // Enlarge the per thread counter storage
+  static bool resize_counters(JavaThread* thread, int current_size, int new_size);
 };
 
 
@@ -187,7 +192,6 @@ class JVMCIThreadState {
   JVMCIThreadState();
 
  private:
-  friend class JavaThread;
   friend class JVMCI;
   friend class JVMCIVMStructs;
 
@@ -195,43 +199,43 @@ class JVMCIThreadState {
   // from an uncommon trap in JVMCI compiled code to the uncommon trap handler.
 
   // Communicates the DeoptReason and DeoptAction of the uncommon trap
-  int       _pending_deoptimization;
+  int _pending_deoptimization;
 
   // Specifies whether the uncommon trap is to bci 0 of a synchronized method
   // before the monitor has been acquired.
-  bool      _pending_monitorenter;
+  bool _pending_monitorenter;
 
   // Specifies if the DeoptReason for the last uncommon trap was Reason_transfer_to_interpreter
-  bool      _pending_transfer_to_interpreter;
+  bool _pending_transfer_to_interpreter;
 
   // True if in a runtime call from compiled code that will deoptimize
   // and re-execute a failed heap allocation in the interpreter.
-  bool      _in_retryable_allocation;
+  bool _in_retryable_allocation;
 
   // An id of a speculation that JVMCI compiled code can use to further describe and
   // uniquely identify the speculative optimization guarded by an uncommon trap.
   // See JVMCINMethodData::SPECULATION_LENGTH_BITS for further details.
-  jlong     _pending_failed_speculation;
+  jlong _pending_failed_speculation;
 
   // These fields are mutually exclusive in terms of live ranges.
   union {
     // Communicates the pc at which the most recent implicit exception occurred
     // from the signal handler to a deoptimization stub.
-    address   _implicit_exception_pc;
+    address _implicit_exception_pc;
 
     // Communicates an alternative call target to an i2c stub from a JavaCall .
-    address   _alternate_call_target;
+    address _alternate_call_target;
   } _union;
 
   // Support for high precision, thread sensitive counters in JVMCI compiled code.
-  jlong*    _jvmci_counters;
+  jlong* _jvmci_counters;
 
   // Fast thread locals for use by JVMCI
-  jlong      _jvmci_reserved0;
-  jlong      _jvmci_reserved1;
-  oop        _jvmci_reserved_oop0;
+  jlong _jvmci_reserved0;
+  jlong _jvmci_reserved1;
+  oop _jvmci_reserved_oop0;
 
- public:
+ public :
   int  pending_deoptimization() const             { return _pending_deoptimization; }
   jlong pending_failed_speculation() const        { return _pending_failed_speculation; }
   bool has_pending_monitorenter() const           { return _pending_monitorenter; }
@@ -241,32 +245,19 @@ class JVMCIThreadState {
   void set_pending_transfer_to_interpreter(bool b) { _pending_transfer_to_interpreter = b; }
   void set_jvmci_alternate_call_target(address a) { assert(_union._alternate_call_target == NULL, "must be"); _union._alternate_call_target = a; }
   void set_jvmci_implicit_exception_pc(address a) { assert(_union._implicit_exception_pc == NULL, "must be"); _union._implicit_exception_pc = a; }
+  address implicit_exception_pc()                 { return _union._implicit_exception_pc; }
   void set_in_retryable_allocation(bool b)        { _in_retryable_allocation = b; }
   bool in_retryable_allocation() const            { return _in_retryable_allocation; }
 
-  void set_jvmci_reserved_oop0(oop value) {
-    _jvmci_reserved_oop0 = value;
-  }
+  void set_jvmci_reserved_oop0(oop value) { _jvmci_reserved_oop0 = value;  }
+  void set_jvmci_reserved0(jlong value)   { _jvmci_reserved0 = value;  }
+  void set_jvmci_reserved1(jlong value)   { _jvmci_reserved1 = value;  }
 
-  oop get_jvmci_reserved_oop0() {
-    return _jvmci_reserved_oop0;
-  }
+  oop get_jvmci_reserved_oop0()           { return _jvmci_reserved_oop0;  }
+  jlong get_jvmci_reserved0()             { return _jvmci_reserved0;  }
+  jlong get_jvmci_reserved1()             { return _jvmci_reserved1;  }
 
-  void set_jvmci_reserved0(jlong value) {
-    _jvmci_reserved0 = value;
-  }
-
-  jlong get_jvmci_reserved0() {
-    return _jvmci_reserved0;
-  }
-
-  void set_jvmci_reserved1(jlong value) {
-    _jvmci_reserved1 = value;
-  }
-
-  jlong get_jvmci_reserved1() {
-    return _jvmci_reserved1;
-  }
+  oop* jvmci_reserved_oop0_addr()         { return &_jvmci_reserved_oop0; }
 
   static ByteSize pending_deoptimization_offset();
   static ByteSize pending_monitorenter_offset();
