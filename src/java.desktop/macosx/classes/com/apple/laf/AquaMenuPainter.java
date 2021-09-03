@@ -408,15 +408,7 @@ public class AquaMenuPainter {
         if (c instanceof JMenu && (model.isArmed() || model.isSelected()) && arrowIcon instanceof InvertableIcon) {
             ((InvertableIcon)arrowIcon).getInvertedIcon().paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
         } else {
-            if (!c.isEnabled() && arrowIcon instanceof ImageIcon) {
-                if (disabledIcon == null) {
-                    disabledIcon = new ImageIconUIResource(GrayFilter.
-                            createDisabledImage(((ImageIcon) arrowIcon).getImage()));
-                }
-                disabledIcon.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
-            } else {
-                arrowIcon.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
-            }
+            arrowIcon.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
         }
     }
 
