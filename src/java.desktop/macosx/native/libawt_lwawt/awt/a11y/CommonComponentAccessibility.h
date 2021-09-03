@@ -57,6 +57,7 @@
 - (void)postTitleChanged;
 - (void)postTreeNodeExpanded;
 - (void)postTreeNodeCollapsed;
+- (void)postSelectedCellsChanged;
 - (BOOL)isEqual:(nonnull id)anObject;
 - (BOOL)isAccessibleWithEnv:(JNIEnv _Nonnull * _Nonnull)env forAccessible:(nonnull jobject)accessible;
 

@@ -219,23 +219,24 @@ static jmethodID sjm_getAccessibleName = NULL;
     return [[self getTableInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_COLS] integerValue];
 }
 
-- (nullable NSArray *)accessibilitySelectedCells
-{
-    NSArray *children = [super accessibilitySelectedChildren];
-    NSMutableArray *cells = [NSMutableArray arrayWithCapacity:[children count]];
-    for (CommonComponentAccessibility *child in children) {
-        [cells addObject:[[CellAccessibility alloc] initWithParent:self
-                                                           withEnv:[ThreadUtilities getJNIEnv]
-                                                    withAccessible:child->fAccessible
-                                                         withIndex:child->fIndex
-                                                          withView:fView
-                                                      withJavaRole:child->fJavaRole]];
-    }
-    return [NSArray arrayWithArray:cells];
-}
-
 - (id)accessibilityCellForColumn:(NSInteger)column row:(NSInteger)row {
     return [[(TableRowAccessibility *)[[self accessibilityRows] objectAtIndex:row] accessibilityChildren] objectAtIndex:column];
+}
+
+- (NSArray *)accessibilitySelectedCells
+{
+    NSArray *selectedRows = [self getTableSelectedInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_ROWS];
+    NSArray *selectedColumns = [self getTableSelectedInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_COLS];
+    NSMutableArray *selectedCells = [NSMutableArray arrayWithCapacity:[selectedRows count] * [selectedColumns count]];
+    for (NSNumber *row in selectedRows) {
+        for (NSNumber *col in selectedColumns ) {
+            CellAccessibility *cell = [self accessibilityCellForColumn:[col integerValue] row:[row integerValue]];
+            if ([self isAccessibleChildSelectedFromIndex:[cell accessibilityIndex]]) {
+                [selectedCells addObject:cell];
+            }
+        }
+    }
+    return [NSArray arrayWithArray:selectedCells];
 }
 
 @end
