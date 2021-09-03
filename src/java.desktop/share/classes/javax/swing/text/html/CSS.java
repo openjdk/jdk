@@ -1574,8 +1574,7 @@ public class CSS implements Serializable {
             }
             current++;
         }
-        String[] retValue = new String[temp.size()];
-        temp.toArray(retValue);
+        String[] retValue = temp.toArray(new String[0]);
         return retValue;
     }
 
