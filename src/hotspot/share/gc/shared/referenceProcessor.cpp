@@ -424,7 +424,7 @@ void RefProcTask::process_discovered_list(uint worker_id,
                                           OopClosure* keep_alive) {
   ReferenceProcessor::RefProcSubPhases subphase;
   DiscoveredList* dl;
-  switch(ref_type) {
+  switch (ref_type) {
     case ReferenceType::REF_SOFT:
       subphase = ReferenceProcessor::ProcessSoftRefSubPhase;
       dl = _ref_processor._discoveredSoftRefs;
@@ -445,7 +445,7 @@ void RefProcTask::process_discovered_list(uint worker_id,
       ShouldNotReachHere();
   }
 
-  // Only Final refs are not enqueued.
+  // Only Final refs are not enqueued and cleared here.
   bool do_enqueue_and_clear = (ref_type != REF_FINAL);
 
   {
