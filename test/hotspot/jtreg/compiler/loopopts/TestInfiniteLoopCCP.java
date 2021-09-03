@@ -25,10 +25,13 @@
  * @test
  * @bug 8271340
  * @summary Crash PhaseIdealLoop::clone_outer_loop
+ * @library /test/lib
  *
  * @run main/othervm TestInfiniteLoopCCP
  *
  */
+
+import jdk.test.lib.Utils;
 
 public class TestInfiniteLoopCCP {
 
@@ -69,6 +72,6 @@ public class TestInfiniteLoopCCP {
         // Give thread some time to trigger compilation
         thread.setDaemon(true);
         thread.start();
-        Thread.sleep(/*Utils.adjustTimeout(4000)*/4000);
+        Thread.sleep(Utils.adjustTimeout(4000));
     }
 }
