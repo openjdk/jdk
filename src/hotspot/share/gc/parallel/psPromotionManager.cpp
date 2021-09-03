@@ -369,7 +369,10 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
     obj = obj->forwardee();
   }
 
-  log_develop_trace(gc, scavenge)("{promotion-failure %s " PTR_FORMAT " (%d)}", obj->klass()->internal_name(), p2i(obj), obj->size());
-
+  if (log_develop_is_enabled(Trace, gc, scavenge)) {
+    ResourceMark rm; // required by internal_name()
+    log_develop_trace(gc, scavenge)("{promotion-failure %s " PTR_FORMAT " (%d)}",
+            obj->klass()->internal_name(), p2i(obj), obj->size());
+  }
   return obj;
 }
