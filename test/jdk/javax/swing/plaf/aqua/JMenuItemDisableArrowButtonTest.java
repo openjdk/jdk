@@ -39,6 +39,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
@@ -57,8 +58,10 @@ public class JMenuItemDisableArrowButtonTest {
     private static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n"
             + "Click on \"SubMenuTest\" menu.\n "
             + "If arrow icon is disabled along with \"Submenu\" menuitem\n"
+            + "and\n"
+            + "If checkmark icon is disabled along with \"Submenu\" CheckBox menuitem\n"
             + "then press Pass \n"
-            + "otherwise if arrow icon is not disabled,press Fail.";
+            + "otherwise if arrow or checkmark icon is not disabled, press Fail.";
 
     public static void main(String args[]) throws Exception{
         countDownLatch = new CountDownLatch(1);
@@ -67,7 +70,8 @@ public class JMenuItemDisableArrowButtonTest {
         countDownLatch.await(5, TimeUnit.MINUTES);
 
         if (!testResult) {
-            throw new RuntimeException("Disabled JMenuItem arrow is not disabled!");
+            throw new RuntimeException(
+                    "Disabled JMenuItem arrow or checkmark icon is not disabled!");
         }
     }
 
@@ -151,9 +155,14 @@ public class JMenuItemDisableArrowButtonTest {
         final JMenuBar menuBar = new JMenuBar();
         JMenu subMenuTestmenu = new JMenu("SubMenuTest");
         JMenu disabledSubmenu = new JMenu("Submenu");
-        disabledSubmenu.add(new JMenuItem("item"));
         disabledSubmenu.setEnabled(false);
         subMenuTestmenu.add(disabledSubmenu);
+
+        JCheckBoxMenuItem myItem = new JCheckBoxMenuItem("Submenu");
+        myItem.setSelected(true);
+        myItem.setEnabled(false);
+        subMenuTestmenu.add(myItem);
+
         menuBar.add(subMenuTestmenu);
         return menuBar;
     }
