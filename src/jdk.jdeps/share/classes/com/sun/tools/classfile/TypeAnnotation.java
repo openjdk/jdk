@@ -62,7 +62,7 @@ public class TypeAnnotation {
     @Override
     public String toString() {
         try {
-            return "@" + constant_pool.getUTF8Value(annotation.type_index).toString().substring(1) +
+            return "@" + constant_pool.getUTF8Value(annotation.type_index).substring(1) +
                     " pos: " + position.toString();
         } catch (Exception e) {
             e.printStackTrace();

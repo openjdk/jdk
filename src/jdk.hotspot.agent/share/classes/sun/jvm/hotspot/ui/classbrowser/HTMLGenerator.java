@@ -1007,7 +1007,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          Formatter tmpBuf = new Formatter(genHTML);
          long startPc = addressToLong(addr);
          tmpBuf.append("0x");
-         tmpBuf.append(Long.toHexString(startPc + visitor.getInstructionSize()).toString());
+         tmpBuf.append(Long.toHexString(startPc + visitor.getInstructionSize()));
          tmpBuf.append(",0x");
          tmpBuf.append(Long.toHexString(startPc));
          if (prevPCs != null) {
