@@ -116,7 +116,7 @@ public final class Options {
         if (!path.toFile().canWrite()) {
             throw new IllegalArgumentException("Cannot write JFR emergency dump to " + path.toString());
         }
-        jvm.setDumpPath(path.toString());
+        jvm.setDumpPath(path.toPath().toAbsolutePath().toString());
     }
 
     public static synchronized SafePath getDumpPath() {
