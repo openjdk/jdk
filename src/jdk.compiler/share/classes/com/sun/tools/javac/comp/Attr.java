@@ -5594,547 +5594,547 @@ public class Attr extends JCTree.Visitor {
         private void checkSerialStructure(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
         }
 
-            /**
-         * This visitor will warn if a serialization-related field or
-         * method is declared in a suspicious or incorrect way. In
-         * particular, it will warn for cases where the runtime
-         * serialization mechanism will silently ignore a mis-declared
-         * entity.
-         *
-         * Distinguished serialization-related fields and methods:
-         *
-         * Methods:
-         *
-         * private void writeObject(ObjectOutputStream stream) throws IOException
-         * ANY-ACCESS-MODIFIER Object writeReplace() throws ObjectStreamException
-         *
-         * private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException
-         * private void readObjectNoData() throws ObjectStreamException
-         * ANY-ACCESS-MODIFIER Object readResolve() throws ObjectStreamException
-         *
-         * Fields:
-         *
-         * private static final long serialVersionUID
-         * private static final ObjectStreamField[] serialPersistentFields
-         * 
-         * Externalizable: methods defined on the interface
-         * public void writeExternal(ObjectOutput) throws IOException
-         * public void readExternal(ObjectInput) throws IOException
-         *
-         */
-        private class SerialTypeVisitor extends ElementKindVisitor14<Void, Void> {
-            SerialTypeVisitor(){super();}
+    /**
+     * This visitor will warn if a serialization-related field or
+     * method is declared in a suspicious or incorrect way. In
+     * particular, it will warn for cases where the runtime
+     * serialization mechanism will silently ignore a mis-declared
+     * entity.
+     *
+     * Distinguished serialization-related fields and methods:
+     *
+     * Methods:
+     *
+     * private void writeObject(ObjectOutputStream stream) throws IOException
+     * ANY-ACCESS-MODIFIER Object writeReplace() throws ObjectStreamException
+     *
+     * private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException
+     * private void readObjectNoData() throws ObjectStreamException
+     * ANY-ACCESS-MODIFIER Object readResolve() throws ObjectStreamException
+     *
+     * Fields:
+     *
+     * private static final long serialVersionUID
+     * private static final ObjectStreamField[] serialPersistentFields
+     * 
+     * Externalizable: methods defined on the interface
+     * public void writeExternal(ObjectOutput) throws IOException
+     * public void readExternal(ObjectInput) throws IOException
+     *
+     */
+    private class SerialTypeVisitor extends ElementKindVisitor14<Void, Void> {
+        SerialTypeVisitor(){super();}
 
-            final Set<String> serialMethodNames = Set.of("writeObject", "writeReplace",
-                                                         "readObject",  "readObjectNoData", "readResolve");
+        final Set<String> serialMethodNames = Set.of("writeObject", "writeReplace",
+                                                     "readObject",  "readObjectNoData", "readResolve");
 
-            final Set<String> serialFieldNames = Set.of("serialVersionUID", "serialPersistentFields");
+        final Set<String> serialFieldNames = Set.of("serialVersionUID", "serialPersistentFields");
             
-            final Set<Modifier> PRIVATE_STATIC_FINAL_MODS =
-                Set.of(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
+        final Set<Modifier> PRIVATE_STATIC_FINAL_MODS =
+            Set.of(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
 
-            final Set<Modifier> STATIC_FINAL_MODS = Set.of(Modifier.STATIC, Modifier.FINAL);
+        final Set<Modifier> STATIC_FINAL_MODS = Set.of(Modifier.STATIC, Modifier.FINAL);
 
-            final Set<Modifier> ABSTRACT_STATIC_MODS = Set.of(Modifier.ABSTRACT, Modifier.STATIC);
+        final Set<Modifier> ABSTRACT_STATIC_MODS = Set.of(Modifier.ABSTRACT, Modifier.STATIC);
 
-            final Set<Modifier> PRIVATE_MODS = Set.of(Modifier.PRIVATE);
-            final Set<Modifier> STATIC_MODS =  Set.of(Modifier.STATIC);
+        final Set<Modifier> PRIVATE_MODS = Set.of(Modifier.PRIVATE);
+        final Set<Modifier> STATIC_MODS =  Set.of(Modifier.STATIC);
 
-            // Type of serialVersionUID
-            final Type LONG_TYPE = syms.longType;
+        // Type of serialVersionUID
+        final Type LONG_TYPE = syms.longType;
 
-            // Type of serialPersistentFields
-            final TypeMirror OSF_TYPE = syms.objectStreamFieldType;
+        // Type of serialPersistentFields
+        final TypeMirror OSF_TYPE = syms.objectStreamFieldType;
 
-            final Type OIS_TYPE = syms.objectInputStreamType;
-            final TypeMirror OOS_TYPE = syms.objectOutputStreamType;
-            final Type VOID_TYPE = syms.voidType;
-            final Type OBJECT_TYPE = syms.objectType;
+        final Type OIS_TYPE = syms.objectInputStreamType;
+        final Type OOS_TYPE = syms.objectOutputStreamType;
+        final Type VOID_TYPE = syms.voidType;
+        final Type OBJECT_TYPE = syms.objectType;
 
-            // Exception types used in serialization-related methods' throws clauses
-            final Type IOE_TYPE = syms.ioExceptionType;
-            final Type OSE_TYPE = syms.objectStreamExceptionType;
-            final Type CNFE_TYPE = syms.classNotFoundExceptionType;
-            final Type J_L_ERROR_TYPE = syms.errorType;
-            final Type RUNTIME_EXCEPTION_TYPE = syms.runtimeExceptionType;
+        // Exception types used in serialization-related methods' throws clauses
+        final Type IOE_TYPE = syms.ioExceptionType;
+        final Type OSE_TYPE = syms.objectStreamExceptionType;
+        final Type CNFE_TYPE = syms.classNotFoundExceptionType;
+        final Type J_L_ERROR_TYPE = syms.errorType;
+        final Type RUNTIME_EXCEPTION_TYPE = syms.runtimeExceptionType;
 
-            final Type externalizableType = syms.externalizableType;
+        final Type externalizableType = syms.externalizableType;
 
-//             final TypeMirror SERIAL_ANNOTATION =
-//                 Objects.requireNonNull(elementUtils.getTypeElement("java.io.Serial").asType());
+        //             final TypeMirror SERIAL_ANNOTATION =
+        //                 Objects.requireNonNull(elementUtils.getTypeElement("java.io.Serial").asType());
             
-            @Override
-            public Void defaultAction(Element e, Void p) {
-                throw new IllegalArgumentException(Objects.requireNonNullElse(e.toString(), ""));
-            }
+        @Override
+        public Void defaultAction(Element e, Void p) {
+            throw new IllegalArgumentException(Objects.requireNonNullElse(e.toString(), ""));
+        }
 
-            @Override
-            public Void visitTypeAsClass(TypeElement e,
+        @Override
+        public Void visitTypeAsClass(TypeElement e,
                                          Void p) {
-                System.out.println("Class\t" + e.getQualifiedName() +" is Serializeable.");
+            System.out.println("Class\t" + e.getQualifiedName() +" is Serializeable.");
 
-                if (checkSuppressSerialWarning(e) ||
-                    (e.getNestingKind() == NestingKind.MEMBER ?
-                     checkSuppressSerialWarning(e.getEnclosingElement()) :
-                     false) ) {
-                    System.out.println("\tserial warning suppressed on type");
-                    return null;
-                }
+            if (checkSuppressSerialWarning(e) ||
+                (e.getNestingKind() == NestingKind.MEMBER ?
+                 checkSuppressSerialWarning(e.getEnclosingElement()) :
+                 false) ) {
+                System.out.println("\tserial warning suppressed on type");
+                return null;
+            }
 
-                // QUICK HACK -- check for missing serialVersionUID
-                // Covered by existing checks
-//                 if (!ElementFilter.fieldsIn(e.getEnclosedElements())
-//                     .stream()
-//                     .anyMatch(f -> f.getSimpleName().toString().equals("serialVersionUID")) ) {
-//                         messager.printMessage(Diagnostic.Kind.WARNING, 
-//                                               "Serializable class " + e.getQualifiedName() + 
-//                                               " is missing a serialVersionUID field.");
-//                 }
+            // QUICK HACK -- check for missing serialVersionUID
+            // Covered by existing checks
+            //                 if (!ElementFilter.fieldsIn(e.getEnclosedElements())
+            //                     .stream()
+            //                     .anyMatch(f -> f.getSimpleName().toString().equals("serialVersionUID")) ) {
+            //                         messager.printMessage(Diagnostic.Kind.WARNING, 
+            //                                               "Serializable class " + e.getQualifiedName() + 
+            //                                               " is missing a serialVersionUID field.");
+            //                 }
 
-                for(Element enclosed : e.getEnclosedElements()) {
-                    if (checkSuppressSerialWarning(enclosed))
-                        continue;
+            for(Element enclosed : e.getEnclosedElements()) {
+                if (checkSuppressSerialWarning(enclosed))
+                    continue;
 
-                    String name = null;
-                    boolean svuidFound = false;
-                    switch(enclosed.getKind()) {
-                    case FIELD -> {
-                        /*
-                         * Fields can have modifiers: public,
-                         * protected, private (access modifiers)
-                         * static, final, transient, volatile
-                         */
+                String name = null;
+                boolean svuidFound = false;
+                switch(enclosed.getKind()) {
+                case FIELD -> {
+                    /*
+                     * Fields can have modifiers: public,
+                     * protected, private (access modifiers)
+                     * static, final, transient, volatile
+                     */
                         
-                        name = enclosed.getSimpleName().toString();
-                        if (serialFieldNames.contains(name)) {
-                            switch (name) {
-                            case "serialVersionUID"       ->  checkSerialVersionUID(e, enclosed);
-                            case "serialPersistentFields" ->  checkSerialPersistentFields(e, enclosed);
-                            default -> throw new AssertionError();
-                            }
-
+                    name = enclosed.getSimpleName().toString();
+                    if (serialFieldNames.contains(name)) {
+                        switch (name) {
+                        case "serialVersionUID"       ->  checkSerialVersionUID(e, enclosed);
+                        case "serialPersistentFields" ->  checkSerialPersistentFields(e, enclosed);
+                        default -> throw new AssertionError();
                         }
-                    }
 
-                    // Correctly checking the serialization-related
-                    // methods is subtle. For the methods declared to
-                    // be private or directly declared in the class,
-                    // the enclosed elements of the class can be
-                    // checked in turn. However, writeReplace and
-                    // readResolve can be declared in a superclass and
-                    // inherited. Note that the runtime lookup walks
-                    // the superclass chain looking for
-                    // writeReplace/readResolve via
-                    // Class.getDeclaredMethod. This differs from
-                    // calling Elements.getAllMembers(TypeElement) as
-                    // the latter will also pull in default methods
-                    // from superinterfaces. In other words, the
-                    // runtime checks (which long predate default
-                    // methods on interfaces) do not admit the
-                    // possibility of inheriting methods this way, a
-                    // difference from general inheritance.
+                    }
+                }
+
+                // Correctly checking the serialization-related
+                // methods is subtle. For the methods declared to
+                // be private or directly declared in the class,
+                // the enclosed elements of the class can be
+                // checked in turn. However, writeReplace and
+                // readResolve can be declared in a superclass and
+                // inherited. Note that the runtime lookup walks
+                // the superclass chain looking for
+                // writeReplace/readResolve via
+                // Class.getDeclaredMethod. This differs from
+                // calling Elements.getAllMembers(TypeElement) as
+                // the latter will also pull in default methods
+                // from superinterfaces. In other words, the
+                // runtime checks (which long predate default
+                // methods on interfaces) do not admit the
+                // possibility of inheriting methods this way, a
+                // difference from general inheritance.
                     
-                    // The current implementation just checks the
-                    // enclosed elements and does not directly check
-                    // the inherited methods. If all the types are
-                    // being checked this is less of a concern;
-                    // however, there are cases that could be missed.
-                    case METHOD -> {
-                        var method = toMethod(enclosed);
-                        name = enclosed.getSimpleName().toString();
-                        if (serialMethodNames.contains(name)) {
-                            switch (name) {
-                            case "writeObject"      -> checkWriteObject(e, method);
-                            case "writeReplace"     -> checkWriteReplace(e, method);
-                            case "readObject"       -> checkReadObject(e, method);
-                            case "readObjectNoData" -> checkReadObjectNoData(e, method);
-                            case "readResolve"      -> checkReadResolve(e, method);
-                            default ->  throw new AssertionError();
-                            }
+                // The current implementation just checks the
+                // enclosed elements and does not directly check
+                // the inherited methods. If all the types are
+                // being checked this is less of a concern;
+                // however, there are cases that could be missed.
+                case METHOD -> {
+                    var method = toMethod(enclosed);
+                    name = enclosed.getSimpleName().toString();
+                    if (serialMethodNames.contains(name)) {
+                        switch (name) {
+                        case "writeObject"      -> checkWriteObject(e, method);
+                        case "writeReplace"     -> checkWriteReplace(e, method);
+                        case "readObject"       -> checkReadObject(e, method);
+                        case "readObjectNoData" -> checkReadObjectNoData(e, method);
+                        case "readResolve"      -> checkReadResolve(e, method);
+                        default ->  throw new AssertionError();
                         }
                     }
-                    }
-
                 }
+                }
+
+            }
+            return null;
+        }
+
+        private void checkSerialVersionUID(Element e, Element field) {
+            // To be effective, serialVersionUID must be marked
+            // static and final, but private is recommended.
+
+            // But alas, in practice there are many non-private
+            // serialVersionUID fields
+            checkMandatoryModifiers(e, field, STATIC_FINAL_MODS);
+            checkTypeOfField(e , field, LONG_TYPE);
+        }
+
+        private void checkSerialPersistentFields(Element e, Element field) {
+            // To be effective, serialPersisentFields must be private, static, and final.
+            checkMandatoryModifiers(e, field, PRIVATE_STATIC_FINAL_MODS);
+            checkTypeOfField(e, field, OSF_TYPE);
+            // If additional compile-time information is
+            // available, should check for a "constant null"
+            // assignment to this field. A null value makes having
+            // the field a no-op.
+        }
+
+        /*
+         * Methods can have modifiers: public, protected, private,
+         * abstract, static, final, synchronized, native, strictfp
+         */
+
+        private void checkWriteObject(Element e, ExecutableElement method) {
+            // The "synchronized" modifier is seen on the wild on
+            // readObject and writeObject methods and is generally
+            // innocuous.
+
+            // private void writeObject(ObjectOutputStream stream) throws IOException
+            checkMandatoryModifiers(e, method, PRIVATE_MODS);
+            checkExcludedModifiers(e,  method, STATIC_MODS);
+            checkReturnTypeOfMethod(e, method, VOID_TYPE);
+            checkOneArg(e, method, OOS_TYPE);
+            checkExternalizable(e, method);
+            checkExceptions(e, method, IOE_TYPE);
+        }
+
+        private void checkWriteReplace(Element e, ExecutableElement method) {
+            // ANY-ACCESS-MODIFIER Object writeReplace() throws
+            // ObjectStreamException
+
+            // Excluding abstract, could have a more complicated
+            // rule based on abstract-ness of the class?
+            checkExcludedModifiers(e, method, ABSTRACT_STATIC_MODS);
+            checkReturnTypeOfMethod(e, method, OBJECT_TYPE);
+            checkNoArgs(e, method);
+            checkExceptions(e, method, OSE_TYPE);
+        }
+
+        private void checkReadObject(Element e, ExecutableElement method) {
+            // The "synchronized" modifier is seen on the wild on
+            // readObject and writeObject methods and is generally
+            // innocuous.
+
+            // private void readObject(ObjectInputStream stream)
+            // throws IOException, ClassNotFoundException
+            checkMandatoryModifiers(e, method, PRIVATE_MODS);
+            checkExcludedModifiers(e,  method, STATIC_MODS);
+            checkReturnTypeOfMethod(e, method, VOID_TYPE);
+            checkOneArg(e, method, OIS_TYPE);
+            checkExternalizable(e, method);
+            checkExceptions(e, method, IOE_TYPE, CNFE_TYPE);
+        }
+
+        private void checkReadObjectNoData(Element e, ExecutableElement method) {
+            // private void readObjectNoData()
+            // throws ObjectStreamException
+            checkMandatoryModifiers(e, method, PRIVATE_MODS);
+            checkExcludedModifiers(e,  method, STATIC_MODS);
+            checkReturnTypeOfMethod(e, method, VOID_TYPE);
+            checkNoArgs(e, method);
+            checkExternalizable(e, method);
+            checkExceptions(e, method, OSE_TYPE);
+        }
+
+        private void checkReadResolve(Element e, ExecutableElement method) {
+            // ANY-ACCESS-MODIFIER Object readResolve()
+            // throws ObjectStreamException
+
+            // Excluding abstract, could have a more complicated
+            // rule based on abstract-ness of the class?
+            checkExcludedModifiers(e, method, ABSTRACT_STATIC_MODS);
+            checkReturnTypeOfMethod(e, method, OBJECT_TYPE);
+            checkNoArgs(e, method);
+            checkExceptions(e, method, OSE_TYPE);
+        }
+
+
+        /**
+         * Per section 1.12 "Serialization of Enum Constants" of
+         * the serialization specification, due to the special
+         * serialization handling of enums, any writeObject,
+         * readObject, writeReplace, and readResolve methods are
+         * ignored as are serialPersistentFields and
+         * serialVersionUID fields.
+         */
+        @Override
+        public Void visitTypeAsEnum(TypeElement e,
+                                    Void p) {
+            System.out.println("Enum\t" + e.getQualifiedName() +" is Serializeable.");
+
+            if (checkSuppressSerialWarning(e)) {
+                System.out.println("\tserial warning suppressed on type");
                 return null;
             }
 
-            private void checkSerialVersionUID(Element e, Element field) {
-                // To be effective, serialVersionUID must be marked
-                // static and final, but private is recommended.
+            for(Element enclosed : e.getEnclosedElements()) {
+                if (checkSuppressSerialWarning(enclosed))
+                    continue;
 
-                // But alas, in practice there are many non-private
-                // serialVersionUID fields
-                checkMandatoryModifiers(e, field, STATIC_FINAL_MODS);
-                checkTypeOfField(e , field, LONG_TYPE);
-            }
-
-            private void checkSerialPersistentFields(Element e, Element field) {
-                // To be effective, serialPersisentFields must be private, static, and final.
-                checkMandatoryModifiers(e, field, PRIVATE_STATIC_FINAL_MODS);
-                checkTypeOfField(e, field, OSF_TYPE);
-                // If additional compile-time information is
-                // available, should check for a "constant null"
-                // assignment to this field. A null value makes having
-                // the field a no-op.
-            }
-
-            /*
-             * Methods can have modifiers: public, protected, private,
-             * abstract, static, final, synchronized, native, strictfp
-             */
-
-            private void checkWriteObject(Element e, ExecutableElement method) {
-                // The "synchronized" modifier is seen on the wild on
-                // readObject and writeObject methods and is generally
-                // innocuous.
-
-                // private void writeObject(ObjectOutputStream stream) throws IOException
-                checkMandatoryModifiers(e, method, PRIVATE_MODS);
-                checkExcludedModifiers(e,  method, STATIC_MODS);
-                checkReturnTypeOfMethod(e, method, VOID_TYPE);
-                checkOneArg(e, method, OOS_TYPE);
-                checkExternalizable(e, method);
-                checkExceptions(e, method, IOE_TYPE);
-            }
-
-            private void checkWriteReplace(Element e, ExecutableElement method) {
-                // ANY-ACCESS-MODIFIER Object writeReplace() throws
-                // ObjectStreamException
-
-                // Excluding abstract, could have a more complicated
-                // rule based on abstract-ness of the class?
-                checkExcludedModifiers(e, method, ABSTRACT_STATIC_MODS);
-                checkReturnTypeOfMethod(e, method, OBJECT_TYPE);
-                checkNoArgs(e, method);
-                checkExceptions(e, method, OSE_TYPE);
-            }
-
-            private void checkReadObject(Element e, ExecutableElement method) {
-                // The "synchronized" modifier is seen on the wild on
-                // readObject and writeObject methods and is generally
-                // innocuous.
-
-                // private void readObject(ObjectInputStream stream)
-                // throws IOException, ClassNotFoundException
-                checkMandatoryModifiers(e, method, PRIVATE_MODS);
-                checkExcludedModifiers(e,  method, STATIC_MODS);
-                checkReturnTypeOfMethod(e, method, VOID_TYPE);
-                checkOneArg(e, method, OIS_TYPE);
-                checkExternalizable(e, method);
-                checkExceptions(e, method, IOE_TYPE, CNFE_TYPE);
-            }
-
-            private void checkReadObjectNoData(Element e, ExecutableElement method) {
-                // private void readObjectNoData()
-                // throws ObjectStreamException
-                checkMandatoryModifiers(e, method, PRIVATE_MODS);
-                checkExcludedModifiers(e,  method, STATIC_MODS);
-                checkReturnTypeOfMethod(e, method, VOID_TYPE);
-                checkNoArgs(e, method);
-                checkExternalizable(e, method);
-                checkExceptions(e, method, OSE_TYPE);
-            }
-
-            private void checkReadResolve(Element e, ExecutableElement method) {
-                // ANY-ACCESS-MODIFIER Object readResolve()
-                // throws ObjectStreamException
-
-                // Excluding abstract, could have a more complicated
-                // rule based on abstract-ness of the class?
-                checkExcludedModifiers(e, method, ABSTRACT_STATIC_MODS);
-                checkReturnTypeOfMethod(e, method, OBJECT_TYPE);
-                checkNoArgs(e, method);
-                checkExceptions(e, method, OSE_TYPE);
-            }
-
-
-            /**
-             * Per section 1.12 "Serialization of Enum Constants" of
-             * the serialization specification, due to the special
-             * serialization handling of enums, any writeObject,
-             * readObject, writeReplace, and readResolve methods are
-             * ignored as are serialPersistentFields and
-             * serialVersionUID fields.
-             */
-            @Override
-            public Void visitTypeAsEnum(TypeElement e,
-                                        Void p) {
-                System.out.println("Enum\t" + e.getQualifiedName() +" is Serializeable.");
-
-                if (checkSuppressSerialWarning(e)) {
-                    System.out.println("\tserial warning suppressed on type");
-                    return null;
+                String name = null;
+                switch(enclosed.getKind()) {
+                case FIELD -> {
+                    name = enclosed.getSimpleName().toString();
+                    if (serialFieldNames.contains(name))
+                        System.out.println("Serial field name " + name + 
+                                           " in " + e.getKind() + " " + e.toString());
                 }
 
-               for(Element enclosed : e.getEnclosedElements()) {
-                    if (checkSuppressSerialWarning(enclosed))
-                        continue;
+                case METHOD -> {
+                    name = enclosed.getSimpleName().toString();
+                    if (serialMethodNames.contains(name))
+                        System.out.println("Serial method name " + name + 
+                                           " in " + e.getKind() + " " + e.toString());
+                }
+                }
+            }
+            return null;
+        }
 
-                    String name = null;
-                    switch(enclosed.getKind()) {
-                    case FIELD -> {
-                        name = enclosed.getSimpleName().toString();
-                        if (serialFieldNames.contains(name))
-                            System.out.println("Serial field name " + name + 
-                                               " in " + e.getKind() + " " + e.toString());
+        /**
+         * Serialization-related fields and methods on interfaces are ineffectual.
+         */
+        @Override
+        public Void visitTypeAsInterface(TypeElement e,
+                                         Void p) {
+            System.err.println("Interface\t" + e.getQualifiedName() +" is Serializeable.");
+
+            if (checkSuppressSerialWarning(e)) {
+                System.out.println("\tserial warning suppressed on type");
+                return null;
+            }
+
+            for(Element enclosed : e.getEnclosedElements()) {
+                if (checkSuppressSerialWarning(enclosed))
+                    continue;
+
+                String name = null;
+                switch(enclosed.getKind()) {
+                case FIELD -> {
+                    name = enclosed.getSimpleName().toString();
+                    if (serialFieldNames.contains(name))
+                        System.out.println("Serial field name " + name + 
+                                           " in " + e.getKind() + " " + e.toString());
+                }
+
+                case METHOD -> {
+                    name = enclosed.getSimpleName().toString();
+                    if (serialMethodNames.contains(name))
+                        System.out.println("Serial method name " + name + 
+                                           " in " + e.getKind() + " " + e.toString());
+                }
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        public Void visitTypeAsAnnotationType(TypeElement e,
+                                              Void p) {
+            // Per the JLS, annotation types are not serializeable
+            return null;
+        }
+
+        /**
+         * From the Java Object Serialization Specification, 1.13
+         * Serialization of Records:
+         *
+         * "The process by which record objects are serialized or
+         * externalized cannot be customized; any class-specific
+         * writeObject, readObject, readObjectNoData,
+         * writeExternal, and readExternal methods defined by
+         * record classes are ignored during serialization and
+         * deserialization. However, a substitute object to be
+         * serialized or a designate replacement may be specified,
+         * by the writeReplace and readResolve methods,
+         * respectively. Any serialPersistentFields field
+         * declaration is ignored. Documenting serializable fields
+         * and data for record classes is unnecessary, since there
+         * is no variation in the serial form, other than whether
+         * a substitute or replacement object is used. The
+         * serialVersionUID of a record class is 0L unless
+         * explicitly declared. The requirement for matching
+         * serialVersionUID values is waived for record classes."
+         */
+
+        @Override
+        public Void visitTypeAsRecord(TypeElement e,
+                                      Void p) {
+            System.out.println("Record\t" + e.getQualifiedName() +" is Serializeable.");
+
+            if (checkSuppressSerialWarning(e)) {
+                System.out.println("\tserial warning suppressed on type");
+                return null;
+            }
+
+            for(Element enclosed : e.getEnclosedElements()) {
+                if (checkSuppressSerialWarning(enclosed))
+                    continue;
+
+                String name = enclosed.getSimpleName().toString();
+                switch(enclosed.getKind()) {
+                case FIELD -> {
+                    switch(name) {
+                    case "serialPersistentFields" -> {
+                        System.out.println("Serial field name " + name + 
+                                           " in " + e.getKind() + " " + e.toString());
                     }
 
-                    case METHOD -> {
-                        name = enclosed.getSimpleName().toString();
+                    case "serialVersionUID" -> {
+                        System.out.println("Serial field name " + name + 
+                                           " in " + e.getKind() + " " + e.toString());
+                        checkSerialVersionUID(e, enclosed);
+                    }
+
+                    }
+                }
+
+                case METHOD -> {
+                    var method = toMethod(enclosed);
+                    switch(name) {
+                    case "writeReplace" -> checkWriteReplace(e, method);
+                    case "readResolve"  -> checkReadResolve(e, method);
+                    default -> {
                         if (serialMethodNames.contains(name))
                             System.out.println("Serial method name " + name + 
                                                " in " + e.getKind() + " " + e.toString());
                     }
                     }
-               }
-                return null;
-            }
 
-            /**
-             * Serialization-related fields and methods on interfaces are ineffectual.
-             */
-            @Override
-            public Void visitTypeAsInterface(TypeElement e,
-                                             Void p) {
-                System.err.println("Interface\t" + e.getQualifiedName() +" is Serializeable.");
-
-                if (checkSuppressSerialWarning(e)) {
-                    System.out.println("\tserial warning suppressed on type");
-                    return null;
                 }
-
-                for(Element enclosed : e.getEnclosedElements()) {
-                    if (checkSuppressSerialWarning(enclosed))
-                        continue;
-
-                    String name = null;
-                    switch(enclosed.getKind()) {
-                    case FIELD -> {
-                        name = enclosed.getSimpleName().toString();
-                        if (serialFieldNames.contains(name))
-                            System.out.println("Serial field name " + name + 
-                                               " in " + e.getKind() + " " + e.toString());
-                    }
-
-                    case METHOD -> {
-                        name = enclosed.getSimpleName().toString();
-                        if (serialMethodNames.contains(name))
-                            System.out.println("Serial method name " + name + 
-                                               " in " + e.getKind() + " " + e.toString());
-                    }
-                    }
-                }
-
-                return null;
-            }
-
-            @Override
-            public Void visitTypeAsAnnotationType(TypeElement e,
-                                              Void p) {
-                // Per the JLS, annotation types are not serializeable
-                return null;
-            }
-
-            /**
-             * From the Java Object Serialization Specification, 1.13
-             * Serialization of Records:
-             *
-             * "The process by which record objects are serialized or
-             * externalized cannot be customized; any class-specific
-             * writeObject, readObject, readObjectNoData,
-             * writeExternal, and readExternal methods defined by
-             * record classes are ignored during serialization and
-             * deserialization. However, a substitute object to be
-             * serialized or a designate replacement may be specified,
-             * by the writeReplace and readResolve methods,
-             * respectively. Any serialPersistentFields field
-             * declaration is ignored. Documenting serializable fields
-             * and data for record classes is unnecessary, since there
-             * is no variation in the serial form, other than whether
-             * a substitute or replacement object is used. The
-             * serialVersionUID of a record class is 0L unless
-             * explicitly declared. The requirement for matching
-             * serialVersionUID values is waived for record classes."
-             */
-
-            @Override
-            public Void visitTypeAsRecord(TypeElement e,
-                                              Void p) {
-                System.out.println("Record\t" + e.getQualifiedName() +" is Serializeable.");
-
-                if (checkSuppressSerialWarning(e)) {
-                    System.out.println("\tserial warning suppressed on type");
-                    return null;
-                }
-
-               for(Element enclosed : e.getEnclosedElements()) {
-                    if (checkSuppressSerialWarning(enclosed))
-                        continue;
-
-                    String name = enclosed.getSimpleName().toString();
-                    switch(enclosed.getKind()) {
-                    case FIELD -> {
-                        switch(name) {
-                        case "serialPersistentFields" -> {
-                            System.out.println("Serial field name " + name + 
-                                               " in " + e.getKind() + " " + e.toString());
-                        }
-
-                        case "serialVersionUID" -> {
-                            System.out.println("Serial field name " + name + 
-                                               " in " + e.getKind() + " " + e.toString());
-                            checkSerialVersionUID(e, enclosed);
-                        }
-
-                        }
-                    }
-
-                    case METHOD -> {
-                        var method = toMethod(enclosed);
-                        switch(name) {
-                        case "writeReplace" -> checkWriteReplace(e, method);
-                        case "readResolve"  -> checkReadResolve(e, method);
-                        default -> {
-                            if (serialMethodNames.contains(name))
-                                System.out.println("Serial method name " + name + 
-                                                   " in " + e.getKind() + " " + e.toString());
-                        }
-                        }
-
-                    }
-                    }
-               }
-               return null;
-            }
-
-            // Note that since SuppressWarnings has source retention,
-            // this check will only be effective when run against
-            // source files.
-            boolean checkSuppressSerialWarning(Element e) {
-                SuppressWarnings suppress = e.getAnnotation(SuppressWarnings.class);
-                if (suppress == null)
-                    return false;
-                else {
-                    for (String warning : suppress.value()) {
-                        if ("serial".equals(warning))
-                            return true;
-                    }
-                    return false;
                 }
             }
+            return null;
+        }
 
-            void checkMandatoryModifiers(Element enclosing, Element element, Set<Modifier> mandatoryMods) {
-                String name = element.getSimpleName().toString();
-                Set<Modifier> mods = element.getModifiers();
-                for (Modifier mandatoryMod : mandatoryMods) {
-                    if (!mods.contains(mandatoryMod) ) {
-                        System.out.println("Serialization-related declaration " + name + 
-                                           " in " + enclosing.getKind() + " " + enclosing.toString() +
-                                           " is missing expected modifier " + mandatoryMod);
-                    }
+        // Note that since SuppressWarnings has source retention,
+        // this check will only be effective when run against
+        // source files.
+        boolean checkSuppressSerialWarning(Element e) {
+            SuppressWarnings suppress = e.getAnnotation(SuppressWarnings.class);
+            if (suppress == null)
+                return false;
+            else {
+                for (String warning : suppress.value()) {
+                    if ("serial".equals(warning))
+                        return true;
                 }
-            }
-
-            void checkExcludedModifiers(Element enclosing, Element element, Set<Modifier> excludedMods) {
-                String name = element.getSimpleName().toString();
-                Set<Modifier> mods = element.getModifiers();
-                for (Modifier excludedMod : excludedMods) {
-                    if (mods.contains(excludedMod) ) {
-                        System.out.println("Serialization-related declaration " + name + 
-                                           " in " + enclosing.getKind() + " " + enclosing.toString() +
-                                           " has unexpected modifier " + excludedMod);
-                    }
-                }
-            }
-
-            void checkTypeOfField(Element enclosing, Element element, TypeMirror expected) {
-                String name = element.getSimpleName().toString();
-                TypeMirror tm = element.asType();
-                if (!types.isSameType((Type)expected, /* fixme*/ (Type)tm)) {
-                    System.out.println("Serialization-related field " + name + " in "
-                                       + enclosing.getKind() + " " + enclosing.toString() +
-                                       " has unexpected type " + tm + " rather than " +
-                                       expected.toString());
-                }
-            }
-
-            private void checkReturnTypeOfMethod(Element enclosing, ExecutableElement method, TypeMirror expectedReturnType) {
-                String name = method.getSimpleName().toString();
-                TypeMirror tm = method.getReturnType();
-                if (!types.isSameType((Type)expectedReturnType, /* fixme*/ (Type)tm)) {
-                    System.out.println("Unexpected return type " + tm + " on " + name + 
-                                       " in " + enclosing.getKind() + " " + enclosing.toString());
-                }
-            }
-
-            private void checkOneArg(Element enclosing, ExecutableElement method, TypeMirror expected) {
-                String name = method.getSimpleName().toString();
-
-                var parameters= method.getParameters();
-
-                if (parameters.size() != 1) {
-                    System.out.println("Unexpected parameters " + parameters + " on " + name + 
-                                       " in " + enclosing.getKind() + " " + enclosing.toString());
-                    return;
-                }
-
-                TypeMirror parameterType = parameters.get(0).asType();
-                if (!types.isSameType(/* fixme*/ (Type)parameterType, (Type)expected)) {
-                    System.out.println("Unexpected parameter type " + parameterType + " on " + name + 
-                                       " in " + enclosing.getKind() + " " + enclosing.toString());
-                }
-                return;
-            }
-
-            private void checkNoArgs(Element enclosing, ExecutableElement method) {
-                String name = method.getSimpleName().toString();
-                var parameters= method.getParameters();
-                if (!parameters.isEmpty()) {
-                    System.out.println("Unexpected parameters " + parameters + " on " + name + 
-                                       " in " + enclosing.getKind() + " " + enclosing.toString());
-                }
-            }
-
-            private void checkExternalizable(Element enclosing, ExecutableElement method) {
-                //if the enclosing class is externalizable, warn for the method
-                if (types.isSubtype(/*fixme*/(Type)enclosing.asType(), externalizableType)) {
-                    System.out.println("Serialization-related method " + method +
-                                       "is ineffectual on Externalizable type " + enclosing);
-                }
-                return;
-            }
-
-            private void checkExceptions(Element enclosing, ExecutableElement method, TypeMirror... declaredExceptions) {
-                for (TypeMirror thrownType: method.getThrownTypes()) {
-                    // If not an Error and not a RuntimeException, check if a subtype of a blessed exception
-                    if (types.isSubtype(/*fixme*/(Type)thrownType, RUNTIME_EXCEPTION_TYPE) ||
-                        types.isSubtype(/*fixme*/(Type)thrownType, J_L_ERROR_TYPE) ) {
-                        continue;
-                    } else {
-                        boolean declared = false;
-                        for (TypeMirror declaredException : declaredExceptions) {
-                            if (types.isSubtype(/*fixme*/(Type)thrownType, /*fixme*/(Type)declaredException)) {
-                                declared = true;
-                                continue;
-                            }
-                        }
-                        if (!declared) {
-                            System.out.println("Serialization-related method " + method +
-                                               " in " + enclosing.getKind() + " " + enclosing.toString() +
-                                               " has unexpected throws clause including " + thrownType);
-
-                        }
-                    }
-                }
-                return;
-            }
-
-            // Implicit cast to ExecutableElement; could also use a kind visitor.
-            ExecutableElement toMethod(Element element) {
-                return ElementFilter.methodsIn(List.of(element)).get(0);
+                return false;
             }
         }
+
+        void checkMandatoryModifiers(Element enclosing, Element element, Set<Modifier> mandatoryMods) {
+            String name = element.getSimpleName().toString();
+            Set<Modifier> mods = element.getModifiers();
+            for (Modifier mandatoryMod : mandatoryMods) {
+                if (!mods.contains(mandatoryMod) ) {
+                    System.out.println("Serialization-related declaration " + name + 
+                                       " in " + enclosing.getKind() + " " + enclosing.toString() +
+                                       " is missing expected modifier " + mandatoryMod);
+                }
+            }
+        }
+
+        void checkExcludedModifiers(Element enclosing, Element element, Set<Modifier> excludedMods) {
+            String name = element.getSimpleName().toString();
+            Set<Modifier> mods = element.getModifiers();
+            for (Modifier excludedMod : excludedMods) {
+                if (mods.contains(excludedMod) ) {
+                    System.out.println("Serialization-related declaration " + name + 
+                                       " in " + enclosing.getKind() + " " + enclosing.toString() +
+                                       " has unexpected modifier " + excludedMod);
+                }
+            }
+        }
+
+        void checkTypeOfField(Element enclosing, Element element, TypeMirror expected) {
+            String name = element.getSimpleName().toString();
+            TypeMirror tm = element.asType();
+            if (!types.isSameType((Type)expected, /* fixme*/ (Type)tm)) {
+                System.out.println("Serialization-related field " + name + " in "
+                                   + enclosing.getKind() + " " + enclosing.toString() +
+                                   " has unexpected type " + tm + " rather than " +
+                                   expected.toString());
+            }
+        }
+
+        private void checkReturnTypeOfMethod(Element enclosing, ExecutableElement method, TypeMirror expectedReturnType) {
+            String name = method.getSimpleName().toString();
+            TypeMirror tm = method.getReturnType();
+            if (!types.isSameType((Type)expectedReturnType, /* fixme*/ (Type)tm)) {
+                System.out.println("Unexpected return type " + tm + " on " + name + 
+                                   " in " + enclosing.getKind() + " " + enclosing.toString());
+            }
+        }
+
+        private void checkOneArg(Element enclosing, ExecutableElement method, TypeMirror expected) {
+            String name = method.getSimpleName().toString();
+
+            var parameters= method.getParameters();
+
+            if (parameters.size() != 1) {
+                System.out.println("Unexpected parameters " + parameters + " on " + name + 
+                                   " in " + enclosing.getKind() + " " + enclosing.toString());
+                return;
+            }
+
+            TypeMirror parameterType = parameters.get(0).asType();
+            if (!types.isSameType(/* fixme*/ (Type)parameterType, (Type)expected)) {
+                System.out.println("Unexpected parameter type " + parameterType + " on " + name + 
+                                   " in " + enclosing.getKind() + " " + enclosing.toString());
+            }
+            return;
+        }
+
+        private void checkNoArgs(Element enclosing, ExecutableElement method) {
+            String name = method.getSimpleName().toString();
+            var parameters= method.getParameters();
+            if (!parameters.isEmpty()) {
+                System.out.println("Unexpected parameters " + parameters + " on " + name + 
+                                   " in " + enclosing.getKind() + " " + enclosing.toString());
+            }
+        }
+
+        private void checkExternalizable(Element enclosing, ExecutableElement method) {
+            //if the enclosing class is externalizable, warn for the method
+            if (types.isSubtype(/*fixme*/(Type)enclosing.asType(), externalizableType)) {
+                System.out.println("Serialization-related method " + method +
+                                   "is ineffectual on Externalizable type " + enclosing);
+            }
+            return;
+        }
+
+        private void checkExceptions(Element enclosing, ExecutableElement method, TypeMirror... declaredExceptions) {
+            for (TypeMirror thrownType: method.getThrownTypes()) {
+                // If not an Error and not a RuntimeException, check if a subtype of a blessed exception
+                if (types.isSubtype(/*fixme*/(Type)thrownType, RUNTIME_EXCEPTION_TYPE) ||
+                    types.isSubtype(/*fixme*/(Type)thrownType, J_L_ERROR_TYPE) ) {
+                    continue;
+                } else {
+                    boolean declared = false;
+                    for (TypeMirror declaredException : declaredExceptions) {
+                        if (types.isSubtype(/*fixme*/(Type)thrownType, /*fixme*/(Type)declaredException)) {
+                            declared = true;
+                            continue;
+                        }
+                    }
+                    if (!declared) {
+                        System.out.println("Serialization-related method " + method +
+                                           " in " + enclosing.getKind() + " " + enclosing.toString() +
+                                           " has unexpected throws clause including " + thrownType);
+
+                    }
+                }
+            }
+            return;
+        }
+
+        // Implicit cast to ExecutableElement; could also use a kind visitor.
+        ExecutableElement toMethod(Element element) {
+            return ElementFilter.methodsIn(List.of(element)).get(0);
+        }
+    }
 
 
     private Type capture(Type type) {
