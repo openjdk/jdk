@@ -35,11 +35,6 @@
  * @build EventGeneratorLoop
  * @run driver TestJcmd
  */
-
-// TODO: remove
-import java.util.Date;
-
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -65,7 +60,7 @@ public class TestJcmd {
     public static void main(String[] args) throws Exception {
         DockerTestUtils.canTestDocker();
 
-        // TODO: file a bug
+        // See JDK-8273216 for details
         if (Container.ENGINE_COMMAND.equals("podman")) {
             throw new SkippedException("JCMD does not work across container boundaries when using Podman");
         }
@@ -138,6 +133,8 @@ public class TestJcmd {
             .shouldContain("VM Arguments");
     }
 
+    // Need to make sure that user name+id and group name+id are created for the image, and
+    // match the host system. This is necessary to allow proper permission/access for JCMD.
     private static String generateCustomDockerfile(String uid, String gid,
                                             String userName, String groupName) throws Exception {
         StringBuilder sb = new StringBuilder();
