@@ -92,6 +92,9 @@ final class StringLatin1 {
 
     @IntrinsicCandidate
     public static boolean equals(byte[] value, byte[] other) {
+        if (value == other) {
+            return true;
+        }
         if (value.length == other.length) {
             for (int i = 0; i < value.length; i++) {
                 if (value[i] != other[i]) {
@@ -105,12 +108,18 @@ final class StringLatin1 {
 
     @IntrinsicCandidate
     public static int compareTo(byte[] value, byte[] other) {
+        if (value == other) {
+            return 0;
+        }
         int len1 = value.length;
         int len2 = other.length;
         return compareTo(value, other, len1, len2);
     }
 
     public static int compareTo(byte[] value, byte[] other, int len1, int len2) {
+        if (value == other) {
+            return 0;
+        }
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             if (value[k] != other[k]) {
@@ -122,6 +131,9 @@ final class StringLatin1 {
 
     @IntrinsicCandidate
     public static int compareToUTF16(byte[] value, byte[] other) {
+        if (value == other) {
+            return 0;
+        }
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         return compareToUTF16Values(value, other, len1, len2);
@@ -131,6 +143,9 @@ final class StringLatin1 {
      * Checks the boundary and then compares the byte arrays.
      */
     public static int compareToUTF16(byte[] value, byte[] other, int len1, int len2) {
+        if (value == other) {
+            return 0;
+        }
         checkOffset(len1, length(value));
         checkOffset(len2, StringUTF16.length(other));
 
@@ -138,6 +153,9 @@ final class StringLatin1 {
     }
 
     private static int compareToUTF16Values(byte[] value, byte[] other, int len1, int len2) {
+        if (value == other) {
+            return 0;
+        }
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             char c1 = getChar(value, k);
@@ -150,6 +168,9 @@ final class StringLatin1 {
     }
 
     public static int compareToCI(byte[] value, byte[] other) {
+        if (value == other) {
+            return 0;
+        }
         int len1 = value.length;
         int len2 = other.length;
         int lim = Math.min(len1, len2);
@@ -170,6 +191,9 @@ final class StringLatin1 {
     }
 
     public static int compareToCI_UTF16(byte[] value, byte[] other) {
+        if (value == other) {
+            return 0;
+        }
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         int lim = Math.min(len1, len2);
@@ -389,6 +413,9 @@ final class StringLatin1 {
     // case insensitive
     public static boolean regionMatchesCI(byte[] value, int toffset,
                                           byte[] other, int ooffset, int len) {
+        if (value == other) {
+            return true;
+        }
         int last = toffset + len;
         while (toffset < last) {
             char c1 = (char)(value[toffset++] & 0xff);
@@ -411,6 +438,9 @@ final class StringLatin1 {
 
     public static boolean regionMatchesCI_UTF16(byte[] value, int toffset,
                                                 byte[] other, int ooffset, int len) {
+        if (value == other) {
+            return true;
+        }
         int last = toffset + len;
         while (toffset < last) {
             char c1 = (char)(value[toffset++] & 0xff);

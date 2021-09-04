@@ -268,6 +268,9 @@ final class StringUTF16 {
 
     @IntrinsicCandidate
     public static boolean equals(byte[] value, byte[] other) {
+        if (value == other) {
+            return true;
+        }
         if (value.length == other.length) {
             int len = value.length >> 1;
             for (int i = 0; i < len; i++) {
@@ -282,6 +285,9 @@ final class StringUTF16 {
 
     @IntrinsicCandidate
     public static int compareTo(byte[] value, byte[] other) {
+        if (value == other) {
+            return 0;
+        }
         int len1 = length(value);
         int len2 = length(other);
         return compareValues(value, other, len1, len2);
@@ -298,6 +304,9 @@ final class StringUTF16 {
     }
 
     private static int compareValues(byte[] value, byte[] other, int len1, int len2) {
+        if (value == other) {
+            return 0;
+        }
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             char c1 = getChar(value, k);
@@ -324,6 +333,9 @@ final class StringUTF16 {
 
     private static int compareToCIImpl(byte[] value, int toffset, int tlen,
                                       byte[] other, int ooffset, int olen) {
+        if (value == other) {
+            return 0;
+        }
         int tlast = toffset + tlen;
         int olast = ooffset + olen;
         assert toffset >= 0 && ooffset >= 0;
@@ -408,6 +420,9 @@ final class StringUTF16 {
     }
 
     public static int compareToCI_Latin1(byte[] value, byte[] other) {
+        if (value == other) {
+            return 0;
+        }
         return -StringLatin1.compareToCI_UTF16(other, value);
     }
 
@@ -1375,6 +1390,9 @@ final class StringUTF16 {
     }
 
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
+        if (v1 == v2) {
+            return true;
+        }
         checkBoundsOffCount(0, len, v2);
         for (int i = 0; i < len; i++) {
             if ((char)(v1[i] & 0xff) != getChar(v2, i)) {

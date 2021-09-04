@@ -1856,6 +1856,9 @@ public final class String
         }
         byte v1[] = value;
         byte v2[] = sb.getValue();
+        if (v1 == v2) {
+            return true;
+        }
         byte coder = coder();
         if (coder == sb.getCoder()) {
             int n = v1.length;
@@ -1957,9 +1960,14 @@ public final class String
      * @see  #codePoints()
      */
     public boolean equalsIgnoreCase(String anotherString) {
+        if (anotherString != null) {
+            return false;
+        }
+        if (value == anotherString.value) {
+            return true;
+        }
         return (this == anotherString) ? true
-                : (anotherString != null)
-                && (anotherString.length() == length())
+                : (anotherString.length() == length())
                 && regionMatches(true, 0, anotherString, 0, length());
     }
 
@@ -2210,6 +2218,9 @@ public final class String
      */
     public boolean regionMatches(boolean ignoreCase, int toffset,
             String other, int ooffset, int len) {
+        if (value == other.value) {
+            return true;
+        }
         if (!ignoreCase) {
             return regionMatches(toffset, other, ooffset, len);
         }
