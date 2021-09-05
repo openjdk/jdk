@@ -140,7 +140,7 @@ public class ManySourcesAndTargets {
 
             for (int i = 0; i < count; i++) {
                 System.out.format("send %s -> %s%n", local, remote);
-                reader.send(ByteBuffer.allocate(32), remote);
+                sender.send(ByteBuffer.allocate(32), remote);
 
                 ByteBuffer bb = ByteBuffer.allocate(1000);
                 SocketAddress source = reader.receive(bb);
