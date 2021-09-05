@@ -108,6 +108,12 @@ public class TransferTo {
             int posOut = RND.nextInt(MIN_SIZE);
             checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut);
         }
+
+        // beyond source EOF
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0);
+
+        // beyond target EOF
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
     }
 
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
@@ -139,7 +145,7 @@ public class TransferTo {
     }
 
     private static byte[] createRandomBytes(int min, int maxRandomAdditive) {
-        byte[] bytes = new byte[min + RND.nextInt(maxRandomAdditive)];
+        byte[] bytes = new byte[min + (maxRandomAdditive == 0 ? 0 : RND.nextInt(maxRandomAdditive))];
         RND.nextBytes(bytes);
         return bytes;
     }
