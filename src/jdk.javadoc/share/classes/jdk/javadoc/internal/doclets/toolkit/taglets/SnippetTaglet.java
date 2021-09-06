@@ -68,22 +68,25 @@ public class SnippetTaglet extends BaseTaglet {
     }
 
     /*
-     * A snippet can specify content by value or by reference.
+     * A snippet can specify content by value (inline), by reference (external)
+     * or both (hybrid).
      *
-     * To specify content by value, a snippet uses its body; the body of a snippet is the content.
-     * To specify content by reference, a snippet uses either the "class" or "file" attribute;
-     * the value of that attribute refers to the content.
+     * To specify content by value, a snippet uses its body; the body of
+     * a snippet is the content.
      *
-     * A snippet can specify the "region" attribute. That attribute refines the location of the content.
-     * The value of that attribute must match one of the named regions in the snippets content.
+     * To specify content by reference, a snippet uses either the "class"
+     * or "file" attribute; the value of that attribute refers to the content.
+     *
+     * A snippet can specify the "region" attribute. That attribute refines
+     * the location of the content. The value of that attribute must match
+     * one of the named regions in the snippets content.
      */
     @Override
     public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer) {
         SnippetTree snippetTag = (SnippetTree) tag;
 
+        // organize snippet attributes in a map, performing basic checks along the way
         Map<String, AttributeTree> attributes = new HashMap<>();
-
-        // organize attributes in a map, performing basic checks along the way
         for (DocTree d : snippetTag.getAttributes()) {
             if (!(d instanceof AttributeTree a)) {
                 continue; // this might be an ErroneousTree
@@ -92,9 +95,10 @@ public class SnippetTaglet extends BaseTaglet {
                 continue;
             }
             // two like-named attributes found; although we report on the most
-            // recently encountered of two, the iteration order might differ
+            // recently encountered of the two, the iteration order might differ
             // from the source order (see JDK-8266826)
-            error(writer, holder, a, "doclet.tag.attribute.repeated", a.getName().toString());
+            error(writer, holder, a, "doclet.tag.attribute.repeated",
+                a.getName().toString());
             return badSnippet(writer);
         }
 
@@ -106,19 +110,21 @@ public class SnippetTaglet extends BaseTaglet {
         final boolean containsBody = snippetTag.getBody() != null;
 
         if (containsClass && containsFile) {
-            error(writer, holder, attributes.get(CLASS), "doclet.snippet.contents.ambiguity.external");
+            error(writer, holder, attributes.get(CLASS),
+                "doclet.snippet.contents.ambiguity.external");
             return badSnippet(writer);
         } else if (!containsClass && !containsFile && !containsBody) {
             error(writer, holder, tag, "doclet.snippet.contents.none");
             return badSnippet(writer);
         }
 
-        String r = null;
+        String regionName = null;
         AttributeTree region = attributes.get("region");
         if (region != null) {
-            r = stringOf(region.getValue());
-            if (r.isBlank()) {
-                error(writer, holder, region, "doclet.tag.attribute.value.illegal", "region", region.getValue());
+            regionName = stringOf(region.getValue());
+            if (regionName.isBlank()) {
+                error(writer, holder, region, "doclet.tag.attribute.value.illegal",
+                    "region", region.getValue());
                 return badSnippet(writer);
             }
         }
@@ -134,11 +140,12 @@ public class SnippetTaglet extends BaseTaglet {
         if (containsFile || containsClass) {
             AttributeTree a;
             String v = containsFile
-                    ? stringOf((a = attributes.get(FILE)).getValue())
-                    : stringOf((a = attributes.get(CLASS)).getValue()).replace(".", "/") + ".java";
+                ? stringOf((a = attributes.get(FILE)).getValue())
+                : stringOf((a = attributes.get(CLASS)).getValue()).replace(".", "/") + ".java";
 
             if (v.isBlank()) {
-                error(writer, holder, a, "doclet.tag.attribute.value.illegal", containsFile ? FILE : CLASS, v);
+                error(writer, holder, a, "doclet.tag.attribute.value.illegal",
+                    containsFile ? FILE : CLASS, v);
             }
 
             // we didn't create JavaFileManager, so we won't close it; even if an error occurs
@@ -163,7 +170,8 @@ public class SnippetTaglet extends BaseTaglet {
                 return badSnippet(writer);
             }
 
-            if (fileObject == null) { /* i.e. the file does not exist */
+            if (fileObject == null) {
+                // i.e. the file does not exist
                 error(writer, holder, a, "doclet.File_not_found", v);
                 return badSnippet(writer);
             }
@@ -171,7 +179,8 @@ public class SnippetTaglet extends BaseTaglet {
             try {
                 externalContent = fileObject.getCharContent(true).toString();
             } catch (IOException e) {
-                error(writer, holder, a, "doclet.exception.read.file", fileObject.getName(), e.getCause());
+                error(writer, holder, a, "doclet.exception.read.file",
+                    fileObject.getName(), e.getCause());
                 return badSnippet(writer);
             }
         }
@@ -186,10 +195,13 @@ public class SnippetTaglet extends BaseTaglet {
                 inlineSnippet = parse(inlineContent);
             }
         } catch (ParseException e) {
-            var path = writer.configuration().utils.getCommentHelper(holder).getDocTreePath(snippetTag.getBody());
+            var path = writer.configuration().utils.getCommentHelper(holder)
+                .getDocTreePath(snippetTag.getBody());
             // FIXME: there should be a method in Messages; that method should mirror Reporter's; use that method instead accessing Reporter.
-            String msg = writer.configuration().getDocResources().getText("doclet.snippet.markup", e.getMessage());
-            writer.configuration().getReporter().print(Diagnostic.Kind.ERROR, path, e.getPosition(), e.getPosition(), e.getPosition(), msg);
+            String msg = writer.configuration().getDocResources()
+                .getText("doclet.snippet.markup", e.getMessage());
+            writer.configuration().getReporter().print(Diagnostic.Kind.ERROR,
+                path, e.getPosition(), e.getPosition(), e.getPosition(), msg);
             return badSnippet(writer);
         }
 
@@ -199,30 +211,30 @@ public class SnippetTaglet extends BaseTaglet {
             }
         } catch (ParseException e) {
             assert fileObject != null;
-            writer.configuration().getMessages().error(
-                    fileObject, e.getPosition(), e.getPosition(), e.getPosition(), "doclet.snippet.markup", e.getMessage());
+            writer.configuration().getMessages().error(fileObject, e.getPosition(),
+                e.getPosition(), e.getPosition(), "doclet.snippet.markup", e.getMessage());
             return badSnippet(writer);
         }
 
         // the region must be matched at least in one content: it can be matched
         // in both, but never in none
-        if (r != null) {
+        if (regionName != null) {
             StyledText r1 = null;
             StyledText r2 = null;
             if (inlineSnippet != null) {
-                r1 = inlineSnippet.getBookmarkedText(r);
+                r1 = inlineSnippet.getBookmarkedText(regionName);
                 if (r1 != null) {
                     inlineSnippet = r1;
                 }
             }
             if (externalSnippet != null) {
-                r2 = externalSnippet.getBookmarkedText(r);
+                r2 = externalSnippet.getBookmarkedText(regionName);
                 if (r2 != null) {
                     externalSnippet = r2;
                 }
             }
             if (r1 == null && r2 == null) {
-                error(writer, holder, tag, "doclet.snippet.region.not_found", r);
+                error(writer, holder, tag, "doclet.snippet.region.not_found", regionName);
                 return badSnippet(writer);
             }
         }
@@ -254,12 +266,13 @@ public class SnippetTaglet extends BaseTaglet {
     /*
      * Maybe there's a case for implementing a proper (or at least more helpful)
      * diff view, but for now simply outputting both sides of a hybrid snippet
-     * would do. Users could then use diff tools to compare those sides.
+     * would do. A user could then use a diff tool of their choice to compare
+     * those sides.
      *
      * There's a separate issue of mapping discrepancies back to their
      * originating source in the doc comment and the external file. Maybe there
      * is a value in it, or maybe there isn't. In any case, accurate mapping
-     * would be not trivial to code.
+     * would not be trivial to code.
      */
     private static String diff(String inline, String external) {
         return """
@@ -280,15 +293,17 @@ public class SnippetTaglet extends BaseTaglet {
 
     private static String stringOf(List<? extends DocTree> value) {
         return value.stream()
-                .map(t -> ((TextTree) t).getBody()) // value consists of TextTree nodes
-                .collect(Collectors.joining());
+            // value consists of TextTree or ErroneousTree nodes;
+            // ErroneousTree is a subtype of TextTree
+            .map(t -> ((TextTree) t).getBody())
+            .collect(Collectors.joining());
     }
 
     // FIXME: figure out how to do that correctly
     // FIXME: consider returning null from this method so it can be used as oneliner
     private void error(TagletWriter writer, Element holder, DocTree tag, String key, Object... args) {
         writer.configuration().getMessages().error(
-                writer.configuration().utils.getCommentHelper(holder).getDocTreePath(tag), key, args);
+            writer.configuration().utils.getCommentHelper(holder).getDocTreePath(tag), key, args);
     }
 
     private Content badSnippet(TagletWriter writer) {
