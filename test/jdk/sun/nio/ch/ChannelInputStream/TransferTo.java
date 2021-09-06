@@ -141,11 +141,11 @@ public class TransferTo {
         return bytes;
     }
 
-    private static interface InputStreamProvider {
+    private interface InputStreamProvider {
         InputStream input(byte... bytes) throws Exception;
     }
 
-    private static interface OutputStreamProvider {
+    private interface OutputStreamProvider {
         OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception;
     }
 
