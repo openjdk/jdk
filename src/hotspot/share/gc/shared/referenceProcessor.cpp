@@ -836,34 +836,61 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   return list;
 }
 
-inline void
-ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
-                                              oop             obj,
-                                              HeapWord*       discovered_addr) {
-  assert(_discovery_is_mt, "!_discovery_is_mt should have been handled by caller");
-  // First we must make sure this object is only enqueued once. CAS in a non null
-  // discovered_addr.
+inline bool ReferenceProcessor::set_discovered_link(HeapWord* discovered_addr, oop next_discovered) {
+  return discovery_is_mt() ? set_discovered_link_mt(discovered_addr, next_discovered)
+                           : set_discovered_link_st(discovered_addr, next_discovered);
+}
+
+inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list,
+                                                       oop obj,
+                                                       HeapWord* discovered_addr) {
   oop current_head = refs_list.head();
-  // The last ref must have its discovered field pointing to itself.
+  // Prepare value to put into the discovered field. The last ref must have its
+  // discovered field pointing to itself.
   oop next_discovered = (current_head != NULL) ? current_head : obj;
 
-  oop retest = HeapAccess<AS_NO_KEEPALIVE>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
-
-  if (retest == NULL) {
-    // This thread just won the right to enqueue the object.
-    // We have separate lists for enqueueing, so no synchronization
-    // is necessary.
-    refs_list.set_head(obj);
-    refs_list.inc_length(1);
-
-    log_develop_trace(gc, ref)("Discovered reference (mt) (" INTPTR_FORMAT ": %s)",
-                               p2i(obj), obj->klass()->internal_name());
+  bool added = set_discovered_link(discovered_addr, next_discovered);
+  if (added) {
+    // We can always add the object without synchronization: every thread has its
+    // own list head.
+    refs_list.add_as_head(obj);
+    log_develop_trace(gc, ref)("Discovered reference (%s) (" INTPTR_FORMAT ": %s)",
+                               discovery_is_mt() ? "mt" : "st", p2i(obj), obj->klass()->internal_name());
   } else {
-    // If retest was non NULL, another thread beat us to it:
-    // The reference has already been discovered...
-    log_develop_trace(gc, ref)("Already discovered reference (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Already discovered reference (mt) (" INTPTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
   }
+}
+
+inline bool ReferenceProcessor::set_discovered_link_st(HeapWord* discovered_addr,
+                                                       oop next_discovered) {
+  assert(!discovery_is_mt(), "must be");
+
+  if (discovery_is_atomic()) {
+    // Do a raw store here: the field will be visited later when processing
+    // the discovered references.
+    RawAccess<>::oop_store(discovered_addr, next_discovered);
+  } else {
+    HeapAccess<AS_NO_KEEPALIVE>::oop_store(discovered_addr, next_discovered);
+  }
+  // Always successful.
+  return true;
+}
+
+inline bool ReferenceProcessor::set_discovered_link_mt(HeapWord* discovered_addr,
+                                                       oop next_discovered) {
+  assert(discovery_is_mt(), "must be");
+
+  // We must make sure this object is only enqueued once. Try to CAS into the discovered_addr.
+  oop retest;
+  if (discovery_is_atomic()) {
+    // Try a raw store here, still making sure that we enqueue only once: the field
+    // will be visited later when processing the discovered references.
+    retest = RawAccess<>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
+  } else {
+    retest = HeapAccess<AS_NO_KEEPALIVE>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
+  }
+  return retest == NULL;
 }
 
 #ifndef PRODUCT
@@ -998,22 +1025,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;   // nothing special needs to be done
   }
 
-  if (_discovery_is_mt) {
-    add_to_discovered_list_mt(*list, obj, discovered_addr);
-  } else {
-    // We do a raw store here: the field will be visited later when processing
-    // the discovered references.
-    oop current_head = list->head();
-    // The last ref must have its discovered field pointing to itself.
-    oop next_discovered = (current_head != NULL) ? current_head : obj;
+  add_to_discovered_list(*list, obj, discovered_addr);
 
-    assert(discovered == NULL, "control point invariant");
-    RawAccess<>::oop_store(discovered_addr, next_discovered);
-    list->set_head(obj);
-    list->inc_length(1);
-
-    log_develop_trace(gc, ref)("Discovered reference (" INTPTR_FORMAT ": %s)", p2i(obj), obj->klass()->internal_name());
-  }
   assert(oopDesc::is_oop(obj), "Discovered a bad reference");
   verify_referent(obj);
   return true;
