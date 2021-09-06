@@ -69,9 +69,9 @@ public class InfoOptsTest extends OptionModesTester {
 
     @Test
     void testUniqueInfoOpts() throws IOException {
-        testUniqueInfoOpt(new String[] {"--help", "--help"}, "possible options");
-        testUniqueInfoOpt(new String[] {"-X", "-X"}, "extra options");
-        testUniqueInfoOpt(new String[] {"--help-lint", "--help-lint"}, "supported keys");
+        testUniqueInfoOpt(new String[] {"--help", "--help"}, "where possible options");
+        testUniqueInfoOpt(new String[] {"-X", "-X"}, "These extra options");
+        testUniqueInfoOpt(new String[] {"--help-lint", "--help-lint"}, "The supported keys");
 
         testUniqueInfoOpt(new String[] {"-version", "-version"}, "javac");
         testUniqueInfoOpt(new String[] {"-fullversion", "-fullversion"}, "javac full version");
@@ -81,6 +81,6 @@ public class InfoOptsTest extends OptionModesTester {
         String[] files = { };
         runMain(opts, files)
                 .checkOK()
-                .checkUniqueLog(expect);
+                .checkUniqueStartLog(expect);
     }
 }

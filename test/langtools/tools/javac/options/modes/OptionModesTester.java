@@ -45,6 +45,7 @@ import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -269,16 +270,23 @@ public class OptionModesTester {
             return this;
         }
 
-        TestResult checkUniqueLog(String... uniqueExpects) {
-            return checkUniqueLog(Log.DIRECT, uniqueExpects);
+        TestResult checkUniqueStartLog(String... uniqueExpects) {
+            return checkUniqueStartLog(Log.DIRECT, uniqueExpects);
         }
 
-        TestResult checkUniqueLog(Log l, String... uniqueExpects) {
+        TestResult checkUniqueStartLog(Log l, String... uniqueExpects) {
             String log = logs.get(l);
             for (String e : uniqueExpects) {
-                if (!log.contains(e)) {
+                Scanner scanner = new Scanner(log);
+                int num = 0;
+                while (scanner.hasNextLine()) {
+                    if (scanner.nextLine().startsWith(e)) {
+                        num++;
+                    }
+                }
+                if (num == 0) {
                     error("Expected string not found: " + e);
-                } else if (log.indexOf(e) != log.lastIndexOf(e)) {
+                } else if (num > 1) {
                     error("Expected string appears more than once: " + e);
                 }
             }
