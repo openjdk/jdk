@@ -35,7 +35,7 @@
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
-#include "gc/z/zRemember.inline.hpp"
+#include "gc/z/zRemembered.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline ZHeap* ZHeap::heap() {

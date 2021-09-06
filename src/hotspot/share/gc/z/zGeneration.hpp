@@ -28,7 +28,7 @@
 #include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
-#include "gc/z/zRemember.hpp"
+#include "gc/z/zRemembered.hpp"
 
 class ZGeneration {
 protected:
@@ -60,7 +60,7 @@ public:
 
 class ZYoungGeneration : public ZGeneration {
 private:
-  ZRemember        _remember;
+  ZRemembered      _remembered;
   ZObjectAllocator _survivor_allocator;
 
 public:

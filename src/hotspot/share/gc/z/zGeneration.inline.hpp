@@ -57,18 +57,18 @@ inline zaddress ZGeneration::alloc_object(size_t size) {
 }
 
 inline void ZYoungGeneration::remember(volatile zpointer* p) {
-  _remember.remember(p);
+  _remembered.remember(p);
 }
 
 inline void ZYoungGeneration::mark_and_remember(volatile zpointer* p) {
-  _remember.mark_and_remember(p);
+  _remembered.mark_and_remember(p);
 }
 
 inline bool ZYoungGeneration::is_remembered(volatile zpointer* p) {
-  return _remember.is_remembered(p);
+  return _remembered.is_remembered(p);
 }
 
 inline void ZYoungGeneration::remember_fields(zaddress addr) {
-  _remember.remember_fields(addr);
+  _remembered.remember_fields(addr);
 }
 #endif // SHARE_GC_Z_ZGENERATION_INLINE_HPP

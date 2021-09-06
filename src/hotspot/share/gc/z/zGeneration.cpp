@@ -48,17 +48,17 @@ size_t ZGeneration::used_total() const {
 
 ZYoungGeneration::ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator) :
   ZGeneration(ZGenerationId::young, ZPageAge::eden),
-    _remember(page_table, page_allocator),
+    _remembered(page_table, page_allocator),
     _survivor_allocator(ZGenerationId::young, ZPageAge::survivor) {
 }
 
 void ZYoungGeneration::flip_remembered_set() {
-  _remember.flip();
+  _remembered.flip();
 }
 
 void ZYoungGeneration::scan_remembered() {
   ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemset);
-  _remember.scan();
+  _remembered.scan();
 }
 
 zaddress ZYoungGeneration::alloc_object_for_relocation(size_t size) {

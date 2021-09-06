@@ -21,25 +21,25 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZREMEMBER_INLINE_HPP
-#define SHARE_GC_Z_ZREMEMBER_INLINE_HPP
+#ifndef SHARE_GC_Z_ZREMEMBERED_INLINE_HPP
+#define SHARE_GC_Z_ZREMEMBERED_INLINE_HPP
 
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
-#include "gc/z/zRemember.hpp"
+#include "gc/z/zRemembered.hpp"
 
-inline void ZRemember::remember(volatile zpointer* p) const {
+inline void ZRemembered::remember(volatile zpointer* p) const {
   ZPage* page = _page_table->get(p);
   assert(page != NULL,  "Page missing in page table");
   page->remember(p);
 }
 
-inline bool ZRemember::is_remembered(volatile zpointer* p) const {
+inline bool ZRemembered::is_remembered(volatile zpointer* p) const {
   ZPage* page = _page_table->get(p);
   assert(page != NULL,  "Page missing in page table");
   return page->is_remembered(p);
 }
 
-#endif // SHARE_GC_Z_ZREMEMBER_INLINE_HPP
+#endif // SHARE_GC_Z_ZREMEMBERED_INLINE_HPP

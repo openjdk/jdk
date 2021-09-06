@@ -36,7 +36,7 @@
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
-#include "gc/z/zRemember.hpp"
+#include "gc/z/zRemembered.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
@@ -698,7 +698,7 @@ void ZMajorCollector::roots_remap() {
   {
     ZGenerationPagesIterator iter(_page_table, ZGenerationId::old, _page_allocator);
     for (ZPage* page; iter.next(&page);) {
-      if (!ZRemember::should_scan(page)) {
+      if (!ZRemembered::should_scan(page)) {
         continue;
       }
       // Visit all entries pointing into young gen

@@ -26,31 +26,31 @@
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
-#include "gc/z/zRemember.inline.hpp"
+#include "gc/z/zRemembered.inline.hpp"
 #include "gc/z/zRememberedSet.hpp"
 #include "gc/z/zTask.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
-ZRemember::ZRemember(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZRemembered::ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _page_table(page_table),
     _page_allocator(page_allocator) {
 }
 
-void ZRemember::remember_fields(zaddress addr) const {
+void ZRemembered::remember_fields(zaddress addr) const {
   assert(ZHeap::heap()->is_old(addr), "Should already have been checked");
   ZIterator::basic_oop_iterate_safe(to_oop(addr), [&](volatile zpointer* p) {
     remember(p);
   });
 }
 
-void ZRemember::flip() const {
+void ZRemembered::flip() const {
   ZRememberedSet::flip();
 }
 
 template <typename Function>
-void ZRemember::oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const {
+void ZRemembered::oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const {
   // The array contains duplicated from_addr values. Cache expensive operations.
   zaddress_unsafe from_addr = zaddress_unsafe::null;
   zaddress to_addr = zaddress::null;
@@ -82,7 +82,7 @@ void ZRemember::oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSe
 }
 
 template <typename Function>
-void ZRemember::oops_do_forwarded(ZForwarding* forwarding, Function function) const {
+void ZRemembered::oops_do_forwarded(ZForwarding* forwarding, Function function) const {
   // All objects have been forwarded, and the page could have been detached.
   // Visit all objects via the forwarding table.
   forwarding->oops_do_in_forwarded_via_table([&](volatile zpointer* p) {
@@ -90,7 +90,7 @@ void ZRemember::oops_do_forwarded(ZForwarding* forwarding, Function function) co
   });
 }
 
-void ZRemember::scan_page(ZPage* page) const {
+void ZRemembered::scan_page(ZPage* page) const {
   const bool can_trust_live_bits =
       page->is_relocatable() && !ZHeap::heap()->major_collector()->is_phase_mark();
 
@@ -121,7 +121,7 @@ static void fill_containing(GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* 
   }
 }
 
-void ZRemember::scan_forwarding(ZForwarding* forwarding, void* context) const {
+void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context) const {
   if (forwarding->get_and_set_remset_scanned()) {
     // Scanned last minor cycle; implies that the to-space objects
     // are going to be found in the page table scan
@@ -148,42 +148,42 @@ void ZRemember::scan_forwarding(ZForwarding* forwarding, void* context) const {
   }
 }
 
-class ZRememberScanForwardingTask : public ZTask {
+class ZRememberedScanForwardingTask : public ZTask {
 private:
   ZForwardingTableParallelIterator _iterator;
-  const ZRemember&                 _remember;
+  const ZRemembered&               _remembered;
 
 public:
-  ZRememberScanForwardingTask(const ZRemember& remember) :
-      ZTask("ZRememberScanForwardingTask"),
+  ZRememberedScanForwardingTask(const ZRemembered& remembered) :
+      ZTask("ZRememberedScanForwardingTask"),
       _iterator(ZHeap::heap()->major_collector()->forwarding_table()),
-      _remember(remember) {}
+      _remembered(remembered) {}
 
   virtual void work() {
     GrowableArrayCHeap<ZRememberedSetContaining, mtGC> containing_array;
 
     _iterator.do_forwardings([&](ZForwarding* forwarding) {
-      _remember.scan_forwarding(forwarding, &containing_array);
+      _remembered.scan_forwarding(forwarding, &containing_array);
     });
   }
 };
 
-class ZRememberScanPageTask : public ZTask {
+class ZRememberedScanPageTask : public ZTask {
 private:
   ZGenerationPagesParallelIterator _iterator;
-  const ZRemember&                 _remember;
+  const ZRemembered&               _remembered;
 
 public:
-  ZRememberScanPageTask(const ZRemember& remember) :
-      ZTask("ZRememberScanPageTask"),
-      _iterator(remember._page_table, ZGenerationId::old, remember._page_allocator),
-      _remember(remember) {}
+  ZRememberedScanPageTask(const ZRemembered& remembered) :
+      ZTask("ZRememberedScanPageTask"),
+      _iterator(remembered._page_table, ZGenerationId::old, remembered._page_allocator),
+      _remembered(remembered) {}
 
   virtual void work() {
     _iterator.do_pages([&](ZPage* page) {
-      if (_remember.should_scan(page)) {
+      if (_remembered.should_scan(page)) {
         // Visit all entries pointing into young gen
-        _remember.scan_page(page);
+        _remembered.scan_page(page);
         // ... and as a side-effect clear the previous entries
         page->clear_previous_remembered();
       }
@@ -194,19 +194,19 @@ public:
 static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemsetForwarding("Concurrent Minor Mark Root Remset Forw");
 static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemsetPage("Concurrent Minor Mark Root Remset Page");
 
-void ZRemember::scan() const {
+void ZRemembered::scan() const {
   if (ZHeap::heap()->major_collector()->is_phase_relocate()) {
     ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemsetForwarding);
-    ZRememberScanForwardingTask task(*this);
+    ZRememberedScanForwardingTask task(*this);
     ZHeap::heap()->minor_collector()->workers()->run(&task);
   }
 
   ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemsetPage);
-  ZRememberScanPageTask task(*this);
+  ZRememberedScanPageTask task(*this);
   ZHeap::heap()->minor_collector()->workers()->run(&task);
 }
 
-void ZRemember::mark_and_remember(volatile zpointer* p) const {
+void ZRemembered::mark_and_remember(volatile zpointer* p) const {
   assert(ZHeap::heap()->minor_collector()->is_phase_mark(), "Wrong phase");
 
   zaddress addr = ZBarrier::mark_minor_good_barrier_on_oop_field(p);
@@ -216,7 +216,7 @@ void ZRemember::mark_and_remember(volatile zpointer* p) const {
   }
 }
 
-bool ZRemember::should_scan(ZPage* page) {
+bool ZRemembered::should_scan(ZPage* page) {
   if (!ZHeap::heap()->major_collector()->is_phase_relocate()) {
     // If the major cycle is not in the relocation phase, then it will not need any
     // synchronization on its forwardings.

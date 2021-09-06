@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZREMEMBER_HPP
-#define SHARE_GC_Z_ZREMEMBER_HPP
+#ifndef SHARE_GC_Z_ZREMEMBERED_HPP
+#define SHARE_GC_Z_ZREMEMBERED_HPP
 
 #include "gc/z/zAddress.hpp"
 
@@ -32,9 +32,9 @@ class ZPageTable;
 class ZRememberedSetContaining;
 template <typename T> class GrowableArrayView;
 
-class ZRemember {
-  friend class ZRememberScanForwardingTask;
-  friend class ZRememberScanPageTask;
+class ZRemembered {
+  friend class ZRememberedScanForwardingTask;
+  friend class ZRememberedScanPageTask;
 
 private:
   ZPageTable* const _page_table;
@@ -50,7 +50,7 @@ private:
   void scan_forwarding(ZForwarding* forwarding, void* context) const;
 
 public:
-  ZRemember(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void remember(volatile zpointer* p) const;
   void remember_fields(zaddress obj) const;
@@ -68,4 +68,4 @@ public:
   bool is_remembered(volatile zpointer* p) const;
 };
 
-#endif // SHARE_GC_Z_ZREMEMBER_HPP
+#endif // SHARE_GC_Z_ZREMEMBERED_HPP
