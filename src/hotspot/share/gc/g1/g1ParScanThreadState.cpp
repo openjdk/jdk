@@ -207,23 +207,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   }
   RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
-  assert(obj != NULL, "Must be");
-  if (HeapRegion::is_in_same_region(p, obj)) {
-    return;
-  }
-  G1HeapRegionAttr from_attr = _g1h->region_attr(p);
-  // If this is a reference from (current) survivor regions, we do not need
-  // to track references from it.
-  if (from_attr.is_new_survivor()) {
-    return;
-  }
-  G1HeapRegionAttr dest_attr = _g1h->region_attr(obj);
-  // References to the current collection set are references to objects that failed
-  // evacuation. Currently these regions are always relabelled as old without
-  // remembered sets, so skip them.
-  if (!dest_attr.is_in_cset()) {
-    enqueue_card_if_tracked(dest_attr, p, obj);
-  }
+  enqueue_card_after_barrier_filters(p, obj);
 }
 
 MAYBE_INLINE_EVACUATION

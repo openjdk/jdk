@@ -128,6 +128,14 @@ public:
 
   void push_on_queue(ScannerTask task);
 
+  // Enqueue card of p if the barrier or other reasons (same region, not from survivor,
+  // not into evacuation failed region) do not find that it is not required.
+  // To be called if nothing particular about p and obj are known.
+  template <class T> void enqueue_card_after_barrier_filters(T* p, oop obj);
+
+  // Enqueue the card if the reference's target region's remembered set is tracked.
+  // Assumes that a significant amount of pre-filtering (like done by
+  // enqueue_card_after_barrier_filters()) has already been performed.
   template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
     assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
     assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-survivor references already.");

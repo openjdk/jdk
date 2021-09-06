@@ -95,4 +95,25 @@ G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const Heap
   return &_oops_into_optional_regions[hr->index_in_opt_cset()];
 }
 
+template <class T>
+void G1ParScanThreadState::enqueue_card_after_barrier_filters(T* p, oop obj) {
+  assert(obj != nullptr, "Must be");
+  if (HeapRegion::is_in_same_region(p, obj)) {
+    return;
+  }
+  G1HeapRegionAttr from_attr = _g1h->region_attr(p);
+  // If this is a reference from (current) survivor regions, we do not need
+  // to track references from it.
+  if (from_attr.is_new_survivor()) {
+    return;
+  }
+  G1HeapRegionAttr dest_attr = _g1h->region_attr(obj);
+  // References to the current collection set are references to objects that failed
+  // evacuation. Currently these regions are always relabelled as old without
+  // remembered sets, so skip them.
+  if (!dest_attr.is_in_cset()) {
+    enqueue_card_if_tracked(dest_attr, p, obj);
+  }
+}
+
 #endif // SHARE_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP
