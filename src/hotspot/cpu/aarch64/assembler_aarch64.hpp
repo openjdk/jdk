@@ -647,21 +647,21 @@ typedef enum {
 
 class Assembler : public AbstractAssembler {
 
+public:
+
 #ifndef PRODUCT
   static const uintptr_t asm_bp;
 
-  void emit_long(jint x) {
+  void emit_int32(jint x) {
     if ((uintptr_t)pc() == asm_bp)
       NOP();
     AbstractAssembler::emit_int32(x);
   }
 #else
-  void emit_long(jint x) {
+  void emit_int32(jint x) {
     AbstractAssembler::emit_int32(x);
   }
 #endif
-
-public:
 
   enum { instruction_size = 4 };
 
