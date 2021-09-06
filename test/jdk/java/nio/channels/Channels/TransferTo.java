@@ -92,7 +92,7 @@ public class TransferTo {
         // to span through several batches
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(16384, 16384));
 
-        // randomly chosen starting points within source and target
+        // randomly chosen starting positions within source and target
         for (int i = 0; i < ITERATIONS; i++) {
             byte[] inBytes = createRandomBytes(MIN_SIZE, MAX_SIZE_INCR);
             int posIn = RND.nextInt(inBytes.length);
@@ -117,7 +117,7 @@ public class TransferTo {
         AtomicReference<Supplier<byte[]>> recorder = new AtomicReference<>();
         try (InputStream in = inputStreamProvider.input(inBytes);
                 OutputStream out = outputStreamProvider.output(recorder::set)) {
-            // skip bytes till starting point
+            // skip bytes till starting position
             in.skipNBytes(posIn);
             out.write(new byte[posOut]);
 
