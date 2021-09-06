@@ -325,10 +325,6 @@ inline void ZPage::clear_remset_range_non_par(uintptr_t l_offset, size_t size) {
   _remembered_set.unset_range_non_par(l_offset, size);
 }
 
-inline BitMap* ZPage::remset_bitmap() {
-  return _remembered_set.previous();
-}
-
 inline ZRememberedSetReverseIterator ZPage::remset_reverse_iterator() {
   return _remembered_set.iterator_reverse();
 }
@@ -357,7 +353,12 @@ inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
 
 template <typename Function>
 inline void ZPage::oops_do_remembered(Function function) {
-  _remembered_set.oops_do_function(function, start());
+  _remembered_set.iterate([&](uintptr_t local_offset) {
+    const zoffset offset = start() + local_offset;
+    const zaddress addr = ZOffset::address(offset);
+
+    function((volatile zpointer*)addr);
+  });
 }
 
 template <typename Function>
@@ -376,7 +377,12 @@ inline void ZPage::oops_do_remembered_in_live(Function function) {
 
 template <typename Function>
 inline void ZPage::oops_do_current_remembered(Function function) {
-  _remembered_set.oops_do_current_function(function, start());
+  _remembered_set.iterate_current([&](uintptr_t local_offset) {
+    const zoffset offset = start() + local_offset;
+    const zaddress addr = ZOffset::address(offset);
+
+    function((volatile zpointer*)addr);
+  });
 }
 
 inline zaddress ZPage::alloc_object(size_t size) {

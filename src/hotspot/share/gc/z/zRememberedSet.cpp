@@ -55,8 +55,8 @@ void ZRememberedSet::clear_current() {
   current()->clear_large();
 }
 
-void ZRememberedSet::clear_current(uintptr_t local_offset) {
-  current()->clear_range(0, local_offset / oopSize);
+void ZRememberedSet::clear_current(uintptr_t offset) {
+  current()->clear_range(0, offset / oopSize);
 }
 
 void ZRememberedSet::clear_previous() {
@@ -67,8 +67,8 @@ ZRememberedSetReverseIterator ZRememberedSet::iterator_reverse() {
   return ZRememberedSetReverseIterator(previous());
 }
 
-ZRememberedSetIterator ZRememberedSet::iterator_current_limited(uintptr_t local_offset, size_t size) {
-  const size_t index = local_offset / oopSize;
+ZRememberedSetIterator ZRememberedSet::iterator_current_limited(uintptr_t offset, size_t size) {
+  const size_t index = offset / oopSize;
   const size_t bit_size = size / oopSize;
 
   return ZRememberedSetIterator(current(), index, index + bit_size);

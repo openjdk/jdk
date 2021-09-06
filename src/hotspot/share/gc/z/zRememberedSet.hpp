@@ -98,6 +98,13 @@ public:
   void print_statistics() const;
 };
 
+// The remembered set of a ZPage.
+//
+// There's one bit per potential object field address within the ZPage.
+//
+// New entries are added to the "current" active bitmap, while the
+// "previous" bitmap is used by the GC to find pointers from old
+// gen to young gen.
 class ZRememberedSet {
 private:
   static int _current;
@@ -107,33 +114,37 @@ private:
   CHeapBitMap* current();
   const CHeapBitMap* current() const;
 
+  CHeapBitMap* previous();
+
+  template <typename Function>
+  void iterate_bitmap(Function function, CHeapBitMap* bitmap);
+
 public:
   static void flip();
 
   ZRememberedSet(size_t page_size);
 
-  CHeapBitMap* previous();
-
   void resize(size_t page_size);
   void reset();
 
-  bool get(uintptr_t local_offset) const;
-  bool set(uintptr_t local_offset);
-  void unset_non_par(uintptr_t local_offset);
-  void unset_range_non_par(uintptr_t local_offset, size_t size);
+  bool get(uintptr_t offset) const;
+  bool set(uintptr_t offset);
+  void unset_non_par(uintptr_t offset);
+  void unset_range_non_par(uintptr_t offset, size_t size);
 
-  template <typename Function>
-  void oops_do_function(Function function, zoffset page_start);
+  // Visit all set offsets.
+  template <typename Function /* void(uintptr_t offset) */>
+  void iterate(Function function);
 
-  template <typename Function>
-  void oops_do_current_function(Function function, zoffset page_start);
+  template <typename Function /* void(uintptr_t offset) */>
+  void iterate_current(Function function);
 
   void clear_current();
-  void clear_current(uintptr_t local_offset);
+  void clear_current(uintptr_t end_offset);
   void clear_previous();
 
   ZRememberedSetReverseIterator iterator_reverse();
-  ZRememberedSetIterator iterator_current_limited(uintptr_t local_offset, size_t size);
+  ZRememberedSetIterator iterator_current_limited(uintptr_t offset, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZREMEMBEREDSET_HPP

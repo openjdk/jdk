@@ -38,51 +38,46 @@ inline CHeapBitMap* ZRememberedSet::previous() {
   return &_bitmap[_current ^ 1];
 }
 
-inline bool ZRememberedSet::get(uintptr_t local_offset) const {
-  const size_t index = local_offset / oopSize;
+inline bool ZRememberedSet::get(uintptr_t offset) const {
+  const size_t index = offset / oopSize;
   return current()->at(index);
 }
 
-inline bool ZRememberedSet::set(uintptr_t local_offset) {
-  const size_t index = local_offset / oopSize;
+inline bool ZRememberedSet::set(uintptr_t offset) {
+  const size_t index = offset / oopSize;
   return current()->par_set_bit(index);
 }
 
-inline void ZRememberedSet::unset_non_par(uintptr_t local_offset) {
-  const size_t index = local_offset / oopSize;
+inline void ZRememberedSet::unset_non_par(uintptr_t offset) {
+  const size_t index = offset / oopSize;
   current()->clear_bit(index);
 }
 
-inline void ZRememberedSet::unset_range_non_par(uintptr_t local_offset, size_t size) {
-  const size_t index = local_offset / oopSize;
+inline void ZRememberedSet::unset_range_non_par(uintptr_t offset, size_t size) {
+  const size_t index = offset / oopSize;
   const size_t size_in_bits = size / oopSize;
   current()->clear_range(index, index + size_in_bits);
 }
 
 template <typename Function>
-void ZRememberedSet::oops_do_function(Function function, zoffset page_start) {
-  previous()->iterate_f([&](BitMap::idx_t index) {
-    const size_t local_offset = index * oopSize;
-    const zoffset offset = page_start + local_offset;
-    const zaddress addr = ZOffset::address(offset);
+void ZRememberedSet::iterate_bitmap(Function function, CHeapBitMap* bitmap) {
+  bitmap->iterate_f([&](BitMap::idx_t index) {
+    const uintptr_t offset = index * oopSize;
 
-    function((volatile zpointer*)addr);
+    function(offset);
 
     return true;
   });
 }
 
 template <typename Function>
-void ZRememberedSet::oops_do_current_function(Function function, zoffset page_start) {
-  current()->iterate_f([&](BitMap::idx_t index) {
-    const size_t local_offset = index * oopSize;
-    const zoffset offset = page_start + local_offset;
-    const zaddress addr = ZOffset::address(offset);
+void ZRememberedSet::iterate(Function function) {
+  iterate_bitmap(function, previous());
+}
 
-    function((volatile zpointer*)addr);
-
-    return true;
-  });
+template <typename Function>
+void ZRememberedSet::iterate_current(Function function) {
+  iterate_bitmap(function, current());
 }
 
 #endif // SHARE_GC_Z_ZREMEMBEREDSET_INLINE_HPP

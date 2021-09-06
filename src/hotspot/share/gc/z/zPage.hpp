@@ -145,7 +145,6 @@ public:
   void clear_remset_non_par(uintptr_t l_offset);
   void clear_remset_range_non_par(uintptr_t l_offset, size_t size);
 
-  BitMap* remset_bitmap();
   ZRememberedSetReverseIterator remset_reverse_iterator();
   ZRememberedSetIterator remset_iterator_current_limited(uintptr_t l_offset, size_t size);
 
