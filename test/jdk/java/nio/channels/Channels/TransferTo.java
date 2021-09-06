@@ -23,6 +23,8 @@
 
 import static java.lang.String.format;
 
+import static org.testng.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,13 +41,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import jdk.test.lib.RandomFactory;
 
 /*
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main TransferTo
+ * @run testng TransferTo
  * @bug 8265891
  * @summary tests whether sun.nio.ChannelInputStream.transferTo conforms to the
  *          InputStream.transferTo contract defined in the javadoc
@@ -59,32 +64,34 @@ public class TransferTo {
 
     private static final Random RND = RandomFactory.getRandom();
 
-    public static void main(String[] args) throws Exception {
-        test(fileChannelInput(), fileChannelOutput());
-        test(readableByteChannelInput(), defaultOutput());
+    @DataProvider
+    public static Object[][] streamCombinations() throws Exception {
+        return new Object[][] {
+            { fileChannelInput(), fileChannelOutput() },
+            { readableByteChannelInput(), defaultOutput() }
+        };
     }
 
-    private static void test(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
-            throws Exception {
-        testNullPointerException(inputStreamProvider);
-        testStreamContents(inputStreamProvider, outputStreamProvider);
+    @Test(dataProvider = "streamCombinations", expectedExceptions = NullPointerException.class)
+    public void testNullPointerExceptionWithEmptyStream(InputStreamProvider inputStreamProvider,
+            OutputStreamProvider outputStreamProvider) throws Exception {
+        inputStreamProvider.input().transferTo(null);
     }
 
-    private static void testNullPointerException(InputStreamProvider inputStreamProvider) throws Exception {
-        try (InputStream in = inputStreamProvider.input()) {
-            assertThrowsNPE(() -> in.transferTo(null), "out");
-        }
-
-        try (InputStream in = inputStreamProvider.input((byte) 1)) {
-            assertThrowsNPE(() -> in.transferTo(null), "out");
-        }
-
-        try (InputStream in = inputStreamProvider.input((byte) 1, (byte) 2)) {
-            assertThrowsNPE(() -> in.transferTo(null), "out");
-        }
+    @Test(dataProvider = "streamCombinations", expectedExceptions = NullPointerException.class)
+    public void testNullPointerExceptionWithSingleByteStream(InputStreamProvider inputStreamProvider,
+            OutputStreamProvider outputStreamProvider) throws Exception {
+        inputStreamProvider.input((byte) 1).transferTo(null);
     }
 
-    private static void testStreamContents(InputStreamProvider inputStreamProvider,
+    @Test(dataProvider = "streamCombinations", expectedExceptions = NullPointerException.class)
+    public void testNullPointerExceptionWithTwoByteStream(InputStreamProvider inputStreamProvider,
+            OutputStreamProvider outputStreamProvider) throws Exception {
+        inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null);
+    }
+
+    @Test(dataProvider = "streamCombinations")
+    public void testStreamContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider) throws Exception {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
@@ -125,13 +132,11 @@ public class TransferTo {
             int count = inBytes.length - posIn;
 
             if (reported != count)
-                throw new AssertionError(
-                        format("reported %d bytes but should report %d", reported, count));
+                fail(format("reported %d bytes but should report %d", reported, count));
 
             byte[] outBytes = recorder.get().get();
             if (!Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count))
-                throw new AssertionError(
-                        format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
+                fail(format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
         }
     }
 
@@ -198,31 +203,4 @@ public class TransferTo {
         };
     }
 
-    public interface Thrower {
-        public void run() throws Throwable;
-    }
-
-    public static void assertThrowsNPE(Thrower thrower, String message) {
-        assertThrows(thrower, NullPointerException.class, message);
-    }
-
-    public static <T extends Throwable> void assertThrows(Thrower thrower, Class<T> throwable, String message) {
-        Throwable thrown;
-        try {
-            thrower.run();
-            thrown = null;
-        } catch (Throwable caught) {
-            thrown = caught;
-        }
-
-        if (!throwable.isInstance(thrown)) {
-            String caught = thrown == null ? "nothing" : thrown.getClass().getCanonicalName();
-            throw new AssertionError(format("Expected to catch %s, but caught %s", throwable, caught), thrown);
-        }
-
-        if (thrown != null && !message.equals(thrown.getMessage())) {
-            throw new AssertionError(
-                    format("Expected exception message to be '%s', but it's '%s'", message, thrown.getMessage()));
-        }
-    }
 }
