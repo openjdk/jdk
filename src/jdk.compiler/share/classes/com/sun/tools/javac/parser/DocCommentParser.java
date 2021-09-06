@@ -1425,13 +1425,15 @@ public class DocCommentParser {
                         newline = false;
                         // consume ':'
                         nextChar();
-                        // better still reuse JavaTokenizer here
                         // expect optional whitespace followed by mandatory newline
                         while (bp < buflen && isHorizontalWhitespace(ch)) {
                             nextChar();
                         }
                         // check that we are looking at newline
                         if (!newline) {
+                            if (bp >= buf.length - 1) {
+                                throw new ParseException("dc.no.content");
+                            }
                             throw new ParseException("dc.unexpected.content");
                         }
                         // consume newline
@@ -1439,6 +1441,8 @@ public class DocCommentParser {
                         DCText text = inlineText(WhitespaceRetentionPolicy.RETAIN_ALL);
                         nextChar();
                         return m.at(pos).newSnippetTree(attributes, text);
+                    } else if (bp >= buf.length - 1) {
+                        throw new ParseException("dc.no.content");
                     } else {
                         throw new ParseException("dc.unexpected.content");
                     }
@@ -1477,7 +1481,6 @@ public class DocCommentParser {
                             } else {
                                 vkind = ValueKind.UNQUOTED;
                                 textStart = bp;
-                                // TODO: do balance {}!
                                 // Stop on '}' and ':' for them to be re-consumed by non-attribute parts of tag
                                 while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
                                     nextChar();

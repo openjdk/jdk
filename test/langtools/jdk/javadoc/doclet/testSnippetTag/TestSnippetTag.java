@@ -48,6 +48,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.ObjIntConsumer;
 import java.util.regex.Matcher;
@@ -119,8 +120,9 @@ public class TestSnippetTag extends JavadocTester {
                 }
                 """,
 // (1) Haven't yet decided on this one. It's a consistency issue. On the one
-// hand, `:` is considered a part of a javadoc tag's name; on the other hand,
-// snippet markup treats `:` (next-line modifier) as a value terminator.
+// hand, `:` is considered a part of a javadoc tag's name (e.g. JDK-4750173);
+// on the other hand, snippet markup treats `:` (next-line modifier) as a value
+// terminator.
 //                """
 //                {@snippet id=foo:
 //                    Hello, Snippet!
@@ -141,12 +143,11 @@ public class TestSnippetTag extends JavadocTester {
                     Hello, Snippet!
                 }
                 """,
-// Similarly to (1), haven't yet decided on this one.
-//                """
-//                {@snippet id=:
-//                    Hello, Snippet!
-//                }
-//                """,
+                """
+                {@snippet id=:
+                    Hello, Snippet!
+                }
+                """,
                 """
                 {@snippet lang="java" :
                     Hello, Snippet!
@@ -233,146 +234,341 @@ public class TestSnippetTag extends JavadocTester {
 
     @Test
     public void testBadTagSyntax(Path base) throws IOException {
-        Path srcDir = base.resolve("src");
-        Path outDir = base.resolve("out");
+        // TODO consider improving diagnostic output by providing more specific
+        //  error messages and better positioning the caret (depends on JDK-8273244)
 
-        record TestCase(String input, String expectedError) { }
+        // Capture is created to expose TestCase only to the testErrors method;
+        // The resulting complexity suggests this whole method should be
+        // extracted into a separate test file
+        class Capture {
+            static final AtomicInteger counter = new AtomicInteger();
 
-        final var badSnippets = List.of(
-                // No newline after `:`
-                new TestCase("""
-                             {@snippet :}
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet :}
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet : }
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet : }
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet
-                             : }
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet
-                              : }
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet
-                                       ^
-                             """)
-                ,
-                // Attribute issues
-                new TestCase("""
-                             {@snippet file="}
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet file="}
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet file="
-                             }
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet file="
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet file='}
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet file='}
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet file='
-                             }
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet file='
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet file='
-                                 }
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet file='
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet
-                             file='
-                                 }
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet
-                                       ^
-                             """)
-                ,
-                new TestCase("""
-                             {@snippet
-                             file='}
-                             """,
-                             """
-                             error: unexpected content
-                                 /**   {@snippet
-                                       ^
-                             """)
-                ,
-// This is an interesting case: closing curly terminates the tag, leaving the
-// attribute value empty.
-                new TestCase("""
-                             {@snippet
-                             file=}
-                             """,
-                             """
-                             error: illegal value for attribute "file": ""
-                             file=}
-                             ^
-                             """)
-        );
-        ClassBuilder classBuilder = new ClassBuilder(tb, "pkg.A")
-                .setModifiers("public", "class");
-        forEachNumbered(badSnippets, (s, i) -> {
-            classBuilder.addMembers(
-                    MethodBuilder.parse("public void case%s() { }".formatted(i)).setComments(s.input));
-        });
-        classBuilder.write(srcDir);
-        javadoc("-d", outDir.toString(),
-                "-sourcepath", srcDir.toString(),
-                "pkg");
-        checkExit(Exit.ERROR);
-        checkOrder(Output.OUT, badSnippets.stream().map(TestCase::expectedError).toArray(String[]::new));
-        checkNoCrashes();
+            record TestCase(String input, String expectedError) {
+            }
+
+            void testErrors(List<TestCase> testCases) throws IOException {
+                List<String> inputs = testCases.stream().map(s -> s.input).toList();
+                StringBuilder methods = new StringBuilder();
+                forEachNumbered(inputs, (i, n) -> {
+                    methods.append(
+                        """
+                                          
+                        /**
+                        %s*/
+                        public void case%s() {}
+                        """.formatted(i, n));
+                });
+
+                String classString =
+                    """
+                    public class A {
+                    %s
+                    }
+                    """.formatted(methods.toString());
+
+                String suffix = String.valueOf(counter.incrementAndGet());
+
+                Path src = Files.createDirectories(base.resolve("src" + suffix));
+                tb.writeJavaFiles(src, classString);
+
+                javadoc("-d", base.resolve("out" + suffix).toString(),
+                    "-sourcepath", src.toString(),
+                    src.resolve("A.java").toString());
+                checkExit(Exit.ERROR);
+                checkOrder(Output.OUT, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
+                checkNoCrashes();
+            }
+        }
+
+        new Capture().testErrors(List.of(
+            // <editor-fold desc="missing newline after colon">
+            new Capture.TestCase(
+                """
+                {@snippet :}
+                """,
+                """
+                error: unexpected content
+                {@snippet :}
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet : }
+                """,
+                """
+                error: unexpected content
+                {@snippet : }
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet :a}
+                """,
+                """
+                error: unexpected content
+                {@snippet :a}
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                :}
+                """,
+                """
+                error: unexpected content
+                {@snippet
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                : }
+                """,
+                """
+                error: unexpected content
+                {@snippet
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                :a}
+                """,
+                """
+                error: unexpected content
+                {@snippet
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                 :}
+                """,
+                """
+                error: unexpected content
+                {@snippet
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                 : }
+                """,
+                """
+                error: unexpected content
+                {@snippet
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                 :a}
+                """,
+                """
+                error: unexpected content
+                {@snippet
+                ^
+                """),
+            // </editor-fold>
+            // <editor-fold desc="unexpected end of attribute">
+            // In this and some other tests cases below, the tested behavior
+            // is expected, although it might seem counterintuitive.
+            // It might seem like the closing curly should close the tag,
+            // where in fact it belongs to the attribute value.
+            new Capture.TestCase(
+                """
+                {@snippet file="}
+                """,
+                """
+                error: no content
+                {@snippet file="}
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file="
+                }
+                """,
+                """
+                error: no content
+                {@snippet file="
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file='}
+                """,
+                """
+                error: no content
+                {@snippet file='}
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file='
+                }
+                """,
+                """
+                error: no content
+                {@snippet file='
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file='
+                    }
+                """,
+                """
+                error: no content
+                {@snippet file='
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                file='
+                    }
+                """,
+                """
+                error: no content
+                {@snippet
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                file='}
+                """,
+                """
+                error: no content
+                {@snippet
+                ^
+                """),
+            // </editor-fold>
+            // <editor-fold desc="missing attribute value">
+            new Capture.TestCase(
+                """
+                {@snippet file=}
+                """,
+                """
+                error: illegal value for attribute "file": ""
+                {@snippet file=}
+                          ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file=:
+                }
+                """,
+                """
+                error: illegal value for attribute "file": ""
+                {@snippet file=:
+                          ^
+                """)
+            // </editor-fold>
+        ));
+
+        // The below errors are checked separately because they might appear
+        // out of order with respect to the errors checked above.
+        // This is because the below errors are modelled as exceptions thrown
+        // at parse time, when there are no doc trees yet. And the above errors
+        // are modelled as erroneous trees that are processed after the parsing
+        // is finished.
+
+        new Capture().testErrors(List.of(
+            // <editor-fold desc="unexpected end of input">
+            // now newline after :
+            new Capture.TestCase(
+                """
+                {@snippet file=:}
+                """,
+                """
+                error: unexpected content
+                {@snippet file=:}
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet
+                """,
+                """
+                error: no content
+                {@snippet
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file
+                """,
+                """
+                error: no content
+                {@snippet file
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file=
+                """,
+                """
+                error: no content
+                {@snippet file=
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file="
+                """,
+                """
+                error: no content
+                {@snippet file="
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file='
+                """,
+                """
+                error: no content
+                {@snippet file='
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet :""",
+                """
+                error: no content
+                {@snippet :*/
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet :
+                    Hello, World!""",
+                """
+                error: unterminated inline tag
+                {@snippet :
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file="gibberish" :\
+                """,
+                """
+                error: no content
+                {@snippet file="gibberish" :*/
+                ^
+                """),
+            new Capture.TestCase(
+                """
+                {@snippet file="gibberish" :
+                """,
+                """
+                error: unterminated inline tag
+                {@snippet file="gibberish" :
+                ^
+                """)
+            // </editor-fold>
+        ));
     }
 
     // TODO This is a temporary method; it should be removed after JavadocTester has provided similar functionality (JDK-8273154).
@@ -380,6 +576,7 @@ public class TestSnippetTag extends JavadocTester {
         String outputString = getOutput(output);
         int prevIndex = -1;
         for (String s : strings) {
+            s = s.replace("\n", NL); // normalize new lines
             int currentIndex = outputString.indexOf(s, prevIndex + 1);
             checking("output: " + output + ": " + s + " at index " + currentIndex);
             if (currentIndex == -1) {
