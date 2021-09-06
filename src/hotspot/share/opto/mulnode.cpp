@@ -207,9 +207,8 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in1->Opcode() == Op_SubI && in2->Opcode() == Op_SubI) {
     Node* n11 = in1->in(1);
     Node* n21 = in2->in(1);
-    const Type* t11 = phase->type(n11);
-    const Type* t21 = phase->type(n21);
-    if (t11 == TypeInt::ZERO && t21 == TypeInt::ZERO) {
+    if (phase->type(n11)->higher_equal(TypeInt::ZERO) &&
+        phase->type(n21)->higher_equal(TypeInt::ZERO)) {
       return new MulINode(in1->in(2), in2->in(2));
     }
   }
@@ -315,9 +314,8 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in1->Opcode() == Op_SubL && in2->Opcode() == Op_SubL) {
     Node* n11 = in1->in(1);
     Node* n21 = in2->in(1);
-    const Type* t11 = phase->type(n11);
-    const Type* t21 = phase->type(n21);
-    if (t11 == TypeLong::ZERO && t21 == TypeLong::ZERO) {
+    if (phase->type(n11)->higher_equal(TypeLong::ZERO) &&
+        phase->type(n21)->higher_equal(TypeLong::ZERO)) {
       return new MulLNode(in1->in(2), in2->in(2));
     }
   }
