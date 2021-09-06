@@ -464,14 +464,12 @@ tier3 = \
   :hotspot_tier3_runtime \
   :tier3_gc_shenandoah
 
-# Everything not in other tiers, except vmTestbase and long-running application tests
+# Everything not in other tiers
 tier4 = \
   / \
  -:tier1 \
  -:tier2 \
- -:tier3 \
- -applications/ \
- -vmTestbase/
+ -:tier3
 
 hotspot_tier2_runtime = \
   runtime/ \
