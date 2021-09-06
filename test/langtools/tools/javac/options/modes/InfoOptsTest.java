@@ -73,9 +73,8 @@ public class InfoOptsTest extends OptionModesTester {
         testUniqueInfoOpt(new String[] {"-X", "-X"}, "extra options");
         testUniqueInfoOpt(new String[] {"--help-lint", "--help-lint"}, "supported keys");
 
-        String specVersion = System.getProperty("java.specification.version");
-        testUniqueInfoOpt(new String[] {"-version", "-version"}, "javac", specVersion);
-        testUniqueInfoOpt(new String[] {"-fullversion", "-fullversion"}, "javac", specVersion);
+        testUniqueInfoOpt(new String[] {"-version", "-version"}, "javac");
+        testUniqueInfoOpt(new String[] {"-fullversion", "-fullversion"}, "javac full version");
     }
 
     void testUniqueInfoOpt(String[] opts, String... expect) {
