@@ -571,19 +571,19 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
     ciInstance* ex_obj = NULL;
     switch (reason) {
     case Deoptimization::Reason_null_check:
-      ex_obj = env()->NullPointerException_instance();
+      ex_obj = env()->NullPointerException_instance(this);
       break;
     case Deoptimization::Reason_div0_check:
-      ex_obj = env()->ArithmeticException_instance();
+      ex_obj = env()->ArithmeticException_instance(this);
       break;
     case Deoptimization::Reason_range_check:
-      ex_obj = env()->ArrayIndexOutOfBoundsException_instance();
+      ex_obj = env()->ArrayIndexOutOfBoundsException_instance(this);
       break;
     case Deoptimization::Reason_class_check:
       if (java_bc() == Bytecodes::_aastore) {
-        ex_obj = env()->ArrayStoreException_instance();
+        ex_obj = env()->ArrayStoreException_instance(this);
       } else {
-        ex_obj = env()->ClassCastException_instance();
+        ex_obj = env()->ClassCastException_instance(this);
       }
       break;
     default:

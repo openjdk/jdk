@@ -33,6 +33,7 @@
 #include "utilities/vmEnums.hpp"
 
 class RecordComponent;
+class GraphKit;
 
 // Interface for manipulating the basic Java classes.
 
@@ -555,6 +556,10 @@ class java_lang_Throwable: AllStatic {
 
   // Allocate space for backtrace (created but stack trace not filled in)
   static void allocate_backtrace(Handle throwable, TRAPS);
+  #ifdef COMPILER2
+  // Fill in the stack frame(s) for an implicit exception, can cause GC
+  static void fill_in_stack_trace_of_implicit_exception(Handle throwable, GraphKit* gk);
+  #endif
   // Fill in current stack trace for throwable with preallocated backtrace (no GC)
   static void fill_in_stack_trace_of_preallocated_backtrace(Handle throwable);
   // Fill in current stack trace, can cause GC

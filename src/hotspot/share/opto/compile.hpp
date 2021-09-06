@@ -392,6 +392,8 @@ class Compile : public Phase {
 
   GrowableArray<RuntimeStub*>   _native_invokers;
 
+  GrowableArray<jobject>        _implicit_exceptions;
+
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
   // pieces in order.
@@ -961,6 +963,10 @@ class Compile : public Phase {
   void add_native_invoker(RuntimeStub* stub);
 
   const GrowableArray<RuntimeStub*> native_invokers() const { return _native_invokers; }
+
+  void add_implicit_exception(jobject except) { _implicit_exceptions.append(except); }
+
+  const GrowableArray<jobject> implicit_exceptions() const { return _implicit_exceptions; }
 
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
 

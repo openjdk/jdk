@@ -1743,7 +1743,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                  frame_words, oop_map_set,
                                  handler_table, implicit_exception_table,
                                  compiler, comp_level, GrowableArrayView<RuntimeStub*>::EMPTY,
-                                 speculations, speculations_len,
+                                 GrowableArrayView<jobject>::EMPTY, speculations, speculations_len,
                                  nmethod_mirror_index, nmethod_mirror_name, failed_speculations);
 
 

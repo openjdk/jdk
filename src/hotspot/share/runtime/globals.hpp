@@ -642,6 +642,10 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, OmitStackTraceInFastThrow, true,                            \
           "Omit backtraces for some 'hot' exceptions in optimized code")    \
                                                                             \
+  product(bool, StackFrameInFastThrow, true,                                \
+          "Create backtraces with at least the top stack frame for 'hot' "  \
+          "exceptions optimized by -XX:+OmitStackTraceInFastThrow")         \
+                                                                            \
   product(bool, ShowCodeDetailsInExceptionMessages, true, MANAGEABLE,       \
           "Show exception messages from RuntimeExceptions that contain "    \
           "snippets of the failing code. Disable this to improve privacy.") \

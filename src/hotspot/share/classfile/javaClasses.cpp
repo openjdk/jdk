@@ -82,6 +82,9 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
+#ifdef COMPILER2
+#include "opto/graphKit.hpp"
+#endif
 
 #define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java)    \
   klass::_##name##_offset = JavaClasses::compute_injected_offset(JavaClasses::klass##_##name##_enum);
@@ -2565,6 +2568,41 @@ void java_lang_Throwable::allocate_backtrace(Handle throwable, TRAPS) {
   set_backtrace(throwable(), bt.backtrace());
 }
 
+#ifdef COMPILER2
+void java_lang_Throwable::fill_in_stack_trace_of_implicit_exception(Handle throwable, GraphKit* gk) {
+  // Fill in the stack frame(s) for an implicit exception, can cause GC
+  assert(throwable->is_a(vmClasses::Throwable_klass()), "sanity check");
+
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+
+  java_lang_Throwable::allocate_backtrace(throwable, CHECK);
+  objArrayHandle backtrace (THREAD, (objArrayOop)java_lang_Throwable::backtrace(throwable()));
+
+  ResourceMark rm(THREAD);
+
+  BacktraceBuilder bt(THREAD, backtrace);
+
+  // fill in as much stack trace as available
+  int chunk_count = 1;
+  Method* m = gk->method()->get_Method();
+  assert(m != NULL, "Method* of the ciMethod we're compiling should be set.");
+  bt.push(m, gk->bci(), CHECK);
+  JVMState* caller = gk->jvms()->caller();
+  while (caller != NULL) {
+    bt.push(caller->method()->get_Method(), caller->bci(), CHECK);
+    chunk_count++;
+    caller = caller->caller();
+  }
+  set_depth(throwable(), chunk_count);
+  log_info(stacktrace)("Created implicit exception %s with %d stack frame(s) for %s::%s at bci %d",
+                       throwable->klass()->external_name(), chunk_count,
+                       m->klass_name()->as_klass_external_name(), m->name()->as_C_string(), gk->bci());
+
+  // We support the Throwable immutability protocol defined for Java 7.
+  java_lang_Throwable::set_stacktrace(throwable(), java_lang_Throwable::unassigned_stacktrace());
+  assert(java_lang_Throwable::unassigned_stacktrace() != NULL, "not initialized");
+}
+#endif
 
 void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle throwable) {
   // Fill in stack trace into preallocated backtrace (no GC)

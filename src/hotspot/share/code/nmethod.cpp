@@ -122,6 +122,8 @@ struct java_nmethod_stats_struct {
   int scopes_data_size;
   int scopes_pcs_size;
   int dependencies_size;
+  int native_invokers_size;
+  int implicit_exceptions_size;
   int handler_table_size;
   int nul_chk_table_size;
 #if INCLUDE_JVMCI
@@ -133,42 +135,46 @@ struct java_nmethod_stats_struct {
 
   void note_nmethod(nmethod* nm) {
     nmethod_count += 1;
-    total_size          += nm->size();
-    relocation_size     += nm->relocation_size();
-    consts_size         += nm->consts_size();
-    insts_size          += nm->insts_size();
-    stub_size           += nm->stub_size();
-    oops_size           += nm->oops_size();
-    metadata_size       += nm->metadata_size();
-    scopes_data_size    += nm->scopes_data_size();
-    scopes_pcs_size     += nm->scopes_pcs_size();
-    dependencies_size   += nm->dependencies_size();
-    handler_table_size  += nm->handler_table_size();
-    nul_chk_table_size  += nm->nul_chk_table_size();
+    total_size               += nm->size();
+    relocation_size          += nm->relocation_size();
+    consts_size              += nm->consts_size();
+    insts_size               += nm->insts_size();
+    stub_size                += nm->stub_size();
+    oops_size                += nm->oops_size();
+    metadata_size            += nm->metadata_size();
+    scopes_data_size         += nm->scopes_data_size();
+    scopes_pcs_size          += nm->scopes_pcs_size();
+    dependencies_size        += nm->dependencies_size();
+    native_invokers_size     += nm->native_invokers_size();
+    implicit_exceptions_size += nm->implicit_exceptions_size();
+    handler_table_size       += nm->handler_table_size();
+    nul_chk_table_size       += nm->nul_chk_table_size();
 #if INCLUDE_JVMCI
-    speculations_size   += nm->speculations_size();
-    jvmci_data_size     += nm->jvmci_data_size();
+    speculations_size        += nm->speculations_size();
+    jvmci_data_size          += nm->jvmci_data_size();
 #endif
   }
   void print_nmethod_stats(const char* name) {
     if (nmethod_count == 0)  return;
     tty->print_cr("Statistics for %d bytecoded nmethods for %s:", nmethod_count, name);
-    if (total_size != 0)          tty->print_cr(" total in heap  = %d", total_size);
-    if (nmethod_count != 0)       tty->print_cr(" header         = " SIZE_FORMAT, nmethod_count * sizeof(nmethod));
-    if (relocation_size != 0)     tty->print_cr(" relocation     = %d", relocation_size);
-    if (consts_size != 0)         tty->print_cr(" constants      = %d", consts_size);
-    if (insts_size != 0)          tty->print_cr(" main code      = %d", insts_size);
-    if (stub_size != 0)           tty->print_cr(" stub code      = %d", stub_size);
-    if (oops_size != 0)           tty->print_cr(" oops           = %d", oops_size);
-    if (metadata_size != 0)       tty->print_cr(" metadata       = %d", metadata_size);
-    if (scopes_data_size != 0)    tty->print_cr(" scopes data    = %d", scopes_data_size);
-    if (scopes_pcs_size != 0)     tty->print_cr(" scopes pcs     = %d", scopes_pcs_size);
-    if (dependencies_size != 0)   tty->print_cr(" dependencies   = %d", dependencies_size);
-    if (handler_table_size != 0)  tty->print_cr(" handler table  = %d", handler_table_size);
-    if (nul_chk_table_size != 0)  tty->print_cr(" nul chk table  = %d", nul_chk_table_size);
+    if (total_size != 0)               tty->print_cr(" total in heap  = %d", total_size);
+    if (nmethod_count != 0)            tty->print_cr(" header         = " SIZE_FORMAT, nmethod_count * sizeof(nmethod));
+    if (relocation_size != 0)          tty->print_cr(" relocation     = %d", relocation_size);
+    if (consts_size != 0)              tty->print_cr(" constants      = %d", consts_size);
+    if (insts_size != 0)               tty->print_cr(" main code      = %d", insts_size);
+    if (stub_size != 0)                tty->print_cr(" stub code      = %d", stub_size);
+    if (oops_size != 0)                tty->print_cr(" oops           = %d", oops_size);
+    if (metadata_size != 0)            tty->print_cr(" metadata       = %d", metadata_size);
+    if (scopes_data_size != 0)         tty->print_cr(" scopes data    = %d", scopes_data_size);
+    if (scopes_pcs_size != 0)          tty->print_cr(" scopes pcs     = %d", scopes_pcs_size);
+    if (dependencies_size != 0)        tty->print_cr(" dependencies   = %d", dependencies_size);
+    if (native_invokers_size != 0)     tty->print_cr(" native invkrs  = %d", native_invokers_size);
+    if (implicit_exceptions_size != 0) tty->print_cr(" impl excepts   = %d", implicit_exceptions_size);
+    if (handler_table_size != 0)       tty->print_cr(" handler table  = %d", handler_table_size);
+    if (nul_chk_table_size != 0)       tty->print_cr(" nul chk table  = %d", nul_chk_table_size);
 #if INCLUDE_JVMCI
-    if (speculations_size != 0)   tty->print_cr(" speculations   = %d", speculations_size);
-    if (jvmci_data_size != 0)     tty->print_cr(" JVMCI data     = %d", jvmci_data_size);
+    if (speculations_size != 0)        tty->print_cr(" speculations   = %d", speculations_size);
+    if (jvmci_data_size != 0)          tty->print_cr(" JVMCI data     = %d", jvmci_data_size);
 #endif
   }
 };
@@ -502,7 +508,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   int comp_level,
-  const GrowableArrayView<RuntimeStub*>& native_invokers
+  const GrowableArrayView<RuntimeStub*>& native_invokers,
+  const GrowableArrayView<jobject>& implicit_exceptions
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -525,6 +532,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
       + adjust_pcs_size(debug_info->pcs_size())
       + align_up((int)dependencies->size_in_bytes(), oopSize)
       + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize)
+      + align_up(checked_cast<int>(implicit_exceptions.data_size_in_bytes()), oopSize)
       + align_up(handler_table->size_in_bytes()    , oopSize)
       + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
@@ -541,7 +549,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
             nul_chk_table,
             compiler,
             comp_level,
-            native_invokers
+            native_invokers,
+            implicit_exceptions
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -727,7 +736,8 @@ nmethod::nmethod(
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   int comp_level,
-  const GrowableArrayView<RuntimeStub*>& native_invokers
+  const GrowableArrayView<RuntimeStub*>& native_invokers,
+  const GrowableArrayView<jobject>& implicit_exceptions
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -805,7 +815,8 @@ nmethod::nmethod(
     _scopes_pcs_offset       = scopes_data_offset    + align_up(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
     _native_invokers_offset  = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
-    _handler_table_offset    = _native_invokers_offset + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize);
+    _implicit_excepts_offset = _native_invokers_offset + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize);
+    _handler_table_offset    = _implicit_excepts_offset + align_up(checked_cast<int>(implicit_exceptions.data_size_in_bytes()), oopSize);
     _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -830,6 +841,14 @@ nmethod::nmethod(
     if (native_invokers.is_nonempty()) { // can not get address of zero-length array
       // Copy native stubs
       memcpy(native_invokers_begin(), native_invokers.adr_at(0), native_invokers.data_size_in_bytes());
+    }
+    if (implicit_exceptions.is_nonempty()) {
+      // Copy global handles for the implcit exceptions created for this
+      // nmethod such that we can release them once the nmethod gets unloaded.
+      memcpy(implicit_exceptions_begin(), implicit_exceptions.adr_at(0), implicit_exceptions.data_size_in_bytes());
+      log_develop_debug(exceptions)("nmethod (%d) for %s::%s has %d implicit exception(s)", compile_id,
+                                    method->klass_name()->as_klass_external_name(), method->name()->as_C_string(),
+                                    implicit_exceptions.length());
     }
     clear_unloading_state();
 
@@ -1520,6 +1539,17 @@ void nmethod::flush() {
     ExceptionCache* next = ec->next();
     delete ec;
     ec = next;
+  }
+
+  // Release implicit exceptions which have been created for this nmethod
+  jobject* implicit_exception = implicit_exceptions_begin();
+  while (implicit_exception < implicit_exceptions_end()) {
+    assert(*implicit_exception != NULL, "Must be a valid globel JNI handle");
+    JNIHandles::destroy_global(*implicit_exception++);
+  }
+  if (implicit_exceptions_begin() < implicit_exceptions_end()) {
+      log_develop_debug(exceptions)("Releasing " SIZE_FORMAT " implicit exception(s) for nmethod (%d)",
+                                    implicit_exceptions_end() - implicit_exceptions_begin(), _compile_id);
   }
 
   Universe::heap()->flush_nmethod(this);
@@ -2537,63 +2567,71 @@ void nmethod::print(outputStream* st) const {
     st->print_cr("%s ", state());
     st->print_cr("}:");
   }
-  if (size              () > 0) st->print_cr(" total in heap  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(this),
-                                             p2i(this) + size(),
-                                             size());
-  if (relocation_size   () > 0) st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(relocation_begin()),
-                                             p2i(relocation_end()),
-                                             relocation_size());
-  if (consts_size       () > 0) st->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(consts_begin()),
-                                             p2i(consts_end()),
-                                             consts_size());
-  if (insts_size        () > 0) st->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(insts_begin()),
-                                             p2i(insts_end()),
-                                             insts_size());
-  if (stub_size         () > 0) st->print_cr(" stub code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(stub_begin()),
-                                             p2i(stub_end()),
-                                             stub_size());
-  if (oops_size         () > 0) st->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(oops_begin()),
-                                             p2i(oops_end()),
-                                             oops_size());
-  if (metadata_size     () > 0) st->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(metadata_begin()),
-                                             p2i(metadata_end()),
-                                             metadata_size());
-  if (scopes_data_size  () > 0) st->print_cr(" scopes data    [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(scopes_data_begin()),
-                                             p2i(scopes_data_end()),
-                                             scopes_data_size());
-  if (scopes_pcs_size   () > 0) st->print_cr(" scopes pcs     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(scopes_pcs_begin()),
-                                             p2i(scopes_pcs_end()),
-                                             scopes_pcs_size());
-  if (dependencies_size () > 0) st->print_cr(" dependencies   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(dependencies_begin()),
-                                             p2i(dependencies_end()),
-                                             dependencies_size());
-  if (handler_table_size() > 0) st->print_cr(" handler table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(handler_table_begin()),
-                                             p2i(handler_table_end()),
-                                             handler_table_size());
-  if (nul_chk_table_size() > 0) st->print_cr(" nul chk table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(nul_chk_table_begin()),
-                                             p2i(nul_chk_table_end()),
-                                             nul_chk_table_size());
+  if (size                    () > 0) st->print_cr(" total in heap  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(this),
+                                                   p2i(this) + size(),
+                                                   size());
+  if (relocation_size         () > 0) st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(relocation_begin()),
+                                                   p2i(relocation_end()),
+                                                   relocation_size());
+  if (consts_size             () > 0) st->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(consts_begin()),
+                                                   p2i(consts_end()),
+                                                   consts_size());
+  if (insts_size              () > 0) st->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(insts_begin()),
+                                                   p2i(insts_end()),
+                                                   insts_size());
+  if (stub_size               () > 0) st->print_cr(" stub code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(stub_begin()),
+                                                   p2i(stub_end()),
+                                                   stub_size());
+  if (oops_size               () > 0) st->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(oops_begin()),
+                                                   p2i(oops_end()),
+                                                   oops_size());
+  if (metadata_size           () > 0) st->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(metadata_begin()),
+                                                   p2i(metadata_end()),
+                                                   metadata_size());
+  if (scopes_data_size        () > 0) st->print_cr(" scopes data    [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(scopes_data_begin()),
+                                                   p2i(scopes_data_end()),
+                                                   scopes_data_size());
+  if (scopes_pcs_size         () > 0) st->print_cr(" scopes pcs     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(scopes_pcs_begin()),
+                                                   p2i(scopes_pcs_end()),
+                                                   scopes_pcs_size());
+  if (dependencies_size       () > 0) st->print_cr(" dependencies   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(dependencies_begin()),
+                                                   p2i(dependencies_end()),
+                                                   dependencies_size());
+  if (native_invokers_size    () > 0) st->print_cr(" native invkrs  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(native_invokers_begin()),
+                                                   p2i(native_invokers_end()),
+                                                   native_invokers_size());
+  if (implicit_exceptions_size() > 0) st->print_cr(" impl excepts   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(implicit_exceptions_begin()),
+                                                   p2i(implicit_exceptions_end()),
+                                                   implicit_exceptions_size());
+  if (handler_table_size      () > 0) st->print_cr(" handler table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(handler_table_begin()),
+                                                   p2i(handler_table_end()),
+                                                   handler_table_size());
+  if (nul_chk_table_size      () > 0) st->print_cr(" nul chk table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(nul_chk_table_begin()),
+                                                   p2i(nul_chk_table_end()),
+                                                   nul_chk_table_size());
 #if INCLUDE_JVMCI
-  if (speculations_size () > 0) st->print_cr(" speculations   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(speculations_begin()),
-                                             p2i(speculations_end()),
-                                             speculations_size());
-  if (jvmci_data_size   () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(jvmci_data_begin()),
-                                             p2i(jvmci_data_end()),
-                                             jvmci_data_size());
+  if (speculations_size       () > 0) st->print_cr(" speculations   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(speculations_begin()),
+                                                   p2i(speculations_end()),
+                                                   speculations_size());
+  if (jvmci_data_size         () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                                   p2i(jvmci_data_begin()),
+                                                   p2i(jvmci_data_end()),
+                                                   jvmci_data_size());
 #endif
 }
 

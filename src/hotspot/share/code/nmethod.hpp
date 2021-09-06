@@ -209,6 +209,7 @@ class nmethod : public CompiledMethod {
   int _dependencies_offset;
   int _native_invokers_offset;
   int _handler_table_offset;
+  int _implicit_excepts_offset;
   int _nul_chk_table_offset;
 #if INCLUDE_JVMCI
   int _speculations_offset;
@@ -310,7 +311,8 @@ class nmethod : public CompiledMethod {
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
           int comp_level,
-          const GrowableArrayView<RuntimeStub*>& native_invokers
+          const GrowableArrayView<RuntimeStub*>& native_invokers,
+          const GrowableArrayView<jobject>& implicit_exceptions
 #if INCLUDE_JVMCI
           , char* speculations,
           int speculations_len,
@@ -359,7 +361,8 @@ class nmethod : public CompiledMethod {
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
                               int comp_level,
-                              const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY
+                              const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY,
+                              const GrowableArrayView<jobject>& implicit_exceptions = GrowableArrayView<jobject>::EMPTY
 #if INCLUDE_JVMCI
                               , char* speculations = NULL,
                               int speculations_len = 0,
@@ -410,7 +413,9 @@ class nmethod : public CompiledMethod {
   address dependencies_begin    () const          { return           header_begin() + _dependencies_offset  ; }
   address dependencies_end      () const          { return           header_begin() + _native_invokers_offset ; }
   RuntimeStub** native_invokers_begin() const     { return (RuntimeStub**)(header_begin() + _native_invokers_offset) ; }
-  RuntimeStub** native_invokers_end  () const     { return (RuntimeStub**)(header_begin() + _handler_table_offset); }
+  RuntimeStub** native_invokers_end  () const     { return (RuntimeStub**)(header_begin() + _implicit_excepts_offset); }
+  jobject* implicit_exceptions_begin () const     { return (jobject*)(header_begin() + _implicit_excepts_offset) ; }
+  jobject* implicit_exceptions_end   () const     { return (jobject*)(header_begin() + _handler_table_offset); }
   address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
@@ -425,12 +430,14 @@ class nmethod : public CompiledMethod {
 #endif
 
   // Sizes
-  int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
-  int metadata_size     () const                  { return (address)  metadata_end     () - (address)  metadata_begin     (); }
-  int dependencies_size () const                  { return            dependencies_end () -            dependencies_begin (); }
+  int oops_size               () const            { return (address) oops_end               () - (address) oops_begin               (); }
+  int metadata_size           () const            { return (address) metadata_end           () - (address) metadata_begin           (); }
+  int dependencies_size       () const            { return           dependencies_end       () -           dependencies_begin       (); }
+  int native_invokers_size    () const            { return (address) native_invokers_end    () - (address) native_invokers_begin    (); }
+  int implicit_exceptions_size() const            { return (address) implicit_exceptions_end() - (address) implicit_exceptions_begin(); }
 #if INCLUDE_JVMCI
-  int speculations_size () const                  { return            speculations_end () -            speculations_begin (); }
-  int jvmci_data_size   () const                  { return            jvmci_data_end   () -            jvmci_data_begin   (); }
+  int speculations_size () const                  { return           speculations_end       () -           speculations_begin       (); }
+  int jvmci_data_size   () const                  { return           jvmci_data_end         () -           jvmci_data_begin         (); }
 #endif
 
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
