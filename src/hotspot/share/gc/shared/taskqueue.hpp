@@ -345,8 +345,6 @@ public:
   // Initializes the queue to empty.
   GenericTaskQueue();
 
-  void initialize();
-
   // Push the task "t" on the queue.  Returns "false" iff the queue is full.
   inline bool push(E t);
 
@@ -391,11 +389,6 @@ public:
   bool is_last_stolen_queue_id_valid() const { return _last_stolen_queue_id != InvalidQueueId; }
   void invalidate_last_stolen_queue_id()     { _last_stolen_queue_id = InvalidQueueId; }
 };
-
-template<class E, MEMFLAGS F, unsigned int N>
-GenericTaskQueue<E, F, N>::GenericTaskQueue() : _last_stolen_queue_id(InvalidQueueId), _seed(17 /* random number */) {
-  assert(sizeof(Age) == sizeof(size_t), "Depends on this.");
-}
 
 // OverflowTaskQueue is a TaskQueue that also includes an overflow stack for
 // elements that do not fit in the TaskQueue.

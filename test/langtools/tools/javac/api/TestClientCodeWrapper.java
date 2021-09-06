@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,8 +278,8 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
                 f4.getNestingKind();
                 f4.getAccessLevel();
 
-                messager.printMessage(Diagnostic.Kind.NOTE, "informational note",
-                        roundEnv.getRootElements().iterator().next());
+                messager.printNote("informational note",
+                                   roundEnv.getRootElements().iterator().next());
 
             } catch (IOException e) {
                 throw new UserError(e);

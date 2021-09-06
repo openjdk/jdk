@@ -1305,7 +1305,7 @@ class SymbolTableDumper : public SymbolClosure {
 
 void SymbolTableDumper::do_symbol(Symbol** p) {
   ResourceMark rm;
-  Symbol* sym = load_symbol(p);
+  Symbol* sym = *p;
   int len = sym->utf8_length();
   if (len > 0) {
     char* s = sym->as_utf8();

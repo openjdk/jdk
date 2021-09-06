@@ -30,6 +30,7 @@ import sun.hotspot.WhiteBox;
  * @test TestAbortVMOnSafepointTimeout
  * @summary Check if VM can kill thread which doesn't reach safepoint.
  * @bug 8219584 8227528
+ * @requires vm.flagless
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

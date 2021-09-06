@@ -459,7 +459,9 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
  public:
   LateInlineVirtualCallGenerator(ciMethod* method, int vtable_index, float prof_factor)
   : VirtualCallGenerator(method, vtable_index, true /*separate_io_projs*/),
-    _unique_id(0), _inline_cg(NULL), _callee(NULL), _is_pure_call(false), _prof_factor(prof_factor) {}
+    _unique_id(0), _inline_cg(NULL), _callee(NULL), _is_pure_call(false), _prof_factor(prof_factor) {
+    assert(IncrementalInlineVirtual, "required");
+  }
 
   virtual bool is_late_inline() const { return true; }
 
@@ -513,6 +515,12 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   // Method handle linker case is handled in CallDynamicJavaNode::Ideal().
   // Unless inlining is performed, _override_symbolic_info bit will be set in DirectCallGenerator::generate().
 
+  // Implicit receiver null checks introduce problems when exception states are combined.
+  Node* receiver = jvms->map()->argument(jvms, 0);
+  const Type* recv_type = C->initial_gvn()->type(receiver);
+  if (recv_type->maybe_null()) {
+    return false;
+  }
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
   if (!allow_inline && _callee->holder()->is_interface()) {
@@ -734,13 +742,6 @@ void CallGenerator::do_late_inline_helper() {
       Node_Notes* entry_nn = old_nn->clone(C);
       entry_nn->set_jvms(jvms);
       C->set_default_node_notes(entry_nn);
-    }
-
-    // Virtual call involves a receiver null check which can be made implicit.
-    if (is_virtual_late_inline()) {
-      GraphKit kit(jvms);
-      kit.null_check_receiver();
-      jvms = kit.transfer_exceptions_into_jvms();
     }
 
     // Now perform the inlining using the synthesized JVMState

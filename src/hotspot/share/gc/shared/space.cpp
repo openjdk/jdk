@@ -393,7 +393,84 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
 #if INCLUDE_SERIALGC
 
 void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
-  scan_and_forward(this, cp);
+  // Compute the new addresses for the live objects and store it in the mark
+  // Used by universe::mark_sweep_phase2()
+
+  // We're sure to be here before any objects are compacted into this
+  // space, so this is a good time to initialize this:
+  set_compaction_top(bottom());
+
+  if (cp->space == NULL) {
+    assert(cp->gen != NULL, "need a generation");
+    assert(cp->threshold == NULL, "just checking");
+    assert(cp->gen->first_compaction_space() == this, "just checking");
+    cp->space = cp->gen->first_compaction_space();
+    cp->threshold = cp->space->initialize_threshold();
+    cp->space->set_compaction_top(cp->space->bottom());
+  }
+
+  HeapWord* compact_top = cp->space->compaction_top(); // This is where we are currently compacting to.
+
+  DeadSpacer dead_spacer(this);
+
+  HeapWord*  end_of_live = bottom();  // One byte beyond the last byte of the last live object.
+  HeapWord*  first_dead = NULL; // The first dead object.
+
+  const intx interval = PrefetchScanIntervalInBytes;
+
+  HeapWord* cur_obj = bottom();
+  HeapWord* scan_limit = top();
+
+  while (cur_obj < scan_limit) {
+    if (cast_to_oop(cur_obj)->is_gc_marked()) {
+      // prefetch beyond cur_obj
+      Prefetch::write(cur_obj, interval);
+      size_t size = cast_to_oop(cur_obj)->size();
+      compact_top = cp->space->forward(cast_to_oop(cur_obj), size, cp, compact_top);
+      cur_obj += size;
+      end_of_live = cur_obj;
+    } else {
+      // run over all the contiguous dead objects
+      HeapWord* end = cur_obj;
+      do {
+        // prefetch beyond end
+        Prefetch::write(end, interval);
+        end += cast_to_oop(end)->size();
+      } while (end < scan_limit && !cast_to_oop(end)->is_gc_marked());
+
+      // see if we might want to pretend this object is alive so that
+      // we don't have to compact quite as often.
+      if (cur_obj == compact_top && dead_spacer.insert_deadspace(cur_obj, end)) {
+        oop obj = cast_to_oop(cur_obj);
+        compact_top = cp->space->forward(obj, obj->size(), cp, compact_top);
+        end_of_live = end;
+      } else {
+        // otherwise, it really is a free region.
+
+        // cur_obj is a pointer to a dead object. Use this dead memory to store a pointer to the next live object.
+        *(HeapWord**)cur_obj = end;
+
+        // see if this is the first dead region.
+        if (first_dead == NULL) {
+          first_dead = cur_obj;
+        }
+      }
+
+      // move on to the next object
+      cur_obj = end;
+    }
+  }
+
+  assert(cur_obj == scan_limit, "just checking");
+  _end_of_live = end_of_live;
+  if (first_dead != NULL) {
+    _first_dead = first_dead;
+  } else {
+    _first_dead = end_of_live;
+  }
+
+  // save the compaction_top of the compaction space.
+  cp->space->set_compaction_top(compact_top);
 }
 
 void CompactibleSpace::adjust_pointers() {
@@ -402,11 +479,94 @@ void CompactibleSpace::adjust_pointers() {
     return;   // Nothing to do.
   }
 
-  scan_and_adjust_pointers(this);
+  // adjust all the interior pointers to point at the new locations of objects
+  // Used by MarkSweep::mark_sweep_phase3()
+
+  HeapWord* cur_obj = bottom();
+  HeapWord* const end_of_live = _end_of_live;  // Established by prepare_for_compaction().
+  HeapWord* const first_dead = _first_dead;    // Established by prepare_for_compaction().
+
+  assert(first_dead <= end_of_live, "Stands to reason, no?");
+
+  const intx interval = PrefetchScanIntervalInBytes;
+
+  debug_only(HeapWord* prev_obj = NULL);
+  while (cur_obj < end_of_live) {
+    Prefetch::write(cur_obj, interval);
+    if (cur_obj < first_dead || cast_to_oop(cur_obj)->is_gc_marked()) {
+      // cur_obj is alive
+      // point all the oops to the new location
+      size_t size = MarkSweep::adjust_pointers(cast_to_oop(cur_obj));
+      debug_only(prev_obj = cur_obj);
+      cur_obj += size;
+    } else {
+      debug_only(prev_obj = cur_obj);
+      // cur_obj is not a live object, instead it points at the next live object
+      cur_obj = *(HeapWord**)cur_obj;
+      assert(cur_obj > prev_obj, "we should be moving forward through memory, cur_obj: " PTR_FORMAT ", prev_obj: " PTR_FORMAT, p2i(cur_obj), p2i(prev_obj));
+    }
+  }
+
+  assert(cur_obj == end_of_live, "just checking");
 }
 
 void CompactibleSpace::compact() {
-  scan_and_compact(this);
+  // Copy all live objects to their new location
+  // Used by MarkSweep::mark_sweep_phase4()
+
+  verify_up_to_first_dead(this);
+
+  HeapWord* const start = bottom();
+  HeapWord* const end_of_live = _end_of_live;
+
+  assert(_first_dead <= end_of_live, "Invariant. _first_dead: " PTR_FORMAT " <= end_of_live: " PTR_FORMAT, p2i(_first_dead), p2i(end_of_live));
+  if (_first_dead == end_of_live && (start == end_of_live || !cast_to_oop(start)->is_gc_marked())) {
+    // Nothing to compact. The space is either empty or all live object should be left in place.
+    clear_empty_region(this);
+    return;
+  }
+
+  const intx scan_interval = PrefetchScanIntervalInBytes;
+  const intx copy_interval = PrefetchCopyIntervalInBytes;
+
+  assert(start < end_of_live, "bottom: " PTR_FORMAT " should be < end_of_live: " PTR_FORMAT, p2i(start), p2i(end_of_live));
+  HeapWord* cur_obj = start;
+  if (_first_dead > cur_obj && !cast_to_oop(cur_obj)->is_gc_marked()) {
+    // All object before _first_dead can be skipped. They should not be moved.
+    // A pointer to the first live object is stored at the memory location for _first_dead.
+    cur_obj = *(HeapWord**)(_first_dead);
+  }
+
+  debug_only(HeapWord* prev_obj = NULL);
+  while (cur_obj < end_of_live) {
+    if (!cast_to_oop(cur_obj)->is_gc_marked()) {
+      debug_only(prev_obj = cur_obj);
+      // The first word of the dead object contains a pointer to the next live object or end of space.
+      cur_obj = *(HeapWord**)cur_obj;
+      assert(cur_obj > prev_obj, "we should be moving forward through memory");
+    } else {
+      // prefetch beyond q
+      Prefetch::read(cur_obj, scan_interval);
+
+      // size and destination
+      size_t size = cast_to_oop(cur_obj)->size();
+      HeapWord* compaction_top = cast_from_oop<HeapWord*>(cast_to_oop(cur_obj)->forwardee());
+
+      // prefetch beyond compaction_top
+      Prefetch::write(compaction_top, copy_interval);
+
+      // copy object and reinit its mark
+      assert(cur_obj != compaction_top, "everything in this pass should be moving");
+      Copy::aligned_conjoint_words(cur_obj, compaction_top, size);
+      cast_to_oop(compaction_top)->init_mark();
+      assert(cast_to_oop(compaction_top)->klass() != NULL, "should have a class");
+
+      debug_only(prev_obj = cur_obj);
+      cur_obj += size;
+    }
+  }
+
+  clear_empty_region(this);
 }
 
 #endif // INCLUDE_SERIALGC
@@ -617,7 +777,8 @@ HeapWord* OffsetTableContigSpace::cross_threshold(HeapWord* start, HeapWord* end
 OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
                                                MemRegion mr) :
   _offsets(sharedOffsetArray, mr),
-  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true)
+  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock",
+                  Mutex::_safepoint_check_always, true)
 {
   _offsets.set_contig_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
