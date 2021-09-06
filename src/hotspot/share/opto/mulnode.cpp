@@ -201,6 +201,19 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // convert "(-a)*(-b)" into "a*b"
+  Node *in1 = in(1);
+  Node *in2 = in(2);
+  if (in1->Opcode() == Op_SubI && in2->Opcode() == Op_SubI) {
+    Node* n11 = in1->in(1);
+    Node* n21 = in2->in(1);
+    const Type* t11 = phase->type(n11);
+    const Type* t21 = phase->type(n21);
+    if (t11 == TypeInt::ZERO && t21 == TypeInt::ZERO) {
+      return new MulINode(in1->in(2), in2->in(2));
+    }
+  }
+
   // Swap constant to right
   jint con;
   if ((con = in(1)->find_int_con(0)) != 0) {
@@ -296,6 +309,19 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // convert "(-a)*(-b)" into "a*b"
+  Node *in1 = in(1);
+  Node *in2 = in(2);
+  if (in1->Opcode() == Op_SubL && in2->Opcode() == Op_SubL) {
+    Node* n11 = in1->in(1);
+    Node* n21 = in2->in(1);
+    const Type* t11 = phase->type(n11);
+    const Type* t21 = phase->type(n21);
+    if (t11 == TypeLong::ZERO && t21 == TypeLong::ZERO) {
+      return new MulLNode(in1->in(2), in2->in(2));
+    }
+  }
+
   // Swap constant to right
   jlong con;
   if ((con = in(1)->find_long_con(0)) != 0) {
