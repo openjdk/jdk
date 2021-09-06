@@ -3366,6 +3366,9 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 
     if (mincore((address)stack_extent, os::vm_page_size(), vec) == -1) {
       // Fallback to slow path on all errors, including EAGAIN
+      assert((uintptr_t)addr >= stack_extent,
+             "Sanity: addr should be larger than extent, " PTR_FORMAT " >= " PTR_FORMAT,
+             p2i(addr), stack_extent);
       stack_extent = (uintptr_t) get_stack_commited_bottom(
                                                            os::Linux::initial_thread_stack_bottom(),
                                                            (size_t)addr - stack_extent);
@@ -5365,7 +5368,6 @@ bool os::start_debugging(char *buf, int buflen) {
 //    of the stack size given in pthread_attr. We work around this for
 //    threads created by the VM. (We adapt bottom to be P1 and size accordingly.)
 //
-#ifndef ZERO
 static void current_stack_region(address * bottom, size_t * size) {
   if (os::is_primordial_thread()) {
     // primordial thread needs special handling because pthread_getattr_np()
@@ -5421,7 +5423,6 @@ size_t os::current_stack_size() {
   current_stack_region(&bottom, &size);
   return size;
 }
-#endif
 
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
