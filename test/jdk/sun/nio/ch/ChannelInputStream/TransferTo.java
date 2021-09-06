@@ -76,7 +76,7 @@ public class TransferTo {
     private static void test(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
             throws Exception {
         ifOutIsNullThenNpeIsThrown(inputStreamProvider);
-        contents(inputStreamProvider, outputStreamProvider);
+        testStreamContents(inputStreamProvider, outputStreamProvider);
     }
 
     private static void ifOutIsNullThenNpeIsThrown(InputStreamProvider inputStreamProvider) throws Exception {
@@ -93,7 +93,7 @@ public class TransferTo {
         }
     }
 
-    private static void contents(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
+    private static void testStreamContents(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
             throws Exception {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
