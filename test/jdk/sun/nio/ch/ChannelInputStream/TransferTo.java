@@ -84,8 +84,8 @@ public class TransferTo {
         }
     }
 
-    private static void testStreamContents(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
-            throws Exception {
+    private static void testStreamContents(InputStreamProvider inputStreamProvider,
+            OutputStreamProvider outputStreamProvider) throws Exception {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
 
