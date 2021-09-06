@@ -75,11 +75,11 @@ public class TransferTo {
 
     private static void test(InputStreamProvider inputStreamProvider, OutputStreamProvider outputStreamProvider)
             throws Exception {
-        ifOutIsNullThenNpeIsThrown(inputStreamProvider);
+        testNullPointerException(inputStreamProvider);
         testStreamContents(inputStreamProvider, outputStreamProvider);
     }
 
-    private static void ifOutIsNullThenNpeIsThrown(InputStreamProvider inputStreamProvider) throws Exception {
+    private static void testNullPointerException(InputStreamProvider inputStreamProvider) throws Exception {
         try (InputStream in = inputStreamProvider.input()) {
             assertThrowsNPE(() -> in.transferTo(null), "out");
         }
