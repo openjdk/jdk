@@ -124,6 +124,9 @@ public:
 
   uintptr_t local_offset(zoffset offset) const;
   uintptr_t local_offset(zaddress addr) const;
+  uintptr_t local_offset(zaddress_unsafe addr) const;
+
+  zoffset global_offset(uintptr_t local_offset) const;
 
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;

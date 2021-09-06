@@ -217,6 +217,15 @@ inline uintptr_t ZPage::local_offset(zaddress addr) const {
   return local_offset(offset);
 }
 
+inline uintptr_t ZPage::local_offset(zaddress_unsafe addr) const {
+  const zoffset offset = ZAddress::offset(addr);
+  return local_offset(offset);
+}
+
+inline zoffset ZPage::global_offset(uintptr_t local_offset) const {
+  return start() + local_offset;
+}
+
 inline bool ZPage::is_marked() const {
   assert(is_relocatable(), "Invalid page state");
   return _livemap.is_marked(_generation_id);

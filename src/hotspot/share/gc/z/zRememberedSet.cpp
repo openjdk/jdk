@@ -41,7 +41,7 @@ ZRememberedSet::ZRememberedSet(size_t page_size) :
 }
 
 void ZRememberedSet::resize(size_t page_size) {
-  const BitMap::idx_t size_in_bits = page_size / oopSize;
+  const BitMap::idx_t size_in_bits = to_bit_size(page_size);
   _bitmap[0].reinitialize(size_in_bits, false /* clear */);
   _bitmap[1].reinitialize(size_in_bits, false /* clear */);
 }
@@ -56,7 +56,8 @@ void ZRememberedSet::clear_current() {
 }
 
 void ZRememberedSet::clear_current(uintptr_t offset) {
-  current()->clear_range(0, offset / oopSize);
+  const BitMap::idx_t index = to_index(offset);
+  current()->clear_range(0, index);
 }
 
 void ZRememberedSet::clear_previous() {
@@ -68,8 +69,8 @@ ZRememberedSetReverseIterator ZRememberedSet::iterator_reverse() {
 }
 
 ZRememberedSetIterator ZRememberedSet::iterator_current_limited(uintptr_t offset, size_t size) {
-  const size_t index = offset / oopSize;
-  const size_t bit_size = size / oopSize;
+  const size_t index = to_index(offset);;
+  const size_t bit_size = to_bit_size(size);
 
   return ZRememberedSetIterator(current(), index, index + bit_size);
 }
@@ -82,7 +83,7 @@ ZRememberedSetIterator::ZRememberedSetIterator(BitMap* bitmap, BitMap::idx_t sta
     _pos(start),
     _end(end) {}
 
-bool ZRememberedSetIterator::next(size_t* index) {
+bool ZRememberedSetIterator::next(uintptr_t* offset) {
   BitMap::idx_t res = _bitmap->get_next_one_offset(_pos, _end);
   if (res == _end) {
     return false;
@@ -90,7 +91,7 @@ bool ZRememberedSetIterator::next(size_t* index) {
 
   _pos = res + 1;
 
-  *index = res;
+  *offset = ZRememberedSet::to_offset(res);
   return true;
 }
 
@@ -125,12 +126,13 @@ bool ZRememberedSetReverseIterator::next(size_t* index) {
 }
 
 size_t ZRememberedSetContainingIterator::to_index(zaddress_unsafe addr) {
-  zoffset offset = ZAddress::offset(addr);
-  return (offset - _page->start()) / oopSize;
+  const uintptr_t local_offset = _page->local_offset(addr);
+  return ZRememberedSet::to_index(local_offset);
 }
 
 zaddress_unsafe ZRememberedSetContainingIterator::to_addr(size_t index) {
-  return ZOffset::address_unsafe(_page->start() + index * oopSize);
+  const uintptr_t local_offset = ZRememberedSet::to_offset(index);
+  return ZOffset::address_unsafe(_page->global_offset(local_offset));
 }
 
 ZRememberedSetContainingIterator::ZRememberedSetContainingIterator(ZPage* page) :

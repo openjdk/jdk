@@ -532,9 +532,7 @@ private:
     const size_t size = ZUtils::object_size(to_addr);
 
     ZRememberedSetIterator iter = from_page->remset_iterator_current_limited(from_local_offset, size);
-    for (size_t index; iter.next(&index);) {
-      const uintptr_t field_local_offset = index * oopSize;
-
+    for (uintptr_t field_local_offset; iter.next(&field_local_offset);) {
       if (in_place) {
         // Need to forget the bit in the from-page. This is performed during
         // in-place relocation, which will slide the objects in the current page.

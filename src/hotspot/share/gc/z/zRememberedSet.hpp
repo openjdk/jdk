@@ -106,6 +106,9 @@ public:
 // "previous" bitmap is used by the GC to find pointers from old
 // gen to young gen.
 class ZRememberedSet {
+  friend class ZRememberedSetIterator;
+  friend class ZRememberedSetContainingIterator;
+
 private:
   static int _current;
 
@@ -118,6 +121,10 @@ private:
 
   template <typename Function>
   void iterate_bitmap(Function function, CHeapBitMap* bitmap);
+
+  static uintptr_t to_offset(BitMap::idx_t index);
+  static BitMap::idx_t to_index(uintptr_t offset);
+  static BitMap::idx_t to_bit_size(size_t size);
 
 public:
   static void flip();
