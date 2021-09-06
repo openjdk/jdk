@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,38 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_GCID_HPP
-#define SHARE_GC_SHARED_GCID_HPP
+package compiler.vectorapi;
 
-#include "memory/allocation.hpp"
+import jdk.incubator.vector.IntVector;
+import jdk.incubator.vector.VectorSpecies;
 
-class GCId : public AllStatic {
-private:
-  friend class GCIdMark;
+/*
+ * @test
+ * @bug 8244675
+ * @modules jdk.incubator.vector
+ *
+ * @run main/othervm -Xbatch -XX:-Inline            compiler.vectorapi.TestNoInline
+ * @run main/othervm -Xbatch -XX:-IncrementalInline compiler.vectorapi.TestNoInline
+ */
+public class TestNoInline {
+    static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_PREFERRED;
 
-  static uint _next_id;
-  static const uint UNDEFINED = (uint)-1;
-  static uint create();
-
-public:
-  // Returns the currently active GC id. Asserts that there is an active GC id.
-  static uint current();
-  // Same as current() but can return undefined() if no GC id is currently active
-  static uint current_or_undefined();
-  // Returns the next expected GCId.
-  static uint peek();
-  static uint undefined() { return UNDEFINED; }
-  static size_t print_prefix(char* buf, size_t len);
-};
-
-class GCIdMark : public StackObj {
-public:
-  GCIdMark();
-  GCIdMark(uint gc_id);
-  ~GCIdMark();
-};
-
-#endif // SHARE_GC_SHARED_GCID_HPP
+    static IntVector test(int[] arr) {
+        return IntVector.fromArray(I_SPECIES, arr, 0);
+    }
+    public static void main(String[] args) {
+        int[] arr = new int[64];
+        for (int i = 0; i < 20_000; i++) {
+            test(arr);
+        }
+    }
+}
