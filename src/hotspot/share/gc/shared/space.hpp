@@ -308,48 +308,11 @@ public:
 // necessarily, a space that is normally contiguous.  But, for example, a
 // free-list-based space whose normal collection is a mark-sweep without
 // compaction could still support compaction in full GC's.
-//
-// The compaction operations are implemented by the
-// scan_and_{adjust_pointers,compact,forward} function templates.
-// The following are, non-virtual, auxiliary functions used by these function templates:
-// - scan_limit()
-// - scanned_block_is_obj()
-// - scanned_block_size()
-// - adjust_obj_size()
-// - obj_size()
-// These functions are to be used exclusively by the scan_and_* function templates,
-// and must be defined for all (non-abstract) subclasses of CompactibleSpace.
-//
-// NOTE: Any subclasses to CompactibleSpace wanting to change/define the behavior
-// in any of the auxiliary functions must also override the corresponding
-// prepare_for_compaction/adjust_pointers/compact functions using them.
-// If not, such changes will not be used or have no effect on the compaction operations.
-//
-// This translates to the following dependencies:
-// Overrides/definitions of
-//  - scan_limit
-//  - scanned_block_is_obj
-//  - scanned_block_size
-// require override/definition of prepare_for_compaction().
-// Similar dependencies exist between
-//  - adjust_obj_size  and adjust_pointers()
-//  - obj_size         and compact().
-//
-// Additionally, this also means that changes to block_size() or block_is_obj() that
-// should be effective during the compaction operations must provide a corresponding
-// definition of scanned_block_size/scanned_block_is_obj respectively.
 class CompactibleSpace: public Space {
   friend class VMStructs;
 private:
   HeapWord* _compaction_top;
   CompactibleSpace* _next_compaction_space;
-
-  // Auxiliary functions for scan_and_{forward,adjust_pointers,compact} support.
-  inline size_t adjust_obj_size(size_t size) const {
-    return size;
-  }
-
-  inline size_t obj_size(const HeapWord* addr) const;
 
   template <class SpaceType>
   static inline void verify_up_to_first_dead(SpaceType* space) NOT_DEBUG_RETURN;
@@ -451,27 +414,6 @@ protected:
   virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* the_end) {
     return end();
   }
-
-  // Below are template functions for scan_and_* algorithms (avoiding virtual calls).
-  // The space argument should be a subclass of CompactibleSpace, implementing
-  // scan_limit(), scanned_block_is_obj(), and scanned_block_size(),
-  // and possibly also overriding obj_size(), and adjust_obj_size().
-  // These functions should avoid virtual calls whenever possible.
-
-#if INCLUDE_SERIALGC
-  // Frequently calls adjust_obj_size().
-  template <class SpaceType>
-  static inline void scan_and_adjust_pointers(SpaceType* space);
-#endif
-
-  // Frequently calls obj_size().
-  template <class SpaceType>
-  static inline void scan_and_compact(SpaceType* space);
-
-  // Frequently calls scanned_block_is_obj() and scanned_block_size().
-  // Requires the scan_limit() function.
-  template <class SpaceType>
-  static inline void scan_and_forward(SpaceType* space, CompactPoint* cp);
 };
 
 class GenSpaceMangler;
@@ -480,22 +422,6 @@ class GenSpaceMangler;
 // faster allocation, and compaction.
 class ContiguousSpace: public CompactibleSpace {
   friend class VMStructs;
-  // Allow scan_and_forward function to call (private) overrides for auxiliary functions on this class
-  template <typename SpaceType>
-  friend void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* cp);
-
- private:
-  // Auxiliary functions for scan_and_forward support.
-  // See comments for CompactibleSpace for more information.
-  inline HeapWord* scan_limit() const {
-    return top();
-  }
-
-  inline bool scanned_block_is_obj(const HeapWord* addr) const {
-    return true; // Always true, since scan_limit is top
-  }
-
-  inline size_t scanned_block_size(const HeapWord* addr) const;
 
  protected:
   HeapWord* _top;

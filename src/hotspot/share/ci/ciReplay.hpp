@@ -120,8 +120,12 @@ class ciReplay {
   static bool should_not_inline(ciMethod* method);
   static bool should_inline(void* data, ciMethod* method, int bci, int inline_depth);
   static bool should_not_inline(void* data, ciMethod* method, int bci, int inline_depth);
-
 #endif
+
+ public:
+  static oop obj_field(oop obj, Symbol* name);
+  static oop obj_field(oop obj, const char *name);
+
 };
 
 #endif // SHARE_CI_CIREPLAY_HPP
