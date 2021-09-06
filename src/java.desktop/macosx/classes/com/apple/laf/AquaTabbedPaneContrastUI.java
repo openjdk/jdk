@@ -80,8 +80,10 @@ public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
     protected static Color getSelectedTabTitleColor(boolean enabled, boolean pressed) {
         if (enabled && pressed) {
             return UIManager.getColor("TabbedPane.selectedTabTitlePressedColor");
-        } else if (!enabled || (!JRSUIUtils.isMacOSXBigSurOrAbove() && !isFrameActive)) {
+        } else if (!enabled) {
             return UIManager.getColor("TabbedPane.selectedTabTitleDisabledColor");
+        } else if (!JRSUIUtils.isMacOSXBigSurOrAbove() && !isFrameActive) {
+            return UIManager.getColor("TabbedPane.selectedTabTitleNonFocusColor");
         } else {
             return UIManager.getColor("TabbedPane.selectedTabTitleNormalColor");
         }
