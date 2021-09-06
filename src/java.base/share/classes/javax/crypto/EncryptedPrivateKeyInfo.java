@@ -77,15 +77,18 @@ public class EncryptedPrivateKeyInfo {
      * @exception NullPointerException if the <code>encoded</code> is null.
      * @exception IOException if error occurs when parsing the ASN.1 encoding.
      */
-    public EncryptedPrivateKeyInfo(byte[] encoded)
-        throws IOException {
+    public EncryptedPrivateKeyInfo(byte[] encoded) throws IOException {
         if (encoded == null) {
             throw new NullPointerException("the encoded parameter " +
-                                           "must be non-null");
+                "must be non-null");
         }
-        this.encoded = encoded.clone();
-        DerValue val = new DerValue(this.encoded);
 
+        DerValue val = new DerValue(encoded);
+        if (val.tag != DerValue.tag_Sequence) {
+            throw new IOException("DER header error: no SEQ tag");
+        }
+
+        this.encoded = encoded.clone();
         DerValue[] seq = new DerValue[2];
 
         seq[0] = val.data.getDerValue();
