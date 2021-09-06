@@ -873,7 +873,7 @@ table.striped > tbody > tr > th {
     }
     button#navbar-toggle-button {
         width: 3.4em;
-        height: 2.4em;
+        height: 2.8em;
         background-color: transparent;
         display: block;
         float: left;
@@ -886,7 +886,7 @@ table.striped > tbody > tr > th {
         display: block;
         width: 24px;
         height: 3px;
-        margin: 2px 0 4px 0;
+        margin: 1px 0 4px 0;
         border-radius: 2px;
         transition: all 0.1s;
         background-color: #ffffff;
