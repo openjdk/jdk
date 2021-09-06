@@ -132,7 +132,7 @@ void ZStoreBarrierBuffer::on_new_phase_relocate(int i) {
 void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
   volatile zpointer* const p = _buffer[i]._p;
 
-  if (ZHeap::heap()->is_young((zaddress)(uintptr_t)p)) {
+  if (ZHeap::heap()->is_young(p)) {
     return;
   }
 
@@ -160,7 +160,7 @@ bool ZStoreBarrierBuffer::is_inside_marking_snapshot(volatile zpointer* p) {
     return false;
   }
 
-  bool p_is_old = ZHeap::heap()->is_old((zaddress)(uintptr_t)p);
+  bool p_is_old = ZHeap::heap()->is_old(p);
 
   return p_is_old;
 }

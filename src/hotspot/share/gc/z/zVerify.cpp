@@ -62,7 +62,7 @@ static void z_verify_old_oop(zpointer* p) {
     if (!ZPointer::is_mark_good(o)) {
       // Old to old pointers are allowed to have bad minor bits
       guarantee(ZPointer::is_marked_major(o),  BAD_OOP_ARG(o, p));
-      guarantee(ZHeap::heap()->page(zaddress(uintptr_t(p)))->is_old(), BAD_OOP_ARG(o, p));
+      guarantee(ZHeap::heap()->is_old(p), BAD_OOP_ARG(o, p));
     } else {
       zaddress addr = ZPointer::uncolor(o);
       if (ZHeap::heap()->is_young(addr)) {
@@ -78,7 +78,7 @@ static void z_verify_old_oop(zpointer* p) {
 static void z_verify_young_oop(zpointer* p) {
   zpointer o = *p;
   if (!z_is_null_relaxed(o)) {
-    guarantee(ZHeap::heap()->page(zaddress(uintptr_t(p)))->is_young(), BAD_OOP_ARG(o, p));
+    guarantee(ZHeap::heap()->is_young(p), BAD_OOP_ARG(o, p));
     guarantee(ZPointer::is_marked_minor(o),  BAD_OOP_ARG(o, p));
 
     if (ZPointer::is_load_good(o)) {

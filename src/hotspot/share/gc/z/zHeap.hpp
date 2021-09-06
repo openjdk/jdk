@@ -96,8 +96,12 @@ public:
   bool is_young(zaddress addr) const;
   bool is_old(zaddress addr) const;
 
+  bool is_young(volatile zpointer* ptr) const;
+  bool is_old(volatile zpointer* ptr) const;
+
   // Marking
   ZPage* page(zaddress addr) const;
+  ZPage* page(volatile zpointer* addr) const;
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>

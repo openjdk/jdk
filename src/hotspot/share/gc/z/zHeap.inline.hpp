@@ -105,6 +105,15 @@ inline bool ZHeap::is_old(zaddress addr) const {
   return !is_young(addr);
 }
 
+inline bool ZHeap::is_young(volatile zpointer* ptr) const {
+  ZPage* const page = ZHeap::heap()->page(ptr);
+  return page->is_young();
+}
+
+inline bool ZHeap::is_old(volatile zpointer* ptr) const {
+  return !is_young(ptr);
+}
+
 inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   assert(!ZPointer::is_load_good(ptr), "no need to remap load-good pointer");
 
@@ -293,6 +302,10 @@ inline ZPage* ZHeap::page(zaddress addr) const {
   return _page_table.get(addr);
 }
 
+inline ZPage* ZHeap::page(volatile zpointer* ptr) const {
+  return _page_table.get(ptr);
+}
+
 inline bool ZHeap::is_object_live(zaddress addr) const {
   ZPage* page = _page_table.get(addr);
   return page->is_object_live(addr);
@@ -333,7 +346,7 @@ inline void ZHeap::remember(volatile zpointer* p) {
 }
 
 inline void ZHeap::remember_filtered(volatile zpointer* p) {
-  if (is_old(to_zaddress(uintptr_t(p)))) {
+  if (is_old(p)) {
     remember(p);
   }
 }

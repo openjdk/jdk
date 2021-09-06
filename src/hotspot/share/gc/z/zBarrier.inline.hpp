@@ -152,7 +152,7 @@ inline void ZBarrier::self_heal(ZBarrierFastPath fast_path, volatile zpointer* p
 
   for (;;) {
     if (ptr == zpointer::null) {
-      assert(!ZHeap::heap()->is_in(uintptr_t(p)) || !ZHeap::heap()->is_old(zaddress(uintptr_t(p))), "No raw null in old");
+      assert(!ZHeap::heap()->is_in(uintptr_t(p)) || !ZHeap::heap()->is_old(p), "No raw null in old");
     }
 
     assert_transition_monotonicity(ptr, heal_ptr);
