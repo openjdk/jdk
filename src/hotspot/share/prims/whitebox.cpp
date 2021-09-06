@@ -2002,7 +2002,7 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
-  return HeapShared::is_heap_object_archiving_allowed();
+  return HeapShared::can_use();
 WB_END
 
 
