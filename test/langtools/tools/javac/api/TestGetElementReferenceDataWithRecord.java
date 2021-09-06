@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,40 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
-#define SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
+package test;
 
-#include "utilities/globalDefinitions.hpp"
+public record TestGetElementReferenceDataWithRecord(String/*getElement:CLASS:java.lang.String*/ s1,
+                                                    String/*getElement:CLASS:java.lang.String*/ s2) implements I {}
 
-class G1DirtyCardQueueSet;
-
-// A dirty card queue providing thread-safe enqueue.  A shared global
-// instance can be used for cases where a thread-local dirty card can't
-// be used.
-class G1SharedDirtyCardQueue {
-  G1DirtyCardQueueSet* const _qset;
-  void** _buffer;
-  size_t _index;
-
-  NONCOPYABLE(G1SharedDirtyCardQueue);
-
-public:
-  G1SharedDirtyCardQueue(G1DirtyCardQueueSet* qset);
-  ~G1SharedDirtyCardQueue();    // flushes the queue.
-
-  // Thread-safe addition to shared logging buffer.
-  void enqueue(void* card_ptr);
-
-  // Flush any pending entries to the qset and remove the buffer.
-  // Not thread-safe.
-  void flush();
-
-  // Discard any pending entries.
-  // Not thread-safe.
-  void reset();
-};
-
-#endif // SHARE_GC_G1_G1SHAREDDIRTYCARDQUEUE_HPP
+interface I {}

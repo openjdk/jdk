@@ -1736,6 +1736,9 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
+  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
+      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+  }
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {

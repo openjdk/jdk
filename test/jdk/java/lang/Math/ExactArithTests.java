@@ -57,7 +57,7 @@ public class ExactArithTests {
 
     /**
      * Test Math.addExact, multiplyExact, divideExact, subtractExact,
-     * incrementExact, decrementExact, negateExact methods with
+     * floorDivExact, incrementExact, decrementExact, negateExact methods with
      * {@code int} arguments.
      */
     static void testIntegerExact() {
@@ -166,6 +166,34 @@ public class ExactArithTests {
             }
         }
 
+        exceptionExpected = false;
+        try {
+            // Test floorDivExact
+            int q = 0;
+            try {
+                q = Math.floorDiv(x, y);
+            } catch (ArithmeticException e) {
+                exceptionExpected = true;
+            }
+            if (!exceptionExpected && x == Integer.MIN_VALUE && y == -1) {
+                exceptionExpected = true;
+            }
+            int z = Math.floorDivExact(x, y);
+            if (exceptionExpected) {
+                fail("FAIL: int Math.floorDivExact(" + x + " / " + y + ")" +
+                    "; expected ArithmeticException not thrown");
+            }
+            if (z != q) {
+                fail("FAIL: int Math.floorDivExact(" + x + " / " + y + ") = " +
+                    z + "; expected: " + q);
+            }
+        } catch (ArithmeticException ex) {
+            if (!exceptionExpected) {
+                fail("FAIL: int Math.floorDivExact(" + x + " / " + y + ")" +
+                    "; Unexpected exception: " + ex);
+            }
+        }
+
         try {
             // Test incrementExact
             int inc = Math.incrementExact(x);
@@ -217,8 +245,8 @@ public class ExactArithTests {
 
     /**
      * Test Math.addExact, multiplyExact, divideExact, subtractExact,
-     * incrementExact, decrementExact, negateExact, toIntExact methods
-     * with {@code long} arguments.
+     * floorDivExact, incrementExact, decrementExact, negateExact, toIntExact
+     * methods with {@code long} arguments.
      */
     static void testLongExact() {
         testLongExactTwice(0, 0);
@@ -320,6 +348,34 @@ public class ExactArithTests {
         } catch (ArithmeticException ex) {
             if (resultBig != null && inLongRange(resultBig)) {
                 fail("FAIL: long Math.divideExact(" + x + " / " + y + ")" +
+                    "; Unexpected exception: " + ex);
+            }
+        }
+
+        boolean exceptionExpected = false;
+        try {
+            // Test floorDivExact
+            long q = 0;
+            try {
+                q = Math.floorDiv(x, y);
+            } catch (ArithmeticException e) {
+                exceptionExpected = true;
+            }
+            if (!exceptionExpected && x == Long.MIN_VALUE && y == -1) {
+                exceptionExpected = true;
+            }
+            long z = Math.floorDivExact(x, y);
+            if (exceptionExpected) {
+                fail("FAIL: long Math.floorDivExact(" + x + " / " + y + ")" +
+                    "; expected ArithmeticException not thrown");
+            }
+            if (z != q) {
+                fail("FAIL: long Math.floorDivExact(" + x + " / " + y + ") = " +
+                    z + "; expected: " + q);
+            }
+        } catch (ArithmeticException ex) {
+            if (!exceptionExpected) {
+                fail("FAIL: long Math.floorDivExact(" + x + " / " + y + ")" +
                     "; Unexpected exception: " + ex);
             }
         }

@@ -160,9 +160,8 @@ public:
 // straightforward manner in a general, non-generational, non-contiguous generation
 // (or heap) setting.
 class ReferenceProcessor : public ReferenceDiscoverer {
-  friend class RefProcSoftWeakFinalPhaseTask;
+  friend class RefProcTask;
   friend class RefProcKeepAliveFinalPhaseTask;
-  friend class RefProcPhantomPhaseTask;
 public:
   // Names of sub-phases of reference processing. Indicates the type of the reference
   // processed and the associated phase number at the end.
@@ -253,21 +252,15 @@ private:
   // Traverse the list and remove any Refs whose referents are alive,
   // or NULL if discovery is not atomic. Enqueue and clear the reference for
   // others if do_enqueue_and_clear is set.
-  size_t process_soft_weak_final_refs_work(DiscoveredList&    refs_list,
-                                           BoolObjectClosure* is_alive,
-                                           OopClosure*        keep_alive,
-                                           bool               do_enqueue_and_clear);
+  size_t process_discovered_list_work(DiscoveredList&    refs_list,
+                                      BoolObjectClosure* is_alive,
+                                      OopClosure*        keep_alive,
+                                      bool               do_enqueue_and_clear);
 
   // Keep alive followers of referents for FinalReferences. Must only be called for
   // those.
-  size_t process_final_keep_alive_work(DiscoveredList&    refs_list,
-                                       OopClosure*        keep_alive,
-                                       VoidClosure*       complete_gc);
-
-  size_t process_phantom_refs_work(DiscoveredList&    refs_list,
-                                   BoolObjectClosure* is_alive,
-                                   OopClosure*        keep_alive,
-                                   VoidClosure*       complete_gc);
+  size_t process_final_keep_alive_work(DiscoveredList& refs_list,
+                                       OopClosure* keep_alive);
 
 
   void setup_policy(bool always_clear) {
@@ -539,6 +532,11 @@ protected:
   uint tracker_id(uint worker_id) const {
     return _ref_processor.processing_is_mt() ? worker_id : 0;
   }
+
+  void process_discovered_list(uint worker_id,
+                               ReferenceType ref_type,
+                               BoolObjectClosure* is_alive,
+                               OopClosure* keep_alive);
 public:
   RefProcTask(ReferenceProcessor& ref_processor,
               ReferenceProcessorPhaseTimes* phase_times)
