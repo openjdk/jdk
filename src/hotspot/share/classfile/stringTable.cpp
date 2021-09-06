@@ -53,6 +53,7 @@
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/utf8.hpp"
 
 // We prefer short chains of avg 2
@@ -71,11 +72,12 @@ inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
   return HeapShared::decode_from_archive(v);
 }
 
-static CompactHashtable<
+typedef CompactHashtable<
   const jchar*, oop,
   read_string_from_compact_hashtable,
-  java_lang_String::equals
-> _shared_table;
+  java_lang_String::equals> SharedStringTable;
+
+static SharedStringTable _shared_table;
 #endif
 
 // --------------------------------------------------------------------------
@@ -597,39 +599,40 @@ void StringTable::verify() {
 
 // Verification and comp
 class VerifyCompStrings : StackObj {
-  GrowableArray<oop>* _oops;
+  static unsigned string_hash(oop const& str) {
+    return java_lang_String::hash_code_noupdate(str);
+  }
+  static bool string_equals(oop const& a, oop const& b) {
+    return java_lang_String::equals(a, b);
+  }
+
+  ResizeableResourceHashtable<oop, bool,
+                              ResourceObj::C_HEAP, mtInternal,
+                              string_hash, string_equals> _table;
  public:
   size_t _errors;
-  VerifyCompStrings(GrowableArray<oop>* oops) : _oops(oops), _errors(0) {}
+  VerifyCompStrings() : _table(unsigned(_items_count / 8) + 1), _errors(0) {}
   bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == NULL) {
       return true;
     }
-    int len = _oops->length();
-    for (int i = 0; i < len; i++) {
-      bool eq = java_lang_String::equals(s, _oops->at(i));
-      assert(!eq, "Duplicate strings");
-      if (eq) {
-        _errors++;
-      }
+    bool created;
+    _table.put_if_absent(s, true, &created);
+    assert(created, "Duplicate strings");
+    if (!created) {
+      _errors++;
     }
-    _oops->push(s);
     return true;
   };
 };
 
 size_t StringTable::verify_and_compare_entries() {
   Thread* thr = Thread::current();
-  GrowableArray<oop>* oops =
-    new (ResourceObj::C_HEAP, mtInternal)
-      GrowableArray<oop>((int)_current_size, mtInternal);
-
-  VerifyCompStrings vcs(oops);
+  VerifyCompStrings vcs;
   if (!_local_table->try_scan(thr, vcs)) {
     log_info(stringtable)("verify unavailable at this moment");
   }
-  delete oops;
   return vcs._errors;
 }
 
@@ -718,15 +721,15 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 oop StringTable::create_archived_string(oop s) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   assert(java_lang_String::is_instance(s), "sanity");
-  assert(!HeapShared::is_archived_object(s), "sanity");
+  assert(!HeapShared::is_archived_object_during_dumptime(s), "sanity");
 
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v);
+  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_object(v);
   if (new_v == NULL) {
     return NULL;
   }
-  new_s = HeapShared::archive_heap_object(s);
+  new_s = HeapShared::archive_object(s);
   if (new_s == NULL) {
     return NULL;
   }
@@ -759,7 +762,7 @@ public:
 };
 
 void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_strings) {
-  assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
+  assert(HeapShared::can_write(), "must be");
 
   _shared_table.reset();
   CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
@@ -777,9 +780,47 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
     _shared_table.reset();
-  } else if (!HeapShared::closed_archive_heap_region_mapped()) {
+  } else if (!HeapShared::are_archived_strings_available()) {
     _shared_table.reset();
   }
+
+}
+
+class SharedStringTransfer {
+  JavaThread* _current;
+public:
+  SharedStringTransfer(JavaThread* current) : _current(current) {}
+
+  void do_value(oop string) {
+    JavaThread* THREAD = _current;
+    ExceptionMark rm(THREAD);
+    HandleMark hm(THREAD);
+    StringTable::intern(string, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // The archived constant pools contains strings that must be in the interned string table.
+      // If we fail here, it means the VM runs out of memory during bootstrap, so there's no point
+      // of trying to recover from here.
+      vm_exit_during_initialization("Failed to transfer shared strings to interned string table");
+    }
+  }
+};
+
+// If the CDS archive heap is loaded (not mapped) into the old generation,
+// it's possible for the shared strings to move due to full GC, making the
+// _shared_table invalid. Therefore, we proactively copy all the shared
+// strings into the _local_table, which can deal with oop relocation.
+void StringTable::transfer_shared_strings_to_local_table() {
+  assert(HeapShared::is_loaded(), "must be");
+  EXCEPTION_MARK;
+
+  // Reset _shared_table so that during the transfer, StringTable::intern()
+  // will not look up from there. Instead, it will create a new entry in
+  // _local_table for each element in shared_table_copy.
+  SharedStringTable shared_table_copy = _shared_table;
+  _shared_table.reset();
+
+  SharedStringTransfer transfer(THREAD);
+  shared_table_copy.iterate(&transfer);
 }
 
 #endif //INCLUDE_CDS_JAVA_HEAP

@@ -97,7 +97,6 @@ public class InheritDocTaglet extends BaseTaglet {
             if (!inheritedDoc.inlineTags.isEmpty()) {
                 replacement = writer.commentTagsToOutput(inheritedDoc.holder, inheritedDoc.holderTag,
                     inheritedDoc.inlineTags, isFirstSentence);
-                ch.setOverrideElement(inheritedDoc.holder);
             }
 
         } else {

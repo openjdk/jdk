@@ -146,7 +146,9 @@ public:
 private:
 
   static DumpTimeSharedClassTable* _dumptime_table;
+  static DumpTimeSharedClassTable* _cloned_dumptime_table;
   static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
+  static DumpTimeLambdaProxyClassDictionary* _cloned_dumptime_lambda_proxy_class_dictionary;
   // SystemDictionaries in the base layer static archive
   static RunTimeSharedDictionary _builtin_dictionary;
   static RunTimeSharedDictionary _unregistered_dictionary;
@@ -204,8 +206,7 @@ public:
 
   static void allocate_shared_data_arrays(int size, TRAPS);
 
-  // Check if sharing is supported for the class loader.
-  static bool is_sharing_possible(ClassLoaderData* loader_data);
+  static bool is_builtin_loader(ClassLoaderData* loader_data);
 
   static bool add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k);
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
@@ -267,6 +268,16 @@ public:
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
+
+  // For repeatable dumping, we
+  //   1. clone DumpTimeSharedClassTable, same for DumpTimeLambdaProxyClassDictionary
+  //      clone SharedClassPathTable
+  //   2. do dumping
+  //   3. restore DumpTimeSharedClassTable, DumpTimeLambdaProxyClassDictionary and SharedClassPathTable
+  //      from cloned versions.
+  static void clone_dumptime_tables();
+  static void restore_dumptime_tables();
+
   static void check_excluded_classes();
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);

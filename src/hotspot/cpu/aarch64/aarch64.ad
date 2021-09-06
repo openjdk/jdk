@@ -1295,7 +1295,7 @@ public:
   };
 };
 
- bool is_CAS(int opcode, bool maybe_volatile);
+  bool is_CAS(int opcode, bool maybe_volatile);
 
   // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
 
@@ -2161,7 +2161,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         }
       } else if (dst_lo_rc == rc_float) { // fpr --> fpr copy
-          if (cbuf) {
+        if (is64) {
             __ fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         } else {
@@ -2534,7 +2534,7 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
   return NULL;
 }
 
-bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
@@ -2591,6 +2591,14 @@ uint Matcher::int_pressure_limit()
   // a high register pressure area of the code so that split_DEF can
   // generate DefinitionSpillCopy for the derived pointer.
   uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
+  if (!PreserveFramePointer) {
+    // When PreserveFramePointer is off, frame pointer is allocatable,
+    // but different from other SOC registers, it is excluded from
+    // fatproj's mask because its save type is No-Save. Decrease 1 to
+    // ensure high pressure at fatproj when PreserveFramePointer is off.
+    // See check_pressure_at_fatproj().
+    default_int_pressure_threshold--;
+  }
   return (INTPRESSURE == -1) ? default_int_pressure_threshold : INTPRESSURE;
 }
 
@@ -5490,6 +5498,15 @@ operand vRegD_V31()
 %{
   constraint(ALLOC_IN_RC(v31_reg));
   match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand pReg()
+%{
+  constraint(ALLOC_IN_RC(pr_reg));
+  match(RegVectMask);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -14966,12 +14983,12 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_pipe(pipe_class_memory);
 %}
 
-instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, Universe dummy, rFlagsReg cr)
+instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe dummy, rFlagsReg cr)
 %{
   predicate((uint64_t)n->in(2)->get_long()
             < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL base);
+  effect(TEMP temp, USE_KILL base, KILL cr);
 
   ins_cost(4 * INSN_COST);
   format %{ "ClearArray $cnt, $base" %}
@@ -16660,11 +16677,11 @@ instruct string_indexof_conUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
-                              iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
-                              iRegINoSp tmp3, rFlagsReg cr)
+                             iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                             iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
-  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
+  predicate((UseSVE == 0) && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U));
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
@@ -16683,7 +16700,7 @@ instruct stringL_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
                               iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
-  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  predicate((UseSVE == 0) && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L));
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
@@ -16691,8 +16708,8 @@ instruct stringL_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
 
   ins_encode %{
     __ stringL_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
-                           $result$$Register, $tmp1$$Register, $tmp2$$Register,
-                           $tmp3$$Register);
+                            $result$$Register, $tmp1$$Register, $tmp2$$Register,
+                            $tmp3$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}

@@ -797,6 +797,15 @@ public final class System {
      *     <td>The module name of the initial/main module</td></tr>
      * <tr><th scope="row">{@systemProperty jdk.module.main.class}</th>
      *     <td>The main class name of the initial module</td></tr>
+     * <tr><th scope="row">{@systemProperty file.encoding}</th>
+     *     <td>The name of the default charset, defaults to {@code UTF-8}.
+     *     The property may be set on the command line to the value
+     *     {@code UTF-8} or {@code COMPAT}. If set on the command line to
+     *     the value {@code COMPAT} then the value is replaced with the
+     *     value of the {@code native.encoding} property during startup.
+     *     Setting the property to a value other than {@code UTF-8} or
+     *     {@code COMPAT} leads to unspecified behavior.
+     *     </td></tr>
      * </tbody>
      * </table>
      *
@@ -2112,9 +2121,9 @@ public final class System {
         setIn0(new BufferedInputStream(fdIn));
         // sun.stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encoding
-        // defaults to Charset.defaultCharset()
-        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
-        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
+        // defaults to native.encoding
+        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding", StaticProperty.nativeEncoding())));
+        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding", StaticProperty.nativeEncoding())));
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();

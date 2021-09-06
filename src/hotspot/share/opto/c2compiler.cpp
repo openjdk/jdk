@@ -640,6 +640,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
   case vmIntrinsics::_md5_implCompress:
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:

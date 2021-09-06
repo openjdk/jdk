@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,10 +121,9 @@ public class T7018098 extends JavacTestingAbstractProcessor {
 
     <T> void checkEqual(String label, T actual, T expected) {
         if (actual != expected)
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "Unexpected value for " + label
-                    + "; expected: " + expected
-                    + "; found: " + actual);
+            messager.printError("Unexpected value for " + label
+                                + "; expected: " + expected
+                                + "; found: " + actual);
     }
 
     int round = 0;

@@ -547,6 +547,7 @@ class os: AllStatic {
   static FILE* fopen(const char* path, const char* mode);
   static int close(int fd);
   static jlong lseek(int fd, jlong offset, int whence);
+  static bool file_exists(const char* file);
   // This function, on Windows, canonicalizes a given path (see os_windows.cpp for details).
   // On Posix, this function is a noop: it does not change anything and just returns
   // the input pointer.

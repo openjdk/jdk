@@ -49,7 +49,7 @@ public:
   }
 
   void do_test(Metaspace::MetadataType mdType) {
-    _lock = new Mutex(Monitor::native, "gtest-IsMetaspaceObjTest-lock", false, Monitor::_safepoint_check_never);
+    _lock = new Mutex(Monitor::leaf, "gtest-IsMetaspaceObjTest-lock", Monitor::_safepoint_check_never);
     {
       MutexLocker ml(_lock, Mutex::_no_safepoint_check_flag);
       _ms = new ClassLoaderMetaspace(_lock, Metaspace::StandardMetaspaceType);

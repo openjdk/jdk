@@ -133,7 +133,7 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder) :
   _metaspace(NULL),
-  _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock", true,
+  _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock",
                             Mutex::_safepoint_check_never)),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true),
@@ -806,6 +806,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
   if (dest.resolve() != NULL) {
     return;
   } else {
+    record_modified_oops();
     dest = _handles.add(h());
   }
 }
@@ -963,11 +964,13 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr(" - keep alive          %d", _keep_alive);
   out->print   (" - claim               ");
   switch(_claim) {
-    case _claim_none:       out->print_cr("none"); break;
-    case _claim_finalizable:out->print_cr("finalizable"); break;
-    case _claim_strong:     out->print_cr("strong"); break;
-    case _claim_other:      out->print_cr("other"); break;
-    default:                ShouldNotReachHere();
+    case _claim_none:                       out->print_cr("none"); break;
+    case _claim_finalizable:                out->print_cr("finalizable"); break;
+    case _claim_strong:                     out->print_cr("strong"); break;
+    case _claim_other:                      out->print_cr("other"); break;
+    case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
+    case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
+    default:                                ShouldNotReachHere();
   }
   out->print_cr(" - handles             %d", _handles.count());
   out->print_cr(" - dependency count    %d", _dependency_count);

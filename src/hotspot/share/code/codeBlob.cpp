@@ -41,6 +41,8 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaFrameAnchor.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -92,7 +94,6 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _oop_maps(oop_maps),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _name(name)
-  NOT_PRODUCT(COMMA _strings(CodeStrings()))
 {
   assert(is_aligned(layout.size(),            oopSize), "unaligned size");
   assert(is_aligned(layout.header_size(),     oopSize), "unaligned size");
@@ -105,7 +106,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   S390_ONLY(_ctable_offset = 0;) // avoid uninitialized fields
 }
 
-CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb /*UNUSED*/, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
   _type(type),
   _size(layout.size()),
   _header_size(layout.header_size()),
@@ -120,7 +121,6 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _relocation_end(layout.relocation_end()),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _name(name)
-  NOT_PRODUCT(COMMA _strings(CodeStrings()))
 {
   assert(is_aligned(_size,        oopSize), "unaligned size");
   assert(is_aligned(_header_size, oopSize), "unaligned size");
@@ -162,7 +162,8 @@ RuntimeBlob::RuntimeBlob(
 void CodeBlob::flush() {
   FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
   _oop_maps = NULL;
-  NOT_PRODUCT(_strings.free();)
+  NOT_PRODUCT(_asm_remarks.clear());
+  NOT_PRODUCT(_dbg_strings.clear());
 }
 
 void CodeBlob::set_oop_maps(OopMapSet* p) {
@@ -188,7 +189,8 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
       ttyLocker ttyl;
       tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
       tty->print_cr("Decoding %s " INTPTR_FORMAT, stub_id, (intptr_t) stub);
-      Disassembler::decode(stub->code_begin(), stub->code_end(), tty);
+      Disassembler::decode(stub->code_begin(), stub->code_end(), tty
+                           NOT_PRODUCT(COMMA &stub->asm_remarks()));
       if ((stub->oop_maps() != NULL) && AbstractDisassembler::show_structs()) {
         tty->print_cr("- - - [OOP MAPS]- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
         stub->oop_maps()->print();
@@ -713,26 +715,34 @@ void DeoptimizationBlob::print_value_on(outputStream* st) const {
 // Implementation of OptimizedEntryBlob
 
 OptimizedEntryBlob::OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
-                     jobject receiver, ByteSize jfa_sp_offset) :
+                                       jobject receiver, ByteSize frame_data_offset) :
   BufferBlob(name, size, cb),
   _exception_handler_offset(exception_handler_offset),
   _receiver(receiver),
-  _jfa_sp_offset(jfa_sp_offset) {
+  _frame_data_offset(frame_data_offset) {
   CodeCache::commit(this);
 }
 
 OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb, intptr_t exception_handler_offset,
-                             jobject receiver, ByteSize jfa_sp_offset) {
+                                               jobject receiver, ByteSize frame_data_offset) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   OptimizedEntryBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(OptimizedEntryBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) OptimizedEntryBlob(name, size, cb, exception_handler_offset, receiver, jfa_sp_offset);
+    blob = new (size) OptimizedEntryBlob(name, size, cb, exception_handler_offset, receiver, frame_data_offset);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 
   return blob;
+}
+
+void OptimizedEntryBlob::oops_do(OopClosure* f, const frame& frame) {
+  frame_data_for_frame(frame)->old_handles->oops_do(f);
+}
+
+JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
+  return &frame_data_for_frame(frame)->jfa;
 }

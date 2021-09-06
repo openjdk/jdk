@@ -53,7 +53,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
-#include "services/memTracker.hpp"
+#include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -72,7 +72,6 @@ char** Arguments::_jvm_args_array               = NULL;
 int    Arguments::_num_jvm_args                 = 0;
 char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
-const char*  Arguments::_gc_log_filename        = NULL;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
@@ -92,6 +91,8 @@ bool   Arguments::_enable_preview               = false;
 
 char*  Arguments::SharedArchivePath             = NULL;
 char*  Arguments::SharedDynamicArchivePath      = NULL;
+
+LegacyGCLogging Arguments::_legacyGCLogging     = { 0, 0 };
 
 AgentLibraryList Arguments::_libraryList;
 AgentLibraryList Arguments::_agentList;
@@ -525,6 +526,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -533,6 +535,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(18), JDK_Version::jdk(19) },
+  { "InlineFrequencyCount",         JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "G1RSetRegionEntries",          JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "G1RSetSparseRegionEntries",    JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -1116,7 +1119,7 @@ void Arguments::print_on(outputStream* st) {
     if (len == 0) {
       st->print_raw_cr("<not set>");
     } else {
-      st->print_raw_cr(path, (int)len);
+      st->print_raw_cr(path, len);
     }
   }
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
@@ -1990,17 +1993,6 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  if (PrintNMTStatistics) {
-#if INCLUDE_NMT
-    if (MemTracker::tracking_level() == NMT_off) {
-#endif // INCLUDE_NMT
-      warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
-      PrintNMTStatistics = false;
-#if INCLUDE_NMT
-    }
-#endif
-  }
-
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JVMCI
   if (status && EnableJVMCI) {
@@ -2341,7 +2333,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, load));
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, unload));
       } else if (!strcmp(tail, ":gc")) {
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
+        if (_legacyGCLogging.lastFlag == 0) {
+          _legacyGCLogging.lastFlag = 1;
+        }
       } else if (!strcmp(tail, ":jni")) {
         LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(jni, resolve));
       }
@@ -2748,7 +2742,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);
-      _gc_log_filename = os::strdup_check_oom(tail);
+      _legacyGCLogging.lastFlag = 2;
+      _legacyGCLogging.file = os::strdup_check_oom(tail);
     } else if (match_option(option, "-Xlog", &tail)) {
       bool ret = false;
       if (strcmp(tail, ":help") == 0) {
@@ -3707,29 +3702,6 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       JVMFlag::printFlags(tty, false);
       vm_exit(0);
     }
-    if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
-#if INCLUDE_NMT
-      // The launcher did not setup nmt environment variable properly.
-      if (!MemTracker::check_launcher_nmt_support(tail)) {
-        warning("Native Memory Tracking did not setup properly, using wrong launcher?");
-      }
-
-      // Verify if nmt option is valid.
-      if (MemTracker::verify_nmt_option()) {
-        // Late initialization, still in single-threaded mode.
-        if (MemTracker::tracking_level() >= NMT_summary) {
-          MemTracker::init();
-        }
-      } else {
-        vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
-      }
-      continue;
-#else
-      jio_fprintf(defaultStream::error_stream(),
-        "Native Memory Tracking is not supported in this VM\n");
-      return JNI_ERR;
-#endif
-    }
 
 #ifndef PRODUCT
     if (match_option(option, "-XX:+PrintFlagsWithComments")) {
@@ -3759,14 +3731,14 @@ bool Arguments::handle_deprecated_print_gc_flags() {
     log_warning(gc)("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
   }
 
-  if (_gc_log_filename != NULL) {
+  if (_legacyGCLogging.lastFlag == 2) {
     // -Xloggc was used to specify a filename
     const char* gc_conf = PrintGCDetails ? "gc*" : "gc";
 
     LogTarget(Error, logging) target;
     LogStream errstream(target);
-    return LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, &errstream);
-  } else if (PrintGC || PrintGCDetails) {
+    return LogConfiguration::parse_log_arguments(_legacyGCLogging.file, gc_conf, NULL, NULL, &errstream);
+  } else if (PrintGC || PrintGCDetails || (_legacyGCLogging.lastFlag == 1)) {
     LogConfiguration::configure_stdout(LogLevel::Info, !PrintGCDetails, LOG_TAGS(gc));
   }
   return true;
@@ -3981,6 +3953,26 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
+#if INCLUDE_NMT
+  // Verify NMT arguments
+  const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
+  if (lvl == NMT_unknown) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
+    return JNI_ERR;
+  }
+  if (PrintNMTStatistics && lvl == NMT_off) {
+    warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
+    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
+  }
+#else
+  if (!FLAG_IS_DEFAULT(NativeMemoryTracking) || PrintNMTStatistics) {
+    warning("Native Memory Tracking is not supported in this VM");
+    FLAG_SET_DEFAULT(NativeMemoryTracking, "off");
+    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
+  }
+#endif // INCLUDE_NMT
+
   if (TraceDependencies && VerifyDependencies) {
     if (!FLAG_IS_DEFAULT(TraceDependencies)) {
       warning("TraceDependencies results may be inflated by VerifyDependencies");
@@ -3988,6 +3980,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
   apply_debugger_ergo();
+
+  if (log_is_enabled(Info, arguments)) {
+    LogStream st(Log(arguments)::info());
+    Arguments::print_on(&st);
+  }
 
   return JNI_OK;
 }

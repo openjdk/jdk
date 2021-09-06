@@ -31,6 +31,12 @@ import java.lang.annotation.*;
  * Indicates the API declaration in question is associated with a
  * <em>preview feature</em>. See JEP 12: "Preview Language and VM
  * Features" (http://openjdk.java.net/jeps/12).
+ *
+ * Note this internal annotation is handled specially by the javac compiler.
+ * To work properly with {@code --release older-release}, it requires special
+ * handling in {@code make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java}
+ * and {@code src/jdk.compiler/share/classes/com/sun/tools/javac/jvm/ClassReader.java}.
+ *
  * @since 14
  */
 // Match the meaningful targets of java.lang.Deprecated, omit local

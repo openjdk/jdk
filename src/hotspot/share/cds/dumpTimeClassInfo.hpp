@@ -152,6 +152,7 @@ public:
   void set_failed_verification()                    { _failed_verification = true; }
   InstanceKlass* nest_host() const                  { return _nest_host; }
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
+  DumpTimeClassInfo clone();
 };
 
 
@@ -170,14 +171,18 @@ inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
 class DumpTimeSharedClassTable: public ResourceHashtable<
   InstanceKlass*,
   DumpTimeClassInfo,
-  &DumpTimeSharedClassTable_hash,
-  primitive_equals<InstanceKlass*>,
   15889, // prime number
-  ResourceObj::C_HEAP>
+  ResourceObj::C_HEAP,
+  mtClassShared,
+  &DumpTimeSharedClassTable_hash>
 {
   int _builtin_count;
   int _unregistered_count;
 public:
+  DumpTimeSharedClassTable() {
+    _builtin_count = 0;
+    _unregistered_count = 0;
+  }
   DumpTimeClassInfo* find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress);
   void inc_builtin_count()      { _builtin_count++; }
   void inc_unregistered_count() { _unregistered_count++; }

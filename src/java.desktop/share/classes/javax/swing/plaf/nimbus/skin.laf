@@ -25751,7 +25751,7 @@
                      <visible>true</visible>
                      <shapes>
                         <rectangle x1="0.0" x2="100.0" y1="0.0" y2="30.0" rounding="0.0">
-                           <matte red="255" green="255" blue="255" alpha="255" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                           <matte red="255" green="255" blue="255" alpha="255" componentPropertyName="background" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                            <paintPoints x1="0.25" y1="0.0" x2="0.2" y2="0.1"/>
                         </rectangle>
                      </shapes>
@@ -25857,7 +25857,7 @@
                      <visible>true</visible>
                      <shapes>
                         <rectangle x1="0.0" x2="100.0" y1="0.0" y2="30.0" rounding="0.0">
-                           <matte red="255" green="255" blue="255" alpha="255" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                           <matte red="255" green="255" blue="255" alpha="255" componentPropertyName="background" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                            <paintPoints x1="0.25" y1="0.0" x2="0.2" y2="0.1"/>
                         </rectangle>
                      </shapes>
@@ -27621,7 +27621,9 @@
                <stateTypes/>
                <contentMargins top="0" bottom="0" left="0" right="0"/>
                <style>
-                  <textForeground/>
+                  <textForeground>
+                    <matte red="255" green="255" blue="255" alpha="255" uiDefaultParentName="nimbusSelectedText" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0" uiResource="true"/>
+                  </textForeground>
                   <textBackground/>
                   <background/>
                   <uiproperties/>

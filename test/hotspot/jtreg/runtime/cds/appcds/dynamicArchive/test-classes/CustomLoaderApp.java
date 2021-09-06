@@ -36,20 +36,26 @@ public class CustomLoaderApp {
         System.out.println(path);
         System.out.println(url);
 
+        boolean init = false;
+        if (args.length ==2 && args[1].equals("init")) {
+            init = true;
+        }
+
         URLClassLoader urlClassLoader =
             new URLClassLoader("HelloClassLoader", urls, null);
-        Class c = Class.forName(className, true, urlClassLoader);
+        Class c = Class.forName(className, init, urlClassLoader);
         System.out.println(c);
         System.out.println(c.getClassLoader());
-        Object o = c.newInstance();
-
         if (c.getClassLoader() != urlClassLoader) {
             throw new RuntimeException("c.getClassLoader() == " + c.getClassLoader() +
                                        ", expected == " + urlClassLoader);
         }
 
-        Method method = c.getMethod("main", String[].class);
-        String[] params = null;
-        method.invoke(null, (Object)params);
+        if (init) {
+            Object o = c.newInstance();
+            Method method = c.getMethod("main", String[].class);
+            String[] params = null;
+            method.invoke(null, (Object)params);
+        }
     }
 }

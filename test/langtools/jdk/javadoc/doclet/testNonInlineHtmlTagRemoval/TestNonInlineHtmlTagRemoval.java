@@ -85,6 +85,6 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
 
         checkOutput("Negative.html", true,
                 """
-                    <div class="block">case1: A hanging &lt;  : xx<</div>""");
+                    <div class="block">case1: A hanging &lt;  : xx&lt;</div>""");
     }
 }

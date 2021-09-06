@@ -958,8 +958,8 @@ class JavaThread: public Thread {
   jlong*    _jvmci_counters;
 
   // Fast thread locals for use by JVMCI
-  intptr_t*  _jvmci_reserved0;
-  intptr_t*  _jvmci_reserved1;
+  jlong      _jvmci_reserved0;
+  jlong      _jvmci_reserved1;
   oop        _jvmci_reserved_oop0;
 
  public:
@@ -969,6 +969,30 @@ class JavaThread: public Thread {
   bool resize_counters(int current_size, int new_size);
 
   static bool resize_all_jvmci_counters(int new_size);
+
+  void set_jvmci_reserved_oop0(oop value) {
+    _jvmci_reserved_oop0 = value;
+  }
+
+  oop get_jvmci_reserved_oop0() {
+    return _jvmci_reserved_oop0;
+  }
+
+  void set_jvmci_reserved0(jlong value) {
+    _jvmci_reserved0 = value;
+  }
+
+  jlong get_jvmci_reserved0() {
+    return _jvmci_reserved0;
+  }
+
+  void set_jvmci_reserved1(jlong value) {
+    _jvmci_reserved1 = value;
+  }
+
+  jlong get_jvmci_reserved1() {
+    return _jvmci_reserved1;
+  }
 
  private:
 #endif // INCLUDE_JVMCI
@@ -1126,6 +1150,8 @@ class JavaThread: public Thread {
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
  private:
+  DEBUG_ONLY(void verify_frame_info();)
+
   // Support for thread handshake operations
   HandshakeState _handshake;
  public:
@@ -1379,6 +1405,7 @@ class JavaThread: public Thread {
   // Misc. operations
   const char* name() const;
   const char* type_name() const { return "JavaThread"; }
+  static const char* name_for(oop thread_obj);
 
   void print_on(outputStream* st, bool print_extended_info) const;
   void print_on(outputStream* st) const { print_on(st, false); }
@@ -1425,6 +1452,9 @@ class JavaThread: public Thread {
   static JavaThread* current() {
     return JavaThread::cast(Thread::current());
   }
+
+  // Returns the current thread as a JavaThread, or NULL if not attached
+  static inline JavaThread* current_or_null();
 
   // Casts
   static JavaThread* cast(Thread* t) {
@@ -1609,6 +1639,11 @@ public:
   // resource allocation failure.
   static void vm_exit_on_osthread_failure(JavaThread* thread);
 };
+
+inline JavaThread* JavaThread::current_or_null() {
+  Thread* current = Thread::current_or_null();
+  return current != nullptr ? JavaThread::cast(current) : nullptr;
+}
 
 // The active thread queue. It also keeps track of the current used
 // thread priorities.
