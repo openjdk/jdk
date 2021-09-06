@@ -1960,7 +1960,7 @@ public final class String
      * @see  #codePoints()
      */
     public boolean equalsIgnoreCase(String anotherString) {
-        if (anotherString != null) {
+        if (anotherString == null) {
             return false;
         }
         if (value == anotherString.value) {
