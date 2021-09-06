@@ -130,17 +130,19 @@ void ZStoreBarrierBuffer::on_new_phase_relocate(int i) {
 }
 
 void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
-  uintptr_t last_mark_minor_bits = _last_processed_color & (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
-  bool woke_up_in_minor_mark = last_mark_minor_bits != ZPointerMarkedMinor;
-  ZStoreBarrierEntry& entry = _buffer[i];
-  volatile zpointer* p = entry._p;
+  volatile zpointer* const p = _buffer[i]._p;
+
+  if (ZHeap::heap()->is_young((zaddress)(uintptr_t)p)) {
+    return;
+  }
+
+  const uintptr_t last_mark_minor_bits = _last_processed_color & (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
+  const bool woke_up_in_minor_mark = last_mark_minor_bits != ZPointerMarkedMinor;
 
   if (woke_up_in_minor_mark) {
-    if (ZHeap::heap()->is_old((zaddress)(uintptr_t)p)) {
-      ZHeap::heap()->young_generation()->mark_and_remember(p);
-    }
+    ZHeap::heap()->young_generation()->mark_and_remember(p);
   } else {
-    ZHeap::heap()->remember_filtered(p);
+    ZHeap::heap()->young_generation()->remember(p);
   }
 }
 
