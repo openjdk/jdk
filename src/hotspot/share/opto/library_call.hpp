@@ -232,8 +232,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_copyMemory();
   bool inline_native_currentThread();
 
-  bool has_wide_mem(Node* addr, Node* base);
-
   bool inline_native_time_funcs(address method, const char* funcName);
 #ifdef JFR_HAVE_INTRINSICS
   bool inline_native_classID();
