@@ -23,6 +23,9 @@
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import javax.swing.UIManager;
 
@@ -87,4 +90,17 @@ public class TestHelpers {
         Thread.sleep(DELAY_BTWN_FRAME_STATE_CHANGE);
     }
 
+    @DataProvider(name = "lookAndFeelListExcludingWinLookAndFeel")
+    public static Object[][] lookAndFeelProvider() {
+        UIManager.LookAndFeelInfo lookAndFeelInfos[] = UIManager.getInstalledLookAndFeels();
+
+        ArrayList<UIManager.LookAndFeelInfo> listLookAndFeel = new ArrayList<>(Arrays.asList(lookAndFeelInfos));
+
+        UIManager.LookAndFeelInfo lookAndFeelFilteredInfos[] = listLookAndFeel.stream().filter(lf -> !lf.getName().equals("Windows")).collect(Collectors.toList()).toArray(new UIManager.LookAndFeelInfo[0]);
+        Object[][] lookAndFeels = new Object[lookAndFeelFilteredInfos.length][1];
+        for (int i = 0; i < lookAndFeelFilteredInfos.length; i++) {
+            lookAndFeels[i][0] = lookAndFeelFilteredInfos[i].getClassName();
+        }
+        return lookAndFeels;
+    }
 }

@@ -60,7 +60,7 @@ public class ButtonDemoScreenshotTest {
 
     private static final int[] BUTTONS = {0, 1, 2, 3, 4, 5}; // "open browser" buttons (6, 7) open a browser, so ignore
 
-    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    @Test(dataProvider = "lookAndFeelListExcludingWinLookAndFeel", dataProviderClass = TestHelpers.class)
     public void test(String lookAndFeel) throws Exception {
         UIManager.setLookAndFeel(lookAndFeel);
 
