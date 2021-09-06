@@ -27,6 +27,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "unittest.hpp"
 
+#ifndef ZERO
+
 TEST_VM(code, vtableStubs) {
   // Should be in VM to use locks
   ThreadInVMfromNative ThreadInVMfromNative(JavaThread::current());
@@ -50,3 +52,5 @@ TEST_VM(code, itableStubs) {
   }
   VtableStubs::find_itable_stub((1 << 15) - 1); // max itable index
 }
+
+#endif
