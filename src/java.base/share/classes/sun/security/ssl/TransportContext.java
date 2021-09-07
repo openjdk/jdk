@@ -81,7 +81,6 @@ final class TransportContext implements ConnectionContext {
     boolean                         needHandshakeFinishedStatus = false;
     boolean                         hasDelegatedFinished = false;
 
-
     // negotiated security parameters
     SSLSessionImpl                  conSession;
     ProtocolVersion                 protocolVersion;

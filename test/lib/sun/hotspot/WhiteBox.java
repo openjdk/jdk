@@ -592,7 +592,8 @@ public class WhiteBox {
   public native boolean isSharingEnabled();
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
-  public native boolean areSharedStringsIgnored();
+  public native boolean areSharedStringsMapped();
+  public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
   public native boolean isJavaHeapArchiveSupported();

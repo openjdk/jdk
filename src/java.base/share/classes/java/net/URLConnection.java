@@ -1818,7 +1818,7 @@ public abstract class URLConnection {
      * Returns -1, If EOF is reached before len bytes are read, returns 0
      * otherwise
      */
-    private static int readBytes(int c[], int len, InputStream is)
+    private static int readBytes(int[] c, int len, InputStream is)
                 throws IOException {
 
         byte buf[] = new byte[len];

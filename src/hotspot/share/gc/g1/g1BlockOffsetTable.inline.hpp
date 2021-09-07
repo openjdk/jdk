@@ -132,7 +132,6 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr)
 
 inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
                                                                                 const void* addr) const {
-  if (addr >= _hr->top()) return _hr->top();
   while (n <= addr) {
     q = n;
     oop obj = cast_to_oop(q);

@@ -293,8 +293,13 @@ public:
     return !is_interface() && !is_abstract();
   }
 
+  // Replay support
+
   // Dump the current state of this klass for compilation replay.
   virtual void dump_replay_data(outputStream* out);
+
+  // Return stable class name suitable for replay file.
+  const char *replay_name() const;
 
 #ifdef ASSERT
   bool debug_final_field_at(int offset);

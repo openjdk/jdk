@@ -36,6 +36,37 @@
 
 #include "runtime/thread.inline.hpp"
 
+// A helper class to encode a few card indexes within a CardSetPtr.
+//
+// The pointer value (either 32 or 64 bits) is split into two areas:
+//
+// - Header containing identifying tag and number of encoded cards.
+// - Data area containing the card indexes themselves
+//
+// The header starts (from LSB) with the identifying tag (two bits,
+// always 00), and three bits size. The size stores the number of
+// valid card indexes after the header.
+//
+// The data area makes up the remainder of the word, with card indexes
+// put one after another at increasing bit positions. The separate
+// card indexes use just enough space (bits) to represent the whole
+// range of cards needed for covering the whole range of values
+// (typically in a region). There may be unused space at the top of
+// the word.
+//
+// Example:
+//
+//   64 bit pointer size, with 8M-size regions (8M == 2^23)
+// -> 2^14 (2^23 / 2^9) cards; each card represents 512 bytes in a region
+// -> 14 bits per card; must have enough bits to hold the max card index
+// -> may encode up to 4 cards into it, using 61 bits (5 bits header + 4 * 14)
+//
+// M                                                     L
+// S                                                     S
+// B                                                     B
+// +------+         +---------------+--------------+-----+
+// |unused|   ...   |  card_index1  | card_index0  |SSS00|
+// +------+         +---------------+--------------+-----+
 class G1CardSetInlinePtr : public StackObj {
   friend class G1CardSetContainersTest;
 
@@ -63,15 +94,18 @@ class G1CardSetInlinePtr : public StackObj {
     uint result = ((uintptr_t)value >> card_pos) & (((uintptr_t)1 << bits_per_card) - 1);
     return result;
   }
+
+  uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_elems);
+
 public:
   G1CardSetInlinePtr() : _value_addr(nullptr), _value((CardSetPtr)G1CardSet::CardSetInlinePtr) { }
 
   G1CardSetInlinePtr(CardSetPtr value) : _value_addr(nullptr), _value(value) {
-    assert(((uintptr_t)_value & G1CardSet::CardSetInlinePtr) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
+    assert(G1CardSet::card_set_type(_value) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
   }
 
   G1CardSetInlinePtr(CardSetPtr volatile* value_addr, CardSetPtr value) : _value_addr(value_addr), _value(value) {
-    assert(((uintptr_t)_value & G1CardSet::CardSetInlinePtr) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
+    assert(G1CardSet::card_set_type(_value) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
   }
 
   G1AddCardResult add(uint const card_idx, uint const bits_per_card, uint const max_cards_in_inline_ptr);
