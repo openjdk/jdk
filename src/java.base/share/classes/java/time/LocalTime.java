@@ -187,9 +187,13 @@ public final class LocalTime
      */
     static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
     /**
+     * Microseconds per second.
+     */
+    static final long MICROS_PER_SECOND = 1000_000L;
+    /**
      * Microseconds per day.
      */
-    static final long MICROS_PER_DAY = SECONDS_PER_DAY * 1000_000L;
+    static final long MICROS_PER_DAY = MICROS_PER_SECOND * SECONDS_PER_DAY;
     /**
      * Nanos per millisecond.
      */

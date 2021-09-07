@@ -61,6 +61,7 @@
  */
 package java.time;
 
+import static java.time.LocalTime.MICROS_PER_SECOND;
 import static java.time.LocalTime.NANOS_PER_SECOND;
 import static java.time.LocalTime.SECONDS_PER_DAY;
 import static java.time.LocalTime.SECONDS_PER_HOUR;
@@ -242,10 +243,6 @@ public final class Instant
      * an {@code int}.
      */
     public static final Instant MAX = Instant.ofEpochSecond(MAX_SECOND, 999_999_999);
-    /**
-     * Micros per second
-     */
-    private static final long MICROS_PER_SECOND =  1_000_000L;
 
     /**
      * Serialization version.
