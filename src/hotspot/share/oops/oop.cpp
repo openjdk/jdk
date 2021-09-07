@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -185,7 +186,6 @@ void oopDesc::address_field_put(int offset, address value)            { HeapAcce
 void oopDesc::release_address_field_put(int offset, address value)    { HeapAccess<MO_RELEASE>::store_at(as_oop(), offset, value); }
 
 Metadata* oopDesc::metadata_field(int offset) const                   { return HeapAccess<>::load_at(as_oop(), offset); }
-Metadata* oopDesc::metadata_field_raw(int offset) const               { return RawAccess<>::load_at(as_oop(), offset); }
 void oopDesc::metadata_field_put(int offset, Metadata* value)         { HeapAccess<>::store_at(as_oop(), offset, value); }
 
 Metadata* oopDesc::metadata_field_acquire(int offset) const           { return HeapAccess<MO_ACQUIRE>::load_at(as_oop(), offset); }
@@ -218,7 +218,7 @@ void oopDesc::release_double_field_put(int offset, jdouble value)     { HeapAcce
 #ifdef ASSERT
 void oopDesc::verify_forwardee(oop forwardee) {
 #if INCLUDE_CDS_JAVA_HEAP
-  assert(!HeapShared::is_archived_object(forwardee) && !HeapShared::is_archived_object(this),
+  assert(!Universe::heap()->is_archived_object(forwardee) && !Universe::heap()->is_archived_object(this),
          "forwarding archive object");
 #endif
 }

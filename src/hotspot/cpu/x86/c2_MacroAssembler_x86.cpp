@@ -1427,7 +1427,7 @@ void C2_MacroAssembler::evscatter(BasicType typ, Register base, XMMRegister idx,
   }
 }
 
-void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt) {
+void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy) {
   if (vlen_in_bytes <= 16) {
     pxor (dst, dst);
     psubb(dst, src);
@@ -1442,10 +1442,12 @@ void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int v
       default: assert(false, "%s", type2name(elem_bt));
     }
   } else {
+    assert(!is_legacy || !is_subword_type(elem_bt) || vlen_in_bytes < 64, "");
     int vlen_enc = vector_length_encoding(vlen_in_bytes);
 
     vpxor (dst, dst, dst, vlen_enc);
-    vpsubb(dst, dst, src, vlen_enc);
+    vpsubb(dst, dst, src, is_legacy ? AVX_256bit : vlen_enc);
+
     switch (elem_bt) {
       case T_BYTE:   /* nothing to do */            break;
       case T_SHORT:  vpmovsxbw(dst, dst, vlen_enc); break;
@@ -1461,7 +1463,11 @@ void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int v
 
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes) {
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
-  if (vlen_in_bytes <= 16) {
+  if (vlen_in_bytes == 4) {
+    movdl(dst, addr);
+  } else if (vlen_in_bytes == 8) {
+    movq(dst, addr);
+  } else if (vlen_in_bytes == 16) {
     movdqu(dst, addr, scratch);
   } else if (vlen_in_bytes == 32) {
     vmovdqu(dst, addr, scratch);
@@ -1470,6 +1476,7 @@ void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int
     evmovdqub(dst, k0, addr, false /*merge*/, Assembler::AVX_512bit, scratch);
   }
 }
+
 // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
 
 void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegister dst, XMMRegister src) {
@@ -3852,6 +3859,9 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
   vpxor(xtmp, xtmp, xtmp, vec_enc);
   vpsubb(xtmp, xtmp, mask, vec_enc);
   vpmovmskb(tmp, xtmp, vec_enc);
+  if (masklen < 64) {
+    andq(tmp, (((jlong)1 << masklen) - 1));
+  }
   switch(opc) {
     case Op_VectorMaskTrueCount:
       popcntq(dst, tmp);

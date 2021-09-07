@@ -68,22 +68,30 @@ public abstract class CiReplayBase {
         "-XX:CompilerThreadStackSize=512", "-XX:ParallelGCThreads=1", "-XX:CICompilerCount=2",
         "-XX:-BackgroundCompilation", "-XX:CompileCommand=inline,java.io.PrintStream::*",
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222", // extra profile data as a stress test
-        "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
-        "-XX:+PreferInterpreterNativeStubs", REPLAY_FILE_OPTION};
+        "-XX:+CICountNative", "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
+        REPLAY_FILE_OPTION};
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222",
         "-XX:+ReplayCompiles", REPLAY_FILE_OPTION};
     protected final Optional<Boolean> runServer;
     private static int dummy;
 
+    static interface Lambda {
+        int value();
+    }
+
     public static class TestMain {
         public static void main(String[] args) {
-            for (int i = 0; i < 20_000; i++) {
+            // explicitly trigger native compilation
+            Lambda start = () -> 0;
+
+            for (int i = start.value(); i < 20_000; i++) {
                 test(i);
             }
         }
 
         static void test(int i) {
+            i += ((Lambda)(() -> 0)).value();
             if ((i % 1000) == 0) {
                 System.out.println("Hello World!");
             }

@@ -105,6 +105,10 @@ void MacroAssembler::align(int modulus, int max, int rem) {
   for (int c = (padding >> 2); c > 0; --c) { nop(); }
 }
 
+void MacroAssembler::align_prefix() {
+  if (is_aligned(offset() + BytesPerInstWord, 64)) { nop(); }
+}
+
 // Issue instructions that calculate given TOC from global TOC.
 void MacroAssembler::calculate_address_from_global_toc(Register dst, address addr, bool hi16, bool lo16,
                                                        bool add_relocation, bool emit_dummy_addr) {

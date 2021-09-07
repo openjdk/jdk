@@ -113,8 +113,8 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _collection_set->start_incremental_building();
 }
 
-void G1Policy::note_gc_start() {
-  phase_times()->note_gc_start();
+void G1Policy::record_young_gc_pause_start() {
+  phase_times()->record_gc_pause_start();
 }
 
 class G1YoungLengthPredictor {
@@ -517,7 +517,8 @@ void G1Policy::record_concurrent_refinement_stats() {
   }
 }
 
-void G1Policy::record_collection_pause_start(double start_time_sec) {
+void G1Policy::record_young_collection_start() {
+  Ticks now = Ticks::now();
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
@@ -528,7 +529,7 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
          max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
   assert_used_and_recalculate_used_equal(_g1h);
 
-  phase_times()->record_cur_collection_start_sec(start_time_sec);
+  phase_times()->record_cur_collection_start_sec(now.seconds());
 
   record_concurrent_refinement_stats();
 
@@ -628,11 +629,12 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark) {
+void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark) {
   G1GCPhaseTimes* p = phase_times();
 
-  double end_time_sec = os::elapsedTime();
   double start_time_sec = phase_times()->cur_collection_start_sec();
+  double end_time_sec = Ticks::now().seconds();
+  double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
   G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
 
@@ -889,7 +891,8 @@ void G1Policy::report_ihop_statistics() {
   _ihop_control->print();
 }
 
-void G1Policy::print_phases() {
+void G1Policy::record_young_gc_pause_end() {
+  phase_times()->record_gc_pause_end();
   phase_times()->print();
 }
 
@@ -1043,7 +1046,7 @@ void G1Policy::initiate_conc_mark() {
   collector_state()->set_initiate_conc_mark_if_possible(false);
 }
 
-void G1Policy::decide_on_conc_mark_initiation() {
+void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
 
@@ -1052,6 +1055,12 @@ void G1Policy::decide_on_conc_mark_initiation() {
   // the end of the pause (it's only set for the duration of a
   // concurrent start pause).
   assert(!collector_state()->in_concurrent_start_gc(), "pre-condition");
+
+  // We should not be starting a concurrent start pause if the concurrent mark
+  // thread is terminating.
+  if (_g1h->concurrent_mark_is_terminating()) {
+    return;
+  }
 
   if (collector_state()->initiate_conc_mark_if_possible()) {
     // We had noticed on a previous pause that the heap occupancy has
@@ -1101,6 +1110,12 @@ void G1Policy::decide_on_conc_mark_initiation() {
       log_debug(gc, ergo)("Do not initiate concurrent cycle (concurrent cycle already in progress)");
     }
   }
+  // Result consistency checks.
+  // We do not allow concurrent start to be piggy-backed on a mixed GC.
+  assert(!collector_state()->in_concurrent_start_gc() ||
+         collector_state()->in_young_only_phase(), "sanity");
+  // We also do not allow mixed GCs during marking.
+  assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
@@ -1416,7 +1431,7 @@ static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
 }
 
 bool G1Policy::preventive_collection_required(uint alloc_region_count) {
-  if (!G1AllowPreventiveGC || !Universe::is_fully_initialized()) {
+  if (!G1UsePreventiveGC || !Universe::is_fully_initialized()) {
     // Don't attempt any preventive GC's if the feature is disabled,
     // or before initialization is complete.
     return false;
@@ -1487,7 +1502,7 @@ void G1Policy::update_survival_estimates_for_next_collection() {
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
-  note_start_adding_survivor_regions();
+  start_adding_survivor_regions();
 
   HeapRegion* last = NULL;
   for (GrowableArrayIterator<HeapRegion*> it = survivors->regions()->begin();
@@ -1503,7 +1518,7 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
 
     last = curr;
   }
-  note_stop_adding_survivor_regions();
+  stop_adding_survivor_regions();
 
   // Don't clear the survivor list handles until the start of
   // the next evacuation pause - we need it in order to re-tag

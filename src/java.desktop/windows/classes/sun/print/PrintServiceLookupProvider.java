@@ -41,13 +41,17 @@ import javax.print.attribute.PrintServiceAttribute;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.PrinterName;
 
-@SuppressWarnings("removal")
 public class PrintServiceLookupProvider extends PrintServiceLookup {
 
     private PrintService defaultPrintService;
     private PrintService[] printServices; /* includes the default printer */
 
     static {
+        loadAWTLibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadAWTLibrary() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
@@ -102,6 +106,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
      * lead people to assume its guaranteed.
      */
     public synchronized PrintService[] getPrintServices() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();
@@ -202,6 +207,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -267,6 +273,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -276,6 +283,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
 
 
     public synchronized PrintService getDefaultPrintService() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();

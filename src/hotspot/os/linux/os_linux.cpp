@@ -412,7 +412,7 @@ void os::init_system_properties_values() {
   //        ...
   //        7: The default directories, normally /lib and /usr/lib.
 #ifndef OVERRIDE_LIBPATH
-  #if defined(AMD64) || (defined(_LP64) && defined(SPARC)) || defined(PPC64) || defined(S390)
+  #if defined(_LP64)
     #define DEFAULT_LIBPATH "/usr/lib64:/lib64:/lib:/usr/lib"
   #else
     #define DEFAULT_LIBPATH "/lib:/usr/lib"
@@ -863,16 +863,21 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   ThreadState state;
 
   {
+    ResourceMark rm;
     pthread_t tid;
-    int ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    int ret = 0;
+    int limit = 3;
+    do {
+      ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    } while (ret == EAGAIN && limit-- > 0);
 
     char buf[64];
     if (ret == 0) {
-      log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
-        (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+      log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+                           thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     } else {
-      log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
-        os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+      log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
+                              thread->name(), os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
       // Log some OS information which might explain why creating the thread failed.
       log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
       LogStream st(Log(os, thread)::info());
@@ -1377,14 +1382,6 @@ const char* os::dll_file_extension() { return ".so"; }
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
-static bool file_exists(const char* filename) {
-  struct stat statbuf;
-  if (filename == NULL || strlen(filename) == 0) {
-    return false;
-  }
-  return os::stat(filename, &statbuf) == 0;
-}
-
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
@@ -1668,6 +1665,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #ifndef EM_RISCV
   #define EM_RISCV      243               /* RISC-V */
 #endif
+#ifndef EM_LOONGARCH
+  #define EM_LOONGARCH  258               /* LoongArch */
+#endif
 
   static const arch_t arch_array[]={
     {EM_386,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
@@ -1695,6 +1695,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
     {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
     {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISC-V"},
+    {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
 #if  (defined IA32)
@@ -1731,9 +1732,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_SH;
 #elif  (defined RISCV)
   static  Elf32_Half running_arch_code=EM_RISCV;
+#elif  (defined LOONGARCH)
+  static  Elf32_Half running_arch_code=EM_LOONGARCH;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
+        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, LOONGARCH, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
 #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -2137,44 +2140,51 @@ void os::Linux::print_system_memory_info(outputStream* st) {
                       "/sys/kernel/mm/transparent_hugepage/defrag", st);
 }
 
-void os::Linux::print_process_memory_info(outputStream* st) {
-
-  st->print_cr("Process Memory:");
-
-  // Print virtual and resident set size; peak values; swap; and for
-  //  rss its components if the kernel is recent enough.
-  ssize_t vmsize = -1, vmpeak = -1, vmswap = -1,
-      vmrss = -1, vmhwm = -1, rssanon = -1, rssfile = -1, rssshmem = -1;
-  const int num_values = 8;
-  int num_found = 0;
+bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
   FILE* f = ::fopen("/proc/self/status", "r");
+  const int num_values = sizeof(os::Linux::meminfo_t) / sizeof(size_t);
+  int num_found = 0;
   char buf[256];
+  info->vmsize = info->vmpeak = info->vmrss = info->vmhwm = info->vmswap =
+      info->rssanon = info->rssfile = info->rssshmem = -1;
   if (f != NULL) {
     while (::fgets(buf, sizeof(buf), f) != NULL && num_found < num_values) {
-      if ( (vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &vmsize) == 1) ||
-           (vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &vmpeak) == 1) ||
-           (vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &vmswap) == 1) ||
-           (vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &vmhwm) == 1) ||
-           (vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &vmrss) == 1) ||
-           (rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &rssanon) == 1) ||
-           (rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &rssfile) == 1) ||
-           (rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &rssshmem) == 1)
+      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &info->vmsize) == 1) ||
+           (info->vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &info->vmpeak) == 1) ||
+           (info->vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &info->vmswap) == 1) ||
+           (info->vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &info->vmhwm) == 1) ||
+           (info->vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &info->vmrss) == 1) ||
+           (info->rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &info->rssanon) == 1) || // Needs Linux 4.5
+           (info->rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &info->rssfile) == 1) || // Needs Linux 4.5
+           (info->rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &info->rssshmem) == 1)  // Needs Linux 4.5
            )
       {
         num_found ++;
       }
     }
     fclose(f);
+    return true;
+  }
+  return false;
+}
 
-    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmsize, vmpeak);
-    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", vmrss, vmhwm);
-    if (rssanon != -1) { // requires kernel >= 4.5
+void os::Linux::print_process_memory_info(outputStream* st) {
+
+  st->print_cr("Process Memory:");
+
+  // Print virtual and resident set size; peak values; swap; and for
+  //  rss its components if the kernel is recent enough.
+  meminfo_t info;
+  if (query_process_memory_info(&info)) {
+    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmsize, info.vmpeak);
+    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmrss, info.vmhwm);
+    if (info.rssanon != -1) { // requires kernel >= 4.5
       st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
-                  rssanon, rssfile, rssshmem);
+                info.rssanon, info.rssfile, info.rssshmem);
     }
     st->cr();
-    if (vmswap != -1) { // requires kernel >= 2.6.34
-      st->print_cr("Swapped out: " SSIZE_FORMAT "K", vmswap);
+    if (info.vmswap != -1) { // requires kernel >= 2.6.34
+      st->print_cr("Swapped out: " SSIZE_FORMAT "K", info.vmswap);
     }
   } else {
     st->print_cr("Could not open /proc/self/status to get process memory related information");
@@ -2195,7 +2205,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
     struct glibc_mallinfo mi = _mallinfo();
     total_allocated = (size_t)(unsigned)mi.uordblks;
     // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-    might_have_wrapped = (vmrss * K) > UINT_MAX && (vmrss * K) > (total_allocated + UINT_MAX);
+    might_have_wrapped = (info.vmrss * K) > UINT_MAX && (info.vmrss * K) > (total_allocated + UINT_MAX);
   }
   if (_mallinfo2 != NULL || _mallinfo != NULL) {
     st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
@@ -2220,6 +2230,7 @@ void os::Linux::print_uptime_info(outputStream* st) {
 
 bool os::Linux::print_container_info(outputStream* st) {
   if (!OSContainer::is_containerized()) {
+    st->print_cr("container information not found.");
     return false;
   }
 
@@ -2302,6 +2313,14 @@ bool os::Linux::print_container_info(outputStream* st) {
 
   j = OSContainer::OSContainer::memory_max_usage_in_bytes();
   st->print("memory_max_usage_in_bytes: ");
+  if (j > 0) {
+    st->print_cr(JLONG_FORMAT, j);
+  } else {
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
+
+  j = OSContainer::OSContainer::pids_max();
+  st->print("maximum number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
   } else {
@@ -2406,7 +2425,7 @@ static void print_sys_devices_cpu_info(outputStream* st, char* buf, size_t bufle
       snprintf(hbuf_type, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/type", i);
       snprintf(hbuf_size, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/size", i);
       snprintf(hbuf_coherency_line_size, 80, "/sys/devices/system/cpu/cpu0/cache/index%u/coherency_line_size", i);
-      if (file_exists(hbuf_level)) {
+      if (os::file_exists(hbuf_level)) {
         _print_ascii_file_h("cache level", hbuf_level, st);
         _print_ascii_file_h("cache type", hbuf_type, st);
         _print_ascii_file_h("cache size", hbuf_size, st);
@@ -4785,11 +4804,6 @@ void os::set_native_thread_name(const char *name) {
   }
 }
 
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // debug support
 
@@ -4968,9 +4982,7 @@ int os::open(const char *path, int oflag, int mode) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
-  if (!rewrite_existing) {
-    oflags |= O_EXCL;
-  }
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
   return ::open64(path, oflags, S_IREAD | S_IWRITE);
 }
 

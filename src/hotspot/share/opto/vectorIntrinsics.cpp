@@ -59,6 +59,48 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
 }
 #endif
 
+bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt, bool has_scalar_args) {
+    bool is_supported = true;
+    // has_scalar_args flag is true only for non-constant scalar shift count,
+    // since in this case shift needs to be broadcasted.
+    if (!Matcher::match_rule_supported_vector(opc, num_elem, elem_bt) ||
+         (has_scalar_args &&
+           !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
+      is_supported = false;
+    }
+
+    int lshiftopc, rshiftopc;
+    switch(elem_bt) {
+      case T_BYTE:
+        lshiftopc = Op_LShiftI;
+        rshiftopc = Op_URShiftB;
+        break;
+      case T_SHORT:
+        lshiftopc = Op_LShiftI;
+        rshiftopc = Op_URShiftS;
+        break;
+      case T_INT:
+        lshiftopc = Op_LShiftI;
+        rshiftopc = Op_URShiftI;
+        break;
+      case T_LONG:
+        lshiftopc = Op_LShiftL;
+        rshiftopc = Op_URShiftL;
+        break;
+      default:
+        assert(false, "Unexpected type");
+    }
+    int lshiftvopc = VectorNode::opcode(lshiftopc, elem_bt);
+    int rshiftvopc = VectorNode::opcode(rshiftopc, elem_bt);
+    if (!is_supported &&
+        arch_supports_vector(lshiftvopc, num_elem, elem_bt, VecMaskNotUsed, has_scalar_args) &&
+        arch_supports_vector(rshiftvopc, num_elem, elem_bt, VecMaskNotUsed, has_scalar_args) &&
+        arch_supports_vector(Op_OrV, num_elem, elem_bt, VecMaskNotUsed)) {
+      is_supported = true;
+    }
+    return is_supported;
+}
+
 Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception) {
   assert(EnableVectorSupport, "");
 
@@ -112,17 +154,29 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
     return false;
   }
 
-  // Check that architecture supports this op-size-type combination.
-  if (!Matcher::match_rule_supported_vector(sopc, num_elem, type)) {
+  if (VectorNode::is_vector_rotate(sopc)) {
+    if(!arch_supports_vector_rotate(sopc, num_elem, type, has_scalar_args)) {
 #ifndef PRODUCT
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support it",
-                    NodeClassNames[sopc], type2name(type), num_elem);
-    }
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support variable vector shifts",
+                      NodeClassNames[sopc], type2name(type), num_elem);
+      }
 #endif
-    return false;
+      return false;
+    }
   } else {
-    assert(Matcher::match_rule_supported(sopc), "must be supported");
+    // Check that architecture supports this op-size-type combination.
+    if (!Matcher::match_rule_supported_vector(sopc, num_elem, type)) {
+#ifndef PRODUCT
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support it",
+                      NodeClassNames[sopc], type2name(type), num_elem);
+      }
+#endif
+      return false;
+    } else {
+      assert(Matcher::match_rule_supported(sopc), "must be supported");
+    }
   }
 
   if (num_elem == 1) {
@@ -410,9 +464,6 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   int do_wrap = wrap->get_con();
   int num_elem = vlen->get_con();
   BasicType elem_bt = T_BYTE;
-
-  if (num_elem < 4)
-    return false;
 
   if (!arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
@@ -1503,7 +1554,9 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
-  if (opc == 0 || !VectorNode::is_shift_opcode(opc)) {
+  bool is_shift  = VectorNode::is_shift_opcode(opc);
+  bool is_rotate = VectorNode::is_rotate_opcode(opc);
+  if (opc == 0 || (!is_shift && !is_rotate)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** operation not supported: op=%d bt=%s", opr->get_con(), type2name(elem_bt));
     }
@@ -1516,10 +1569,16 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     }
     return false; // operation not supported
   }
+  Node* cnt  = argument(5);
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+  const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
 
-  if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/)) {
+  // If CPU supports vector constant rotate instructions pass it directly
+  bool is_const_rotate = is_rotate && cnt_type && cnt_type->is_con() &&
+                         Matcher::supports_vector_constant_rotates(cnt_type->get_con());
+  bool has_scalar_args = is_rotate ? !is_const_rotate : true;
+  if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, has_scalar_args)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=0 op=int/%d vlen=%d etype=%s ismask=no",
                     sopc, num_elem, type2name(elem_bt));
@@ -1527,7 +1586,20 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     return false; // not supported
   }
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
-  Node* opd2 = vector_shift_count(argument(5), opc, elem_bt, num_elem);
+  Node* opd2 = NULL;
+  if (is_shift) {
+    opd2 = vector_shift_count(cnt, opc, elem_bt, num_elem);
+  } else {
+    assert(is_rotate, "unexpected operation");
+    if (!is_const_rotate) {
+      const Type * type_bt = Type::get_const_basic_type(elem_bt);
+      cnt = elem_bt == T_LONG ? gvn().transform(new ConvI2LNode(cnt)) : cnt;
+      opd2 = gvn().transform(VectorNode::scalar2vector(cnt, num_elem, type_bt));
+    } else {
+      // Constant shift value.
+      opd2 = cnt;
+    }
+  }
   if (opd1 == NULL || opd2 == NULL) {
     return false;
   }

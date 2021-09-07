@@ -1608,6 +1608,8 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
     if (is_not_entrant() && can_convert_to_zombie()) {
       return;
     }
+    // Ensure the sweeper can't collect this nmethod until it become "active" with JvmtiThreadState::nmethods_do.
+    mark_as_seen_on_stack();
   }
 
   // This is a bad time for a safepoint.  We don't want
@@ -2225,8 +2227,10 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
-  typedef ResourceHashtable<DependencySignature, int, &DependencySignature::hash,
-                            &DependencySignature::equals, 11027> DepTable;
+  typedef ResourceHashtable<DependencySignature, int, 11027,
+                            ResourceObj::RESOURCE_AREA, mtInternal,
+                            &DependencySignature::hash,
+                            &DependencySignature::equals> DepTable;
 
   DepTable* table = new DepTable();
 

@@ -117,7 +117,7 @@ public:
        if (_saved_state == _thread_in_Java) {
          ThreadStateTransition::transition_from_java(_jthread, _thread_in_native);
        } else {
-         ThreadStateTransition::transition(_jthread, _saved_state, _thread_in_native);
+         ThreadStateTransition::transition_from_vm(_jthread, _thread_in_native);
        }
     } else {
       _jthread = NULL;
@@ -2206,6 +2206,7 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   ResourceMark rm(thread);
   HandleMark hm(thread);
 
+  assert(!nm->is_zombie(), "nmethod zombie in post_compiled_method_load");
   // Add inlining information
   jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
   // Pass inlining information through the void pointer

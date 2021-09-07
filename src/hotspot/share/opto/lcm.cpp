@@ -413,7 +413,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   // Move the control dependence if it is pinned to not-null block.
   // Don't change it in other cases: NULL or dominating control.
   Node* ctrl = best->in(0);
-  if (get_block_for_node(ctrl) == not_null_block) {
+  if (ctrl != NULL && get_block_for_node(ctrl) == not_null_block) {
     // Set it to control edge of null check.
     best->set_req(0, proj->in(0)->in(0));
   }
@@ -518,7 +518,7 @@ Node* PhaseCFG::select(
   uint score   = 0; // Bigger is better
   int idx = -1;     // Index in worklist
   int cand_cnt = 0; // Candidate count
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -948,7 +948,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     return true;
   }
 
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   // We track the uses of local definitions as input dependences so that
   // we know when a given instruction is avialable to be scheduled.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc.
+ * Copyright (c) 2019, 2021, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 
 package sun.security.krb5.internal;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import sun.security.krb5.Credentials;
 import sun.security.krb5.PrincipalName;
@@ -51,19 +53,33 @@ final class ReferralsCache {
     private static final class ReferralCacheKey {
         private PrincipalName cname;
         private PrincipalName sname;
-        ReferralCacheKey (PrincipalName cname, PrincipalName sname) {
+        private PrincipalName user; // S4U2Self only
+        private byte[] userSvcTicketEnc; // S4U2Proxy only
+        ReferralCacheKey (PrincipalName cname, PrincipalName sname,
+                PrincipalName user, Ticket userSvcTicket) {
             this.cname = cname;
             this.sname = sname;
+            this.user = user;
+            if (userSvcTicket != null && userSvcTicket.encPart != null) {
+                byte[] userSvcTicketEnc = userSvcTicket.encPart.getBytes();
+                if (userSvcTicketEnc.length > 0) {
+                    this.userSvcTicketEnc = userSvcTicketEnc;
+                }
+            }
         }
         public boolean equals(Object other) {
             if (!(other instanceof ReferralCacheKey))
                 return false;
             ReferralCacheKey that = (ReferralCacheKey)other;
             return cname.equals(that.cname) &&
-                    sname.equals(that.sname);
+                    sname.equals(that.sname) &&
+                    Objects.equals(user, that.user) &&
+                    Arrays.equals(userSvcTicketEnc, that.userSvcTicketEnc);
         }
         public int hashCode() {
-            return cname.hashCode() + sname.hashCode();
+            return cname.hashCode() + sname.hashCode() +
+                    Objects.hashCode(user) +
+                    Arrays.hashCode(userSvcTicketEnc);
         }
     }
 
@@ -84,7 +100,8 @@ final class ReferralsCache {
 
     /*
      * Add a new referral entry to the cache, including: client principal,
-     * service principal, source KDC realm, destination KDC realm and
+     * service principal, user principal (S4U2Self only), client service
+     * ticket (S4U2Proxy only), source KDC realm, destination KDC realm and
      * referral TGT.
      *
      * If a loop is generated when adding the new referral, the first hop is
@@ -94,8 +111,12 @@ final class ReferralsCache {
      * REALM-1.COM -> REALM-2.COM referral entry is removed from the cache.
      */
     static synchronized void put(PrincipalName cname, PrincipalName service,
-            String fromRealm, String toRealm, Credentials creds) {
-        ReferralCacheKey k = new ReferralCacheKey(cname, service);
+            PrincipalName user, Ticket[] userSvcTickets, String fromRealm,
+            String toRealm, Credentials creds) {
+        Ticket userSvcTicket = (userSvcTickets != null ?
+                userSvcTickets[0] : null);
+        ReferralCacheKey k = new ReferralCacheKey(cname, service,
+                user, userSvcTicket);
         pruneExpired(k);
         if (creds.getEndTime().before(new Date())) {
             return;
@@ -125,11 +146,16 @@ final class ReferralsCache {
 
     /*
      * Obtain a referral entry from the cache given a client principal,
-     * service principal and a source KDC realm.
+     * a service principal, a user principal (S4U2Self only), a client
+     * service ticket (S4U2Proxy only) and a source KDC realm.
      */
     static synchronized ReferralCacheEntry get(PrincipalName cname,
-            PrincipalName service, String fromRealm) {
-        ReferralCacheKey k = new ReferralCacheKey(cname, service);
+            PrincipalName service, PrincipalName user,
+            Ticket[] userSvcTickets, String fromRealm) {
+        Ticket userSvcTicket = (userSvcTickets != null ?
+                userSvcTickets[0] : null);
+        ReferralCacheKey k = new ReferralCacheKey(cname, service,
+                user, userSvcTicket);
         pruneExpired(k);
         Map<String, ReferralCacheEntry> entries = referralsMap.get(k);
         if (entries != null) {

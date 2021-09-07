@@ -965,8 +965,9 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
         if (ctrl_proj != NULL) {
           _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
 #ifdef ASSERT
+          // If the InitializeNode has no memory out, it will die, and tmp will become NULL
           Node* tmp = init->in(TypeFunc::Control);
-          assert(tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
+          assert(tmp == NULL || tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
 #endif
         }
         Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);

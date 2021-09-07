@@ -230,7 +230,7 @@ public class MethodHandles {
 
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
+        if (sm != null) sm.checkPermission(SecurityConstants.ACCESS_PERMISSION);
         if (targetClass.isPrimitive())
             throw new IllegalArgumentException(targetClass + " is a primitive class");
         if (targetClass.isArray())
@@ -443,13 +443,10 @@ public class MethodHandles {
     public static <T extends Member> T reflectAs(Class<T> expected, MethodHandle target) {
         @SuppressWarnings("removal")
         SecurityManager smgr = System.getSecurityManager();
-        if (smgr != null)  smgr.checkPermission(ACCESS_PERMISSION);
+        if (smgr != null)  smgr.checkPermission(SecurityConstants.ACCESS_PERMISSION);
         Lookup lookup = Lookup.IMPL_LOOKUP;  // use maximally privileged lookup
         return lookup.revealDirect(target).reflectAs(expected, lookup);
     }
-    // Copied from AccessibleObject, as used by Method.setAccessible, etc.:
-    private static final java.security.Permission ACCESS_PERMISSION =
-        new ReflectPermission("suppressAccessChecks");
 
     /**
      * A <em>lookup object</em> is a factory for creating method handles,
@@ -2768,6 +2765,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @throws ClassNotFoundException if the class cannot be loaded by the lookup class' loader.
          * @throws IllegalAccessException if the class is not accessible, using the allowed access
          * modes.
+         * @throws NullPointerException if {@code targetName} is null
          * @since 9
          * @jvms 5.4.3.1 Class and Interface Resolution
          */
@@ -2837,8 +2835,12 @@ assertEquals("[x, y, z]", pb.command().toString());
         /**
          * Determines if a class can be accessed from the lookup context defined by
          * this {@code Lookup} object. The static initializer of the class is not run.
+         * If {@code targetClass} is an array class, {@code targetClass} is accessible
+         * if the element type of the array class is accessible.  Otherwise,
+         * {@code targetClass} is determined as accessible as follows.
+         *
          * <p>
-         * If the {@code targetClass} is in the same module as the lookup class,
+         * If {@code targetClass} is in the same module as the lookup class,
          * the lookup class is {@code LC} in module {@code M1} and
          * the previous lookup class is in module {@code M0} or
          * {@code null} if not present,
@@ -2861,7 +2863,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * can access public types in all modules when the type is in a package
          * that is exported unconditionally.
          * <p>
-         * Otherwise, the target class is in a different module from {@code lookupClass},
+         * Otherwise, {@code targetClass} is in a different module from {@code lookupClass},
          * and if this lookup does not have {@code PUBLIC} access, {@code lookupClass}
          * is inaccessible.
          * <p>
@@ -2897,13 +2899,14 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @return the class that has been access-checked
          * @throws IllegalAccessException if the class is not accessible from the lookup class
          * and previous lookup class, if present, using the allowed access modes.
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws SecurityException if a security manager is present and it
+         *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws NullPointerException if {@code targetClass} is {@code null}
          * @since 9
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
         public Class<?> accessClass(Class<?> targetClass) throws IllegalAccessException {
-            if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, prevLookupClass, allowedModes)) {
+            if (!isClassAccessible(targetClass)) {
                 throw makeAccessException(targetClass);
             }
             checkSecurityManager(targetClass);
@@ -3684,7 +3687,11 @@ return mh1;
         boolean isClassAccessible(Class<?> refc) {
             Objects.requireNonNull(refc);
             Class<?> caller = lookupClassOrNull();
-            return caller == null || VerifyAccess.isClassAccessible(refc, caller, prevLookupClass, allowedModes);
+            Class<?> type = refc;
+            while (type.isArray()) {
+                type = type.getComponentType();
+            }
+            return caller == null || VerifyAccess.isClassAccessible(type, caller, prevLookupClass, allowedModes);
         }
 
         /** Check name for an illegal leading "&lt;" character. */

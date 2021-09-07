@@ -350,14 +350,12 @@ ul.see-list-long li:not(:last-child):after {
 /*
  * Styles for tables.
  */
-.summary-table {
+.summary-table, .details-table {
     width:100%;
     border-spacing:0;
     border-left:1px solid #EEE;
     border-right:1px solid #EEE;
     border-bottom:1px solid #EEE;
-}
-.summary-table {
     padding:0;
 }
 .caption {
@@ -445,7 +443,7 @@ div.table-tabs > button.table-tab {
         grid-template-columns: minmax(15%, max-content) minmax(15%, auto);
     }
 }
-.summary-table > div {
+.summary-table > div, .details-table > div {
     text-align:left;
     padding: 8px 3px 3px 7px;
 }
