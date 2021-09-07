@@ -242,6 +242,10 @@ public final class Instant
      * an {@code int}.
      */
     public static final Instant MAX = Instant.ofEpochSecond(MAX_SECOND, 999_999_999);
+    /**
+     * Nanos per micro.
+     */
+    private static final long NANOS_PER_MICRO =  1_000L;
 
     /**
      * Serialization version.
@@ -1166,7 +1170,7 @@ public final class Instant
 
     private long microsUntil(Instant end) {
         long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long totalMicros = Math.multiplyExact(secsDiff, NANOS_PER_SECOND / 1000);
+        long totalMicros = Math.multiplyExact(secsDiff, NANOS_PER_MICRO);
         return Math.addExact(totalMicros, (end.nanos - nanos) / 1000);
     }
 
