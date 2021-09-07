@@ -1896,6 +1896,15 @@ public class Resolve {
         if (isInterface && bestSoFar.kind.isResolutionError()) {
             bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
                     syms.objectType.tsym.members(), bestSoFar, allowBoxing, useVarargs, true);
+            if (bestSoFar.kind.isValid()) {
+                Symbol baseSymbol = bestSoFar;
+                bestSoFar = new MethodSymbol(bestSoFar.flags_field, bestSoFar.name, bestSoFar.type, intype.tsym) {
+                    @Override
+                    public Symbol baseSymbol() {
+                        return baseSymbol;
+                    }
+                };
+            }
         }
         return bestSoFar;
     }

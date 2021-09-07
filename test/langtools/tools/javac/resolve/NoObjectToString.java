@@ -63,9 +63,10 @@ public class NoObjectToString {
     }
 
     class Test {
-        void test(I i, J j) {
+        void test(I i, J j, K k) {
             i.toString();
             j.toString();
+            k.toString();
         }
     }
 
@@ -73,5 +74,6 @@ public class NoObjectToString {
         public String toString();
     }
     interface J extends I {}
+    interface K {}
 
 }
