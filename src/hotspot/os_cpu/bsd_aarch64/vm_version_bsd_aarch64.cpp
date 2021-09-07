@@ -88,6 +88,10 @@ void VM_Version::get_os_cpu_info() {
   if (sysctlbyname("hw.cpufamily", &family, &sysctllen, NULL, 0)) {
     family = 0;
   }
+
+  // All Apple-darwin Arm processors have AES.
+  _features |= CPU_AES;
+
   _model = family;
   _cpu = CPU_APPLE;
 }
