@@ -2923,7 +2923,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     if (Verbose || PrintStubCode) {
       address first_pc = entry->base_address();
       if (first_pc != NULL) {
-        Disassembler::decode(first_pc, first_pc + insts_size);
+        Disassembler::decode(first_pc, first_pc + insts_size, tty
+                             NOT_PRODUCT(COMMA &new_adapter->asm_remarks()));
         tty->cr();
       }
     }

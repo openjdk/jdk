@@ -143,6 +143,10 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   card_table()->g1_mark_as_young(mr);
 }
 
+inline G1ScannerTasksQueueSet* G1CollectedHeap::task_queues() const {
+  return _task_queues;
+}
+
 inline G1ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
@@ -190,6 +194,11 @@ void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
 
 void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
+}
+
+void G1CollectedHeap::reset_evacuation_failed_data() {
+  Atomic::store(&_num_regions_failed_evacuation, 0u);
+  _regions_failed_evacuation.clear();
 }
 
 bool G1CollectedHeap::evacuation_failed() const {

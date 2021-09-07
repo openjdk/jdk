@@ -45,6 +45,10 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class GCSharedStringsDuringDump {
+    static {
+        // EpsilonGC will run out of memory.
+        CDSOptions.disableRuntimePrefixForEpsilonGC();
+    }
     public static String appClasses[] = {
         GCSharedStringsDuringDumpWb.class.getName(),
     };

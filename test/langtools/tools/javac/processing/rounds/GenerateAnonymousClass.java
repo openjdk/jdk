@@ -74,12 +74,12 @@ public class GenerateAnonymousClass extends JavacTestingAbstractProcessor {
             try (OutputStream out = filer.createClassFile("T").openOutputStream()) {
                 out.write(mfm.getFileBytes(StandardLocation.CLASS_OUTPUT, "T"));
             } catch (IOException e) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.toString());
+                processingEnv.getMessager().printError(e.toString());
             }
             try (OutputStream out = filer.createClassFile("T$1").openOutputStream()) {
                 out.write(mfm.getFileBytes(StandardLocation.CLASS_OUTPUT, "T$1"));
             } catch (IOException e) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.toString());
+                processingEnv.getMessager().printError(e.toString());
             }
         }
 

@@ -552,6 +552,16 @@ public class TypeEnter implements Completer {
             return result;
         }
 
+        /** Generate a base clause for a record type.
+         *  @param pos              The position for trees and diagnostics, if any
+         *  @param c                The class symbol of the record
+         */
+        protected  JCExpression recordBase(int pos, ClassSymbol c) {
+            JCExpression result = make.at(pos).
+                QualIdent(syms.recordType.tsym);
+            return result;
+        }
+
         protected Type modelMissingTypes(Env<AttrContext> env, Type t, final JCExpression tree, final boolean interfaceExpected) {
             if (!t.hasTag(ERROR))
                 return t;
@@ -694,7 +704,10 @@ public class TypeEnter implements Completer {
                                   true, false, false)
                 : (sym.fullname == names.java_lang_Object)
                 ? Type.noType
-                : sym.isRecord() ? syms.recordType : syms.objectType;
+                : sym.isRecord()
+                ? attr.attribBase(recordBase(tree.pos, sym), baseEnv,
+                                  true, false, false)
+                : syms.objectType;
             }
             ct.supertype_field = modelMissingTypes(baseEnv, supertype, extending, false);
 
