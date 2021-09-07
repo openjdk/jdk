@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1846,19 +1846,6 @@ static void gtk2_paint_check(WidgetType widget_type, gint synth_state,
             shadow_type, NULL, gtk2_widget, detail,
             x, y, width, height);
     (*fp_gtk_paint_check)(gtk2_widget->style, gtk2_black_pixmap, state_type,
-            shadow_type, NULL, gtk2_widget, detail,
-            x, y, width, height);
-}
-
-static void gtk2_paint_diamond(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height)
-{
-    gtk2_widget = gtk2_get_widget(widget_type);
-    (*fp_gtk_paint_diamond)(gtk2_widget->style, gtk2_white_pixmap, state_type,
-            shadow_type, NULL, gtk2_widget, detail,
-            x, y, width, height);
-    (*fp_gtk_paint_diamond)(gtk2_widget->style, gtk2_black_pixmap, state_type,
             shadow_type, NULL, gtk2_widget, detail,
             x, y, width, height);
 }
