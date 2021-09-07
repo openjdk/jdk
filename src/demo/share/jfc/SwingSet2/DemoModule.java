@@ -42,7 +42,6 @@ import java.awt.event.*;
 import java.beans.*;
 import java.util.*;
 import java.io.*;
-import java.applet.*;
 import java.net.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
