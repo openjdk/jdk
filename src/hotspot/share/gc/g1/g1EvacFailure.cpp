@@ -204,14 +204,19 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   UpdateLogBuffersDeferred _log_buffer_cl;
 
   uint volatile* _num_failed_regions;
+  G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs, uint worker_id, uint volatile* num_failed_regions) :
+  RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs,
+                                uint worker_id,
+                                uint volatile* num_failed_regions,
+                                G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
     _rdc_local_qset(rdcqs),
     _log_buffer_cl(&_rdc_local_qset),
-    _num_failed_regions(num_failed_regions) {
+    _num_failed_regions(num_failed_regions),
+    _evac_failure_regions(evac_failure_regions) {
   }
 
   ~RemoveSelfForwardPtrHRClosure() {
@@ -235,7 +240,7 @@ public:
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
 
-    if (_g1h->evacuation_failed(hr->hrm_index())) {
+    if (_evac_failure_regions->contains(hr->hrm_index())) {
       hr->clear_index_in_opt_cset();
 
       bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
@@ -270,7 +275,7 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQue
   _num_failed_regions(0) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id, &_num_failed_regions);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id, &_num_failed_regions, _evac_failure_regions);
 
   // Iterate through all regions that failed evacuation during the entire collection.
   _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);

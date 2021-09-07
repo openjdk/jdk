@@ -83,6 +83,7 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
   G1ParRemoveSelfForwardPtrsTask _task;
+  G1EvacFailureRegions* _evac_failure_regions;
 
 public:
   RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions);
@@ -116,7 +117,8 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedGangTask {
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
-                                          G1EvacuationInfo* evacuation_info);
+                                          G1EvacuationInfo* evacuation_info,
+                                          G1EvacFailureRegions* evac_failure_regions);
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask : public G1AbstractSubTask {
@@ -176,9 +178,10 @@ public:
 class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
   G1RedirtyCardsQueueSet* _rdcqs;
   BufferNode* volatile _nodes;
+  G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs);
+  RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions);
   virtual ~RedirtyLoggedCardsTask();
 
   double worker_cost() const override;
@@ -192,12 +195,15 @@ class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1
   HeapRegionClaimer _claimer;
   const size_t*     _surviving_young_words;
   uint              _active_workers;
+  G1EvacFailureRegions* _evac_failure_regions;
 
   FreeCSetStats* worker_stats(uint worker);
   void report_statistics();
 
 public:
-  FreeCollectionSetTask(G1EvacuationInfo* evacuation_info, const size_t* surviving_young_words);
+  FreeCollectionSetTask(G1EvacuationInfo* evacuation_info,
+                        const size_t* surviving_young_words,
+                        G1EvacFailureRegions* evac_failure_regions);
   virtual ~FreeCollectionSetTask();
 
   double worker_cost() const override;

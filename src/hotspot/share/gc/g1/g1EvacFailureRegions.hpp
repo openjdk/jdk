@@ -60,6 +60,9 @@ public:
     return Atomic::load(&_evac_failure_regions_cur_length);
   }
 
+  // Record that the garbage collection encountered an evacuation failure in the
+  // given region. Returns whether this has been the first occurrence of an evacuation
+  // failure in that region.
   inline bool record(uint region_idx);
 };
 

@@ -1050,18 +1050,8 @@ public:
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
-  inline void reset_evacuation_failed_data();
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;
-  // True iff the given region encountered an evacuation failure in the most-recent
-  // collection.
-  inline bool evacuation_failed(uint region_idx) const;
-
-  inline uint num_regions_failed_evacuation() const;
-  // Notify that the garbage collection encountered an evacuation failure in the
-  // given region. Returns whether this has been the first occurrence of an evacuation
-  // failure in that region.
-  inline bool notify_region_failed_evacuation(uint const region_idx);
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,

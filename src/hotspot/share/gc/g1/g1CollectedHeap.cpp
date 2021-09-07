@@ -2314,11 +2314,15 @@ void G1CollectedHeap::collection_set_iterate_all(HeapRegionClosure* cl) {
   _collection_set.iterate(cl);
 }
 
-void G1CollectedHeap::collection_set_par_iterate_all(HeapRegionClosure* cl, HeapRegionClaimer* hr_claimer, uint worker_id) {
+void G1CollectedHeap::collection_set_par_iterate_all(HeapRegionClosure* cl,
+                                                     HeapRegionClaimer* hr_claimer,
+                                                     uint worker_id) {
   _collection_set.par_iterate(cl, hr_claimer, worker_id);
 }
 
-void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *cl, HeapRegionClaimer* hr_claimer, uint worker_id) {
+void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *cl,
+                                                            HeapRegionClaimer* hr_claimer,
+                                                            uint worker_id) {
   _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id);
 }
 
@@ -2883,7 +2887,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
 
   // Perform the collection.
-  G1YoungCollector collector(gc_cause(), target_pause_time_ms);
+  G1YoungCollector collector(gc_cause(), target_pause_time_ms, &_evac_failure_regions);
   collector.collect();
 
   // It should now be safe to tell the concurrent mark thread to start
