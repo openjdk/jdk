@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@
 package test.java.time;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
@@ -67,6 +68,7 @@ import static org.testng.Assert.assertEquals;
 
 /**
  * Test Instant.
+ * @bug 8273369
  */
 @Test
 public class TestInstant extends AbstractTest {
@@ -96,4 +98,11 @@ public class TestInstant extends AbstractTest {
         assertEquals(millis, m, name);
     }
 
+    @Test
+    public void test_microsUntil() {
+        var nanoMax = Instant.EPOCH.plusNanos(Long.MAX_VALUE);
+        var totalMicros = Instant.EPOCH.until(nanoMax, ChronoUnit.MICROS);
+        var plusOneMicro = Instant.EPOCH.until(nanoMax.plusNanos(1000), ChronoUnit.MICROS);
+        assertEquals(plusOneMicro - totalMicros, 1L);
+    }
 }

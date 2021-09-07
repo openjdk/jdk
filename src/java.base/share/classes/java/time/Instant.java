@@ -1145,7 +1145,7 @@ public final class Instant
         if (unit instanceof ChronoUnit chronoUnit) {
             return switch (chronoUnit) {
                 case NANOS     -> nanosUntil(end);
-                case MICROS    -> nanosUntil(end) / 1000;
+                case MICROS    -> microsUntil(end);
                 case MILLIS    -> Math.subtractExact(end.toEpochMilli(), toEpochMilli());
                 case SECONDS   -> secondsUntil(end);
                 case MINUTES   -> secondsUntil(end) / SECONDS_PER_MINUTE;
@@ -1162,6 +1162,12 @@ public final class Instant
         long secsDiff = Math.subtractExact(end.seconds, seconds);
         long totalNanos = Math.multiplyExact(secsDiff, NANOS_PER_SECOND);
         return Math.addExact(totalNanos, end.nanos - nanos);
+    }
+
+    private long microsUntil(Instant end) {
+        long secsDiff = Math.subtractExact(end.seconds, seconds);
+        long totalMicros = Math.multiplyExact(secsDiff, NANOS_PER_SECOND / 1000);
+        return Math.addExact(totalMicros, (end.nanos - nanos) / 1000);
     }
 
     private long secondsUntil(Instant end) {
