@@ -177,6 +177,10 @@ final class KeyProtector {
                 byte[] encodedParams =
                     encrInfo.getAlgorithm().getEncodedParams();
 
+                if (encodedParams == null) {
+                    throw new IOException("Missing PBE parameters");
+                }
+
                 // parse the PBE parameters into the corresponding spec
                 AlgorithmParameters pbeParams =
                     AlgorithmParameters.getInstance("PBE");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,12 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
                 if (!val.getOID().equals(OID_MGF1)) {
                     throw new IOException("Only MGF1 mgf is supported");
                 }
+                byte[] encodedParams = val.getEncodedParams();
+                if (encodedParams == null) {
+                    throw new IOException("Missing MGF1 parameters");
+                }
                 AlgorithmId params = AlgorithmId.parse(
-                    new DerValue(val.getEncodedParams()));
+                    new DerValue(encodedParams));
                 String mgfDigestName = params.getName();
                 if (mgfDigestName.equals("SHA-1")) {
                     mgfSpec = MGF1ParameterSpec.SHA1;
@@ -137,7 +141,12 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
                 if (!val.getOID().equals(OID_PSpecified)) {
                     throw new IOException("Wrong OID for pSpecified");
                 }
-                DerInputStream dis = new DerInputStream(val.getEncodedParams());
+                byte[] encodedParams = val.getEncodedParams();
+                if (encodedParams == null) {
+                    throw new IOException("Missing pSpecified label");
+                }
+
+                DerInputStream dis = new DerInputStream(encodedParams);
                 p = dis.getOctetString();
                 if (dis.available() != 0) {
                     throw new IOException("Extra data for pSpecified");
