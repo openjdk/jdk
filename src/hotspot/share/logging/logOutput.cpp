@@ -366,7 +366,7 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
     julong errstream_count_before = errstream->count();
     success = set_option(key, value_str, errstream);
     if (!success) {
-      if (errstream->count() > errstream_count_before) {
+      if (errstream->count() == errstream_count_before) {
         errstream->print_cr("Invalid option '%s' for log output (%s).", key, name());
       }
       break;
