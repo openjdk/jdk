@@ -167,7 +167,8 @@ public:
 };
 
 void KernelGenerator::unroll() {
-  KernelGenerator *generators[unrolls()];
+  KernelGenerator **generators
+    = NEW_RESOURCE_ARRAY(KernelGenerator *, unrolls());
   generators[0] = this;
   for (int i = 1; i < unrolls(); i++) {
     generators[i] = generators[i-1]->next();
