@@ -25,7 +25,8 @@
 #ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
 #define SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
 
-#include "utilities/bitMap.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/bitMap.hpp"
 
 class HeapRegionClosure;
 class HeapRegionClaimer;
@@ -59,16 +60,7 @@ public:
     return Atomic::load(&_evac_failure_regions_cur_length);
   }
 
-  bool record(uint region_idx) {
-    assert(region_idx < _max_regions, "must be");
-    bool success = _regions_failed_evacuation.par_set_bit(region_idx,
-                                                          memory_order_relaxed);
-    if (success) {
-      size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
-      _evac_failure_regions[offset] = region_idx;
-    }
-    return success;
-  }
+  inline bool record(uint region_idx);
 };
 
 #endif //SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
