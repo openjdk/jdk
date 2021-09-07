@@ -201,6 +201,10 @@ public class TestSpecialArgs extends TestHelper {
 
     @Test
     void testNMArgumentProcessing() throws FileNotFoundException {
+        if (!isEnglishLocale()) {
+            return;
+        }
+
         TestResult tr;
         // the direct invokers of the VM
         String options[] = {
@@ -242,7 +246,7 @@ public class TestSpecialArgs extends TestHelper {
 
         // make sure a missing class is handled correctly, because the class
         // resolution is performed by the JVM.
-        tr = doExec(javaCmd, System.getProperty("test.vm.opts", "").trim(), "AbsentClass", "-XX:NativeMemoryTracking=summary");
+        tr = doExec(javaCmd, "AbsentClass", "-XX:NativeMemoryTracking=summary");
         if (!tr.contains("Error: Could not find or load main class AbsentClass")) {
             throw new RuntimeException("Test Fails");
         }
