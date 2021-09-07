@@ -107,11 +107,6 @@ public class JnaWinSysTerminal extends AbstractWindowsTerminal {
     }
 
     @Override
-    protected int getConsoleOutputCP() {
-        return Kernel32.INSTANCE.GetConsoleOutputCP();
-    }
-
-    @Override
     protected int getConsoleMode() {
         IntByReference mode = new IntByReference();
         Kernel32.INSTANCE.GetConsoleMode(consoleIn, mode);

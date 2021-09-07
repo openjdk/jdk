@@ -14,6 +14,7 @@ import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.impl.jna.win.JnaWinSysTerminal;
 import jdk.internal.org.jline.terminal.spi.JnaSupport;
 import jdk.internal.org.jline.terminal.spi.Pty;
+import jdk.internal.org.jline.utils.OSUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
