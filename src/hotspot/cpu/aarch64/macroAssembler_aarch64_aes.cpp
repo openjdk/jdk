@@ -187,16 +187,16 @@ class AESKernelGenerator: public KernelGenerator {
   const Register _keylen;
   FloatRegister _data;
   const FloatRegister _subkeys;
-  bool _is_base;
+  bool _once;
   Label _rounds_44, _rounds_52;
 
 public:
   AESKernelGenerator(Assembler *as, int unrolls,
                      Register from, Register to, Register keylen, FloatRegister data,
-                     FloatRegister subkeys, bool is_base = true)
+                     FloatRegister subkeys, bool once = true)
     : KernelGenerator(as, unrolls),
       _from(from), _to(to), _keylen(keylen), _data(data),
-      _subkeys(subkeys), _is_base(is_base) {
+      _subkeys(subkeys), _once(once) {
   }
 
   virtual void generate(int index) {
@@ -207,7 +207,7 @@ public:
       }
       break;
     case  1:
-      if (_is_base) {
+      if (_once) {
         cmpw(_keylen, 52);
         br(Assembler::LO, _rounds_44);
         br(Assembler::EQ, _rounds_52);
@@ -216,12 +216,12 @@ public:
     case  2:  aes_round(_data, _subkeys +  0);  break;
     case  3:  aes_round(_data, _subkeys +  1);  break;
     case  4:
-      if (_is_base)  bind(_rounds_52);
+      if (_once)  bind(_rounds_52);
       break;
     case  5:  aes_round(_data, _subkeys +  2);  break;
     case  6:  aes_round(_data, _subkeys +  3);  break;
     case  7:
-      if (_is_base)  bind(_rounds_44);
+      if (_once)  bind(_rounds_44);
       break;
     case  8:  aes_round(_data, _subkeys +  4);  break;
     case  9:  aes_round(_data, _subkeys +  5);  break;
@@ -246,7 +246,7 @@ public:
   virtual KernelGenerator *next() {
     return new AESKernelGenerator(this, _unrolls,
                                   _from, _to, _keylen,
-                                  _data + 1, _subkeys, /*is_base*/false);
+                                  _data + 1, _subkeys, /*once*/false);
   }
 
   virtual int length() { return 20; }
@@ -411,7 +411,7 @@ public:
 // reduction. This is to reduce latency next time around the loop.
 class GHASHReduceGenerator: public KernelGenerator {
   FloatRegister _result, _lo, _hi, _p, _vzr, _data, _t1;
-  int _base;
+  int _once;
 public:
   GHASHReduceGenerator(Assembler *as, int unrolls,
                        /* offsetted registers */
@@ -422,7 +422,7 @@ public:
                        FloatRegister t1)
     : KernelGenerator(as, unrolls),
       _result(result), _lo(lo), _hi(hi),
-      _p(p), _vzr(vzr), _data(data), _t1(t1), _base(0) { }
+      _p(p), _vzr(vzr), _data(data), _t1(t1), _once(true) { }
 
   int register_stride = 7;
 
@@ -456,7 +456,7 @@ public:
     }
 
     // Sprinkle load instructions into the generated instructions
-    if (_data->is_valid() && _base == 0) {
+    if (_data->is_valid() && _once) {
       assert(length() >= unrolls(), "not enough room for inteleaved loads");
       if (index < unrolls()) {
         ld1((_data + index*register_stride), T16B, post(r2, 0x10));
@@ -470,7 +470,7 @@ public:
     result->_hi += register_stride;
     result->_lo += register_stride;
     result->_t1 += register_stride;
-    result->_base++;
+    result->_once = false;
     return result;
   }
 
@@ -486,6 +486,7 @@ void MacroAssembler::ghash_modmul(FloatRegister result,
   ghash_reduce(result, result_lo, result_hi, p, vzr, t1);
 }
 
+// Interleaved GHASH processing.
 void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register state,
                                               Register subkeyH,
                                               Register data, Register blocks, int unrolls) {
@@ -547,8 +548,7 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
   {
     bind(already_calculated);
 
-    // We've been here before. Load the largest power of H we need
-    // into v6.
+    // Load the largest power of H we need into v6.
     ldrq(v6, Address(subkeyH, 16 * (unrolls - 1)));
     rev64(v6, T16B, v6);
     rbit(v6, T16B, v6);
@@ -572,6 +572,22 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
     ld1(v2+ofs, T16B, post(data, 0x10));
   }
 
+  // Register assignments, replicated across 4 clones, v0 ... v23
+  //
+  // v0: current state, result of multiply/reduce
+  // v1: temp
+  // v2: one block of data (the ciphertext)
+  // v3: temp
+  // v4: high part of product
+  // v5: low part ...
+  //
+  // Not replicated:
+  //
+  // v28: High part of H xor low part of H'
+  // v29: H' (hash subkey)
+  // v30: zero
+  // v31: Reduction polynomial of the Galois field
+
   // Inner loop.
   // Do the whole load/add/multiply/reduce over all our data except
   // the last few rows.
@@ -582,6 +598,7 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
     // Prefetching doesn't help here. In fact, on Neoverse N1 it's worse.
     // prfm(Address(data, 128), PLDL1KEEP);
 
+    // Xor data into current state
     for (int ofs = 0; ofs < unrolls * register_stride; ofs += register_stride) {
       rbit((v2+ofs), T16B, (v2+ofs));
       eor((v2+ofs), T16B, v0+ofs, (v2+ofs));   // bit-swapped data ^ bit-swapped state
@@ -595,7 +612,7 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
                            /*temps*/v1, v3, /* reuse b*/v2) .unroll();
 
     // NB: GHASHReduceGenerator also loads the next #unrolls blocks of
-    // data.
+    // data into .
     GHASHReduceGenerator (this, unrolls,
                           /*result*/v0, /*lo*/v5, /*hi*/v4, p, vzr,
                           /*data*/v2, /*temp*/v3) .unroll();
@@ -605,10 +622,10 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
     br(GE, L_ghash_loop);
   }
 
-  // Merge the #unrolls columns.  Note that the data for the next
+  // Merge the #unrolls states.  Note that the data for the next
   // operation has already been loaded into v4, v4+ofs, etc...
 
-  // First, we multiply/reduce each column by an appropriate power of H.
+  // First, we multiply/reduce each clone by the appropriate power of H.
   for (int i = 0; i < unrolls; i++) {
     int ofs = register_stride * i;
     ldrq(Hprime, Address(subkeyH, 16 * (unrolls - i - 1)));

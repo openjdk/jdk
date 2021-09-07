@@ -56,8 +56,6 @@
 #include "gc/z/zThreadLocalData.hpp"
 #endif
 
-#include <functional>
-
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
@@ -2828,13 +2826,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  static void forAll(FloatRegSet floatRegs,
-                   std::function<void (FloatRegister)> f1) {
-    for (RegSetIterator<FloatRegister> i = floatRegs.begin();  *i != fnoreg; ++i) {
-      f1(*i);
-    }
-  }
-
   // CTR AES crypt.
   // Arguments:
   //
@@ -2983,7 +2974,8 @@ class StubGenerator: public StubCodeGenerator {
 
       __ BIND(NEXT);
 
-      // Encrypt a signle byte.
+      // Encrypt a single byte, and loop.
+      // We expect this to be a rare event.
       __ ldrb(rscratch1, Address(in, offset));
       __ ldrb(rscratch2, Address(saved_encrypted_ctr, used));
       __ eor(rscratch1, rscratch1, rscratch2);
