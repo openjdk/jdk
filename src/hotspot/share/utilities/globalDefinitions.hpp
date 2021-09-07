@@ -275,6 +275,7 @@ const int NANOUNITS_PER_MILLIUNIT = NANOUNITS / MILLIUNITS;
 
 const jlong NANOSECS_PER_SEC      = CONST64(1000000000);
 const jint  NANOSECS_PER_MILLISEC = 1000000;
+const jint  NANOSECS_PER_MICROSEC = 1000;
 
 
 // Unit conversion functions

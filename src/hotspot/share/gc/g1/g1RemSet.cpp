@@ -561,7 +561,7 @@ class G1RemSetSamplingTask : public G1ServiceTask {
   // 0 is returned.
   jlong reschedule_delay_ms() {
     Tickspan since_last_gc = G1CollectedHeap::heap()->time_since_last_collection();
-    jlong delay = (jlong) (G1ConcRefinementServiceIntervalMillis - (uintx)since_last_gc.milliseconds());
+    jlong delay = (jlong) (G1ConcRefinementServiceIntervalMillis - since_last_gc.milliseconds());
     return MAX2<jlong>(0L, delay);
   }
 

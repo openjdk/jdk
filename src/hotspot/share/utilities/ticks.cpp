@@ -32,11 +32,6 @@
 
 #include OS_CPU_HEADER(os)
 
-template <typename TimeSource, const int unit>
-inline double conversion(typename TimeSource::Type& value) {
-  return (double)value * ((double)unit / (double)TimeSource::frequency());
-}
-
 uint64_t ElapsedCounterSource::frequency() {
   static const uint64_t freq = (uint64_t)os::elapsed_frequency();
   return freq;
@@ -44,22 +39,6 @@ uint64_t ElapsedCounterSource::frequency() {
 
 ElapsedCounterSource::Type ElapsedCounterSource::now() {
   return os::elapsed_counter();
-}
-
-double ElapsedCounterSource::seconds(Type value) {
-  return conversion<ElapsedCounterSource, 1>(value);
-}
-
-double ElapsedCounterSource::milliseconds(Type value) {
-  return conversion<ElapsedCounterSource, MILLIUNITS>(value);
-}
-
-double ElapsedCounterSource::microseconds(Type value) {
-  return conversion<ElapsedCounterSource, MICROUNITS>(value);
-}
-
-double ElapsedCounterSource::nanoseconds(Type value) {
-  return conversion<ElapsedCounterSource, NANOUNITS>(value);
 }
 
 uint64_t FastUnorderedElapsedCounterSource::frequency() {
@@ -84,22 +63,6 @@ FastUnorderedElapsedCounterSource::Type FastUnorderedElapsedCounterSource::now()
   return os::elapsed_counter();
 }
 
-double FastUnorderedElapsedCounterSource::seconds(Type value) {
-  return conversion<FastUnorderedElapsedCounterSource, 1>(value);
-}
-
-double FastUnorderedElapsedCounterSource::milliseconds(Type value) {
-  return conversion<FastUnorderedElapsedCounterSource, MILLIUNITS>(value);
-}
-
-double FastUnorderedElapsedCounterSource::microseconds(Type value) {
-  return conversion<FastUnorderedElapsedCounterSource, MICROUNITS>(value);
-}
-
-double FastUnorderedElapsedCounterSource::nanoseconds(Type value) {
-  return conversion<FastUnorderedElapsedCounterSource, NANOUNITS>(value);
-}
-
 uint64_t CompositeElapsedCounterSource::frequency() {
   return ElapsedCounterSource::frequency();
 }
@@ -119,20 +82,4 @@ CompositeElapsedCounterSource::Type CompositeElapsedCounterSource::now() {
   }
 #endif
   return ct;
-}
-
-double CompositeElapsedCounterSource::seconds(Type value) {
-  return conversion<ElapsedCounterSource, 1>(value.val1);
-}
-
-double CompositeElapsedCounterSource::milliseconds(Type value) {
-  return conversion<ElapsedCounterSource, MILLIUNITS>(value.val1);
-}
-
-double CompositeElapsedCounterSource::microseconds(Type value) {
-  return conversion<ElapsedCounterSource, MICROUNITS>(value.val1);
-}
-
-double CompositeElapsedCounterSource::nanoseconds(Type value) {
-  return conversion<ElapsedCounterSource, NANOUNITS>(value.val1);
 }

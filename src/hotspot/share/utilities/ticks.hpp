@@ -35,10 +35,26 @@ class ElapsedCounterSource {
   typedef jlong Type;
   static uint64_t frequency();
   static Type now();
-  static double seconds(Type value);
-  static double milliseconds(Type value);
-  static double microseconds(Type value);
-  static double nanoseconds(Type value);
+
+  template<typename T>
+  static T seconds(Type value) {
+    return (T)((double)value / (double)NANOSECS_PER_SEC);
+  }
+
+  template<typename T>
+  static T milliseconds(Type value) {
+    return (T)((double)value / (double)NANOSECS_PER_MILLISEC);
+  }
+
+  template<typename T>
+  static T microseconds(Type value) {
+    return (T)((double)value / (double)NANOSECS_PER_MICROSEC);
+  }
+
+  template<typename T>
+  static T nanoseconds(Type value) {
+    return (T)value;
+  }
 };
 
 // Not guaranteed to be synchronized across hardware threads and
@@ -51,10 +67,31 @@ class FastUnorderedElapsedCounterSource {
   typedef jlong Type;
   static uint64_t frequency();
   static Type now();
-  static double seconds(Type value);
-  static double milliseconds(Type value);
-  static double microseconds(Type value);
-  static double nanoseconds(Type value);
+
+  template <typename TimeSource, const int unit>
+  static double conversion(typename TimeSource::Type& value) {
+    return (double)value * ((double)unit / (double)TimeSource::frequency());
+  }
+
+  template<typename T>
+  static T seconds(Type value) {
+    return (T)conversion<FastUnorderedElapsedCounterSource, 1>(value);
+  }
+
+  template<typename T>
+  static T milliseconds(Type value) {
+    return (T)conversion<FastUnorderedElapsedCounterSource, MILLIUNITS>(value);
+  }
+
+  template<typename T>
+  static T microseconds(Type value) {
+    return (T)conversion<FastUnorderedElapsedCounterSource, MICROUNITS>(value);
+  }
+
+  template<typename T>
+  static T nanoseconds(Type value) {
+    return (T)conversion<FastUnorderedElapsedCounterSource, NANOUNITS>(value);
+  }
 };
 
 template <typename T1, typename T2>
@@ -100,10 +137,26 @@ class CompositeElapsedCounterSource {
   typedef CompositeTime Type;
   static uint64_t frequency();
   static Type now();
-  static double seconds(Type value);
-  static double milliseconds(Type value);
-  static double microseconds(Type value);
-  static double nanoseconds(Type value);
+
+  template<typename T>
+  static T seconds(Type value) {
+    return ElapsedCounterSource::seconds<T>(value.val1);
+  }
+
+  template<typename T>
+  static T milliseconds(Type value) {
+    return ElapsedCounterSource::milliseconds<T>(value.val1);
+  }
+
+  template<typename T>
+  static T microseconds(Type value) {
+    return ElapsedCounterSource::microseconds<T>(value.val1);
+  }
+
+  template<typename T>
+  static T nanoseconds(Type value) {
+    return ElapsedCounterSource::nanoseconds<T>(value.val1);
+  }
 };
 
 template <typename TimeSource>
@@ -139,17 +192,37 @@ class Representation {
   bool operator>=(const Representation<TimeSource>& rhs) const {
     return !operator<(rhs);
   }
+
   double seconds() const {
-    return TimeSource::seconds(_rep);
+    return TimeSource::template seconds<double>(_rep);
   }
-  double milliseconds() const {
-    return TimeSource::milliseconds(_rep);
+  template<typename T>
+  T seconds() const {
+    return TimeSource::template seconds<T>(_rep);
   }
-  double microseconds() const {
-    return TimeSource::microseconds(_rep);
+
+  uint64_t milliseconds() const {
+    return TimeSource::template milliseconds<uint64_t>(_rep);
   }
-  double nanoseconds() const {
-    return TimeSource::nanoseconds(_rep);
+  template<typename T>
+  T milliseconds() const {
+    return TimeSource::template milliseconds<T>(_rep);
+  }
+
+  uint64_t microseconds() const {
+    return TimeSource::template microseconds<uint64_t>(_rep);
+  }
+  template<typename T>
+  T microseconds() const {
+    return TimeSource::template microseconds<T>(_rep);
+  }
+
+  uint64_t nanoseconds() const {
+    return TimeSource::template nanoseconds<uint64_t>(_rep);
+  }
+  template<typename T>
+  T nanoseconds() const {
+    return TimeSource::template nanoseconds<T>(_rep);
   }
 };
 

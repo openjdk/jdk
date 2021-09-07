@@ -56,8 +56,9 @@ namespace {
     static Type now() {
       return current_ticks;
     }
-    static uint64_t nanoseconds(Type value) {
-      return value;
+    template<typename T>
+    static T nanoseconds(Type value) {
+      return (T)value;
     }
   };
 

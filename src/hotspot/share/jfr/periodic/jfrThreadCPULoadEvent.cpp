@@ -132,7 +132,7 @@ void JfrThreadCPULoadEvent::send_events() {
     }
   }
   log_trace(jfr)("Measured CPU usage for %d threads in %.3f milliseconds", number_of_threads,
-    (JfrTicks::now() - event_time).milliseconds());
+    (JfrTicks::now() - event_time).milliseconds<double>());
   // Restore this thread's thread id
   periodic_thread_tl->set_thread_id(periodic_thread_id);
 }
