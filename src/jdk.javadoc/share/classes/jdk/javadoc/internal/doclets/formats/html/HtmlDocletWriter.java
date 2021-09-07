@@ -1698,7 +1698,12 @@ public class HtmlDocletWriter {
         if (!shouldRedirectRelativeLinks(element)) {
             return text;
         }
-        if (text.matches("^[^:/?#]+:.+$")) {
+        String lower = Utils.toLowerCase(text);
+        if (lower.startsWith("mailto:")
+                || lower.startsWith("http:")
+                || lower.startsWith("https:")
+                || lower.startsWith("file:")
+                || lower.startsWith("ftp:")) {
             return text;
         }
         if (text.startsWith("#")) {

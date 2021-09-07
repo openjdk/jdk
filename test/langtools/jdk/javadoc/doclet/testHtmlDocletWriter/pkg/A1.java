@@ -26,7 +26,7 @@ package pkg;
 /**
  *This class has <a href="{@docRoot}/pkg/A1.html#functions">various functions</a>,
  * see <a href="ftp://www.domain.com/">FTP Site</a>, <a href="http://www.domain.com/">HTTP Site</a>, <a href="https://www.domain.com/">HTTPS Site</a>,
- *  <a href="file:///path/to/somefile">file service</a>, and <a href="javascript:void(0)">Click here</a>, also contact to <a href="mailto:username@hogehoge.com">mail service</a> for further infomation.
+ *  <a href="file:///path/to/somefile">file service</a>, also contact to <a href="mailto:username@hogehoge.com">mail service</a> for further infomation.
  *<a id="functions">various functions</a>
  *<ul>
  *<li>function1</li>
@@ -92,13 +92,6 @@ public class A1 implements java.io.Serializable {
      *@param p1 arg1
      */
     public void method6(B1.StaticInnerB1 p1){
-    }
-
-    /**
-     *<a href="javascript:void(0)">Click here</a> for more infomation.
-     *@param p1 arg1
-     */
-    public void method7(B1.StaticInnerB1 p1){
     }
 
     /**

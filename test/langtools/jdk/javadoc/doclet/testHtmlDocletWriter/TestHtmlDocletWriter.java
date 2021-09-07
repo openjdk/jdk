@@ -49,8 +49,6 @@ public class TestHtmlDocletWriter extends JavadocTester {
         checkOutput(html, true,
                     "<a href=\"file:///path/to/somefile\">file service</a>");
         checkOutput(html, true,
-                    "<a href=\"javascript:void(0)\">Click here</a>");
-        checkOutput(html, true,
                     "<a href=\"mailto:username@hogehoge.com\">mail service</a>");
     }
 
