@@ -2907,7 +2907,7 @@ public:
   INSN(frintn, 0, 0b00, 0b01, 0b11000);
   INSN(frintm, 0, 0b00, 0b01, 0b11001);
   INSN(frintp, 0, 0b10, 0b01, 0b11000);
-  INSN(fcvtzv, 0, 0b10, 0b01, 0b11011); // converts each element in a vector from a floating-point value to a signed integer value, and Arm's name is fcvtzs
+  INSN(fcvtzs, 0, 0b10, 0b01, 0b11011);
 #undef ASSERTION
 
 #define ASSERTION (T == T8B || T == T16B || T == T4H || T == T8H || T == T2S || T == T4S)

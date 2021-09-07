@@ -1536,7 +1536,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["umov",   "__ umov(r0, v1, __ B, 3);",                          "umov\tw0, v1.b[3]"],
                         ["fmov",   "__ fmovhid(r0, v1);",                                "fmov\tx0, v1.d[1]"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
-                        ["fcvtzv", "__ fcvtzv(v0, __ T4S, v1);",                         "fcvtzs\tv0.4s, v1.4s"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T4S, v1);",                         "fcvtzs\tv0.4s, v1.4s"],
                         # SVE instructions
                         ["cpy",    "__ sve_cpy(z0, __ S, p0, v1);",                      "cpy\tz0.s, p0/m, s1"],
                         ["inc",    "__ sve_inc(r0, __ S);",                              "incw\tx0"],
