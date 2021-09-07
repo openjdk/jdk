@@ -7202,7 +7202,7 @@ instruct castLL( eRegL dst ) %{
   ins_pipe( empty );
 %}
 
-instruct castFF( regF dst ) %{
+instruct castFF( regFPR dst ) %{
   match(Set dst (CastFF dst));
   format %{ "#castFF of $dst" %}
   ins_encode( /*empty encoding*/ );
@@ -7210,7 +7210,7 @@ instruct castFF( regF dst ) %{
   ins_pipe( empty );
 %}
 
-instruct castDD( regD dst ) %{
+instruct castDD( regDPR dst ) %{
   match(Set dst (CastDD dst));
   format %{ "#castDD of $dst" %}
   ins_encode( /*empty encoding*/ );
