@@ -86,7 +86,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     // data size when buffer is divided up to aid in intrinsics
     private static final int TRIGGERLEN = 65536;  // 64k
     // x86-64 parallel intrinsic data size
-    private static final int PARALLEL_LEN = 768;
+    private static final int PARALLEL_LEN = 8192;
 
     static final byte[] EMPTY_BUF = new byte[0];
 

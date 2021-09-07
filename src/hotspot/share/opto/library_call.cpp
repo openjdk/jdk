@@ -6758,11 +6758,20 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* state_start = array_element_address(state, intcon(0), T_LONG);
   Node* subkeyHtbl_start = array_element_address(subkeyHtbl, intcon(0), T_LONG);
 
+  ciKlass* klass = ciTypeArrayKlass::make(T_LONG);
+  Node* klass_node = makecon(TypeKlassPtr::make(klass));
+
+  Node* avx512_subkeyHtbl = new_array(klass_node, intcon(96), 0);
+  if (avx512_subkeyHtbl == NULL) return false;
+
+  Node* avx512_subkeyHtbl_start = array_element_address(avx512_subkeyHtbl, intcon(0), T_LONG);
+
+
   // Call the stub, passing params
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
                                OptoRuntime::galoisCounterMode_aescrypt_Type(),
                                stubAddr, stubName, TypePtr::BOTTOM,
-                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, cnt_start);
+                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, avx512_subkeyHtbl_start, cnt_start);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));
