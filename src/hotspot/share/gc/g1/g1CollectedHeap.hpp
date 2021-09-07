@@ -51,9 +51,10 @@
 #include "gc/shared/plab.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/bitMap.hpp"
-#include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
 // It uses the "Garbage First" heap organization and algorithm, which
@@ -61,45 +62,28 @@
 // heap subsets that will yield large amounts of garbage.
 
 // Forward declarations
-class HeapRegion;
-class GenerationSpec;
-class G1CardSetFreeMemoryTask;
-class G1ParScanThreadState;
-class G1ParScanThreadStateSet;
-class G1ParScanThreadState;
-class MemoryPool;
-class MemoryManager;
-class ObjectClosure;
-class SpaceClosure;
-class CompactibleSpaceClosure;
-class Space;
+class G1Allocator;
+class G1ArchiveAllocator;
 class G1BatchedGangTask;
 class G1CardTableEntryClosure;
-class G1CollectionSet;
-class G1GCCounters;
-class G1Policy;
-class G1HotCardCache;
-class G1RemSet;
-class G1ServiceTask;
-class G1ServiceThread;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1ConcurrentRefine;
-class GenerationCounters;
-class STWGCTimer;
-class G1NewTracer;
-class nmethod;
-class WorkGang;
-class G1Allocator;
-class G1ArchiveAllocator;
-class G1FullGCScope;
-class G1HeapVerifier;
-class G1HeapSizingPolicy;
-class G1HeapSummary;
-class G1EvacSummary;
+class G1GCCounters;
 class G1GCPhaseTimes;
+class G1HeapSizingPolicy;
+class G1HotCardCache;
+class G1NewTracer;
+class G1RemSet;
+class G1ServiceTask;
+class G1ServiceThread;
+class GCMemoryManager;
+class HeapRegion;
+class MemoryPool;
+class nmethod;
 class ReferenceProcessor;
-class G1BatchedGangTask;
+class STWGCTimer;
+class WorkGang;
 
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
