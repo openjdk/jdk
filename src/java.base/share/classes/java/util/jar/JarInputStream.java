@@ -28,7 +28,6 @@ package java.util.jar;
 import java.util.zip.*;
 import java.io.*;
 import sun.security.util.ManifestEntryVerifier;
-import jdk.internal.util.jar.JarIndex;
 
 /**
  * The {@code JarInputStream} class is used to read the contents of
@@ -133,7 +132,7 @@ public class JarInputStream extends ZipInputStream {
             }
         } else {
             e = first;
-            if (first.getName().equalsIgnoreCase(JarIndex.INDEX_NAME))
+            if (first.getName().equalsIgnoreCase(JarFile.INDEX_NAME))
                 tryManifest = true;
             first = null;
         }

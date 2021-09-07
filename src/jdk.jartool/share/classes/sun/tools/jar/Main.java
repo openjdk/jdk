@@ -66,12 +66,11 @@ import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
-import jdk.internal.util.jar.JarIndex;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
-import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
+import static java.util.jar.JarFile.INDEX_NAME;
 
 /**
  * This class implements a simple utility for creating files in the JAR

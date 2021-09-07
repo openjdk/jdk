@@ -215,6 +215,11 @@ public class JarFile extends ZipFile {
     public static final String MANIFEST_NAME = META_INF + "MANIFEST.MF";
 
     /**
+     * The index file name.
+     */
+    public static final String INDEX_NAME = "META-INF/INDEX.LIST";
+
+    /**
      * Returns the version that represents the unversioned configuration of a
      * multi-release jar file.
      *

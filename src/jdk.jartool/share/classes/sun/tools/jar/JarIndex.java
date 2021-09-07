@@ -23,15 +23,14 @@
  * questions.
  */
 
-package jdk.internal.util.jar;
-
-import sun.nio.cs.UTF_8;
+package sun.tools.jar;
 
 import java.io.*;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.*;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 /**
@@ -64,11 +63,6 @@ public class JarIndex {
      * An ordered list of jar file names.
      */
     private String[] jarFiles;
-
-    /**
-     * The index file name.
-     */
-    public static final String INDEX_NAME = "META-INF/INDEX.LIST";
 
     /**
      * true if, and only if, sun.misc.JarIndex.metaInfFilenames is set to true.
@@ -115,7 +109,7 @@ public class JarIndex {
      */
     public static JarIndex getJarIndex(JarFile jar) throws IOException {
         JarIndex index = null;
-        JarEntry e = jar.getJarEntry(INDEX_NAME);
+        JarEntry e = jar.getJarEntry(JarFile.INDEX_NAME);
         // if found, then load the index
         if (e != null) {
             index = new JarIndex(jar.getInputStream(e));
@@ -225,7 +219,7 @@ public class JarIndex {
                 // Skip the META-INF directory, the index, and manifest.
                 // Any files in META-INF/ will be indexed explicitly
                 if (fileName.equals("META-INF/") ||
-                    fileName.equals(INDEX_NAME) ||
+                    fileName.equals(JarFile.INDEX_NAME) ||
                     fileName.equals(JarFile.MANIFEST_NAME) ||
                     fileName.startsWith("META-INF/versions/"))
                     continue;
@@ -253,7 +247,7 @@ public class JarIndex {
      */
     public void write(OutputStream out) throws IOException {
         BufferedWriter bw = new BufferedWriter
-            (new OutputStreamWriter(out, UTF_8.INSTANCE));
+            (new OutputStreamWriter(out, UTF_8));
         bw.write("JarIndex-Version: 1.0\n\n");
 
         if (jarFiles != null) {
@@ -283,7 +277,7 @@ public class JarIndex {
      */
     public void read(InputStream is) throws IOException {
         BufferedReader br = new BufferedReader
-            (new InputStreamReader(is, UTF_8.INSTANCE));
+            (new InputStreamReader(is, UTF_8));
         String line;
         String currentJar = null;
 

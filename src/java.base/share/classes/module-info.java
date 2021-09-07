@@ -298,7 +298,8 @@ module java.base {
         java.desktop,
         java.security.jgss,
         jdk.crypto.ec,
-        jdk.incubator.foreign;
+        jdk.incubator.foreign,
+        jdk.jartool;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to

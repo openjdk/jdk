@@ -32,7 +32,6 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.zip.ZipEntry;
 
-import jdk.internal.util.jar.JarIndex;
 import sun.security.util.ManifestDigester;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
@@ -145,7 +144,7 @@ class JarVerifier {
                 }
 
                 if (uname.equals(JarFile.MANIFEST_NAME) ||
-                        uname.equals(JarIndex.INDEX_NAME)) {
+                        uname.equals(JarFile.INDEX_NAME)) {
                     return;
                 }
 
