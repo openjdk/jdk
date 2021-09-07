@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,12 @@ import javax.swing.text.View;
 
 import sun.swing.SwingUtilities2;
 
+import apple.laf.JRSUIUtils;
 import apple.laf.JRSUIConstants.*;
 
 public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
+    private static boolean isFrameActive = false;
+
     public static ComponentUI createUI(final JComponent c) {
         return new AquaTabbedPaneContrastUI();
     }
@@ -79,6 +82,8 @@ public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
             return UIManager.getColor("TabbedPane.selectedTabTitlePressedColor");
         } else if (!enabled) {
             return UIManager.getColor("TabbedPane.selectedTabTitleDisabledColor");
+        } else if (!JRSUIUtils.isMacOSXBigSurOrAbove() && !isFrameActive) {
+            return UIManager.getColor("TabbedPane.selectedTabTitleNonFocusColor");
         } else {
             return UIManager.getColor("TabbedPane.selectedTabTitleNormalColor");
         }
@@ -101,6 +106,7 @@ public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
     }
 
     protected State getState(final int index, final boolean frameActive, final boolean isSelected) {
+        isFrameActive = frameActive;;
         if (!frameActive) return State.INACTIVE;
         if (!tabPane.isEnabled()) return State.DISABLED;
         if (pressedTab == index) return State.PRESSED;
