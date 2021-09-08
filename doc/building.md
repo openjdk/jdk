@@ -818,7 +818,7 @@ configuration, as opposed to the "configure time" configuration.
 #### Test Make Control Variables
 
 These make control variables only make sense when running tests. Please see
-[Testing the JDK](testing.html) for details.
+[Testing the JDK](testing.md) for details.
 
   * `TEST`
   * `TEST_JOBS`
