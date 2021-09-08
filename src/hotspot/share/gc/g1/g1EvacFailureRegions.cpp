@@ -52,7 +52,6 @@ void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
   G1CollectedHeap::heap()->par_iterate_regions_array_part_from(closure,
                                                                _hrclaimer,
                                                                _evac_failure_regions,
-                                                               0,
                                                                Atomic::load(&_evac_failure_regions_cur_length),
                                                                worker_id);
 }

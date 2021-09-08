@@ -1161,7 +1161,6 @@ public:
   void par_iterate_regions_array_part_from(HeapRegionClosure* cl,
                                            HeapRegionClaimer* hr_claimer,
                                            const uint* regions,
-                                           size_t offset,
                                            size_t length,
                                            uint worker_id) const;
 
