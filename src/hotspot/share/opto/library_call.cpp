@@ -4077,6 +4077,29 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
 
 //----------------------inline_unsafe_copyMemory-------------------------
 // public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
+
+static bool has_wide_mem(PhaseGVN& gvn, Node* addr, Node* base) {
+  const TypeAryPtr* addr_t = gvn.type(addr)->isa_aryptr();
+  const Type*       base_t = gvn.type(base);
+
+  bool in_native = (base_t == TypePtr::NULL_PTR);
+  bool in_heap   = !TypePtr::NULL_PTR->higher_equal(base_t);
+  bool is_mixed  = !in_heap && !in_native;
+
+  if (is_mixed) {
+    return true; // mixed accesses can touch both on-heap and off-heap memory
+  }
+  if (in_heap) {
+    bool is_prim_array = (addr_t != NULL) && (addr_t->elem() != Type::BOTTOM);
+    if (!is_prim_array) {
+      // Though Unsafe.copyMemory() ensures at runtime for on-heap accesses that base is a primitive array,
+      // there's not enough type information available to determine proper memory slice for it.
+      return true;
+    }
+  }
+  return false;
+}
+
 bool LibraryCallKit::inline_unsafe_copyMemory() {
   if (callee()->is_static())  return false;  // caller must have the capability!
   null_check_receiver();  // null-check receiver
@@ -4084,21 +4107,17 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
 
   C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
 
-  Node* src_ptr =         argument(1);   // type: oop
-  Node* src_off = ConvL2X(argument(2));  // type: long
-  Node* dst_ptr =         argument(4);   // type: oop
-  Node* dst_off = ConvL2X(argument(5));  // type: long
-  Node* size    = ConvL2X(argument(7));  // type: long
+  Node* src_base =         argument(1);  // type: oop
+  Node* src_off  = ConvL2X(argument(2)); // type: long
+  Node* dst_base =         argument(4);  // type: oop
+  Node* dst_off  = ConvL2X(argument(5)); // type: long
+  Node* size     = ConvL2X(argument(7)); // type: long
 
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
 
-  Node* src = make_unsafe_address(src_ptr, src_off);
-  Node* dst = make_unsafe_address(dst_ptr, dst_off);
-
-  // Conservatively insert a memory barrier on all memory slices.
-  // Do not let writes of the copy source or destination float below the copy.
-  insert_mem_bar(Op_MemBarCPUOrder);
+  Node* src_addr = make_unsafe_address(src_base, src_off);
+  Node* dst_addr = make_unsafe_address(dst_base, dst_off);
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
   Node* doing_unsafe_access_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
@@ -4108,18 +4127,30 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   // update volatile field
   store_to_memory(control(), doing_unsafe_access_addr, intcon(1), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
 
+  int flags = RC_LEAF | RC_NO_FP;
+
+  const TypePtr* dst_type = TypePtr::BOTTOM;
+
+  // Adjust memory effects of the runtime call based on input values.
+  if (!has_wide_mem(_gvn, src_addr, src_base) &&
+      !has_wide_mem(_gvn, dst_addr, dst_base)) {
+    dst_type = _gvn.type(dst_addr)->is_ptr(); // narrow out memory
+
+    const TypePtr* src_type = _gvn.type(src_addr)->is_ptr();
+    if (C->get_alias_index(src_type) == C->get_alias_index(dst_type)) {
+      flags |= RC_NARROW_MEM; // narrow in memory
+    }
+  }
+
   // Call it.  Note that the length argument is not scaled.
-  make_runtime_call(RC_LEAF|RC_NO_FP,
+  make_runtime_call(flags,
                     OptoRuntime::fast_arraycopy_Type(),
                     StubRoutines::unsafe_arraycopy(),
                     "unsafe_arraycopy",
-                    TypeRawPtr::BOTTOM,
-                    src, dst, size XTOP);
+                    dst_type,
+                    src_addr, dst_addr, size XTOP);
 
   store_to_memory(control(), doing_unsafe_access_addr, intcon(0), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
-
-  // Do not let reads of the copy destination float above the copy.
-  insert_mem_bar(Op_MemBarCPUOrder);
 
   return true;
 }

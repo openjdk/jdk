@@ -158,7 +158,7 @@ public class FcFontConfiguration extends FontConfiguration {
 
     @Override
     protected Charset getDefaultFontCharset(String fontName) {
-        return Charset.forName("ISO8859_1");
+        return ISO_8859_1;
     }
 
     @Override
