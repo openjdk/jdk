@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,22 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1EVACFAILURE_HPP
-#define SHARE_GC_G1_G1EVACFAILURE_HPP
+#ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
+#define SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 
-#include "gc/g1/g1OopClosures.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/shared/workgroup.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/bitMap.inline.hpp"
 
-class G1CollectedHeap;
-class G1EvacFailureRegions;
-class G1RedirtyCardsQueueSet;
+bool G1EvacFailureRegions::record(uint region_idx) {
+  assert(region_idx < _max_regions, "must be");
+  bool success = _regions_failed_evacuation.par_set_bit(region_idx,
+                                                        memory_order_relaxed);
+  if (success) {
+    size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
+    _evac_failure_regions[offset] = region_idx;
+  }
+  return success;
+}
 
-// Task to fixup self-forwarding pointers
-// installed as a result of an evacuation failure.
-class G1ParRemoveSelfForwardPtrsTask: public AbstractGangTask {
-protected:
-  G1CollectedHeap* _g1h;
-  G1RedirtyCardsQueueSet* _rdcqs;
-  HeapRegionClaimer _hrclaimer;
-
-  G1EvacFailureRegions* _evac_failure_regions;
-  uint volatile _num_failed_regions;
-
-public:
-  G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions);
-
-  void work(uint worker_id);
-
-  uint num_failed_regions() const;
-};
-
-#endif // SHARE_GC_G1_G1EVACFAILURE_HPP
+#endif //SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
