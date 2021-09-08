@@ -41,7 +41,7 @@ public class TestPostParseCallDevirtualization {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         Scenario noOSR = new Scenario(0, "-XX:-UseOnStackReplacement");
-        Scenario alwaysIncremental = new Scenario(1, "-XX:-UseOnStackReplacement", "-XX:+AlwaysIncrementalInline");
+        Scenario alwaysIncremental = new Scenario(1, "-XX:-UseOnStackReplacement", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlwaysIncrementalInline");
         framework.addScenarios(noOSR, alwaysIncremental).start();
     }
 
