@@ -26,12 +26,12 @@
  * @bug 8270366
  * @summary Test transformation (-a)*(-b) = a*b
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestAssociative
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestNegMultiply
  *
  */
 
-public class Test {
-    private static final int[][2] intParams = {
+public class TestNegMultiply {
+    private static final int[][] intParams = {
         {Integer.MAX_VALUE, Integer.MAX_VALUE},
         {Integer.MIN_VALUE, Integer.MIN_VALUE},
         {Integer.MAX_VALUE, Integer.MIN_VALUE},
@@ -56,7 +56,7 @@ public class Test {
         }
     }
 
-    private static final int[][2] longParams = {
+    private static final long[][] longParams = {
         {Long.MAX_VALUE, Long.MAX_VALUE},
         {Long.MIN_VALUE, Long.MIN_VALUE},
         {Long.MAX_VALUE, Long.MIN_VALUE},
