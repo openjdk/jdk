@@ -1,10 +1,20 @@
 /*
+ * Note: to run this test manually, you need to build the tests first to get native
+ * libraries compiled, and then execute it with plain jtreg, like:
+ *
+ *  $ bin/jtreg -jdk:<path-to-tested-jdk> \
+ *              -nativepath:<path-to-build-dir>/support/test/jdk/jtreg/native/lib/ \
+ *              -concurrency:auto \
+ *              ./test/jdk/java/foreign/TestMatrix.java
+ */
+
+/*
  * @test id=UpcallHighArity-FFTT
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -18,7 +28,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -32,7 +42,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -46,7 +56,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -60,7 +70,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -74,7 +84,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -88,7 +98,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -102,7 +112,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -116,7 +126,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -130,7 +140,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -144,7 +154,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -158,7 +168,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -172,7 +182,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -186,7 +196,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -200,7 +210,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -214,7 +224,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native
+ * @run testng/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -228,7 +238,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncall
  *
- * @run testng/othervm
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -240,7 +250,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncall
  *
- * @run testng/othervm
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -252,7 +262,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncall
  *
- * @run testng/othervm
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -264,7 +274,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncall
  *
- * @run testng/othervm
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -276,7 +286,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -290,7 +300,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -304,7 +314,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -318,7 +328,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -332,7 +342,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -346,7 +356,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -360,7 +370,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -374,7 +384,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -388,7 +398,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -402,7 +412,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
@@ -416,7 +426,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
@@ -430,7 +440,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm/timeout=480
+ * @run testng/othervm/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
