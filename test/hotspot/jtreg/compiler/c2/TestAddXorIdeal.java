@@ -74,17 +74,24 @@ public class TestAddXorIdeal {
 
     public static void main(String... args) {
         Random random = new Random();
-
+        int n = 0;
+        long n1 = 0;
         for (int i = -5_000; i < 5_000; i++) {
-            int n = random.nextInt();
-            long n1 = random.nextLong();
+            n = random.nextInt();
             Asserts.assertTrue(test1(i + n) == -(i + n));
+            n = random.nextInt();
             Asserts.assertTrue(test2(i - n) == -(i - n));
+            n1 = random.nextLong();
             Asserts.assertTrue(test3(i + n1) == -(i + n1));
+            n1 = random.nextLong();
             Asserts.assertTrue(test4(i - n1) == -(i - n1));
+            n = random.nextInt();
             Asserts.assertTrue(test5(i + n) == -(i + n));
+            n = random.nextInt();
             Asserts.assertTrue(test6(i - n) == -(i - n));
+            n1 = random.nextLong();
             Asserts.assertTrue(test7(i + n1) == -(i + n1));
+            n1 = random.nextLong();
             Asserts.assertTrue(test8(i - n1) == -(i - n1));
         }
     }
