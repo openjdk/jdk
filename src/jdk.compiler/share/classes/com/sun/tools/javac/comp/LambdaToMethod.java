@@ -1090,24 +1090,42 @@ public class LambdaToMethod extends TreeTranslator {
 
     private MethodType typeToMethodType(Type mt, MethodType interfaceMethodType) {
         Type type = types.erasure(mt);
+        List<Type> adaptedParams = List.nil();
+        if (interfaceMethodType != null && !areParametersAssignable(type, interfaceMethodType)) {
+            adaptedParams = adaptParameters(mt, interfaceMethodType);
+        }
+        return new MethodType(
+                adaptedParams.isEmpty() ? type.getParameterTypes() : adaptedParams,
+                type.getReturnType(),
+                type.getThrownTypes(),
+                syms.methodClass);
+    }
+
+    boolean areParametersAssignable(Type erasedMT, MethodType interfaceMethodType) {
+        List<Type> interfaceMParams = interfaceMethodType.getParameterTypes();
+        for (Type paramType : erasedMT.getParameterTypes()) {
+            if (!types.isAssignable(paramType, interfaceMParams.head)) {
+                return false;
+            }
+            interfaceMParams = interfaceMParams.tail;
+        }
+        return true;
+    }
+
+    List<Type> adaptParameters(Type mt, MethodType interfaceMethodType) {
         ListBuffer<Type> parameterTypes = new ListBuffer<>();
-        if (interfaceMethodType != null && mt.getParameterTypes().stream().anyMatch(Type::isIntersection)) {
-            // we need to make sure that we are selecting the right component of the intersection to erase to
+        if (mt.getParameterTypes().stream().anyMatch(Type::isIntersection)) {
             List<Type> interfaceParamTypes = interfaceMethodType.getParameterTypes();
             for (Type paramType : mt.getParameterTypes()) {
                 if (paramType.isIntersection()) {
-                    parameterTypes.add(selectIntersectionComponent((IntersectionClassType)paramType, interfaceParamTypes.head));
+                    parameterTypes.add(selectIntersectionComponent((IntersectionClassType) paramType, interfaceParamTypes.head));
                 } else {
                     parameterTypes.add(types.erasure(paramType));
                 }
                 interfaceParamTypes = interfaceParamTypes.tail;
             }
         }
-        return new MethodType(
-                parameterTypes.isEmpty() ? type.getParameterTypes() : parameterTypes.toList(),
-                type.getReturnType(),
-                type.getThrownTypes(),
-                syms.methodClass);
+        return parameterTypes.toList();
     }
 
     private Type selectIntersectionComponent(IntersectionClassType intersection, Type interfaceParamType) {
