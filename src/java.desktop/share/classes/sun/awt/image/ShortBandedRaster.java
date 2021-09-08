@@ -803,8 +803,8 @@ public class ShortBandedRaster extends SunWritableRaster {
     }
 
     public String toString() {
-        return "ShortBandedRaster: width = " + width + " height = "
-                + height
+        return "ShortBandedRaster: width = " + width
+                + " height = " + height
                 + " #numBands " + numBands
                 + " #dataElements " + numDataElements;
 

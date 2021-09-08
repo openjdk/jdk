@@ -1407,10 +1407,9 @@ public class DirectColorModel extends PackedColorModel {
      * {@code DirectColorModel}.
      */
     public String toString() {
-        return "DirectColorModel: rmask="
-                + Integer.toHexString(red_mask) + " gmask="
-                + Integer.toHexString(green_mask) + " bmask="
-                + Integer.toHexString(blue_mask) + " amask="
-                + Integer.toHexString(alpha_mask);
+        return "DirectColorModel: rmask=" + Integer.toHexString(red_mask)
+                + " gmask=" + Integer.toHexString(green_mask)
+                + " bmask=" + Integer.toHexString(blue_mask)
+                + " amask=" + Integer.toHexString(alpha_mask);
     }
 }

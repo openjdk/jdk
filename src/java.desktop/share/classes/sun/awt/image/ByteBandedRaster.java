@@ -819,10 +819,11 @@ public class ByteBandedRaster extends SunWritableRaster {
     }
 
     public String toString() {
-        return "ByteBandedRaster: width = " + width + " height = "
-                + height
+        return "ByteBandedRaster: width = " + width
+                + " height = " + height
                 + " #bands " + numDataElements
-                + " minX = " + minX + " minY = " + minY;
+                + " minX = " + minX
+                + " minY = " + minY;
     }
 
 }

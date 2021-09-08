@@ -1425,7 +1425,8 @@ public class BytePackedRaster extends SunWritableRaster {
     }
 
     public String toString() {
-        return "BytePackedRaster: width = " + width + " height = " + height
+        return "BytePackedRaster: width = " + width
+                + " height = " + height
                 + " #channels " + numBands
                 + " xOff = " + sampleModelTranslateX
                 + " yOff = " + sampleModelTranslateY;

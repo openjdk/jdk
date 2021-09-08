@@ -3206,7 +3206,10 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         }
 
         public String toString() {
-            return "viewport.viewSize=" + viewport.getViewSize() + "\n" + "viewport.viewRectangle=" + viewport.getViewRect() + "\n" + "leadingTabIndex=" + leadingTabIndex + "\n" + "tabViewPosition=" + tabViewPosition;
+            return "viewport.viewSize=" + viewport.getViewSize() + "\n"
+                    + "viewport.viewRectangle=" + viewport.getViewRect() + "\n"
+                    + "leadingTabIndex=" + leadingTabIndex + "\n"
+                    + "tabViewPosition=" + tabViewPosition;
         }
 
     }

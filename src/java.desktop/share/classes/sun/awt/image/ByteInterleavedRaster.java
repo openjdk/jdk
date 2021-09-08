@@ -1289,8 +1289,8 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
     }
 
     public String toString() {
-        return "ByteInterleavedRaster: width = " + width + " height = "
-                + height
+        return "ByteInterleavedRaster: width = " + width
+                + " height = " + height
                 + " #numDataElements " + numDataElements
                 //  +" xOff = "+xOffset+" yOff = "+yOffset
                 + " dataOff[0] = " + dataOffsets[0];

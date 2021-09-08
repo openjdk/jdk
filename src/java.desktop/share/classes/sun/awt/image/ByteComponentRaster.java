@@ -946,8 +946,8 @@ public class ByteComponentRaster extends SunWritableRaster {
     }
 
     public String toString() {
-        return "ByteComponentRaster: width = " + width + " height = "
-                + height
+        return "ByteComponentRaster: width = " + width
+                + " height = " + height
                 + " #numDataElements " + numDataElements
                 //  +" xOff = "+xOffset+" yOff = "+yOffset
                 + " dataOff[0] = " + dataOffsets[0];
