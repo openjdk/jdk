@@ -91,7 +91,7 @@ public class TestJcmd {
     }
 
 
-    // Run "jcmd -l" in a sidecar container, find the target process.
+    // Run "jcmd -l", find the target process.
     private static long testJcmdGetPid(String className) throws Exception {
         System.out.println("TestCase: testJcmdGetPid()");
         ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getJDKTool("jcmd"), "-l");
