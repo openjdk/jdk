@@ -2850,6 +2850,112 @@ G1JFRTracerMark::~G1JFRTracerMark() {
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
 }
 
+void G1CollectedHeap::prepare_tlabs_for_mutator() {
+  Ticks start = Ticks::now();
+
+  _survivor_evac_stats.adjust_desired_plab_sz();
+  _old_evac_stats.adjust_desired_plab_sz();
+
+  allocate_dummy_regions();
+
+  _allocator->init_mutator_alloc_regions();
+
+  resize_all_tlabs();
+
+  phase_times()->record_resize_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
+}
+
+void G1CollectedHeap::retire_tlabs() {
+  ensure_parsability(true);
+}
+
+void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_pause_time_ms) {
+  ResourceMark rm;
+
+  IsGCActiveMark active_gc_mark;
+  GCIdMark gc_id_mark;
+  SvcGCMarker sgcm(SvcGCMarker::MINOR);
+
+  GCTraceCPUTime tcpu;
+
+  _bytes_used_during_gc = 0;
+
+  policy()->decide_on_concurrent_start_pause();
+  // Record whether this pause may need to trigger a concurrent operation. Later,
+  // when we signal the G1ConcurrentMarkThread, the collector state has already
+  // been reset for the next pause.
+  bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
+
+  // Perform the collection.
+  G1YoungCollector collector(gc_cause(), target_pause_time_ms, &_evac_failure_regions);
+  collector.collect();
+
+  // It should now be safe to tell the concurrent mark thread to start
+  // without its logging output interfering with the logging output
+  // that came from the pause.
+  if (should_start_concurrent_mark_operation) {
+    // CAUTION: after the start_concurrent_cycle() call below, the concurrent marking
+    // thread(s) could be running concurrently with us. Make sure that anything
+    // after this point does not assume that we are the only GC thread running.
+    // Note: of course, the actual marking work will not start until the safepoint
+    // itself is released in SuspendibleThreadSet::desynchronize().
+    start_concurrent_cycle(collector.concurrent_operation_is_full_mark());
+    ConcurrentGCBreakpoints::notify_idle_to_active();
+  }
+}
+
+void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
+                                        bool class_unloading_occurred) {
+  uint num_workers = workers()->active_workers();
+  G1ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred);
+  workers()->run_task(&unlink_task);
+}
+
+bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {
+  assert(obj != NULL, "must not be NULL");
+  assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));
+  // The areas the CM and STW ref processor manage must be disjoint. The is_in_cset() below
+  // may falsely indicate that this is not the case here: however the collection set only
+  // contains old regions when concurrent mark is not running.
+  return _g1h->is_in_cset(obj) || _g1h->heap_region_containing(obj)->is_survivor();
+}
+
+void G1CollectedHeap::make_pending_list_reachable() {
+  if (collector_state()->in_concurrent_start_gc()) {
+    oop pll_head = Universe::reference_pending_list();
+    if (pll_head != NULL) {
+      // Any valid worker id is fine here as we are in the VM thread and single-threaded.
+      _cm->mark_in_next_bitmap(0 /* worker_id */, pll_head);
+    }
+  }
+}
+
+static bool do_humongous_object_logging() {
+  return log_is_enabled(Debug, gc, humongous);
+}
+
+bool G1CollectedHeap::should_do_eager_reclaim() const {
+  // As eager reclaim logging also gives information about humongous objects in
+  // the heap in general, always do the eager reclaim pass even without known
+  // candidates.
+  return (G1EagerReclaimHumongousObjects &&
+          (has_humongous_reclaim_candidates() || do_humongous_object_logging()));
+}
+
+void G1CollectedHeap::set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates) {
+  _num_humongous_objects = num_humongous_total;
+  _num_humongous_reclaim_candidates = num_humongous_candidates;
+}
+
+bool G1CollectedHeap::should_sample_collection_set_candidates() const {
+  G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
+  return candidates != NULL && candidates->num_remaining() > 0;
+}
+
+void G1CollectedHeap::set_collection_set_candidates_stats(G1CardSetMemoryStats& stats) {
+  _collection_set_candidates_card_set_stats = stats;
+}
+
 void G1CollectedHeap::set_young_gen_card_set_stats(const G1CardSetMemoryStats& stats) {
   _young_gen_card_set_stats = stats;
 }
