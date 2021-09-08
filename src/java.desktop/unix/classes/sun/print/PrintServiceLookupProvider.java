@@ -540,7 +540,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
         } else {
             /* specified service attributes don't include a name.*/
-            Vector<PrintService> matchedServices = new Vector<>();
+            ArrayList<PrintService> matchedServices = new ArrayList<>();
             services = getPrintServices();
             for (int i = 0; i< services.length; i++) {
                 if (matchesAttributes(services[i], serviceSet)) {
@@ -549,7 +549,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
             services = new PrintService[matchedServices.size()];
             for (int i = 0; i< services.length; i++) {
-                services[i] = matchedServices.elementAt(i);
+                services[i] = matchedServices.get(i);
             }
             return services;
         }
