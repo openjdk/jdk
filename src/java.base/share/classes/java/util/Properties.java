@@ -41,8 +41,13 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -167,10 +172,41 @@ public class Properties extends Hashtable<Object,Object> {
      */
     private transient volatile ConcurrentHashMap<Object, Object> map;
 
-    // cached, string representation of any Date parsed out of the SOURCE_DATE_EPOCH environment variable
-    private static volatile String cachedDateComment;
-    // true if SOURCE_DATE_EPOCH environment variable value has been parsed
-    private static volatile boolean sourceDateEpochParsed;
+    @SuppressWarnings("removal")
+    private static final class LazyDateCommentProvider {
+        // formatter used while writing out current date. this formatter matches the format
+        // used by java.util.Date.toString()
+        private static final DateTimeFormatter currentDateFormatter =
+                DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy");
+        private static final String cachedDateComment;
+
+        static {
+            String sourceDateEpoch = System.getSecurityManager() == null
+                                        ? System.getenv("SOURCE_DATE_EPOCH")
+                                        : AccessController.doPrivileged((PrivilegedAction<String>)
+                                                () -> System.getenv("SOURCE_DATE_EPOCH"));
+            String dateComment = null;
+            if (sourceDateEpoch != null) {
+                try {
+                    long epochSeconds = Long.parseLong(sourceDateEpoch);
+                    dateComment = "#" + DateTimeFormatter.RFC_1123_DATE_TIME
+                            .withLocale(Locale.ROOT)
+                            .withZone(ZoneOffset.UTC)
+                            .format(Instant.ofEpochSecond(epochSeconds));
+                } catch (NumberFormatException | DateTimeException e) {
+                    // ignore any value that cannot be parsed for the SOURCE_DATE_EPOCH.
+                    // store APIs will subsequently use current date, in their date comments
+                }
+            }
+            cachedDateComment = dateComment;
+        }
+
+        private static String getDateComment() {
+            return cachedDateComment != null
+                            ? cachedDateComment
+                            : "#" + currentDateFormatter.format(ZonedDateTime.now());
+        }
+    }
 
     /**
      * Creates an empty property list with no default values.
@@ -920,9 +956,17 @@ public class Properties extends Hashtable<Object,Object> {
         if (comments != null) {
             writeComments(bw, comments);
         }
-        writeDateComment(bw);
+        bw.write(LazyDateCommentProvider.getDateComment());
+        bw.newLine();
         synchronized (this) {
-            for (Map.Entry<Object, Object> e : new TreeMap<>(map).entrySet()) {
+            var entries = map.entrySet().toArray(new Map.Entry<?, ?>[0]);
+            Arrays.sort(entries, new Comparator<Map.Entry<?, ?>>() {
+                @Override
+                public int compare(Map.Entry<?, ?> o1, Map.Entry<?, ?> o2) {
+                    return ((String) o1.getKey()).compareTo((String) o2.getKey());
+                }
+            });
+            for (Map.Entry<?, ?> e : entries) {
                 String key = (String)e.getKey();
                 String val = (String)e.getValue();
                 key = saveConvert(key, true, escUnicode);
@@ -935,59 +979,6 @@ public class Properties extends Hashtable<Object,Object> {
             }
         }
         bw.flush();
-    }
-
-    private static void writeDateComment(BufferedWriter bw) throws IOException {
-        if (sourceDateEpochParsed && cachedDateComment == null) {
-            // SOURCE_DATE_EPOCH environment variable value has already been queried previously and
-            // the environment variable was either not set or its value couldn't be parsed to a Date.
-            // In either case, we write out the current date in the date comment
-            bw.write("#" + new Date());
-            bw.newLine();
-            return;
-        }
-        // Either the SOURCE_DATE_EPOCH environment variable needs to be queried or we have already
-        // queried it previously and are holding a cached string representation of that value.
-        // In either case, we first make sure the current caller has the necessary permissions to access
-        // that environment variable's value
-        String sourceDateEpoch = null;
-        try {
-            sourceDateEpoch = System.getenv("SOURCE_DATE_EPOCH");
-        } catch (SecurityException se) {
-            // caller code doesn't have permissions to SOURCE_DATE_EPOCH environment variable.
-            // Use current date in comment
-            bw.write("#" + new Date());
-            bw.newLine();
-            return;
-        }
-        // caller code has permissions to the environment variable, OK to use (any parseable) value
-        // of that environment variable in the date comment
-        if (!sourceDateEpochParsed) {
-            synchronized (Properties.class) {
-                if (!sourceDateEpochParsed) {
-                    try {
-                        String dateComment = null;
-                        if (sourceDateEpoch != null) {
-                            try {
-                                Date d = new Date(Long.parseLong(sourceDateEpoch) * 1000);
-                                // use the same format as that of Date.toGMTString() and a neutral locale for reproducibility
-                                DateFormat df = new SimpleDateFormat("d MMM yyyy HH:mm:ss 'GMT'", Locale.ROOT);
-                                df.setTimeZone(TimeZone.getTimeZone("GMT"));
-                                dateComment = "#" + df.format(d);
-                            } catch (NumberFormatException nfe) {
-                                // ignore any value that cannot be parsed for the SOURCE_DATE_EPOCH.
-                                // store APIs will subsequently use current date, in their date comments
-                            }
-                        }
-                        cachedDateComment = dateComment;
-                    } finally {
-                        sourceDateEpochParsed = true;
-                    }
-                }
-            }
-        }
-        bw.write(cachedDateComment != null ? cachedDateComment : "#" + new Date());
-        bw.newLine();
     }
 
     /**
