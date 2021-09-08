@@ -64,8 +64,12 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
+  bool _evacuation_failed;
+
 public:
-  RecalculateUsedTask() : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed) { }
+  RecalculateUsedTask(bool evacuation_failed) :
+    G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed),
+    _evacuation_failed(evacuation_failed) { }
 
   double worker_cost() const override;
   void do_work(uint worker_id) override;
@@ -88,8 +92,6 @@ class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : publi
 public:
   RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions);
   ~RemoveSelfForwardPtrsTask();
-
-  static bool should_execute();
 
   double worker_cost() const override;
   void do_work(uint worker_id) override;
@@ -168,8 +170,6 @@ class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : publi
 public:
   RestorePreservedMarksTask(PreservedMarksSet* preserved_marks);
   virtual ~RestorePreservedMarksTask();
-
-  static bool should_execute();
 
   double worker_cost() const override;
   void do_work(uint worker_id) override;

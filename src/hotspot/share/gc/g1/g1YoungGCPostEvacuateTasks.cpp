@@ -44,11 +44,11 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new MergePssTask(per_thread_states));
-  add_serial_task(new RecalculateUsedTask());
+  add_serial_task(new RecalculateUsedTask(evac_failure_regions->evacuation_failed()));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
-  if (RemoveSelfForwardPtrsTask::should_execute()) {
+  if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RemoveSelfForwardPtrsTask(per_thread_states->rdcqs(), evac_failure_regions));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
@@ -64,11 +64,11 @@ void G1PostEvacuateCollectionSetCleanupTask1::MergePssTask::do_work(uint worker_
 
 double G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::worker_cost() const {
   // If there is no evacuation failure, the work to perform is minimal.
-  return G1CollectedHeap::heap()->evacuation_failed() ? 1.0 : AlmostNoWork;
+  return _evacuation_failed ? 1.0 : AlmostNoWork;
 }
 
 void G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::do_work(uint worker_id) {
-  G1CollectedHeap::heap()->update_used_after_gc();
+  G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed);
 }
 
 bool G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::should_execute() {
@@ -97,10 +97,6 @@ void G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask:
   g1h->set_collection_set_candidates_stats(cl._total);
 }
 
-bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::should_execute() {
-  return G1CollectedHeap::heap()->evacuation_failed();
-}
-
 G1PostEvacuateCollectionSetCleanupTask1::
     RemoveSelfForwardPtrsTask::RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs,
                                                          G1EvacFailureRegions* evac_failure_regions) :
@@ -109,14 +105,13 @@ G1PostEvacuateCollectionSetCleanupTask1::
   _evac_failure_regions(evac_failure_regions) { }
 
 G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::~RemoveSelfForwardPtrsTask() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(_task.num_failed_regions() == _evac_failure_regions->num_regions_failed_evacuation(),
          "Removed regions %u inconsistent with expected %u",
          _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
 }
 
 double G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::worker_cost() const {
-  assert(should_execute(), "Should not call this if not executed");
+  assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
   return _evac_failure_regions->num_regions_failed_evacuation();
 }
 
@@ -271,10 +266,6 @@ G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::~Ea
   g1h->decrement_summary_bytes(_bytes_freed);
 }
 
-bool G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::should_execute() {
-  return G1CollectedHeap::heap()->evacuation_failed();
-}
-
 G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
   G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks), _preserved_marks(preserved_marks), _task(preserved_marks->create_task()) { }
 
@@ -283,7 +274,6 @@ G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::~RestorePres
 }
 
 double G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::worker_cost() const {
-  assert(should_execute(), "Should not call this if not executed");
   return _preserved_marks->num();
 }
 
@@ -635,7 +625,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
-  if (RestorePreservedMarksTask::should_execute()) {
+  if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));

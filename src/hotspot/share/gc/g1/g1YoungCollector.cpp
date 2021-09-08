@@ -104,6 +104,8 @@ void G1YoungCollector::reset_taskqueue_stats() {
 // The code relies on the fact that GCTraceTimeWrapper stores the string passed
 // initially as a reference only, so that we can modify it as needed.
 class G1YoungGCTraceTime {
+  G1YoungCollector* _collector;
+
   G1GCPauseType _pause_type;
   GCCause::Cause _pause_cause;
 
@@ -118,16 +120,17 @@ class G1YoungGCTraceTime {
              "Pause Young (%s) (%s)%s",
              G1GCPauseTypeHelper::to_string(_pause_type),
              GCCause::to_string(_pause_cause),
-             G1CollectedHeap::heap()->evacuation_failed() ? " (Evacuation Failure)" : "");
+             _collector->evacuation_failed() ? " (Evacuation Failure)" : "");
     return _young_gc_name_data;
   }
 
 public:
-  G1YoungGCTraceTime(GCCause::Cause cause) :
+  G1YoungGCTraceTime(G1YoungCollector* collector, GCCause::Cause cause) :
+    _collector(collector),
     // Take snapshot of current pause type at start as it may be modified during gc.
     // The strings for all Concurrent Start pauses are the same, so the parameter
     // does not matter here.
-    _pause_type(G1CollectedHeap::heap()->collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */)),
+    _pause_type(_collector->collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */)),
     _pause_cause(cause),
     // Fake a "no cause" and manually add the correct string in update_young_gc_name()
     // to make the string look more natural.
@@ -140,9 +143,16 @@ public:
 };
 
 class G1YoungGCNotifyPauseMark : public StackObj {
+  G1YoungCollector* _collector;
+
 public:
-  G1YoungGCNotifyPauseMark() { G1CollectedHeap::heap()->policy()->record_young_gc_pause_start(); }
-  ~G1YoungGCNotifyPauseMark() { G1CollectedHeap::heap()->policy()->record_young_gc_pause_end(); }
+  G1YoungGCNotifyPauseMark(G1YoungCollector* collector) : _collector(collector) {
+    G1CollectedHeap::heap()->policy()->record_young_gc_pause_start();
+  }
+
+  ~G1YoungGCNotifyPauseMark() {
+    G1CollectedHeap::heap()->policy()->record_young_gc_pause_end(_collector->evacuation_failed());
+  }
 };
 
 class G1YoungGCJFRTracerMark : public G1JFRTracerMark {
@@ -170,6 +180,7 @@ public:
 };
 
 class G1YoungGCVerifierMark : public StackObj {
+  G1YoungCollector* _collector;
   G1HeapVerifier::G1VerifyType _type;
 
   static G1HeapVerifier::G1VerifyType young_collection_verify_type() {
@@ -184,12 +195,17 @@ class G1YoungGCVerifierMark : public StackObj {
   }
 
 public:
-  G1YoungGCVerifierMark() : _type(young_collection_verify_type()) {
+  G1YoungGCVerifierMark(G1YoungCollector* collector) : _collector(collector), _type(young_collection_verify_type()) {
     G1CollectedHeap::heap()->verify_before_young_collection(_type);
   }
 
   ~G1YoungGCVerifierMark() {
-    G1CollectedHeap::heap()->verify_after_young_collection(_type);
+    // Inject evacuation failure tag into type if needed.
+    G1HeapVerifier::G1VerifyType type = _type;
+    if (_collector->evacuation_failed()) {
+      type = (G1HeapVerifier::G1VerifyType)(type | G1HeapVerifier::G1VerifyYoungEvacFail);
+    }
+    G1CollectedHeap::heap()->verify_after_young_collection(type);
   }
 };
 
@@ -498,7 +514,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_
   // reference processing currently works in G1.
   ref_processor_stw()->start_discovery(false /* always_clear */);
 
-  _evac_failure_regions->reset();
+   _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
 
   _g1h->gc_prologue(false);
 
@@ -794,7 +810,7 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
   const double collection_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
 
-  while (!_g1h->evacuation_failed() && collection_set()->optional_region_length() > 0) {
+  while (!evacuation_failed() && collection_set()->optional_region_length() > 0) {
 
     double time_used_ms = os::elapsedTime() * 1000.0 - collection_start_time_ms;
     double time_left_ms = MaxGCPauseMillis - time_used_ms;
@@ -955,7 +971,7 @@ bool G1STWIsAliveClosure::do_object_b(oop p) {
 void G1YoungCollector::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {
   Ticks start = Ticks::now();
   {
-    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states, _evac_failure_regions);
+    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states, &_evac_failure_regions);
     _g1h->run_batch_task(&cl);
   }
   phase_times()->record_post_evacuate_cleanup_task_1_time((Ticks::now() - start).seconds() * 1000.0);
@@ -965,7 +981,7 @@ void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thre
                                                G1EvacuationInfo* evacuation_info) {
   Ticks start = Ticks::now();
   {
-    G1PostEvacuateCollectionSetCleanupTask2 cl(per_thread_states, evacuation_info, _evac_failure_regions);
+    G1PostEvacuateCollectionSetCleanupTask2 cl(per_thread_states, evacuation_info, &_evac_failure_regions);
     _g1h->run_batch_task(&cl);
   }
   phase_times()->record_post_evacuate_cleanup_task_2_time((Ticks::now() - start).seconds() * 1000.0);
@@ -993,6 +1009,8 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacuationInfo* evacuation
 
   post_evacuate_cleanup_2(per_thread_states, evacuation_info);
 
+  _evac_failure_regions.post_collection();
+
   assert_used_and_recalculate_used_equal(_g1h);
 
   _g1h->rebuild_free_region_list();
@@ -1011,6 +1029,10 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacuationInfo* evacuation
   _g1h->expand_heap_after_young_collection();
 }
 
+bool G1YoungCollector::evacuation_failed() const {
+  return _evac_failure_regions.evacuation_failed();
+}
+
 class G1PreservedMarksSet : public PreservedMarksSet {
 public:
 
@@ -1025,13 +1047,12 @@ public:
 };
 
 G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
-                                   double target_pause_time_ms,
-                                   G1EvacFailureRegions* evac_failure_regions) :
+                                   double target_pause_time_ms) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
   _target_pause_time_ms(target_pause_time_ms),
   _concurrent_operation_is_full_mark(false),
-  _evac_failure_regions(evac_failure_regions)
+  _evac_failure_regions()
 {
 }
 
@@ -1042,7 +1063,7 @@ void G1YoungCollector::collect() {
 
   // The G1YoungGCTraceTime message depends on collector state, so must come after
   // determining collector state.
-  G1YoungGCTraceTime tm(_gc_cause);
+  G1YoungGCTraceTime tm(this, _gc_cause);
 
   // JFR
   G1YoungGCJFRTracerMark jtm(gc_timer_stw(), gc_tracer_stw(), _gc_cause);
@@ -1054,7 +1075,7 @@ void G1YoungCollector::collect() {
   // heap information printed as last part of detailed GC log.
   G1HeapPrinterMark hpm(_g1h);
   // Young GC internal pause timing
-  G1YoungGCNotifyPauseMark npm;
+  G1YoungGCNotifyPauseMark npm(this);
 
   // Verification may use the gang workers, so they must be set up before.
   // Individual parallel phases may override this.
@@ -1065,7 +1086,7 @@ void G1YoungCollector::collect() {
   // just to do that).
   wait_for_root_region_scanning();
 
-  G1YoungGCVerifierMark vm;
+  G1YoungGCVerifierMark vm(this);
   {
     // Actual collection work starts and is executed (only) in this scope.
 
@@ -1084,7 +1105,8 @@ void G1YoungCollector::collect() {
                                               workers()->active_workers(),
                                               collection_set()->young_region_length(),
                                               collection_set()->optional_region_length(),
-                                              _evac_failure_regions);
+                                              &_evac_failure_regions);
+
     pre_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states);
 
     bool may_do_optional_evacuation = collection_set()->optional_region_length() != 0;
@@ -1104,7 +1126,9 @@ void G1YoungCollector::collect() {
     // modifies it to the next state.
     jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
 
-    policy()->record_young_collection_end(_concurrent_operation_is_full_mark);
+    // Evacuation failures skew the timing too much to be considered for some statistics updates.
+    // We make the assumption that these are rare.
+    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, !evacuation_failed());
   }
   TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());

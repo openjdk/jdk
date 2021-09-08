@@ -196,10 +196,6 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
-bool G1CollectedHeap::evacuation_failed() const {
-  return _evac_failure_regions.num_regions_failed_evacuation() > 0;
-}
-
 inline bool G1CollectedHeap::is_in_young(const oop obj) {
   if (obj == NULL) {
     return false;
