@@ -23,11 +23,12 @@
  *
  */
 
+#include "precompiled.hpp"
+
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "macroAssembler_aarch64.hpp"
 #include "memory/resourceArea.hpp"
-#include "precompiled.hpp"
 #include "runtime/stubRoutines.hpp"
 
 void MacroAssembler::aesecb_decrypt(Register from, Register to, Register key, Register keylen) {
@@ -488,6 +489,9 @@ void MacroAssembler::ghash_modmul(FloatRegister result,
 }
 
 // Interleaved GHASH processing.
+//
+// Clobbers all vector registers.
+//
 void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register state,
                                               Register subkeyH,
                                               Register data, Register blocks, int unrolls) {
