@@ -880,11 +880,10 @@ public class Properties extends Hashtable<Object,Object> {
      * {@code SOURCE_DATE_EPOCH} environment variable is set. If it is set, then instead
      * of writing the current date and time, the date and time represented by the
      * value of {@code SOURCE_DATE_EPOCH} will be written, using the
-     * {@code d MMM yyyy HH:mm:ss 'GMT'} date format and {@link Locale#ROOT root locale}.
-     * In the presence of a SecurityManager, if the caller doesn't have permission
-     * to read the {@code SOURCE_DATE_EPOCH} environment variable, then the current date
-     * and time will be written. Similarly, if the value set for {@code SOURCE_DATE_EPOCH}
-     * cannot be parsed to a {@code long}, then the current date and time will be written.
+     * {@link DateTimeFormatter#RFC_1123_DATE_TIME} date format with a
+     * {@link Locale#ROOT root locale} and {@link ZoneOffset#UTC UTC zone offset}.
+     * If the value set for {@code SOURCE_DATE_EPOCH} cannot be parsed to a {@code long},
+     * then the current date and time will be written.
      *
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
