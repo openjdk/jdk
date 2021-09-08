@@ -869,7 +869,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"TabbedPane.selectedTabPadInsets", new InsetsUIResource(0, 0, 1, 0), // Really outsets, this is where we allow for overlap
             "TabbedPane.selectedTabPadInsets", new InsetsUIResource(0, 0, 0, 0), // Really outsets, this is where we allow for overlap
             "TabbedPane.tabsOverlapBorder", Boolean.TRUE,
-            "TabbedPane.selectedTabTitlePressedColor", selectedTabTitlePressedColor,
+            "TabbedPane.selectedTabTitlePressedColor", JRSUIUtils.isMacOSXBigSurOrAbove() ? selectedControlTextColor : selectedTabTitlePressedColor,
             "TabbedPane.selectedTabTitleDisabledColor", selectedTabTitleDisabledColor,
             "TabbedPane.selectedTabTitleNormalColor", JRSUIUtils.isMacOSXBigSurOrAbove() ? selectedControlTextColor : selectedTabTitleNormalColor,
             "TabbedPane.selectedTabTitleShadowDisabledColor", selectedTabTitleShadowDisabledColor,
