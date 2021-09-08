@@ -147,10 +147,6 @@ static void (*fp_gtk_paint_arrow)(GtkStyle* style, GdkWindow* window,
         GdkRectangle* area, GtkWidget* widget, const gchar* detail,
         GtkArrowType arrow_type, gboolean fill, gint x, gint y,
         gint width, gint height);
-static void (*fp_gtk_paint_diamond)(GtkStyle* style, GdkWindow* window,
-        GtkStateType state_type, GtkShadowType shadow_type,
-        GdkRectangle* area, GtkWidget* widget, const gchar* detail,
-        gint x, gint y, gint width, gint height);
 static void (*fp_gtk_paint_box)(GtkStyle* style, GdkWindow* window,
         GtkStateType state_type, GtkShadowType shadow_type,
         GdkRectangle* area, GtkWidget* widget, const gchar* detail,
