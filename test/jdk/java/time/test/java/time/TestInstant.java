@@ -98,6 +98,11 @@ public class TestInstant extends AbstractTest {
         assertEquals(millis, m, name);
     }
 
+    /**
+     * Checks whether Instant.until() returning microseconds does not throw
+     * an ArithmeticException for Instants apart for more than Long.MAX_VALUE
+     * nanoseconds.
+     */
     @Test
     public void test_microsUntil() {
         var nanoMax = Instant.EPOCH.plusNanos(Long.MAX_VALUE);
