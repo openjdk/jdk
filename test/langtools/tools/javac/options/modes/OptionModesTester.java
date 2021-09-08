@@ -270,25 +270,15 @@ public class OptionModesTester {
             return this;
         }
 
-        TestResult checkUniqueStartLog(String... uniqueExpects) {
-            return checkUniqueStartLog(Log.DIRECT, uniqueExpects);
+        TestResult checkSameLog(TestResult other) {
+            return checkSameLog(Log.DIRECT, other);
         }
 
-        TestResult checkUniqueStartLog(Log l, String... uniqueExpects) {
-            String log = logs.get(l);
-            for (String e : uniqueExpects) {
-                Scanner scanner = new Scanner(log);
-                int num = 0;
-                while (scanner.hasNextLine()) {
-                    if (scanner.nextLine().startsWith(e)) {
-                        num++;
-                    }
-                }
-                if (num == 0) {
-                    error("Expected string not found: " + e);
-                } else if (num > 1) {
-                    error("Expected string appears more than once: " + e);
-                }
+        TestResult checkSameLog(Log l, TestResult other) {
+            String thisLog = logs.get(l);
+            String otherLog = other.logs.get(l);
+            if (!thisLog.equals(otherLog)) {
+                error("Logs are not the same.\nThis:\n" + thisLog + "\nOther:\n" + otherLog);
             }
             return this;
         }

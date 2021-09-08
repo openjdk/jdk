@@ -69,18 +69,23 @@ public class InfoOptsTest extends OptionModesTester {
 
     @Test
     void testUniqueInfoOpts() throws IOException {
-        testUniqueInfoOpt(new String[] {"--help", "--help"}, "where possible options");
-        testUniqueInfoOpt(new String[] {"-X", "-X"}, "These extra options");
-        testUniqueInfoOpt(new String[] {"--help-lint", "--help-lint"}, "The supported keys");
+        testUniqueInfoOpt(new String[] {"--help"},       new String[] {"--help", "--help"});
+        testUniqueInfoOpt(new String[] {"-X"},           new String[] {"-X", "-X"});
+        testUniqueInfoOpt(new String[] {"--help-lint"},  new String[] {"--help-lint", "--help-lint"});
 
-        testUniqueInfoOpt(new String[] {"-version", "-version"}, "javac");
-        testUniqueInfoOpt(new String[] {"-fullversion", "-fullversion"}, "javac full version");
+        testUniqueInfoOpt(new String[] {"-version"},     new String[] {"-version", "-version"});
+        testUniqueInfoOpt(new String[] {"-fullversion"}, new String[] {"-fullversion", "-fullversion"});
     }
 
-    void testUniqueInfoOpt(String[] opts, String... expect) {
+    void testUniqueInfoOpt(String[] baseOpts, String[] testOpts) {
         String[] files = { };
-        runMain(opts, files)
-                .checkOK()
-                .checkUniqueStartLog(expect);
+
+        TestResult base = runMain(baseOpts, files)
+                                 .checkOK();
+
+        TestResult test = runMain(testOpts, files)
+                                 .checkOK();
+
+        base.checkSameLog(test);
     }
 }
