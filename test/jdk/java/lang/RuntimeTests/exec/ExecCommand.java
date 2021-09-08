@@ -37,6 +37,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Arrays;
@@ -102,14 +103,6 @@ public class ExecCommand {
         ".\\Program Files\\doNot.cmd",
         ".\\Program Files\\do.cmd");
 
-    private static void deleteOut(String path) {
-        try {
-            Files.delete(FileSystems.getDefault().getPath(path));
-        } catch (IOException ex) {
-            // that is OK
-        }
-    }
-
     @BeforeClass
     void setup() throws Exception {
 
@@ -128,13 +121,20 @@ public class ExecCommand {
     }
 
     /**
+     * Sequence of tests and test results in the TEST_RTE_ARGS DataProvider below.
+     * The ordinals are used as indices in the lists of expected results.
+     */
+    private enum Mode {
+        UNSET_NO_SM, // 0) no SM and default allowAmbiguousCommands; equivalent to true
+        EMPTY_NO_SM, // 1) no SM and allowAmbiguousCommand is empty; equivalent to true
+        FALSE_NO_SM, // 2) no SM and allowAmbiguousCommands = false
+        EMPTY_SM,    // 3) SM and default allowAmbiguousCommands is empty; equivalent to false
+    };
+
+    /**
      * The command for Runtime.exec calls to execute in each of 4 modes,
      * and the expected exception for each mode.
-     * Modes:
-     * 0) no SM and default allowAmbiguousCommands; equivalent to true
-     * 1) no SM and allowAmbiguousCommand is empty; equivalent to true
-     * 2) no SM and allowAmbiguousCommands = false
-     * 3) SM and default allowAmbiguousCommands is empty; equivalent to false
+     * Modes above define the indices in the List of expected results for each mode.
      */
     @DataProvider(name = "TEST_RTE_ARGS")
     Object[][] TEST_RTE_ARGS() {
@@ -196,7 +196,8 @@ public class ExecCommand {
         props.remove(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS);
         System.setSecurityManager(null);
 
-        testCommandMode(command, "Ambiguous Unset", testFile, perModeExpected.get(0));
+        testCommandMode(command, "Ambiguous Unset", testFile,
+                perModeExpected.get(Mode.UNSET_NO_SM.ordinal()));
     }
 
     /**
@@ -209,7 +210,8 @@ public class ExecCommand {
         Properties props = System.getProperties();
         props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "");
         System.setSecurityManager(null);
-        testCommandMode(command, "Ambiguous Empty", testFile, perModeExpected.get(1));
+        testCommandMode(command, "Ambiguous Empty", testFile,
+                perModeExpected.get(Mode.EMPTY_NO_SM.ordinal()));
     }
 
     /**
@@ -223,7 +225,8 @@ public class ExecCommand {
         props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "false");
         System.setSecurityManager(null);
 
-        testCommandMode(command, "Ambiguous false", testFile, perModeExpected.get(2));
+        testCommandMode(command, "Ambiguous false", testFile,
+                perModeExpected.get(Mode.FALSE_NO_SM.ordinal()));
     }
 
     /**
@@ -237,7 +240,8 @@ public class ExecCommand {
         props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "");
         System.setSecurityManager(new SecurityMan());
 
-        testCommandMode(command, "SecurityManager and Ambiguous Empty", testFile, perModeExpected.get(3));
+        testCommandMode(command, "SecurityManager and Ambiguous Empty", testFile,
+                perModeExpected.get(Mode.EMPTY_SM.ordinal()));
     }
 
     private void testCommandMode(String command, String kind,
@@ -246,7 +250,7 @@ public class ExecCommand {
         try {
             // Ensure the file that will be created does not exist.
             if (testFile != null) {
-                deleteOut(testFile);
+                Files.deleteIfExists(Path.of(testFile));
             }
 
             Process exec = Runtime.getRuntime().exec(command);
