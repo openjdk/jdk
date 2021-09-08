@@ -1474,8 +1474,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _cm_thread(NULL),
   _cr(NULL),
   _task_queues(NULL),
-  _num_regions_failed_evacuation(0),
-  _regions_failed_evacuation(mtGC),
   _ref_processor_stw(NULL),
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
@@ -1756,7 +1754,7 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_reserved_regions());
 
-  _regions_failed_evacuation.resize(max_regions());
+  _evac_failure_regions.initialize(max_reserved_regions());
 
   evac_failure_injector()->reset();
 
@@ -1835,7 +1833,7 @@ void G1CollectedHeap::ref_processing_init() {
                            // thread counts must be considered for discovery.
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
-                           false,                                          // Reference discovery is not atomic
+                           true,                                           // Reference discovery is concurrent
                            &_is_alive_closure_cm);                         // is alive closure
 
   // STW ref processor
@@ -1844,7 +1842,7 @@ void G1CollectedHeap::ref_processing_init() {
                            ParallelGCThreads,                    // degree of mt processing
                            (ParallelGCThreads > 1),              // mt discovery
                            ParallelGCThreads,                    // degree of mt discovery
-                           true,                                 // Reference discovery is atomic
+                           false,                                // Reference discovery is not concurrent
                            &_is_alive_closure_stw);              // is alive closure
 }
 
@@ -2316,12 +2314,46 @@ void G1CollectedHeap::collection_set_iterate_all(HeapRegionClosure* cl) {
   _collection_set.iterate(cl);
 }
 
-void G1CollectedHeap::collection_set_par_iterate_all(HeapRegionClosure* cl, HeapRegionClaimer* hr_claimer, uint worker_id) {
-  _collection_set.par_iterate(cl, hr_claimer, worker_id, workers()->active_workers());
+void G1CollectedHeap::collection_set_par_iterate_all(HeapRegionClosure* cl,
+                                                     HeapRegionClaimer* hr_claimer,
+                                                     uint worker_id) {
+  _collection_set.par_iterate(cl, hr_claimer, worker_id);
 }
 
-void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *cl, HeapRegionClaimer* hr_claimer, uint worker_id) {
-  _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id, workers()->active_workers());
+void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *cl,
+                                                            HeapRegionClaimer* hr_claimer,
+                                                            uint worker_id) {
+  _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id);
+}
+
+void G1CollectedHeap::par_iterate_regions_array_part_from(HeapRegionClosure* cl,
+                                                          HeapRegionClaimer* hr_claimer,
+                                                          const uint* regions,
+                                                          size_t offset,
+                                                          size_t length,
+                                                          uint worker_id) const {
+  assert_at_safepoint();
+  if (length == 0) {
+    return;
+  }
+  uint total_workers = workers()->active_workers();
+
+  size_t start_pos = (worker_id * length) / total_workers;
+  size_t cur_pos = start_pos;
+
+  do {
+    uint region_idx = regions[cur_pos + offset];
+    if (hr_claimer == NULL || hr_claimer->claim_region(region_idx)) {
+      HeapRegion* r = region_at(region_idx);
+      bool result = cl->do_heap_region(r);
+      guarantee(!result, "Must not cancel iteration");
+    }
+
+    cur_pos++;
+    if (cur_pos == length) {
+      cur_pos = 0;
+    }
+  } while (cur_pos != start_pos);
 }
 
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
@@ -2855,7 +2887,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
 
   // Perform the collection.
-  G1YoungCollector collector(gc_cause(), target_pause_time_ms);
+  G1YoungCollector collector(gc_cause(), target_pause_time_ms, &_evac_failure_regions);
   collector.collect();
 
   // It should now be safe to tell the concurrent mark thread to start

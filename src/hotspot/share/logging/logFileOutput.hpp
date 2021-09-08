@@ -65,7 +65,6 @@ class LogFileOutput : public LogFileStreamOutput {
 
   void archive();
   void rotate();
-  bool parse_options(const char* options, outputStream* errstream);
   char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
 
   bool should_rotate() {
@@ -83,6 +82,7 @@ class LogFileOutput : public LogFileStreamOutput {
   LogFileOutput(const char *name);
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options, outputStream* errstream);
+  virtual bool set_option(const char* key, const char* value, outputStream* errstream);
   virtual int write(const LogDecorations& decorations, const char* msg);
   virtual int write(LogMessageBuffer::Iterator msg_iterator);
   int write_blocking(const LogDecorations& decorations, const char* msg);
