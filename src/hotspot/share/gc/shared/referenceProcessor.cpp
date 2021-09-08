@@ -902,7 +902,7 @@ void ReferenceProcessor::verify_referent(oop obj) {
   assert(concurrent ? oopDesc::is_oop_or_null(referent) : oopDesc::is_oop(referent),
          "Bad referent " INTPTR_FORMAT " found in Reference "
          INTPTR_FORMAT " during %sconcurrent discovery ",
-         p2i(referent), p2i(obj), concurrent ? "non-" : "");
+         p2i(referent), p2i(obj), concurrent ? "" : "non-");
 }
 #endif
 
