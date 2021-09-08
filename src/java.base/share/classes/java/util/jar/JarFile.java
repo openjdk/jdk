@@ -217,7 +217,7 @@ public class JarFile extends ZipFile {
     /**
      * The index file name.
      */
-    public static final String INDEX_NAME = "META-INF/INDEX.LIST";
+    static final String INDEX_NAME = "META-INF/INDEX.LIST";
 
     /**
      * Returns the version that represents the unversioned configuration of a

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import jdk.internal.module.ModuleTarget;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
-import static java.util.jar.JarFile.INDEX_NAME;
+import static sun.tools.jar.JarIndex.INDEX_NAME;
 
 /**
  * This class implements a simple utility for creating files in the JAR

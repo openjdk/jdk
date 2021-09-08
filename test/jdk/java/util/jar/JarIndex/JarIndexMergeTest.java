@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6901992
- * @summary InvalidJarIndexException due to bug in sun.misc.JarIndex.merge()
+ * @summary InvalidJarIndexException due to bug in sun.tools.jar.JarIndex.merge()
  * @modules jdk.jartool/sun.tools.jar
  * @compile -XDignore.symbol.file JarIndexMergeTest.java
  * @run main JarIndexMergeTest

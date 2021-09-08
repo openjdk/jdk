@@ -65,6 +65,11 @@ public class JarIndex {
     private String[] jarFiles;
 
     /**
+     * The index file name.
+    */
+    public static final String INDEX_NAME = "META-INF/INDEX.LIST";
+
+    /**
      * true if, and only if, sun.misc.JarIndex.metaInfFilenames is set to true.
      * If true, the names of the files in META-INF, and its subdirectories, will
      * be added to the index. Otherwise, just the directory names are added.
@@ -109,7 +114,7 @@ public class JarIndex {
      */
     public static JarIndex getJarIndex(JarFile jar) throws IOException {
         JarIndex index = null;
-        JarEntry e = jar.getJarEntry(JarFile.INDEX_NAME);
+        JarEntry e = jar.getJarEntry(INDEX_NAME);
         // if found, then load the index
         if (e != null) {
             index = new JarIndex(jar.getInputStream(e));
@@ -219,7 +224,7 @@ public class JarIndex {
                 // Skip the META-INF directory, the index, and manifest.
                 // Any files in META-INF/ will be indexed explicitly
                 if (fileName.equals("META-INF/") ||
-                    fileName.equals(JarFile.INDEX_NAME) ||
+                    fileName.equals(INDEX_NAME) ||
                     fileName.equals(JarFile.MANIFEST_NAME) ||
                     fileName.startsWith("META-INF/versions/"))
                     continue;
