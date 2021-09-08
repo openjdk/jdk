@@ -595,7 +595,6 @@ GtkApi* gtk2_load(JNIEnv *env, const char* lib_name)
         fp_gtk_paint_vline = dl_symbol("gtk_paint_vline");
         fp_gtk_paint_shadow = dl_symbol("gtk_paint_shadow");
         fp_gtk_paint_arrow = dl_symbol("gtk_paint_arrow");
-        fp_gtk_paint_diamond = dl_symbol("gtk_paint_diamond");
         fp_gtk_paint_box = dl_symbol("gtk_paint_box");
         fp_gtk_paint_flat_box = dl_symbol("gtk_paint_flat_box");
         fp_gtk_paint_check = dl_symbol("gtk_paint_check");
