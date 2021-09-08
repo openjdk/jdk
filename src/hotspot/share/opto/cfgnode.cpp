@@ -2717,7 +2717,7 @@ const Type* NeverBranchNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Check for no longer being part of a loop
 Node *NeverBranchNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (can_reshape && !in(0)->is_Loop()) {
+  if (can_reshape && !in(0)->is_Region()) {
     // Dead code elimination can sometimes delete this projection so
     // if it's not there, there's nothing to do.
     Node* fallthru = proj_out_or_null(0);

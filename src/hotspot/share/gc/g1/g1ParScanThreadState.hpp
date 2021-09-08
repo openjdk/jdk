@@ -102,6 +102,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Per-thread evacuation failure data structures.
   PreservedMarks* _preserved_marks;
   EvacuationFailedInfo _evacuation_failed_info;
+  G1EvacFailureRegions* _evac_failure_regions;
 
   void handle_evacuation_failure_notifications(oop obj, markWord m, size_t word_sz);
 
@@ -112,7 +113,8 @@ public:
                        uint worker_id,
                        uint n_workers,
                        size_t young_cset_length,
-                       size_t optional_cset_length);
+                       size_t optional_cset_length,
+                       G1EvacFailureRegions* evac_failure_regions);
   virtual ~G1ParScanThreadState();
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
@@ -253,6 +255,7 @@ class G1ParScanThreadStateSet : public StackObj {
   size_t _optional_cset_length;
   uint _n_workers;
   bool _flushed;
+  G1EvacFailureRegions* _evac_failure_regions;
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
@@ -260,7 +263,8 @@ class G1ParScanThreadStateSet : public StackObj {
                           PreservedMarksSet* preserved_marks_set,
                           uint n_workers,
                           size_t young_cset_length,
-                          size_t optional_cset_length);
+                          size_t optional_cset_length,
+                          G1EvacFailureRegions* evac_failure_regions);
   ~G1ParScanThreadStateSet();
 
   G1RedirtyCardsQueueSet* rdcqs() { return _rdcqs; }

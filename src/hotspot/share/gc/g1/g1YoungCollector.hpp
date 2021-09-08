@@ -37,6 +37,7 @@ class G1CollectedHeap;
 class G1CollectionSet;
 class G1CollectorState;
 class G1ConcurrentMark;
+class G1EvacFailureRegions;
 class G1EvacuationInfo;
 class G1GCPhaseTimes;
 class G1HotCardCache;
@@ -78,6 +79,7 @@ class G1YoungCollector {
 
   GCCause::Cause _gc_cause;
   double _target_pause_time_ms;
+  G1EvacFailureRegions* _evac_failure_regions;
 
   bool _concurrent_operation_is_full_mark;
 
@@ -123,7 +125,6 @@ class G1YoungCollector {
   void post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 
-
 #if TASKQUEUE_STATS
   uint num_task_queues() const;
   static void print_taskqueue_stats_hdr(outputStream* const st);
@@ -133,7 +134,9 @@ class G1YoungCollector {
 
 public:
 
-  G1YoungCollector(GCCause::Cause gc_cause, double target_pause_time_ms);
+  G1YoungCollector(GCCause::Cause gc_cause,
+                   double target_pause_time_ms,
+                   G1EvacFailureRegions* evac_failure_regions);
   void collect();
 
   bool concurrent_operation_is_full_mark() const { return _concurrent_operation_is_full_mark; }

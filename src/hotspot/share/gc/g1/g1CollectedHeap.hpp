@@ -34,6 +34,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -831,10 +832,7 @@ public:
   // The parallel task queues
   G1ScannerTasksQueueSet *_task_queues;
 
-  // Number of regions evacuation failed in the current collection.
-  volatile uint _num_regions_failed_evacuation;
-  // Records for every region on the heap whether evacuation failed for it.
-  CHeapBitMap _regions_failed_evacuation;
+  G1EvacFailureRegions _evac_failure_regions;
 
   // ("Weak") Reference processing support.
   //
@@ -1053,18 +1051,8 @@ public:
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
-  inline void reset_evacuation_failed_data();
   // True iff an evacuation has failed in the most-recent collection.
   inline bool evacuation_failed() const;
-  // True iff the given region encountered an evacuation failure in the most-recent
-  // collection.
-  inline bool evacuation_failed(uint region_idx) const;
-
-  inline uint num_regions_failed_evacuation() const;
-  // Notify that the garbage collection encountered an evacuation failure in the
-  // given region. Returns whether this has been the first occurrence of an evacuation
-  // failure in that region.
-  inline bool notify_region_failed_evacuation(uint const region_idx);
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,
@@ -1168,6 +1156,15 @@ public:
     collection_set_iterate_increment_from(blk, NULL, worker_id);
   }
   void collection_set_iterate_increment_from(HeapRegionClosure *blk, HeapRegionClaimer* hr_claimer, uint worker_id);
+  // Iterate part of an array of region indexes given by offset and length, applying
+  // the given HeapRegionClosure on each region. The worker_id will determine where
+  // in the part to start the iteration to allow for more efficient parallel iteration.
+  void par_iterate_regions_array_part_from(HeapRegionClosure* cl,
+                                           HeapRegionClaimer* hr_claimer,
+                                           const uint* regions,
+                                           size_t offset,
+                                           size_t length,
+                                           uint worker_id) const;
 
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
