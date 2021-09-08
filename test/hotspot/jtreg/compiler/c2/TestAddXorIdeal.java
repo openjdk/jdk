@@ -27,9 +27,14 @@
  * @bug 8273021
  * @summary C2: Improve Add and Xor ideal optimizations
  * @library /test/lib
- * @run main/othervm -XX:-Inline -XX:-TieredCompilation -XX:TieredStopAtLevel=4 -XX:CompileCommand=compileonly,compiler.c2.TestAddXorIdeal::* compiler.c2.TestAddXorIdeal
+ * @run main/othervm -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *                   -XX:CompileCommand=dontinline,compiler.c2.TestAddXorIdeal::test*
+ *                   -XX:CompileCommand=compileonly,compiler.c2.TestAddXorIdeal::test*
+ *                   compiler.c2.TestAddXorIdeal
  */
 package compiler.c2;
+
+import java.util.Random;
 
 import jdk.test.lib.Asserts;
 
@@ -51,12 +56,36 @@ public class TestAddXorIdeal {
         return ~(x - 1L);
     }
 
+    public static int test5(int x) {
+        return 1 + ~x;
+    }
+
+    public static int test6(int x) {
+        return ~(-1 + x);
+    }
+
+    public static long test7(long x) {
+        return 1L + ~x;
+    }
+
+    public static long test8(long x) {
+        return ~(-1L + x);
+    }
+
     public static void main(String... args) {
+        Random random = new Random();
+
         for (int i = -5_000; i < 5_000; i++) {
-            Asserts.assertTrue(test1(i + 5) == -(i + 5));
-            Asserts.assertTrue(test2(i - 7) == -(i - 7));
-            Asserts.assertTrue(test3(i + 100) == -(i + 100));
-            Asserts.assertTrue(test4(i - 1024) == -(i - 1024));
+            int n = random.nextInt();
+            long n1 = random.nextLong();
+            Asserts.assertTrue(test1(i + n) == -(i + n));
+            Asserts.assertTrue(test2(i - n) == -(i - n));
+            Asserts.assertTrue(test3(i + n1) == -(i + n1));
+            Asserts.assertTrue(test4(i - n1) == -(i - n1));
+            Asserts.assertTrue(test5(i + n) == -(i + n));
+            Asserts.assertTrue(test6(i - n) == -(i - n));
+            Asserts.assertTrue(test7(i + n1) == -(i + n1));
+            Asserts.assertTrue(test8(i - n1) == -(i - n1));
         }
     }
 }
