@@ -28,16 +28,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
-import java.util.TimeZone;
 
 /*
  * @test
@@ -49,15 +53,14 @@ import java.util.TimeZone;
 public class StoreReproducibilityTest {
 
     private static final String ENV_SOURCE_DATE_EPOCH = "SOURCE_DATE_EPOCH";
-    private static final String GMT_DATE_FORMAT = "d MMM yyyy HH:mm:ss 'GMT'";
 
     public static void main(final String[] args) throws Exception {
         // no security manager enabled
         testWithoutSecurityManager();
-        // security manager enabled and security policy allows read permissions on getenv.SOURCE_DATE_EPOCH
-        testWithSecMgrCallerHasPermission();
-        // security manager enabled and security policy doesn't allow getenv.SOURCE_DATE_EPOCH permission
-        testWithSecMgrCallerNotPermitted();
+        // security manager enabled and security policy explicitly allows read permissions on getenv.SOURCE_DATE_EPOCH
+        testWithSecMgrExplicitPermission();
+        // security manager enabled and no explicit getenv.SOURCE_DATE_EPOCH permission
+        testWithSecMgrNoSpecificPermission();
         // invalid/unparsable value for SOURCE_DATE_EPOCH
         testInvalidSourceDateEpochValue();
     }
@@ -98,17 +101,23 @@ public class StoreReproducibilityTest {
      * properties to a file. The launched Java program is passed an environment variable value for
      * {@code SOURCE_DATE_EPOCH} environment variable and the date comment written out to the file
      * is expected to use this value.
+     * The launched Java program is run with the default security manager and is granted
+     * a {@code read} permission on {@code getenv.SOURCE_DATE_EPOCH}.
      * The program is launched multiple times with the same value for {@code SOURCE_DATE_EPOCH}
      * and the output written out by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
      * corresponds to the passed {@code SOURCE_DATE_EPOCH}.
-     * The launched Java program is run with the default security manager and the launched program that
-     * uses the Properties.store() APIs is granted a {@code read} permission on {@code getenv.SOURCE_DATE_EPOCH},
-     * thus allowing it to see the actual value of the environment variable.
      */
-    private static void testWithSecMgrCallerHasPermission() throws Exception {
-        final Path policyFile = Path.of(System.getProperty("test.src"),
-                "source-date-epoch-policy").toAbsolutePath();
+    private static void testWithSecMgrExplicitPermission() throws Exception {
+        final Path policyFile = Files.createTempFile("8231640", ".policy");
+        Files.write(policyFile, Collections.singleton("""
+                grant {
+                    // test writes/stores to a file, so FilePermission
+                    permission java.io.FilePermission "<<ALL FILES>>", "read,write";
+                    // explicitly grant read on SOURCE_DATE_EPOCH to verifies store() APIs work fine
+                    permission java.lang.RuntimePermission "getenv.SOURCE_DATE_EPOCH", "read";
+                };
+                """));
         final List<Path> storedFiles = new ArrayList<>();
         final String sourceDateEpoch = "1234342423";
         for (int i = 0; i < 5; i++) {
@@ -135,17 +144,28 @@ public class StoreReproducibilityTest {
      * properties to a file. The launched Java program is passed an environment variable value for
      * {@code SOURCE_DATE_EPOCH} environment variable and the date comment written out to the file
      * is expected to use this value.
-     * The launched Java program is run with the default security manager. The launched program that
-     * uses the Properties.store() APIs is NOT granted any permission on {@code getenv.SOURCE_DATE_EPOCH}.
-     * It is expected and verified in this test that the absence of such a permission will cause the
-     * date comment to be the "current date" instead of the date corresponding to the {@code SOURCE_DATE_EPOCH}
+     * The launched Java program is run with the default security manager and is NOT granted
+     * any explicit permission for {@code getenv.SOURCE_DATE_EPOCH}.
+     * The program is launched multiple times with the same value for {@code SOURCE_DATE_EPOCH}
+     * and the output written out by each run of this program is verified to be exactly the same.
+     * Additionally, the date comment that's written out is verified to be the expected date that
+     * corresponds to the passed {@code SOURCE_DATE_EPOCH}.
      */
-    private static void testWithSecMgrCallerNotPermitted() throws Exception {
-        final Path policyFile = Path.of(System.getProperty("test.src"),
-                "source-date-epoch-policy-no-perm").toAbsolutePath();
+    private static void testWithSecMgrNoSpecificPermission() throws Exception {
+        final Path policyFile = Files.createTempFile("8231640", ".policy");
+        Files.write(policyFile, Collections.singleton("""
+                grant {
+                    // test writes/stores to a file, so FilePermission
+                    permission java.io.FilePermission "<<ALL FILES>>", "read,write";
+                    // no other grants, not even "read" on SOURCE_DATE_EPOCH. test should still
+                    // work fine and the date comment should correspond to the value of SOURCE_DATE_EPOCH
+                };
+                """));
+        final List<Path> storedFiles = new ArrayList<>();
         final String sourceDateEpoch = "1234342423";
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
+            storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile.toString(),
@@ -153,16 +173,13 @@ public class StoreReproducibilityTest {
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
             processBuilder.environment().put(ENV_SOURCE_DATE_EPOCH, sourceDateEpoch);
-            final Date processLaunchedAt = new Date();
-            // launch with a second delay so that we can then verify that the date comment
-            // written out by the program is "after" this date
-            Thread.sleep(1000);
             executeJavaProcess(processBuilder);
+            assertExpectedSourceEpochDate(tmpFile, sourceDateEpoch);
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
-            assertCurrentDate(tmpFile, processLaunchedAt);
         }
+        assertAllFileContentsAreSame(storedFiles, sourceDateEpoch);
     }
 
     /**
@@ -224,21 +241,22 @@ public class StoreReproducibilityTest {
                     + " when " + ENV_SOURCE_DATE_EPOCH + " was set " +
                     "(to " + sourceEpochDate + ")");
         }
-        final Date parsedDate;
+        long parsedSecondsSinceEpoch;
         try {
-            final DateFormat df = new SimpleDateFormat(GMT_DATE_FORMAT, Locale.ROOT);
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
-            parsedDate = df.parse(dateComment);
-        } catch (ParseException pe) {
+            var d = DateTimeFormatter.RFC_1123_DATE_TIME
+                    .withLocale(Locale.ROOT)
+                    .withZone(ZoneOffset.UTC).parse(dateComment);
+            parsedSecondsSinceEpoch = Duration.between(Instant.ofEpochSecond(0), Instant.from(d)).toSeconds();
+        } catch (DateTimeParseException pe) {
             throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile
                     + " when " + ENV_SOURCE_DATE_EPOCH + " was set " +
-                    "(to " + sourceEpochDate + ")");
+                    "(to " + sourceEpochDate + ")", pe);
 
         }
-        final long expected = Long.parseLong(sourceEpochDate) * 1000;
-        if (parsedDate.getTime() != expected) {
-            throw new RuntimeException("Expected " + expected + " millis since epoch but found "
-                    + parsedDate.getTime());
+        final long expected = Long.parseLong(sourceEpochDate);
+        if (parsedSecondsSinceEpoch != expected) {
+            throw new RuntimeException("Expected " + expected + " seconds since epoch but found "
+                    + parsedSecondsSinceEpoch);
         }
     }
 
