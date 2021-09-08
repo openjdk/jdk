@@ -169,9 +169,8 @@ class WorkGang : public CHeapObj<mtInternal> {
   // Run a task with the given number of workers, returns
   // when the task is done. The number of workers must be at most the number of
   // active workers.  Additional workers may be created if an insufficient
-  // number currently exists. If the add_foreground_work flag is true, the current thread
-  // is used to run the task too.
-  void run_task(AbstractGangTask* task, uint num_workers, bool add_foreground_work = false);
+  // number currently exists.
+  void run_task(AbstractGangTask* task, uint num_workers);
 };
 
 // Temporarily try to set the number of active workers.
