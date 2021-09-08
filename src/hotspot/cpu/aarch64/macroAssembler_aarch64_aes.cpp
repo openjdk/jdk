@@ -168,8 +168,10 @@ public:
 };
 
 void KernelGenerator::unroll() {
+  ResourceMark rm;
   KernelGenerator **generators
     = NEW_RESOURCE_ARRAY(KernelGenerator *, unrolls());
+
   generators[0] = this;
   for (int i = 1; i < unrolls(); i++) {
     generators[i] = generators[i-1]->next();
@@ -617,7 +619,7 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
                            /*temps*/v1, v3, /* reuse b*/v2) .unroll();
 
     // NB: GHASHReduceGenerator also loads the next #unrolls blocks of
-    // data into .
+    // data into current state.
     GHASHReduceGenerator (this, unrolls,
                           /*result*/v0, /*lo*/v5, /*hi*/v4, p, vzr,
                           /*data*/v2, /*temp*/v3) .unroll();
@@ -628,7 +630,7 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
   }
 
   // Merge the #unrolls states.  Note that the data for the next
-  // operation has already been loaded into v4, v4+ofs, etc...
+  // iteration has already been loaded into v4, v4+ofs, etc...
 
   // First, we multiply/reduce each clone by the appropriate power of H.
   for (int i = 0; i < unrolls; i++) {
