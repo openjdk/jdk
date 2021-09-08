@@ -38,12 +38,12 @@
 #if INCLUDE_CDS
 
 class DynamicArchiveHeader : public FileMapHeader {
-  friend class CDSOffsets;
 private:
   int _base_header_crc;
-  int _base_region_crc[MetaspaceShared::n_regions];
 
 public:
+  int _base_region_crc[MetaspaceShared::n_regions];
+
   int base_header_crc() const { return _base_header_crc; }
   int base_region_crc(int i) const {
     assert(is_valid_region(i), "must be");
