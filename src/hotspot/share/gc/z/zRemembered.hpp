@@ -46,23 +46,27 @@ private:
   template <typename Function>
   void oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const;
 
+  bool should_scan_page(ZPage* page) const;
+
   void scan_page(ZPage* page) const;
   void scan_forwarding(ZForwarding* forwarding, void* context) const;
 
 public:
   ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
+  // Add to remembered set
   void remember(volatile zpointer* p) const;
   void remember_fields(zaddress obj) const;
 
-  // Global flip of the current active set of remset bitmaps
-  void flip() const;
-
+  // Scan all remembered sets
   void scan() const;
 
-  void mark_and_remember(volatile zpointer* p) const;
+  // Save the current remembered sets,
+  // and switch over to empty remembered sets.
+  void flip() const;
 
-  static bool should_scan(ZPage* page);
+  // Scan a remembered set entry
+  void scan_field(volatile zpointer* p) const;
 
   // Verification
   bool is_remembered(volatile zpointer* p) const;

@@ -275,6 +275,7 @@ public:
 class ZAddress : public AllStatic {
 public:
   static zpointer color(zaddress addr, uintptr_t color);
+  static zpointer color(zaddress_unsafe addr, uintptr_t color);
 
   static zoffset offset(zaddress addr);
   static zoffset offset(zaddress_unsafe addr);

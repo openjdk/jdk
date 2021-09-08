@@ -60,8 +60,8 @@ inline void ZYoungGeneration::remember(volatile zpointer* p) {
   _remembered.remember(p);
 }
 
-inline void ZYoungGeneration::mark_and_remember(volatile zpointer* p) {
-  _remembered.mark_and_remember(p);
+inline void ZYoungGeneration::scan_remembered_field(volatile zpointer* p) {
+  _remembered.scan_field(p);
 }
 
 inline bool ZYoungGeneration::is_remembered(volatile zpointer* p) {

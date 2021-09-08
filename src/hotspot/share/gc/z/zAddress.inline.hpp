@@ -462,6 +462,10 @@ inline zpointer ZAddress::color(zaddress addr, uintptr_t color) {
   return to_zpointer((untype(addr) << ZPointer::load_shift_lookup(color)) | color);
 }
 
+inline zpointer ZAddress::color(zaddress_unsafe addr, uintptr_t color) {
+  return to_zpointer((untype(addr) << ZPointer::load_shift_lookup(color)) | color);
+}
+
 inline zoffset ZAddress::offset(zaddress addr) {
   return to_zoffset(untype(addr) & ZAddressOffsetMask);
 }

@@ -43,12 +43,20 @@ class ZStoreBarrierBuffer : public CHeapObj<mtGC> {
 private:
   static const size_t _buffer_length = 32;
   static const size_t _buffer_size_bytes = _buffer_length * sizeof(ZStoreBarrierEntry);
+
   ZStoreBarrierEntry _buffer[_buffer_length];
-  uintptr_t _last_processed_color;
-  uintptr_t _last_installed_color;
-  ZLock _base_pointer_lock;
-  zaddress_unsafe _base_pointers[_buffer_length];
-  size_t _current;
+  
+  // Color from previous phase this buffer was processed
+  uintptr_t          _last_processed_color;
+  
+  // Use as a claim mechansim for installing base pointers
+  uintptr_t          _last_installed_color;
+  
+  ZLock              _base_pointer_lock;
+  zaddress_unsafe    _base_pointers[_buffer_length];
+
+  // sizeof(ZStoreBarrierEntry) scaled index growing downwards
+  size_t             _current;
 
   void on_new_phase_relocate(int i);
   void on_new_phase_remember(int i);
@@ -56,9 +64,12 @@ private:
 
   void clear();
 
-  bool is_inside_marking_snapshot(volatile zpointer* p);
-  bool is_empty();
+  bool is_major_mark() const;
+  bool stored_during_major_mark() const;
+  bool is_empty() const;
   intptr_t current() const;
+
+  void install_base_pointers_inner();
 
 public:
   ZStoreBarrierBuffer();

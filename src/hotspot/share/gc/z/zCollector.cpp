@@ -340,7 +340,7 @@ void ZMinorCollector::mark_start() {
   _mark.start();
 
   // Flip remembered set bits
-  ZHeap::heap()->young_generation()->flip_remembered_set();
+  ZHeap::heap()->young_generation()->flip_remembered_sets();
 
   // Update statistics
   stat_heap()->set_at_mark_start(_page_allocator->stats(this));
@@ -698,9 +698,6 @@ void ZMajorCollector::roots_remap() {
   {
     ZGenerationPagesIterator iter(_page_table, ZGenerationId::old, _page_allocator);
     for (ZPage* page; iter.next(&page);) {
-      if (!ZRemembered::should_scan(page)) {
-        continue;
-      }
       // Visit all entries pointing into young gen
       page->oops_do_current_remembered([&](volatile zpointer* p) {
         ZBarrier::load_barrier_on_oop_field(p);

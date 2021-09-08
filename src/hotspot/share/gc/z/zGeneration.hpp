@@ -66,14 +66,19 @@ private:
 public:
   ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
-  // Remembering
+  // Add to remembered set
   void remember(volatile zpointer* p);
-  void mark_and_remember(volatile zpointer* p);
-
   void remember_fields(zaddress addr);
 
-  void scan_remembered();
-  void flip_remembered_set();
+  // Scan a remembered set entry
+  void scan_remembered_field(volatile zpointer* p);
+
+  // Scan all remembered sets
+  void scan_remembered_sets();
+
+  // Save the current remembered sets,
+  // and switch over to empty remembered sets.
+  void flip_remembered_sets();
 
   zaddress alloc_object_for_relocation(size_t size);
   void undo_alloc_object_for_relocation(zaddress addr, size_t size);
