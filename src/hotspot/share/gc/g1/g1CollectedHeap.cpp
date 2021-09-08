@@ -1833,7 +1833,7 @@ void G1CollectedHeap::ref_processing_init() {
                            // thread counts must be considered for discovery.
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
-                           false,                                          // Reference discovery is not atomic
+                           true,                                           // Reference discovery is concurrent
                            &_is_alive_closure_cm);                         // is alive closure
 
   // STW ref processor
@@ -1842,7 +1842,7 @@ void G1CollectedHeap::ref_processing_init() {
                            ParallelGCThreads,                    // degree of mt processing
                            (ParallelGCThreads > 1),              // mt discovery
                            ParallelGCThreads,                    // degree of mt discovery
-                           true,                                 // Reference discovery is atomic
+                           false,                                // Reference discovery is not concurrent
                            &_is_alive_closure_stw);              // is alive closure
 }
 
