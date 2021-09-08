@@ -395,7 +395,7 @@ extern void resource_free_bytes( char *old, size_t size );
 // allocated objects
 class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
-  enum allocation_type { STACK_OR_EMBEDDED = 0, RESOURCE_AREA, C_HEAP, ARENA, allocation_mask = 0x3 };
+  enum allocation_type : u8 { STACK_OR_EMBEDDED, RESOURCE_AREA, C_HEAP, ARENA };
 #ifdef ASSERT
  private:
   // When this object is allocated on stack (or embedded) the new() operator is not
@@ -405,6 +405,13 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   // the corresponding constructor invocation.
   allocation_type _type;
   static THREAD_LOCAL allocation_type _thread_last_allocated;
+
+  static void set_type(allocation_type t) {
+    if (t != STACK_OR_EMBEDDED) {
+      assert(_thread_last_allocated == STACK_OR_EMBEDDED, "_thread_last_allocated should always be reset to STACK_OR_EMBEDDED by ResourceOBJ() before being set again");
+    }
+    _thread_last_allocated = t;
+  }
 
  public:
   allocation_type get_allocation_type() const;
@@ -430,13 +437,13 @@ protected:
 
   void* operator new(size_t size) throw() {
       address res = (address)resource_allocate_bytes(size);
-      DEBUG_ONLY(_thread_last_allocated = RESOURCE_AREA;)
+      DEBUG_ONLY(set_type(RESOURCE_AREA);)
       return res;
   }
 
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
       address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-      DEBUG_ONLY(if (res != NULL) _thread_last_allocated = RESOURCE_AREA;)
+      DEBUG_ONLY(if (res != NULL) set_type(RESOURCE_AREA);)
       return res;
   }
 
