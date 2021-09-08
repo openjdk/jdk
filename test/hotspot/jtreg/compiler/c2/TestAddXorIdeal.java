@@ -29,7 +29,6 @@
  * @library /test/lib
  * @run main/othervm -XX:-TieredCompilation -XX:TieredStopAtLevel=4
  *                   -XX:CompileCommand=dontinline,compiler.c2.TestAddXorIdeal::test*
- *                   -XX:CompileCommand=compileonly,compiler.c2.TestAddXorIdeal::test*
  *                   compiler.c2.TestAddXorIdeal
  */
 package compiler.c2;
