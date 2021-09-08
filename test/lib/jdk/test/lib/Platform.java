@@ -365,7 +365,10 @@ public class Platform {
         } else if (Platform.isMinimal()) {
             return "minimal";
         } else if (Platform.isZero()) {
-            return "zero";
+            // This name is used to search for libjvm.so. Weirdly, current
+            // build system puts libjvm.so into default location, which is
+            // "server". See JDK-8273494.
+            return "server";
         } else {
             throw new Error("TESTBUG: unsupported vm variant");
         }
