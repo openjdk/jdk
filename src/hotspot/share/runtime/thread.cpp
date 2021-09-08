@@ -948,6 +948,15 @@ void JavaThread::check_possible_safepoint() {
   // Clear unhandled oops in JavaThreads so we get a crash right away.
   clear_unhandled_oops();
 #endif // CHECK_UNHANDLED_OOPS
+
+  // Macos/aarch64 should be in the right state for safepoint (e.g.
+  // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
+  // happens in practice, making such issues hard to find and reproduce.
+#if defined(__APPLE__) && defined(AARCH64)
+  if (AssertWXAtThreadSync) {
+    assert_wx_state(WXWrite);
+  }
+#endif
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
@@ -1015,8 +1024,8 @@ JavaThread::JavaThread() :
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _jvmci_counters(nullptr),
-  _jvmci_reserved0(nullptr),
-  _jvmci_reserved1(nullptr),
+  _jvmci_reserved0(0),
+  _jvmci_reserved1(0),
   _jvmci_reserved_oop0(nullptr),
 #endif // INCLUDE_JVMCI
 
@@ -1227,7 +1236,9 @@ void JavaThread::run() {
 
   // Thread is now sufficiently initialized to be handled by the safepoint code as being
   // in the VM. Change thread state from _thread_new to _thread_in_vm
-  ThreadStateTransition::transition(this, _thread_new, _thread_in_vm);
+  assert(this->thread_state() == _thread_new, "wrong thread state");
+  set_thread_state(_thread_in_vm);
+
   // Before a thread is on the threads list it is always safe, so after leaving the
   // _thread_new we should emit a instruction barrier. The distance to modified code
   // from here is probably far enough, but this is consistent and safe.
@@ -1644,7 +1655,7 @@ void JavaThread::check_and_handle_async_exceptions() {
     case _thread_in_Java: {
       ThreadInVMfromJava tiv(this);
       JavaThread* THREAD = this;
-      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in a recent unsafe memory access operation in compiled Java code");
+      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation in compiled Java code");
       return;
     }
     default:

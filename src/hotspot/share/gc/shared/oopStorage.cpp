@@ -814,7 +814,7 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
                                     int rank) {
   char name[256];
   os::snprintf(name, sizeof(name), "%s %s lock", storage_name, kind);
-  return new PaddedMutex(rank, name, true, Mutex::_safepoint_check_never);
+  return new PaddedMutex(rank, name, Mutex::_safepoint_check_never);
 }
 
 void* OopStorage::operator new(size_t size, MEMFLAGS memflags) {

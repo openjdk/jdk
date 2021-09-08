@@ -1629,7 +1629,6 @@ void MacroAssembler::ghash16_encrypt16_parallel(Register key, Register subkeyHtb
 
 void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
                                     Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter) {
-
     Label ENC_DEC_DONE, GENERATE_HTBL_48_BLKS, AES_192, AES_256, STORE_CT, GHASH_LAST_32,
           AES_32_BLOCKS, GHASH_AES_PARALLEL, LOOP, ACCUMULATE, GHASH_16_AES_16;
     const XMMRegister CTR_BLOCKx = xmm9;

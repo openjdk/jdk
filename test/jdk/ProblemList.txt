@@ -564,6 +564,8 @@ java/lang/invoke/RicochetTest.java                              8251969 generic-
 java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all
 java/lang/instrument/RetransformBigClass.sh                     8065756 generic-all
 
+java/lang/instrument/BootClassPath/BootClassPathTest.sh         8273188 generic-all
+
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
@@ -726,7 +728,6 @@ javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
-javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java 8272481 macosx-all
 javax/swing/JPopupMenu/6580930/bug6580930.java 7124313 macosx-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
@@ -810,6 +811,9 @@ sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aa
 sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
+sun/tools/jcmd/JcmdOutputEncodingTest.java                      8273187 generic-all
+sun/tools/jstack/BasicJStackTest.java                           8273187 generic-all
+
 ############################################################################
 
 # jdk_other
@@ -828,7 +832,6 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
-jdk/jfr/event/oldobject/TestObjectSize.java                     8269418 macosx-x64
 
 ############################################################################
 

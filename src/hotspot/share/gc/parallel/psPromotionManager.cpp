@@ -121,6 +121,7 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
       promotion_failure_occurred = true;
     }
     manager->flush_labs();
+    manager->flush_string_dedup_requests();
   }
   if (!promotion_failure_occurred) {
     // If there was no promotion failure, the preserved mark stacks

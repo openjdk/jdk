@@ -115,20 +115,16 @@ public:
     _builder(builder), _dumped_obj(dumped_obj), _start_idx(start_idx) {}
 
   bool do_bit(BitMap::idx_t bit_offset) {
-    uintx FLAG_MASK = 0x03; // See comments around MetaspaceClosure::FLAG_MASK
     size_t field_offset = size_t(bit_offset - _start_idx) * sizeof(address);
     address* ptr_loc = (address*)(_dumped_obj + field_offset);
 
-    uintx old_p_and_bits = (uintx)(*ptr_loc);
-    uintx flag_bits = (old_p_and_bits & FLAG_MASK);
-    address old_p = (address)(old_p_and_bits & (~FLAG_MASK));
+    address old_p = *ptr_loc;
     address new_p = _builder->get_dumped_addr(old_p);
-    uintx new_p_and_bits = ((uintx)new_p) | flag_bits;
 
     log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
                    p2i(ptr_loc), p2i(old_p), p2i(new_p));
 
-    ArchivePtrMarker::set_and_mark_pointer(ptr_loc, (address)(new_p_and_bits));
+    ArchivePtrMarker::set_and_mark_pointer(ptr_loc, new_p);
     return true; // keep iterating the bitmap
   }
 };
@@ -1121,12 +1117,12 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
                                         closed_heap_regions,
                                         closed_heap_oopmaps,
                                         MetaspaceShared::first_closed_heap_region,
-                                        MetaspaceShared::max_closed_heap_region);
+                                        MetaspaceShared::max_num_closed_heap_regions);
     _total_open_heap_region_size = mapinfo->write_heap_regions(
                                         open_heap_regions,
                                         open_heap_oopmaps,
                                         MetaspaceShared::first_open_heap_region,
-                                        MetaspaceShared::max_open_heap_region);
+                                        MetaspaceShared::max_num_open_heap_regions);
   }
 
   print_region_stats(mapinfo, closed_heap_regions, open_heap_regions);

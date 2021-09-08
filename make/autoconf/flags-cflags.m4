@@ -137,7 +137,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       DISABLED_WARNINGS="4800"
       if test "x$TOOLCHAIN_VERSION" = x2017; then
         # VS2017 incorrectly triggers this warning for constexpr
-        DISABLED_WARNINGS+=" 4307"
+        DISABLED_WARNINGS="$DISABLED_WARNINGS 4307"
       fi
       ;;
 
