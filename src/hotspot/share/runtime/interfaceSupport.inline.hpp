@@ -77,16 +77,6 @@ class ThreadStateTransition : public StackObj {
  protected:
   JavaThread* _thread;
 
- private:
-  static inline void transition_and_process(JavaThread *thread, JavaThreadState to, bool check_asyncs) {
-    // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
-    thread->check_possible_safepoint();
-
-    thread->set_thread_state_fence(_thread_in_vm);
-    SafepointMechanism::process_if_requested_with_exit_check(thread, check_asyncs);
-    thread->set_thread_state(to);
-  }
-
  public:
   ThreadStateTransition(JavaThread *thread) : _thread(thread) {
     assert(thread != NULL, "must be active Java thread");
@@ -106,13 +96,17 @@ class ThreadStateTransition : public StackObj {
     assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
     assert(to == _thread_in_vm || to == _thread_in_Java, "invalid transition");
     assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native transition");
-    transition_and_process(thread, to, to != _thread_in_Java ? false : check_asyncs);
+
+    thread->set_thread_state_fence(_thread_in_vm);
+    SafepointMechanism::process_if_requested_with_exit_check(thread, to != _thread_in_Java ? false : check_asyncs);
+    thread->set_thread_state(to);
   }
 
   static inline void transition_from_vm(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {
     assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     if (to == _thread_in_Java) {
-      transition_and_process(thread, _thread_in_Java, check_asyncs);
+      SafepointMechanism::process_if_requested_with_exit_check(thread, check_asyncs);
+      thread->set_thread_state(to);
     } else {
       assert(to == _thread_in_native || to == _thread_blocked, "invalid transition");
       // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.

@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
+#include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
