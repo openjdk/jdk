@@ -110,4 +110,14 @@ public class TestInstant extends AbstractTest {
         var plusOneMicro = Instant.EPOCH.until(nanoMax.plusNanos(1000), ChronoUnit.MICROS);
         assertEquals(plusOneMicro - totalMicros, 1L);
     }
+
+    /**
+     * Checks whether Instant.until() returning milliseconds does not throw
+     * an ArithmeticException for very large/small Instants
+     */
+    @Test
+    public void test_millisUntil() {
+        assertEquals(Instant.MIN.until(Instant.MIN.plusSeconds(1), ChronoUnit.MILLIS), 1000L);
+        assertEquals(Instant.MAX.plusSeconds(-1).until(Instant.MAX, ChronoUnit.MILLIS), 1000L);
+    }
 }
