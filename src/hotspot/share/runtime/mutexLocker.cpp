@@ -213,9 +213,9 @@ void mutex_init() {
 
     def(G1DetachedRefinementStats_lock, PaddedMutex, leaf-2,     true, _safepoint_check_never);
 
-    def(FreeList_lock              , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+    def(FreeList_lock              , PaddedMutex  , service-1,   true,  _safepoint_check_never);
     def(OldSets_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
-    def(Uncommit_lock              , PaddedMutex  , leaf-2,      true,  _safepoint_check_never);
+    def(Uncommit_lock              , PaddedMutex  , service-2,   true,  _safepoint_check_never);
     def(RootRegionScan_lock        , PaddedMonitor, leaf-1,      true,  _safepoint_check_never);
 
     def(MarkStackFreeList_lock     , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);

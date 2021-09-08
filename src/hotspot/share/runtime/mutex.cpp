@@ -289,14 +289,14 @@ Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check
          "higher than nonleaf should safepoint %s", name);
 
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
-         "Special locks or below should never safepoint");
+         "Special locks or below should never safepoint: %s", name);
 
   // The allow_vm_block also includes allowing other non-Java threads to block or
   // allowing Java threads to block in native.
   assert(_safepoint_check_required == _safepoint_check_always || _allow_vm_block,
-         "Safepoint check never locks should always allow the vm to block");
+         "Safepoint check never locks should always allow the vm to block: %s", name);
 
-  assert(_rank >= 0, "Bad lock rank");
+  assert(_rank >= 0, "Bad lock rank: %s", name);
 #endif
 }
 
