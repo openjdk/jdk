@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7071819 8221431 8239383
+ * @bug 7071819 8221431 8239383 8273430
  * @summary tests Unicode Extended Grapheme support
  * @library /lib/testlibrary/java/lang
  * @run testng GraphemeTest
@@ -35,6 +35,7 @@ import java.nio.file.Path;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.fail;
+import static org.testng.Assert.assertFalse;
 
 public class GraphemeTest {
 
@@ -46,6 +47,12 @@ public class GraphemeTest {
     @Test
     public static void testEmojiData() throws Throwable {
         testProps(UCDFiles.EMOJI_DATA);
+    }
+
+    @Test
+    public static void testExcludedSpacingMarks() {
+        assertFalse(isExcludedSpacingMark(0x1065));
+        assertFalse(isExcludedSpacingMark(0x1066));
     }
 
     private static void testProps(Path path) throws IOException {
@@ -174,7 +181,7 @@ public class GraphemeTest {
     private static boolean isExcludedSpacingMark(int cp) {
        return  cp == 0x102B || cp == 0x102C || cp == 0x1038 ||
                cp >= 0x1062 && cp <= 0x1064 ||
-               cp >= 0x1062 && cp <= 0x106D ||
+               cp >= 0x1067 && cp <= 0x106D ||
                cp == 0x1083 ||
                cp >= 0x1087 && cp <= 0x108C ||
                cp == 0x108F ||
