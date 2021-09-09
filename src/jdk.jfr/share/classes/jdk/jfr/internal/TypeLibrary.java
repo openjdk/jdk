@@ -320,7 +320,6 @@ public final class TypeLibrary {
             createAnnotationType(Timespan.class);
             createAnnotationType(Timestamp.class);
             createAnnotationType(Label.class);
-            defineType(long.class, null, false);
             implicitFieldTypes = true;
         }
         addFields(type, requestable, hasDuration, hasThread, hasStackTrace, hasCutoff);
