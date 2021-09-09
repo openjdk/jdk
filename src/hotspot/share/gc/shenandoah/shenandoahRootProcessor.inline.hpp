@@ -86,9 +86,8 @@ ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::ShenandoahClassLoad
     ClassLoaderDataGraph_lock->lock();
   }
 
-  // Non-concurrent mode only runs at safepoints by VM thread
+  // Non-concurrent mode only runs at safepoints
   assert(CONCURRENT || SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(CONCURRENT || Thread::current()->is_VM_thread(), "Can only be done by VM thread");
 }
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
