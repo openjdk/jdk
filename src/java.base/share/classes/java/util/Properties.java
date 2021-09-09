@@ -958,16 +958,12 @@ public class Properties extends Hashtable<Object,Object> {
         bw.write(LazyDateCommentProvider.getDateComment());
         bw.newLine();
         synchronized (this) {
-            var entries = map.entrySet().toArray(new Map.Entry<?, ?>[0]);
-            Arrays.sort(entries, new Comparator<Map.Entry<?, ?>>() {
-                @Override
-                public int compare(Map.Entry<?, ?> o1, Map.Entry<?, ?> o2) {
-                    return ((String) o1.getKey()).compareTo((String) o2.getKey());
-                }
-            });
-            for (Map.Entry<?, ?> e : entries) {
-                String key = (String)e.getKey();
-                String val = (String)e.getValue();
+            @SuppressWarnings("unchecked")
+            var entries = new ArrayList<>(((Map<String, String>) (Map) map).entrySet());
+            entries.sort(Map.Entry.comparingByKey());
+            for (Map.Entry<String, String> e : entries) {
+                String key = e.getKey();
+                String val = e.getValue();
                 key = saveConvert(key, true, escUnicode);
                 /* No need to escape embedded and trailing spaces for value, hence
                  * pass false to flag.
