@@ -46,6 +46,7 @@ import org.xml.sax.SAXException;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class AppImageFile {
 
@@ -54,6 +55,7 @@ public class AppImageFile {
     private final String creatorPlatform;
     private final String launcherName;
     private final List<String> addLauncherNames;
+    private final boolean signed;
 
     private static final String FILENAME = ".jpackage.xml";
 
@@ -63,15 +65,16 @@ public class AppImageFile {
 
 
     private AppImageFile() {
-        this(null, null, null, null);
+        this(null, null, null, null, null);
     }
 
     private AppImageFile(String launcherName, List<String> addLauncherNames,
-            String creatorVersion, String creatorPlatform) {
+            String creatorVersion, String creatorPlatform, String signedStr) {
         this.launcherName = launcherName;
         this.addLauncherNames = addLauncherNames;
         this.creatorVersion = creatorVersion;
         this.creatorPlatform = creatorPlatform;
+        this.signed = "true".equals(signedStr);
     }
 
     /**
@@ -88,6 +91,10 @@ public class AppImageFile {
      */
     String getLauncherName() {
         return launcherName;
+    }
+
+    boolean isSigned() {
+        return signed;
     }
 
     void verifyCompatible() throws ConfigException {
@@ -123,6 +130,10 @@ public class AppImageFile {
 
             xml.writeStartElement("main-launcher");
             xml.writeCharacters(APP_NAME.fetchFrom(params));
+            xml.writeEndElement();
+
+            xml.writeStartElement("signed");
+            xml.writeCharacters(SIGN_BUNDLE.fetchFrom(params).toString());
             xml.writeEndElement();
 
             List<Map<String, ? super Object>> addLaunchers =
@@ -164,6 +175,9 @@ public class AppImageFile {
             String version = xpathQueryNullable(xPath,
                     "/jpackage-state/@version", doc);
 
+            String signedStr = xpathQueryNullable(xPath,
+                    "/jpackage-state/@signed", doc);
+
             NodeList launcherNameNodes = (NodeList) xPath.evaluate(
                     "/jpackage-state/add-launcher/text()", doc,
                     XPathConstants.NODESET);
@@ -173,7 +187,7 @@ public class AppImageFile {
             }
 
             AppImageFile file = new AppImageFile(
-                    mainLauncher, addLaunchers, version, platform);
+                    mainLauncher, addLaunchers, version, platform, signedStr);
             if (!file.isValid()) {
                 file = new AppImageFile();
             }
