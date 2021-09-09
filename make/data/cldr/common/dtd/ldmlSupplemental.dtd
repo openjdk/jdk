@@ -1158,7 +1158,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST dayPeriodRule references CDATA #IMPLIED >
     <!--@METADATA-->
 
-<!ELEMENT metaZones ( metazoneInfo?, mapTimezones? ) >
+<!ELEMENT metaZones ( metazoneInfo?, mapTimezones?, metazoneIds? ) >
+
+<!ELEMENT metazoneIds ( metazoneId* ) >
+
+<!ELEMENT metazoneId EMPTY >
+<!ATTLIST metazoneId shortId NMTOKEN #REQUIRED >
+    <!--@MATCH:regex/[a-z][a-z][a-z][a-z]-->
+<!ATTLIST metazoneId longId CDATA #IMPLIED >
+    <!--@MATCH:metazone-->
+    <!--@VALUE-->
+<!ATTLIST metazoneId deprecated (true | false) "false" >
+    <!--@VALUE-->
+<!ATTLIST metazoneId preferred NMTOKEN #IMPLIED >
+    <!--@MATCH:metazone-->
+    <!--@VALUE-->
+<!ATTLIST metazoneId since CDATA "40" >
+    <!--@MATCH:version-->
+    <!--@METADATA-->
 
 <!ELEMENT primaryZones ( primaryZone* ) >
 
