@@ -83,7 +83,7 @@ public final class MarkupParser {
     protected Parser.Tag readTag() throws ParseException {
         nextChar();
         if (!Character.isUnicodeIdentifierStart(ch)) {
-            // FIXME: internationalize!
+            // TODO: internationalize!
             throw new ParseException("Bad character: '%s' (0x%s)".formatted(ch, Integer.toString(ch, 16)), bp);
         }
         final int nameBp = bp;
@@ -164,7 +164,7 @@ public final class MarkupParser {
                     while (bp < buflen && ch != quote) {
                         nextChar();
                     }
-                    if (bp >= buflen) { // TODO: unexpected EOL; check for a similar issue in parsing the @snippet tag
+                    if (bp >= buflen) {
                         throw new ParseException("dc.unterminated.string", bp - 1);
                     }
                     addPendingText(value, valueStartPos, bp - 1);

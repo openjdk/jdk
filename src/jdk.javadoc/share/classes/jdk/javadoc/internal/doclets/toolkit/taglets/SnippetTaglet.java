@@ -284,8 +284,6 @@ public class SnippetTaglet extends BaseTaglet {
     }
 
     private StyledText parse(String content) throws ParseException {
-        // FIXME: need to be able to process more fine-grained, i.e. around a particular region...
-        // or, which is even better, cache the styled text
         Parser.Result result = new Parser().parse(content);
         result.actions().forEach(Action::perform);
         return result.text();
@@ -299,8 +297,6 @@ public class SnippetTaglet extends BaseTaglet {
             .collect(Collectors.joining());
     }
 
-    // FIXME: figure out how to do that correctly
-    // FIXME: consider returning null from this method so it can be used as oneliner
     private void error(TagletWriter writer, Element holder, DocTree tag, String key, Object... args) {
         writer.configuration().getMessages().error(
             writer.configuration().utils.getCommentHelper(holder).getDocTreePath(tag), key, args);

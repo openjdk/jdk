@@ -1146,7 +1146,7 @@ public class HtmlDocletWriter {
     public Content linkToContent(Element referrer, Element target, String targetSignature, String text) {
         CommentHelper ch = utils.getCommentHelper(referrer);
 
-        boolean isLinkPlain = false; // FIXME: for now
+        boolean isLinkPlain = false; // TODO: for now
         Content labelContent = plainOrCode(isLinkPlain, Text.of(text));
 
         TypeElement refClass = ch.getReferencedClass(target);
@@ -1181,7 +1181,7 @@ public class HtmlDocletWriter {
                     return links.createExternalLink(elementCrossLink, labelContent);
                 } else {
                     // No cross link found so print warning
-// FIXME:
+// TODO:
 //                    messages.warning(ch.getDocTreePath(see),
 //                                     "doclet.see.class_or_package_not_found",
 //                                     "@" + tagName,
@@ -1195,7 +1195,7 @@ public class HtmlDocletWriter {
                 if (!refClass.getTypeParameters().isEmpty() && targetSignature.contains("<")) {
                     // If this is a generic type link try to use the TypeMirror representation.
 
-// FIXME
+// TODO:
 //                  TypeMirror refType = ch.getReferencedType(target);
                     TypeMirror refType = target.asType();
 
@@ -1236,12 +1236,12 @@ public class HtmlDocletWriter {
                 if (this instanceof ClassWriterImpl writer) {
                     containing = writer.getTypeElement();
                 } else if (!utils.isPublic(containing)) {
-// FIXME
+// TODO:
 //                    messages.warning(
 //                            ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
 //                            tagName, utils.getFullyQualifiedName(containing));
                 } else {
-// FIXME
+// TODO:
 //                    messages.warning(
 //                            ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
 //                            tagName, seeText);

@@ -396,7 +396,7 @@ public class TagletWriterImpl extends TagletWriter {
                     if (s instanceof Style.Name n) {
                         classes.add(n.name());
                     } else if (s instanceof Style.Link l) {
-                        assert !linkEncountered; // FIXME: do not assert; pick the first link
+                        assert !linkEncountered; // TODO: do not assert; pick the first link report on subsequent
                         linkEncountered = true;
                         t = l.target();
                         e = getLinkedElement(element, t);
