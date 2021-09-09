@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8271186
+ * @bug 8271186 8273471
  * @library /test/lib
  * @run driver FoldMultilinesTest
  */
@@ -41,7 +41,6 @@ public class FoldMultilinesTest {
     private static String XLOG_BASE = "-Xlog:exceptions=info:";
     private static String EXCEPTION_MESSAGE = "line 1\nline 2\\nstring";
     private static String FOLDED_EXCEPTION_MESSAGE = "line 1\\nline 2\\\\nstring";
-    // Windows may out "\r\n" even though UL outs "\n" only, so we need to evaluate regex with \R.
     private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\Rline 2\\\\nstring", Pattern.MULTILINE);
 
     private static void analyzeFoldMultilinesOn(ProcessBuilder pb, String out) throws Exception {
