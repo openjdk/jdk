@@ -129,7 +129,7 @@ public class JStack {
         // method.
         InputStream in = ((HotSpotVirtualMachine)vm).remoteDataDump((Object[])args);
         // read to EOF and just print output
-        PrintStreamPrinter.drainNative(in, System.out);
+        PrintStreamPrinter.drain(in, System.out);
         vm.detach();
     }
 

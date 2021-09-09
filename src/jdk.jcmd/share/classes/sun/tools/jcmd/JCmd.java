@@ -123,7 +123,7 @@ public class JCmd {
 
             InputStream is = hvm.executeJCmd(line);
 
-            if (PrintStreamPrinter.drainNative(is, System.out) == 0) {
+            if (PrintStreamPrinter.drain(is, System.out) == 0) {
                 System.out.println("Command executed successfully");
             }
         }

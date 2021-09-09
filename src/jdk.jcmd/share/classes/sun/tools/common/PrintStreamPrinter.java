@@ -28,39 +28,36 @@ package sun.tools.common;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.Arrays;
 
 /**
  * A helper class which prints the content of input streams to print streams.
  */
 public class PrintStreamPrinter {
-    private static final String nativeEncoding = System.getProperty("native.encoding");
 
     /**
-     * Reads characters in `native.encoding` from the input stream and prints them
+     * Reads bytes from the input stream and writes them
      * with the given print stream. Closes the input stream before it returns.
      *
-     * @return The number of printed characters.
+     * @return The number of printed bytes.
      */
-    public static long drainNative(InputStream is, PrintStream ps) throws IOException {
+    public static long drain(InputStream is, PrintStream ps) throws IOException {
         long result = 0;
 
-        try (BufferedInputStream bis = new BufferedInputStream(is);
-             InputStreamReader isr = new InputStreamReader(bis, nativeEncoding)) {
-            char c[] = new char[256];
+        try (BufferedInputStream bis = new BufferedInputStream(is)) {
+            byte b[] = new byte[256];
             int n;
 
             do {
-                n = isr.read(c);
+                n = bis.read(b);
 
                 if (n > 0) {
                     result += n;
-                    ps.print(n == c.length ? c : Arrays.copyOf(c, n));
+                    ps.write(b, 0, n);
                 }
             } while (n > 0);
         }
+        is.close();
 
         return result;
     }

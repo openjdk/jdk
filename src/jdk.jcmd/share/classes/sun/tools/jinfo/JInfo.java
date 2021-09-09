@@ -203,7 +203,7 @@ final public class JInfo {
 
     // Read the stream from the target VM until EOF, then detach
     private static void drain(VirtualMachine vm, InputStream in) throws IOException {
-        PrintStreamPrinter.drainNative(in, System.out);
+        PrintStreamPrinter.drain(in, System.out);
         vm.detach();
     }
 
