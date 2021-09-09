@@ -115,9 +115,9 @@ import java.util.Locale;
  * The search order of locale sensitive services can
  * be configured by using the {@systemProperty java.locale.providers} system property.
  * This system property declares the user's preferred order for looking up
- * the locale sensitive services separated by a comma. It is only read at
- * the Java runtime startup, so the later call to System.setProperty() won't
- * affect the order.
+ * the locale sensitive services separated by a comma. It is only read and cached at
+ * the initialization of this class, so the later call to
+ * {@link System#setProperty(String, String)} may not affect the order.
  * <p>
  * Java Runtime Environment provides the following four locale providers:
  * <ul>
