@@ -48,6 +48,7 @@ public class FoldMultilinesTest {
         output.shouldHaveExitValue(0);
 
         String logs = switch (out) {
+            case "" -> output.getStdout();
             case "stdout" -> output.getStdout();
             case "stderr" -> output.getStderr();
             default -> Files.readString(Path.of(EXCEPTION_LOG_FILE));
@@ -97,9 +98,17 @@ public class FoldMultilinesTest {
     }
 
     public static void main(String[] args) throws Exception {
+        // -Xlog:exceptions=info:file=exceptions.log::foldmultilines=[true|false|invalid]
         test("file=" + EXCEPTION_LOG_FILE);
+
+        // -Xlog:exceptions=info:stdout::foldmultilines=[true|false|invalid]
         test("stdout");
+
+        // -Xlog:exceptions=info:stderr::foldmultilines=[true|false|invalid]
         test("stderr");
+
+        // -Xlog:exceptions=info:::foldmultilines=[true|false|invalid]
+        test("");
     }
 
     public static class InternalClass {
