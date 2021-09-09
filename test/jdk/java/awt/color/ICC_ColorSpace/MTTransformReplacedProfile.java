@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @test
- * @bug 8271718
+ * @bug 8271718 8273135
  * @summary Verifies MT safety of color transformation while profile is changed
  */
 public final class MTTransformReplacedProfile {
