@@ -445,9 +445,6 @@ public final class Connection implements Runnable {
         } catch (InterruptedException ex) {
             throw new InterruptedNamingException(
                 "Interrupted during LDAP operation");
-        } catch (CommunicationException ce) {
-            // Re-throw
-            throw ce;
         } catch (IOException ioe) {
             // Connection is timed out OR closed/cancelled
             // getReplyBer throws IOException when the requests needs to be abandoned
@@ -460,7 +457,10 @@ public final class Connection implements Runnable {
         }
         // ioException can be not null in the following cases:
         //  a) The response is timed-out
-        //  b) LDAP request connection has been closed or cancelled
+        //  b) LDAP request connection has been closed
+        // If the request has been cancelled - CommunicationException is
+        // thrown directly from LdapRequest.getReplyBer, since there is no
+        // need to abandon request.
         // The exception message is initialized in LdapRequest::getReplyBer
         if (ioException != null) {
             // Throw CommunicationException after all cleanups are done
