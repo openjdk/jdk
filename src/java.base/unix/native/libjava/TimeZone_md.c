@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 
 #include "jvm.h"
 #include "TimeZone_md.h"
+#include "path_util.h"
 
 static char *isFileIdentical(char* buf, size_t size, char *pathname);
 
@@ -76,6 +77,39 @@ static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
 #endif
 
 #if defined(__linux__) || defined(MACOSX)
+
+/*
+ * remove repeated path separators ('/') in the giving 'path'.
+ */
+static void
+removeDuplicateSlashes(char* path)
+{
+    char *left = path;
+    char *right = path;
+    char *end = path + strlen(path);
+    /*
+     * Find first '//'
+     */
+    for (; right < end; right++) {
+        if (*right == '/' && *(right + 1) == '/') break;
+    }
+
+    for (left = right; right < end; right++) {
+        // Skip sequence of multiple path-separators.
+        while (*right == '/' && *(right + 1) == '/') {
+            right++;
+        }
+
+        while (*right != '\0' && !(*right == '/' && *(right + 1) == '/')) {
+            *left++ = *right++;
+        }
+
+        if (*right == '\0') {
+            *left = '\0';
+            break;
+        }
+    }
+}
 
 /*
  * Returns a pointer to the zone ID portion of the given zoneinfo file
@@ -287,17 +321,18 @@ getPlatformTimeZoneID()
      * from /etc/localtime.)
      */
     if (S_ISLNK(statbuf.st_mode)) {
-        /* canonicalize the path */
-        char resolvedpath[PATH_MAX + 1];
-        char *path = realpath(DEFAULT_ZONEINFO_FILE, resolvedpath);
-        if (path == NULL) {
-            if (errno != ENOTDIR) {
-                jio_fprintf(stderr, (const char *) "can't to get a symlink of %s\n",
-                              DEFAULT_ZONEINFO_FILE);
-            }
+        char linkbuf[PATH_MAX+1];
+        int len;
+
+        if ((len = readlink(DEFAULT_ZONEINFO_FILE, linkbuf, sizeof(linkbuf)-1)) == -1) {
+            jio_fprintf(stderr, (const char *) "can't get a symlink of %s\n",
+                        DEFAULT_ZONEINFO_FILE);
             return NULL;
         }
-        tz = getZoneName(resolvedpath);
+        linkbuf[len] = '\0';
+        removeDuplicateSlashes(linkbuf);
+        collapse(linkbuf);
+        tz = getZoneName(linkbuf);
         if (tz != NULL) {
             tz = strdup(tz);
             return tz;
