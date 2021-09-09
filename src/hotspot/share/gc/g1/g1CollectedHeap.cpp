@@ -1684,7 +1684,6 @@ jint G1CollectedHeap::initialize() {
   }
 
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
-                          true /* are_GC_task_threads */,
                           false /* are_ConcurrentGC_threads */);
   if (_workers == NULL) {
     return JNI_ENOMEM;
