@@ -160,19 +160,13 @@ GangWorker* WorkGang::install_worker(uint worker_id) {
 }
 
 void WorkGang::add_workers(bool initializing) {
-  os::ThreadType worker_type;
-  if (are_ConcurrentGC_threads()) {
-    worker_type = os::cgc_thread;
-  } else {
-    worker_type = os::pgc_thread;
-  }
   uint previous_created_workers = _created_workers;
 
   _created_workers = WorkerManager::add_workers(this,
                                                 _active_workers,
                                                 _total_workers,
                                                 _created_workers,
-                                                worker_type,
+                                                os::gc_thread,
                                                 initializing);
   _active_workers = MIN2(_created_workers, _active_workers);
 
