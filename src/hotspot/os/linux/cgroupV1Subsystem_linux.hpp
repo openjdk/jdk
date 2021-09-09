@@ -88,6 +88,7 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     int cpu_shares();
 
     jlong pids_max();
+    jlong pids_current();
 
     const char * container_type() {
       return "cgroupv1";
@@ -106,6 +107,7 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     CgroupV1Controller* _pids = NULL;
 
     char * pids_max_val();
+    char * pids_current_val();
 
   public:
     CgroupV1Subsystem(CgroupV1Controller* cpuset,

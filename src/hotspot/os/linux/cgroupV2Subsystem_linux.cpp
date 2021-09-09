@@ -235,6 +235,16 @@ char* CgroupV2Subsystem::pids_max_val() {
   return os::strdup(pidsmax);
 }
 
+char* CgroupV2Subsystem::pids_current_val() {
+  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/pids.current",
+                     "Current number of tasks is: %s", "%s %*d", pids_current, 1024);
+  if (pids_current == NULL) {
+    return NULL;
+  }
+  return os::strdup(pids_current);
+}
+
+
 /* pids_max
  *
  * Return the maximum number of tasks available to the process
@@ -249,3 +259,15 @@ jlong CgroupV2Subsystem::pids_max() {
   return limit_from_str(pidsmax_str);
 }
 
+/* pids_current
+ *
+ * The number of tasks currently in the cgroup (and its descendants) of the process
+ *
+ * return:
+ *    current number of tasks
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV2Subsystem::pids_current() {
+  char * pidscurrent_str = pids_current_val();
+  return limit_from_str(pidscurrent_str);
+}

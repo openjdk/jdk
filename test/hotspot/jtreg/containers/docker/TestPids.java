@@ -93,6 +93,10 @@ public class TestPids {
                 String[] parts = line.split(":");
                 System.out.println("DEBUG: line = " + line);
                 System.out.println("DEBUG: parts.length = " + parts.length);
+                if (expectedValue.equals("no_value_expected")) {
+                    System.out.println("No value expected for " + lineMarker);
+                    break;
+                }
 
                 Asserts.assertEquals(parts.length, 2);
                 String actual = parts[1].replaceAll("\\s","");
@@ -137,6 +141,8 @@ public class TestPids {
         } else {
             checkResult(lines, "Maximum number of tasks is: ", value);
         }
+        // current number of tasks value is hard to predict, so better expect no value
+        checkResult(lines, "Current number of tasks is: ", "no_value_expected");
     }
 
 }

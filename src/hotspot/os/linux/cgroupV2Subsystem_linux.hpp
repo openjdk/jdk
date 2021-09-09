@@ -61,6 +61,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     char *mem_soft_limit_val();
     char *cpu_quota_val();
     char *pids_max_val();
+    char *pids_current_val();
 
   public:
     CgroupV2Subsystem(CgroupController * unified) {
@@ -80,6 +81,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
     jlong pids_max();
+    jlong pids_current();
 
     const char * container_type() {
       return "cgroupv2";

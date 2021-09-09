@@ -2327,6 +2327,16 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
+  j = OSContainer::OSContainer::pids_current();
+  st->print("current number of tasks: ");
+  if (j > 0) {
+    st->print_cr(JLONG_FORMAT, j);
+  } else {
+    if (j == OSCONTAINER_ERROR) {
+      st->print_cr("not supported");
+    }
+  }
+
   return true;
 }
 

@@ -408,6 +408,11 @@ public final class LauncherHelper {
         limit = c.getPidsMax();
         ostream.println(formatLimitString(limit, INDENT + "Maximum Processes Limit: ",
                                           longRetvalNotSupported, false));
+
+        long val = c.getPidsCurrent();
+        ostream.println(formatLimitString(val, INDENT + "Current number of processes: ",
+                                          longRetvalNotSupported, false));
+
         ostream.println("");
     }
 
