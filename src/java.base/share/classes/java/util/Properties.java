@@ -174,10 +174,10 @@ public class Properties extends Hashtable<Object,Object> {
 
     @SuppressWarnings("removal")
     private static final class LazyDateCommentProvider {
-        // formatter used while writing out current date. this formatter matches the format
-        // used by java.util.Date.toString()
-        private static final DateTimeFormatter currentDateFormatter =
-                DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy");
+        // format that matches the one used by java.util.Date.toString()
+        private static final String dateFormatPattern = "EEE MMM dd HH:mm:ss zzz yyyy";
+        // formatter used while writing out current date
+        private static final DateTimeFormatter currentDateFormatter = DateTimeFormatter.ofPattern(dateFormatPattern);
         private static final String cachedDateComment;
 
         static {
@@ -189,7 +189,7 @@ public class Properties extends Hashtable<Object,Object> {
             if (sourceDateEpoch != null) {
                 try {
                     long epochSeconds = Long.parseLong(sourceDateEpoch);
-                    dateComment = "#" + DateTimeFormatter.RFC_1123_DATE_TIME
+                    dateComment = "#" + DateTimeFormatter.ofPattern(dateFormatPattern)
                             .withLocale(Locale.ROOT)
                             .withZone(ZoneOffset.UTC)
                             .format(Instant.ofEpochSecond(epochSeconds));
