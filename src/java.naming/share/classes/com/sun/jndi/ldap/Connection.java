@@ -425,7 +425,7 @@ public final class Connection implements Runnable {
     /**
      * Reads a reply; waits until one is ready.
      */
-    BerDecoder readReply(LdapRequest ldr) throws IOException, NamingException {
+    BerDecoder readReply(LdapRequest ldr) throws NamingException {
         BerDecoder rber;
 
         // If socket closed, don't even try
@@ -436,7 +436,7 @@ public final class Connection implements Runnable {
             }
         }
 
-        NamingException namingException = null;
+        IOException ioException = null;
         try {
             // if no timeout is set so we wait infinitely until
             // a response is received OR until the connection is closed or cancelled
@@ -448,22 +448,26 @@ public final class Connection implements Runnable {
         } catch (CommunicationException ce) {
             // Re-throw
             throw ce;
-        } catch (NamingException ne) {
+        } catch (IOException ioe) {
             // Connection is timed out OR closed/cancelled
-            namingException = ne;
+            // getReplyBer throws IOException when the requests needs to be abandoned
+            ioException = ioe;
             rber = null;
         }
 
         if (rber == null) {
             abandonRequest(ldr, null);
         }
-        // namingException can be not null in the following cases:
+        // ioException can be not null in the following cases:
         //  a) The response is timed-out
         //  b) LDAP request connection has been closed or cancelled
         // The exception message is initialized in LdapRequest::getReplyBer
-        if (namingException != null) {
-            // Re-throw NamingException after all cleanups are done
-            throw namingException;
+        if (ioException != null) {
+            // Throw CommunicationException after all cleanups are done
+            String message = ioException.getMessage();
+            var ce = new CommunicationException(message);
+            ce.initCause(ioException);
+            throw ce;
         }
         return rber;
     }
