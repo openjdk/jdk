@@ -269,7 +269,6 @@ class PKIX {
             for (CertStore store : stores) {
                 try {
                     Collection<? extends Certificate> certs =
-                        (Collection<? extends Certificate>)
                             store.getCertificates(sel);
                     if (!certs.isEmpty()) {
                         X509Certificate xc =
