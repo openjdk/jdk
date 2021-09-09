@@ -2715,8 +2715,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 elements.push(e);
                 e = e.getElement(e.getElementIndex(offset));
             }
-            Element[] retValue = new Element[elements.size()];
-            elements.toArray(retValue);
+            Element[] retValue = elements.toArray(new Element[0]);
             return retValue;
         }
 
