@@ -29,7 +29,7 @@ package java.io;
  * A {@code FilterInputStream} wraps some other input stream, which it uses as
  * its basic source of data, possibly transforming the data along the way or
  * providing additional functionality. The class {@code FilterInputStream}
- * itself simply overrides key methods of {@code InputStream} with versions
+ * itself simply overrides select methods of {@code InputStream} with versions
  * that pass all requests to the wrapped input stream. Subclasses of
  * {@code FilterInputStream} may of course override any methods declared or
  * inherited by {@code FilterInputStream}, and may also provide additional
