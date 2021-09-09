@@ -498,7 +498,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_
   // reference processing currently works in G1.
   ref_processor_stw()->start_discovery(false /* always_clear */);
 
-  _g1h->reset_evacuation_failed_data();
+  _evac_failure_regions->reset();
 
   _g1h->gc_prologue(false);
 
@@ -955,7 +955,7 @@ bool G1STWIsAliveClosure::do_object_b(oop p) {
 void G1YoungCollector::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {
   Ticks start = Ticks::now();
   {
-    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states);
+    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states, _evac_failure_regions);
     _g1h->run_batch_task(&cl);
   }
   phase_times()->record_post_evacuate_cleanup_task_1_time((Ticks::now() - start).seconds() * 1000.0);
@@ -965,7 +965,7 @@ void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thre
                                                G1EvacuationInfo* evacuation_info) {
   Ticks start = Ticks::now();
   {
-    G1PostEvacuateCollectionSetCleanupTask2 cl(per_thread_states, evacuation_info);
+    G1PostEvacuateCollectionSetCleanupTask2 cl(per_thread_states, evacuation_info, _evac_failure_regions);
     _g1h->run_batch_task(&cl);
   }
   phase_times()->record_post_evacuate_cleanup_task_2_time((Ticks::now() - start).seconds() * 1000.0);
@@ -1024,11 +1024,14 @@ public:
   }
 };
 
-G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause, double target_pause_time_ms) :
+G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
+                                   double target_pause_time_ms,
+                                   G1EvacFailureRegions* evac_failure_regions) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
   _target_pause_time_ms(target_pause_time_ms),
-  _concurrent_operation_is_full_mark(false)
+  _concurrent_operation_is_full_mark(false),
+  _evac_failure_regions(evac_failure_regions)
 {
 }
 
@@ -1080,7 +1083,8 @@ void G1YoungCollector::collect() {
                                               &preserved_marks_set,
                                               workers()->active_workers(),
                                               collection_set()->young_region_length(),
-                                              collection_set()->optional_region_length());
+                                              collection_set()->optional_region_length(),
+                                              _evac_failure_regions);
     pre_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states);
 
     bool may_do_optional_evacuation = collection_set()->optional_region_length() != 0;

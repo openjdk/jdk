@@ -25,6 +25,7 @@
  * @test
  * @bug 8191278
  * @requires os.family != "windows"
+ * @requires vm.flavor != "zero"
  * @summary Check that SIGBUS errors caused by memory accesses in Unsafe_CopyMemory()
  * and UnsafeCopySwapMemory() get converted to java.lang.InternalError exceptions.
  * @modules java.base/jdk.internal.misc
