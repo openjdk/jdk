@@ -39,6 +39,7 @@ public class TestNegMultiply {
     private static int test(int a, int b) {
         return (-a) * (-b);
     }
+
     private static void testInt(int a, int b) {
         int expected = (-a) * (-b);
         for (int i = 0; i < 20_000; i++) {
