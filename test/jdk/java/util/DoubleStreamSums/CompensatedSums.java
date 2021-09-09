@@ -87,8 +87,6 @@ public class CompensatedSums {
 
         }
 
-        Assert.assertEquals(goodSequentialStreamError, jdkSequentialStreamError);
-
         Assert.assertTrue(jdkParallelStreamError <= goodParallelStreamError);
         Assert.assertTrue(badParallelStreamError > goodParallelStreamError);
 
