@@ -28,17 +28,12 @@ package jdk.jfr.internal;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Path;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.Comparator;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 final class RepositoryChunk {
-    private static final int MAX_CHUNK_NAMES = 100;
-    private static final String FILE_EXTENSION = ".jfr";
 
     static final Comparator<RepositoryChunk> END_TIME_COMPARATOR = new Comparator<RepositoryChunk>() {
         @Override
@@ -48,15 +43,14 @@ final class RepositoryChunk {
     };
 
     private final SafePath chunkFile;
-    private final Instant startTime;
     private final RandomAccessFile unFinishedRAF;
 
     private Instant endTime = null; // unfinished
+    private Instant startTime;
     private int refCount = 0;
     private long size;
 
-    RepositoryChunk(SafePath path, Instant startTime) throws Exception {
-        this.startTime = startTime;
+    RepositoryChunk(SafePath path) throws Exception {
         this.chunkFile = path;
         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
     }
@@ -80,6 +74,10 @@ final class RepositoryChunk {
 
     public Instant getStartTime() {
         return startTime;
+    }
+
+    public void setStartTime(Instant timestamp) {
+        this.startTime = timestamp;
     }
 
     public Instant getEndTime() {

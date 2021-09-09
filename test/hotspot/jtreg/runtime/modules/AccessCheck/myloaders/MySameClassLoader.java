@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@ package myloaders;
 
 import java.io.*;
 import java.lang.module.ModuleReference;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 // Declare a MySameClassLoader class to be used to map modules to the same
 // class loader.  This class loader will also be used to load classes
@@ -45,23 +46,8 @@ public class MySameClassLoader extends ClassLoader
             !name.equals("p6.c6")) {
             return super.loadClass(name);
         }
-        byte[] data = getClassData(name);
+        byte[] data = ClassUnloadCommon.getClassData(name);
         return defineClass(name, data, 0, data.length);
-    }
-    byte[] getClassData(String name) {
-        try {
-           String TempName = name.replaceAll("\\.", "/");
-           String currentDir = System.getProperty("test.classes");
-           String filename = currentDir + File.separator + TempName + ".class";
-           FileInputStream fis = new FileInputStream(filename);
-           byte[] b = new byte[5000];
-           int cnt = fis.read(b, 0, 5000);
-           byte[] c = new byte[cnt];
-           for (int i=0; i<cnt; i++) c[i] = b[i];
-              return c;
-        } catch (IOException e) {
-           return null;
-        }
     }
 
     public void register(ModuleReference mref) { }

@@ -143,6 +143,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahOldGC;
   friend class ShenandoahDegenGC;
   friend class ShenandoahFullGC;
+  friend class ShenandoahUnload;
 
 // ---------- Locks that guard important data structures in Heap
 //
@@ -189,6 +190,7 @@ public:
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
   jint initialize();
   void post_initialize();
+  void initialize_mode();
   void initialize_heuristics();
   void initialize_generations();
 
@@ -206,6 +208,11 @@ public:
   void verify_rem_set_at_mark();
   void verify_rem_set_at_update_ref();
   void verify_rem_set_after_full_gc();
+
+// WhiteBox testing support.
+  bool supports_concurrent_gc_breakpoints() const {
+    return true;
+  }
 
 // ---------- Heap counters and metrics
 //
@@ -308,8 +315,11 @@ public:
     // Heap is under updating: needs no additional barriers.
     UPDATEREFS_BITPOS = 3,
 
+    // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
+    WEAK_ROOTS_BITPOS  = 4,
+
     // Old regions are under marking, still need SATB barriers.
-    OLD_MARKING_BITPOS = 4
+    OLD_MARKING_BITPOS = 5
   };
 
   enum GCState {
@@ -318,6 +328,7 @@ public:
     YOUNG_MARKING = 1 << YOUNG_MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
     UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
+    WEAK_ROOTS    = 1 << WEAK_ROOTS_BITPOS,
     OLD_MARKING   = 1 << OLD_MARKING_BITPOS
   };
 
@@ -328,7 +339,6 @@ private:
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
-  ShenandoahSharedFlag   _concurrent_weak_root_in_progress;
 
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
@@ -423,7 +433,6 @@ private:
 
   void rendezvous_threads();
   void recycle_trash();
-
 public:
   void notify_gc_progress()    { _progress_last_gc.set();   }
   void notify_gc_no_progress() { _progress_last_gc.unset(); }
@@ -709,13 +718,19 @@ public:
   template <class T>
   inline void update_with_forwarded(T* p);
 
-  static inline oop cas_oop(oop n, narrowOop* addr, oop c);
-  static inline oop cas_oop(oop n, oop* addr, oop c);
-  static inline oop cas_oop(oop n, narrowOop* addr, narrowOop c);
+  static inline void atomic_update_oop(oop update,       oop* addr,       oop compare);
+  static inline void atomic_update_oop(oop update, narrowOop* addr,       oop compare);
+  static inline void atomic_update_oop(oop update, narrowOop* addr, narrowOop compare);
+
+  static inline bool atomic_update_oop_check(oop update,       oop* addr,       oop compare);
+  static inline bool atomic_update_oop_check(oop update, narrowOop* addr,       oop compare);
+  static inline bool atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare);
+
+  static inline void atomic_clear_oop(      oop* addr,       oop compare);
+  static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
+  static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
   size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
-
-  void deduplicate_string(oop str);
 
   static inline void increase_object_age(oop obj, uint additional_age);
 

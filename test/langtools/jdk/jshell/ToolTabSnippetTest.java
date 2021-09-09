@@ -23,11 +23,11 @@
 
 /**
  * @test
- * @bug 8177076 8185426 8189595 8188072 8221759
+ * @bug 8177076 8185426 8189595 8188072 8221759 8255273
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
- *     jdk.jshell/jdk.internal.jshell.tool
+ *     jdk.jshell/jdk.internal.jshell.tool:+open
  *     jdk.jshell/jdk.internal.jshell.tool.resources:open
  *     jdk.jshell/jdk.jshell:open
  * @library /tools/lib
@@ -331,4 +331,13 @@ public class ToolTabSnippetTest extends UITesting {
     //where:
         private final Compiler compiler = new Compiler();
 
+    public void testDocumentationAfterInsert() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("import java.time.*\n");
+            waitOutput(out, PROMPT);
+
+            inputSink.write("new Instant" + TAB);
+            waitOutput(out, PROMPT + "new InstantiationE");
+        });
+    }
 }

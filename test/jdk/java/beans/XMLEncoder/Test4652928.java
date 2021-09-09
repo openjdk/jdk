@@ -25,6 +25,7 @@
  * @test
  * @bug 4652928
  * @summary Tests encoding of collections
+ * @run main/othervm -Djava.security.manager=allow Test4652928
  * @author Sergey Malenkov, Mark Davidson
  */
 

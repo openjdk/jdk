@@ -26,10 +26,10 @@
 #define SHARE_JFR_UTILITIES_JFRCONCURRENTLINKEDLISTHOST_INLINE_HPP
 
 #include "jfr/utilities/jfrConcurrentLinkedListHost.hpp"
+
 #include "jfr/utilities/jfrRelation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 /*

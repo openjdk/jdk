@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,12 @@
 
 /*
  * @test
- * @bug 8071859
+ * @bug 8071859 8169629
  * @summary Check annotation equality behavior against the invocation handler
+ * @compile --release 8 EqualityTest.java
+ * @run main EqualityTest
+ * @compile EqualityTest.java
+ * @run main EqualityTest
  */
 
 import java.lang.annotation.*;
@@ -40,6 +44,7 @@ public class EqualityTest {
         testEquality(annotation, handler,    false);
         testEquality(annotation, annotation, true);
         testEquality(handler,    handler,    true);
+        testEquality(annotation, AnnotationHost.class.getAnnotation(TestAnnotation.class), true);
     }
 
     private static void testEquality(Object a, Object b, boolean expected) {
@@ -47,9 +52,14 @@ public class EqualityTest {
         if (result != b.equals(a) || result != expected)
             throw new RuntimeException("Unexpected result");
     }
+
+    @TestAnnotation
+    private static class AnnotationHost {}
 }
 
 @Retention(RetentionPolicy.RUNTIME)
 @interface TestAnnotation {
+    // Trigger creation of synthetic method to initialize r.
+    public static final Runnable r = () -> {};
 }
 

@@ -46,6 +46,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Permission;
@@ -72,10 +73,10 @@ import jdk.jfr.internal.consumer.FileAccess;
  * {@link AccessController#doPrivileged(PrivilegedAction)}
  */
 public final class SecuritySupport {
-    private final static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private final static Module JFR_MODULE = Event.class.getModule();
-    public  final static SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
-    public final static FileAccess PRIVILEGED = new Privileged();
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final Module JFR_MODULE = Event.class.getModule();
+    public  static final SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
+    public static final FileAccess PRIVILEGED = new Privileged();
     static final SafePath USER_HOME = getPathInProperty("user.home", null);
     static final SafePath JAVA_IO_TMPDIR = getPathInProperty("java.io.tmpdir", null);
 
@@ -87,16 +88,18 @@ public final class SecuritySupport {
         addInstrumentExport(Object.class);
     }
 
-    final static class SecureRecorderListener implements FlightRecorderListener {
+    static final class SecureRecorderListener implements FlightRecorderListener {
 
+        @SuppressWarnings("removal")
         private final AccessControlContext context;
         private final FlightRecorderListener changeListener;
 
-        SecureRecorderListener(AccessControlContext context, FlightRecorderListener changeListener) {
+        SecureRecorderListener(@SuppressWarnings("removal") AccessControlContext context, FlightRecorderListener changeListener) {
             this.context = Objects.requireNonNull(context);
             this.changeListener = Objects.requireNonNull(changeListener);
         }
 
+        @SuppressWarnings("removal")
         @Override
         public void recordingStateChanged(Recording recording) {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -110,6 +113,7 @@ public final class SecuritySupport {
             }, context);
         }
 
+        @SuppressWarnings("removal")
         @Override
         public void recorderInitialized(FlightRecorder recorder) {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -172,6 +176,7 @@ public final class SecuritySupport {
             return path.toFile();
         }
 
+        @Override
         public String toString() {
             return text;
         }
@@ -183,8 +188,8 @@ public final class SecuritySupport {
 
         @Override
         public boolean equals(Object other) {
-            if(other != null && other instanceof SafePath){
-                return this.toPath().equals(((SafePath) other).toPath());
+            if(other != null && other instanceof SafePath s){
+                return this.toPath().equals(s.toPath());
             }
             return false;
         }
@@ -203,6 +208,7 @@ public final class SecuritySupport {
         public T call();
     }
 
+    @SuppressWarnings("removal")
     private static <U> U doPrivilegedIOWithReturn(Callable<U> function) throws IOException {
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<U>() {
@@ -227,6 +233,7 @@ public final class SecuritySupport {
         });
     }
 
+    @SuppressWarnings("removal")
     private static void doPrivileged(Runnable function, Permission... perms) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
@@ -237,6 +244,7 @@ public final class SecuritySupport {
         }, null, perms);
     }
 
+    @SuppressWarnings("removal")
     private static void doPrivileged(Runnable function) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
@@ -247,6 +255,7 @@ public final class SecuritySupport {
         });
     }
 
+    @SuppressWarnings("removal")
     private static <T> T doPrivilegedWithReturn(CallableWithoutCheckException<T> function, Permission... perms) {
         return AccessController.doPrivileged(new PrivilegedAction<T>() {
             @Override
@@ -430,6 +439,7 @@ public final class SecuritySupport {
         doPrivileged(() -> constructor.setAccessible(true), new ReflectPermission("suppressAccessChecks"));
     }
 
+    @SuppressWarnings("removal")
     static void ensureClassIsInitialized(Class<?> clazz) {
         try {
             MethodHandles.Lookup lookup;
@@ -451,6 +461,7 @@ public final class SecuritySupport {
         }
     }
 
+    @SuppressWarnings("removal")
     static Class<?> defineClass(Class<?> lookupClass, byte[] bytes) {
         return AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
             @Override
@@ -468,7 +479,7 @@ public final class SecuritySupport {
         return doPrivilegedWithReturn(() -> new Thread(runnable, threadName), new Permission[0]);
     }
 
-    static void setDaemonThread(Thread t, boolean daemon) {
+    public static void setDaemonThread(Thread t, boolean daemon) {
       doPrivileged(()-> t.setDaemon(daemon), new RuntimePermission("modifyThread"));
     }
 
@@ -476,7 +487,7 @@ public final class SecuritySupport {
         return new SafePath(doPrivilegedIOWithReturn((()-> path.toPath().toAbsolutePath())));
     }
 
-    private final static class Privileged extends FileAccess {
+    private static final class Privileged extends FileAccess {
         @Override
         public RandomAccessFile openRAF(File f, String mode) throws IOException {
             return doPrivilegedIOWithReturn( () -> new RandomAccessFile(f, mode));
@@ -504,6 +515,18 @@ public final class SecuritySupport {
         @Override
         public boolean exists(Path p) throws IOException {
             return doPrivilegedIOWithReturn( () -> Files.exists(p));
+        }
+
+        @Override
+        public boolean isDirectory(Path p) {
+            return doPrivilegedWithReturn( () -> Files.isDirectory(p));
+        }
+
+        @Override
+        public FileTime getLastModified(Path p) throws IOException {
+            // Timestamp only needed when examining repository for other JVMs,
+            // in which case an unprivileged mode should be used.
+            throw new InternalError("Should not reach here");
         }
     }
 

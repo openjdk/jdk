@@ -29,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
@@ -1745,7 +1746,7 @@ void PerfMemory::create_memory_region(size_t size) {
       if (PrintMiscellaneous && Verbose) {
         warning("Reverting to non-shared PerfMemory region.\n");
       }
-      PerfDisableSharedMem = true;
+      FLAG_SET_ERGO(PerfDisableSharedMem, true);
       _start = create_standard_memory(size);
     }
   }
@@ -1823,7 +1824,7 @@ void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode,
 // the indicated process's PerfData memory region from this
 // process's address space.
 //
-void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
+void PerfMemory::detach(char* addr, size_t bytes) {
 
   assert(addr != 0, "address sanity check");
   assert(bytes > 0, "capacity sanity check");

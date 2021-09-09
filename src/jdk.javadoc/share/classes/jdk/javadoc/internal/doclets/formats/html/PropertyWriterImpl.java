@@ -33,7 +33,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
@@ -81,7 +81,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     public Content getPropertyDocTreeHeader(ExecutableElement property) {
         Content propertyDocTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(utils.getPropertyLabel(name(property))));
+                Text.of(utils.getPropertyLabel(name(property))));
         propertyDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, propertyDocTree)
                 .setId(htmlIds.forProperty(property));
@@ -172,11 +172,11 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = new StringContent(utils.isClass(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Properties_Declared_In_Class")
                     : resources.getText("doclet.Properties_Declared_In_Interface"));
         } else {
-            label = new StringContent(utils.isClass(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Properties_Inherited_From_Class")
                     : resources.getText("doclet.Properties_Inherited_From_Interface"));
         }
@@ -193,7 +193,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                                   Content tdSummary) {
         Content memberLink = writer.getDocLink(context, typeElement,
                 member,
-                new StringContent(utils.getPropertyLabel(name(member))),
+                Text.of(utils.getPropertyLabel(name(member))),
                 HtmlStyle.memberNameLink,
                 true);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class setnotif001 {
         }
     }
 
-    native static void enableEv();
+    native static void enableEv(Thread notifyFramePopThread);
     native static int getRes();
 
     static int fld = 1;
@@ -55,7 +55,7 @@ public class setnotif001 {
     public static int run(String argv[], PrintStream ref) {
         setnotif001 t = new setnotif001();
         fld++;
-        enableEv();
+        enableEv(Thread.currentThread());
         t.meth();
         Thread thr = new Thread(new setnotif001a());
         thr.start();

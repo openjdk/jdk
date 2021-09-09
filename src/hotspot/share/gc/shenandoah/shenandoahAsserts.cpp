@@ -142,7 +142,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   msg.append("\n");
 
   if (level >= _safe_oop) {
-    oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
     msg.append("Forwardee:\n");
     if (obj != fwd) {
       if (level >= _safe_oop_fwd) {
@@ -157,8 +157,8 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   }
 
   if (level >= _safe_oop_fwd) {
-    oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-    oop fwd2 = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
+    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+    oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
     if (fwd != fwd2) {
       msg.append("Second forwardee:\n");
       print_obj_safe(msg, fwd2);
@@ -213,7 +213,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file,line);
   }
 
-  oop fwd = oop(ShenandoahForwarding::get_forwardee_raw_unchecked(obj));
+  oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj != fwd) {
     // When Full GC moves the objects, we cannot trust fwdptrs. If we got here, it means something
@@ -246,7 +246,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     }
 
     // Step 4. Check for multiple forwardings
-    oop fwd2 = oop(ShenandoahForwarding::get_forwardee_raw_unchecked(fwd));
+    oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
     if (fwd != fwd2) {
       print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
                     "Multiple forwardings",
@@ -288,7 +288,7 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
 
 void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
-  oop fwd = oop(ShenandoahForwarding::get_forwardee_raw_unchecked(obj));
+  oop fwd =   ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj == fwd) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_forwarded failed",
@@ -299,7 +299,7 @@ void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char
 
 void ShenandoahAsserts::assert_not_forwarded(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
-  oop fwd = oop(ShenandoahForwarding::get_forwardee_raw_unchecked(obj));
+  oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj != fwd) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_not_forwarded failed",
@@ -315,6 +315,28 @@ void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *f
   if (!heap->marking_context()->is_marked(obj)) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked failed",
                   "Object should be marked",
+                  file, line);
+  }
+}
+
+void ShenandoahAsserts::assert_marked_weak(void *interior_loc, oop obj, const char *file, int line) {
+  assert_correct(interior_loc, obj, file, line);
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->marking_context()->is_marked_weak(obj)) {
+    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked_weak failed",
+                  "Object should be marked weakly",
+                  file, line);
+  }
+}
+
+void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const char *file, int line) {
+  assert_correct(interior_loc, obj, file, line);
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->marking_context()->is_marked_strong(obj)) {
+    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked_strong failed",
+                  "Object should be marked strongly",
                   file, line);
   }
 }

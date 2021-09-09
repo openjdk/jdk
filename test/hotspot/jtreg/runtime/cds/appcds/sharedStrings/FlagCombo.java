@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @test
  * @summary Test relevant combinations of command line flags with shared strings
  * @requires vm.cds.archived.java.heap & vm.hasJFR
+ * @requires vm.gc == null
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build HelloString
  * @run driver FlagCombo
@@ -36,6 +37,7 @@
  * @summary Test relevant combinations of command line flags with shared strings
  * @comment A special test excluding the case that requires JFR
  * @requires vm.cds.archived.java.heap & !vm.hasJFR
+ * @requires vm.gc == null
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build HelloString
  * @run driver FlagCombo noJfr
@@ -55,7 +57,7 @@ public class FlagCombo {
 
         if (args.length == 0) {
             SharedStringsUtils.runWithArchiveAuto("HelloString",
-                "-XX:StartFlightRecording=dumponexit=true");
+                "-XX:StartFlightRecording:dumponexit=true");
         }
 
         SharedStringsUtils.runWithArchive("HelloString", "-XX:+UnlockDiagnosticVMOptions",

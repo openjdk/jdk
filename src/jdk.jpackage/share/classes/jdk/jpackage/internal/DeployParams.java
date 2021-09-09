@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class DeployParams {
         if (!Files.isSymbolicLink(root)) {
             if (Files.isDirectory(root)) {
                 try (Stream<Path> stream = Files.list(root)) {
-                    List<Path> children = stream.collect(Collectors.toList());
+                    List<Path> children = stream.toList();
                     if (children != null && children.size() > 0) {
                         children.forEach(f -> {
                             try {

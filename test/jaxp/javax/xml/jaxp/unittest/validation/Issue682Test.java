@@ -42,7 +42,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Issue682Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Issue682Test
  * @run testng/othervm validation.Issue682Test
  * @summary Test comination of fields in <xsd:unique>, for https://issues.apache.org/jira/browse/XERCESJ-682.
  */

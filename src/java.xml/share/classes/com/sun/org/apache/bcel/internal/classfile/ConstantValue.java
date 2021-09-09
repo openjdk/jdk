@@ -36,7 +36,7 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class ConstantValue extends Attribute {
 
-    private int constantvalue_index;
+    private int constantValueIndex;
 
 
     /**
@@ -65,13 +65,13 @@ public final class ConstantValue extends Attribute {
     /**
      * @param name_index Name index in constant pool
      * @param length Content length in bytes
-     * @param constantvalue_index Index in constant pool
+     * @param constantValueIndex Index in constant pool
      * @param constant_pool Array of constants
      */
-    public ConstantValue(final int name_index, final int length, final int constantvalue_index,
+    public ConstantValue(final int name_index, final int length, final int constantValueIndex,
             final ConstantPool constant_pool) {
         super(Const.ATTR_CONSTANT_VALUE, name_index, length, constant_pool);
-        this.constantvalue_index = constantvalue_index;
+        this.constantValueIndex = constantValueIndex;
     }
 
 
@@ -97,7 +97,7 @@ public final class ConstantValue extends Attribute {
     @Override
     public void dump( final DataOutputStream file ) throws IOException {
         super.dump(file);
-        file.writeShort(constantvalue_index);
+        file.writeShort(constantValueIndex);
     }
 
 
@@ -105,15 +105,15 @@ public final class ConstantValue extends Attribute {
      * @return Index in constant pool of constant value.
      */
     public int getConstantValueIndex() {
-        return constantvalue_index;
+        return constantValueIndex;
     }
 
 
     /**
-     * @param constantvalue_index the index info the constant pool of this constant value
+     * @param constantValueIndex the index info the constant pool of this constant value
      */
-    public void setConstantValueIndex( final int constantvalue_index ) {
-        this.constantvalue_index = constantvalue_index;
+    public void setConstantValueIndex( final int constantValueIndex ) {
+        this.constantValueIndex = constantValueIndex;
     }
 
 
@@ -122,7 +122,7 @@ public final class ConstantValue extends Attribute {
      */
     @Override
     public String toString() {
-        Constant c = super.getConstantPool().getConstant(constantvalue_index);
+        Constant c = super.getConstantPool().getConstant(constantValueIndex);
         String buf;
         int i;
         // Print constant to string depending on its type

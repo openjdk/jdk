@@ -24,10 +24,10 @@
 /**
  * @test
  * @bug 8241232
+ * @requires vm.flagless
  * @requires vm.jvmci
  * @library /test/lib
- * @build TestInvalidTieredStopAtLevel jdk.test.lib.process.*
- * @run main TestInvalidTieredStopAtLevel
+ * @run driver TestInvalidTieredStopAtLevel
  */
 
 import jdk.test.lib.process.ProcessTools;

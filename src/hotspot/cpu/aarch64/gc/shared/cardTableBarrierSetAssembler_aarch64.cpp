@@ -46,7 +46,6 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 
   if (UseCondCardMark) {
     Label L_already_dirty;
-    __ membar(Assembler::StoreLoad);
     __ ldrb(rscratch2,  Address(obj, rscratch1));
     __ cbz(rscratch2, L_already_dirty);
     __ strb(zr, Address(obj, rscratch1));

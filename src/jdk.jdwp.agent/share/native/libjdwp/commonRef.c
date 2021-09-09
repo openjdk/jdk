@@ -205,7 +205,9 @@ weakenNode(JNIEnv *env, RefNode *node)
         }
         return weakRef;
     } else {
-        node->strongCount--;
+        if (node->strongCount > 0) {
+            node->strongCount--;
+        }
         return node->ref;
     }
 }

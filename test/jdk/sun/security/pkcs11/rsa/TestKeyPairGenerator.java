@@ -31,7 +31,7 @@
  * @modules jdk.crypto.cryptoki
  * @build jdk.test.lib.RandomFactory
  * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
- * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
+ * @run main/othervm -Djava.security.manager=allow -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
  *                                                   sm TestKeyPairGenerator.policy
  * @key randomness
  */

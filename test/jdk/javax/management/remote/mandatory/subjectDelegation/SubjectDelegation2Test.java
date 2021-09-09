@@ -31,11 +31,11 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean SubjectDelegation2Test SimpleStandard SimpleStandardMBean
  * @run build SubjectDelegation2Test SimpleStandard SimpleStandardMBean
- * @run main SubjectDelegation2Test policy21 ok
- * @run main SubjectDelegation2Test policy22 ko
- * @run main SubjectDelegation2Test policy23 ko
- * @run main SubjectDelegation2Test policy24 ok
- * @run main SubjectDelegation2Test policy25 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation2Test policy21 ok
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation2Test policy22 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation2Test policy23 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation2Test policy24 ok
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation2Test policy25 ko
  */
 
 import com.sun.jmx.remote.security.JMXPluggableAuthenticator;

@@ -29,7 +29,7 @@
  * @modules jdk.compiler
  *          jdk.zipfs
  * @compile -XDignore.symbol.file LambdaAccessControlDoPrivilegedTest.java LUtils.java
- * @run main/othervm LambdaAccessControlDoPrivilegedTest
+ * @run main/othervm -Djava.security.manager=allow LambdaAccessControlDoPrivilegedTest
  */
 import java.io.File;
 import java.util.ArrayList;
@@ -77,7 +77,9 @@ public class LambdaAccessControlDoPrivilegedTest extends LUtils {
         doprivClass.delete();
         tr = doExec(JAVA_CMD.getAbsolutePath(),
                     "-Xbootclasspath/a:foo.jar",
-                    "-cp", ".", "Bar");
+                    "-cp", ".",
+                    "-Djava.security.manager=allow",
+                    "Bar");
         tr.assertZero("testDoPrivileged fails");
         barJava.delete();
         barClass.delete();

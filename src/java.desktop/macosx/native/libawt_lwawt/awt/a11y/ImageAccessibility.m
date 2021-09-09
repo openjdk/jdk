@@ -29,9 +29,24 @@
  * Implementation of the accessibility peer for the icon role
  */
 @implementation ImageAccessibility
-- (nullable NSString *)accessibilityLabel
+- (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-    return [self accessibilityTitleAttribute];
+    return NSAccessibilityImageRole;
+}
+
+- (NSString * _Nullable)accessibilityLabel
+{
+    return [super accessibilityLabel];
+}
+
+- (NSRect)accessibilityFrame
+{
+    return [super accessibilityFrame];
+}
+
+- (id)accessibilityParent
+{
+    return [super accessibilityParent];
 }
 
 @end

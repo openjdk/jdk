@@ -39,8 +39,8 @@
 
 class BitMap;
 class CardTableBarrierSet;
-class G1BlockOffsetTable;
 class CodeBlobClosure;
+class G1AbstractSubTask;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1HotCardCache;
@@ -57,6 +57,9 @@ class HeapRegionClaimer;
 // external heap references into it.  Uses a mod ref bs to track updates,
 // so that they can be used to update the individual region remsets.
 class G1RemSet: public CHeapObj<mtGC> {
+public:
+  typedef CardTable::CardValue CardValue;
+
 private:
   G1RemSetScanState* _scan_state;
 
@@ -72,10 +75,10 @@ private:
   void print_merge_heap_roots_stats();
 
   void assert_scan_top_is_null(uint hrm_index) NOT_DEBUG_RETURN;
+
+  void enqueue_for_reprocessing(CardValue* card_ptr);
+
 public:
-
-  typedef CardTable::CardValue CardValue;
-
   // Initialize data that depends on the heap size being known.
   void initialize(uint max_reserved_regions);
 
@@ -107,8 +110,12 @@ public:
   // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.
   void prepare_for_scan_heap_roots();
-  // Cleans the card table from temporary duplicate detection information.
-  void cleanup_after_scan_heap_roots();
+
+  // Print coarsening stats.
+  void print_coarsen_stats();
+  // Creates a gang task for cleaining up temporary data structures and the
+  // card table, removing temporary duplicate detection information.
+  G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task();
   // Excludes the given region from heap root scanning.
   void exclude_region_from_scan(uint region_idx);
   // Creates a snapshot of the current _top values at the start of collection to

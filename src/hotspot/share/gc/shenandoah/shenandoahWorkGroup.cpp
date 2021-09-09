@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,18 +71,8 @@ ShenandoahPushWorkerScope::~ShenandoahPushWorkerScope() {
   assert(nworkers == _old_workers, "Must be able to restore");
 }
 
-ShenandoahPushWorkerQueuesScope::ShenandoahPushWorkerQueuesScope(WorkGang* workers, ShenandoahObjToScanQueueSet* queues, uint nworkers, bool check) :
-  ShenandoahPushWorkerScope(workers, nworkers, check), _queues(queues) {
-  _queues->reserve(_n_workers);
-}
-
-ShenandoahPushWorkerQueuesScope::~ShenandoahPushWorkerQueuesScope() {
-  // Restore old worker value
-  _queues->reserve(_old_workers);
-}
-
-AbstractGangWorker* ShenandoahWorkGang::install_worker(uint which) {
-  AbstractGangWorker* worker = WorkGang::install_worker(which);
+GangWorker* ShenandoahWorkGang::install_worker(uint which) {
+  GangWorker* worker = WorkGang::install_worker(which);
   ShenandoahThreadLocalData::create(worker);
   if (_initialize_gclab) {
     ShenandoahThreadLocalData::initialize_gclab(worker);

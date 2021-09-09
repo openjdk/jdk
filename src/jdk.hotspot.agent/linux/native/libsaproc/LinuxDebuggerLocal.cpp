@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, 2020, NTT DATA.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class AutoJavaString {
 public:
   // check env->ExceptionOccurred() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
-    : m_env(env), m_str(str), m_buf(env->GetStringUTFChars(str, NULL)) {
+    : m_env(env), m_str(str), m_buf(str == NULL ? NULL : env->GetStringUTFChars(str, NULL)) {
   }
 
   ~AutoJavaString() {
@@ -183,28 +183,33 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
     CHECK_EXCEPTION;
     env->CallBooleanMethod(threadList, listAdd_ID, thread);
     CHECK_EXCEPTION;
+    env->DeleteLocalRef(thread);
+    env->DeleteLocalRef(threadList);
   }
 
   // add load objects
   n = get_num_libs(ph);
   for (i = 0; i < n; i++) {
-     uintptr_t base;
+     uintptr_t base, memsz;
      const char* name;
      jobject loadObject;
      jobject loadObjectList;
      jstring str;
 
-     base = get_lib_base(ph, i);
+     get_lib_addr_range(ph, i, &base, &memsz);
      name = get_lib_name(ph, i);
 
      str = env->NewStringUTF(name);
      CHECK_EXCEPTION;
-     loadObject = env->CallObjectMethod(this_obj, createLoadObject_ID, str, (jlong)0, (jlong)base);
+     loadObject = env->CallObjectMethod(this_obj, createLoadObject_ID, str, (jlong)memsz, (jlong)base);
      CHECK_EXCEPTION;
      loadObjectList = env->GetObjectField(this_obj, loadObjectList_ID);
      CHECK_EXCEPTION;
      env->CallBooleanMethod(loadObjectList, listAdd_ID, loadObject);
      CHECK_EXCEPTION;
+     env->DeleteLocalRef(str);
+     env->DeleteLocalRef(loadObject);
+     env->DeleteLocalRef(loadObjectList);
   }
 }
 
@@ -345,12 +350,14 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_l
   jlong addr;
   jboolean isCopy;
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
+  // Note, objectName is ignored, and may in fact be NULL.
+  // lookup_symbol will always search all objects/libs
   AutoJavaString objectName_cstr(env, objectName);
   CHECK_EXCEPTION_(0);
   AutoJavaString symbolName_cstr(env, symbolName);
   CHECK_EXCEPTION_(0);
 
-  addr = (jlong) lookup_symbol(ph, objectName_cstr, symbolName_cstr);
+  addr = (jlong) lookup_symbol(ph, NULL, symbolName_cstr);
   return addr;
 }
 

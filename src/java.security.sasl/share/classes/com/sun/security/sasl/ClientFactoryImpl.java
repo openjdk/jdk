@@ -48,7 +48,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *
  * @author Rosanna Lee
  */
-final public class ClientFactoryImpl implements SaslClientFactory {
+public final class ClientFactoryImpl implements SaslClientFactory {
     private static final String[] myMechs = {
         "EXTERNAL",
         "CRAM-MD5",

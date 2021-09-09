@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public interface JavaLangAccess {
      * Returns a new Thread with the given Runnable and an
      * inherited AccessControlContext.
      */
-    Thread newThreadWithAcc(Runnable target, AccessControlContext acc);
+    Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc);
 
     /**
      * Invokes the finalize method of the given object.
@@ -161,7 +161,7 @@ public interface JavaLangAccess {
     /**
      * Returns a class loaded by the bootstrap class loader.
      */
-    Class<?> findBootstrapClassOrNull(ClassLoader cl, String name);
+    Class<?> findBootstrapClassOrNull(String name);
 
     /**
      * Define a Package of the given name and module by the given class loader.
@@ -257,6 +257,21 @@ public interface JavaLangAccess {
     boolean isReflectivelyOpened(Module module, String pn, Module other);
 
     /**
+     * Updates module m to allow access to restricted methods.
+     */
+    Module addEnableNativeAccess(Module m);
+
+    /**
+     * Updates all unnamed modules to allow access to restricted methods.
+     */
+    void addEnableNativeAccessAllUnnamed();
+
+    /**
+     * Returns true if module m can access restricted methods.
+     */
+    boolean isEnableNativeAccess(Module m);
+
+    /**
      * Returns the ServicesCatalog for the given Layer.
      */
     ServicesCatalog getServicesCatalog(ModuleLayer layer);
@@ -329,6 +344,19 @@ public interface JavaLangAccess {
     byte[] getBytesUTF8NoRepl(String s);
 
     /**
+     * Inflated copy from byte[] to char[], as defined by StringLatin1.inflate
+     */
+    void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+
+    /**
+     * Decodes ASCII from the source byte array into the destination
+     * char array.
+     *
+     * @return the number of bytes successfully decoded, at most len
+     */
+    int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+
+    /**
      * Set the cause of Throwable
      * @param cause set t's cause to new value
      */
@@ -354,10 +382,23 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
+    /**
+     * Join strings
+     */
+    String join(String prefix, String suffix, String delimiter, String[] elements, int size);
+
     /*
      * Get the class data associated with the given class.
      * @param c the class
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
+
+    long findNative(ClassLoader loader, String entry);
+
+    /**
+     * Direct access to Shutdown.exit to avoid security manager checks
+     * @param statusCode the status code
+     */
+    void exit(int statusCode);
 }

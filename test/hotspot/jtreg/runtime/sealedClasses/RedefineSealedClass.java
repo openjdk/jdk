@@ -29,9 +29,10 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
- * @compile --enable-preview -source ${jdk.version} RedefineSealedClass.java
- * @run main/othervm --enable-preview RedefineSealedClass buildagent
- * @run main/othervm/timeout=6000 --enable-preview RedefineSealedClass runtest
+ * @requires vm.flagless
+ * @compile RedefineSealedClass.java
+ * @run driver RedefineSealedClass buildagent
+ * @run driver/timeout=6000 RedefineSealedClass runtest
  */
 
 import java.io.FileNotFoundException;
@@ -44,6 +45,7 @@ import java.security.ProtectionDomain;
 import java.util.spi.ToolProvider;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefineSealedClass {
 
@@ -105,11 +107,11 @@ public class RedefineSealedClass {
         }
         if (argv.length == 1 && argv[0].equals("runtest")) {
             String[] javaArgs1 = { "-XX:MetaspaceSize=12m", "-XX:MaxMetaspaceSize=12m",
-                                   "-javaagent:redefineagent.jar", "--enable-preview",
-                                   "RedefineSealedClass"};
+                                   "-javaagent:redefineagent.jar", "RedefineSealedClass"};
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotContain("processing of -javaagent failed");
+            output.shouldHaveExitValue(0);
         }
     }
 }

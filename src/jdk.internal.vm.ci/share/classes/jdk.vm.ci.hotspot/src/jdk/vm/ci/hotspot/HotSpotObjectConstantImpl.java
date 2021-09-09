@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.JavaConstant;
@@ -184,7 +185,15 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     }
 
     public JavaConstant readFieldValue(HotSpotResolvedJavaField field, boolean isVolatile) {
-        return runtime().reflection.readFieldValue(this, field, isVolatile);
+        if (IS_IN_NATIVE_IMAGE && this instanceof DirectHotSpotObjectConstantImpl) {
+            // cannot read fields from objects due to lack of
+            // general reflection support in native image
+            return null;
+        }
+        if (field.isStatic()) {
+            return null;
+        }
+        return runtime().compilerToVm.readFieldValue(this, (HotSpotResolvedObjectTypeImpl) field.getDeclaringClass(), field.getOffset(), isVolatile, field.getType().getJavaKind());
     }
 
     public ResolvedJavaType asJavaType() {

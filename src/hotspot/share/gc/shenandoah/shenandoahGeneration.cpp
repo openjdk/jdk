@@ -279,7 +279,6 @@ ShenandoahGeneration::ShenandoahGeneration(GenerationMode generation_mode,
   assert(max_workers > 0, "At least one queue");
   for (uint i = 0; i < max_workers; ++i) {
     ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
-    task_queue->initialize();
     _task_queues->register_queue(i, task_queue);
   }
 }

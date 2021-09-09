@@ -488,7 +488,7 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
 
   // Verify that I can find this object within its enclosing card by scanning forward from first_start.
   while (base_addr + offset < address) {
-    oop obj = oop(base_addr + offset);
+    oop obj = cast_to_oop(base_addr + offset);
     if (!ctx || ctx->is_marked(obj)) {
       offset += obj->size();
     } else {
@@ -522,7 +522,7 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
   if (!ctx) {
     do {
       HeapWord* obj_addr = base_addr + offset;
-      oop obj = oop(base_addr + offset);
+      oop obj = cast_to_oop(base_addr + offset);
       prev_offset = offset;
       offset += obj->size();
     } while (offset < max_offset);
@@ -557,11 +557,11 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
     HeapWord* end_of_interest = base_addr + max_offset;
     do {
       HeapWord* obj_addr = base_addr + offset;
-      oop obj = oop(base_addr + offset);
+      oop obj = cast_to_oop(base_addr + offset);
       prev_offset = offset;
       offset = ctx->get_next_marked_addr(base_addr + offset, end_of_interest) - base_addr;
     } while (offset < max_offset);
-    oop last_obj = oop(base_addr + prev_offset);
+    oop last_obj = cast_to_oop(base_addr + prev_offset);
     if (prev_offset + last_obj->size() >= max_offset) {
       if (_scc->get_last_start(index) != prev_offset) {
         return false;
@@ -653,7 +653,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
 
           p += start_offset;
           while (p < endp) {
-            oop obj = oop(p);
+            oop obj = cast_to_oop(p);
 
             // ctx->is_marked() returns true if mark bit set or if obj above TAMS.
             if (!ctx || ctx->is_marked(obj)) {
@@ -703,7 +703,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
         size_t start_offset = _scc->get_last_start(card_index);
         HeapWord *card_start = _rs->addr_for_card_index(card_index);
         HeapWord *p = card_start + start_offset;
-        oop obj = oop(p);
+        oop obj = cast_to_oop(p);
 
         size_t last_card;
         if (!ctx || ctx->is_marked(obj)) {

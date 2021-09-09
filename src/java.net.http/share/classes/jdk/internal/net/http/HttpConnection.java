@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import jdk.internal.net.http.common.SequentialScheduler.DeferredCompleter;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
 /**
  * Wraps socket channel layer and takes care of SSL also.
@@ -150,6 +151,51 @@ abstract class HttpConnection implements Closeable {
                 (connected() ? !getConnectionFlow().isFinished() : true);
     }
 
+    /**
+     * Forces a call to the native implementation of the
+     * connection's channel to verify that this channel is still
+     * open.
+     * <p>
+     * This method should only be called just after an HTTP/1.1
+     * connection is retrieved from the HTTP/1.1 connection pool.
+     * It is used to trigger an early detection of the channel state,
+     * before handling the connection over to the HTTP stack.
+     * It helps minimizing race conditions where the selector manager
+     * thread hasn't woken up - or hasn't raised the event, before
+     * the connection was retrieved from the pool. It helps reduce
+     * the occurrence of "HTTP/1.1 parser received no bytes"
+     * exception, when the server closes the connection while
+     * it's being taken out of the pool.
+     * <p>
+     * This method attempts to read one byte from the underlying
+     * channel. Because the connection was in the pool - there
+     * should be nothing to read.
+     * <p>
+     * If {@code read} manages to read a byte off the connection, this is a
+     * protocol error: the method closes the connection and returns false.
+     * If {@code read} returns EOF, the method closes the connection and
+     * returns false.
+     * If {@code read} throws an exception, the method returns false.
+     * Otherwise, {@code read} returns 0, the channel appears to be
+     * still open, and the method returns true.
+     * @return true if the channel appears to be still open.
+     */
+    final boolean checkOpen() {
+        if (isOpen()) {
+            try {
+                // channel is non blocking
+                int read = channel().read(ByteBuffer.allocate(1));
+                if (read == 0) return true;
+                close();
+            } catch (IOException x) {
+                debug.log("Pooled connection is no longer operational: %s",
+                        x.toString());
+                return false;
+            }
+        }
+        return false;
+    }
+
     interface HttpPublisher extends FlowTube.TubePublisher {
         void enqueue(List<ByteBuffer> buffers) throws IOException;
         void enqueueUnordered(List<ByteBuffer> buffers) throws IOException;
@@ -206,7 +252,7 @@ abstract class HttpConnection implements Closeable {
 
         if (!secure) {
             c = pool.getConnection(false, addr, proxy);
-            if (c != null && c.isOpen() /* may have been eof/closed when in the pool */) {
+            if (c != null && c.checkOpen() /* may have been eof/closed when in the pool */) {
                 final HttpConnection conn = c;
                 if (DEBUG_LOGGER.on())
                     DEBUG_LOGGER.log(conn.getConnectionFlow()
@@ -306,14 +352,10 @@ abstract class HttpConnection implements Closeable {
     // Composes a new immutable HttpHeaders that combines the
     // user and system header but only keeps those headers that
     // start with "proxy-"
-    private static HttpHeaders proxyTunnelHeaders(HttpRequestImpl request) {
-        Map<String, List<String>> combined = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        combined.putAll(request.getSystemHeadersBuilder().map());
-        combined.putAll(request.headers().map()); // let user override system
-
-        // keep only proxy-* - and also strip authorization headers
-        // for disabled schemes
-        return HttpHeaders.of(combined, Utils.PROXY_TUNNEL_FILTER);
+    private static ProxyHeaders proxyTunnelHeaders(HttpRequestImpl request) {
+        HttpHeaders userHeaders = HttpHeaders.of(request.headers().map(), Utils.PROXY_TUNNEL_FILTER);
+        HttpHeaders systemHeaders = HttpHeaders.of(request.getSystemHeadersBuilder().map(), Utils.PROXY_TUNNEL_FILTER);
+        return new ProxyHeaders(userHeaders, systemHeaders);
     }
 
     /* Returns either a plain HTTP connection or a plain tunnelling connection
@@ -350,7 +392,7 @@ abstract class HttpConnection implements Closeable {
                 .map((s) -> !s.equalsIgnoreCase("close"))
                 .orElse(true);
 
-        if (keepAlive && isOpen()) {
+        if (keepAlive && checkOpen()) {
             Log.logTrace("Returning connection to the pool: {0}", this);
             pool.returnToPool(this);
         } else {

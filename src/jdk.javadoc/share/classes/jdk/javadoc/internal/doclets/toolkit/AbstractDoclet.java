@@ -267,17 +267,22 @@ public abstract class AbstractDoclet implements Doclet {
      */
     protected void generateClassFiles(ClassTree classtree)
             throws DocletException {
+
+        SortedSet<TypeElement> classes = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
+
         // handle classes specified as files on the command line
         for (PackageElement pkg : configuration.typeElementCatalog.packages()) {
-            generateClassFiles(configuration.typeElementCatalog.allClasses(pkg), classtree);
+            classes.addAll(configuration.typeElementCatalog.allClasses(pkg));
         }
 
-        // handle classes specified in m odules and packages on the command line
+        // handle classes specified in modules and packages on the command line
         SortedSet<PackageElement> packages = new TreeSet<>(utils.comparators.makePackageComparator());
         packages.addAll(configuration.getSpecifiedPackageElements());
         configuration.modulePackages.values().stream().forEach(packages::addAll);
         for (PackageElement pkg : packages) {
-            generateClassFiles(utils.getAllClasses(pkg), classtree);
+            classes.addAll(utils.getAllClasses(pkg));
         }
+
+        generateClassFiles(classes, classtree);
     }
 }

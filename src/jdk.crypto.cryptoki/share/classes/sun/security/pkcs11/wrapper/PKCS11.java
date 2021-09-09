@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -57,6 +57,7 @@ import java.security.PrivilegedAction;
 import sun.security.util.Debug;
 
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
 
 /**
  * This is the default implementation of the PKCS11 interface. IT connects to
@@ -81,7 +82,8 @@ public class PKCS11 {
         // cannot use LoadLibraryAction because that would make the native
         // library available to the bootclassloader, but we run in the
         // extension classloader.
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 System.loadLibrary(PKCS11_WRAPPER);
                 return null;

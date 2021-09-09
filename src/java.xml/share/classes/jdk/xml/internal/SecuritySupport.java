@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public class SecuritySupport {
      * @param propName the name of the property
      * @return the value of the property
      */
+    @SuppressWarnings("removal")
     public static String getSystemProperty(final String propName) {
         return
         AccessController.doPrivileged(
@@ -206,6 +207,7 @@ public class SecuritySupport {
      * @param f the file to be tested
      * @return true if it is a directory, false otherwise
      */
+    @SuppressWarnings("removal")
     public static boolean isDirectory(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
                 -> f.isDirectory()));
@@ -217,6 +219,7 @@ public class SecuritySupport {
      * @param f the file to be tested
      * @return true if the file exists, false otherwise
      */
+    @SuppressWarnings("removal")
     public static boolean isFileExists(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
                 -> f.exists()));
@@ -228,6 +231,7 @@ public class SecuritySupport {
      * @return the FileInputStream
      * @throws FileNotFoundException if the file is not found
      */
+    @SuppressWarnings("removal")
     public static FileInputStream getFileInputStream(final File file)
             throws FileNotFoundException {
         try {
@@ -243,6 +247,7 @@ public class SecuritySupport {
      * @param name the resource name
      * @return the resource stream
      */
+    @SuppressWarnings("removal")
     public static InputStream getResourceAsStream(final String name) {
         return AccessController.doPrivileged((PrivilegedAction<InputStream>) () ->
                 SecuritySupport.class.getResourceAsStream("/"+name));
@@ -263,6 +268,7 @@ public class SecuritySupport {
      * @param locale the locale for which a resource bundle is desired
      * @return a resource bundle for the given base name and locale
      */
+    @SuppressWarnings("removal")
     public static ResourceBundle getResourceBundle(final String bundle, final Locale locale) {
         return AccessController.doPrivileged((PrivilegedAction<ResourceBundle>) () -> {
             try {
@@ -283,6 +289,7 @@ public class SecuritySupport {
      * @param f the specified file
      * @return true if the file exists, false otherwise
      */
+    @SuppressWarnings("removal")
     public static boolean doesFileExist(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> f.exists()));
     }
@@ -292,6 +299,7 @@ public class SecuritySupport {
      * @param f the specified file
      * @return the LastModified attribute
      */
+    @SuppressWarnings("removal")
     static long getLastModified(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Long>) () -> f.lastModified()));
     }
@@ -373,6 +381,7 @@ public class SecuritySupport {
          return false;
      }
 
+    @SuppressWarnings("removal")
     public static ClassLoader getContextClassLoader() {
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -383,6 +392,7 @@ public class SecuritySupport {
     }
 
 
+    @SuppressWarnings("removal")
     public static ClassLoader getSystemClassLoader() {
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
             ClassLoader cl = null;
@@ -394,6 +404,7 @@ public class SecuritySupport {
         });
     }
 
+    @SuppressWarnings("removal")
     public static ClassLoader getParentClassLoader(final ClassLoader cl) {
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
             ClassLoader parent = null;
@@ -410,6 +421,7 @@ public class SecuritySupport {
 
 
     // Used for debugging purposes
+    @SuppressWarnings("removal")
     public static String getClassSource(Class<?> cls) {
         return AccessController.doPrivileged((PrivilegedAction<String>) () -> {
             CodeSource cs = cls.getProtectionDomain().getCodeSource();
@@ -429,6 +441,7 @@ public class SecuritySupport {
      * @return the current thread's context class loader, or the system class loader
      * @throws SecurityException
      */
+    @SuppressWarnings("removal")
     public static ClassLoader getClassLoader() throws SecurityException{
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>)() -> {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -440,6 +453,7 @@ public class SecuritySupport {
         });
     }
 
+    @SuppressWarnings("removal")
     public static InputStream getResourceAsStream(final ClassLoader cl, final String name)
     {
         return AccessController.doPrivileged((PrivilegedAction<InputStream>) () -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,6 +534,67 @@ public interface Elements {
     List<? extends Element> getAllMembers(TypeElement type);
 
     /**
+     * {@return the outermost type element an element is contained in
+     * if such a containing element exists; otherwise returns {@code
+     * null}}
+     *
+     * {@linkplain ModuleElement Modules} and {@linkplain
+     * PackageElement packages} do <em>not</em> have a containing type
+     * element and therefore {@code null} is returned for those kinds
+     * of elements.
+     *
+     * A {@link NestingKind#TOP_LEVEL top-level} class or
+     * interface is its own outermost type element.
+     *
+     * @implSpec
+     * The default implementation of this method first checks the kind
+     * of the argument. For elements of kind {@code PACKAGE}, {@code
+     * MODULE}, and {@code OTHER}, {@code null} is returned. For
+     * elements of other kinds, the element is examined to see if it
+     * is a top-level class or interface. If so, that element is
+     * returned; otherwise, the {@linkplain
+     * Element#getEnclosingElement enclosing element} chain is
+     * followed until a top-level class or interface is found. The
+     * element for the eventual top-level class or interface is
+     * returned.
+     *
+     * @param e the element being examined
+     * @see Element#getEnclosingElement
+     * @since 18
+     */
+    default TypeElement getOutermostTypeElement(Element e) {
+        return switch (e.getKind()) {
+        case PACKAGE,
+             MODULE  -> null; // Per the general spec above.
+        case OTHER   -> null; // Outside of base model of the javax.lang.model API
+
+        // Elements of all remaining kinds should be enclosed in some
+        // sort of class or interface. Check to see if the element is
+        // a top-level type; if so, return it. Otherwise, keep going
+        // up the enclosing element chain until a top-level type is
+        // found.
+        default -> {
+            Element enclosing = e;
+            // This implementation is susceptible to infinite loops
+            // for misbehaving element implementations.
+            while (true) {
+                // Conceptual instanceof TypeElement check. If the
+                // argument is a type element, put it into a
+                // one-element list, otherwise an empty list.
+                List<TypeElement> possibleTypeElement = ElementFilter.typesIn(List.of(enclosing));
+                if (!possibleTypeElement.isEmpty()) {
+                    TypeElement typeElement = possibleTypeElement.get(0);
+                    if (typeElement.getNestingKind() == NestingKind.TOP_LEVEL) {
+                        yield typeElement;
+                    }
+                }
+                enclosing = enclosing.getEnclosingElement();
+            }
+        }
+        };
+    }
+
+    /**
      * Returns all annotations <i>present</i> on an element, whether
      * directly present or present via inheritance.
      *
@@ -655,6 +716,22 @@ public interface Elements {
      * @since 1.8
      */
     boolean isFunctionalInterface(TypeElement type);
+
+    /**
+     * {@return {@code true} if the module element is an automatic
+     * module, {@code false} otherwise}
+     *
+     * @implSpec
+     * The default implementation of this method returns {@code
+     * false}.
+     *
+     * @param module the module element being examined
+     * @jls 7.7.1 Dependences
+     * @since 17
+     */
+    default boolean isAutomaticModule(ModuleElement module) {
+        return false;
+    }
 
     /**
      * Returns the record component for the given accessor. Returns null if the

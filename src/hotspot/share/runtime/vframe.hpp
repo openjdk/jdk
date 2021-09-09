@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/oop.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/registerMap.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "utilities/growableArray.hpp"
@@ -51,6 +52,8 @@
 
 // - BasicLock
 
+class StackFrameStream;
+
 class vframe: public ResourceObj {
  protected:
   frame        _fr;      // Raw frame behind the virtual frame.
@@ -60,8 +63,9 @@ class vframe: public ResourceObj {
   vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread);
   vframe(const frame* fr, JavaThread* thread);
  public:
-  // Factory method for creating vframes
+  // Factory methods for creating vframes
   static vframe* new_vframe(const frame* f, const RegisterMap *reg_map, JavaThread* thread);
+  static vframe* new_vframe(StackFrameStream& fst, JavaThread* thread);
 
   // Accessors
   frame              fr()           const { return _fr;       }
@@ -306,6 +310,8 @@ class vframeStreamCommon : StackObj {
   int bci() const { return _bci; }
   inline intptr_t* frame_id() const;
   address frame_pc() const { return _frame.pc(); }
+  inline int vframe_id() const;
+  inline int decode_offset() const;
 
   CodeBlob*          cb()         const { return _frame.cb();  }
   CompiledMethod*   nm()         const {

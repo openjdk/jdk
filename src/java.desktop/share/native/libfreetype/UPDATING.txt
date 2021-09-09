@@ -22,8 +22,7 @@ sources.
 Use "expand" and "sed" to remove tabs and trailing white space from the imported
 sources. The current version of freetype is quite clean in this respect.
 None of files we import have tabs, and ./include/freetype/freetype.h,
-./include/freetype/ftlcdfil.h and ./include/freetype/ftstroke.h have the
-only trailing white space.
+and ./include/freetype/ftlcdfil.h have the only trailing white space.
 If you forget this step, or aren't thorough, jcheck will remind you.
 
 Remember to update the freetype version identified in

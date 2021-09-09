@@ -57,7 +57,7 @@ public enum Wrapper {
         this.wrapperType = wtype;
         this.primitiveType = ptype;
         this.basicTypeChar = tchar;
-        this.basicTypeString = new String(new char[] {this.basicTypeChar});
+        this.basicTypeString = String.valueOf(this.basicTypeChar);
         this.emptyArray = emptyArray;
         this.format = format;
         this.wrapperSimpleName = wtypeName;

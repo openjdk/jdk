@@ -396,7 +396,11 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 #endif
 
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
+  int flags = ShenandoahHeap::HAS_FORWARDED;
+  if (!is_strong) {
+    flags |= ShenandoahHeap::WEAK_ROOTS;
+  }
+  __ testb(gc_state, flags);
   __ jcc(Assembler::zero, heap_stable);
 
   Register tmp1 = noreg, tmp2 = noreg;
@@ -778,13 +782,14 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   //
   // Try to CAS with given arguments. If successful, then we are done.
 
-  if (os::is_MP()) __ lock();
 #ifdef _LP64
   if (UseCompressedOops) {
+    __ lock();
     __ cmpxchgl(newval, addr);
   } else
 #endif
   {
+    __ lock();
     __ cmpxchgptr(newval, addr);
   }
   __ jcc(Assembler::equal, L_success);
@@ -861,13 +866,14 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   }
 #endif
 
-  if (os::is_MP()) __ lock();
 #ifdef _LP64
   if (UseCompressedOops) {
+    __ lock();
     __ cmpxchgl(tmp2, addr);
   } else
 #endif
   {
+    __ lock();
     __ cmpxchgptr(tmp2, addr);
   }
 
@@ -887,13 +893,14 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
     __ movptr(oldval, tmp2);
   }
 
-  if (os::is_MP()) __ lock();
 #ifdef _LP64
   if (UseCompressedOops) {
+    __ lock();
     __ cmpxchgl(newval, addr);
   } else
 #endif
   {
+    __ lock();
     __ cmpxchgptr(newval, addr);
   }
   if (!exchange) {
@@ -995,7 +1002,7 @@ void ShenandoahBarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, Shen
   Register pre_val_reg = stub->pre_val()->as_register();
 
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
   __ cmpptr(pre_val_reg, (int32_t)NULL_WORD);

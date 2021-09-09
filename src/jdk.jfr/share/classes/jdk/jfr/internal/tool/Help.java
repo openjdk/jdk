@@ -26,7 +26,6 @@
 package jdk.jfr.internal.tool;
 
 import java.io.PrintStream;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
@@ -39,9 +38,10 @@ final class Help extends Command {
 
     @Override
     public List<String> getOptionSyntax() {
-        return Collections.singletonList("[<command>]");
+        return List.of("[<command>]");
     }
 
+    @Override
     protected List<String> getAliases() {
         return List.of("--help", "-h", "-?");
     }

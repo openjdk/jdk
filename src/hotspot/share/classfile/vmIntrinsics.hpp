@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,10 +341,6 @@ class methodHandle;
   do_intrinsic(_Preconditions_checkLongIndex, jdk_internal_util_Preconditions, checkIndex_name, Preconditions_checkLongIndex_signature, F_S)   \
    do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
-  do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
-  do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
-   do_name(     checkIndex_name,                                 "checkIndex")                                          \
-                                                                                                                        \
   do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
   do_intrinsic(_hasNegatives,             java_lang_StringCoding, hasNegatives_name, hasNegatives_signature,     F_S)   \
    do_name(     hasNegatives_name,                               "hasNegatives")                                        \
@@ -419,6 +415,11 @@ class methodHandle;
    do_intrinsic(_counterMode_AESCrypt, com_sun_crypto_provider_counterMode, crypt_name, byteArray_int_int_byteArray_int_signature, F_R)   \
    do_name(     crypt_name,                                 "implCrypt")                                                    \
                                                                                                                         \
+  do_class(com_sun_crypto_provider_galoisCounterMode, "com/sun/crypto/provider/GaloisCounterMode")                      \
+   do_intrinsic(_galoisCounterMode_AESCrypt, com_sun_crypto_provider_galoisCounterMode, gcm_crypt_name, aes_gcm_signature, F_S)   \
+   do_name(gcm_crypt_name, "implGCMCrypt")                                                                                 \
+   do_signature(aes_gcm_signature, "([BII[BI[BILcom/sun/crypto/provider/GCTR;Lcom/sun/crypto/provider/GHASH;)I")                                                             \
+                                                                                                                        \
   /* support for sun.security.provider.MD5 */                                                                           \
   do_class(sun_security_provider_md5,                              "sun/security/provider/MD5")                         \
   do_intrinsic(_md5_implCompress, sun_security_provider_md5, implCompress_name, implCompress_signature, F_R)            \
@@ -457,7 +458,7 @@ class methodHandle;
   do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
   do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
    do_name(decodeBlock_name, "decodeBlock")                                                                             \
-   do_signature(decodeBlock_signature, "([BII[BIZ)I")                                                                   \
+   do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                   \
                                                                                                                         \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
@@ -533,6 +534,9 @@ class methodHandle;
   do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
    do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
    do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
+                                                                                                                        \
+  /* special marker for blackholed methods: */                                                                          \
+  do_intrinsic(_blackhole,                java_lang_Object,       blackhole_name, star_name, F_S)                       \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -922,7 +926,11 @@ class methodHandle;
    do_alias(vector_rebox_sig, object_object_signature)                                                                                         \
    do_name(vector_rebox_name, "maybeRebox")                                                                                                    \
                                                                                                                                                \
-                                                                                                                               \
+  do_intrinsic(_VectorMaskOp, jdk_internal_vm_vector_VectorSupport, vector_mask_oper_name, vector_mask_oper_sig, F_S)                          \
+    do_signature(vector_mask_oper_sig, "(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;"                                               \
+                                        "Ljdk/internal/vm/vector/VectorSupport$VectorMaskOp;)I")                                               \
+    do_name(vector_mask_oper_name, "maskReductionCoerced")                                                                                     \
+                                                                                                                                               \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
   do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_R)    \
@@ -1031,7 +1039,7 @@ enum class vmIntrinsicID : int {
                    __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
 
   ID_LIMIT,
-  LAST_COMPILER_INLINE = _VectorScatterOp,
+  LAST_COMPILER_INLINE = _VectorMaskOp,
   FIRST_MH_SIG_POLY    = _invokeGeneric,
   FIRST_MH_STATIC      = _linkToVirtual,
   LAST_MH_SIG_POLY     = _linkToNative,
@@ -1140,6 +1148,8 @@ public:
   static vmSymbolID signature_for(ID id);
   static Flags              flags_for(ID id);
 #endif
+
+  static bool class_has_intrinsics(vmSymbolID holder);
 
   static const char* short_name_as_C_string(ID id, char* buf, int size);
 

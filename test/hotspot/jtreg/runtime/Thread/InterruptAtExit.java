@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,16 @@
 
 /**
  * @test
- * @bug 8167108
+ * @bug 8167108 8266130
  * @summary Stress test java.lang.Thread.interrupt() at thread exit.
- * @run main/othervm -Xlog:thread+smr=debug InterruptAtExit
+ * @run main/othervm InterruptAtExit
  */
 
 import java.util.concurrent.CountDownLatch;
 
 public class InterruptAtExit extends Thread {
-    final static int N_THREADS = 32;
-    final static int N_LATE_CALLS = 1000;
+    private final static int DEF_TIME_MAX = 30;  // default max # secs to test
+    private final static String PROG_NAME = "InterruptAtExit";
 
     public CountDownLatch exitSyncObj = new CountDownLatch(1);
     public CountDownLatch startSyncObj = new CountDownLatch(1);
@@ -42,32 +42,46 @@ public class InterruptAtExit extends Thread {
         // Tell main thread we have started.
         startSyncObj.countDown();
         try {
-            // Wait for main thread to interrupt us so we
-            // can race to exit.
+            // Wait for main thread to tell us to race to the exit.
             exitSyncObj.await();
         } catch (InterruptedException e) {
-            // ignore because we expect one
+            // Ignore because we are testing java.lang.Thread.interrupt()
+            // and one may arrive before we leave the 'try { }' block.
         }
     }
 
     public static void main(String[] args) {
-        InterruptAtExit threads[] = new InterruptAtExit[N_THREADS];
+        int timeMax = 0;
+        if (args.length == 0) {
+            timeMax = DEF_TIME_MAX;
+        } else {
+            try {
+                timeMax = Integer.parseUnsignedInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                System.err.println("'" + args[0] + "': invalid timeMax value.");
+                usage();
+            }
+        }
 
-        for (int i = 0; i < N_THREADS; i++ ) {
-            threads[i] = new InterruptAtExit();
-            int late_count = 1;
-            threads[i].start();
+        System.out.println("About to execute for " + timeMax + " seconds.");
+
+        long count = 0;
+        long start_time = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
+            count++;
+
+            InterruptAtExit thread = new InterruptAtExit();
+            thread.start();
             try {
                 // Wait for the worker thread to get going.
-                threads[i].startSyncObj.await();
+                thread.startSyncObj.await();
+                // Tell the worker thread to race to the exit and the
+                // Thread.interrupt() calls will come in during thread exit.
+                thread.exitSyncObj.countDown();
+                while (true) {
+                    thread.interrupt();
 
-                // The first interrupt() call will break the
-                // worker out of the exitSyncObj.await() call
-                // and the rest will come in during thread exit.
-                for (; late_count <= N_LATE_CALLS; late_count++) {
-                    threads[i].interrupt();
-
-                    if (!threads[i].isAlive()) {
+                    if (!thread.isAlive()) {
                         // Done with Thread.interrupt() calls since
                         // thread is not alive.
                         break;
@@ -77,30 +91,30 @@ public class InterruptAtExit extends Thread {
                 throw new Error("Unexpected: " + e);
             }
 
-            System.out.println("INFO: thread #" + i + ": made " + late_count +
-                               " late calls to java.lang.Thread.interrupt()");
-            System.out.println("INFO: thread #" + i + ": N_LATE_CALLS==" +
-                               N_LATE_CALLS + " value is " +
-                               ((late_count >= N_LATE_CALLS) ? "NOT " : "") +
-                               "large enough to cause a Thread.interrupt() " +
-                               "call after thread exit.");
-
             try {
-                threads[i].join();
+                thread.join();
             } catch (InterruptedException e) {
                 throw new Error("Unexpected: " + e);
             }
-            threads[i].interrupt();
-            if (threads[i].isAlive()) {
-                throw new Error("Expected !Thread.isAlive() after thread #" +
-                                i + " has been join()'ed");
-            }
+            thread.interrupt();
         }
+
+        System.out.println("Executed " + count + " loops in " + timeMax +
+                           " seconds.");
 
         String cmd = System.getProperty("sun.java.command");
         if (cmd != null && !cmd.startsWith("com.sun.javatest.regtest.agent.MainWrapper")) {
             // Exit with success in a non-JavaTest environment:
             System.exit(0);
         }
+    }
+
+    public static void usage() {
+        System.err.println("Usage: " + PROG_NAME + " [time_max]");
+        System.err.println("where:");
+        System.err.println("    time_max  max looping time in seconds");
+        System.err.println("              (default is " + DEF_TIME_MAX +
+                           " seconds)");
+        System.exit(1);
     }
 }

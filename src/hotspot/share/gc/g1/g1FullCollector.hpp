@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.hpp"
+#include "gc/shared/gcId.hpp"
+#include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -54,6 +57,16 @@ public:
   }
 };
 
+// Full GC Mark that holds GC id and CPU time trace. Needs to be separate
+// from the G1FullCollector and G1FullGCScope to allow the Full GC logging
+// to have the same structure as the Young GC logging.
+class G1FullGCMark : StackObj {
+  GCIdMark       _gc_id;
+  GCTraceCPUTime _cpu_time;
+public:
+  G1FullGCMark() : _gc_id(), _cpu_time() { }
+};
+
 // The G1FullCollector holds data associated with the current Full GC.
 class G1FullCollector : StackObj {
   G1CollectedHeap*          _heap;
@@ -67,6 +80,7 @@ class G1FullCollector : StackObj {
   G1FullGCCompactionPoint   _serial_compaction_point;
   G1IsAliveClosure          _is_alive;
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
+  G1RegionMarkStats*        _live_stats;
 
   static uint calc_active_workers();
 
@@ -76,7 +90,10 @@ class G1FullCollector : StackObj {
   G1FullGCHeapRegionAttr _region_attr_table;
 
 public:
-  G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs);
+  G1FullCollector(G1CollectedHeap* heap,
+                  bool explicit_gc,
+                  bool clear_soft_refs,
+                  bool do_maximum_compaction);
   ~G1FullCollector();
 
   void prepare_collection();
@@ -93,12 +110,20 @@ public:
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
+  size_t live_words(uint region_index) {
+    assert(region_index < _heap->max_regions(), "sanity");
+    return _live_stats[region_index]._live_words;
+  }
 
-  void update_attribute_table(HeapRegion* hr);
+  void before_marking_update_attribute_table(HeapRegion* hr);
 
-  inline bool is_in_pinned_or_closed(oop obj) const;
-  inline bool is_in_pinned(oop obj) const;
-  inline bool is_in_closed(oop obj) const;
+  inline bool is_compacting(oop obj) const;
+  inline bool is_skip_compacting(uint region_index) const;
+  inline bool is_skip_marking(oop obj) const;
+
+  inline void set_free(uint region_idx);
+  inline bool is_free(uint region_idx) const;
+  inline void update_from_compacting_to_skip_compacting(uint region_idx);
 
 private:
   void phase1_mark_live_objects();

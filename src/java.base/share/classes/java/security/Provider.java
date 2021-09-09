@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -810,6 +810,7 @@ public abstract class Provider extends Properties {
 
     private void check(String directive) {
         checkInitialized();
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSecurityAccess(directive);
@@ -860,6 +861,8 @@ public abstract class Provider extends Properties {
     * is, then its double value will be used to populate both fields.
     *
     * @param in the {@code ObjectInputStream} to read
+    * @throws IOException if an I/O error occurs
+    * @throws ClassNotFoundException if a serialized class cannot be loaded
     * @serial
     */
     @java.io.Serial
@@ -1075,10 +1078,8 @@ public abstract class Provider extends Properties {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof ServiceKey other)) {
-                return false;
-            }
-            return this.type.equals(other.type)
+            return obj instanceof ServiceKey other
+                && this.type.equals(other.type)
                 && this.algorithm.equals(other.algorithm);
         }
         boolean matches(String type, String algorithm) {
@@ -1498,11 +1499,8 @@ public abstract class Provider extends Properties {
             if (this == obj) {
                 return true;
             }
-            if (obj instanceof UString == false) {
-                return false;
-            }
-            UString other = (UString)obj;
-            return lowerString.equals(other.lowerString);
+            return obj instanceof UString other
+                    && lowerString.equals(other.lowerString);
         }
 
         public String toString() {
@@ -2003,16 +2001,16 @@ public abstract class Provider extends Properties {
                 // unknown engine type, return true by default
                 return true;
             }
-            if (cap.supportsParameter == false) {
+            if (!cap.supportsParameter) {
                 throw new InvalidParameterException("supportsParameter() not "
                     + "used with " + type + " engines");
             }
             // allow null for keys without attributes for compatibility
-            if ((parameter != null) && (parameter instanceof Key == false)) {
+            if ((parameter != null) && (!(parameter instanceof Key))) {
                 throw new InvalidParameterException
                     ("Parameter must be instanceof Key for engine " + type);
             }
-            if (hasKeyAttributes() == false) {
+            if (!hasKeyAttributes()) {
                 return true;
             }
             if (parameter == null) {

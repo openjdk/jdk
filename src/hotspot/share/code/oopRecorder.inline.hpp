@@ -26,6 +26,7 @@
 #define SHARE_CODE_OOPRECORDER_INLINE_HPP
 
 #include "code/oopRecorder.hpp"
+
 #include "memory/universe.hpp"
 
 template <class T>

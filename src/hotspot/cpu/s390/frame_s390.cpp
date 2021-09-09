@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -54,7 +55,6 @@ void RegisterMap::check_location_valid() {
 // Profiling/safepoint support
 
 bool frame::safe_for_sender(JavaThread *thread) {
-  bool safe = false;
   address sp = (address)_sp;
   address fp = (address)_fp;
   address unextended_sp = (address)_unextended_sp;
@@ -72,28 +72,23 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
   // An fp must be within the stack and above (but not equal) sp.
   bool fp_safe = thread->is_in_stack_range_excl(fp, sp);
-  // An interpreter fp must be within the stack and above (but not equal) sp.
-  // Moreover, it must be at least the size of the z_ijava_state structure.
+  // An interpreter fp must be fp_safe.
+  // Moreover, it must be at a distance at least the size of the z_ijava_state structure.
   bool fp_interp_safe = fp_safe && ((fp - sp) >= z_ijava_state_size);
 
   // We know sp/unextended_sp are safe, only fp is questionable here
 
   // If the current frame is known to the code cache then we can attempt to
-  // to construct the sender and do some validation of it. This goes a long way
+  // construct the sender and do some validation of it. This goes a long way
   // toward eliminating issues when we get in frame construction code
 
   if (_cb != NULL ) {
-    // Entry frame checks
-    if (is_entry_frame()) {
-      // An entry frame must have a valid fp.
-      return fp_safe && is_entry_frame_valid(thread);
-    }
 
-    // Now check if the frame is complete and the test is
-    // reliable. Unfortunately we can only check frame completeness for
-    // runtime stubs. Other generic buffer blobs are more
-    // problematic so we just assume they are OK. Adapter blobs never have a
-    // complete frame and are never OK. nmethods should be OK on s390.
+    // First check if the frame is complete and the test is reliable.
+    // Unfortunately we can only check frame completeness for runtime stubs.
+    // Other generic buffer blobs are more problematic so we just assume they are OK.
+    // Adapter blobs never have a complete frame and are never OK.
+    // nmethods should be OK on s390.
     if (!_cb->is_frame_complete_at(_pc)) {
       if (_cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
@@ -105,13 +100,26 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
+    // Entry frame checks
+    if (is_entry_frame()) {
+      // An entry frame must have a valid fp.
+      return fp_safe && is_entry_frame_valid(thread);
+    }
+
     if (is_interpreted_frame() && !fp_interp_safe) {
+      return false;
+    }
+
+    // At this point, there still is a chance that fp_safe is false.
+    // In particular, (fp == NULL) might be true. So let's check and
+    // bail out before we actually dereference from fp.
+    if (!fp_safe) {
       return false;
     }
 
     z_abi_160* sender_abi = (z_abi_160*) fp;
     intptr_t* sender_sp = (intptr_t*) sender_abi->callers_sp;
-    address   sender_pc = (address) sender_abi->return_pc;
+    address   sender_pc = (address)   sender_abi->return_pc;
 
     // We must always be able to find a recognizable pc.
     CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
@@ -207,6 +215,16 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   return fr;
 }
 
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // Pass callers sender_sp as unextended_sp.
   return frame(sender_sp(), sender_pc(), (intptr_t*)(ijava_state()->sender_sp));
@@ -297,7 +315,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     switch (type) {
       case T_OBJECT:
       case T_ARRAY: {
-        *oop_result = (oop) (void*) ijava_state()->oop_tmp;
+        *oop_result = cast_to_oop((void*) ijava_state()->oop_tmp);
         break;
       }
       // We use std/stfd to store the values.

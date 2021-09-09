@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      * @param certs the signers associated with this
      *                  <code>SubjectCodeSource</code> <p>
      */
+    @SuppressWarnings("removal")
     SubjectCodeSource(Subject subject,
         LinkedList<PrincipalEntry> principals,
         URL url, Certificate[] certs) {
@@ -365,6 +366,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      *
      * @return a String representation of this <code>SubjectCodeSource</code>.
      */
+    @SuppressWarnings("removal")
     public String toString() {
         String returnMe = super.toString();
         if (getSubject() != null) {

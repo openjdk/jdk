@@ -88,9 +88,11 @@ public:
     ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
     ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
     assert(rp != NULL, "need reference processor");
+    StringDedup::Requests requests;
     _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
-                   true, // cancellable
-                   ShenandoahStringDedup::is_enabled()); // perform string dedup
+                   true /*cancellable*/,
+                   ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
+                   &requests);
   }
 };
 
@@ -136,6 +138,7 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
 
     ShenandoahParallelWorkerSession worker_session(worker_id);
+    StringDedup::Requests requests;
     ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
 
     // First drain remaining SATB buffers.
@@ -153,11 +156,10 @@ public:
                                                ShenandoahIUBarrier ? &mark_cl : NULL);
       Threads::threads_do(&tc);
     }
-
     _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
-                   false, // not cancellable
-                   _dedup_string);
-
+                   false /*not cancellable*/,
+                   _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
+                   &requests);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };

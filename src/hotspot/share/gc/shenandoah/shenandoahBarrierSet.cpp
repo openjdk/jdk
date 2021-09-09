@@ -44,7 +44,7 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap, MemRegion heap_
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             new ShenandoahBarrierSetNMethod(heap),
+             ShenandoahNMethodBarrier ? new ShenandoahBarrierSetNMethod(heap) : NULL,
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
@@ -105,9 +105,11 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     ShenandoahThreadLocalData::initialize_gclab(thread);
     ShenandoahThreadLocalData::set_disarmed_value(thread, ShenandoahCodeRoots::disarmed_value());
 
-    JavaThread* const jt = thread->as_Java_thread();
-    StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
-    StackWatermarkSet::add_watermark(jt, watermark);
+    if (ShenandoahStackWatermarkBarrier) {
+      JavaThread* const jt = JavaThread::cast(thread);
+      StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
+      StackWatermarkSet::add_watermark(jt, watermark);
+    }
   }
 }
 
@@ -120,20 +122,23 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       gclab->retire();
     }
 
-    ShenandoahHeap* const heap = ShenandoahHeap::heap();
     PLAB* plab = ShenandoahThreadLocalData::plab(thread);
     // CAUTION: retire_plab may register the remnant filler object with the remembered set scanner without a lock.
     // This is safe iff it is assured that each PLAB is a whole-number multiple of card-mark memory size and each
     // PLAB is aligned with the start of each card's memory range.
-    heap->retire_plab(plab);
+    if (plab != NULL) {
+      _heap->retire_plab(plab);
+    }
 
     // SATB protocol requires to keep alive reacheable oops from roots at the beginning of GC
-    if (heap->is_concurrent_mark_in_progress()) {
-      ShenandoahKeepAliveClosure oops;
-      StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
-    } else if (heap->is_concurrent_weak_root_in_progress() && heap->is_evacuation_in_progress()) {
-      ShenandoahContextEvacuateUpdateRootsClosure oops;
-      StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
+    if (ShenandoahStackWatermarkBarrier) {
+      if (_heap->is_concurrent_mark_in_progress()) {
+        ShenandoahKeepAliveClosure oops;
+        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
+      } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
+        ShenandoahContextEvacuateUpdateRootsClosure oops;
+        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
+      }
     }
   }
 }

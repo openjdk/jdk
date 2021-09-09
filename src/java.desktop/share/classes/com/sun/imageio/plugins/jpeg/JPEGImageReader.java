@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,11 @@ public class JPEGImageReader extends ImageReader {
     private int numImages = 0;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 @Override
@@ -1047,7 +1052,7 @@ public class JPEGImageReader extends ImageReader {
                        (!cs.isCS_sRGB()) &&
                        (cm.getNumComponents() == numComponents)) {
                 // Target isn't sRGB, so convert from sRGB to the target
-                convert = new ColorConvertOp(JPEG.JCS.sRGB, cs, null);
+                convert = new ColorConvertOp(JPEG.sRGB, cs, null);
             } else if (csType != ColorSpace.TYPE_RGB) {
                 throw new IIOException("Incompatible color conversion");
             }
@@ -1898,7 +1903,7 @@ class ImageTypeProducer {
             case JPEG.JCS_YCbCr:
             //there is no YCbCr raw type so by default we assume it as RGB
             case JPEG.JCS_RGB:
-                return ImageTypeSpecifier.createInterleaved(JPEG.JCS.sRGB,
+                return ImageTypeSpecifier.createInterleaved(JPEG.sRGB,
                         JPEG.bOffsRGB,
                         DataBuffer.TYPE_BYTE,
                         false,

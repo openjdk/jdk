@@ -29,7 +29,7 @@
  * @modules java.management
  * @requires (vm.debug == false)
  * @build TimSortStackSize2
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI TimSortStackSize2
  */

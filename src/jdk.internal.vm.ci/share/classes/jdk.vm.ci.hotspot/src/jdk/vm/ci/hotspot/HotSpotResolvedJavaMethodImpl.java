@@ -477,7 +477,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
                 if (methodDataFilter != null && this.format("%H.%n").contains(methodDataFilter)) {
                     String line = methodData.toString() + System.lineSeparator();
                     byte[] lineBytes = line.getBytes();
-                    CompilerToVM.compilerToVM().writeDebugOutput(lineBytes, 0, lineBytes.length, true, true);
+                    HotSpotJVMCIRuntime.runtime().writeDebugOutput(lineBytes, 0, lineBytes.length, true, true);
                 }
             }
         }
@@ -680,7 +680,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             return config().invalidVtableIndex;
         }
         if (holder.isInterface()) {
-            if (resolved.isInterface() || !resolved.isLinked()) {
+            if (resolved.isInterface() || !resolved.isLinked() || !getDeclaringClass().isAssignableFrom(resolved)) {
                 return config().invalidVtableIndex;
             }
             return getVtableIndexForInterfaceMethod(resolved);

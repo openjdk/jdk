@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -420,7 +420,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">മോൾഡാവിയൻ</language>
 			<language type="rof">റോംബോ</language>
 			<language type="rom">റൊമാനി</language>
-			<language type="root">മൂലഭാഷ</language>
 			<language type="ru">റഷ്യൻ</language>
 			<language type="rup">ആരോമാനിയൻ</language>
 			<language type="rw">കിന്യാർവാണ്ട</language>
@@ -3318,9 +3317,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>സാന്ത ഇസബേൽ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ഹോണലൂലു</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>കോർഡിനേറ്റഡ് യൂണിവേഴ്‌സൽ ടൈം</standard>
@@ -3440,11 +3436,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>ബ്രോക്കൺ ഹിൽ</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>ക്യൂറി</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>മെൽബൺ</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>ക്യൂറി</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ഹൊബാർട്ട്</exemplarCity>
@@ -4477,6 +4473,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>നോം</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ഹോണലൂലു</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>ജോൺസ്റ്റൺ</exemplarCity>
@@ -7262,7 +7261,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>പശ്ചിമ ആഫ്രിക്കൻ [CFA] ഫ്രാങ്ക്</displayName>
 				<displayName count="one">പശ്ചിമ ആഫ്രിക്കൻ [CFA] ഫ്രാങ്ക്</displayName>
 				<displayName count="other">പശ്ചിമ ആഫ്രിക്കൻ [CFA] ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>പലാഡിയം</displayName>
@@ -7559,7 +7558,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ക്യാരറ്റ്</unitPattern>
 				<unitPattern count="other">{0} ക്യാരറ്റ്</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>മില്ലിഗ്രാം / ഡെസിലിറ്റർ</displayName>
 				<unitPattern count="one">{0} മില്ലിഗ്രാം / ഡെസിലിറ്റർ</unitPattern>
 				<unitPattern count="other">{0} മില്ലിഗ്രാം / ഡെസിലിറ്റർ</unitPattern>
@@ -8407,7 +8406,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ക്യാ.</unitPattern>
 				<unitPattern count="other">{0} ക്യാ.</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>മി.ഗ്രാം/ഡെ.ലി.</displayName>
 				<unitPattern count="one">{0} മി.ഗ്രാം/ഡെ.ലി.</unitPattern>
 				<unitPattern count="other">{0} മി.ഗ്രാം/ഡെ.ലി.</unitPattern>
@@ -8696,12 +8695,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="one">{0} ppcm</unitPattern>
 				<unitPattern count="other">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="one">{0} ppi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
@@ -8733,9 +8732,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മി.മീ.</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µമീറ്റർ</displayName>
-				<unitPattern count="one">µമീ.</unitPattern>
-				<unitPattern count="other">{0} µമീ.</unitPattern>
+				<displayName>μമീറ്റർ</displayName>
+				<unitPattern count="one">μമീ.</unitPattern>
+				<unitPattern count="other">{0} μമീ.</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>നാ.മീ.</displayName>
@@ -8840,9 +8839,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മി.ഗ്രാം.</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µ.ഗ്രാം.</displayName>
-				<unitPattern count="one">{0} µ.ഗ്രാം.</unitPattern>
-				<unitPattern count="other">{0} µ.ഗ്രാം.</unitPattern>
+				<displayName>μ.ഗ്രാം.</displayName>
+				<unitPattern count="one">{0} μ.ഗ്രാം.</unitPattern>
+				<unitPattern count="other">{0} μ.ഗ്രാം.</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ടൺ</displayName>
@@ -9301,9 +9300,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മി.മീ.</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="contributed">µമീ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}µമീ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}µമീ.</unitPattern>
+				<displayName draft="contributed">μമീ.</displayName>
+				<unitPattern count="one" draft="contributed">{0}μമീ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}μമീ.</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName draft="contributed">നാ.മീ.</displayName>
@@ -9400,9 +9399,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}മി.ഗ്രാം.</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName draft="contributed">µ.ഗ്രാം.</displayName>
-				<unitPattern count="one" draft="contributed">{0}µ.ഗ്രാം.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}µ.ഗ്രാം.</unitPattern>
+				<displayName draft="contributed">μ.ഗ്രാം.</displayName>
+				<unitPattern count="one" draft="contributed">{0}μ.ഗ്രാം.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}μ.ഗ്രാം.</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName draft="contributed">ടൺ</displayName>

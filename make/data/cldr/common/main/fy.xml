@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -397,7 +397,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro_MD" draft="contributed">Moldavysk</language>
 			<language type="rof" draft="contributed">Rombo</language>
 			<language type="rom" draft="contributed">Romani</language>
-			<language type="root" draft="contributed">Root</language>
 			<language type="ru" draft="contributed">Russysk</language>
 			<language type="rup" draft="contributed">Aromaniaansk</language>
 			<language type="rw" draft="contributed">Kinyarwanda</language>
@@ -6113,7 +6112,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="contributed">CFA-franc BCEAO</displayName>
 				<displayName count="one" draft="contributed">CFA-franc BCEAO</displayName>
 				<displayName count="other" draft="contributed">CFA-franc BCEAO</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName draft="contributed">Palladium</displayName>

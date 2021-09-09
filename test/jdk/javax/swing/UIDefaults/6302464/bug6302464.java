@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,28 +118,49 @@ public class bug6302464 {
     private static void testAntialiasingHints() {
         setMetalLookAndFeel();
 
-        HashSet colorsAAOff = getAntialiasedColors(VALUE_TEXT_ANTIALIAS_OFF, 100);
+        boolean isMacOSX14 = false;
+        boolean isMacOSXBigSur = false;
+        if (System.getProperty("os.name").contains("OS X")) {
+            String version = System.getProperty("os.version", "");
+            if (version.startsWith("10.")) {
+                version = version.substring(3);
+                int periodIndex = version.indexOf('.');
+                if (periodIndex != -1) {
+                    version = version.substring(0, periodIndex);
+                }
+                try {
+                    int v = Integer.parseInt(version);
+                    isMacOSX14 = (v >= 14);
+                } catch (NumberFormatException e) {
+                }
+            } else if (version.startsWith("11.")) {
+                isMacOSXBigSur = true;
+            }
+        }
+        if (!isMacOSX14 && !isMacOSXBigSur) {
+            HashSet colorsAAOff = getAntialiasedColors(VALUE_TEXT_ANTIALIAS_OFF, 100);
 
-        if (colorsAAOff.size() > 2) {
-            throw new RuntimeException("Wrong number of antialiased colors.");
+            if (colorsAAOff.size() > 2) {
+                throw new RuntimeException("Wrong number of antialiased colors.");
+            }
         }
 
         HashSet colorsAAOnLCD100 = getAntialiasedColors(
                 VALUE_TEXT_ANTIALIAS_LCD_HRGB, 100);
 
         if (colorsAAOnLCD100.size() <= 2) {
-            throw new RuntimeException("Wrong number of antialiased colors.");
+            throw new RuntimeException("Wrong number of antialiased ANTIALIAS_LCD_HRGB_100 colors.");
         }
 
         HashSet colorsAAOnLCD250 = getAntialiasedColors(
                 VALUE_TEXT_ANTIALIAS_LCD_HRGB, 250);
 
         if (colorsAAOnLCD250.size() <= 2) {
-            throw new RuntimeException("Wrong number of antialiased colors.");
+            throw new RuntimeException("Wrong number of antialiased ANTIALIAS_LCD_HRGB_250 colors.");
         }
 
         if (colorsAAOnLCD100.equals(colorsAAOnLCD250)) {
-            throw new RuntimeException("LCD contarst is not used.");
+            throw new RuntimeException("LCD contrast is not used.");
         }
     }
 

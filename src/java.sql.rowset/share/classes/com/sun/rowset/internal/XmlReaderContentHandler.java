@@ -119,143 +119,143 @@ public class XmlReaderContentHandler extends DefaultHandler {
     /**
      * A constant representing the tag for the command property.
      */
-    private final static int CommandTag = 0;
+    private static final int CommandTag = 0;
 
     /**
      * A constant representing the tag for the concurrency property.
      */
-    private final static int ConcurrencyTag = 1;
+    private static final int ConcurrencyTag = 1;
 
     /**
      * A constant representing the tag for the datasource property.
      */
-    private final static int DatasourceTag = 2;
+    private static final int DatasourceTag = 2;
 
     /**
      * A constant representing the tag for the escape-processing property.
      */
-    private final static int EscapeProcessingTag = 3;
+    private static final int EscapeProcessingTag = 3;
 
     /**
      * A constant representing the tag for the fetch-direction property.
      */
-    private final static int FetchDirectionTag = 4;
+    private static final int FetchDirectionTag = 4;
 
     /**
      * A constant representing the tag for the fetch-size property.
      */
-    private final static int FetchSizeTag = 5;
+    private static final int FetchSizeTag = 5;
 
     /**
      * A constant representing the tag for the isolation-level property
      */
-    private final static int IsolationLevelTag = 6;
+    private static final int IsolationLevelTag = 6;
 
     /**
      * A constant representing the tag for the key-columns property.
      */
-    private final static int KeycolsTag = 7;
+    private static final int KeycolsTag = 7;
 
     /**
      * A constant representing the tag for the map property.
      * This map is the type map that specifies the custom mapping
      * for an SQL user-defined type.
      */
-    private final static int MapTag = 8;
+    private static final int MapTag = 8;
 
     /**
      * A constant representing the tag for the max-field-size property.
      */
-    private final static int MaxFieldSizeTag = 9;
+    private static final int MaxFieldSizeTag = 9;
 
     /**
      * A constant representing the tag for the max-rows property.
      */
-    private final static int MaxRowsTag = 10;
+    private static final int MaxRowsTag = 10;
 
     /**
      * A constant representing the tag for the query-timeout property.
      */
-    private final static int QueryTimeoutTag = 11;
+    private static final int QueryTimeoutTag = 11;
 
     /**
      * A constant representing the tag for the read-only property.
      */
-    private final static int ReadOnlyTag = 12;
+    private static final int ReadOnlyTag = 12;
 
     /**
      * A constant representing the tag for the rowset-type property.
      */
-    private final static int RowsetTypeTag = 13;
+    private static final int RowsetTypeTag = 13;
 
     /**
      * A constant representing the tag for the show-deleted property.
      */
-    private final static int ShowDeletedTag = 14;
+    private static final int ShowDeletedTag = 14;
 
     /**
      * A constant representing the tag for the table-name property.
      */
-    private final static int TableNameTag = 15;
+    private static final int TableNameTag = 15;
 
     /**
      * A constant representing the tag for the URL property.
      */
-    private final static int UrlTag = 16;
+    private static final int UrlTag = 16;
 
     /**
      * A constant representing the tag for the null property.
      */
-    private final static int PropNullTag = 17;
+    private static final int PropNullTag = 17;
 
     /**
      * A constant representing the tag for the column property.
      */
-    private final static int PropColumnTag = 18;
+    private static final int PropColumnTag = 18;
 
     /**
      * A constant representing the tag for the type property.
      */
-    private final static int PropTypeTag = 19;
+    private static final int PropTypeTag = 19;
 
     /**
      * A constant representing the tag for the class property.
      */
-    private final static int PropClassTag = 20;
+    private static final int PropClassTag = 20;
 
     /**
      * A constant representing the tag for the sync-provider.
      */
-    private final static int SyncProviderTag = 21;
+    private static final int SyncProviderTag = 21;
 
     /**
      * A constant representing the tag for the sync-provider
      * name
      */
-    private final static int SyncProviderNameTag = 22;
+    private static final int SyncProviderNameTag = 22;
 
     /**
      * A constant representing the tag for the sync-provider
      * vendor tag.
      */
-    private final static int SyncProviderVendorTag = 23;
+    private static final int SyncProviderVendorTag = 23;
 
     /**
      * A constant representing the tag for the sync-provider
      * version tag.
      */
-    private final static int SyncProviderVersionTag = 24;
+    private static final int SyncProviderVersionTag = 24;
 
     /**
      * A constant representing the tag for the sync-provider
      * grade tag.
      */
-    private final static int SyncProviderGradeTag = 25;
+    private static final int SyncProviderGradeTag = 25;
 
     /**
      * A constant representing the tag for the data source lock.
      */
-    private final static int DataSourceLock = 26;
+    private static final int DataSourceLock = 26;
 
     /**
      * A listing of the kinds of metadata information available about
@@ -273,113 +273,113 @@ public class XmlReaderContentHandler extends DefaultHandler {
     /**
      * A constant representing the tag for column-count.
      */
-    private final static int ColumnCountTag = 0;
+    private static final int ColumnCountTag = 0;
 
     /**
      * A constant representing the tag for column-definition.
      */
-    private final static int ColumnDefinitionTag = 1;
+    private static final int ColumnDefinitionTag = 1;
 
     /**
      * A constant representing the tag for column-index.
      */
-    private final static int ColumnIndexTag = 2;
+    private static final int ColumnIndexTag = 2;
 
     /**
      * A constant representing the tag for auto-increment.
      */
-    private final static int AutoIncrementTag = 3;
+    private static final int AutoIncrementTag = 3;
 
     /**
      * A constant representing the tag for case-sensitive.
      */
-    private final static int CaseSensitiveTag = 4;
+    private static final int CaseSensitiveTag = 4;
 
     /**
      * A constant representing the tag for currency.
      */
-    private final static int CurrencyTag = 5;
+    private static final int CurrencyTag = 5;
 
     /**
      * A constant representing the tag for nullable.
      */
-    private final static int NullableTag = 6;
+    private static final int NullableTag = 6;
 
     /**
      * A constant representing the tag for signed.
      */
-    private final static int SignedTag = 7;
+    private static final int SignedTag = 7;
 
     /**
      * A constant representing the tag for searchable.
      */
-    private final static int SearchableTag = 8;
+    private static final int SearchableTag = 8;
 
     /**
      * A constant representing the tag for column-display-size.
      */
-    private final static int ColumnDisplaySizeTag = 9;
+    private static final int ColumnDisplaySizeTag = 9;
 
     /**
      * A constant representing the tag for column-label.
      */
-    private final static int ColumnLabelTag = 10;
+    private static final int ColumnLabelTag = 10;
 
     /**
      * A constant representing the tag for column-name.
      */
-    private final static int ColumnNameTag = 11;
+    private static final int ColumnNameTag = 11;
 
     /**
      * A constant representing the tag for schema-name.
      */
-    private final static int SchemaNameTag = 12;
+    private static final int SchemaNameTag = 12;
 
     /**
      * A constant representing the tag for column-precision.
      */
-    private final static int ColumnPrecisionTag = 13;
+    private static final int ColumnPrecisionTag = 13;
 
     /**
      * A constant representing the tag for column-scale.
      */
-    private final static int ColumnScaleTag = 14;
+    private static final int ColumnScaleTag = 14;
 
     /**
      * A constant representing the tag for table-name.
      */
-    private final static int MetaTableNameTag = 15;
+    private static final int MetaTableNameTag = 15;
 
     /**
      * A constant representing the tag for catalog-name.
      */
-    private final static int CatalogNameTag = 16;
+    private static final int CatalogNameTag = 16;
 
     /**
      * A constant representing the tag for column-type.
      */
-    private final static int ColumnTypeTag = 17;
+    private static final int ColumnTypeTag = 17;
 
     /**
      * A constant representing the tag for column-type-name.
      */
-    private final static int ColumnTypeNameTag = 18;
+    private static final int ColumnTypeNameTag = 18;
 
     /**
      * A constant representing the tag for null.
      */
-    private final static int MetaNullTag = 19;
+    private static final int MetaNullTag = 19;
 
     private String [] data = {"currentRow", "columnValue", "insertRow", "deleteRow", "insdel", "updateRow", "null" , "emptyString"};
 
-    private final static int RowTag = 0;
-    private final static int ColTag = 1;
-    private final static int InsTag = 2;
-    private final static int DelTag = 3;
-    private final static int InsDelTag = 4;
-    private final static int UpdTag = 5;
-    private final static int NullTag = 6;
-    private final static int EmptyStringTag = 7;
+    private static final int RowTag = 0;
+    private static final int ColTag = 1;
+    private static final int InsTag = 2;
+    private static final int DelTag = 3;
+    private static final int InsDelTag = 4;
+    private static final int UpdTag = 5;
+    private static final int NullTag = 6;
+    private static final int EmptyStringTag = 7;
 
     /**
      * A constant indicating the state of this <code>XmlReaderContentHandler</code>
@@ -391,7 +391,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
      * still be parsed correctly (except that metadata must be
      * set before data values can be set).
      */
-    private final static int INITIAL = 0;
+    private static final int INITIAL = 0;
 
     /**
      * A constant indicating the state in which this <code>XmlReaderContentHandler</code>
@@ -399,7 +399,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
      * SAX parser to be a string corresponding to one of the elements in
      * <code>properties</code>.
      */
-    private final static int PROPERTIES = 1;
+    private static final int PROPERTIES = 1;
 
     /**
      * A constant indicating the state in which this <code>XmlReaderContentHandler</code>
@@ -407,7 +407,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
      * SAX parser to be a string corresponding to one of the elements in
      * <code>colDef</code>.
      */
-    private final static int METADATA = 2;
+    private static final int METADATA = 2;
 
     /**
      * A constant indicating the state in which this <code>XmlReaderContentHandler</code>
@@ -415,7 +415,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
      * SAX parser to be a string corresponding to one of the elements in
      * <code>data</code>.
      */
-    private final static int DATA = 3;
+    private static final int DATA = 3;
 
     private  JdbcRowSetResourceBundle resBundle;
 

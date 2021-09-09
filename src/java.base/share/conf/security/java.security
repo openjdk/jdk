@@ -964,6 +964,11 @@ jdk.xml.dsig.secureValidationPolicy=\
     disallowAlg http://www.w3.org/2001/04/xmldsig-more#rsa-md5,\
     disallowAlg http://www.w3.org/2001/04/xmldsig-more#hmac-md5,\
     disallowAlg http://www.w3.org/2001/04/xmldsig-more#md5,\
+    disallowAlg http://www.w3.org/2000/09/xmldsig#sha1,\
+    disallowAlg http://www.w3.org/2000/09/xmldsig#dsa-sha1,\
+    disallowAlg http://www.w3.org/2000/09/xmldsig#rsa-sha1,\
+    disallowAlg http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1,\
+    disallowAlg http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1,\
     maxTransforms 5,\
     maxReferences 30,\
     disallowReferenceUriSchemes file http https,\
@@ -973,11 +978,27 @@ jdk.xml.dsig.secureValidationPolicy=\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
+
 #
-# Serialization system-wide filter
+# Deserialization JVM-wide filter factory
 #
-# A filter, if configured, is used by java.io.ObjectInputStream during
-# deserialization to check the contents of the stream.
+# A filter factory class name is used to configure the JVM-wide filter factory.
+# The class must be public, must have a public zero-argument constructor, implement the
+# java.util.function.BinaryOperator<java.io.ObjectInputFilter> interface, provide its
+# implementation and be accessible via the application class loader.
+# A builtin filter factory is used if no filter factory is defined.
+# See java.io.ObjectInputFilter.Config for more information.
+#
+# If the system property jdk.serialFilterFactory is also specified, it supersedes
+# the security property value defined here.
+#
+#jdk.serialFilterFactory=<classname>
+
+#
+# Deserialization JVM-wide filter
+#
+# A filter, if configured, is used by the filter factory to provide the filter used by
+# java.io.ObjectInputStream during deserialization to check the contents of the stream.
 # A filter is configured as a sequence of patterns, each pattern is either
 # matched against the name of a class in the stream or defines a limit.
 # Patterns are separated by ";" (semicolon).
@@ -1055,7 +1076,6 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    sun.rmi.server.UnicastRef;\
 #    sun.rmi.server.RMIClientSocketFactory;\
 #    sun.rmi.server.RMIServerSocketFactory;\
-#    java.rmi.activation.ActivationID;\
 #    java.rmi.server.UID
 #
 # RMI Distributed Garbage Collector (DGC) Serial Filter
@@ -1321,3 +1341,26 @@ jdk.io.permissionsUseCanonicalPath=false
 #
 # jdk.tls.alpnCharset=UTF-8
 jdk.tls.alpnCharset=ISO_8859_1
+
+#
+# JNDI Object Factories Filter
+#
+# This filter is used by the JNDI runtime to control the set of object factory classes
+# which will be allowed to instantiate objects from object references returned by
+# naming/directory systems. The factory class named by the reference instance will be
+# matched against this filter. The filter property supports pattern-based filter syntax
+# with the same format as jdk.serialFilter.
+#
+# Each pattern is matched against the factory class name to allow or disallow it's
+# instantiation. The access to a factory class is allowed unless the filter returns
+# REJECTED.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# If the system property jdk.jndi.object.factoriesFilter is also specified, it supersedes
+# the security property value defined here. The default value of the property is "*".
+#
+# The default pattern value allows any object factory class specified by the reference
+# instance to recreate the referenced object.
+#jdk.jndi.object.factoriesFilter=*

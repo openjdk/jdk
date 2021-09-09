@@ -39,7 +39,6 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspace.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
@@ -51,6 +50,26 @@ class PSAdaptiveSizePolicy;
 class PSCardTable;
 class PSHeapSummary;
 
+// ParallelScavengeHeap is the implementation of CollectedHeap for Parallel GC.
+//
+// The heap is reserved up-front in a single contiguous block, split into two
+// parts, the old and young generation. The old generation resides at lower
+// addresses, the young generation at higher addresses. The boundary address
+// between the generations is fixed. Within a generation, committed memory
+// grows towards higher addresses.
+//
+//
+// low                                                                high
+//
+//                          +-- generation boundary (fixed after startup)
+//                          |
+// |<- old gen (reserved) ->|<-       young gen (reserved)             ->|
+// +---------------+--------+-----------------+--------+--------+--------+
+// |      old      |        |       eden      |  from  |   to   |        |
+// |               |        |                 |  (to)  | (from) |        |
+// +---------------+--------+-----------------+--------+--------+--------+
+// |<- committed ->|        |<-          committed            ->|
+//
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
  private:
@@ -139,6 +158,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Returns JNI_OK on success
   virtual jint initialize();
+
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
 
   void post_initialize();
   void update_counters();
@@ -247,13 +269,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Mangle the unused parts of all spaces in the heap
   void gen_mangle_unused_area() PRODUCT_RETURN;
-
-  // Call these in sequential code around the processing of strong roots.
-  class ParStrongRootsScope : public MarkScope {
-   public:
-    ParStrongRootsScope();
-    ~ParStrongRootsScope();
-  };
 
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }

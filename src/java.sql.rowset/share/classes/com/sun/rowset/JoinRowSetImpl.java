@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,13 +427,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      * @see CachedRowSet#setTableName
      */
     public String[] getRowSetNames() throws SQLException {
-        Object [] arr = vecTableNames.toArray();
-        String []strArr = new String[arr.length];
-
-        for( int i = 0;i < arr.length; i++) {
-           strArr[i] = arr[i].toString();
-        }
-
+        String[] strArr = vecTableNames.toArray(new String[0]);
         return strArr;
     }
 

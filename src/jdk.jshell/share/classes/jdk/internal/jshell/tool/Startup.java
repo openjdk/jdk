@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static jdk.internal.jshell.tool.JShellTool.RECORD_SEPARATOR;
 import static jdk.internal.jshell.tool.JShellTool.getResource;
 import static jdk.internal.jshell.tool.JShellTool.readResource;
@@ -231,17 +230,11 @@ class Startup {
                 } else if (all.length % 4 == 0) {
                     List<StartupEntry> e = new ArrayList<>(all.length / 4);
                     for (int i = 0; i < all.length; i += 4) {
-                        final boolean isBuiltIn;
-                        switch (all[i]) {
-                            case "*":
-                                isBuiltIn = true;
-                                break;
-                            case "-":
-                                isBuiltIn = false;
-                                break;
-                            default:
-                                throw new IllegalArgumentException("Unexpected StartupEntry kind: " + all[i]);
-                        }
+                        final boolean isBuiltIn = switch (all[i]) {
+                            case "*" -> true;
+                            case "-" -> false;
+                            default -> throw new IllegalArgumentException("Unexpected StartupEntry kind: " + all[i]);
+                        };
                         String name = all[i + 1];
                         String timeStamp = all[i + 2];
                         String content = all[i + 3];
@@ -276,7 +269,7 @@ class Startup {
     static Startup fromFileList(List<String> fns, String context, MessageHandler mh) {
         List<StartupEntry> entries = fns.stream()
                 .map(fn -> readFile(fn, context, mh))
-                .collect(toList());
+                .toList();
         if (entries.stream().anyMatch(sue -> sue == null)) {
             return null;
         }

@@ -32,7 +32,7 @@ import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
@@ -301,7 +301,7 @@ public class HtmlLinkInfo extends LinkInfo {
      * @param label plain-text label for the link
      */
     public HtmlLinkInfo label(CharSequence label) {
-        this.label = new StringContent(label);
+        this.label = Text.of(label);
         return this;
     }
 

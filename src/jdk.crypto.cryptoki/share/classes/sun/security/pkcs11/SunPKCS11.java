@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,11 @@ import javax.security.auth.login.LoginException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.ConfirmationCallback;
 import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.TextOutputCallback;
 
+import com.sun.crypto.provider.ChaCha20Poly1305Parameters;
+
+import jdk.internal.misc.InnocuousThread;
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -51,6 +52,7 @@ import sun.security.pkcs11.Secmod.*;
 
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
 
 /**
  * PKCS#11 provider main class.
@@ -85,6 +87,8 @@ public final class SunPKCS11 extends AuthProvider {
 
     private TokenPoller poller;
 
+    static NativeResourceCleaner cleaner;
+
     Token getToken() {
         return token;
     }
@@ -103,6 +107,7 @@ public final class SunPKCS11 extends AuthProvider {
         poller = null;
     }
 
+    @SuppressWarnings("removal")
     @Override
     public Provider configure(String configArg) throws InvalidParameterException {
         final String newConfigName = checkNull(configArg);
@@ -432,7 +437,7 @@ public final class SunPKCS11 extends AuthProvider {
 
     // Map from mechanism to List of Descriptors that should be
     // registered if the mechanism is supported
-    private final static Map<Integer,List<Descriptor>> descriptors =
+    private static final Map<Integer,List<Descriptor>> descriptors =
         new HashMap<Integer,List<Descriptor>>();
 
     private static int[] m(long m1) {
@@ -480,29 +485,29 @@ public final class SunPKCS11 extends AuthProvider {
         }
     }
 
-    private final static String MD  = "MessageDigest";
+    private static final String MD  = "MessageDigest";
 
-    private final static String SIG = "Signature";
+    private static final String SIG = "Signature";
 
-    private final static String KPG = "KeyPairGenerator";
+    private static final String KPG = "KeyPairGenerator";
 
-    private final static String KG  = "KeyGenerator";
+    private static final String KG  = "KeyGenerator";
 
-    private final static String AGP = "AlgorithmParameters";
+    private static final String AGP = "AlgorithmParameters";
 
-    private final static String KF  = "KeyFactory";
+    private static final String KF  = "KeyFactory";
 
-    private final static String SKF = "SecretKeyFactory";
+    private static final String SKF = "SecretKeyFactory";
 
-    private final static String CIP = "Cipher";
+    private static final String CIP = "Cipher";
 
-    private final static String MAC = "Mac";
+    private static final String MAC = "Mac";
 
-    private final static String KA  = "KeyAgreement";
+    private static final String KA  = "KeyAgreement";
 
-    private final static String KS  = "KeyStore";
+    private static final String KS  = "KeyStore";
 
-    private final static String SR  = "SecureRandom";
+    private static final String SR  = "SecureRandom";
 
     static {
         // names of all the implementation classes
@@ -606,6 +611,8 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_AES_KEY_GEN));
         d(KG,  "Blowfish",      P11KeyGenerator,
                 m(CKM_BLOWFISH_KEY_GEN));
+        d(KG,  "ChaCha20",      P11KeyGenerator,
+                m(CKM_CHACHA20_KEY_GEN));
         d(KG,  "HmacMD5",      P11KeyGenerator, // 1.3.6.1.5.5.8.1.1
                 m(CKM_GENERIC_SECRET_KEY_GEN));
         dA(KG,  "HmacSHA1",      P11KeyGenerator,
@@ -655,6 +662,10 @@ public final class SunPKCS11 extends AuthProvider {
         d(AGP, "GCM",            "sun.security.util.GCMParameters",
                 m(CKM_AES_GCM));
 
+        dA(AGP, "ChaCha20-Poly1305",
+                "com.sun.crypto.provider.ChaCha20Poly1305Parameters",
+                m(CKM_CHACHA20_POLY1305));
+
         d(KA, "DH",             P11KeyAgreement,
                 dhAlias,
                 m(CKM_DH_PKCS_DERIVE));
@@ -671,6 +682,8 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_AES_CBC));
         d(SKF, "Blowfish",      P11SecretKeyFactory,
                 m(CKM_BLOWFISH_CBC));
+        d(SKF, "ChaCha20",      P11SecretKeyFactory,
+                m(CKM_CHACHA20_POLY1305));
 
         // XXX attributes for Ciphers (supported modes, padding)
         dA(CIP, "ARCFOUR",                      P11Cipher,
@@ -731,6 +744,9 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_BLOWFISH_CBC));
         d(CIP, "Blowfish/CBC/PKCS5Padding",     P11Cipher,
                 m(CKM_BLOWFISH_CBC));
+
+        dA(CIP, "ChaCha20-Poly1305",            P11AEADCipher,
+                m(CKM_CHACHA20_POLY1305));
 
         d(CIP, "RSA/ECB/PKCS1Padding",          P11RSACipher,
                 List.of("RSA"),
@@ -895,10 +911,12 @@ public final class SunPKCS11 extends AuthProvider {
     private static class TokenPoller implements Runnable {
         private final SunPKCS11 provider;
         private volatile boolean enabled;
+
         private TokenPoller(SunPKCS11 provider) {
             this.provider = provider;
             enabled = true;
         }
+        @Override
         public void run() {
             int interval = provider.config.getInsertionCheckInterval();
             while (enabled) {
@@ -923,17 +941,20 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     // create the poller thread, if not already active
+    @SuppressWarnings("removal")
     private void createPoller() {
         if (poller != null) {
             return;
         }
-        final TokenPoller poller = new TokenPoller(this);
-        Thread t = new Thread(null, poller, "Poller " + getName(), 0, false);
-        t.setContextClassLoader(null);
+        poller = new TokenPoller(this);
+        Thread t = InnocuousThread.newSystemThread(
+                "Poller-" + getName(),
+                poller,
+                Thread.MIN_PRIORITY);
+        assert t.getContextClassLoader() == null;
         t.setDaemon(true);
-        t.setPriority(Thread.MIN_PRIORITY);
         t.start();
-        this.poller = poller;
+
     }
 
     // destroy the poller thread, if active
@@ -956,7 +977,64 @@ public final class SunPKCS11 extends AuthProvider {
         return (token != null) && token.isValid();
     }
 
+    private class NativeResourceCleaner implements Runnable {
+        private long sleepMillis = config.getResourceCleanerShortInterval();
+        private int count = 0;
+        boolean keyRefFound, sessRefFound;
+
+        /*
+         * The cleaner.shortInterval and cleaner.longInterval properties
+         * may be defined in the pkcs11 config file and are specified in milliseconds
+         * Minimum value is 1000ms.  Default values :
+         *  cleaner.shortInterval : 2000ms
+         *  cleaner.longInterval  : 60000ms
+         *
+         * The cleaner thread runs at cleaner.shortInterval intervals
+         * while P11Key or Session references continue to be found for cleaning.
+         * If 100 iterations occur with no references being found, then the interval
+         * period moves to cleaner.longInterval value. The cleaner thread moves back
+         * to short interval checking if a resource is found
+         */
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(sleepMillis);
+                } catch (InterruptedException ie) {
+                    break;
+                }
+                keyRefFound = P11Key.drainRefQueue();
+                sessRefFound = Session.drainRefQueue();
+                if (!keyRefFound && !sessRefFound) {
+                    count++;
+                    if (count > 100) {
+                        // no reference freed for some time
+                        // increase the sleep time
+                        sleepMillis = config.getResourceCleanerLongInterval();
+                    }
+                } else {
+                    count = 0;
+                    sleepMillis = config.getResourceCleanerShortInterval();
+                }
+            }
+        }
+    }
+
+    // create the cleaner thread, if not already active
+    @SuppressWarnings("removal")
+    private void createCleaner() {
+        cleaner = new NativeResourceCleaner();
+        Thread t = InnocuousThread.newSystemThread(
+                "Cleanup-SunPKCS11",
+                cleaner,
+                Thread.MIN_PRIORITY);
+        assert t.getContextClassLoader() == null;
+        t.setDaemon(true);
+        t.start();
+    }
+
     // destroy the token. Called if we detect that it has been removed
+    @SuppressWarnings("removal")
     synchronized void uninitToken(Token token) {
         if (this.token != token) {
             // mismatch, our token must already be destroyed
@@ -971,7 +1049,10 @@ public final class SunPKCS11 extends AuthProvider {
                 return null;
             }
         });
-        createPoller();
+        // keep polling for token insertion unless configured not to
+        if (removable && !config.getDestroyTokenAfterLogout()) {
+            createPoller();
+        }
     }
 
     private static boolean isLegacy(CK_MECHANISM_INFO mechInfo)
@@ -1087,7 +1168,8 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // register algorithms in provider
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 for (Map.Entry<Descriptor,Integer> entry
                         : supportedAlgs.entrySet()) {
@@ -1118,6 +1200,9 @@ public final class SunPKCS11 extends AuthProvider {
         });
 
         this.token = token;
+        if (cleaner == null) {
+            createCleaner();
+        }
     }
 
     private static final class P11Service extends Service {
@@ -1156,7 +1241,8 @@ public final class SunPKCS11 extends AuthProvider {
             } else if (type == CIP) {
                 if (algorithm.startsWith("RSA")) {
                     return new P11RSACipher(token, algorithm, mechanism);
-                } else if (algorithm.endsWith("GCM/NoPadding")) {
+                } else if (algorithm.endsWith("GCM/NoPadding") ||
+                           algorithm.startsWith("ChaCha20-Poly1305")) {
                     return new P11AEADCipher(token, algorithm, mechanism);
                 } else {
                     return new P11Cipher(token, algorithm, mechanism);
@@ -1209,6 +1295,8 @@ public final class SunPKCS11 extends AuthProvider {
                     return new sun.security.util.ECParameters();
                 } else if (algorithm == "GCM") {
                     return new sun.security.util.GCMParameters();
+                } else if (algorithm == "ChaCha20-Poly1305") {
+                    return new ChaCha20Poly1305Parameters(); // from SunJCE
                 } else {
                     throw new NoSuchAlgorithmException("Unsupported algorithm: "
                             + algorithm);
@@ -1320,6 +1408,7 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // security check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (debug != null) {
@@ -1329,12 +1418,12 @@ public final class SunPKCS11 extends AuthProvider {
                         ("authProvider." + this.getName()));
         }
 
-        if (hasValidToken() == false) {
+        if (!hasValidToken()) {
             throw new LoginException("No token present");
+
         }
 
         // see if a login is required
-
         if ((token.tokenInfo.flags & CKF_LOGIN_REQUIRED) == 0) {
             if (debug != null) {
                 debug.println("login operation not required for token - " +
@@ -1446,12 +1535,12 @@ public final class SunPKCS11 extends AuthProvider {
      *  this provider's <code>getName</code> method
      */
     public void logout() throws LoginException {
-
         if (!isConfigured()) {
             throw new IllegalStateException("Configuration is required");
         }
 
         // security check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission
@@ -1472,9 +1561,12 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         try {
-            if (token.isLoggedInNow(null) == false) {
+            if (!token.isLoggedInNow(null)) {
                 if (debug != null) {
                     debug.println("user not logged in");
+                }
+                if (config.getDestroyTokenAfterLogout()) {
+                    token.destroy();
                 }
                 return;
             }
@@ -1483,7 +1575,6 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // perform token logout
-
         Session session = null;
         try {
             session = token.getOpSession();
@@ -1504,6 +1595,9 @@ public final class SunPKCS11 extends AuthProvider {
             throw le;
         } finally {
             token.releaseSession(session);
+            if (config.getDestroyTokenAfterLogout()) {
+                token.destroy();
+            }
         }
     }
 
@@ -1539,6 +1633,7 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // security check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission
@@ -1573,6 +1668,7 @@ public final class SunPKCS11 extends AuthProvider {
                     debug.println("getting default callback handler");
                 }
 
+                @SuppressWarnings("removal")
                 CallbackHandler myHandler = AccessController.doPrivileged
                     (new PrivilegedExceptionAction<CallbackHandler>() {
                     public CallbackHandler run() throws Exception {

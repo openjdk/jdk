@@ -86,8 +86,9 @@ public class HtmlTree extends Content {
 
     /**
      * A sentinel value to explicitly indicate empty content.
+     * The '==' identity of this object is significant.
      */
-    public static final Content EMPTY = new StringContent("");
+    public static final Content EMPTY = Text.of("");
 
     /**
      * Creates an {@code HTMLTree} object representing an HTML element
@@ -173,8 +174,8 @@ public class HtmlTree extends Content {
      */
     @Override
     public HtmlTree add(Content content) {
-        if (content instanceof ContentBuilder) {
-            ((ContentBuilder) content).contents.forEach(this::add);
+        if (content instanceof ContentBuilder cb) {
+            cb.contents.forEach(this::add);
         }
         else if (content == HtmlTree.EMPTY || content.isValid()) {
             // quietly avoid adding empty or invalid nodes (except EMPTY)
@@ -198,14 +199,14 @@ public class HtmlTree extends Content {
     public HtmlTree add(CharSequence stringContent) {
         if (!content.isEmpty()) {
             Content lastContent = content.get(content.size() - 1);
-            if (lastContent instanceof StringContent)
+            if (lastContent instanceof TextBuilder)
                 lastContent.add(stringContent);
             else {
-                add(new StringContent(stringContent));
+                add(new TextBuilder(stringContent));
             }
         }
         else {
-            add(new StringContent(stringContent));
+            add(new TextBuilder(stringContent));
         }
         return this;
     }
@@ -527,10 +528,10 @@ public class HtmlTree extends Content {
      * @param value the initial value
      * @return the element
      */
-    public static HtmlTree INPUT(String type, String id, String value) {
+    public static HtmlTree INPUT(String type, HtmlId id, String value) {
         return new HtmlTree(TagName.INPUT)
                 .put(HtmlAttr.TYPE, type)
-                .put(HtmlAttr.ID, id)
+                .setId(id)
                 .put(HtmlAttr.VALUE, value)
                 .put(HtmlAttr.DISABLED, "disabled");
     }
@@ -925,6 +926,8 @@ public class HtmlTree extends Content {
                         (hasAttr(HtmlAttr.TYPE) && hasContent()));
             case SPAN:
                 return (hasAttr(HtmlAttr.ID) || hasContent());
+            case WBR:
+                return (!hasContent());
             default :
                 return hasContent();
         }
@@ -941,6 +944,7 @@ public class HtmlTree extends Content {
         switch (tagName) {
             case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
             case LABEL: case SMALL: case SPAN: case STRONG: case SUB: case SUP:
+            case WBR:
                 return true;
             default:
                 return false;
@@ -956,7 +960,7 @@ public class HtmlTree extends Content {
      */
     public boolean isVoid() {
         switch (tagName) {
-            case BR: case HR: case IMG: case INPUT: case LINK: case META:
+            case BR: case HR: case IMG: case INPUT: case LINK: case META: case WBR:
                 return true;
             default:
                 return false;

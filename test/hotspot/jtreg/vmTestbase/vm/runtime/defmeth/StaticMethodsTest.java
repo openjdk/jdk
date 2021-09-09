@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,31 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.StaticMethodsTest
+ */
 package vm.runtime.defmeth;
 
-import nsk.share.test.TestBase;
+import java.util.Set;
+
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.Crash;
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
@@ -39,7 +56,11 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
 public class StaticMethodsTest extends DefMethTest {
 
     public static void main(String[] args) {
-        TestBase.runTest(new StaticMethodsTest(), args);
+        DefMethTest.runTest(StaticMethodsTest.class,
+                /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
+                /* redefine */ Set.of(false, true),
+                /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
 
     // static method in interface
@@ -52,9 +73,7 @@ public class StaticMethodsTest extends DefMethTest {
      *
      * class C implements I {}
      */
-    public void testStaticMethod() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testStaticMethod(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -62,9 +81,8 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().staticCallSite(I, "m", "()I").returns(1).done()
-
-        .run();
+        b.test().staticCallSite(I, "m", "()I").returns(1).done();
+        b.test().staticCallSite(C, "m", "()I").throws_(NoSuchMethodError.class).done();
     }
 
     // invoke[virtual|interface|special] from same/subintf
@@ -78,9 +96,7 @@ public class StaticMethodsTest extends DefMethTest {
      *
      * class C implements I {}
      */
-    public void testInvokeVirtual() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInvokeVirtual(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("staticM", "()I")
                     .static_().public_().returns(1).build()
@@ -92,12 +108,10 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().staticCallSite(I, "staticM", "()I").returns(1).done()
+        b.test().staticCallSite(I, "staticM", "()I").returns(1).done();
 
-         .test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-
-        .run();
+        b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
+        b.test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
     }
 
     /*
@@ -110,9 +124,7 @@ public class StaticMethodsTest extends DefMethTest {
      *
      * class C implements I {}
      */
-    public void testInvokeIntf() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInvokeIntf(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("staticM", "()I")
                     .static_().public_().returns(1).build()
@@ -123,12 +135,10 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().staticCallSite(I, "staticM", "()I").returns(1).done()
+        b.test().staticCallSite(I, "staticM", "()I").returns(1).done();
 
-         .test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-
-        .run();
+        b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
+        b.test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
     }
 
     /*
@@ -141,9 +151,7 @@ public class StaticMethodsTest extends DefMethTest {
      *
      * class C implements I {}
      */
-    public void testInvokeSpecial() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInvokeSpecial(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("staticM", "()I")
                     .static_().public_().returns(1).build()
@@ -154,12 +162,10 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().staticCallSite(I, "staticM", "()I").returns(1).done()
+        b.test().staticCallSite(I, "staticM", "()I").returns(1).done();
 
-         .test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-
-        .run();
+        b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
+        b.test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
     }
 
     /*
@@ -172,9 +178,7 @@ public class StaticMethodsTest extends DefMethTest {
      *
      * class C implements I {}
      */
-    public void testStaticVsDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testStaticVsDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -184,16 +188,14 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().staticCallSite(I, "m", "()I").throws_(ClassFormatError.class).done()
+        b.test().staticCallSite(I, "m", "()I").throws_(ClassFormatError.class).done();
 
          // FIXME: throws exception during an attempt to lookup Test2.test() method
 
          // Invalid test. ClassFormatError is thrown at verification time, rather
          // than execution time.
          // .test().callSite(I, C, "m", "()I").throws_(ClassFormatError.class).done()
-         .test().callSite(C, C, "m", "()I").throws_(ClassFormatError.class).done()
-
-        .run();
+         b.test().callSite(C, C, "m", "()I").throws_(ClassFormatError.class).done();
     }
 
     // call static method from default method
@@ -209,9 +211,7 @@ public class StaticMethodsTest extends DefMethTest {
      *
      * class C implements I {}
      */
-    public void testInvokeFromDefaultMethod() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInvokeFromDefaultMethod(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("staticPublicM", "()I")
                     .static_().public_().returns(1).build()
@@ -226,16 +226,10 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = IllegalAccessError.class;
-        }
-
         // call static method from another class
         b.test().staticCallSite(I, "staticPublicM", "()I").returns(1).done()
-         .test().staticCallSite(I, "staticPrivateM", "()I").throws_(expectedClass).done()
+
+         .test().callSite(I, "staticPrivateM", "()I", ACC_STATIC | ACC_PRIVATE).throws_(IllegalAccessError.class).done()
 
          // call public static method from default method
          .test().callSite(I, C, "invokePublic", "()I").returns(1).done()
@@ -243,9 +237,7 @@ public class StaticMethodsTest extends DefMethTest {
 
          // call private static method from default method
          .test().callSite(I, C, "invokePrivate", "()I").returns(1).done()
-         .test().callSite(C, C, "invokePrivate", "()I").returns(1).done()
-
-        .run();
+         .test().callSite(C, C, "invokePrivate", "()I").returns(1).done();
     }
 
     // call static method from implementing subclass
@@ -267,11 +259,8 @@ public class StaticMethodsTest extends DefMethTest {
      * C c = new C(); c.invokePrivate() ==> IAE or if -ver < 52, IAE or VerifyError
      * }
      */
-
     @NotApplicableFor(modes = { REDEFINITION }) // Can't redefine a class that gets error during loading
-    public void testInvokeFromSubclass() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInvokeFromSubclass(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("staticPublicM", "()I")
                     .static_().public_().returns(1).build()
@@ -287,35 +276,18 @@ public class StaticMethodsTest extends DefMethTest {
                     .invokeStatic(b.intfByName("I"), "staticPrivateM", "()I").build()
             .build();
 
-        Class expectedError1;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedError1 = NoSuchMethodException.class;
-        } else {
-            expectedError1 = IllegalAccessError.class;
-        }
+        // call static method from another class
+        b.test().staticCallSite(I, "staticPublicM", "()I").returns(1).done()
+         .test().callSite(I, "staticPrivateM", "()I", ACC_STATIC | ACC_PRIVATE).throws_(IllegalAccessError.class).done();
 
-        // Adjust for -ver < 52
+        // call static method from implementing subclass
         if (factory.getVer() >=52) {
-            // call static method from another class
-            b.test().staticCallSite(I, "staticPublicM", "()I").returns(1).done()
-             .test().staticCallSite(I, "staticPrivateM", "()I").throws_(expectedError1).done()
-
-            // call static method from implementing subclass
-             .test().callSite(C, C, "invokePublic", "()I").returns(1).done()
-             .test().callSite(C, C, "invokePrivate", "()I").throws_(IllegalAccessError.class).done()
-
-            .run();
+            b.test().callSite(C, C, "invokePublic", "()I").returns(1).done()
+             .test().callSite(C, C, "invokePrivate", "()I").throws_(IllegalAccessError.class).done();
         } else {
-            // call static method from another class
-            b.test().staticCallSite(I, "staticPublicM", "()I").returns(1).done()
-             .test().staticCallSite(I, "staticPrivateM", "()I").throws_(expectedError1).done()
-
-            // call static method from implementing subclass
             // invokestatic IMR - not supported for ver < 52
-             .test().callSite(C, C, "invokePublic",  "()I").throws_(VerifyError.class).done()
-             .test().callSite(C, C, "invokePrivate", "()I").throws_(VerifyError.class).done()
-
-            .run();
+            b.test().callSite(C, C, "invokePublic",  "()I").throws_(VerifyError.class).done()
+             .test().callSite(C, C, "invokePrivate", "()I").throws_(VerifyError.class).done();
         }
     }
 
@@ -330,9 +302,7 @@ public class StaticMethodsTest extends DefMethTest {
      *
      * class C implements I {}
      */
-    public void testNotInherited() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNotInherited(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -340,17 +310,15 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().staticCallSite(I, "m", "()I").returns(1).done()
-              // invokeinterface to static method ==> ICCE
-              .test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(C, C, "m", "()I").throws_(NoSuchMethodError.class).done()
-            .run();
+        b.test().staticCallSite(I, "m", "()I").returns(1).done();
+
+        b.test().callSite(C, C, "m", "()I").throws_(NoSuchMethodError.class).done();
+
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(I, C, "m", "()I").returns(1).done();
         } else {
-            b.test().staticCallSite(I, "m", "()I").returns(1).done()
-             .test().callSite(I, C, "m", "()I").returns(1).done()
-             .test().callSite(C, C, "m", "()I").throws_(NoSuchMethodError.class).done()
-            .run();
+            // invokeinterface to static method ==> ICCE
+            b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
         }
     }
 
@@ -367,9 +335,7 @@ public class StaticMethodsTest extends DefMethTest {
      * TEST: I o = new C(); o.m()I throws ICCE
      * TEST: C o = new C(); o.m()I == 2
      */
-    public void testDefaultVsConcrete() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testDefaultVsConcrete(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -379,15 +345,14 @@ public class StaticMethodsTest extends DefMethTest {
                 .concreteMethod("m", "()I").returns(2).build()
             .build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            // invokeinterface to static method ==> ICCE
-            b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(C, C, "m", "()I").returns(2).done().run();
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(I, C, "m", "()I").returns(1).done();
         } else {
-            b.test().callSite(I, C, "m", "()I").returns(1).done()
-             .test().callSite(C, C, "m", "()I").returns(2).done().run();
+            // invokeinterface to static method ==> ICCE
+            b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
         }
 
+        b.test().callSite(C, C, "m", "()I").returns(2).done();
     }
 
     /*
@@ -404,9 +369,7 @@ public class StaticMethodsTest extends DefMethTest {
      * class C implements J {
      * }
      */
-    public void testOverrideStatic() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testOverrideStatic(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -419,20 +382,16 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(J).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().staticCallSite(I, "m", "()I").returns(1).done()
-             .test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(J, C, "m", "()I").returns(2).done()
-             .test().callSite(C, C, "m", "()I").returns(2).done()
-            .run();
-        } else {
-            b.test().staticCallSite(I, "m", "()I").returns(1).done()
-             .test().callSite(I, C, "m", "()I").returns(1).done()
-             .test().callSite(J, C, "m", "()I").returns(2).done()
-             .test().callSite(C, C, "m", "()I").returns(2).done()
-            .run();
-        }
+        b.test().staticCallSite(I, "m", "()I").returns(1).done();
 
+        b.test().callSite(J, C, "m", "()I").returns(2).done();
+        b.test().callSite(C, C, "m", "()I").returns(2).done();
+
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(I, C, "m", "()I").returns(1).done();
+        } else {
+            b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
+        }
     }
 
     /*
@@ -452,9 +411,7 @@ public class StaticMethodsTest extends DefMethTest {
      * TEST: J o = new C(); o.m()I == ICCE
      * TEST: C o = new C(); o.m()I == 1
      */
-    public void testOverrideDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testOverrideDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .returns(1).build()
@@ -467,22 +424,15 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(J).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().callSite(I, C, "m", "()I").returns(1).done()
-             .test().callSite(J, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(C, C, "m", "()I").returns(1).done()
+        b.test().callSite(I, C, "m", "()I").returns(1).done();
+        b.test().callSite(C, C, "m", "()I").returns(1).done();
 
-            .run();
-
-        } else {
+        if (factory.getExecutionMode().equals("REFLECTION")) {
             // Reflection correctly finds the static method defined in J and
             // calls it with invokestatic.
-
-            b.test().callSite(I, C, "m", "()I").returns(1).done()
-             .test().callSite(J, C, "m", "()I").returns(2).done()
-             .test().callSite(C, C, "m", "()I").returns(1).done()
-
-            .run();
+            b.test().callSite(J, C, "m", "()I").returns(2).done();
+        } else {
+            b.test().callSite(J, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
         }
     }
 
@@ -504,9 +454,7 @@ public class StaticMethodsTest extends DefMethTest {
      * TEST: J o = new C(); o.m()I throws AME
      * TEST: C o = new C(); o.m()I throws AME
      */
-    public void testReabstract() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testReabstract(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -518,17 +466,14 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(J).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(J, C, "m", "()I").throws_(AbstractMethodError.class).done()
-             .test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done()
-            .run();
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(I, C, "m", "()I").returns(1).done();
         } else {
-            b.test().callSite(I, C, "m", "()I").returns(1).done()
-             .test().callSite(J, C, "m", "()I").throws_(AbstractMethodError.class).done()
-             .test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done()
-            .run();
+            b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
         }
+
+        b.test().callSite(J, C, "m", "()I").throws_(AbstractMethodError.class).done();
+        b.test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done();
     }
 
     /*
@@ -549,9 +494,7 @@ public class StaticMethodsTest extends DefMethTest {
      *                             -mode reflect returns 1
      * TEST: C o = new C(); o.m()I throws AME
      */
-    public void testOverrideAbstract() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testOverrideAbstract(TestBuilder b) {
         Interface I = b.intf("I")
                 .abstractMethod("m", "()I").build()
             .build();
@@ -563,18 +506,13 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(J).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().callSite(I, C, "m", "()I").throws_(AbstractMethodError.class).done()
-             .test().callSite(J, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done()
+        b.test().callSite(I, C, "m", "()I").throws_(AbstractMethodError.class).done();
+        b.test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done();
 
-            .run();
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(J, C, "m", "()I").returns(1).done();
         } else {
-            b.test().callSite(I, C, "m", "()I").throws_(AbstractMethodError.class).done()
-             .test().callSite(J, C, "m", "()I").returns(1).done()
-             .test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done()
-
-            .run();
+            b.test().callSite(J, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
         }
     }
 
@@ -594,9 +532,7 @@ public class StaticMethodsTest extends DefMethTest {
      * TEST: B o = new C(); o.m()I throws NoSuchMethodError
      * TEST: C o = new C(); o.m()I throws NoSuchMethodError
      */
-    public void testInheritedDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInheritedDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -605,18 +541,14 @@ public class StaticMethodsTest extends DefMethTest {
         ConcreteClass B = b.clazz("B").implement(I).build();
         ConcreteClass C = b.clazz("C").extend(B).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().callSite(I, C, "m","()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(B, C, "m","()I").throws_(NoSuchMethodError.class).done()
-             .test().callSite(C, C, "m","()I").throws_(NoSuchMethodError.class).done()
-            .run();
-        } else {
-            b.test().callSite(I, C, "m","()I").returns(1).done()
-             .test().callSite(B, C, "m","()I").throws_(NoSuchMethodError.class).done()
-             .test().callSite(C, C, "m","()I").throws_(NoSuchMethodError.class).done()
-            .run();
-        }
+        b.test().callSite(B, C, "m","()I").throws_(NoSuchMethodError.class).done();
+        b.test().callSite(C, C, "m","()I").throws_(NoSuchMethodError.class).done();
 
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(I, C, "m","()I").returns(1).done();
+        } else {
+            b.test().callSite(I, C, "m","()I").throws_(IncompatibleClassChangeError.class).done();
+        }
     }
 
     /*
@@ -633,9 +565,7 @@ public class StaticMethodsTest extends DefMethTest {
      * class C extends B implements I {}
      *
      */
-    public void testDefaultVsConcreteInherited() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testDefaultVsConcreteInherited(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -647,20 +577,16 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").extend(B).implement(I).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().staticCallSite(I, "m","()I").returns(1).done()
-             .test().callSite(I, C, "m","()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(B, C, "m","()I").returns(2).done()
-             .test().callSite(C, C, "m","()I").returns(2).done()
-            .run();
-        } else {
-            b.test().staticCallSite(I, "m","()I").returns(1).done()
-             .test().callSite(I, C, "m","()I").returns(1).done()
-             .test().callSite(B, C, "m","()I").returns(2).done()
-             .test().callSite(C, C, "m","()I").returns(2).done()
-            .run();
-        }
+        b.test().staticCallSite(I, "m","()I").returns(1).done();
 
+        b.test().callSite(B, C, "m","()I").returns(2).done();
+        b.test().callSite(C, C, "m","()I").returns(2).done();
+
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(I, C, "m","()I").returns(1).done();
+        } else {
+            b.test().callSite(I, C, "m","()I").throws_(IncompatibleClassChangeError.class).done();
+        }
     }
 
     /*
@@ -681,9 +607,7 @@ public class StaticMethodsTest extends DefMethTest {
      * TEST: J o = new C(); o.m()I == 2
      * TEST: C o = new C(); o.m()I == 2
      */
-    public void testDefaultVsStaticConflict() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testDefaultVsStaticConflict(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .static_().public_().returns(1).build()
@@ -695,19 +619,16 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I,J).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(J, C, "m", "()I").returns(2).done()
-             .test().callSite(C, C, "m", "()I").returns(2).done()
-            .run();
-        } else {
-            b.test().callSite(I, C, "m", "()I").returns(1).done()
-             .test().callSite(J, C, "m", "()I").returns(2).done()
-             .test().callSite(C, C, "m", "()I").returns(2).done()
-            .run();
-        }
+        b.test().callSite(J, C, "m", "()I").returns(2).done();
+        b.test().callSite(C, C, "m", "()I").returns(2).done();
 
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(I, C, "m", "()I").returns(1).done();
+        } else {
+            b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
+        }
     }
+
     /*
      * testStaticSuperClassVsDefaultSuperInterface
      *
@@ -725,9 +646,7 @@ public class StaticMethodsTest extends DefMethTest {
      *                             -mode reflect returns 2
      * TEST: I o = new C(); o.m()I == 1
      */
-    public void testStaticSuperClassVsDefaultSuperInterface() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testStaticSuperClassVsDefaultSuperInterface(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .public_().returns(1).build()
@@ -740,16 +659,15 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").extend(A).implement(I).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(I, C, "m", "()I").returns(1).done()
-            .run();
+        b.test().callSite(I, C, "m", "()I").returns(1).done();
+
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(C, C, "m", "()I").returns(2).done();
         } else {
-            b.test().callSite(C, C, "m", "()I").returns(2).done()
-             .test().callSite(I, C, "m", "()I").returns(1).done()
-            .run();
+            b.test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
         }
     }
+
     /*
      * testStaticLocalVsDefaultSuperInterface
      *
@@ -767,9 +685,7 @@ public class StaticMethodsTest extends DefMethTest {
      *                             -mode reflect returns 2
      * TEST: I o = new A(); o.m()I == 1
      */
-    public void testStaticLocalVsDefaultSuperInterface() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testStaticLocalVsDefaultSuperInterface(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .public_().returns(1).build()
@@ -782,16 +698,18 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").extend(A).implement(I).build();
 
-        if (!factory.getExecutionMode().equals("REFLECTION")) {
-            b.test().callSite(A, A, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-             .test().callSite(I, A, "m", "()I").returns(1).done()
-            .run();
+        b.test().callSite(I, A, "m", "()I").returns(1).done();
+        b.test().callSite(I, C, "m", "()I").returns(1).done();
+
+        if (factory.getExecutionMode().equals("REFLECTION")) {
+            b.test().callSite(A, A, "m", "()I").returns(2).done();
+            b.test().callSite(C, C, "m", "()I").returns(2).done();
         } else {
-            b.test().callSite(A, A, "m", "()I").returns(2).done()
-             .test().callSite(I, A, "m", "()I").returns(1).done()
-            .run();
+            b.test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
+            b.test().callSite(A, A, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
         }
     }
+
     /*
      * testConflictingDefaultsandStaticMethod
      * @bug 8033150
@@ -812,9 +730,7 @@ public class StaticMethodsTest extends DefMethTest {
      *
      * TEST: C.m(); should call A.m, return value = 3
      */
-    public void testConflictingDefaultsandStaticMethod() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testConflictingDefaultsandStaticMethod(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I")
                     .public_().returns(1).build()
@@ -832,7 +748,6 @@ public class StaticMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").extend(A).build();
 
-        b.test().staticCallSite(C, "m", "()I").returns(3).done()
-         .run();
+        b.test().staticCallSite(C, "m", "()I").returns(3).done();
     }
 }

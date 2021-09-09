@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,13 +155,13 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
         String s;
         if (arg instanceof Formattable) {
             s = arg.toString();
-        } else if (arg instanceof JCExpression) {
+        } else if (arg instanceof JCExpression expression) {
             Assert.checkNonNull(rawDiagnosticPosHelper);
-            s = "@" + rawDiagnosticPosHelper.getPosition((JCExpression)arg);
-        } else if (arg instanceof PathFileObject) {
-            s = ((PathFileObject) arg).getShortName();
-        } else if (arg instanceof Tag) {
-            s = "compiler.misc.tree.tag." + StringUtils.toLowerCase(((Tag) arg).name());
+            s = "@" + rawDiagnosticPosHelper.getPosition(expression);
+        } else if (arg instanceof PathFileObject pathFileObject) {
+            s = pathFileObject.getShortName();
+        } else if (arg instanceof Tag tag) {
+            s = "compiler.misc.tree.tag." + StringUtils.toLowerCase(tag.name());
         } else if (arg instanceof Source && arg == Source.DEFAULT &&
                 CODES_NEEDING_SOURCE_NORMALIZATION.contains(diag.getCode())) {
             s = "DEFAULT";

@@ -30,33 +30,40 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.MulticastChannel;
 
 /**
- * The multicast datagram socket class is useful for sending
- * and receiving IP multicast packets. A MulticastSocket is
- * a (UDP) DatagramSocket, with additional capabilities for
- * joining "groups" of other multicast hosts on the internet.
+ * A {@code MulticastSocket} is a datagram socket that is
+ * convenient for sending and receiving IP multicast datagrams.
+ * The {@code MulticastSocket} constructors create a socket
+ * with appropriate socket options enabled that make
+ * it suitable for receiving multicast datagrams.
+ * The {@code MulticastSocket} class additionally defines
+ * convenient setter and getter methods for socket options
+ * that are commonly used by multicasting applications.
  * <P>
- * A multicast group is specified by a class D IP address
+ * Joining one or more multicast groups makes it possible to
+ * receive multicast datagrams sent to these groups.
+ * <P>
+ * An IPv4 multicast group is specified by a class D IP address
  * and by a standard UDP port number. Class D IP addresses
  * are in the range {@code 224.0.0.0} to {@code 239.255.255.255},
  * inclusive. The address 224.0.0.0 is reserved and should not be used.
  * <P>
  * One would join a multicast group by first creating a MulticastSocket
  * with the desired port, then invoking the
- * <CODE>joinGroup(InetAddress groupAddr)</CODE>
- * method:
+ * <CODE>joinGroup</CODE> method, specifying the group address and
+ * the network interface through which multicast datagrams will be
+ * received:
  * <PRE>{@code
  * // join a Multicast group and send the group salutations
  * ...
  * String msg = "Hello";
  * InetAddress mcastaddr = InetAddress.getByName("228.5.6.7");
- * InetSocketAddress group = new InetSocketAddress(mcastaddr, port);
+ * InetSocketAddress group = new InetSocketAddress(mcastaddr, 6789);
  * NetworkInterface netIf = NetworkInterface.getByName("bge0");
  * MulticastSocket s = new MulticastSocket(6789);
  *
- * s.joinGroup(group, netIf);
+ * s.joinGroup(new InetSocketAddress(mcastaddr, 0), netIf);
  * byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
- * DatagramPacket hi = new DatagramPacket(msgBytes, msgBytes.length,
- *                                        group, 6789);
+ * DatagramPacket hi = new DatagramPacket(msgBytes, msgBytes.length, group);
  * s.send(hi);
  * // get their responses!
  * byte[] buf = new byte[1000];

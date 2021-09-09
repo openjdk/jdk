@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@
  * @summary kerberos login failure on win2008 with AD set to win2000 compat mode
  * and cannot login if session key and preauth does not use the same etype
  * @library /test/lib
+ * @compile -XDignore.symbol.file W83.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm -D6932525 -Djdk.net.hosts.file=TestHosts W83
  * @run main/othervm -D6959292 -Djdk.net.hosts.file=TestHosts W83
  */
 import com.sun.security.auth.module.Krb5LoginModule;
-import java.io.File;
 import sun.security.krb5.Config;
 import sun.security.krb5.EncryptedData;
 import sun.security.krb5.PrincipalName;
@@ -49,7 +49,8 @@ public class W83 {
         KDC kdc = new KDC(OneKDC.REALM, "127.0.0.1", 0, true);
         kdc.addPrincipal(OneKDC.USER, OneKDC.PASS);
         kdc.addPrincipalRandKey("krbtgt/" + OneKDC.REALM);
-        KDC.saveConfig(OneKDC.KRB5_CONF, kdc);
+        KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
+                "allow_weak_crypto = true");
         System.setProperty("java.security.krb5.conf", OneKDC.KRB5_CONF);
         Config.refresh();
 

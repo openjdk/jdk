@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit;
 
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -77,10 +78,10 @@ public interface SerializedFormWriter {
     /**
      * Get the given package header.
      *
-     * @param packageName the package header to write
+     * @param packageElement the package element to write
      * @return a content tree for the package header
      */
-    Content getPackageHeader(String packageName);
+    Content getPackageHeader(PackageElement packageElement);
 
     /**
      * Get the serialized class header.
@@ -225,19 +226,6 @@ public interface SerializedFormWriter {
          * @param contentTree content tree to which the member tags will be added
          */
         void addMemberTags(VariableElement field, Content contentTree);
-
-        /**
-         * Adds the member header.
-         *
-         * @param fieldType the type of the field
-         * @param fieldTypeStr the type of the field in string format, used
-         *                     only if the type cannot be linked
-         * @param fieldDimensions the dimensions of the field
-         * @param fieldName the name of the field
-         * @param contentTree content tree to which the member header will be added
-         */
-        void addMemberHeader(TypeElement fieldType, String fieldTypeStr, String fieldDimensions,
-                             String fieldName, Content contentTree);
 
         /**
          * Adds the member header.

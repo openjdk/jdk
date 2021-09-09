@@ -4,6 +4,7 @@ on:
   push:
     branches-ignore:
       - master
+      - pr/*
   workflow_dispatch:
     inputs:
       platforms:
@@ -24,6 +25,7 @@ jobs:
       platform_windows_aarch64: ${{ steps.check_platforms.outputs.platform_windows_aarch64 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
+      platform_macos_aarch64: ${{ steps.check_platforms.outputs.platform_macos_aarch64 }}
       dependencies: ${{ steps.check_deps.outputs.dependencies }}
 
     steps:
@@ -40,6 +42,7 @@ jobs:
           echo "::set-output name=platform_windows_aarch64::${{ contains(github.event.inputs.platforms, 'windows aarch64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows aarch64'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
+          echo "::set-output name=platform_macos_aarch64::${{ contains(github.event.inputs.platforms, 'macos aarch64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos aarch64'))) }}"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine unique bundle identifier
@@ -64,7 +67,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine the jtreg ref to checkout
-        run: "echo JTREG_REF=jtreg${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_VERSION }}-${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_BUILD }} >> $GITHUB_ENV"
+        run: "echo JTREG_REF=jtreg-${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_VERSION }}+${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_BUILD }} >> $GITHUB_ENV"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Check if a jtreg image is present in the cache
@@ -84,7 +87,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
       - name: Build jtreg
-        run: sh make/build-all.sh ${JAVA_HOME_8_X64}
+        run: bash make/build.sh --jdk ${JAVA_HOME_8_X64}
         working-directory: jtreg
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
@@ -171,7 +174,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc-10=10.2.0-5ubuntu1~20.04 g++-10=10.2.0-5ubuntu1~20.04 libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
+          sudo apt-get install gcc-10=10.3.0-1ubuntu1~20.04 g++-10=10.3.0-1ubuntu1~20.04 libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
 
       - name: Configure
@@ -486,12 +489,12 @@ jobs:
 
       - name: Install native host dependencies
         run: |
-          sudo apt-get install gcc-10=10.2.0-5ubuntu1~20.04 g++-10=10.2.0-5ubuntu1~20.04 libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
+          sudo apt-get install gcc-10=10.3.0-1ubuntu1~20.04 g++-10=10.3.0-1ubuntu1~20.04 libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
         if: matrix.debian-arch == ''
 
       - name: Install cross-compilation host dependencies
-        run: sudo apt-get install gcc-10-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}=10.2.0-5ubuntu1~20.04cross1 g++-10-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}=10.2.0-5ubuntu1~20.04cross1
+        run: sudo apt-get install gcc-10-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}=10.3.0-1ubuntu1~20.04cross1 g++-10-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}=10.3.0-1ubuntu1~20.04cross1
         if: matrix.debian-arch != ''
 
       - name: Cache sysroot
@@ -536,10 +539,6 @@ jobs:
           echo "cross_flags=
           --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}
           --with-sysroot=${HOME}/sysroot-${{ matrix.debian-arch }}/
-          --with-toolchain-path=${HOME}/sysroot-${{ matrix.debian-arch }}/
-          --with-freetype-lib=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/
-          --with-freetype-include=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/include/freetype2/
-          --x-libraries=${HOME}/sysroot-${{ matrix.debian-arch }}/usr/lib/${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-flavor}}/
           " >> $GITHUB_ENV
         if: matrix.debian-arch != ''
 
@@ -913,7 +912,7 @@ jobs:
         run: >
           Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList
           'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet
-          --add Microsoft.VisualStudio.Component.VC.14.28.arm64'
+          --add Microsoft.VisualStudio.Component.VC.14.29.arm64'
 
       - name: Configure
         run: >
@@ -922,7 +921,7 @@ jobs:
           $env:BOOT_JDK = cygpath "$HOME/bootjdk/$env:BOOT_JDK_VERSION" ;
           & bash configure
           --with-conf-name=windows-aarch64
-          --with-msvc-toolset-version=14.28
+          --with-msvc-toolset-version=14.29
           --openjdk-target=aarch64-unknown-cygwin
           ${{ matrix.flags }}
           --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
@@ -1362,8 +1361,112 @@ jobs:
         with:
           name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
-            jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}.tar.gz
-            jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}.tar.gz
+
+  macos_aarch64_build:
+    name: macOS aarch64
+    runs-on: "macos-10.15"
+    needs: prerequisites
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_macos_aarch64 != 'false'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - build release
+          - build debug
+        include:
+          - flavor: build release
+          - flavor: build debug
+            flags: --enable-debug
+            artifact: -debug
+
+    env:
+      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
+      BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_FILENAME }}"
+      BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_URL }}"
+      BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_SHA256 }}"
+
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v2
+        with:
+          path: jdk
+
+      - name: Restore boot JDK from cache
+        id: bootjdk
+        uses: actions/cache@v2
+        with:
+          path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+          key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
+
+      - name: Download boot JDK
+        run: |
+          mkdir -p ${HOME}/bootjdk/${BOOT_JDK_VERSION} || true
+          wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+          echo "${BOOT_JDK_SHA256}  ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | shasum -a 256 -c >/dev/null -
+          tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          mv "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"*/* "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"
+        if: steps.bootjdk.outputs.cache-hit != 'true'
+
+      - name: Restore jtreg artifact
+        id: jtreg_restore
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
+
+      - name: Checkout gtest sources
+        uses: actions/checkout@v2
+        with:
+          repository: "google/googletest"
+          ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
+          path: gtest
+
+      - name: Install dependencies
+        run: brew install make
+
+      - name: Select Xcode version
+        run: sudo xcode-select --switch /Applications/Xcode_12.4.app/Contents/Developer
+
+      - name: Configure
+        run: >
+          bash configure
+          --with-conf-name=macos-aarch64
+          --openjdk-target=aarch64-apple-darwin
+          ${{ matrix.flags }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-version-build=0
+          --with-boot-jdk=${HOME}/bootjdk/${BOOT_JDK_VERSION}/Contents/Home
+          --with-jtreg=${HOME}/jtreg
+          --with-gtest=${GITHUB_WORKSPACE}/gtest
+          --with-default-make-target="product-bundles test-bundles"
+          --with-zlib=system
+          --enable-jtreg-failure-handler
+        working-directory: jdk
+
+      - name: Build
+        run: make CONF_NAME=macos-aarch64
+        working-directory: jdk
+
+      - name: Persist test bundles
+        uses: actions/upload-artifact@v2
+        with:
+          name: transient_jdk-macos-aarch64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: |
+            jdk/build/macos-aarch64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_macos-aarch64_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-aarch64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_macos-aarch64_bin-tests${{ matrix.artifact }}.tar.gz
+
 
   macos_x64_test:
     name: macOS x64
@@ -1469,13 +1572,13 @@ jobs:
 
       - name: Unpack jdk
         run: |
-          mkdir -p "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}"
-          tar -xf "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}"
+          mkdir -p "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }}"
+          tar -xf "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }}"
 
       - name: Unpack tests
         run: |
-          mkdir -p "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}"
-          tar -xf "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}"
+          mkdir -p "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}"
+          tar -xf "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}"
 
       - name: Install dependencies
         run: brew install make
@@ -1485,13 +1588,13 @@ jobs:
 
       - name: Find root of jdk image dir
         run: |
-          imageroot=`find ${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }} -name release -type f`
+          imageroot=`find ${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }} -name release -type f`
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
-          TEST_IMAGE_DIR=${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}
+          TEST_IMAGE_DIR=${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}
           BOOT_JDK=${HOME}/bootjdk/${BOOT_JDK_VERSION}/Contents/Home
           JT_HOME=${HOME}/jtreg
           gmake test-prebuilt
@@ -1563,6 +1666,7 @@ jobs:
       - linux_x86_test
       - windows_x64_test
       - macos_x64_test
+      - macos_aarch64_build
 
     steps:
       - name: Determine current artifacts endpoint

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,7 +67,7 @@ void print_scaled_words_and_percentage(outputStream* st, size_t word_size, size_
 // Print a human readable size.
 // byte_size: size, in bytes, to be printed.
 // scale: one of 1 (byte-wise printing), sizeof(word) (word-size printing), K, M, G (scaled by KB, MB, GB respectively,
-//         or 0, which means the best scale is choosen dynamically.
+//         or 0, which means the best scale is chosen dynamically.
 // width: printing width.
 void print_human_readable_size(outputStream* st, size_t byte_size, size_t scale = 0, int width = -1);
 

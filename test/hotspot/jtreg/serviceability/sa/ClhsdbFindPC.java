@@ -82,6 +82,7 @@ public class ClhsdbFindPC {
 
     private static void testFindPC(boolean withXcomp, boolean withCore) throws Exception {
         try {
+            String linesep = System.getProperty("line.separator");
             String segvAddress = null;
             List<String> cmds = null;
             String cmdStr = null;
@@ -89,7 +90,7 @@ public class ClhsdbFindPC {
 
             test = new ClhsdbLauncher();
 
-            theApp = new LingeredAppWithTrivialMain();
+            theApp = new LingeredApp();
             theApp.setForceCrash(withCore);
             if (withXcomp) {
                 LingeredApp.startApp(theApp, "-Xcomp");
@@ -133,9 +134,9 @@ public class ClhsdbFindPC {
             String jStackOutput = runTest(withCore, cmds, null);
 
             // Extract pc address from the following line:
-            //   - LingeredAppWithTrivialMain.main(java.lang.String[]) @bci=1, line=33, pc=0x00007ff18ff519f0, ...
+            //   - LingeredApp.steadyState(java.lang.Object) @bci=1, line=33, pc=0x00007ff18ff519f0, ...
             String pcAddress = null;
-            String[] parts = jStackOutput.split("LingeredAppWithTrivialMain.main");
+            String[] parts = jStackOutput.split("LingeredApp.steadyState");
             String[] tokens = parts[1].split(" ");
             for (String token : tokens) {
                 if (token.contains("pc")) {
@@ -146,7 +147,7 @@ public class ClhsdbFindPC {
                 }
             }
             if (pcAddress == null) {
-                throw new RuntimeException("Cannot find LingeredAppWithTrivialMain.main pc in output");
+                throw new RuntimeException("Cannot find LingeredApp.steadyState pc in output");
             }
 
             // Test the 'findpc' command passing in the pc obtained from jstack above
@@ -156,7 +157,7 @@ public class ClhsdbFindPC {
             expStrMap = new HashMap<>();
             if (withXcomp) {
                 expStrMap.put(cmdStr, List.of(
-                            "In code in NMethod for LingeredAppWithTrivialMain.main",
+                            "In code in NMethod for jdk/test/lib/apps/LingeredApp.steadyState",
                             "content:",
                             "oops:",
                             "frame size:"));
@@ -167,9 +168,9 @@ public class ClhsdbFindPC {
             runTest(withCore, cmds, expStrMap);
 
             // Run findpc on a Method*. We can find one in the jstack output. For example:
-            // - LingeredAppWithTrivialMain.main(java.lang.String[]) @bci=1, line=33, pc=..., Method*=0x0000008041000208 ...
+            // - LingeredApp.steadyState(java.lang.Object) @bci=1, line=33, pc=..., Method*=0x0000008041000208 ...
             // This is testing the PointerFinder support for C++ MetaData types.
-            parts = jStackOutput.split("LingeredAppWithTrivialMain.main");
+            parts = jStackOutput.split("LingeredApp.steadyState");
             parts = parts[1].split("Method\\*=");
             parts = parts[1].split(" ");
             String methodAddr = parts[0];
@@ -177,7 +178,7 @@ public class ClhsdbFindPC {
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of("Method ",
-                                          "LingeredAppWithTrivialMain.main",
+                                          "LingeredApp.steadyState",
                                           methodAddr));
             runTest(withCore, cmds, expStrMap);
 
@@ -202,11 +203,16 @@ public class ClhsdbFindPC {
             parts = parts[1].split(" \\[");
             parts = parts[1].split("\\]");
             String stackAddress = parts[0];  // address of the thread's stack
-            cmdStr = "findpc " + stackAddress;
-            cmds = List.of(cmdStr);
-            expStrMap = new HashMap<>();
-            expStrMap.put(cmdStr, List.of("In java stack"));
-            runTest(withCore, cmds, expStrMap);
+            if (Long.decode(stackAddress) == 0L) {
+                System.out.println("Stack address is " + stackAddress + ". Skipping test.");
+            } else {
+                cmdStr = "findpc " + stackAddress;
+                cmds = List.of(cmdStr);
+                expStrMap = new HashMap<>();
+                // Note, sometimes a stack address points to a hotspot type, thus allow for "Is of type".
+                expStrMap.put(cmdStr, List.of("(In java stack)|(Is of type)"));
+                runTest(withCore, cmds, expStrMap);
+            }
 
             // Run 'examine <addr>' using a thread's tid as the address. The
             // examine output will be the of the form:
@@ -218,7 +224,7 @@ public class ClhsdbFindPC {
             String examineOutput = runTest(withCore, cmds, null);
             // Extract <value>.
             parts = examineOutput.split(tid + ": ");
-            String value = parts[1];
+            String value = parts[1].split(linesep)[0];
             // Use findpc on <value>. The output should look something like:
             //    Address 0x00007fed86f610b8: vtable for JavaThread + 0x10
             cmdStr = "findpc " + value;
@@ -229,13 +235,49 @@ public class ClhsdbFindPC {
             } else if (Platform.isOSX()) {
                 if (withCore) {
                     expStrMap.put(cmdStr, List.of("__ZTV10JavaThread"));
-                } else { // symbol lookups not supported with OSX live process
+                } else { // address -> symbol lookups not supported with OSX live process
                     expStrMap.put(cmdStr, List.of("In unknown location"));
                 }
             } else {
                 expStrMap.put(cmdStr, List.of("vtable for JavaThread"));
             }
-            runTest(withCore, cmds, expStrMap);
+            String findpcOutput = runTest(withCore, cmds, expStrMap);
+
+            // Determine if we have symbol support. Currently we assume yes except on windows.
+            boolean hasSymbols = true;
+            if (Platform.isWindows()) {
+                if (findpcOutput.indexOf("jvm!JavaThread::`vftable'") == -1) {
+                    hasSymbols = false;
+                }
+            }
+
+            // Run "findsym MaxJNILocalCapacity". The output should look something like:
+            //   0x00007eff8e1a0da0: <jdk-dir>/lib/server/libjvm.so + 0x1d81da0
+            String symbol = "MaxJNILocalCapacity";
+            cmds = List.of("findsym " + symbol);
+            expStrMap = new HashMap<>();
+            if (!hasSymbols) {
+                expStrMap.put(cmdStr, List.of("Symbol not found"));
+            }
+            String findsymOutput = runTest(withCore, cmds, expStrMap);
+            // Run findpc on the result of "findsym MaxJNILocalCapacity". The output
+            // should look something like:
+            //   Address 0x00007eff8e1a0da0: MaxJNILocalCapacity
+            if (hasSymbols) {
+                parts = findsymOutput.split("findsym " + symbol + linesep);
+                parts = parts[1].split(":");
+                String findsymAddress = parts[0].split(linesep)[0];
+                cmdStr = "findpc " + findsymAddress;
+                cmds = List.of(cmdStr);
+                expStrMap = new HashMap<>();
+                if (Platform.isOSX() && !withCore) {
+                    // address -> symbol lookups not supported with OSX live process
+                    expStrMap.put(cmdStr, List.of("Address " + findsymAddress + ": In unknown location"));
+                } else {
+                    expStrMap.put(cmdStr, List.of("Address " + findsymAddress + ": .*" + symbol));
+                }
+                runTest(withCore, cmds, expStrMap);
+            }
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {

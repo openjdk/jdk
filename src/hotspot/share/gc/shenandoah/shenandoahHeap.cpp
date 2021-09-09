@@ -83,6 +83,7 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
@@ -162,6 +163,9 @@ jint ShenandoahHeap::initialize() {
   Universe::check_alignment(init_byte_size, reg_size_bytes, "Shenandoah heap");
 
   _num_regions = ShenandoahHeapRegion::region_count();
+  assert(_num_regions == (max_byte_size / reg_size_bytes),
+         "Regions should cover entire heap exactly: " SIZE_FORMAT " != " SIZE_FORMAT "/" SIZE_FORMAT,
+         _num_regions, max_byte_size, reg_size_bytes);
 
   size_t num_committed_regions = init_byte_size / reg_size_bytes;
   num_committed_regions = MIN2(num_committed_regions, _num_regions);
@@ -337,7 +341,7 @@ jint ShenandoahHeap::initialize() {
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      ReservedSpace cset_rs(cset_size, cset_align, false, req_addr);
+      ReservedSpace cset_rs(cset_size, cset_align, os::vm_page_size(), req_addr);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -346,7 +350,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == NULL) {
-      ReservedSpace cset_rs(cset_size, cset_align, false);
+      ReservedSpace cset_rs(cset_size, cset_align, os::vm_page_size());
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
   }
@@ -425,7 +429,6 @@ jint ShenandoahHeap::initialize() {
 
   _monitoring_support = new ShenandoahMonitoringSupport(this);
   _phase_timings = new ShenandoahPhaseTimings(max_workers());
-  ShenandoahStringDedup::initialize();
   ShenandoahCodeRoots::initialize();
 
   if (ShenandoahPacing) {
@@ -658,12 +661,11 @@ size_t ShenandoahHeap::young_generation_capacity(size_t capacity) {
 }
 
 size_t ShenandoahHeap::used() const {
-  return Atomic::load_acquire(&_used);
+  return Atomic::load(&_used);
 }
 
 size_t ShenandoahHeap::committed() const {
-  OrderAccess::acquire();
-  return _committed;
+  return Atomic::load(&_committed);
 }
 
 void ShenandoahHeap::increase_committed(size_t bytes) {
@@ -677,20 +679,20 @@ void ShenandoahHeap::decrease_committed(size_t bytes) {
 }
 
 void ShenandoahHeap::increase_used(size_t bytes) {
-  Atomic::add(&_used, bytes);
+  Atomic::add(&_used, bytes, memory_order_relaxed);
 }
 
 void ShenandoahHeap::set_used(size_t bytes) {
-  Atomic::release_store_fence(&_used, bytes);
+  Atomic::store(&_used, bytes);
 }
 
 void ShenandoahHeap::decrease_used(size_t bytes) {
   assert(used() >= bytes, "never decrease heap size by more than we've left");
-  Atomic::sub(&_used, bytes);
+  Atomic::sub(&_used, bytes, memory_order_relaxed);
 }
 
 void ShenandoahHeap::increase_allocated(size_t bytes) {
-  Atomic::add(&_bytes_allocated_since_gc_start, bytes);
+  Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
 }
 
 void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
@@ -1204,7 +1206,7 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
 size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
 
-  oop humongous_obj = oop(start->bottom());
+  oop humongous_obj = cast_to_oop(start->bottom());
   size_t size = humongous_obj->size();
   size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
   size_t index = start->index() + required_regions - 1;
@@ -1647,7 +1649,6 @@ private:
     // Initialize queues for every workers
     for (uint i = 0; i < _num_workers; ++i) {
       ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
-      task_queue->initialize();
       _task_queues->register_queue(i, task_queue);
     }
     // Divide roots among the workers. Assume that object referencing distribution
@@ -1728,8 +1729,8 @@ public:
     size_t stride = ShenandoahParallelRegionStride;
 
     size_t max = _heap->num_regions();
-    while (_index < max) {
-      size_t cur = Atomic::fetch_and_add(&_index, stride);
+    while (Atomic::load(&_index) < max) {
+      size_t cur = Atomic::fetch_and_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -1752,6 +1753,12 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   }
 }
 
+class ShenandoahRendezvousClosure : public HandshakeClosure {
+public:
+  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
+  inline void do_thread(Thread* thread) {}
+};
+
 void ShenandoahHeap::rendezvous_threads() {
   ShenandoahRendezvousClosure cl;
   Handshake::execute(&cl);
@@ -1763,7 +1770,6 @@ void ShenandoahHeap::recycle_trash() {
 
 void ShenandoahHeap::do_class_unloading() {
   _unloader.unload();
-  set_concurrent_weak_root_in_progress(false);
 }
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
@@ -1852,12 +1858,8 @@ void ShenandoahHeap::set_concurrent_strong_root_in_progress(bool in_progress) {
   }
 }
 
-void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool in_progress) {
-  if (in_progress) {
-    _concurrent_weak_root_in_progress.set();
-  } else {
-    _concurrent_weak_root_in_progress.unset();
-  }
+void ShenandoahHeap::set_concurrent_weak_root_in_progress(bool cond) {
+  set_gc_state_mask(WEAK_ROOTS, cond);
 }
 
 GCTracer* ShenandoahHeap::tracer() {
@@ -1879,7 +1881,7 @@ bool ShenandoahHeap::try_cancel_gc() {
     if (thread->is_Java_thread()) {
       // We need to provide a safepoint here, otherwise we might
       // spin forever if a SP is pending.
-      ThreadBlockInVM sp(thread->as_Java_thread());
+      ThreadBlockInVM sp(JavaThread::cast(thread));
       SpinPause();
     }
   }
@@ -1925,11 +1927,6 @@ void ShenandoahHeap::stop() {
 
   // Step 3. Wait until GC worker exits normally.
   control_thread()->stop();
-
-  // Step 4. Stop String Dedup thread if it is active
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::stop();
-  }
 }
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
@@ -2026,11 +2023,11 @@ address ShenandoahHeap::gc_state_addr() {
 }
 
 size_t ShenandoahHeap::bytes_allocated_since_gc_start() {
-  return Atomic::load_acquire(&_bytes_allocated_since_gc_start);
+  return Atomic::load(&_bytes_allocated_since_gc_start);
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  Atomic::release_store_fence(&_bytes_allocated_since_gc_start, (size_t)0);
+  Atomic::store(&_bytes_allocated_since_gc_start, (size_t)0);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {
@@ -2068,7 +2065,10 @@ oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
-  heap_region_containing(o)->record_unpin();
+  ShenandoahHeapRegion* r = heap_region_containing(o);
+  assert(r != NULL, "Sanity");
+  assert(r->pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", r->index());
+  r->record_unpin();
 }
 
 void ShenandoahHeap::sync_pinned_region_status() {
@@ -2239,7 +2239,7 @@ private:
                 // Anything beyond update_watermark was allocated during evacuation.  Thus, it is known to not hold
                 // references to collection set objects.
                 while (p < update_watermark) {
-                  oop obj = oop(p);
+                  oop obj = cast_to_oop(p);
                   if (ctx->is_marked(obj)) {
                     objs.do_object(obj);
                     p += obj->size();
@@ -2294,7 +2294,7 @@ private:
       ShenandoahObjectToOopBoundedClosure<T> objs(cl, p, update_watermark);
       // Anything beyond update_watermark is not yet allocated or initialized.
       while (p < update_watermark) {
-        oop obj = oop(p);
+        oop obj = cast_to_oop(p);
         objs.do_object(obj);
         p += obj->size();
       }
@@ -2535,14 +2535,6 @@ char ShenandoahHeap::gc_state() const {
   return _gc_state.raw_value();
 }
 
-void ShenandoahHeap::deduplicate_string(oop str) {
-  assert(java_lang_String::is_instance(str), "invariant");
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::deduplicate(str);
-  }
-}
-
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT
   assert(_liveness_cache != NULL, "sanity");
@@ -2623,7 +2615,7 @@ void ShenandoahHeap::verify_rem_set_at_mark() {
     if (r->is_old()) {
       HeapWord* obj_addr = r->bottom();
       if (r->is_humongous_start()) {
-        oop obj = oop(obj_addr);
+        oop obj = cast_to_oop(obj_addr);
         if (!ctx || ctx->is_marked(obj)) {
           // For humongous objects, the typical object is an array, so the following checks may be overkill
           // For regular objects (not object arrays), if the card holding the start of the object is dirty,
@@ -2641,7 +2633,7 @@ void ShenandoahHeap::verify_rem_set_at_mark() {
       } else if (!r->is_humongous()) {
         HeapWord* t = r->top();
         while (obj_addr < t) {
-          oop obj = oop(obj_addr);
+          oop obj = cast_to_oop(obj_addr);
           // ctx->is_marked() returns true if mark bit set (TAMS not relevant here)
           if (!ctx || ctx->is_marked(obj)) {
             // For regular objects (not object arrays), if the card holding the start of the object is dirty,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,8 +121,6 @@ class MethodParametersElement {
   u2 flags;
 };
 
-class AdapterHandlerEntry;
-
 // Class to collect the sizes of ConstMethod inline tables
 #define INLINE_TABLES_DO(do_element)            \
   do_element(localvariable_table_length)        \
@@ -205,12 +203,6 @@ private:
   // Raw stackmap data for the method
   Array<u1>*        _stackmap_data;
 
-  // Adapter blob (i2c/c2i) for this Method*. Set once when method is linked.
-  union {
-    AdapterHandlerEntry* _adapter;
-    AdapterHandlerEntry** _adapter_trampoline; // see comments around Method::link_method()
-  };
-
   int               _constMethod_size;
   u2                _flags;
   u1                _result_type;                 // BasicType of result
@@ -284,26 +276,6 @@ public:
   void set_stackmap_data(Array<u1>* sd) { _stackmap_data = sd; }
   void copy_stackmap_data(ClassLoaderData* loader_data, u1* sd, int length, TRAPS);
   bool has_stackmap_table() const { return _stackmap_data != NULL; }
-
-  // adapter
-  void set_adapter_entry(AdapterHandlerEntry* adapter) {
-    assert(!is_shared(),
-           "shared methods in archive have fixed adapter_trampoline");
-    _adapter = adapter;
-  }
-  void set_adapter_trampoline(AdapterHandlerEntry** trampoline);
-  void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
-    assert(is_shared(), "must be");
-    *_adapter_trampoline = adapter;
-    assert(this->adapter() == adapter, "must be");
-  }
-  AdapterHandlerEntry* adapter() {
-    if (is_shared()) {
-      return *_adapter_trampoline;
-    } else {
-      return _adapter;
-    }
-  }
 
   void init_fingerprint() {
     const uint64_t initval = UCONST64(0x8000000000000000);

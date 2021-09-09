@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,6 @@ import sun.security.x509.NetscapeCertTypeExtension;
  * providers had incorrect extensions. In this mode the checks
  * are relaxed compared to standard code signing checks in order to
  * allow these certificates to pass.
- *
- * <li>Plugin code signing. WebStart and Plugin require their own variant
- * which is equivalent to VAR_CODE_SIGNING with additional checks for
- * compatibility/special cases. See also PKIXValidator.
  *
  * <li>TSA Server (see RFC 3161, section 2.3).
  *
@@ -155,8 +151,6 @@ class EndEntityChecker {
         } else if (variant.equals(Validator.VAR_CODE_SIGNING)) {
             checkCodeSigning(chain[0], exts);
         } else if (variant.equals(Validator.VAR_JCE_SIGNING)) {
-            checkCodeSigning(chain[0], exts);
-        } else if (variant.equals(Validator.VAR_PLUGIN_CODE_SIGNING)) {
             checkCodeSigning(chain[0], exts);
         } else if (variant.equals(Validator.VAR_TSA_SERVER)) {
             checkTSAServer(chain[0], exts);

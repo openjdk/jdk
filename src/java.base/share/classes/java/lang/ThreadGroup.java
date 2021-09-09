@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,8 +320,16 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *               access this thread group.
      * @see        java.lang.SecurityManager#checkAccess(java.lang.ThreadGroup)
      * @since      1.0
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
+    @Deprecated(since="17", forRemoval=true)
     public final void checkAccess() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkAccess(this);
@@ -391,7 +399,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @since   1.0
      */
-    public int enumerate(Thread list[]) {
+    public int enumerate(Thread[] list) {
         checkAccess();
         return enumerate(list, 0, true);
     }
@@ -429,12 +437,12 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @since   1.0
      */
-    public int enumerate(Thread list[], boolean recurse) {
+    public int enumerate(Thread[] list, boolean recurse) {
         checkAccess();
         return enumerate(list, 0, recurse);
     }
 
-    private int enumerate(Thread list[], int n, boolean recurse) {
+    private int enumerate(Thread[] list, int n, boolean recurse) {
         int ngroupsSnapshot = 0;
         ThreadGroup[] groupsSnapshot = null;
         synchronized (this) {
@@ -525,7 +533,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @since   1.0
      */
-    public int enumerate(ThreadGroup list[]) {
+    public int enumerate(ThreadGroup[] list) {
         checkAccess();
         return enumerate(list, 0, true);
     }
@@ -563,12 +571,12 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @since   1.0
      */
-    public int enumerate(ThreadGroup list[], boolean recurse) {
+    public int enumerate(ThreadGroup[] list, boolean recurse) {
         checkAccess();
         return enumerate(list, 0, recurse);
     }
 
-    private int enumerate(ThreadGroup list[], int n, boolean recurse) {
+    private int enumerate(ThreadGroup[] list, int n, boolean recurse) {
         int ngroupsSnapshot = 0;
         ThreadGroup[] groupsSnapshot = null;
         synchronized (this) {

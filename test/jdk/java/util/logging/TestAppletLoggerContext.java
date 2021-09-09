@@ -45,25 +45,25 @@ import jdk.internal.access.SharedSecrets;
  * @modules java.base/jdk.internal.access
  *          java.logging
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext LoadingApplet
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  LoadingApplet
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  LoadingApplet
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext LoadingMain
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  LoadingMain
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  LoadingMain
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext One
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  One
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  One
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext Two
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  Two
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Two
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext Three
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  Three
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Three
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext Four
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  Four
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Four
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext Five
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  Five
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Five
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext Six
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  Six
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Six
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext Seven
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext  Seven
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Seven
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext
- * @run main/othervm -Dtest.security=on TestAppletLoggerContext
+ * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext
  */
 
 // NOTE: We run in other VM in order to 1. switch security manager and 2. cause

@@ -82,17 +82,6 @@ public class PointerFinder {
         }
     }
 
-    // Check if address is a native (C++) symbol
-    JVMDebugger dbg = VM.getVM().getDebugger();
-    CDebugger cdbg = dbg.getCDebugger();
-    if (cdbg != null) {
-        loc.loadObject = cdbg.loadObjectContainingPC(a);
-        if (loc.loadObject != null) {
-            loc.nativeSymbol = loc.loadObject.closestSymbolToPC(a);
-            return loc;
-        }
-    }
-
     // Check if address is in the java heap.
     CollectedHeap heap = VM.getVM().getUniverse().heap();
     if (heap instanceof GenCollectedHeap) {
@@ -196,6 +185,19 @@ public class PointerFinder {
           return loc;
         }
       }
+    }
+
+    // Check if address is a native (C++) symbol. Do this last because we don't always
+    // do a good job of computing if an address is actually within a native lib, and sometimes
+    // an address outside of a lib will be found as inside.
+    JVMDebugger dbg = VM.getVM().getDebugger();
+    CDebugger cdbg = dbg.getCDebugger();
+    if (cdbg != null) {
+        loc.loadObject = cdbg.loadObjectContainingPC(a);
+        if (loc.loadObject != null) {
+            loc.nativeSymbol = loc.loadObject.closestSymbolToPC(a);
+            return loc;
+        }
     }
 
     // Fall through; have to return it anyway.

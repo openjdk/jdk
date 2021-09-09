@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.io.*;
  */
 public class LocalVmManager {
     private String userName;                 // user name for monitored jvm
-    private List<String> tmpdirs;
     private Pattern userPattern;
     private Matcher userMatcher;
     private FilenameFilter userFilter;
@@ -77,9 +76,7 @@ public class LocalVmManager {
     public LocalVmManager(String user) {
         this.userName = user;
 
-
         if (userName == null) {
-            tmpdirs = PerfDataFile.getTempDirectories(null, 0);
             userPattern = Pattern.compile(PerfDataFile.userDirNamePattern);
             userMatcher = userPattern.matcher("");
 
@@ -89,8 +86,6 @@ public class LocalVmManager {
                     return userMatcher.lookingAt();
                 }
             };
-        } else {
-            tmpdirs = PerfDataFile.getTempDirectories(userName, 0);
         }
 
         filePattern = Pattern.compile(PerfDataFile.fileNamePattern);
@@ -134,6 +129,7 @@ public class LocalVmManager {
          * we'd see strange file names being matched by the matcher.
          */
         Set<Integer> jvmSet = new HashSet<Integer>();
+        List<String> tmpdirs = PerfDataFile.getTempDirectories(userName, 0);
 
         for (String dir : tmpdirs) {
             File tmpdir = new File(dir);

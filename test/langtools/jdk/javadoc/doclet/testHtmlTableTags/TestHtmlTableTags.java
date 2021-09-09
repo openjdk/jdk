@@ -84,15 +84,11 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary">""",
-                """
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary">""",
-                """
-                    <div class="summary-table two-column-summary">""");
+                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
@@ -305,16 +301,44 @@ public class TestHtmlTableTags extends JavadocTester {
     void checkHtmlTableCaptions() {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
-                "<div class=\"caption\"><span>Class Summary</span></div>",
-                "<div class=\"caption\"><span>Interface Summary</span></div>");
+                """
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id=\
+                    "class-summary-tab0" role="tab" aria-selected="true" aria-controls="class-summar\
+                    y.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('class-summa\
+                    ry', 'class-summary', 2)" class="active-table-tab">All Classes and Interfaces</b\
+                    utton>\
+                    <button id="class-summary-tab1" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab1', 2)" class="table-tab">Interfaces</button\
+                    >\
+                    <button id="class-summary-tab2" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab2', 2)" class="table-tab">Classes</button></\
+                    div>""");
 
         checkOutput("pkg2/package-summary.html", true,
-                "<div class=\"caption\"><span>Enum Class Summary</span></div>",
-                "<div class=\"caption\"><span>Annotation Interfaces Summary</span></div>");
+                """
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id=\
+                    "class-summary-tab0" role="tab" aria-selected="true" aria-controls="class-summar\
+                    y.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('class-summa\
+                    ry', 'class-summary', 2)" class="active-table-tab">All Classes and Interfaces</b\
+                    utton>\
+                    <button id="class-summary-tab2" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab2', 2)" class="table-tab">Classes</button>\
+                    <button id="class-summary-tab3" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab3', 2)" class="table-tab">Enum Classes</butt\
+                    on>\
+                    <button id="class-summary-tab7" role="tab" aria-selected="false" aria-controls="\
+                    class-summary.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show\
+                    ('class-summary', 'class-summary-tab7', 2)" class="table-tab">Annotation Interfa\
+                    ces</button></div>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
-                "<div class=\"caption\"><span>Fields</span></div>",
+                """
+                    <div class="caption"><span>Fields</span></div>""",
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
                     <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\
@@ -337,17 +361,22 @@ public class TestHtmlTableTags extends JavadocTester {
                     """);
 
         checkOutput("pkg2/C2.html", true,
-                "<div class=\"caption\"><span>Nested Classes</span></div>",
-                "<div class=\"caption\"><span>Constructors</span></div>");
+                """
+                    <div class="caption"><span>Nested Classes</span></div>""",
+                """
+                    <div class="caption"><span>Constructors</span></div>""");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
-                "<div class=\"caption\"><span>Enum Constants</span></div>");
+                """
+                    <div class="caption"><span>Enum Constants</span></div>""");
 
         checkOutput("pkg2/C3.html", true,
-                "<div class=\"caption\"><span>Required Elements</span></div>");
+                """
+                    <div class="caption"><span>Required Elements</span></div>""");
 
         checkOutput("pkg2/C4.html", true,
-                "<div class=\"caption\"><span>Optional Elements</span></div>");
+                """
+                    <div class="caption"><span>Optional Elements</span></div>""");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
@@ -393,8 +422,10 @@ public class TestHtmlTableTags extends JavadocTester {
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<div class=\"caption\"><span>Fields</span></div>",
-                "<div class=\"caption\"><span>Methods</span></div>");
+                """
+                    <div class="caption"><span>Deprecated Fields</span></div>""",
+                """
+                    <div class="caption"><span>Deprecated Methods</span></div>""");
 
         // Constant values
         checkOutput("constant-values.html", true,
@@ -403,7 +434,8 @@ public class TestHtmlTableTags extends JavadocTester {
 
         // Overview Summary
         checkOutput("index.html", true,
-                "<div class=\"caption\"><span>Packages</span></div>");
+                """
+                    <div class="caption"><span>Packages</span></div>""");
     }
 
     /*
@@ -414,17 +446,11 @@ public class TestHtmlTableTags extends JavadocTester {
         checkOutput("pkg1/package-summary.html", true,
                 """
                     <div class="table-header col-first">Class</div>
-                    <div class="table-header col-last">Description</div>""",
-                """
-                    <div class="table-header col-first">Interface</div>
                     <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="table-header col-first">Enum Class</div>
-                    <div class="table-header col-last">Description</div>""",
-                """
-                    <div class="table-header col-first">Annotation Interface</div>
+                    <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>""");
 
         // Class documentation
@@ -546,25 +572,29 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="I1.html" title="interface in pkg1">I1</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-first odd-row-color class-summary class-summary-tab1"><a \
+                    href="I1.html" title="interface in pkg1">I1</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab1">
                     <div class="block">A sample interface used to test table tags.</div>
                     </div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C1.html" title="class in pkg1">C1</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a\
+                     href="C1.html" title="class in pkg1">C1</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2">
                     <div class="block">A test class.</div>
                     </div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionType</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-first odd-row-color class-summary class-summary-tab3"><a \
+                    href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionType</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab3">
                     <div class="block">A sample enum.</div>
                     </div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C3.html" title="annotation in pkg2">C3</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-first even-row-color class-summary class-summary-tab7"><a\
+                     href="C3.html" title="annotation interface in pkg2">C3</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab7">
                     <div class="block">Test Annotation class.</div>
                     </div>""");
 
@@ -581,7 +611,7 @@ public class TestHtmlTableTags extends JavadocTester {
                     ab2 method-summary-table-tab4"><code>void</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method1(int,int)" class="member-\
-                    name-link">method1</a>&#8203;(int&nbsp;a,
+                    name-link">method1</a><wbr>(int&nbsp;a,
                      int&nbsp;b)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4">
@@ -601,8 +631,8 @@ public class TestHtmlTableTags extends JavadocTester {
                     kg1">C1</a></code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method(pkg1.C1)" class="member-n\
-                    ame-link">method</a>&#8203;(<a href="../pkg1/C1.html" title="class \
-                    in pkg1">C1</a>&nbsp;param)</code></div>
+                    ame-link">method</a><wbr>(<a href="../pkg1/C1.html" title="class in pkg1">C1</a>\
+                    &nbsp;param)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4">
                     <div class="block">A sample method.</div>
@@ -650,8 +680,8 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="col-first even-row-color"><code><a href="../C2.html" title="class in pkg2">C2</a></code></div>
                     <div class="col-second even-row-color"><span class="type-name-label">C1.</span><\
                     code><a href="../../pkg1/C1.html#method(pkg2.C2)" class="member-name-link">metho\
-                    d</a>&#8203;(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp\
-                    ;param)</code></div>
+                    d</a><wbr>(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp;param)</code><\
+                    /div>
                     <div class="col-last even-row-color">
                     <div class="block">Method thats does some processing.</div>
                     </div>""");
@@ -677,7 +707,8 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="deprecation-comment">don't use this field anymore.</div>
                     </div>""",
                 """
-                    <div class="col-summary-item-name even-row-color"><a href="pkg1/C1.html#deprecatedMethod()">pkg1.C1.deprecatedMethod()</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg1/C1.html#deprecat\
+                    edMethod()">pkg1.C1.deprecatedMethod()</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">don't use this anymore.</div>
                     </div>""");
@@ -685,7 +716,8 @@ public class TestHtmlTableTags extends JavadocTester {
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;static&nbsp;final&nbsp;java.lang.String</code></div>
+                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
+                    tatic&nbsp;final&nbsp;java.lang.String</code></div>
                     <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CONSTANT1</a></code></div>
                     <div class="col-last even-row-color"><code>"C1"</code></div>
                     </div>""");
@@ -707,19 +739,24 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="I1.html" title="interface in pkg1">I1</a></div>
-                    <div class="col-last even-row-color"></div>""",
+                    <div class="col-first odd-row-color class-summary class-summary-tab1"><a \
+                    href="I1.html" title="interface in pkg1">I1</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab1"></div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C1.html" title="class in pkg1">C1</a></div>
-                    <div class="col-last even-row-color"></div>""");
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a\
+                     href="C1.html" title="class in pkg1">C1</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2"></div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionType</a></div>
-                    <div class="col-last even-row-color"></div>""",
+                    <div class="col-first odd-row-color class-summary class-summary-tab3"><a \
+                    href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionTyp\
+                    e</a></div>
+                    <div class="col-last odd-row-color class-summary class-summary-tab3"></div>""",
                 """
-                    <div class="col-first even-row-color"><a href="C3.html" title="annotation in pkg2">C3</a></div>
-                    <div class="col-last even-row-color"></div>""");
+                    <div class="col-first even-row-color class-summary class-summary-tab7"><a\
+                     href="C3.html" title="annotation interface in pkg2">C3</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab7"></div>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
@@ -732,7 +769,7 @@ public class TestHtmlTableTags extends JavadocTester {
                     ab2 method-summary-table-tab4"><code>void</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method1(int,int)" class="member-\
-                    name-link">method1</a>&#8203;(int&nbsp;a,
+                    name-link">method1</a><wbr>(int&nbsp;a,
                      int&nbsp;b)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4"></div>""");
@@ -748,8 +785,8 @@ public class TestHtmlTableTags extends JavadocTester {
                     kg1">C1</a></code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method(pkg1.C1)" class="member-n\
-                    ame-link">method</a>&#8203;(<a href="../pkg1/C1.html" title="class in pkg1">C1</\
-                    a>&nbsp;param)</code></div>
+                    ame-link">method</a><wbr>(<a href="../pkg1/C1.html" title="class in pkg1">C1</a>\
+                    &nbsp;param)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4"></div>""");
 
@@ -790,7 +827,7 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="col-first even-row-color"><code><a href="../C2.html" title="class in pkg2">C2</a></code></div>
                     <div class="col-second even-row-color"><span class="type-name-label">C1.</span><\
                     code><a href="../../pkg1/C1.html#method(pkg2.C2)" class="member-name-link">metho\
-                    d</a>&#8203;(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp;param)</code></div>
+                    d</a><wbr>(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp;param)</code></div>
                     <div class="col-last even-row-color"></div>""");
 
         // Package use documentation
@@ -808,13 +845,15 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="col-summary-item-name even-row-color"><a href="pkg2/C2.html#dep_field">pkg2.C2.dep_field</a></div>
                     <div class="col-last even-row-color"></div>""",
                 """
-                    <div class="col-summary-item-name even-row-color"><a href="pkg1/C1.html#deprecatedMethod()">pkg1.C1.deprecatedMethod()</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg1/C1.html#deprecat\
+                    edMethod()">pkg1.C1.deprecatedMethod()</a></div>
                     <div class="col-last even-row-color"></div>""");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;static&nbsp;final&nbsp;java.lang.String</code></div>
+                    <div class="col-first even-row-color"><code id="pkg1.C1.CONSTANT1">public&nbsp;s\
+                    tatic&nbsp;final&nbsp;java.lang.String</code></div>
                     <div class="col-second even-row-color"><code><a href="pkg1/C1.html#CONSTANT1">CONSTANT1</a></code></div>
                     <div class="col-last even-row-color"><code>"C1"</code></div>
                     </div>""");

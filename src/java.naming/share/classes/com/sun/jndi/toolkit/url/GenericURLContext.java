@@ -47,7 +47,7 @@ import java.net.MalformedURLException;
  * @author Scott Seligman
  * @author Rosanna Lee
  */
-abstract public class GenericURLContext implements Context {
+public abstract class GenericURLContext implements Context {
     protected Hashtable<String, Object> myEnv = null;
 
     @SuppressWarnings("unchecked") // Expect Hashtable<String, Object>
@@ -76,7 +76,7 @@ abstract public class GenericURLContext implements Context {
       * getRootURLContext(), getURLPrefix(), and getURLSuffix()
       * must be in sync wrt how URLs are parsed and returned.
       */
-    abstract protected ResolveResult getRootURLContext(String url,
+    protected abstract ResolveResult getRootURLContext(String url,
         Hashtable<?,?> env) throws NamingException;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -985,6 +985,7 @@ public class Arrays {
      * circular dependencies. To be removed in a future release.
      */
     static final class LegacyMergeSort {
+        @SuppressWarnings("removal")
         private static final boolean userRequested =
             java.security.AccessController.doPrivileged(
                 new sun.security.action.GetBooleanAction(
@@ -4264,7 +4265,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    public static int hashCode(long a[]) {
+    public static int hashCode(long[] a) {
         if (a == null)
             return 0;
 
@@ -4293,7 +4294,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    public static int hashCode(int a[]) {
+    public static int hashCode(int[] a) {
         if (a == null)
             return 0;
 
@@ -4320,7 +4321,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    public static int hashCode(short a[]) {
+    public static int hashCode(short[] a) {
         if (a == null)
             return 0;
 
@@ -4347,7 +4348,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    public static int hashCode(char a[]) {
+    public static int hashCode(char[] a) {
         if (a == null)
             return 0;
 
@@ -4374,7 +4375,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    public static int hashCode(byte a[]) {
+    public static int hashCode(byte[] a) {
         if (a == null)
             return 0;
 
@@ -4401,7 +4402,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    public static int hashCode(boolean a[]) {
+    public static int hashCode(boolean[] a) {
         if (a == null)
             return 0;
 
@@ -4428,7 +4429,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    public static int hashCode(float a[]) {
+    public static int hashCode(float[] a) {
         if (a == null)
             return 0;
 
@@ -4455,7 +4456,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    public static int hashCode(double a[]) {
+    public static int hashCode(double[] a) {
         if (a == null)
             return 0;
 
@@ -4488,7 +4489,7 @@ public class Arrays {
      * @see #deepHashCode(Object[])
      * @since 1.5
      */
-    public static int hashCode(Object a[]) {
+    public static int hashCode(Object[] a) {
         if (a == null)
             return 0;
 
@@ -4529,7 +4530,7 @@ public class Arrays {
      * @see #hashCode(Object[])
      * @since 1.5
      */
-    public static int deepHashCode(Object a[]) {
+    public static int deepHashCode(Object[] a) {
         if (a == null)
             return 0;
 

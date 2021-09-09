@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,8 +292,12 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
                 PBEKeySpec pbeKeySpec = (PBEKeySpec)engineGetKeySpec
                     (key, PBEKeySpec.class);
 
-                // Create key from spec, and return it
-                return engineGenerateSecret(pbeKeySpec);
+                try {
+                    // Create key from spec, and return it
+                    return engineGenerateSecret(pbeKeySpec);
+                } finally {
+                    pbeKeySpec.clearPassword();
+                }
             } else {
                 throw new InvalidKeyException("Invalid key format/algorithm");
             }

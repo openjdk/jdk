@@ -58,22 +58,18 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
                                          Node* val,
                                          BasicType bt,
                                          bool use_precise) const {
-  // No store check needed if we're storing a NULL or an old object
-  // (latter case is probably a string constant). The concurrent
-  // mark sweep garbage collector, however, needs to have all nonNull
-  // oop updates flagged via card-marks.
+  // No store check needed if we're storing a NULL.
   if (val != NULL && val->is_Con()) {
-    // must be either an oop or NULL
     const Type* t = val->bottom_type();
-    if (t == TypePtr::NULL_PTR || t == Type::TOP)
-      // stores of null never (?) need barriers
+    if (t == TypePtr::NULL_PTR || t == Type::TOP) {
       return;
+    }
   }
 
   if (use_ReduceInitialCardMarks()
       && obj == kit->just_allocated_object(kit->control())) {
     // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
+    // Keep this code in sync with CardTableBarrierSet::on_slowpath_allocation_exit.
     // That routine informs GC to take appropriate compensating steps,
     // upon a slow-path allocation, so as to make this card-mark
     // elision safe.
@@ -83,8 +79,10 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   if (!use_precise) {
     // All card marks for a (non-array) instance are in one place:
     adr = obj;
+  } else {
+    // Else it's an array (or unknown), and we want more precise card marks.
   }
-  // (Else it's an array (or unknown), and we want more precise card marks.)
+
   assert(adr != NULL, "");
 
   IdealKit ideal(kit, true);
@@ -93,14 +91,16 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   Node* cast = __ CastPX(__ ctrl(), adr);
 
   // Divide by card size
-  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift) );
+  Node* card_offset = __ URShiftX(cast, __ ConI(CardTable::card_shift));
 
   // Combine card table base and card offset
-  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset );
+  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset);
 
   // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;
-  Node*   zero = __ ConI(0); // Dirty card value
+
+  // Dirty card value to store
+  Node* dirty = __ ConI(CardTable::dirty_card_val());
 
   if (UseCondCardMark) {
     // The classic GC reference write barrier is typically implemented
@@ -111,11 +111,11 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
     // stores.  In theory we could relax the load from ctrl() to
     // no_ctrl, but that doesn't buy much latitude.
     Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE, adr_type);
-    __ if_then(card_val, BoolTest::ne, zero);
+    __ if_then(card_val, BoolTest::ne, dirty);
   }
 
-  // Smash zero into card
-  __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
+  // Smash dirty value into card
+  __ store(__ ctrl(), card_adr, dirty, T_BYTE, adr_type, MemNode::unordered);
 
   if (UseCondCardMark) {
     __ end_if();
@@ -176,7 +176,7 @@ void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* 
   }
 }
 
-bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const {
+bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const {
   bool is_oop = is_reference_type(type);
   return is_oop && (!tightly_coupled_alloc || !use_ReduceInitialCardMarks());
 }

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200
-             8186332 8186703 8182765 8187288
+             8186332 8186703 8182765 8187288 8261976
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -191,7 +191,7 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg2/Spliterator.OfDouble.html", true,
             // Ensure the correct type parameters are displayed correctly
             """
-                <h2 id="nested.classes.inherited.from.class.pkg2.Spliterator">Nested classes/int\
+                <h2 id="nested-classes-inherited-from-class-pkg2.Spliterator">Nested classes/int\
                 erfaces inherited from interface&nbsp;pkg2.<a href="Spliterator.html" title="int\
                 erface in pkg2">Spliterator</a></h2>
                 <code><a href="Spliterator.OfDouble.html" title="interface in pkg2">Spliterator.\
@@ -199,14 +199,14 @@ public class TestInterface extends JavadocTester {
                 ator.OfInt</a>&lt;<a href="Spliterator.OfInt.html" title="type parameter in Spli\
                 terator.OfInt">Integer</a>&gt;, <a href="Spliterator.OfPrimitive.html" title="in\
                 terface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.OfPrimitive\
-                .html" title="type parameter in Spliterator.OfPrimitive">T</a>,&#8203;<a href="S\
-                pliterator.OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T\
-                _CONS</a>,&#8203;<a href="Spliterator.OfPrimitive.html" title="type parameter in\
-                 Spliterator.OfPrimitive">T_SPLITR</a> extends <a href="Spliterator.OfPrimitive.\
-                html" title="interface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Splitera\
-                tor.OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T</a>,&#\
-                8203;<a href="Spliterator.OfPrimitive.html" title="type parameter in Spliterator\
-                .OfPrimitive">T_CONS</a>,&#8203;<a href="Spliterator.OfPrimitive.html" title="ty\
-                pe parameter in Spliterator.OfPrimitive">T_SPLITR</a>&gt;&gt;</code>""");
+                .html" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><a href="Spl\
+                iterator.OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T_C\
+                ONS</a>,<wbr><a href="Spliterator.OfPrimitive.html" title="type parameter in Spl\
+                iterator.OfPrimitive">T_SPLITR</a> extends <a href="Spliterator.OfPrimitive.html\
+                " title="interface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.\
+                OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><\
+                a href="Spliterator.OfPrimitive.html" title="type parameter in Spliterator.OfPri\
+                mitive">T_CONS</a>,<wbr><a href="Spliterator.OfPrimitive.html" title="type param\
+                eter in Spliterator.OfPrimitive">T_SPLITR</a>&gt;&gt;</code>""");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,11 @@ public abstract class SunToolkit extends Toolkit
 
     /* Load debug settings for native code */
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         if (AccessController.doPrivileged(new GetBooleanAction("sun.awt.nativedebug"))) {
             DebugSettings.init();
         }
@@ -667,6 +672,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns the value of "sun.awt.noerasebackground" property. Default
      * value is {@code false}.
      */
+    @SuppressWarnings("removal")
     public static boolean getSunAwtNoerasebackground() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.noerasebackground"));
     }
@@ -675,6 +681,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns the value of "sun.awt.erasebackgroundonresize" property. Default
      * value is {@code false}.
      */
+    @SuppressWarnings("removal")
     public static boolean getSunAwtErasebackgroundonresize() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.erasebackgroundonresize"));
     }
@@ -894,6 +901,7 @@ public abstract class SunToolkit extends Toolkit
     }
 
     private static void checkPermissions(String filename) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(filename);
@@ -901,6 +909,7 @@ public abstract class SunToolkit extends Toolkit
     }
 
     private static void checkPermissions(URL url) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -1108,6 +1117,7 @@ public abstract class SunToolkit extends Toolkit
     public boolean canPopupOverlapTaskBar() {
         boolean result = true;
         try {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
@@ -1148,6 +1158,7 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Returns the locale in which the runtime was started.
      */
+    @SuppressWarnings("removal")
     public static Locale getStartupLocale() {
         if (startupLocale == null) {
             String language, region, country, variant;
@@ -1191,6 +1202,7 @@ public abstract class SunToolkit extends Toolkit
      * @return {@code true}, if XEmbed is needed, {@code false} otherwise
      */
     public static boolean needsXEmbed() {
+        @SuppressWarnings("removal")
         String noxembed = AccessController.
             doPrivileged(new GetPropertyAction("sun.awt.noxembed", "false"));
         if ("true".equals(noxembed)) {
@@ -1224,6 +1236,7 @@ public abstract class SunToolkit extends Toolkit
      * developer.  If true, Toolkit should return an
      * XEmbed-server-enabled CanvasPeer instead of the ordinary CanvasPeer.
      */
+    @SuppressWarnings("removal")
     protected final boolean isXEmbedServerRequested() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.xembedserver"));
     }
@@ -1406,15 +1419,6 @@ public abstract class SunToolkit extends Toolkit
     }
 
     @SuppressWarnings("serial")
-    public static class OperationTimedOut extends RuntimeException {
-        public OperationTimedOut(String msg) {
-            super(msg);
-        }
-        public OperationTimedOut() {
-        }
-    }
-
-    @SuppressWarnings("serial")
     public static class IllegalThreadException extends RuntimeException {
         public IllegalThreadException(String msg) {
             super(msg);
@@ -1431,7 +1435,7 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Parameterless version of realsync which uses default timout (see DEFAUL_WAIT_TIME).
      */
-    public void realSync() throws OperationTimedOut {
+    public void realSync() {
         realSync(DEFAULT_WAIT_TIME);
     }
 
@@ -1480,7 +1484,7 @@ public abstract class SunToolkit extends Toolkit
      *
      * @param timeout the maximum time to wait in milliseconds, negative means "forever".
      */
-    public void realSync(final long timeout) throws OperationTimedOut {
+    public void realSync(final long timeout) {
         if (EventQueue.isDispatchThread()) {
             throw new IllegalThreadException("The SunToolkit.realSync() method cannot be used on the event dispatch thread (EDT).");
         }
@@ -1536,7 +1540,7 @@ public abstract class SunToolkit extends Toolkit
                 && bigLoop < MAX_ITERS);
     }
 
-    private long timeout(long end){
+    protected long timeout(long end){
         return end - TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
     }
 
@@ -1566,6 +1570,9 @@ public abstract class SunToolkit extends Toolkit
      */
     @SuppressWarnings("serial")
     private final boolean waitForIdle(final long end) {
+        if (timeout(end) <= 0) {
+            return false;
+        }
         flushPendingEvents();
         final boolean queueWasEmpty;
         final AtomicBoolean queueEmpty = new AtomicBoolean();
@@ -1750,6 +1757,7 @@ public abstract class SunToolkit extends Toolkit
      * to be inapplicable in that case. In that headless case although
      * this method will return "true" the toolkit will return a null map.
      */
+    @SuppressWarnings("removal")
     private static boolean useSystemAAFontSettings() {
         if (!checkedSystemAAFontSettings) {
             useSystemAAFontSettings = true; /* initially set this true */
@@ -1853,6 +1861,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns the value of "sun.awt.disableMixing" property. Default
      * value is {@code false}.
      */
+    @SuppressWarnings("removal")
     public static synchronized boolean getSunAwtDisableMixing() {
         if (sunAwtDisableMixing == null) {
             sunAwtDisableMixing = AccessController.doPrivileged(

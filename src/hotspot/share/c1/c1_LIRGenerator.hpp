@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,6 +251,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_RegisterFinalizer(Intrinsic* x);
   void do_isInstance(Intrinsic* x);
   void do_isPrimitive(Intrinsic* x);
+  void do_getModifiers(Intrinsic* x);
   void do_getClass(Intrinsic* x);
   void do_currentThread(Intrinsic* x);
   void do_getObjectSize(Intrinsic* x);
@@ -259,12 +260,13 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_LibmIntrinsic(Intrinsic* x);
   void do_ArrayCopy(Intrinsic* x);
   void do_CompareAndSwap(Intrinsic* x, ValueType* type);
-  void do_NIOCheckIndex(Intrinsic* x);
+  void do_PreconditionsCheckIndex(Intrinsic* x, BasicType type);
   void do_FPIntrinsics(Intrinsic* x);
   void do_Reference_get(Intrinsic* x);
   void do_update_CRC32(Intrinsic* x);
   void do_update_CRC32C(Intrinsic* x);
   void do_vectorizedMismatch(Intrinsic* x);
+  void do_blackhole(Intrinsic* x);
 
  public:
   LIR_Opr call_runtime(BasicTypeArray* signature, LIRItemList* args, address entry, ValueType* result_type, CodeEmitInfo* info);
@@ -299,8 +301,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   LIR_Opr access_atomic_add_at(DecoratorSet decorators, BasicType type,
                                LIRItem& base, LIRItem& offset, LIRItem& value);
-
-  LIR_Opr access_resolve(DecoratorSet decorators, LIR_Opr obj);
 
   // These need to guarantee JMM volatile semantics are preserved on each platform
   // and requires one implementation per architecture.
@@ -338,8 +338,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void increment_counter(address counter, BasicType type, int step = 1);
   void increment_counter(LIR_Address* addr, int step = 1);
 
-  // is_strictfp is only needed for mul and div (and only generates different code on i486)
-  void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp, CodeEmitInfo* info = NULL);
+  void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp, CodeEmitInfo* info = NULL);
   // machine dependent.  returns true if it emitted code for the multiply
   bool strength_reduce_multiply(LIR_Opr left, jint constant, LIR_Opr result, LIR_Opr tmp);
 
@@ -349,12 +348,10 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   // this loads the length and compares against the index
   void array_range_check          (LIR_Opr array, LIR_Opr index, CodeEmitInfo* null_check_info, CodeEmitInfo* range_check_info);
-  // For java.nio.Buffer.checkIndex
-  void nio_range_check            (LIR_Opr buffer, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info);
 
   void arithmetic_op_int  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp);
   void arithmetic_op_long (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info = NULL);
-  void arithmetic_op_fpu  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp = LIR_OprFact::illegalOpr);
+  void arithmetic_op_fpu  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp = LIR_OprFact::illegalOpr);
 
   void shift_op   (Bytecodes::Code code, LIR_Opr dst_reg, LIR_Opr value, LIR_Opr count, LIR_Opr tmp);
 
@@ -400,18 +397,18 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
                                     int bci, bool backedge, bool notify);
   void increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int bci, bool backedge);
   void increment_invocation_counter(CodeEmitInfo *info) {
-    if (compilation()->count_invocations()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), InvocationEntryBci, false);
     }
   }
   void increment_backedge_counter(CodeEmitInfo* info, int bci) {
-    if (compilation()->count_backedges()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), bci, true);
     }
   }
   void increment_backedge_counter_conditionally(LIR_Condition cond, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info, int left_bci, int right_bci, int bci);
   void increment_backedge_counter(CodeEmitInfo* info, LIR_Opr step, int bci) {
-    if (compilation()->count_backedges()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, step, bci, true);
     }
   }
@@ -430,9 +427,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void do_root (Instruction* instr);
   void walk    (Instruction* instr);
-
-  void bind_block_entry(BlockBegin* block);
-  void start_block(BlockBegin* block);
 
   LIR_Opr new_register(BasicType type);
   LIR_Opr new_register(Value value)              { return new_register(as_BasicType(value->type())); }
@@ -472,7 +466,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux);
 
 #ifdef JFR_HAVE_INTRINSICS
-  void do_ClassIDIntrinsic(Intrinsic* x);
   void do_getEventWriter(Intrinsic* x);
 #endif
 
@@ -485,7 +478,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_parameters(Base* x);
   void profile_parameters_at_call(ProfileCall* x);
   LIR_Opr mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
-  LIR_Opr maybe_mask_boolean(StoreIndexed* x, LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
 
  public:
   Compilation*  compilation() const              { return _compilation; }
@@ -576,7 +568,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_BlockBegin     (BlockBegin*      x);
   virtual void do_Goto           (Goto*            x);
   virtual void do_If             (If*              x);
-  virtual void do_IfInstanceOf   (IfInstanceOf*    x);
   virtual void do_TableSwitch    (TableSwitch*     x);
   virtual void do_LookupSwitch   (LookupSwitch*    x);
   virtual void do_Return         (Return*          x);
@@ -585,11 +576,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_OsrEntry       (OsrEntry*        x);
   virtual void do_ExceptionObject(ExceptionObject* x);
   virtual void do_RoundFP        (RoundFP*         x);
-  virtual void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  virtual void do_UnsafePutRaw   (UnsafePutRaw*    x);
-  virtual void do_UnsafeGetObject(UnsafeGetObject* x);
-  virtual void do_UnsafePutObject(UnsafePutObject* x);
-  virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
+  virtual void do_UnsafeGet      (UnsafeGet*       x);
+  virtual void do_UnsafePut      (UnsafePut*       x);
+  virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileReturnType (ProfileReturnType* x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);

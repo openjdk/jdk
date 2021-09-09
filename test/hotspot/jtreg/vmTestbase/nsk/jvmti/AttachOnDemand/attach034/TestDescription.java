@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
  *
  * @comment create attach034Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach034.attach034Agent00
- * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach034.attach034Agent00
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller nsk.jvmti.AttachOnDemand.attach034.attach034Agent00
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach034Agent00.jar ${test.src}/attach034Agent00.mf
@@ -53,7 +53,7 @@
  *
  * @comment create AgentParent.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach034.AgentParent
- * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach034.AgentParent
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller nsk.jvmti.AttachOnDemand.attach034.AgentParent
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm AgentParent.jar ${test.src}/AgentParent.mf

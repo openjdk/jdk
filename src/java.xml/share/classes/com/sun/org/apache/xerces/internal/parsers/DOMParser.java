@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,6 +40,8 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import java.io.CharConversionException;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
 import org.w3c.dom.Node;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
@@ -59,7 +60,7 @@ import org.xml.sax.helpers.LocatorImpl;
  *
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
- *
+ * @LastModified: May 2021
  */
 public class DOMParser
     extends AbstractDOMParser {
@@ -79,7 +80,7 @@ public class DOMParser
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     // recognized features:
     private static final String[] RECOGNIZED_FEATURES = {
@@ -546,13 +547,13 @@ public class DOMParser
             setProperty0(Constants.SECURITY_MANAGER, securityManager);
             return;
         }
-        if (propertyId.equals(Constants.XML_SECURITY_PROPERTY_MANAGER)) {
+        if (propertyId.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (value == null) {
                 securityPropertyManager = new XMLSecurityPropertyManager();
             } else {
                 securityPropertyManager = (XMLSecurityPropertyManager)value;
             }
-            setProperty0(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+            setProperty0(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
             return;
         }
 
@@ -563,7 +564,7 @@ public class DOMParser
 
         if (securityPropertyManager == null) {
             securityPropertyManager = new XMLSecurityPropertyManager();
-            setProperty0(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+            setProperty0(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
         }
         int index = securityPropertyManager.getIndex(propertyId);
 
@@ -576,7 +577,7 @@ public class DOMParser
             securityPropertyManager.setValue(index, XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
         } else {
             //check if the property is managed by security manager
-            if (!securityManager.setLimit(propertyId, XMLSecurityManager.State.APIPROPERTY, value)) {
+            if (!securityManager.setLimit(propertyId, JdkProperty.State.APIPROPERTY, value)) {
                 //fall back to the default configuration to handle the property
                 setProperty0(propertyId, value);
             }

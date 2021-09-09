@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,9 @@ public class CertificateRevokedException extends CertificateException {
      * the following data is emitted: the OID String (Object), the criticality
      * flag (boolean), the length of the encoded extension value byte array
      * (int), and the encoded extension value bytes.
+     *
+     * @param  oos the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream oos) throws IOException {
@@ -219,6 +222,10 @@ public class CertificateRevokedException extends CertificateException {
 
     /**
      * Deserialize the {@code CertificateRevokedException} instance.
+     *
+     * @param  ois the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream ois)

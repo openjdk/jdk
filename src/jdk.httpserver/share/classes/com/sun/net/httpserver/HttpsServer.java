@@ -58,6 +58,7 @@ public abstract class HttpsServer extends HttpServer {
      * must also have a {@code HttpsConfigurator} established with
      * {@link #setHttpsConfigurator(HttpsConfigurator)}.
      *
+     * @return an instance of {@code HttpsServer}
      * @throws IOException if an I/O error occurs
      */
     public static HttpsServer create() throws IOException {
@@ -80,6 +81,7 @@ public abstract class HttpsServer extends HttpServer {
      *             the address
      * @param backlog the socket backlog. If this value is less than or equal to
      *               zero, then a system default value is used.
+     * @return an instance of {@code HttpsServer}
      * @throws BindException if the server cannot bind to the requested address,
      *          or if the server is already bound
      * @throws IOException if an I/O error occurs

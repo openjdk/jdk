@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ import jdk.jfr.internal.SecuritySupport.SafePath;
 
 public final class RepositoryFiles {
     private static final Object WAIT_OBJECT = new Object();
+    private static final String DIRECTORY_PATTERN = "DDDD_DD_DD_DD_DD_DD_";
     public static void notifyNewFile() {
         synchronized (WAIT_OBJECT) {
             WAIT_OBJECT.notifyAll();
@@ -56,15 +58,16 @@ public final class RepositoryFiles {
     private final FileAccess fileAccess;
     private final NavigableMap<Long, Path> pathSet = new TreeMap<>();
     private final Map<Path, Long> pathLookup = new HashMap<>();
-    private final Path repository;
     private final Object waitObject;
-
+    private boolean allowSubDirectory;
     private volatile boolean closed;
+    private Path repository;
 
-    public RepositoryFiles(FileAccess fileAccess, Path repository) {
+    public RepositoryFiles(FileAccess fileAccess, Path repository, boolean allowSubDirectory) {
         this.repository = repository;
         this.fileAccess = fileAccess;
         this.waitObject = repository == null ? WAIT_OBJECT : new Object();
+        this.allowSubDirectory = allowSubDirectory;
     }
 
     long getTimestamp(Path p) {
@@ -167,6 +170,14 @@ public final class RepositoryFiles {
     private boolean updatePaths() throws IOException {
         boolean foundNew = false;
         Path repoPath = repository;
+
+        if (allowSubDirectory) {
+            Path subDirectory = findSubDirectory(repoPath);
+            if (subDirectory != null) {
+                repoPath = subDirectory;
+            }
+        }
+
         if (repoPath == null) {
             // Always get the latest repository if 'jcmd JFR.configure
             // repositorypath=...' has been executed
@@ -209,20 +220,78 @@ public final class RepositoryFiles {
                 long size = fileAccess.fileSize(p);
                 if (size >= ChunkHeader.headerSize()) {
                     long startNanos = readStartTime(p);
-                    pathSet.put(startNanos, p);
-                    pathLookup.put(p, startNanos);
-                    foundNew = true;
+                    if (startNanos != -1) {
+                        pathSet.put(startNanos, p);
+                        pathLookup.put(p, startNanos);
+                        foundNew = true;
+                    }
                 }
             }
+            if (allowSubDirectory && foundNew) {
+                // Found a valid file, possibly in a subdirectory.
+                // Use the same (sub)directory from now on.
+                repository = repoPath;
+                allowSubDirectory = false;
+            }
+
             return foundNew;
         }
     }
 
-    private long readStartTime(Path p) throws IOException {
+    private Path findSubDirectory(Path repoPath) {
+        FileTime latestTimestamp = null;
+        Path latestPath = null;
+        try (DirectoryStream<Path> dirStream = fileAccess.newDirectoryStream(repoPath)) {
+            for (Path p : dirStream) {
+                String filename = p.getFileName().toString();
+                if (isRepository(filename) && fileAccess.isDirectory(p)) {
+                    FileTime timestamp = getLastModified(p);
+                    if (timestamp != null) {
+                        if (latestPath == null || latestTimestamp.compareTo(timestamp) <= 0) {
+                            latestPath = p;
+                            latestTimestamp = timestamp;
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            // Ignore
+        }
+        return latestPath;
+    }
+
+    private FileTime getLastModified(Path p) {
+        try {
+            return fileAccess.getLastModified(p);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private static boolean isRepository(String filename) {
+        if (filename.length() < DIRECTORY_PATTERN.length()) {
+            return false;
+        }
+        for (int i = 0; i < DIRECTORY_PATTERN.length(); i++) {
+            char expected = DIRECTORY_PATTERN.charAt(i);
+            char c = filename.charAt(i);
+            if (expected == 'D' && !Character.isDigit(c)) {
+                return false;
+            }
+            if (expected == '_' && c != '_') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private long readStartTime(Path p) {
         try (RecordingInput in = new RecordingInput(p.toFile(), fileAccess, 100)) {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Parsing header for chunk start time");
             ChunkHeader c = new ChunkHeader(in);
             return c.getStartNanos();
+        } catch (IOException ioe) {
+            return -1;
         }
     }
 

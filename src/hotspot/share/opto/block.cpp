@@ -1245,12 +1245,18 @@ void PhaseCFG::verify() const {
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
         if (def && def != n) {
-          assert(get_block_for_node(def) || def->is_Con(), "must have block; constants for debug info ok");
-          // Verify that instructions in the block is in correct order.
+          Block* def_block = get_block_for_node(def);
+          assert(def_block || def->is_Con(), "must have block; constants for debug info ok");
+          // Verify that all definitions dominate their uses (except for virtual
+          // instructions merging multiple definitions).
+          assert(n->is_Root() || n->is_Region() || n->is_Phi() || n->is_MachMerge() ||
+                 def_block->dominates(block),
+                 "uses must be dominated by definitions");
+          // Verify that instructions in the block are in correct order.
           // Uses must follow their definition if they are at the same block.
           // Mostly done to check that MachSpillCopy nodes are placed correctly
           // when CreateEx node is moved in build_ifg_physical().
-          if (get_block_for_node(def) == block && !(block->head()->is_Loop() && n->is_Phi()) &&
+          if (def_block == block && !(block->head()->is_Loop() && n->is_Phi()) &&
               // See (+++) comment in reg_split.cpp
               !(n->jvms() != NULL && n->jvms()->is_monitor_use(k))) {
             bool is_loop = false;
@@ -1265,6 +1271,14 @@ void PhaseCFG::verify() const {
             assert(is_loop || block->find_node(def) < j, "uses must follow definitions");
           }
         }
+      }
+      if (n->is_Proj()) {
+        assert(j >= 1, "a projection cannot be the first instruction in a block");
+        Node* pred = block->get_node(j - 1);
+        Node* parent = n->in(0);
+        assert(parent != NULL, "projections must have a parent");
+        assert(pred == parent || (pred->is_Proj() && pred->in(0) == parent),
+               "projections must follow their parents or other sibling projections");
       }
     }
 

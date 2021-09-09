@@ -37,6 +37,35 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
+template<GenerationMode GENERATION>
+class ShenandoahInitMarkRootsClosure : public OopClosure {
+ private:
+  ShenandoahObjToScanQueue* const _queue;
+  ShenandoahMarkingContext* const _mark_context;
+
+  template <class T>
+    inline void do_oop_work(T* p);
+
+ public:
+  ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
+
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(oop* p)       { do_oop_work(p); }
+};
+
+template<GenerationMode GENERATION>
+ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
+_queue(q),
+_mark_context(ShenandoahHeap::heap()->marking_context()) {
+}
+
+template <GenerationMode GENERATION>
+template <class T>
+void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
+  // Only called from STW mark, should not be used to bootstrap old generation marking.
+  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, nullptr, _mark_context, false);
+}
+
 class ShenandoahSTWMarkTask : public AbstractGangTask {
 private:
   ShenandoahSTWMark* const _mark;
@@ -121,10 +150,11 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->active_generation()->ref_processor();
+  StringDedup::Requests requests;
 
   mark_loop(_generation->generation_mode(),
             worker_id, &_terminator, rp,
-            false, // not cancellable
-            ShenandoahStringDedup::is_enabled());
+            false /* not cancellable */,
+            ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
 }
 

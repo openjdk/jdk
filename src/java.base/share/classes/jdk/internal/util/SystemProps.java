@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,19 @@ public final class SystemProps {
 
         // Platform defined encoding cannot be overridden on the command line
         put(props, "sun.jnu.encoding", raw.propDefault(Raw._sun_jnu_encoding_NDX));
+        var nativeEncoding = ((raw.propDefault(Raw._file_encoding_NDX) == null)
+                ? raw.propDefault(Raw._sun_jnu_encoding_NDX)
+                : raw.propDefault(Raw._file_encoding_NDX));
+        put(props, "native.encoding", nativeEncoding);
 
-        // Add properties that have not been overridden on the cmdline
-        putIfAbsent(props, "file.encoding",
-                ((raw.propDefault(Raw._file_encoding_NDX) == null)
-                        ? raw.propDefault(Raw._sun_jnu_encoding_NDX)
-                        : raw.propDefault(Raw._file_encoding_NDX)));
+        // "file.encoding" defaults to "UTF-8", unless specified in the command line
+        // where "COMPAT" designates the native encoding.
+        var fileEncoding = props.getOrDefault("file.encoding", "UTF-8");
+        if ("COMPAT".equals(fileEncoding)) {
+            put(props, "file.encoding", nativeEncoding);
+        } else {
+            putIfAbsent(props, "file.encoding", fileEncoding);
+        }
 
         // Use platform values if not overridden by a commandline -Dkey=value
         // In no particular order

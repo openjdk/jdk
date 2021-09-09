@@ -43,7 +43,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -51,6 +50,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ArrayDecoder;
@@ -270,7 +272,7 @@ public final class String
      * @param  value
      *         The initial value of the string
      */
-    public String(char value[]) {
+    public String(char[] value) {
         this(value, 0, value.length, null);
     }
 
@@ -295,7 +297,7 @@ public final class String
      *          If {@code offset} is negative, {@code count} is negative, or
      *          {@code offset} is greater than {@code value.length - count}
      */
-    public String(char value[], int offset, int count) {
+    public String(char[] value, int offset, int count) {
         this(value, offset, count, rangeCheck(value, offset, count));
     }
 
@@ -392,7 +394,7 @@ public final class String
      * @see  #String(byte[])
      */
     @Deprecated(since="1.1")
-    public String(byte ascii[], int hibyte, int offset, int count) {
+    public String(byte[] ascii, int hibyte, int offset, int count) {
         checkBoundsOffCount(offset, count, ascii.length);
         if (count == 0) {
             this.value = "".value;
@@ -444,7 +446,7 @@ public final class String
      * @see  #String(byte[])
      */
     @Deprecated(since="1.1")
-    public String(byte ascii[], int hibyte) {
+    public String(byte[] ascii, int hibyte) {
         this(ascii, hibyte, 0, ascii.length);
     }
 
@@ -516,6 +518,7 @@ public final class String
      *
      * @since  1.6
      */
+    @SuppressWarnings("removal")
     public String(byte[] bytes, int offset, int length, Charset charset) {
         Objects.requireNonNull(charset);
         checkBoundsOffCount(offset, length, bytes.length);
@@ -744,6 +747,7 @@ public final class String
         }
     }
 
+    @SuppressWarnings("removal")
     private static String newStringNoRepl1(byte[] src, Charset cs) {
         int len = src.length;
         if (len == 0) {
@@ -793,6 +797,7 @@ public final class String
     private static final char REPL = '\ufffd';
 
     // Trim the given byte array to the given length
+    @SuppressWarnings("removal")
     private static byte[] safeTrim(byte[] ba, int len, boolean isTrusted) {
         if (len == ba.length && (isTrusted || System.getSecurityManager() == null)) {
             return ba;
@@ -1008,6 +1013,27 @@ public final class String
 
     //////////////////////////////// utf8 ////////////////////////////////////
 
+    /**
+     * Decodes ASCII from the source byte array into the destination
+     * char array. Used via JavaLangAccess from UTF_8 and other charset
+     * decoders.
+     *
+     * @return the number of bytes successfully decoded, at most len
+     */
+    /* package-private */
+    static int decodeASCII(byte[] sa, int sp, char[] da, int dp, int len) {
+        if (!StringCoding.hasNegatives(sa, sp, len)) {
+            StringLatin1.inflate(sa, sp, da, dp, len);
+            return len;
+        } else {
+            int start = sp;
+            int end = sp + len;
+            while (sp < end && sa[sp] >= 0) {
+                da[dp++] = (char) sa[sp++];
+            }
+            return sp - start;
+        }
+    }
 
     private static boolean isNotContinuation(int b) {
         return (b & 0xc0) != 0x80;
@@ -1328,7 +1354,7 @@ public final class String
      *
      * @since  1.1
      */
-    public String(byte bytes[], String charsetName)
+    public String(byte[] bytes, String charsetName)
             throws UnsupportedEncodingException {
         this(bytes, 0, bytes.length, charsetName);
     }
@@ -1353,7 +1379,7 @@ public final class String
      *
      * @since  1.6
      */
-    public String(byte bytes[], Charset charset) {
+    public String(byte[] bytes, Charset charset) {
         this(bytes, 0, bytes.length, charset);
     }
 
@@ -1546,9 +1572,7 @@ public final class String
      */
     public int codePointBefore(int index) {
         int i = index - 1;
-        if (i < 0 || i >= length()) {
-            throw new StringIndexOutOfBoundsException(index);
-        }
+        checkIndex(i, length());
         if (isLatin1()) {
             return (value[i] & 0xff);
         }
@@ -1577,10 +1601,7 @@ public final class String
      * @since  1.5
      */
     public int codePointCount(int beginIndex, int endIndex) {
-        if (beginIndex < 0 || beginIndex > endIndex ||
-            endIndex > length()) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromToIndex(beginIndex, endIndex, length());
         if (isLatin1()) {
             return endIndex - beginIndex;
         }
@@ -1644,7 +1665,7 @@ public final class String
      *            <li>{@code dstBegin+(srcEnd-srcBegin)} is larger than
      *                {@code dst.length}</ul>
      */
-    public void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin) {
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);
         if (isLatin1()) {
@@ -1698,7 +1719,7 @@ public final class String
      *          </ul>
      */
     @Deprecated(since="1.1")
-    public void getBytes(int srcBegin, int srcEnd, byte dst[], int dstBegin) {
+    public void getBytes(int srcBegin, int srcEnd, byte[] dst, int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         Objects.requireNonNull(dst);
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);
@@ -1797,13 +1818,9 @@ public final class String
         if (this == anObject) {
             return true;
         }
-        if (anObject instanceof String) {
-            String aString = (String)anObject;
-            if (!COMPACT_STRINGS || this.coder == aString.coder) {
-                return StringLatin1.equals(value, aString.value);
-            }
-        }
-        return false;
+        return (anObject instanceof String aString)
+                && (!COMPACT_STRINGS || this.coder == aString.coder)
+                && StringLatin1.equals(value, aString.value);
     }
 
     /**
@@ -2148,9 +2165,9 @@ public final class String
      * ignoring case if and only if {@code ignoreCase} is true.
      * The sequences {@code tsequence} and {@code osequence} are compared,
      * where {@code tsequence} is the sequence produced as if by calling
-     * {@code this.substring(toffset, len).codePoints()} and {@code osequence}
-     * is the sequence produced as if by calling
-     * {@code other.substring(ooffset, len).codePoints()}.
+     * {@code this.substring(toffset, toffset + len).codePoints()} and
+     * {@code osequence} is the sequence produced as if by calling
+     * {@code other.substring(ooffset, ooffset + len).codePoints()}.
      * The result is {@code true} if and only if all of the following
      * are true:
      * <ul><li>{@code toffset} is non-negative.
@@ -3201,14 +3218,62 @@ public final class String
      * @since 1.8
      */
     public static String join(CharSequence delimiter, CharSequence... elements) {
-        Objects.requireNonNull(delimiter);
-        Objects.requireNonNull(elements);
-        // Number of elements not likely worth Arrays.stream overhead.
-        StringJoiner joiner = new StringJoiner(delimiter);
-        for (CharSequence cs: elements) {
-            joiner.add(cs);
+        var delim = delimiter.toString();
+        var elems = new String[elements.length];
+        for (int i = 0; i < elements.length; i++) {
+            elems[i] = String.valueOf(elements[i]);
         }
-        return joiner.toString();
+        return join("", "", delim, elems, elems.length);
+    }
+
+    /**
+     * Designated join routine.
+     *
+     * @param prefix the non-null prefix
+     * @param suffix the non-null suffix
+     * @param delimiter the non-null delimiter
+     * @param elements the non-null array of non-null elements
+     * @param size the number of elements in the array (<= elements.length)
+     * @return the joined string
+     */
+    @ForceInline
+    static String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
+        int icoder = prefix.coder() | suffix.coder();
+        long len = (long) prefix.length() + suffix.length();
+        if (size > 1) { // when there are more than one element, size - 1 delimiters will be emitted
+            len += (long) (size - 1) * delimiter.length();
+            icoder |= delimiter.coder();
+        }
+        // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
+        // following loop wil add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
+        // so len can overflow at most once
+        for (int i = 0; i < size; i++) {
+            var el = elements[i];
+            len += el.length();
+            icoder |= el.coder();
+        }
+        byte coder = (byte) icoder;
+        // long len overflow check, char -> byte length, int len overflow check
+        if (len < 0L || (len <<= coder) != (int) len) {
+            throw new OutOfMemoryError("Requested string length exceeds VM limit");
+        }
+        byte[] value = StringConcatHelper.newArray(len);
+
+        int off = 0;
+        prefix.getBytes(value, off, coder); off += prefix.length();
+        if (size > 0) {
+            var el = elements[0];
+            el.getBytes(value, off, coder); off += el.length();
+            for (int i = 1; i < size; i++) {
+                delimiter.getBytes(value, off, coder); off += delimiter.length();
+                el = elements[i];
+                el.getBytes(value, off, coder); off += el.length();
+            }
+        }
+        suffix.getBytes(value, off, coder);
+        // assert off + suffix.length() == value.length >> coder;
+
+        return new String(value, coder);
     }
 
     /**
@@ -3249,11 +3314,16 @@ public final class String
             Iterable<? extends CharSequence> elements) {
         Objects.requireNonNull(delimiter);
         Objects.requireNonNull(elements);
-        StringJoiner joiner = new StringJoiner(delimiter);
+        var delim = delimiter.toString();
+        var elems = new String[8];
+        int size = 0;
         for (CharSequence cs: elements) {
-            joiner.add(cs);
+            if (size >= elems.length) {
+                elems = Arrays.copyOf(elems, elems.length << 1);
+            }
+            elems[size++] = String.valueOf(cs);
         }
-        return joiner.toString();
+        return join("", "", delim, elems, size);
     }
 
     /**
@@ -3757,7 +3827,7 @@ public final class String
         }
         char lastChar = charAt(length - 1);
         boolean optOut = lastChar == '\n' || lastChar == '\r';
-        List<String> lines = lines().collect(Collectors.toList());
+        List<String> lines = lines().toList();
         final int outdent = optOut ? 0 : outdent(lines);
         return lines.stream()
             .map(line -> {
@@ -4151,7 +4221,7 @@ public final class String
      * @return  a {@code String} that contains the characters of the
      *          character array.
      */
-    public static String valueOf(char data[]) {
+    public static String valueOf(char[] data) {
         return new String(data);
     }
 
@@ -4175,7 +4245,7 @@ public final class String
      *          {@code offset+count} is larger than
      *          {@code data.length}.
      */
-    public static String valueOf(char data[], int offset, int count) {
+    public static String valueOf(char[] data, int offset, int count) {
         return new String(data, offset, count);
     }
 
@@ -4192,7 +4262,7 @@ public final class String
      *          {@code offset+count} is larger than
      *          {@code data.length}.
      */
-    public static String copyValueOf(char data[], int offset, int count) {
+    public static String copyValueOf(char[] data, int offset, int count) {
         return new String(data, offset, count);
     }
 
@@ -4203,7 +4273,7 @@ public final class String
      * @return  a {@code String} that contains the characters of the
      *          character array.
      */
-    public static String copyValueOf(char data[]) {
+    public static String copyValueOf(char[] data) {
         return new String(data);
     }
 
@@ -4482,10 +4552,7 @@ public final class String
      * negative or greater than or equal to {@code length}.
      */
     static void checkIndex(int index, int length) {
-        if (index < 0 || index >= length) {
-            throw new StringIndexOutOfBoundsException("index " + index +
-                                                      ", length " + length);
-        }
+        Preconditions.checkIndex(index, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*
@@ -4493,10 +4560,7 @@ public final class String
      * is negative or greater than {@code length}.
      */
     static void checkOffset(int offset, int length) {
-        if (offset < 0 || offset > length) {
-            throw new StringIndexOutOfBoundsException("offset " + offset +
-                                                      ", length " + length);
-        }
+        Preconditions.checkFromToIndex(offset, length, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*
@@ -4508,10 +4572,7 @@ public final class String
      *          or {@code offset} is greater than {@code length - count}
      */
     static void checkBoundsOffCount(int offset, int count, int length) {
-        if (offset < 0 || count < 0 || offset > length - count) {
-            throw new StringIndexOutOfBoundsException(
-                "offset " + offset + ", count " + count + ", length " + length);
-        }
+        Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*
@@ -4523,10 +4584,7 @@ public final class String
      *          {@code end}, or {@code end} is greater than {@code length}.
      */
     static void checkBoundsBeginEnd(int begin, int end, int length) {
-        if (begin < 0 || begin > end || end > length) {
-            throw new StringIndexOutOfBoundsException(
-                "begin " + begin + ", end " + end + ", length " + length);
-        }
+        Preconditions.checkFromToIndex(begin, end, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /**

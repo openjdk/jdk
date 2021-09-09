@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,36 @@ abstract class UnixFileStore
         throw new UnsupportedOperationException("'" + attribute + "' not recognized");
     }
 
+    /**
+     * Checks whether extended attributes are enabled on the file system where the given file resides.
+     *
+     * @param path A path pointing to an existing node, such as the file system's root
+     * @return <code>true</code> if enabled, <code>false</code> if disabled or unable to determine
+     */
+    protected boolean isExtendedAttributesEnabled(UnixPath path) {
+        if (!UnixNativeDispatcher.xattrSupported()) {
+            // avoid I/O if native code doesn't support xattr
+            return false;
+        }
+
+        int fd = -1;
+        try {
+            fd = path.openForAttributeAccess(false);
+
+            // fgetxattr returns size if called with size==0
+            byte[] name = Util.toBytes("user.java");
+            UnixNativeDispatcher.fgetxattr(fd, name, 0L, 0);
+            return true;
+        } catch (UnixException e) {
+            // attribute does not exist
+            if (e.errno() == UnixConstants.XATTR_NOT_FOUND)
+                return true;
+        } finally {
+            UnixNativeDispatcher.close(fd);
+        }
+        return false;
+    }
+
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
         if (type == null)
@@ -240,6 +270,7 @@ abstract class UnixFileStore
     /**
      * Returns status to indicate if file system supports a given feature
      */
+    @SuppressWarnings("removal")
     FeatureStatus checkIfFeaturePresent(String feature) {
         if (props == null) {
             synchronized (loadLock) {

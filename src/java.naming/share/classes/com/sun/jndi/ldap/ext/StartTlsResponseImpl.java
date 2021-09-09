@@ -60,7 +60,7 @@ import com.sun.jndi.ldap.Connection;
  * @see StartTlsRequest
  * @author Vincent Ryan
  */
-final public class StartTlsResponseImpl extends StartTlsResponse {
+public final class StartTlsResponseImpl extends StartTlsResponse {
 
     private static final boolean debug = false;
 

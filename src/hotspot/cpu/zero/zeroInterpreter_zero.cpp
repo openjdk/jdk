@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
-#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/zero/bytecodeInterpreter.hpp"
@@ -109,7 +108,7 @@ InterpreterCodelet* ZeroInterpreter::codelet_containing(address pc) {
   fixup_after_potential_safepoint()
 
 int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
 
   // Allocate and initialize our frame.
   InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
@@ -123,7 +122,7 @@ int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -171,7 +170,7 @@ intptr_t narrow(BasicType type, intptr_t result) {
 
 
 void ZeroInterpreter::main_loop(int recurse, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // If we are entering from a deopt we may need to call
@@ -200,6 +199,18 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
       BytecodeInterpreter::run<false>(istate);
     }
     fixup_after_potential_safepoint();
+
+    // If we are unwinding, notify the stack watermarks machinery.
+    // Should do this before resetting the frame anchor.
+    if (istate->msg() == BytecodeInterpreter::return_from_method ||
+        istate->msg() == BytecodeInterpreter::do_osr) {
+      stack_watermark_unwind_check(thread);
+    } else {
+      assert(istate->msg() == BytecodeInterpreter::call_method ||
+             istate->msg() == BytecodeInterpreter::more_monitors ||
+             istate->msg() == BytecodeInterpreter::throwing_exception,
+             "Should be one of these otherwise");
+    }
 
     // Clear the frame anchor
     thread->reset_last_Java_frame();
@@ -305,7 +316,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Make sure method is native and not abstract
   assert(method->is_native() && !method->is_abstract(), "should be");
 
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Allocate and initialize our frame
@@ -437,6 +448,10 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   thread->set_thread_state(_thread_in_Java);
   fixup_after_potential_safepoint();
 
+  // Notify the stack watermarks machinery that we are unwinding.
+  // Should do this before resetting the frame anchor.
+  stack_watermark_unwind_check(thread);
+
   // Clear the frame anchor
   thread->reset_last_Java_frame();
 
@@ -552,8 +567,9 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD;
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -578,7 +594,6 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     return normal_entry(method, 0, THREAD);
   }
 
-  JavaThread* thread = THREAD->as_Java_thread();
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -640,8 +655,9 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD;
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -667,7 +683,6 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     return normal_entry(method, 0, THREAD);
   }
 
-  JavaThread* thread = THREAD->as_Java_thread();
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -731,11 +746,11 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -747,7 +762,7 @@ int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Calculate the size of the frame we'll build, including
@@ -808,7 +823,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
     if (method->is_static())
       object = method->constants()->pool_holder()->java_mirror();
     else
-      object = (oop) (void*)locals[0];
+      object = cast_to_oop((void*)locals[0]);
     monitor->set_obj(object);
   }
 
@@ -822,7 +837,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
 }
 
 InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
-  ZeroStack *stack = THREAD->as_Java_thread()->zero_stack();
+  ZeroStack *stack = THREAD->zero_stack();
 
   int size_in_words = size >> LogBytesPerWord;
   assert(size_in_words * wordSize == size, "unaligned");
@@ -869,4 +884,14 @@ address ZeroInterpreter::remove_activation_early_entry(TosState state) {
 
 bool ZeroInterpreter::contains(address pc) {
   return false; // make frame::print_value_on work
+}
+
+void ZeroInterpreter::stack_watermark_unwind_check(JavaThread* thread) {
+  // If frame pointer is in the danger zone, notify the runtime that
+  // it needs to act before continuing the unwinding.
+  uintptr_t fp = (uintptr_t)thread->last_Java_fp();
+  uintptr_t watermark = thread->poll_data()->get_polling_word();
+  if (fp > watermark) {
+    InterpreterRuntime::at_unwind(thread);
+  }
 }

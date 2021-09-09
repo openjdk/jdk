@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
  */
 
 import java.io.IOException;
-import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.*;
 import java.net.MalformedURLException;
@@ -42,11 +41,9 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 
 import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.ForceGC;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -139,39 +136,6 @@ public class ReflectionCallerCacheTest {
 
         TestLoader() {
             super("testloader", toURLs(), ClassLoader.getSystemClassLoader());
-        }
-    }
-
-    /**
-     * Utility class to invoke System.gc()
-     */
-    static class ForceGC {
-        private  final CountDownLatch cleanerInvoked = new CountDownLatch(1);
-        private  final Cleaner cleaner = Cleaner.create();
-
-        ForceGC() {
-            cleaner.register(new Object(), () -> cleanerInvoked.countDown());
-        }
-
-        void doit() {
-            try {
-                for (int i = 0; i < 10; i++) {
-                    System.gc();
-                    if (cleanerInvoked.await(1L, TimeUnit.SECONDS)) {
-                        return;
-                    }
-                }
-            } catch (InterruptedException unexpected) {
-                throw new AssertionError("unexpected InterruptedException");
-            }
-        }
-
-        void await(BooleanSupplier s) {
-            for (int i = 0; i < 10; i++) {
-                if (s.getAsBoolean()) return;
-                doit();
-            }
-            throw new AssertionError("failed to satisfy condition");
         }
     }
 }

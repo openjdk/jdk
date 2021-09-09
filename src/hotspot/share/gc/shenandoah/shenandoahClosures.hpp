@@ -28,6 +28,7 @@
 #include "oops/accessDecorators.hpp"
 #include "runtime/handshake.hpp"
 
+class BarrierSetNMethod;
 class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
@@ -138,12 +139,6 @@ private:
 public:
   inline ShenandoahCodeBlobAndDisarmClosure(OopClosure* cl);
   inline void do_code_blob(CodeBlob* cb);
-};
-
-class ShenandoahRendezvousClosure : public HandshakeClosure {
-public:
-  inline ShenandoahRendezvousClosure();
-  inline void do_thread(Thread* thread);
 };
 
 #ifdef ASSERT

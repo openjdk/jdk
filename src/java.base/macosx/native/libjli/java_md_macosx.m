@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,8 @@ static InvocationFunctions *GetExportedJNIFunctions() {
 #if defined(__i386__)
         preferredJVM = "client";
 #elif defined(__x86_64__)
+        preferredJVM = "server";
+#elif defined(__aarch64__)
         preferredJVM = "server";
 #else
 #error "Unknown architecture - needs definition"
@@ -827,7 +829,7 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
     NULL_CHECK(getCanonicalNameMID = (*env)->GetMethodID(env, classClass, "getCanonicalName", "()Ljava/lang/String;"));
 
     jstring mainClassString = (*env)->CallObjectMethod(env, mainClass, getCanonicalNameMID);
-    if ((*env)->ExceptionCheck(env)) {
+    if ((*env)->ExceptionCheck(env) || NULL == mainClassString) {
         /*
          * Clears all errors caused by getCanonicalName() on the mainclass and
          * leaves the JAVA_MAIN_CLASS__<pid> empty.

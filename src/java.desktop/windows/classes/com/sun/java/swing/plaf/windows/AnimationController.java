@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ import sun.awt.AppContext;
  */
 class AnimationController implements ActionListener, PropertyChangeListener {
 
+    @SuppressWarnings("removal")
     private static final boolean VISTA_ANIMATION_DISABLED =
         AccessController.doPrivileged(new GetBooleanAction("swing.disablevistaanimation"));
 

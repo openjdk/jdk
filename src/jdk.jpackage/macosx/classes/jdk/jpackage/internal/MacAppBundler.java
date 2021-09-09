@@ -31,9 +31,11 @@ import java.util.Map;
 import java.util.Optional;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class MacAppBundler extends AppImageBundler {
      public MacAppBundler() {
@@ -41,7 +43,7 @@ public class MacAppBundler extends AppImageBundler {
         setParamsValidator(MacAppBundler::doValidate);
     }
 
-    private static final String TEMPLATE_BUNDLE_ICON = "java.icns";
+    private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
 
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME =
             new StandardBundlerParam<>(
@@ -62,11 +64,20 @@ public class MacAppBundler extends AppImageBundler {
             "mac.signing-key-developer-id-app",
             String.class,
             params -> {
-                    String result = MacBaseInstallerBundler.findKey(
-                            "Developer ID Application: ",
-                            SIGNING_KEY_USER.fetchFrom(params),
-                            SIGNING_KEYCHAIN.fetchFrom(params),
-                            VERBOSE.fetchFrom(params));
+                    String user = SIGNING_KEY_USER.fetchFrom(params);
+                    String keychain = SIGNING_KEYCHAIN.fetchFrom(params);
+                    String result = null;
+                    if (APP_STORE.fetchFrom(params)) {
+                        result = MacBaseInstallerBundler.findKey(
+                            "3rd Party Mac Developer Application: ",
+                            user, keychain);
+                    }
+                    // if either not signing for app store or couldn't find
+                    if (result == null) {
+                        result = MacBaseInstallerBundler.findKey(
+                            "Developer ID Application: ", user, keychain);
+                    }
+
                     if (result != null) {
                         MacCertificate certificate = new MacCertificate(result);
 
@@ -115,7 +126,7 @@ public class MacAppBundler extends AppImageBundler {
         }
 
         // reject explicitly set sign to true and no valid signature key
-        if (Optional.ofNullable(MacAppImageBuilder.
+        if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
             String signingIdentity =
                     DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);

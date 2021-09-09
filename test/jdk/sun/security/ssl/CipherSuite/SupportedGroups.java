@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
   * @run main/othervm SupportedGroups ffdhe6144
   * @run main/othervm SupportedGroups ffdhe8192
  */
+import java.net.InetAddress;
 import java.util.Arrays;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocket;
@@ -50,6 +51,10 @@ public class SupportedGroups extends SSLSocketTemplate {
         {{"TLSv1.2"}, {"TLSv1.3", "TLSv1.2"}},
         {{"TLSv1.2"}, {"TLSv1.2"}}
     };
+
+    public SupportedGroups() {
+        this.serverAddress = InetAddress.getLoopbackAddress();
+    }
 
     // Servers are configured before clients, increment test case after.
     @Override

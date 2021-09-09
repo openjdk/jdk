@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,24 +164,50 @@ public class ToolBox {
     }
 
     /**
-     * Filters a list of strings according to the given regular expression.
+     * Filters a list of strings according to the given regular expression,
+     * returning the strings that match the regular expression.
      * @param regex the regular expression
      * @param lines the strings to be filtered
      * @return the strings matching the regular expression
      */
     public List<String> grep(String regex, List<String> lines) {
-        return grep(Pattern.compile(regex), lines);
+        return grep(Pattern.compile(regex), lines, true);
     }
 
     /**
-     * Filters a list of strings according to the given regular expression.
+     * Filters a list of strings according to the given regular expression,
+     * returning the strings that match the regular expression.
      * @param pattern the regular expression
      * @param lines the strings to be filtered
      * @return the strings matching the regular expression
      */
     public List<String> grep(Pattern pattern, List<String> lines) {
+        return grep(pattern, lines, true);
+    }
+
+    /**
+     * Filters a list of strings according to the given regular expression,
+     * returning either the strings that match or the strings that do not match.
+     * @param regex the regular expression
+     * @param lines the strings to be filtered
+     * @param match if true, return the lines that match; otherwise if false, return the lines that do not match.
+     * @return the strings matching(or not matching) the regular expression
+     */
+    public List<String> grep(String regex, List<String> lines, boolean match) {
+        return grep(Pattern.compile(regex), lines, match);
+    }
+
+    /**
+     * Filters a list of strings according to the given regular expression,
+     * returning either the strings that match or the strings that do not match.
+     * @param pattern the regular expression
+     * @param lines the strings to be filtered
+     * @param match if true, return the lines that match; otherwise if false, return the lines that do not match.
+     * @return the strings matching(or not matching) the regular expression
+     */
+    public List<String> grep(Pattern pattern, List<String> lines, boolean match) {
         return lines.stream()
-                .filter(s -> pattern.matcher(s).find())
+                .filter(s -> pattern.matcher(s).find() == match)
                 .collect(Collectors.toList());
     }
 

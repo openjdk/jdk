@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ class UnixAsynchronousServerSocketChannelImpl
     private PendingFuture<AsynchronousSocketChannel,Object> acceptFuture;
 
     // context for permission check when security manager set
+    @SuppressWarnings("removal")
     private AccessControlContext acceptAcc;
 
 
@@ -200,6 +201,7 @@ class UnixAsynchronousServerSocketChannelImpl
      * with an IOException or SecurityException then the channel/file descriptor
      * will be closed.
      */
+    @SuppressWarnings("removal")
     private AsynchronousSocketChannel finishAccept(FileDescriptor newfd,
                                                    final InetSocketAddress remote,
                                                    AccessControlContext acc)
@@ -244,6 +246,7 @@ class UnixAsynchronousServerSocketChannelImpl
         return ch;
     }
 
+    @SuppressWarnings("removal")
     @Override
     Future<AsynchronousSocketChannel> implAccept(Object att,
         CompletionHandler<AsynchronousSocketChannel,Object> handler)

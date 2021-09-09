@@ -159,11 +159,11 @@ void ObjectValue::read_object(DebugInfoReadStream* stream) {
 }
 
 void ObjectValue::write_on(DebugInfoWriteStream* stream) {
-  if (_visited) {
+  if (is_visited()) {
     stream->write_int(OBJECT_ID_CODE);
     stream->write_int(_id);
   } else {
-    _visited = true;
+    set_visited(true);
     stream->write_int(is_auto_box() ? AUTO_BOX_OBJECT_CODE : OBJECT_CODE);
     stream->write_int(_id);
     _klass->write_on(stream);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,8 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  * @author Arthur van Hoff, Kara Kytle, Jan Borgersen
  * @author Florian Bomers
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "removal"})
 public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
-
-    private static final int BUFFER_SIZE = 16384; // number of bytes written each time to the source data line
 
     private long lastPlayCall = 0;
     private static final int MINIMUM_PLAY_DELAY = 30;
@@ -90,7 +88,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
      *
      */
     private static final long CLIP_THRESHOLD = 1048576;
-    //private final static long CLIP_THRESHOLD = 1;
     private static final int STREAM_BUFFER_SIZE = 1024;
 
     public static JavaSoundAudioClip create(final URLConnection uc) {
@@ -359,19 +356,9 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     private void readStream(AudioInputStream as) throws IOException {
 
         DirectBAOS baos = new DirectBAOS();
-        byte[] buffer = new byte[16384];
-        int bytesRead = 0;
-        int totalBytesRead = 0;
-
-        // this loop may throw an IOException
-        while( true ) {
-            bytesRead = as.read(buffer, 0, buffer.length);
-            if (bytesRead <= 0) {
-                as.close();
-                break;
-            }
-            totalBytesRead += bytesRead;
-            baos.write(buffer, 0, bytesRead);
+        int totalBytesRead;
+        try (as) {
+            totalBytesRead = (int) as.transferTo(baos);
         }
         loadedAudio = baos.getInternalBuffer();
         loadedAudioByteLength = totalBytesRead;

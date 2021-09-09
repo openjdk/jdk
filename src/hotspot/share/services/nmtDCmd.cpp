@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ NMTDCmd::NMTDCmd(outputStream* output,
   bool heap): DCmdWithParser(output, heap),
   _summary("summary", "request runtime to report current memory summary, " \
            "which includes total reserved and committed memory, along " \
-           "with memory usage summary by each subsytem.",
+           "with memory usage summary by each subsystem.",
            "BOOLEAN", false, "false"),
   _detail("detail", "request runtime to report memory allocation >= "
            "1K by each callsite.",
@@ -157,17 +157,6 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   } else {
     ShouldNotReachHere();
     output()->print_cr("Unknown command");
-  }
-}
-
-int NMTDCmd::num_arguments() {
-  ResourceMark rm;
-  NMTDCmd* dcmd = new NMTDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
   }
 }
 

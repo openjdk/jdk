@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,13 +689,16 @@ final class CertificateRequest {
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);
 
-            List<SignatureScheme> sss = new LinkedList<>();
-            for (int id : crm.algorithmIds) {
-                SignatureScheme ss = SignatureScheme.valueOf(id);
-                if (ss != null) {
-                    sss.add(ss);
-                }
+            List<SignatureScheme> sss =
+                    SignatureScheme.getSupportedAlgorithms(
+                            chc.sslConfig,
+                            chc.algorithmConstraints, chc.negotiatedProtocol,
+                            crm.algorithmIds);
+            if (sss == null || sss.isEmpty()) {
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
             }
+
             chc.peerRequestedSignatureSchemes = sss;
             chc.peerRequestedCertSignSchemes = sss;     // use the same schemes
             chc.handshakeSession.setPeerSupportedSignatureAlgorithms(sss);
@@ -728,6 +731,7 @@ final class CertificateRequest {
             }
 
             Collection<String> checkedKeyTypes = new HashSet<>();
+            List<String> supportedKeyTypes = new ArrayList<>();
             for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
                 if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -736,6 +740,7 @@ final class CertificateRequest {
                     }
                     continue;
                 }
+                checkedKeyTypes.add(ss.keyAlgorithm);
 
                 // Don't select a signature scheme unless we will be able to
                 // produce a CertificateVerify message later
@@ -749,36 +754,28 @@ final class CertificateRequest {
                             "Unable to produce CertificateVerify for " +
                             "signature scheme: " + ss.name);
                     }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
                     continue;
                 }
 
-                SSLAuthentication ka = X509Authentication.valueOf(ss);
+                X509Authentication ka = X509Authentication.valueOf(ss);
                 if (ka == null) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
                             "Unsupported authentication scheme: " + ss.name);
                     }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
                     continue;
                 }
+                supportedKeyTypes.add(ss.keyAlgorithm);
+            }
 
-                SSLPossession pos = ka.createPossession(hc);
-                if (pos == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unavailable authentication scheme: " + ss.name);
-                    }
-                    continue;
+            SSLPossession pos = X509Authentication
+                    .createPossession(hc, supportedKeyTypes.toArray(String[]::new));
+            if (pos == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning("No available authentication scheme");
                 }
-
-                return pos;
             }
-
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.warning("No available authentication scheme");
-            }
-            return null;
+            return pos;
         }
     }
 

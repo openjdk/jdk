@@ -27,7 +27,6 @@ package sun.awt.image;
 
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
-import java.io.BufferedInputStream;
 
 public class ByteArrayImageSource extends InputStreamImageSource {
     byte[] imagedata;
@@ -52,10 +51,8 @@ public class ByteArrayImageSource extends InputStreamImageSource {
     }
 
     protected ImageDecoder getDecoder() {
-        InputStream is =
-            new BufferedInputStream(new ByteArrayInputStream(imagedata,
-                                                             imageoffset,
-                                                             imagelength));
+        InputStream is = new ByteArrayInputStream(imagedata, imageoffset,
+                imagelength);
         return getDecoder(is);
     }
 }

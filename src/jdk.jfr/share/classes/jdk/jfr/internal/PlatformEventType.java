@@ -39,7 +39,7 @@ import jdk.jfr.SettingDescriptor;
  */
 public final class PlatformEventType extends Type {
     private final boolean isJVM;
-    private final boolean  isJDK;
+    private final boolean isJDK;
     private final boolean isMethodSampling;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
@@ -188,6 +188,10 @@ public final class PlatformEventType extends Type {
         return enabled;
     }
 
+    public boolean isSystem() {
+        return isJVM || isJDK;
+    }
+
     public boolean isJVM() {
         return isJVM;
     }
@@ -285,7 +289,7 @@ public final class PlatformEventType extends Type {
         if (this.registered != registered) {
             this.registered = registered;
             updateCommittable();
-            LogTag logTag = isJVM() || isJDK() ? LogTag.JFR_SYSTEM_EVENT : LogTag.JFR_EVENT;
+            LogTag logTag = isSystem() ? LogTag.JFR_SYSTEM_METADATA : LogTag.JFR_METADATA;
             if (registered) {
                 Logger.log(logTag, LogLevel.INFO, "Registered " + getLogName());
             } else {

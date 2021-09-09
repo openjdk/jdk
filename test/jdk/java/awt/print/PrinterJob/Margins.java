@@ -37,6 +37,8 @@ import java.awt.print.Printable;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.awt.print.PrinterException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Color;
@@ -47,28 +49,26 @@ public class Margins implements Printable {
 
     public static void main(String args[]) throws Exception {
         Robot robot = new Robot();
-        Thread t = new Thread (() -> {
-            robot.waitForIdle();
-            robot.delay(5000);
-            robot.keyPress(KeyEvent.VK_ENTER);
-            robot.keyRelease(KeyEvent.VK_ENTER);
-            robot.waitForIdle();
-            robot.delay(5000);
-            robot.keyPress(KeyEvent.VK_ENTER);
-            robot.keyRelease(KeyEvent.VK_ENTER);
-            robot.waitForIdle();
-            robot.delay(5000);
-            robot.keyPress(KeyEvent.VK_ENTER);
-            robot.keyRelease(KeyEvent.VK_ENTER);
-        });
-
         PrinterJob job = PrinterJob.getPrinterJob();
+        if (job.getPrintService() == null) {
+            System.out.println("No printers. Test cannot continue");
+            return;
+        }
+        PrintService psrv = PrintServiceLookup.lookupDefaultPrintService();
+        System.out.println("PrintService " + psrv.getName());
+
         PageFormat pageFormat = job.defaultPage();
         Paper paper = pageFormat.getPaper();
         double wid = paper.getWidth();
         double hgt = paper.getHeight();
         paper.setImageableArea(0, -10, wid, hgt);
-        t.start();
+
+        Thread t1 = new Thread(() -> {
+            robot.delay(2000);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+        });
+        t1.start();
 
         pageFormat = job.pageDialog(pageFormat);
         pageFormat.setPaper(paper);
@@ -79,6 +79,14 @@ public class Margins implements Printable {
         }
 
         paper.setImageableArea(0, 0, wid, hgt + 72);
+
+        Thread t2 = new Thread(() -> {
+            robot.delay(2000);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+        });
+        t2.start();
+
         pageFormat = job.pageDialog(pageFormat);
         pageFormat.setPaper(paper);
 
@@ -94,6 +102,14 @@ public class Margins implements Printable {
         hgt = paper.getHeight();
 
         paper.setImageableArea(0, -10, -wid, hgt);
+
+        Thread t3 = new Thread(() -> {
+            robot.delay(2000);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+        });
+        t3.start();
+
         pageFormat = job.pageDialog(pageFormat);
         pageFormat.setPaper(paper);
 

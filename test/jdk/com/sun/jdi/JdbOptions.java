@@ -120,19 +120,19 @@ public class JdbOptions {
         test("-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=\"-client\" \"-XX:+PrintVMOptions\""
                 + " -XX:+IgnoreUnrecognizedVMOptions"
-                + " \"-XX:StartFlightRecording=dumponexit=true,maxsize=500M\" \"-XX:FlightRecorderOptions=repository=jfrrep\""
+                + " \"-XX:StartFlightRecording:dumponexit=true,maxsize=500M\" \"-XX:FlightRecorderOptions:repository=jfrrep\""
                 + ",main=" + targ + " " + outFilename)
-            .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
-            .expectedArg("-XX:FlightRecorderOptions=repository=jfrrep");
+            .expectedArg("-XX:StartFlightRecording:dumponexit=true,maxsize=500M")
+            .expectedArg("-XX:FlightRecorderOptions:repository=jfrrep");
 
         // 'options' contains commas - values are quoted (single quotes)
         test("-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options='-client' '-XX:+PrintVMOptions'"
                         + " -XX:+IgnoreUnrecognizedVMOptions"
-                        + " '-XX:StartFlightRecording=dumponexit=true,maxsize=500M' '-XX:FlightRecorderOptions=repository=jfrrep'"
+                        + " '-XX:StartFlightRecording:dumponexit=true,maxsize=500M' '-XX:FlightRecorderOptions:repository=jfrrep'"
                         + ",main=" + targ + " " + outFilename)
-            .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
-            .expectedArg("-XX:FlightRecorderOptions=repository=jfrrep");
+            .expectedArg("-XX:StartFlightRecording:dumponexit=true,maxsize=500M")
+            .expectedArg("-XX:FlightRecorderOptions:repository=jfrrep");
 
         // java options are specified in 2 ways, with and without spaces
         // options are quoted by using single and double quotes.
@@ -141,15 +141,15 @@ public class JdbOptions {
                 "-connect",
                 "com.sun.jdi.CommandLineLaunch:vmexec=java,options=-Dprop3=val3 '-Dprop4=val 4'"
                         + " -XX:+IgnoreUnrecognizedVMOptions"
-                        + " \"-XX:StartFlightRecording=dumponexit=true,maxsize=500M\""
-                        + " '-XX:FlightRecorderOptions=repository=jfrrep'"
+                        + " \"-XX:StartFlightRecording:dumponexit=true,maxsize=500M\""
+                        + " '-XX:FlightRecorderOptions:repository=jfrrep'"
                         + ",main=" + targ + " " + outFilename + " prop1 prop2 prop3 prop4")
                 .expectedProp("prop1", "val1")
                 .expectedProp("prop2", "val 2")
                 .expectedProp("prop3", "val3")
                 .expectedProp("prop4", "val 4")
-                .expectedArg("-XX:StartFlightRecording=dumponexit=true,maxsize=500M")
-                .expectedArg("-XX:FlightRecorderOptions=repository=jfrrep");
+                .expectedArg("-XX:StartFlightRecording:dumponexit=true,maxsize=500M")
+                .expectedArg("-XX:FlightRecorderOptions:repository=jfrrep");
 
     }
 

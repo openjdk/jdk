@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
  * Returns NULL if class not found.
  */
 JNIEXPORT jclass JNICALL
-Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jobject loader,
+Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jclass dummy,
                                               jstring classname)
 {
     char *clname;

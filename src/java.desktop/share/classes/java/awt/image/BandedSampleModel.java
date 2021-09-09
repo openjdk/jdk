@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,13 @@ public final class BandedSampleModel extends ComponentSampleModel
      * @param h         The height (in pixels) of the region of image
      *                  data described.
      * @param numBands  The number of bands for the image data.
+     * @throws IllegalArgumentException if {@code w} and {@code h}
+     *         are not both greater than 0
+     * @throws IllegalArgumentException if the product of {@code w}
+     *         and {@code h} is greater than {@code Integer.MAX_VALUE}
+     * @throws IllegalArgumentException if {@code numBands} is not > 0
      * @throws IllegalArgumentException if {@code dataType} is not
-     *         one of the supported data types
+     *         one of the supported data types for this sample model.
      */
     public BandedSampleModel(int dataType, int w, int h, int numBands) {
         super(dataType, w, h, 1, w,
@@ -100,8 +105,21 @@ public final class BandedSampleModel extends ComponentSampleModel
      * @param scanlineStride The line stride of the of the image data.
      * @param bankIndices The bank index for each band.
      * @param bandOffsets The band offset for each band.
+     * @throws IllegalArgumentException if {@code w} and {@code h}
+     *         are not both greater than 0
+     * @throws IllegalArgumentException if the product of {@code w}
+     *         and {@code h} is greater than {@code Integer.MAX_VALUE}
+     * @throws IllegalArgumentException if {@code scanlineStride} is less than 0
+     * @throws NullPointerException if {@code bankIndices} is {@code null}
+     * @throws NullPointerException if {@code bandOffsets} is {@code null}
+     * @throws IllegalArgumentException if {@code bandOffsets.length} is 0
+     * @throws IllegalArgumentException if the length of
+     *         {@code bankIndices} does not equal the length of
+     *         {@code bandOffsets}
+     * @throws IllegalArgumentException if any of the bank indices
+     *         of {@code bandIndices} is less than 0
      * @throws IllegalArgumentException if {@code dataType} is not
-     *         one of the supported data types
+     *         one of the supported data types for this sample model
      */
     public BandedSampleModel(int dataType,
                              int w, int h,
@@ -853,6 +871,9 @@ public final class BandedSampleModel extends ComponentSampleModel
     }
 
     private static int[] createOffsetArray(int numBands) {
+        if (numBands <= 0) {
+            throw new IllegalArgumentException("numBands must be > 0");
+        }
         int[] bandOffsets = new int[numBands];
         for (int i=0; i < numBands; i++) {
             bandOffsets[i] = 0;
@@ -861,6 +882,9 @@ public final class BandedSampleModel extends ComponentSampleModel
     }
 
     private static int[] createIndicesArray(int numBands) {
+        if (numBands <= 0) {
+            throw new IllegalArgumentException("numBands must be > 0");
+        }
         int[] bankIndices = new int[numBands];
         for (int i=0; i < numBands; i++) {
             bankIndices[i] = i;

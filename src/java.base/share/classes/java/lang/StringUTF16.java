@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ final class StringUTF16 {
     }
 
     @IntrinsicCandidate
-    public static void getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin) {
+    public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         // We need a range check here because 'getChar' has no checks
         if (srcBegin < srcEnd) {
             checkBoundsOffCount(srcBegin, srcEnd - srcBegin, value);
@@ -258,7 +258,7 @@ final class StringUTF16 {
     }
 
     /* @see java.lang.String.getBytes(int, int, byte[], int) */
-    public static void getBytes(byte[] value, int srcBegin, int srcEnd, byte dst[], int dstBegin) {
+    public static void getBytes(byte[] value, int srcBegin, int srcEnd, byte[] dst, int dstBegin) {
         srcBegin <<= 1;
         srcEnd <<= 1;
         for (int i = srcBegin + (1 >> LO_BYTE_SHIFT); i < srcEnd; i += 2) {
@@ -342,12 +342,12 @@ final class StringUTF16 {
             cp1 = codePointIncluding(value, cp1, k1, toffset, tlast);
             if (cp1 < 0) {
                 k1++;
-                cp1 -= cp1;
+                cp1 = -cp1;
             }
             cp2 = codePointIncluding(other, cp2, k2, ooffset, olast);
             if (cp2 < 0) {
                 k2++;
-                cp2 -= cp2;
+                cp2 = -cp2;
             }
 
             int diff = compareCodePointCI(cp1, cp2);
@@ -1065,7 +1065,7 @@ final class StringUTF16 {
         return (right != length) ? newString(value, 0, right) : null;
     }
 
-    private final static class LinesSpliterator implements Spliterator<String> {
+    private static final class LinesSpliterator implements Spliterator<String> {
         private byte[] value;
         private int index;        // current index, modified on advance/split
         private final int fence;  // one past last index

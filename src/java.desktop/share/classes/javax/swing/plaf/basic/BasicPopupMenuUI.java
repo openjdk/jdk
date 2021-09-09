@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -778,6 +778,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
+        @SuppressWarnings("removal")
         void grabWindow(MenuElement[] newPath) {
             // A grab needs to be added
             final Toolkit tk = Toolkit.getDefaultToolkit();
@@ -813,6 +814,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
+        @SuppressWarnings("removal")
         void ungrabWindow() {
             final Toolkit tk = Toolkit.getDefaultToolkit();
             // The grab should be removed
@@ -932,7 +934,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         boolean isInPopup(Component src) {
             for (Component c=src; c!=null; c=c.getParent()) {
                 if (c instanceof Applet || c instanceof Window) {
@@ -1150,7 +1152,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         public void stateChanged(ChangeEvent ev) {
             if (!(UIManager.getLookAndFeel() instanceof BasicLookAndFeel)) {
                 uninstall();

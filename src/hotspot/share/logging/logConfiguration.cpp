@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logDecorators.hpp"
@@ -35,7 +36,7 @@
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -210,6 +211,21 @@ void LogConfiguration::delete_output(size_t idx) {
   delete output;
 }
 
+// MT-SAFETY
+//
+// The ConfigurationLock guarantees that only one thread is performing reconfiguration. This function still needs
+// to be MT-safe because logsites in other threads may be executing in parallel. Reconfiguration means unified
+// logging allows users to dynamically change tags and decorators of a log output via DCMD(logDiagnosticCommand.hpp).
+//
+// A RCU-style synchronization 'wait_until_no_readers()' is used inside of 'ts->set_output_level(output, level)'
+// if a setting has changed. It guarantees that all logs, either synchronous writes or enqueuing to the async buffer
+// see the new tags and decorators. It's worth noting that the synchronization occurs even if the level does not change.
+//
+// LogDecorator is a set of decorators represented in a uint. ts->update_decorators(decorators) is a union of the
+// current decorators and new_decorators. It's safe to do output->set_decorators(decorators) because new_decorators
+// is a subset of relevant tagsets decorators. After updating output's decorators, it is still safe to shrink all
+// decorators of tagsets.
+//
 void LogConfiguration::configure_output(size_t idx, const LogSelectionList& selections, const LogDecorators& decorators) {
   assert(ConfigurationLock::current_thread_has_lock(), "Must hold configuration lock to call this function.");
   assert(idx < _n_outputs, "Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
@@ -252,6 +268,10 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
     on_level[level]++;
   }
 
+  // For async logging we have to ensure that all enqueued messages, which may refer to previous decorators,
+  // or a soon-to-be-deleted output, are written out first. The flush() call ensures this.
+  AsyncLogWriter::flush();
+
   // It is now safe to set the new decorators for the actual output
   output->set_decorators(decorators);
 
@@ -277,6 +297,12 @@ void LogConfiguration::disable_outputs() {
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     ts->disable_outputs();
   }
+
+  // Handle 'jcmd VM.log disable' and JVM termination.
+  // ts->disable_outputs() above has disabled all output_lists with RCU synchronization.
+  // Therefore, no new logging message can enter the async buffer for the time being.
+  // flush out all pending messages before LogOutput instances die.
+  AsyncLogWriter::flush();
 
   while (idx > 0) {
     LogOutput* out = _outputs[--idx];
@@ -427,6 +453,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
 
   ConfigurationLock cl;
   size_t idx;
+  bool added = false;
   if (outputstr[0] == '#') { // Output specified using index
     int ret = sscanf(outputstr + 1, SIZE_FORMAT, &idx);
     if (ret != 1 || idx >= _n_outputs) {
@@ -447,15 +474,17 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       LogOutput* output = new_output(normalized, output_options, errstream);
       if (output != NULL) {
         idx = add_output(output);
+        added = true;
       }
-    } else if (output_options != NULL && strlen(output_options) > 0) {
-      errstream->print_cr("Output options for existing outputs are ignored.");
     }
 
     FREE_C_HEAP_ARRAY(char, normalized);
     if (idx == SIZE_MAX) {
       return false;
     }
+  }
+  if (!added && output_options != NULL && strlen(output_options) > 0) {
+    errstream->print_cr("Output options for existing outputs are ignored.");
   }
   configure_output(idx, selections, decorators);
   notify_update_listeners();
@@ -535,12 +564,26 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr(" file=<filename>");
   out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively.");
   out->print_cr("  Additional output-options for file outputs:");
-  out->print_cr("   filesize=..  - Target byte size for log rotation (supports K/M/G suffix)."
-                                    " If set to 0, log rotation will not trigger automatically,"
-                                    " but can be performed manually (see the VM.log DCMD).");
-  out->print_cr("   filecount=.. - Number of files to keep in rotation (not counting the active file)."
-                                    " If set to 0, log rotation is disabled."
-                                    " This will cause existing log files to be overwritten.");
+  out->print_cr("   filesize=..       - Target byte size for log rotation (supports K/M/G suffix)."
+                                         " If set to 0, log rotation will not trigger automatically,"
+                                         " but can be performed manually (see the VM.log DCMD).");
+  out->print_cr("   filecount=..      - Number of files to keep in rotation (not counting the active file)."
+                                         " If set to 0, log rotation is disabled."
+                                         " This will cause existing log files to be overwritten.");
+  out->print_cr("   foldmultilines=.. - If set to true, a log event that consists of multiple lines"
+                                         " will be folded into a single line by replacing newline characters"
+                                         " with the sequence '\\' and 'n' in the output."
+                                         " Existing single backslash characters will also be replaced"
+                                         " with a sequence of two backslashes so that the conversion can be reversed."
+                                         " This option is safe to use with UTF-8 character encodings,"
+                                         " but other encodings may not work.");
+
+  out->cr();
+  out->print_cr("\nAsynchronous logging (off by default):");
+  out->print_cr(" -Xlog:async");
+  out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
+                " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
+                " guaranteed non-blocking.");
   out->cr();
 
   out->print_cr("Some examples:");
@@ -584,6 +627,10 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr(" -Xlog:disable -Xlog:safepoint=trace:safepointtrace.txt");
   out->print_cr("\t Turn off all logging, including warnings and errors,");
   out->print_cr("\t and then enable messages tagged with 'safepoint' up to 'trace' level to file 'safepointtrace.txt'.");
+
+  out->print_cr(" -Xlog:async -Xlog:gc=debug:file=gc.log -Xlog:safepoint=trace");
+  out->print_cr("\t Write logs asynchronously. Enable messages tagged with 'safepoint' up to 'trace' level to stdout ");
+  out->print_cr("\t and messages tagged with 'gc' up to 'debug' level to file 'gc.log'.");
 }
 
 void LogConfiguration::rotate_all_outputs() {
@@ -610,3 +657,5 @@ void LogConfiguration::notify_update_listeners() {
     _listener_callbacks[i]();
   }
 }
+
+bool LogConfiguration::_async_mode = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,11 @@ class G1Policy: public CHeapObj<mtGC> {
   G1YoungGenSizer _young_gen_sizer;
 
   uint _free_regions_at_end_of_collection;
+
+  // These values are predictions of how much we think will survive in each
+  // section of the heap.
+  size_t _predicted_surviving_bytes_from_survivor;
+  size_t _predicted_surviving_bytes_from_old;
 
   size_t _rs_length;
 
@@ -246,7 +251,7 @@ public:
 
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
-  uint calc_min_old_cset_length() const;
+  uint calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
@@ -261,33 +266,14 @@ private:
   void clear_collection_set_candidates();
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
-
-  // The kind of STW pause.
-  enum PauseKind : uint {
-    FullGC,
-    YoungOnlyGC,
-    MixedGC,
-    LastYoungGC,
-    ConcurrentStartMarkGC,
-    ConcurrentStartUndoGC,
-    Cleanup,
-    Remark
-  };
-
-  static bool is_young_only_pause(PauseKind kind);
-  static bool is_mixed_pause(PauseKind kind);
-  static bool is_last_young_pause(PauseKind kind);
-  static bool is_concurrent_start_pause(PauseKind kind);
-  // Calculate PauseKind from internal state.
-  PauseKind young_gc_pause_kind(bool concurrent_operation_is_full_mark) const;
   // Manage time-to-mixed tracking.
-  void update_time_to_mixed_tracking(PauseKind pause, double start, double end);
+  void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(PauseKind kind, double start, double end);
+  void record_pause(G1GCPauseType gc_type, double start, double end);
 
   bool should_update_gc_stats();
 
-  void update_gc_pause_time_ratios(PauseKind kind, double start_sec, double end_sec);
+  void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
@@ -315,7 +301,9 @@ public:
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
-  void note_gc_start();
+  // Record the start and end of the young gc pause.
+  void record_young_gc_pause_start();
+  void record_young_gc_pause_end();
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
@@ -323,9 +311,9 @@ public:
 
   bool about_to_start_mixed_phase() const;
 
-  // Record the start and end of an evacuation pause.
-  void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
+  // Record the start and end of the actual collection part of the evacuation pause.
+  void record_young_collection_start();
+  void record_young_collection_end(bool concurrent_operation_is_full_mark);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -340,13 +328,13 @@ public:
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
-  void record_concurrent_mark_cleanup_end();
-
-  void print_phases();
+  void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
 
+  // Amount of allowed waste in bytes in the collection set.
+  size_t allowed_waste_in_collection_set() const;
   // Calculate and return the number of initial and optional old gen regions from
   // the given collection set candidates and the remaining time.
   void calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
@@ -362,7 +350,17 @@ public:
                                                  double time_remaining_ms,
                                                  uint& num_optional_regions);
 
+  // Returns whether a collection should be done proactively, taking into
+  // account the current number of free regions and the expected survival
+  // rates in each section of the heap.
+  bool preventive_collection_required(uint region_count);
+
 private:
+
+  // Predict the number of bytes of surviving objects from survivor and old
+  // regions and update the associated members.
+  void update_survival_estimates_for_next_collection();
+
   // Set the state to start a concurrent marking cycle and clear
   // _initiate_conc_mark_if_possible because it has now been
   // acted on.
@@ -375,13 +373,13 @@ public:
   // progress or not is stable.
   bool force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause);
 
-  // This is called at the very beginning of an evacuation pause (it
-  // has to be the first thing that the pause does). If
-  // initiate_conc_mark_if_possible() is true, and the concurrent
-  // marking thread has completed its work during the previous cycle,
-  // it will set in_concurrent_start_gc() to so that the pause does
-  // the concurrent start work and start a marking cycle.
-  void decide_on_conc_mark_initiation();
+  // Decide whether this garbage collection pause should be a concurrent start
+  // pause and update the collector state accordingly.
+  // We decide on a concurrent start pause if initiate_conc_mark_if_possible() is
+  // true, the concurrent marking thread has completed its work for the previous
+  // cycle, and we are not shutting down the VM.
+  // This must be called at the very beginning of an evacuation pause.
+  void decide_on_concurrent_start_pause();
 
   size_t young_list_target_length() const { return _young_list_target_length; }
 
@@ -429,11 +427,11 @@ public:
     return _max_survivor_regions;
   }
 
-  void note_start_adding_survivor_regions() {
+  void start_adding_survivor_regions() {
     _survivor_surv_rate_group->start_adding_regions();
   }
 
-  void note_stop_adding_survivor_regions() {
+  void stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
   }
 

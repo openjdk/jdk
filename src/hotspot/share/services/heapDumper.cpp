@@ -46,7 +46,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -444,7 +444,7 @@ class DumpWriter : public StackObj {
   void finish_dump_segment();
 
   // Called by threads used for parallel writing.
-  void writer_loop()                    { _backend.thread_loop(false); }
+  void writer_loop()                    { _backend.thread_loop(); }
   // Called when finished to release the threads.
   void deactivate()                     { flush(); _backend.deactivate(); }
 };
@@ -1305,7 +1305,7 @@ class SymbolTableDumper : public SymbolClosure {
 
 void SymbolTableDumper::do_symbol(Symbol** p) {
   ResourceMark rm;
-  Symbol* sym = load_symbol(p);
+  Symbol* sym = *p;
   int len = sym->utf8_length();
   if (len > 0) {
     char* s = sym->as_utf8();
@@ -1905,7 +1905,7 @@ void VM_HeapDumper::dump_stack_traces() {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path, outputStream* out, int compression) {
+int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
   // print message in interactive case
@@ -1928,7 +1928,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression) {
     }
   }
 
-  DumpWriter writer(new (std::nothrow) FileWriter(path), compressor);
+  DumpWriter writer(new (std::nothrow) FileWriter(path, overwrite), compressor);
 
   if (writer.error() != NULL) {
     set_error(writer.error());

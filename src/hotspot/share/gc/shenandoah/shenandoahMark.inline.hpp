@@ -25,10 +25,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahMark.hpp"
+
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
@@ -39,21 +40,22 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-template<GenerationMode GENERATION>
-ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
-  _queue(q),
-  _mark_context(ShenandoahHeap::heap()->marking_context()) {
+template <StringDedupMode STRING_DEDUP>
+void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
+  if (STRING_DEDUP == ENQUEUE_DEDUP) {
+    if (ShenandoahStringDedup::is_candidate(obj)) {
+      req->add(obj);
+    }
+  } else if (STRING_DEDUP == ALWAYS_DEDUP) {
+    if (ShenandoahStringDedup::is_string_candidate(obj) &&
+        !ShenandoahStringDedup::dedup_requested(obj)) {
+        req->add(obj);
+    }
+  }
 }
 
-template <GenerationMode GENERATION>
-template <class T>
-void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
-  // Only called from STW mark, should not be used to bootstrap old generation marking.
-  ShenandoahMark::mark_through_ref<T, GENERATION, NO_DEDUP>(p, _queue, nullptr, _mark_context, false);
-}
-
-template <class T>
-void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task) {
+template <class T, StringDedupMode STRING_DEDUP>
+void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
   // HEY! This will push array chunks into the mark queue with no regard for
@@ -72,6 +74,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
       obj->oop_iterate(cl);
+      dedup_string<STRING_DEDUP>(obj, req);
     } else if (obj->is_objArray()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
@@ -243,18 +246,9 @@ public:
 
   void do_buffer(void **buffer, size_t size) {
     assert(size == 0 || !_heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded objects are not expected here");
-    if (ShenandoahStringDedup::is_enabled()) {
-      do_buffer_impl<ENQUEUE_DEDUP>(buffer, size);
-    } else {
-      do_buffer_impl<NO_DEDUP>(buffer, size);
-    }
-  }
-
-  template<StringDedupMode STRING_DEDUP>
-  void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, GENERATION, STRING_DEDUP>(p, _queue, _old, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, GENERATION>(p, _queue, _old, _mark_context, false);
     }
   }
 };
@@ -272,7 +266,7 @@ bool ShenandoahMark::in_generation(oop obj) {
     return false;
 }
 
-template<class T, GenerationMode GENERATION, StringDedupMode STRING_DEDUP>
+template<class T, GenerationMode GENERATION>
 inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
@@ -281,7 +275,7 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
     shenandoah_assert_not_forwarded(p, obj);
     shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
     if (in_generation<GENERATION>(obj)) {
-      mark_ref<STRING_DEDUP>(q, mark_context, weak, obj);
+      mark_ref(q, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
       if (ShenandoahHeap::heap()->mode()->is_generational()) {
         // TODO: As implemented herein, GLOBAL collections reconstruct the card table during GLOBAL concurrent
@@ -303,7 +297,7 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
       }
     } else if (old != nullptr) {
       // Young mark, bootstrapping old or concurrent with old marking.
-      mark_ref<STRING_DEDUP>(old, mark_context, weak, obj);
+      mark_ref(old, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
     } else if (GENERATION == OLD) {
       // Old mark, found a young pointer.
@@ -315,8 +309,7 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
   }
 }
 
-template<StringDedupMode STRING_DEDUP>
-void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
+inline void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
                               ShenandoahMarkingContext* const mark_context,
                               bool weak, oop obj) {
   bool skip_live = false;
@@ -329,11 +322,6 @@ void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
   if (marked) {
     bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
     assert(pushed, "overflow queue should always succeed pushing");
-
-    if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {
-      assert(ShenandoahStringDedup::is_enabled(), "Must be enabled");
-      ShenandoahStringDedup::enqueue_candidate(obj);
-    }
   }
 }
 

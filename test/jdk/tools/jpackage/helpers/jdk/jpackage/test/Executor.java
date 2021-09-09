@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,13 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor setRemovePath(boolean value) {
         removePath = value;
+        return this;
+    }
+
+    public Executor setWindowsTmpDir(String tmp) {
+        TKit.assertTrue(TKit.isWindows(),
+                "setWindowsTmpDir is only valid on Windows platform");
+        winTmpDir = tmp;
         return this;
     }
 
@@ -242,7 +249,9 @@ public final class Executor extends CommandArguments<Executor> {
 
             try {
                 Thread.sleep(wait * 1000);
-            } catch (Exception ex) {} // Ignore
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
 
             count++;
         } while (count < max);
@@ -279,6 +288,9 @@ public final class Executor extends CommandArguments<Executor> {
         command.add(executablePath().toString());
         command.addAll(args);
         ProcessBuilder builder = new ProcessBuilder(command);
+        if (winTmpDir != null) {
+            builder.environment().put("TMP", winTmpDir);
+        }
         StringBuilder sb = new StringBuilder(getPrintableCommandLine());
         if (withSavedOutput()) {
             builder.redirectErrorStream(true);
@@ -426,6 +438,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
     private boolean removePath;
+    private String winTmpDir = null;
 
     private static enum SaveOutputType {
         NONE, FULL, FIRST_LINE, DUMP

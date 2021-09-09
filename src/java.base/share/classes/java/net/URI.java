@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -486,14 +486,14 @@ import java.lang.NullPointerException;  // for javadoc
  * @since 1.4
  *
  * @see <a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
- * transformation format of ISO 10646</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
- * Architecture</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
- * Resource Identifiers (URI): Generic Syntax</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
- * Literal IPv6 Addresses in URLs</i></a>, <br><a
- * href="URISyntaxException.html">URISyntaxException</a>
+ * transformation format of ISO 10646</i></a>
+ * @see <a href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
+ * Architecture</i></a>
+ * @see <a href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
+ * Resource Identifiers (URI): Generic Syntax</i></a>
+ * @see <a href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
+ * Literal IPv6 Addresses in URLs</i></a>
+ * @see <a href="URISyntaxException.html">URISyntaxException</a>
  */
 
 public final class URI
@@ -1501,9 +1501,8 @@ public final class URI
     public boolean equals(Object ob) {
         if (ob == this)
             return true;
-        if (!(ob instanceof URI))
+        if (!(ob instanceof URI that))
             return false;
-        URI that = (URI)ob;
         if (this.isOpaque() != that.isOpaque()) return false;
         if (!equalIgnoringCase(this.scheme, that.scheme)) return false;
         if (!equal(this.fragment, that.fragment)) return false;
@@ -1777,6 +1776,9 @@ public final class URI
      *
      * @param  os  The object-output stream to which this object
      *             is to be written
+     *
+     * @throws IOException
+     *         If an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream os)
@@ -1795,6 +1797,12 @@ public final class URI
      *
      * @param  is  The object-input stream from which this object
      *             is being read
+     *
+     * @throws IOException
+     *         If an I/O error occurs
+     *
+     * @throws ClassNotFoundException
+     *         If a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream is)

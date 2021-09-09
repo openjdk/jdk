@@ -114,7 +114,7 @@ public class BufferedOutputStream extends FilterOutputStream {
      * @throws     IOException  if an I/O error occurs.
      */
     @Override
-    public synchronized void write(byte b[], int off, int len) throws IOException {
+    public synchronized void write(byte[] b, int off, int len) throws IOException {
         if (len >= buf.length) {
             /* If the request length exceeds the size of the output buffer,
                flush the output buffer and then write the data directly.

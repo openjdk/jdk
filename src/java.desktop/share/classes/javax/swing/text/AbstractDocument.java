@@ -146,6 +146,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         if (defaultI18NProperty == null) {
             // determine default setting for i18n support
+            @SuppressWarnings("removal")
             String o = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
                     public String run() {

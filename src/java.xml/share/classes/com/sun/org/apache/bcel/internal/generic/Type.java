@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,7 +30,7 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
  * Abstract super class for all possible java types, namely basic types
  * such as int, object types like String and array types, e.g. int[]
  *
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public abstract class Type {
 
@@ -295,7 +295,7 @@ public abstract class Type {
             } else if (cl == Character.TYPE) {
                 return CHAR;
             } else {
-                throw new IllegalStateException("Ooops, what primitive type is " + cl);
+                throw new IllegalStateException("Unknown primitive type " + cl);
             }
         } else { // "Real" class
             return ObjectType.getInstance(cl.getName());

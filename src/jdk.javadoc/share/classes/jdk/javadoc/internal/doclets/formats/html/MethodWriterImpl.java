@@ -38,7 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.MethodWriter;
@@ -103,7 +103,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMethodDocTreeHeader(ExecutableElement method) {
         Content methodDocTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(name(method)));
+                Text.of(name(method)));
         HtmlId erasureAnchor;
         if ((erasureAnchor = htmlIds.forErasure(method)) != null) {
             heading.setId(erasureAnchor);
@@ -201,14 +201,14 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
                 .setId(HtmlIds.METHOD_SUMMARY_TABLE)
-                .setDefaultTab(resources.getText("doclet.All_Methods"))
-                .addTab(resources.getText("doclet.Static_Methods"), utils::isStatic)
-                .addTab(resources.getText("doclet.Instance_Methods"), e -> !utils.isStatic(e))
-                .addTab(resources.getText("doclet.Abstract_Methods"), utils::isAbstract)
-                .addTab(resources.getText("doclet.Concrete_Methods"),
+                .setDefaultTab(contents.getContent("doclet.All_Methods"))
+                .addTab(contents.getContent("doclet.Static_Methods"), utils::isStatic)
+                .addTab(contents.getContent("doclet.Instance_Methods"), e -> !utils.isStatic(e))
+                .addTab(contents.getContent("doclet.Abstract_Methods"), utils::isAbstract)
+                .addTab(contents.getContent("doclet.Concrete_Methods"),
                         e -> !utils.isAbstract(e) && !utils.isInterface(e.getEnclosingElement()))
-                .addTab(resources.getText("doclet.Default_Methods"), utils::isDefault)
-                .addTab(resources.getText("doclet.Deprecated_Methods"),
+                .addTab(contents.getContent("doclet.Default_Methods"), utils::isDefault)
+                .addTab(contents.getContent("doclet.Deprecated_Methods"),
                         e -> utils.isDeprecated(e) || utils.isDeprecated(typeElement));
     }
 
@@ -218,11 +218,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = new StringContent(utils.isClass(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Declared_In_Class")
                     : resources.getText("doclet.Methods_Declared_In_Interface"));
         } else {
-            label = new StringContent(utils.isClass(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Inherited_From_Class")
                     : resources.getText("doclet.Methods_Inherited_From_Interface"));
         }

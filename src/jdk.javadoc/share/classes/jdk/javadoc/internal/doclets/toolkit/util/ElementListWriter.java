@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,9 @@ public class ElementListWriter {
     }
 
     protected void generateElementListFile(DocletEnvironment docEnv) throws DocFileIOException {
-        try (BufferedWriter out = new BufferedWriter(file.openWriter())) {
+        try (Writer fileWriter = file.openWriter();
+             BufferedWriter out = (fileWriter instanceof BufferedWriter b) ? b
+                     : new BufferedWriter(fileWriter)) {
             if (configuration.showModules) {
                 for (ModuleElement mdle : configuration.modulePackages.keySet()) {
                     if (!(options.noDeprecated() && utils.isDeprecated(mdle))) {

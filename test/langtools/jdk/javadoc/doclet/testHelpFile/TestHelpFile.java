@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,8 @@ public class TestHelpFile extends JavadocTester {
         // check a representative sample of the contents
         checkOrder("help-doc.html",
                 """
-                    </div>
-                    <section class="help-section">
-                    <h2>Package</h2>""",
+                    <section class="help-section" id="package">
+                    <h3>Package</h3>""",
                 """
                     <ul class="help-section-list">
                     <li>Interfaces</li>
@@ -66,8 +65,8 @@ public class TestHelpFile extends JavadocTester {
                     <li>Enum Classes</li>""",
                 """
                     </section>
-                    <section class="help-section">
-                    <h2>Class or Interface</h2>""",
+                    <section class="help-section" id="class">
+                    <h3>Class or Interface</h3>""",
                 """
                     <ul class="help-section-list">
                     <li>Class Inheritance Diagram</li>

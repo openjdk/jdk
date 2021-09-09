@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -379,19 +380,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return maskFactory(bits);
     }
 
-    /*package-private*/
-    @ForceInline
-    static boolean doBinTest(int cond, float a, float b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a < b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a > b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError(Integer.toHexString(cond));
-    }
 
     /*package-private*/
     @Override
@@ -549,37 +537,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == SIN) {
-                return uOp((i, a) -> (float) Math.sin(a));
-            } else if (op == COS) {
-                return uOp((i, a) -> (float) Math.cos(a));
-            } else if (op == TAN) {
-                return uOp((i, a) -> (float) Math.tan(a));
-            } else if (op == ASIN) {
-                return uOp((i, a) -> (float) Math.asin(a));
-            } else if (op == ACOS) {
-                return uOp((i, a) -> (float) Math.acos(a));
-            } else if (op == ATAN) {
-                return uOp((i, a) -> (float) Math.atan(a));
-            } else if (op == EXP) {
-                return uOp((i, a) -> (float) Math.exp(a));
-            } else if (op == LOG) {
-                return uOp((i, a) -> (float) Math.log(a));
-            } else if (op == LOG10) {
-                return uOp((i, a) -> (float) Math.log10(a));
-            } else if (op == CBRT) {
-                return uOp((i, a) -> (float) Math.cbrt(a));
-            } else if (op == SINH) {
-                return uOp((i, a) -> (float) Math.sinh(a));
-            } else if (op == COSH) {
-                return uOp((i, a) -> (float) Math.cosh(a));
-            } else if (op == TANH) {
-                return uOp((i, a) -> (float) Math.tanh(a));
-            } else if (op == EXPM1) {
-                return uOp((i, a) -> (float) Math.expm1(a));
-            } else if (op == LOG1P) {
-                return uOp((i, a) -> (float) Math.log1p(a));
-            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
@@ -591,8 +548,38 @@ public abstract class FloatVector extends AbstractVector<Float> {
                         v0.uOp((i, a) -> (float) -a);
                 case VECTOR_OP_ABS: return v0 ->
                         v0.uOp((i, a) -> (float) Math.abs(a));
+                case VECTOR_OP_SIN: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.sin(a));
+                case VECTOR_OP_COS: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.cos(a));
+                case VECTOR_OP_TAN: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.tan(a));
+                case VECTOR_OP_ASIN: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.asin(a));
+                case VECTOR_OP_ACOS: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.acos(a));
+                case VECTOR_OP_ATAN: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.atan(a));
+                case VECTOR_OP_EXP: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.exp(a));
+                case VECTOR_OP_LOG: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.log(a));
+                case VECTOR_OP_LOG10: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.log10(a));
                 case VECTOR_OP_SQRT: return v0 ->
                         v0.uOp((i, a) -> (float) Math.sqrt(a));
+                case VECTOR_OP_CBRT: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.cbrt(a));
+                case VECTOR_OP_SINH: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.sinh(a));
+                case VECTOR_OP_COSH: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.cosh(a));
+                case VECTOR_OP_TANH: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.tanh(a));
+                case VECTOR_OP_EXPM1: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.expm1(a));
+                case VECTOR_OP_LOG1P: return v0 ->
+                        v0.uOp((i, a) -> (float) Math.log1p(a));
                 default: return null;
               }}));
     }
@@ -639,13 +626,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     .lanewise(op, that.viewAsIntegralLanes())
                     .viewAsFloatingLanes();
             }
-            if (op == ATAN2) {
-                return bOp(that, (i, a, b) -> (float) Math.atan2(a, b));
-            } else if (op == POW) {
-                return bOp(that, (i, a, b) -> (float) Math.pow(a, b));
-            } else if (op == HYPOT) {
-                return bOp(that, (i, a, b) -> (float) Math.hypot(a, b));
-            }
         }
         int opc = opCode(op);
         return VectorSupport.binaryOp(
@@ -665,6 +645,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
                         v0.bOp(v1, (i, a, b) -> (float)Math.max(a, b));
                 case VECTOR_OP_MIN: return (v0, v1) ->
                         v0.bOp(v1, (i, a, b) -> (float)Math.min(a, b));
+                case VECTOR_OP_ATAN2: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> (float) Math.atan2(a, b));
+                case VECTOR_OP_POW: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> (float) Math.pow(a, b));
+                case VECTOR_OP_HYPOT: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> (float) Math.hypot(a, b));
                 default: return null;
                 }}));
     }
@@ -1692,17 +1678,16 @@ public abstract class FloatVector extends AbstractVector<Float> {
     }
 
     @ForceInline
-    private static
-    boolean compareWithOp(int cond, float a, float b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a <  b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a >  b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError();
+    private static boolean compareWithOp(int cond, float a, float b) {
+        return switch (cond) {
+            case BT_eq -> a == b;
+            case BT_ne -> a != b;
+            case BT_lt -> a < b;
+            case BT_le -> a <= b;
+            case BT_gt -> a > b;
+            case BT_ge -> a >= b;
+            default -> throw new AssertionError();
+        };
     }
 
     /**
@@ -1906,14 +1891,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector sliceTemplate(int origin, Vector<Float> v1) {
         FloatVector that = (FloatVector) v1;
         that.check(this);
-        float[] a0 = this.vec();
-        float[] a1 = that.vec();
-        float[] res = new float[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -1935,6 +1917,17 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    FloatVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -1949,21 +1942,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
     unsliceTemplate(int origin, Vector<Float> w, int part) {
         FloatVector that = (FloatVector) w;
         that.check(this);
-        float[] slice = this.vec();
-        float[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((float)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -1992,6 +1976,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @Override
     public abstract
     FloatVector unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    FloatVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((float)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {
@@ -2069,7 +2066,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                            S shuffle,
                                            FloatVector v) {
         VectorMask<Float> valid = shuffle.laneIsValid();
-        S ws = shuffletype.cast(shuffle.wrapIndexes());
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         FloatVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, float.class, length(),
@@ -2087,6 +2085,29 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
+    }
+
+    @ForceInline
+    private final
+    VectorShuffle<Float> toShuffle0(FloatSpecies dsp) {
+        float[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Float> toShuffleTemplate(Class<?> shuffleType) {
+        FloatSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), float.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     FloatVector::toShuffle0);
     }
 
     /**
@@ -2735,6 +2756,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
         }
     }
 
+
+
     /**
      * Loads a vector from a {@linkplain ByteBuffer byte buffer}
      * starting at an offset into the byte buffer.
@@ -2867,7 +2890,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     }
 
     /**
-     * Stores this vector into an array of {@code float}
+     * Stores this vector into an array of type {@code float[]}
      * starting at offset and using a mask.
      * <p>
      * For each vector lane, where {@code N} is the vector lane index,
@@ -3005,6 +3028,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
         }
     }
 
+
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -3111,6 +3136,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                     (arr_, off_, i) -> arr_[off_ + i]));
     }
 
+
+
     @Override
     abstract
     FloatVector fromByteArray0(byte[] a, int offset);
@@ -3135,15 +3162,14 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     FloatVector fromByteBuffer0Template(ByteBuffer bb, int offset) {
         FloatSpecies vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            bb, offset, vsp,
-            (buf, off, s) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                return s.ldOp(wb, off,
-                        (wb_, o, i) -> wb_.getFloat(o + i * 4));
-           });
+        return ScopedMemoryAccess.loadFromByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                bb, offset, vsp,
+                (buf, off, s) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off,
+                            (wb_, o, i) -> wb_.getFloat(o + i * 4));
+                });
     }
 
     // Unchecked storing operations in native byte order.
@@ -3186,15 +3212,14 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     void intoByteBuffer0(ByteBuffer bb, int offset) {
         FloatSpecies vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            this, bb, offset,
-            (buf, off, v) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                v.stOp(wb, off,
-                        (wb_, o, i, e) -> wb_.putFloat(o + i * 4, e));
-            });
+        ScopedMemoryAccess.storeIntoByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                this, bb, offset,
+                (buf, off, v) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off,
+                            (wb_, o, i, e) -> wb_.putFloat(o + i * 4, e));
+                });
     }
 
     // End of low-level memory operations.
@@ -3245,6 +3270,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
     static long arrayAddress(float[] a, int index) {
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
     }
+
+
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {

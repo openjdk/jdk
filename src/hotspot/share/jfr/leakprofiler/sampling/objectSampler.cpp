@@ -27,6 +27,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/leakprofiler/sampling/objectSample.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/leakprofiler/sampling/sampleList.hpp"
@@ -74,7 +75,7 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
 }
 
 bool ObjectSampler::create_oop_storage() {
-  _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples");
+  _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples", mtTracing);
   assert(_oop_storage != NULL, "invariant");
   _oop_storage->register_num_dead_callback(&oop_storage_gc_notification);
   return true;
@@ -107,6 +108,7 @@ ObjectSampler::~ObjectSampler() {
 bool ObjectSampler::create(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(_oop_storage != NULL, "should be already created");
+  ObjectSampleCheckpoint::clear();
   assert(_instance == NULL, "invariant");
   _instance = new ObjectSampler(size);
   return _instance != NULL;
@@ -159,12 +161,23 @@ static traceid get_thread_id(JavaThread* thread) {
   return tl->thread_id();
 }
 
-static void record_stacktrace(JavaThread* thread) {
-  assert(thread != NULL, "invariant");
-  if (JfrEventSetting::has_stacktrace(EventOldObjectSample::eventId)) {
-    JfrStackTraceRepository::record_and_cache(thread);
+class RecordStackTrace {
+ private:
+  JavaThread* _jt;
+  bool _enabled;
+ public:
+  RecordStackTrace(JavaThread* jt) : _jt(jt),
+    _enabled(JfrEventSetting::has_stacktrace(EventOldObjectSample::eventId)) {
+    if (_enabled) {
+      JfrStackTraceRepository::record_for_leak_profiler(jt);
+    }
   }
-}
+  ~RecordStackTrace() {
+    if (_enabled) {
+      _jt->jfr_thread_local()->clear_cached_stack_trace();
+    }
+  }
+};
 
 void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) {
   assert(thread != NULL, "invariant");
@@ -173,7 +186,7 @@ void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) 
   if (thread_id == 0) {
     return;
   }
-  record_stacktrace(thread);
+  RecordStackTrace rst(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
   if (!tryLock.acquired()) {
@@ -224,7 +237,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
   }
 
   sample->set_span(allocated);
-  sample->set_object((oop)obj);
+  sample->set_object(cast_to_oop(obj));
   sample->set_allocated(allocated);
   sample->set_allocation_time(JfrTicks::now());
   sample->set_heap_used_at_last_gc(Universe::heap()->used_at_last_gc());

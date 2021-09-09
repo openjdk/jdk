@@ -137,7 +137,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       DISABLED_WARNINGS="4800"
       if test "x$TOOLCHAIN_VERSION" = x2017; then
         # VS2017 incorrectly triggers this warning for constexpr
-        DISABLED_WARNINGS+=" 4307"
+        DISABLED_WARNINGS="$DISABLED_WARNINGS 4307"
       fi
       ;;
 
@@ -737,6 +737,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_TOOLCHAIN_CFLAGS="${$1_GCC6_CFLAGS}"
 
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    NO_DELETE_NULL_POINTER_CHECKS_CFLAG="-fno-delete-null-pointer-checks"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_DELETE_NULL_POINTER_CHECKS_CFLAG],
+        PREFIX: $3,
+        IF_FALSE: [
+            NO_DELETE_NULL_POINTER_CHECKS_CFLAG=
+        ]
+    )
+    $1_TOOLCHAIN_CFLAGS="${NO_DELETE_NULL_POINTER_CHECKS_CFLAG}"
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft && test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then

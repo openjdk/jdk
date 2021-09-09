@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -415,7 +415,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">Μολδαβικά</language>
 			<language type="rof">Ρόμπο</language>
 			<language type="rom">Ρομανί</language>
-			<language type="root">Ρίζα</language>
 			<language type="ru">Ρωσικά</language>
 			<language type="rup">Αρομανικά</language>
 			<language type="rw">Κινιαρουάντα</language>
@@ -3384,9 +3383,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Σάντα Ιζαμπέλ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Χονολουλού</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Συντονισμένη Παγκόσμια Ώρα</standard>
@@ -3506,11 +3502,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Μπρόκεν Χιλ</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Κάρι</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Μελβούρνη</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Κάρι</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Χόμπαρτ</exemplarCity>
@@ -4543,6 +4539,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Νόμε</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Χονολουλού</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Τζόνστον</exemplarCity>
@@ -7333,7 +7332,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Φράγκο CFA Δυτικής Αφρικής</displayName>
 				<displayName count="one">φράγκο CFA Δυτικής Αφρικής</displayName>
 				<displayName count="other">φράγκα CFA Δυτικής Αφρικής</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>Φράγκο CFP</displayName>
@@ -7635,7 +7634,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} καράτι</unitPattern>
 				<unitPattern count="other">{0} καράτια</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>χιλιοστόγραμμα ανά δεκατόλιτρο</displayName>
 				<unitPattern count="one">{0} χιλιοστόγραμμο ανά δεκατόλιτρο</unitPattern>
 				<unitPattern count="other">{0} χιλιοστόγραμμα ανά δεκατόλιτρο</unitPattern>
@@ -8482,7 +8481,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>χλστ-{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
-				<unitPrefixPattern>µκρ-{0}</unitPrefixPattern>
+				<unitPrefixPattern>μκρ-{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>νν-{0}</unitPrefixPattern>
@@ -8658,7 +8657,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} κρτ</unitPattern>
 				<unitPattern count="other">{0} κρτ</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="one">{0} mg/dL</unitPattern>
 				<unitPattern count="other">{0} mg/dL</unitPattern>
@@ -8968,8 +8967,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>μικρόμετρα</displayName>
-				<unitPattern count="one">{0} µm</unitPattern>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>
@@ -9089,9 +9088,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µg</displayName>
-				<unitPattern count="one">{0} µg</unitPattern>
-				<unitPattern count="other">{0} µg</unitPattern>
+				<displayName>μg</displayName>
+				<unitPattern count="one">{0} μg</unitPattern>
+				<unitPattern count="other">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>τόνοι ΗΠΑ</displayName>

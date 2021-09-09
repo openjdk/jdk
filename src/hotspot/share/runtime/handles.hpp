@@ -98,7 +98,7 @@ class Handle {
 
   // Raw handle access. Allows easy duplication of Handles. This can be very unsafe
   // since duplicates is only valid as long as original handle is alive.
-  oop* raw_value()                               { return _handle; }
+  oop* raw_value() const                         { return _handle; }
   static oop raw_resolve(oop *handle)            { return handle == NULL ? (oop)NULL : *handle; }
 };
 
@@ -192,11 +192,8 @@ class HandleArea: public Arena {
   // Handle allocation
  private:
   oop* real_allocate_handle(oop obj) {
-#ifdef ASSERT
-    oop* handle = (oop*) (UseMallocOnly ? internal_malloc_4(oopSize) : Amalloc_4(oopSize));
-#else
-    oop* handle = (oop*) Amalloc_4(oopSize);
-#endif
+    // Ignore UseMallocOnly by allocating only in arena.
+    oop* handle = (oop*)internal_amalloc(oopSize);
     *handle = obj;
     return handle;
   }

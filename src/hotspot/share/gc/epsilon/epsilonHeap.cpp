@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
@@ -103,7 +104,7 @@ EpsilonHeap* EpsilonHeap::heap() {
   return named_heap<EpsilonHeap>(CollectedHeap::Epsilon);
 }
 
-HeapWord* EpsilonHeap::allocate_work(size_t size) {
+HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
   assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
 
   HeapWord* res = NULL;
@@ -149,7 +150,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   size_t used = _space->used();
 
   // Allocation successful, update counters
-  {
+  if (verbose) {
     size_t last = _last_counter_update;
     if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
       _monitoring_support->update_counters();
@@ -157,7 +158,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   }
 
   // ...and print the occupancy line, if needed
-  {
+  if (verbose) {
     size_t last = _last_heap_print;
     if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
       print_heap_info(used);
@@ -262,6 +263,11 @@ HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exc
   return allocate_work(size);
 }
 
+HeapWord* EpsilonHeap::allocate_loaded_archive_space(size_t size) {
+  // Cannot use verbose=true because Metaspace is not initialized
+  return allocate_work(size, /* verbose = */false);
+}
+
 void EpsilonHeap::collect(GCCause::Cause cause) {
   switch (cause) {
     case GCCause::_metadata_GC_threshold:
@@ -292,8 +298,7 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
 void EpsilonHeap::print_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
 
-  // Cast away constness:
-  ((VirtualSpace)_virtual_space).print_on(st);
+  _virtual_space.print_on(st);
 
   if (_space != NULL) {
     st->print_cr("Allocation space:");
@@ -330,9 +335,10 @@ void EpsilonHeap::print_heap_info(size_t used) const {
 }
 
 void EpsilonHeap::print_metaspace_info() const {
-  size_t reserved  = MetaspaceUtils::reserved_bytes();
-  size_t committed = MetaspaceUtils::committed_bytes();
-  size_t used      = MetaspaceUtils::used_bytes();
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
+  size_t reserved  = stats.reserved();
+  size_t committed = stats.committed();
+  size_t used      = stats.used();
 
   if (reserved != 0) {
     log_info(gc, metaspace)("Metaspace: " SIZE_FORMAT "%s reserved, " SIZE_FORMAT "%s (%.2f%%) committed, "

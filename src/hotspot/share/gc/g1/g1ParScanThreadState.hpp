@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,11 @@
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/ageTable.hpp"
+#include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -42,7 +44,8 @@ class G1OopStarChunkedList;
 class G1PLABAllocator;
 class G1EvacuationRootClosures;
 class HeapRegion;
-class Klass;
+class PreservedMarks;
+class PreservedMarksSet;
 class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
@@ -55,7 +58,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1PLABAllocator* _plab_allocator;
 
   AgeTable _age_table;
-  G1HeapRegionAttr _dest[G1HeapRegionAttr::Num];
   // Local tenuring threshold.
   uint _tenuring_threshold;
   G1ScanEvacuatedObjClosure  _scanner;
@@ -84,32 +86,29 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Size (in elements) of a partial objArray task chunk.
   int _partial_objarray_chunk_size;
   PartialArrayTaskStepper _partial_array_stepper;
-  // Used to check whether string dedup should be applied to an object.
-  Klass* _string_klass_or_null;
+  StringDedup::Requests _string_dedup_requests;
 
   G1CardTable* ct() { return _ct; }
-
-  G1HeapRegionAttr dest(G1HeapRegionAttr original) const {
-    assert(original.is_valid(),
-           "Original region attr invalid: %s", original.get_type_str());
-    assert(_dest[original.type()].is_valid_gen(),
-           "Dest region attr is invalid: %s", _dest[original.type()].get_type_str());
-    return _dest[original.type()];
-  }
 
   size_t _num_optional_regions;
   G1OopStarChunkedList* _oops_into_optional_regions;
 
   G1NUMA* _numa;
-
   // Records how many object allocations happened at each node during copy to survivor.
   // Only starts recording when log of gc+heap+numa is enabled and its data is
   // transferred when flushed.
   size_t* _obj_alloc_stat;
 
+  // Per-thread evacuation failure data structures.
+  PreservedMarks* _preserved_marks;
+  EvacuationFailedInfo _evacuation_failed_info;
+
+  void handle_evacuation_failure_notifications(oop obj, markWord m, size_t word_sz);
+
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
+                       PreservedMarks* preserved_marks,
                        uint worker_id,
                        uint n_workers,
                        size_t young_cset_length,
@@ -223,7 +222,7 @@ public:
   void reset_trim_ticks();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markWord m);
+  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
@@ -236,6 +235,7 @@ public:
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
   G1RedirtyCardsQueueSet* _rdcqs;
+  PreservedMarksSet* _preserved_marks_set;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
   size_t _young_cset_length;
@@ -246,10 +246,14 @@ class G1ParScanThreadStateSet : public StackObj {
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                           G1RedirtyCardsQueueSet* rdcqs,
+                          PreservedMarksSet* preserved_marks_set,
                           uint n_workers,
                           size_t young_cset_length,
                           size_t optional_cset_length);
   ~G1ParScanThreadStateSet();
+
+  G1RedirtyCardsQueueSet* rdcqs() { return _rdcqs; }
+  PreservedMarksSet* preserved_marks_set() { return _preserved_marks_set; }
 
   void flush();
   void record_unused_optional_region(HeapRegion* hr);

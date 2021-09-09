@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,26 @@ public class Links {
     /**
      * Creates a link of the form {@code <a href="#id">label</a>}.
      *
-     * @param id      the position of the link in the file
-     * @param label      the content for the link
+     * @param id    the position of the link in the file
+     * @param label the content for the link
      * @return a content tree for the link
      */
     public Content createLink(HtmlId id, Content label) {
         DocLink l = DocLink.fragment(id.name());
         return createLink(l, label, "");
+    }
+
+    /**
+     * Creates a link of the form {@code <a href="#id">label</a>} if {@code link}
+     * is {@code true}, or else just returns {@code label}.
+     *
+     * @param id    the position of the link in the file
+     * @param label the content for the link
+     * @param link  whether to create a link or just return the label
+     * @return a content tree for the link or just the label
+     */
+    public Content createLink(HtmlId id, Content label, boolean link) {
+        return link ? createLink(id, label) : label;
     }
 
     /**
@@ -85,7 +98,7 @@ public class Links {
      * @return a content tree for the link
      */
     public Content createLink(DocPath path, String label) {
-        return createLink(path, new StringContent(label), null, "");
+        return createLink(path, Text.of(label), null, "");
     }
 
     /**

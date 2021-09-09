@@ -37,8 +37,8 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -107,8 +107,7 @@ public class HtmlLinkFactory extends LinkFactory {
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
                 DocPath filename = getPath(classLinkInfo);
-                if (linkInfo.linkToSelf ||
-                                !(docPaths.forName(typeElement)).equals(m_writer.filename)) {
+                if (linkInfo.linkToSelf || typeElement != m_writer.getCurrentPageElement()) {
                         link.add(m_writer.links.createLink(
                                 filename.fragment(classLinkInfo.where),
                                 label,
@@ -171,7 +170,7 @@ public class HtmlLinkFactory extends LinkFactory {
             for (TypeMirror t : vars) {
                 if (many) {
                     links.add(",");
-                    links.add(Entity.ZERO_WIDTH_SPACE);
+                    links.add(new HtmlTree(TagName.WBR));
                     if (((HtmlLinkInfo) linkInfo).getContext() == HtmlLinkInfo.Kind.MEMBER_TYPE_PARAMS) {
                         links.add(DocletConstants.NL);
                     }
@@ -250,16 +249,16 @@ public class HtmlLinkFactory extends LinkFactory {
                     utils.getSimpleName(typeElement));
         } else if (utils.isInterface(typeElement)){
             return resources.getText("doclet.Href_Interface_Title",
-                utils.getPackageName(utils.containingPackage(typeElement)));
+                m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         } else if (utils.isAnnotationType(typeElement)) {
             return resources.getText("doclet.Href_Annotation_Title",
-                utils.getPackageName(utils.containingPackage(typeElement)));
+                m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         } else if (utils.isEnum(typeElement)) {
             return resources.getText("doclet.Href_Enum_Title",
-                utils.getPackageName(utils.containingPackage(typeElement)));
+                m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         } else {
             return resources.getText("doclet.Href_Class_Title",
-                utils.getPackageName(utils.containingPackage(typeElement)));
+                m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         }
     }
 

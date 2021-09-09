@@ -33,13 +33,11 @@ hotspot_compiler = \
 
 hotspot_compiler_xcomp = \
   :hotspot_compiler \
-  -:tier1_compiler_not_xcomp \
-  -compiler/graalunit
+  -:tier1_compiler_not_xcomp
 
 hotspot_compiler_all_gcs = \
   :hotspot_compiler \
-  -:tier1_compiler_aot_jvmci \
-  -compiler/graalunit
+  -compiler/jvmci
 
 hotspot_gc = \
   gc
@@ -73,11 +71,35 @@ hotspot_native_sanity = \
 hotspot_containers = \
   containers
 
+hotspot_vector_1 = \
+  compiler/c2/cr6340864 \
+  compiler/codegen \
+  compiler/loopopts/superword \
+  compiler/vectorapi \
+  compiler/vectorization \
+  -compiler/codegen/aes \
+  -compiler/codegen/Test6875866.java \
+  -compiler/codegen/Test6935535.java \
+  -compiler/codegen/TestGCMStorePlacement.java \
+  -compiler/codegen/TestTrichotomyExpressions.java \
+  -compiler/loopopts/superword/Vec_MulAddS2I.java \
+  -compiler/vectorapi/VectorRebracket128Test.java
+
+hotspot_vector_2 = \
+  compiler/intrinsics \
+  compiler/codegen/aes \
+  compiler/codegen/Test6875866.java \
+  compiler/codegen/Test6935535.java \
+  compiler/loopopts/superword/Vec_MulAddS2I.java \
+  compiler/vectorapi/VectorRebracket128Test.java \
+  -compiler/intrinsics/string/TestStringLatin1IndexOfChar.java
+
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
   gtest/MetaspaceGtests.java \
-  gtest/LargePageGtests.java
+  gtest/LargePageGtests.java \
+  gtest/NMTGtests.java \
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -88,8 +110,7 @@ tier1_compiler = \
 hotspot_not_fast_compiler = \
   :hotspot_compiler \
   -:tier1_compiler \
-  -:hotspot_slow_compiler \
-  -compiler/graalunit
+  -:hotspot_slow_compiler
 
 hotspot_slow_compiler = \
   compiler/codegen/aes \
@@ -98,6 +119,7 @@ hotspot_slow_compiler = \
 
 tier1_compiler_1 = \
   compiler/arraycopy/ \
+  compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
   -compiler/c2/Test6850611.java \
@@ -131,6 +153,7 @@ tier1_compiler_2 = \
 tier1_compiler_3 = \
   compiler/intrinsics/ \
   compiler/jsr292/ \
+  compiler/locks/ \
   compiler/loopopts/ \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \
@@ -151,15 +174,7 @@ tier1_compiler_3 = \
   -compiler/runtime/Test6826736.java
 
 tier1_compiler_not_xcomp = \
-  compiler/aot \
   compiler/profiling
-
-tier1_compiler_aot_jvmci = \
-  compiler/aot \
-  compiler/jvmci
-
-tier1_compiler_graal = \
-  compiler/graalunit/HotspotTest.java
 
 ctw_1 = \
   applications/ctw/modules/ \
@@ -175,7 +190,6 @@ ctw_2 = \
 ctw_3 = \
   applications/ctw/modules/java_xml.java \
   applications/ctw/modules/jdk_compiler.java \
-  applications/ctw/modules/jdk_internal_vm_compiler.java \
   applications/ctw/modules/jdk_localedata.java \
   applications/ctw/modules/jdk_localedata_2.java
 
@@ -184,6 +198,7 @@ tier1_gc = \
   :tier1_gc_2 \
   :tier1_gc_gcold \
   :tier1_gc_gcbasher \
+  :tier1_gc_epsilon \
   :tier1_gc_shenandoah
 
 hotspot_not_fast_gc = \
@@ -191,21 +206,27 @@ hotspot_not_fast_gc = \
   -:tier1_gc
 
 tier1_gc_1 = \
-  :gc_epsilon \
   gc/g1/ \
   -gc/g1/ihop/TestIHOPErgo.java
 
 tier1_gc_2 = \
   gc/ \
-  -:gc_epsilon \
+  -gc/CriticalNativeArgs.java \
   -gc/g1/ \
   -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
+  -gc/epsilon \
   -gc/shenandoah
 
-gc_epsilon = \
-  gc/epsilon/ \
+hotspot_gc_epsilon = \
+  :tier1_gc_epsilon \
+  :tier2_gc_epsilon
+
+tier1_gc_epsilon = \
+  gc/epsilon/
+
+tier2_gc_epsilon = \
   gc/CriticalNativeArgs.java \
   gc/stress/CriticalNativeStress.java
 
@@ -233,8 +254,7 @@ tier1_gc_shenandoah = \
   gc/shenandoah/compiler/ \
   gc/shenandoah/mxbeans/ \
   gc/shenandoah/TestSmallHeap.java \
-  gc/shenandoah/oom/ \
-  gc/CriticalNativeArgs.java
+  gc/shenandoah/oom/
 
 tier2_gc_shenandoah = \
   runtime/MemberName/MemberNameLeak.java \
@@ -256,9 +276,10 @@ tier2_gc_shenandoah = \
   gc/logging/TestUnifiedLoggingSwitchStress.java \
   runtime/Metaspace/DefineClass.java \
   gc/shenandoah/ \
+  gc/CriticalNativeArgs.java \
+  gc/stress/CriticalNativeStress.java \
   serviceability/sa/TestHeapDumpForInvokeDynamic.java \
   -gc/shenandoah/TestStringDedupStress.java \
-  -gc/stress/CriticalNativeStress.java \
   -:tier1_gc_shenandoah
 
 # include shenandoah generational tests in tier3 shenandoah
@@ -268,7 +289,6 @@ tier3_gc_shenandoah = \
   gc/stress/gclocker/TestGCLockerWithShenandoah.java \
   gc/stress/systemgc/TestSystemGCWithShenandoah.java \
   gc/shenandoah/TestStringDedupStress.java \
-  gc/stress/CriticalNativeStress.java \
   :hotspot_gc_shenandoah_generational \
   -:tier2_gc_shenandoah
 
@@ -297,14 +317,14 @@ tier1_runtime = \
  -runtime/InvocationTests \
  -runtime/logging/MonitorMismatchTest.java \
  -runtime/memory/ReserveMemory.java \
- -runtime/memory/RunUnitTestsConcurrently.java \
  -runtime/Metaspace/FragmentMetaspace.java \
  -runtime/Metaspace/FragmentMetaspaceSimple.java \
+ -runtime/Metaspace/elastic/TestMetaspaceAllocationMT1.java \
+ -runtime/Metaspace/elastic/TestMetaspaceAllocationMT2.java \
  -runtime/MirrorFrame/Test8003720.java \
  -runtime/modules/LoadUnloadModuleStress.java \
  -runtime/modules/ModuleStress/ExportModuleStressTest.java \
  -runtime/modules/ModuleStress/ModuleStressGC.java \
- -runtime/NMT \
  -runtime/ReservedStack \
  -runtime/SelectionResolution/AbstractMethodErrorTest.java \
  -runtime/SelectionResolution/IllegalAccessErrorTest.java \
@@ -341,6 +361,9 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
  -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
+ -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
+ -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
+ -runtime/cds/appcds/jcmd/JCmdTestFileSafety.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
@@ -361,6 +384,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestCombinedCompressedFlags.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
+ -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
  -runtime/cds/appcds/VerifierTest_1B.java
 
@@ -373,6 +397,23 @@ hotspot_cds_relocation = \
   runtime/NMT \
   serviceability/sa \
  -runtime/cds/DeterministicDump.java
+
+hotspot_cds_verify_shared_spaces = \
+  runtime/cds/appcds/ArchiveRelocationTest.java \
+  runtime/cds/appcds/BootClassPathMismatch.java \
+  runtime/cds/appcds/HelloTest.java \
+  runtime/cds/appcds/VerifierTest_0.java \
+  runtime/cds/appcds/dynamicArchive/BasicLambdaTest.java \
+  runtime/cds/appcds/dynamicArchive/DynamicArchiveRelocationTest.java \
+  runtime/cds/appcds/dynamicArchive/HelloDynamic.java \
+  runtime/cds/appcds/dynamicArchive/LinkClassTest.java \
+  runtime/cds/appcds/dynamicArchive/MismatchedBaseArchive.java \
+  runtime/cds/appcds/customLoader/HelloCustom.java \
+  runtime/cds/appcds/customLoader/LoaderSegregationTest.java \
+  runtime/cds/appcds/javaldr/ArrayTest.java \
+  runtime/cds/appcds/jigsaw/modulepath/ExportModule.java \
+  runtime/cds/appcds/jvmti/dumpingWithAgent/DumpingWithJavaAgent.java \
+  runtime/cds/appcds/sharedStrings/SharedStringsBasic.java
 
 # needs -nativepath:<output>/images/test/hotspot/jtreg/native/
 hotspot_metaspace = \
@@ -428,6 +469,17 @@ tier1 = \
   :tier1_runtime \
   :tier1_serviceability
 
+tier2 = \
+  :hotspot_tier2_runtime \
+  :hotspot_tier2_runtime_platform_agnostic \
+  :hotspot_tier2_serviceability \
+  :tier2_gc_epsilon \
+  :tier2_gc_shenandoah
+
+tier3 = \
+  :hotspot_tier3_runtime \
+  :tier3_gc_shenandoah
+
 hotspot_tier2_runtime = \
   runtime/ \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
@@ -459,7 +511,8 @@ hotspot_runtime_minimalvm = \
   runtime/logging
 
 hotspot_nmt = \
-  runtime/NMT
+  runtime/NMT \
+  gtest/NMTGtests.java
 
 hotspot_rest_runtime = \
   :hotspot_runtime \

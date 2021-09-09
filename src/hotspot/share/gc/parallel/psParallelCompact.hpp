@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
@@ -428,8 +429,8 @@ public:
   void add_obj(oop p, size_t len) { add_obj(cast_from_oop<HeapWord*>(p), len); }
 
   // Fill in the regions covering [beg, end) so that no data moves; i.e., the
-  // destination of region n is simply the start of region n.  The argument beg
-  // must be region-aligned; end need not be.
+  // destination of region n is simply the start of region n.  Both arguments
+  // beg and end must be region-aligned.
   void summarize_dense_prefix(HeapWord* beg, HeapWord* end);
 
   HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
@@ -480,9 +481,9 @@ public:
   HeapWord* partial_obj_end(size_t region_idx) const;
 
   // Return the location of the object after compaction.
-  HeapWord* calc_new_pointer(HeapWord* addr, ParCompactionManager* cm);
+  HeapWord* calc_new_pointer(HeapWord* addr, ParCompactionManager* cm) const;
 
-  HeapWord* calc_new_pointer(oop p, ParCompactionManager* cm) {
+  HeapWord* calc_new_pointer(oop p, ParCompactionManager* cm) const {
     return calc_new_pointer(cast_from_oop<HeapWord*>(p), cm);
   }
 
@@ -675,7 +676,8 @@ inline size_t
 ParallelCompactData::region_offset(const HeapWord* addr) const
 {
   assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
+  // would mistakenly return 0 for _region_end
+  assert(addr < _region_end, "bad addr");
   return (size_t(addr) & RegionAddrOffsetMask) >> LogHeapWordSize;
 }
 
@@ -734,7 +736,7 @@ ParallelCompactData::region_align_up(HeapWord* addr) const
 inline bool
 ParallelCompactData::is_region_aligned(HeapWord* addr) const
 {
-  return region_offset(addr) == 0;
+  return (size_t(addr) & RegionAddrOffsetMask) == 0;
 }
 
 inline size_t
@@ -948,7 +950,6 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // has been updated.  KKK likely resides in a region to the left of the region
 // containing AAA.  These AAA's have there references updated at the end in a
 // clean up phase.  See the method PSParallelCompact::update_deferred_objects().
-// An alternate strategy is being investigated for this deferral of updating.
 //
 // Compaction is done on a region basis.  A region that is ready to be filled is
 // put on a ready list and GC threads take region off the list and fill them.  A
@@ -959,6 +960,25 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // regions and regions compacting into themselves.  There is always at least 1
 // region that can be put on the ready list.  The regions are atomically added
 // and removed from the ready list.
+//
+// During compaction, there is a natural task dependency among regions because
+// destination regions may also be source regions themselves.  Consequently, the
+// destination regions are not available for processing until all live objects
+// within them are evacuated to their destinations.  These dependencies lead to
+// limited thread utilization as threads spin waiting on regions to be ready.
+// Shadow regions are utilized to address these region dependencies.  The basic
+// idea is that, if a region is unavailable because it still contains live
+// objects and thus cannot serve as a destination momentarily, the GC thread
+// may allocate a shadow region as a substitute destination and directly copy
+// live objects into this shadow region.  Live objects in the shadow region will
+// be copied into the target destination region when it becomes available.
+//
+// For more details on shadow regions, please refer to §4.2 of the VEE'19 paper:
+// Haoyu Li, Mingyu Wu, Binyu Zang, and Haibo Chen.  2019.  ScissorGC: scalable
+// and efficient compaction for Java full garbage collection.  In Proceedings of
+// the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution
+// Environments (VEE 2019).  ACM, New York, NY, USA, 108-121.  DOI:
+// https://doi.org/10.1145/3313808.3313820
 
 class TaskQueue;
 
@@ -1043,7 +1063,6 @@ class PSParallelCompact : AllStatic {
 
   // Mark live objects
   static void marking_phase(ParCompactionManager* cm,
-                            bool maximum_heap_compaction,
                             ParallelOldTracer *gc_tracer);
 
   // Compute the dense prefix for the designated space.  This is an experimental
@@ -1107,12 +1126,11 @@ class PSParallelCompact : AllStatic {
   static void summary_phase(ParCompactionManager* cm, bool maximum_compaction);
 
   // Adjust addresses in roots.  Does not adjust addresses in heap.
-  static void adjust_roots(ParCompactionManager* cm);
+  static void adjust_roots();
 
   DEBUG_ONLY(static void write_block_fill_histogram();)
 
   // Move objects to new locations.
-  static void compact_perm(ParCompactionManager* cm);
   static void compact();
 
   // Add available regions to the stack and draining tasks to the task queue.
@@ -1144,7 +1162,7 @@ class PSParallelCompact : AllStatic {
   static bool initialize();
 
   // Closure accessors
-  static BoolObjectClosure* is_alive_closure()     { return (BoolObjectClosure*)&_is_alive_closure; }
+  static BoolObjectClosure* is_alive_closure()     { return &_is_alive_closure; }
 
   // Public accessors
   static elapsedTimer* accumulated_time() { return &_accumulated_time; }
@@ -1388,5 +1406,7 @@ class FillClosure: public ParMarkBitMapClosure {
  private:
   ObjectStartArray* const _start_array;
 };
+
+void steal_marking_work(TaskTerminator& terminator, uint worker_id);
 
 #endif // SHARE_GC_PARALLEL_PSPARALLELCOMPACT_HPP

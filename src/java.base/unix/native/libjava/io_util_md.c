@@ -34,6 +34,11 @@
 #include <sys/ioctl.h>
 #endif
 
+#if defined(__linux__)
+#include <linux/fs.h>
+#include <sys/stat.h>
+#endif
+
 #ifdef MACOSX
 
 #include <CoreFoundation/CoreFoundation.h>
@@ -245,9 +250,17 @@ handleGetLength(FD fd)
     struct stat64 sb;
     int result;
     RESTARTABLE(fstat64(fd, &sb), result);
-    if (result == 0) {
-        return sb.st_size;
-    } else {
+    if (result < 0) {
         return -1;
     }
+#if defined(__linux__) && defined(BLKGETSIZE64)
+    if (S_ISBLK(sb.st_mode)) {
+        uint64_t size;
+        if(ioctl(fd, BLKGETSIZE64, &size) < 0) {
+            return -1;
+        }
+        return (jlong)size;
+    }
+#endif
+    return sb.st_size;
 }

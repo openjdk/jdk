@@ -2319,7 +2319,7 @@ void TemplateTable::_return(TosState state) {
 
   if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
     Label no_safepoint;
-    const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
+    const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()) + 7 /* Big Endian */);
     __ z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
     __ z_braz(no_safepoint);
     __ push(state);
@@ -3768,9 +3768,8 @@ void TemplateTable::_new() {
 
   // Get instance_size in InstanceKlass (scaled to a count of bytes).
   Register Rsize = offset;
-  const int mask = 1 << Klass::_lh_instance_slow_path_bit;
   __ z_llgf(Rsize, Address(iklass, Klass::layout_helper_offset()));
-  __ z_tmll(Rsize, mask);
+  __ z_tmll(Rsize, Klass::_lh_instance_slow_path_bit);
   __ z_btrue(slow_case);
 
   // Allocate the instance
@@ -3813,14 +3812,8 @@ void TemplateTable::_new() {
 
     // Initialize object header only.
     __ bind(initialize_header);
-    if (UseBiasedLocking) {
-      Register prototype = RobjectFields;
-      __ z_lg(prototype, Address(iklass, Klass::prototype_header_offset()));
-      __ z_stg(prototype, Address(RallocatedObject, oopDesc::mark_offset_in_bytes()));
-    } else {
-      __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
-                     (long)markWord::prototype().value());
-    }
+    __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
+                   (long)markWord::prototype().value());
 
     __ store_klass_gap(Rzero, RallocatedObject);  // Zero klass gap for compressed oops.
     __ store_klass(iklass, RallocatedObject);     // Store klass last.

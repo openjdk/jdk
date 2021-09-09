@@ -32,8 +32,9 @@ import java.util.function.Function;
 import java.security.BasicPermission;
 import java.util.Objects;
 
-import sun.hotspot.parser.DiagnosticCommand;
+import jdk.test.whitebox.parser.DiagnosticCommand;
 
+@Deprecated
 public class WhiteBox {
   @SuppressWarnings("serial")
   public static class WhiteBoxPermission extends BasicPermission {
@@ -55,9 +56,10 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
+    @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
+      throw new SecurityException("can't use old whitebox with SecurityManager, please switch to jdk.test.whitebox.WhiteBox");
     }
     return instance;
   }
@@ -231,7 +233,7 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
-  public native boolean isC2OrJVMCIIncludedInVmBuild();
+  public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
   public native int     matchesMethod(Executable method, String pattern);
@@ -250,7 +252,7 @@ public class WhiteBox {
     return isMethodCompiled0(method, isOsr);
   }
   public        boolean isMethodCompilable(Executable method) {
-    return isMethodCompilable(method, -2 /*any*/);
+    return isMethodCompilable(method, -1 /*any*/);
   }
   public        boolean isMethodCompilable(Executable method, int compLevel) {
     return isMethodCompilable(method, compLevel, false /*not osr*/);
@@ -298,7 +300,7 @@ public class WhiteBox {
     return deoptimizeMethod0(method, isOsr);
   }
   public        void    makeMethodNotCompilable(Executable method) {
-    makeMethodNotCompilable(method, -2 /*any*/);
+    makeMethodNotCompilable(method, -1 /*any*/);
   }
   public        void    makeMethodNotCompilable(Executable method, int compLevel) {
     makeMethodNotCompilable(method, compLevel, false /*not osr*/);
@@ -309,7 +311,7 @@ public class WhiteBox {
     makeMethodNotCompilable0(method, compLevel, isOsr);
   }
   public        int     getMethodCompilationLevel(Executable method) {
-    return getMethodCompilationLevel(method, false /*not ost*/);
+    return getMethodCompilationLevel(method, false /*not osr*/);
   }
   private native int     getMethodCompilationLevel0(Executable method, boolean isOsr);
   public         int     getMethodCompilationLevel(Executable method, boolean isOsr) {
@@ -322,7 +324,7 @@ public class WhiteBox {
     return testSetDontInlineMethod0(method, value);
   }
   public        int     getCompileQueuesSize() {
-    return getCompileQueueSize(-2 /*any*/);
+    return getCompileQueueSize(-1 /*any*/);
   }
   public native int     getCompileQueueSize(int compLevel);
   private native boolean testSetForceInlineMethod0(Executable method, boolean value);
@@ -397,7 +399,7 @@ public class WhiteBox {
   public native long allocateMetaspace(ClassLoader classLoader, long size);
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
-  public native long metaspaceReserveAlignment();
+  public native long metaspaceSharedRegionAlignment();
 
   // Metaspace Arena Tests
   public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);
@@ -509,7 +511,6 @@ public class WhiteBox {
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
-  public native void runMemoryUnitTests();
   public native void readFromNoaccessArea();
   public native long getThreadStackSize();
   public native long getThreadRemainingStackSize();
@@ -591,9 +592,10 @@ public class WhiteBox {
   public native boolean isSharingEnabled();
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
-  public native boolean areSharedStringsIgnored();
-  public native boolean isCDSIncludedInVmBuild();
-  public native boolean isJFRIncludedInVmBuild();
+  public native boolean areSharedStringsMapped();
+  public native boolean isSharedInternedString(String s);
+  public native boolean isCDSIncluded();
+  public native boolean isJFRIncluded();
   public native boolean isJavaHeapArchiveSupported();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
@@ -605,7 +607,10 @@ public class WhiteBox {
 
   // Handshakes
   public native int handshakeWalkStack(Thread t, boolean all_threads);
+  public native boolean handshakeReadMonitors(Thread t);
   public native void asyncHandshakeWalkStack(Thread t);
+
+  public native void lockAndBlock(boolean suspender);
 
   // Returns true on linux if library has the noexecstack flag set.
   public native boolean checkLibSpecifiesNoexecstack(String libfilename);
@@ -626,9 +631,6 @@ public class WhiteBox {
   // Protection Domain Table
   public native int protectionDomainRemovedCount();
 
-  // Number of loaded AOT libraries
-  public native int aotLibrariesCount();
-
   public native int getKlassMetadataSize(Class<?> c);
 
   // ThreadSMR GC safety check for threadObj
@@ -638,7 +640,7 @@ public class WhiteBox {
   public native String getLibcName();
 
   // Walk stack frames of current thread
-  public native void verifyFrames(boolean log);
+  public native void verifyFrames(boolean log, boolean updateRegisterMap);
 
   public native boolean isJVMTIIncluded();
 

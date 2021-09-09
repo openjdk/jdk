@@ -69,32 +69,32 @@ public interface Transform extends XMLStructure, AlgorithmMethod {
      * The <a href="http://www.w3.org/2000/09/xmldsig#base64">Base64</a>
      * transform algorithm URI.
      */
-    final static String BASE64 = "http://www.w3.org/2000/09/xmldsig#base64";
+    static final String BASE64 = "http://www.w3.org/2000/09/xmldsig#base64";
 
     /**
      * The <a href="http://www.w3.org/2000/09/xmldsig#enveloped-signature">
      * Enveloped Signature</a> transform algorithm URI.
      */
-    final static String ENVELOPED =
+    static final String ENVELOPED =
         "http://www.w3.org/2000/09/xmldsig#enveloped-signature";
 
     /**
      * The <a href="http://www.w3.org/TR/1999/REC-xpath-19991116">XPath</a>
      * transform algorithm URI.
      */
-    final static String XPATH = "http://www.w3.org/TR/1999/REC-xpath-19991116";
+    static final String XPATH = "http://www.w3.org/TR/1999/REC-xpath-19991116";
 
     /**
      * The <a href="http://www.w3.org/2002/06/xmldsig-filter2">
      * XPath Filter 2</a> transform algorithm URI.
      */
-    final static String XPATH2 = "http://www.w3.org/2002/06/xmldsig-filter2";
+    static final String XPATH2 = "http://www.w3.org/2002/06/xmldsig-filter2";
 
     /**
      * The <a href="http://www.w3.org/TR/1999/REC-xslt-19991116">XSLT</a>
      * transform algorithm URI.
      */
-    final static String XSLT = "http://www.w3.org/TR/1999/REC-xslt-19991116";
+    static final String XSLT = "http://www.w3.org/TR/1999/REC-xslt-19991116";
 
     /**
      * Returns the algorithm-specific input parameters associated with this

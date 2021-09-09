@@ -49,7 +49,7 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
  public:
   explicit ShenandoahRegulatorThread(ShenandoahControlThread* control_thread);
 
-  char* name() const { return (char*)"ShenandoahRegulatorThread";}
+  const char* name() const { return "ShenandoahRegulatorThread";}
 
   // This is called from allocation path, and thus should be fast.
   void notify_heap_changed() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class CharArrayWriter extends Writer {
      *          or {@code off + len} is negative or greater than the length
      *          of the given array
      */
-    public void write(char c[], int off, int len) {
+    public void write(char[] c, int off, int len) {
         if ((off < 0) || (off > c.length) || (len < 0) ||
             ((off + len) > c.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
@@ -276,6 +276,8 @@ public class CharArrayWriter extends Writer {
 
     /**
      * Flush the stream.
+     *
+     * <p> The {@code flush} method of {@code CharArrayWriter} does nothing.
      */
     public void flush() { }
 

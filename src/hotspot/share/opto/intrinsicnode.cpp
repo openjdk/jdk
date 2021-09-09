@@ -47,7 +47,7 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     uint alias_idx = phase->C->get_alias_index(adr_type());
     mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
     if (mem != in(MemNode::Memory)) {
-      set_req(MemNode::Memory, mem);
+      set_req_X(MemNode::Memory, mem, phase);
       return this;
     }
   }

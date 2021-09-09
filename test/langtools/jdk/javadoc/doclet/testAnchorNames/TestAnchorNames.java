@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8025633 8025524 8081854 8187521 8182765
+ * @bug 8025633 8025524 8081854 8187521 8182765 8261976
  * @summary Test for valid name attribute in HTML anchors.
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -62,25 +62,25 @@ public class TestAnchorNames extends JavadocTester {
         // Test some section markers and links to these markers
         checkOutput("pkg1/RegClass.html", true,
                 """
-                    <span class="skip-nav" id="skip.navbar.top">""",
+                    <span class="skip-nav" id="skip-navbar-top">""",
                 """
-                    <a href="#skip.navbar.top" title="Skip navigation links">""",
+                    <a href="#skip-navbar-top" title="Skip navigation links">""",
                 """
-                    <section class="nested-class-summary" id="nested.class.summary">
+                    <section class="nested-class-summary" id="nested-class-summary">
                     <h2>Nested Class Summary</h2>""",
-                "<a href=\"#nested.class.summary\">",
+                "<a href=\"#nested-class-summary\">",
                 """
-                    <section class="method-summary" id="method.summary">
+                    <section class="method-summary" id="method-summary">
                     <h2>Method Summary</h2>""",
-                "<a href=\"#method.summary\">",
+                "<a href=\"#method-summary\">",
                 """
-                    <section class="field-details" id="field.detail">
+                    <section class="field-details" id="field-detail">
                     <h2>Field Details</h2>""",
-                "<a href=\"#field.detail\">",
+                "<a href=\"#field-detail\">",
                 """
-                    <section class="constructor-details" id="constructor.detail">
+                    <section class="constructor-details" id="constructor-detail">
                     <h2>Constructor Details</h2>""",
-                "<a href=\"#constructor.detail\">");
+                "<a href=\"#constructor-detail\">");
 
         // Test some members and link to these members
         checkOutput("pkg1/RegClass.html", true,

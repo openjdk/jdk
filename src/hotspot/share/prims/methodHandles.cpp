@@ -158,7 +158,7 @@ int MethodHandles::ref_kind_to_flags(int ref_kind) {
 Handle MethodHandles::resolve_MemberName_type(Handle mname, Klass* caller, TRAPS) {
   Handle empty;
   Handle type(THREAD, java_lang_invoke_MemberName::type(mname()));
-  if (!java_lang_String::is_instance_inlined(type())) {
+  if (!java_lang_String::is_instance(type())) {
     return type; // already resolved
   }
   Symbol* signature = java_lang_String::as_symbol_or_null(type());
@@ -214,7 +214,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target, TRAPS) {
       if (m == NULL || is_signature_polymorphic(m->intrinsic_id()))
         return NULL;            // do not resolve unless there is a concrete signature
       CallInfo info(m, k, CHECK_NULL);
-      return init_method_MemberName(mname, info, THREAD);
+      return init_method_MemberName(mname, info);
     }
   } else if (target_klass == vmClasses::reflect_Constructor_klass()) {
     oop clazz  = java_lang_reflect_Constructor::clazz(target_oop);
@@ -224,13 +224,13 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target, TRAPS) {
       Method* m = InstanceKlass::cast(k)->method_with_idnum(slot);
       if (m == NULL)  return NULL;
       CallInfo info(m, k, CHECK_NULL);
-      return init_method_MemberName(mname, info, THREAD);
+      return init_method_MemberName(mname, info);
     }
   }
   return NULL;
 }
 
-oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info, TRAPS) {
+oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   assert(info.resolved_appendix().is_null(), "only normal methods here");
   methodHandle m(Thread::current(), info.resolved_method());
   assert(m.not_null(), "null method handle");
@@ -536,7 +536,7 @@ Symbol* MethodHandles::lookup_signature(oop type_str, bool intern_if_not_found, 
     return java_lang_invoke_MethodType::as_signature(type_str, intern_if_not_found);
   } else if (java_lang_Class::is_instance(type_str)) {
     return java_lang_Class::as_signature(type_str, false);
-  } else if (java_lang_String::is_instance_inlined(type_str)) {
+  } else if (java_lang_String::is_instance(type_str)) {
     if (intern_if_not_found) {
       return java_lang_String::as_symbol(type_str);
     } else {
@@ -574,7 +574,7 @@ bool MethodHandles::is_basic_type_signature(Symbol* sig) {
   return true;
 }
 
-Symbol* MethodHandles::lookup_basic_type_signature(Symbol* sig, bool keep_last_arg, TRAPS) {
+Symbol* MethodHandles::lookup_basic_type_signature(Symbol* sig, bool keep_last_arg) {
   Symbol* bsig = NULL;
   if (sig == NULL) {
     return sig;
@@ -801,7 +801,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
         THROW_MSG_(vmSymbols::java_lang_InternalError(), "appendix", empty);
       }
       result.set_resolved_method_name(CHECK_(empty));
-      oop mname2 = init_method_MemberName(mname, result, THREAD);
+      oop mname2 = init_method_MemberName(mname, result);
       return Handle(THREAD, mname2);
     }
   case IS_CONSTRUCTOR:
@@ -824,7 +824,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
       }
       assert(result.is_statically_bound(), "");
       result.set_resolved_method_name(CHECK_(empty));
-      oop mname2 = init_method_MemberName(mname, result, THREAD);
+      oop mname2 = init_method_MemberName(mname, result);
       return Handle(THREAD, mname2);
     }
   case IS_FIELD:
@@ -1025,7 +1025,7 @@ int MethodHandles::find_MemberNames(Klass* k,
         if (!java_lang_invoke_MemberName::is_instance(result()))
           return -99;  // caller bug!
         CallInfo info(m, NULL, CHECK_0);
-        oop saved = MethodHandles::init_method_MemberName(result, info, THREAD);
+        oop saved = MethodHandles::init_method_MemberName(result, info);
         if (saved != result())
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {

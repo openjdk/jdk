@@ -143,7 +143,6 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   if (heap->is_concurrent_weak_root_in_progress()) {
     entry_weak_refs();
     entry_weak_roots();
-    heap->set_concurrent_weak_root_in_progress(false);
   }
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
@@ -155,11 +154,12 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
     heap->free_set()->log_status();
   }
 
+  // TODO: Old marking doesn't support class unloading yet
   // Perform concurrent class unloading
-  if (heap->unload_classes() &&
-      heap->is_concurrent_weak_root_in_progress()) {
-    entry_class_unloading();
-  }
+  // if (heap->unload_classes() &&
+  //     heap->is_concurrent_weak_root_in_progress()) {
+  //   entry_class_unloading();
+  // }
 
   // Coalesce and fill objects _after_ weak root processing and class unloading.
   // Weak root and reference processing makes assertions about unmarked referents
@@ -174,7 +174,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
 
-  entry_rendezvous_roots();
+  vmop_entry_final_roots();
   return true;
 }
 

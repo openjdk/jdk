@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ final class NetMulticastSocket extends MulticastSocket {
         checkAddress(address, "connect");
         if (isClosed())
             return;
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (address.isMulticastAddress()) {
@@ -135,8 +136,7 @@ final class NetMulticastSocket extends MulticastSocket {
             bind(new InetSocketAddress(0));
 
         // old impls do not support connect/disconnect
-        if (oldImpl || (impl instanceof AbstractPlainDatagramSocketImpl &&
-                ((AbstractPlainDatagramSocketImpl) impl).nativeConnectDisabled())) {
+        if (oldImpl) {
             connectState = ST_CONNECTED_NO_IMPL;
         } else {
             try {
@@ -168,6 +168,7 @@ final class NetMulticastSocket extends MulticastSocket {
      * Return true if the given DatagramSocketImpl is an "old" impl. An old impl
      * is one that doesn't implement the abstract methods added in Java SE 1.4.
      */
+    @SuppressWarnings("removal")
     private static boolean checkOldImpl(DatagramSocketImpl impl) {
         // DatagramSocketImpl.peekData() is a protected method, therefore we need to use
         // getDeclaredMethod, therefore we need permission to access the member
@@ -216,14 +217,14 @@ final class NetMulticastSocket extends MulticastSocket {
             throw new SocketException("already bound");
         if (addr == null)
             addr = new InetSocketAddress(0);
-        if (!(addr instanceof InetSocketAddress))
+        if (!(addr instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type!");
-        InetSocketAddress epoint = (InetSocketAddress) addr;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
         InetAddress iaddr = epoint.getAddress();
         int port = epoint.getPort();
         checkAddress(iaddr, "bind");
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkListen(port);
@@ -259,9 +260,8 @@ final class NetMulticastSocket extends MulticastSocket {
     public void connect(SocketAddress addr) throws SocketException {
         if (addr == null)
             throw new IllegalArgumentException("Address can't be null");
-        if (!(addr instanceof InetSocketAddress))
+        if (!(addr instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
-        InetSocketAddress epoint = (InetSocketAddress) addr;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
         connectInternal(epoint.getAddress(), epoint.getPort());
@@ -333,6 +333,7 @@ final class NetMulticastSocket extends MulticastSocket {
                 if (packetPort < 0 || packetPort > 0xFFFF)
                     throw new IllegalArgumentException("port out of range: " + packetPort);
                 // check the address is ok with the security manager on every send.
+                @SuppressWarnings("removal")
                 SecurityManager security = System.getSecurityManager();
 
                 // The reason you want to synchronize on datagram packet
@@ -377,6 +378,7 @@ final class NetMulticastSocket extends MulticastSocket {
                 bind(new InetSocketAddress(0));
             if (connectState == ST_NOT_CONNECTED) {
                 // check the address is ok with the security manager before every recv.
+                @SuppressWarnings("removal")
                 SecurityManager security = System.getSecurityManager();
                 if (security != null) {
                     while (true) {
@@ -482,6 +484,7 @@ final class NetMulticastSocket extends MulticastSocket {
             if (in.isAnyLocalAddress()) {
                 in = InetAddress.anyLocalAddress();
             }
+            @SuppressWarnings("removal")
             SecurityManager s = System.getSecurityManager();
             if (s != null) {
                 s.checkConnect(in.getHostAddress(), -1);
@@ -753,6 +756,7 @@ final class NetMulticastSocket extends MulticastSocket {
         }
 
         checkAddress(mcastaddr, "joinGroup");
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkMulticast(mcastaddr);
@@ -783,6 +787,7 @@ final class NetMulticastSocket extends MulticastSocket {
         }
 
         checkAddress(mcastaddr, "leaveGroup");
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkMulticast(mcastaddr);
@@ -808,6 +813,7 @@ final class NetMulticastSocket extends MulticastSocket {
             throw new UnsupportedOperationException();
 
         checkAddress(addr.getAddress(), "joinGroup");
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkMulticast(addr.getAddress());
@@ -833,6 +839,7 @@ final class NetMulticastSocket extends MulticastSocket {
             throw new UnsupportedOperationException();
 
         checkAddress(addr.getAddress(), "leaveGroup");
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkMulticast(addr.getAddress());
@@ -947,6 +954,7 @@ final class NetMulticastSocket extends MulticastSocket {
         return ((Boolean)getImpl().getOption(SocketOptions.IP_MULTICAST_LOOP)).booleanValue();
     }
 
+    @SuppressWarnings("removal")
     @Deprecated
     @Override
     public void send(DatagramPacket p, byte ttl)

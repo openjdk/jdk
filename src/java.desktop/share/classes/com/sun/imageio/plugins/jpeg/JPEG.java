@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 
 package com.sun.imageio.plugins.jpeg;
 
-import javax.imageio.ImageTypeSpecifier;
-import javax.imageio.plugins.jpeg.JPEGQTable;
-import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
-
-import java.awt.image.ColorModel;
 import java.awt.color.ColorSpace;
-import java.awt.color.ICC_ColorSpace;
+import java.awt.image.ColorModel;
+
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
+import javax.imageio.plugins.jpeg.JPEGQTable;
 
 /**
  * A class containing JPEG-related constants, definitions, and
@@ -199,38 +198,10 @@ public class JPEG {
 
     static final int [] bOffsRGB = { 2, 1, 0 };
 
-    /* These are kept in the inner class to avoid static initialization
-     * of the CMM class until someone actually needs it.
-     * (e.g. do not init CMM on the request for jpeg mime types)
-     */
-    public static class JCS {
-        public static final ColorSpace sRGB =
-            ColorSpace.getInstance(ColorSpace.CS_sRGB);
-    }
+    static final ColorSpace sRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
     // Default value for ImageWriteParam
     public static final float DEFAULT_QUALITY = 0.75F;
-
-    /**
-     * Returns {@code true} if the given {@code ColorSpace}
-     * object is an instance of ICC_ColorSpace but is not one of the
-     * standard {@code ColorSpaces} returned by
-     * {@code ColorSpace.getInstance()}.
-     */
-    static boolean isNonStandardICC(ColorSpace cs) {
-        boolean retval = false;
-        if ((cs instanceof ICC_ColorSpace)
-            && (!cs.isCS_sRGB())
-            && (!cs.equals(ColorSpace.getInstance(ColorSpace.CS_CIEXYZ)))
-            && (!cs.equals(ColorSpace.getInstance(ColorSpace.CS_GRAY)))
-            && (!cs.equals(ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB)))
-            && (!cs.equals(ColorSpace.getInstance(ColorSpace.CS_PYCC)))
-            ) {
-            retval = true;
-        }
-        return retval;
-    }
-
 
     /**
      * Returns {@code true} if the given imageType can be used
@@ -342,5 +313,4 @@ public class JPEG {
         }
         return tables;
     }
-
 }

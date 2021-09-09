@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -953,7 +953,7 @@ public class Locations {
             Path modules = javaHome.resolve("modules");
             if (Files.isDirectory(modules.resolve("java.base"))) {
                 try (Stream<Path> listedModules = Files.list(modules)) {
-                    return listedModules.collect(Collectors.toList());
+                    return listedModules.toList();
                 }
             }
 
@@ -1232,10 +1232,9 @@ public class Locations {
 
             for (Set<Location> set : listLocationsForModules()) {
                 for (Location locn : set) {
-                    if (locn instanceof ModuleLocationHandler) {
-                        ModuleLocationHandler l = (ModuleLocationHandler) locn;
-                        if (!moduleTable.nameMap.containsKey(l.moduleName)) {
-                            moduleTable.add(l);
+                    if (locn instanceof ModuleLocationHandler moduleLocationHandler) {
+                        if (!moduleTable.nameMap.containsKey(moduleLocationHandler.moduleName)) {
+                            moduleTable.add(moduleLocationHandler);
                         }
                     }
                 }
@@ -2200,8 +2199,8 @@ public class Locations {
 
     protected LocationHandler getHandler(Location location) {
         Objects.requireNonNull(location);
-        return (location instanceof LocationHandler)
-                ? (LocationHandler) location
+        return (location instanceof LocationHandler locationHandler)
+                ? locationHandler
                 : handlersForLocation.get(location);
     }
 
