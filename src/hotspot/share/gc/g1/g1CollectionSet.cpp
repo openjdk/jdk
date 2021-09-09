@@ -232,11 +232,10 @@ void G1CollectionSet::iterate_part_from(HeapRegionClosure* cl,
                                         size_t offset,
                                         size_t length,
                                         uint worker_id) const {
-  assert((length > offset) || (length == offset && length == 0), "Must be");
   _g1h->par_iterate_regions_array(cl,
                                   hr_claimer,
                                   &_collection_set_regions[offset],
-                                  length - offset,
+                                  length,
                                   worker_id);
 }
 
