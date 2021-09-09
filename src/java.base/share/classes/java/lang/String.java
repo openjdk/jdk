@@ -1752,7 +1752,6 @@ public final class String
      */
     public byte[] getBytes(String charsetName)
             throws UnsupportedEncodingException {
-        if (charsetName == null) throw new NullPointerException();
         return encode(lookupCharset(charsetName), coder(), value);
     }
 

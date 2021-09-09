@@ -562,6 +562,12 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     }
   }
 
+  // Already did every pending exception check here.
+  // If HAS_PENDING_EXCEPTION is true, the interpreter would handle the rest.
+  if (CheckJNICalls) {
+    THREAD->clear_pending_jni_exception_check();
+  }
+
   // No deoptimized frames on the stack
   return 0;
 }
