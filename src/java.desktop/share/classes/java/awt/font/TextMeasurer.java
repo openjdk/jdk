@@ -48,7 +48,6 @@ import java.text.Bidi;
 import java.text.BreakIterator;
 import java.text.CharacterIterator;
 
-import java.util.Collections;
 import java.util.Map;
 
 import sun.font.AttributeValues;
@@ -243,7 +242,7 @@ public final class TextMeasurer implements Cloneable {
                 GraphicAttribute graphic = (GraphicAttribute)
                                 paragraphAttrs.get(TextAttribute.CHAR_REPLACEMENT);
                 fBaseline = TextLayout.getBaselineFromGraphic(graphic);
-                Font dummyFont = new Font(Collections.emptyMap());
+                Font dummyFont = new Font(null);
                 LineMetrics lm = dummyFont.getLineMetrics(" ", 0, 1, fFrc);
                 fBaselineOffsets = lm.getBaselineOffsets();
             }
