@@ -271,8 +271,7 @@ final class CryptoPolicyParser {
                 }
             }
 
-            Integer[] params = new Integer[paramsV.size()];
-            paramsV.toArray(params);
+            Integer[] params = paramsV.toArray(new Integer[0]);
 
             e.checkParam = true;
             e.algParamSpec = getInstance(algParamSpecClassName, params);
@@ -488,9 +487,7 @@ final class CryptoPolicyParser {
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[result.size()];
-        result.toArray(ret);
-
+        CryptoPermission[] ret = result.toArray(new CryptoPermission[0]);
         return ret;
     }
 

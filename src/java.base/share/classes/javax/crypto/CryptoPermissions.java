@@ -343,8 +343,7 @@ implements Serializable {
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[permList.size()];
-        permList.toArray(ret);
+        CryptoPermission[] ret = permList.toArray(new CryptoPermission[0]);
         return ret;
     }
 
@@ -388,8 +387,7 @@ implements Serializable {
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[permList.size()];
-        permList.toArray(ret);
+        CryptoPermission[] ret = permList.toArray(new CryptoPermission[0]);
         return ret;
     }
 
