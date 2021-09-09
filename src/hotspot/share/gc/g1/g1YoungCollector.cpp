@@ -33,7 +33,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
-#include "gc/g1/g1EvacuationInfo.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
@@ -146,13 +146,13 @@ public:
 };
 
 class G1YoungGCJFRTracerMark : public G1JFRTracerMark {
-  G1EvacuationInfo _evacuation_info;
+  G1EvacInfo _evacuation_info;
 
   G1NewTracer* tracer() const { return (G1NewTracer*)_tracer; }
 
 public:
 
-  G1EvacuationInfo* evacuation_info() { return &_evacuation_info; }
+  G1EvacInfo* evacuation_info() { return &_evacuation_info; }
 
   G1YoungGCJFRTracerMark(STWGCTimer* gc_timer_stw, G1NewTracer* gc_tracer_stw, GCCause::Cause cause) :
     G1JFRTracerMark(gc_timer_stw, gc_tracer_stw), _evacuation_info() { }
@@ -288,7 +288,7 @@ public:
   }
 };
 
-void G1YoungCollector::calculate_collection_set(G1EvacuationInfo* evacuation_info, double target_pause_time_ms) {
+void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, double target_pause_time_ms) {
   // Forget the current allocation region (we might even choose it to be part
   // of the collection set!) before finalizing the collection set.
   allocator()->release_mutator_alloc_regions();
@@ -492,13 +492,13 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 }
 
-void G1YoungCollector::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
   // reference processing currently works in G1.
   ref_processor_stw()->start_discovery(false /* always_clear */);
 
-  _g1h->reset_evacuation_failed_data();
+  _evac_failure_regions->reset();
 
   _g1h->gc_prologue(false);
 
@@ -955,23 +955,23 @@ bool G1STWIsAliveClosure::do_object_b(oop p) {
 void G1YoungCollector::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {
   Ticks start = Ticks::now();
   {
-    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states);
+    G1PostEvacuateCollectionSetCleanupTask1 cl(per_thread_states, _evac_failure_regions);
     _g1h->run_batch_task(&cl);
   }
   phase_times()->record_post_evacuate_cleanup_task_1_time((Ticks::now() - start).seconds() * 1000.0);
 }
 
 void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
-                                               G1EvacuationInfo* evacuation_info) {
+                                               G1EvacInfo* evacuation_info) {
   Ticks start = Ticks::now();
   {
-    G1PostEvacuateCollectionSetCleanupTask2 cl(per_thread_states, evacuation_info);
+    G1PostEvacuateCollectionSetCleanupTask2 cl(per_thread_states, evacuation_info, _evac_failure_regions);
     _g1h->run_batch_task(&cl);
   }
   phase_times()->record_post_evacuate_cleanup_task_2_time((Ticks::now() - start).seconds() * 1000.0);
 }
 
-void G1YoungCollector::post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
+void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                                     G1ParScanThreadStateSet* per_thread_states) {
   G1GCPhaseTimes* p = phase_times();
 
@@ -1024,11 +1024,14 @@ public:
   }
 };
 
-G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause, double target_pause_time_ms) :
+G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
+                                   double target_pause_time_ms,
+                                   G1EvacFailureRegions* evac_failure_regions) :
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
   _target_pause_time_ms(target_pause_time_ms),
-  _concurrent_operation_is_full_mark(false)
+  _concurrent_operation_is_full_mark(false),
+  _evac_failure_regions(evac_failure_regions)
 {
 }
 
@@ -1080,7 +1083,8 @@ void G1YoungCollector::collect() {
                                               &preserved_marks_set,
                                               workers()->active_workers(),
                                               collection_set()->young_region_length(),
-                                              collection_set()->optional_region_length());
+                                              collection_set()->optional_region_length(),
+                                              _evac_failure_regions);
     pre_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states);
 
     bool may_do_optional_evacuation = collection_set()->optional_region_length() != 0;

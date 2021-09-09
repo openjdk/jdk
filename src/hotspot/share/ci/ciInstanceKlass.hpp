@@ -165,6 +165,9 @@ public:
     return compute_shared_has_subklass();
   }
 
+  jint                   layout_helper_size_in_bytes()  {
+    return Klass::layout_helper_size_in_bytes(layout_helper());
+  }
   jint                   size_helper()  {
     return (Klass::layout_helper_size_in_bytes(layout_helper())
             >> LogHeapWordSize);
