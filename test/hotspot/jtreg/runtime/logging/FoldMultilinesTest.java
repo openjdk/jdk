@@ -43,18 +43,19 @@ public class FoldMultilinesTest {
     private static String FOLDED_EXCEPTION_MESSAGE = "line 1\\nline 2\\\\nstring";
     private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\Rline 2\\\\nstring", Pattern.MULTILINE);
 
-    private static void analyzeFoldMultilinesOn(ProcessBuilder pb, String out) throws Exception {
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-
-        String logs = switch (out) {
+    private static String getLog(String out, OutputAnalyzer output) throws Exception {
+        return switch (out) {
             case "" -> output.getStdout();
             case "stdout" -> output.getStdout();
             case "stderr" -> output.getStderr();
             default -> Files.readString(Path.of(EXCEPTION_LOG_FILE));
         };
+    }
 
-        if (!logs.contains(FOLDED_EXCEPTION_MESSAGE)) {
+    private static void analyzeFoldMultilinesOn(ProcessBuilder pb, String out) throws Exception {
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+        if (!getLog(out, output).contains(FOLDED_EXCEPTION_MESSAGE)) {
             throw new RuntimeException(out + ": foldmultilines=true did not work.");
         }
     }
@@ -62,14 +63,7 @@ public class FoldMultilinesTest {
     private static void analyzeFoldMultilinesOff(ProcessBuilder pb, String out) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-
-        String logs = switch (out) {
-            case "stdout" -> output.getStdout();
-            case "stderr" -> output.getStderr();
-            default -> Files.readString(Path.of(EXCEPTION_LOG_FILE));
-        };
-
-        if (!NEWLINE_LOG_PATTERN.matcher(logs).find()) {
+        if (!NEWLINE_LOG_PATTERN.matcher(getLog(out, output)).find()) {
             throw new RuntimeException(out + ": foldmultilines=false did not work.");
         }
     }
