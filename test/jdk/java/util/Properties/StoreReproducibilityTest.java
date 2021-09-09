@@ -42,6 +42,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.TimeZone;
 
 /*
  * @test
@@ -53,6 +54,7 @@ import java.util.Properties;
 public class StoreReproducibilityTest {
 
     private static final String ENV_SOURCE_DATE_EPOCH = "SOURCE_DATE_EPOCH";
+    private static final String dateCommentFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
 
     public static void main(final String[] args) throws Exception {
         // no security manager enabled
@@ -216,9 +218,9 @@ public class StoreReproducibilityTest {
         final OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
         try {
             outputAnalyzer.shouldHaveExitValue(0);
-        } catch (Exception e) {
+        } finally {
+            // print out any stdout/err that was generated in the launched program
             outputAnalyzer.reportDiagnosticSummary();
-            throw e;
         }
     }
 
@@ -241,9 +243,10 @@ public class StoreReproducibilityTest {
                     + " when " + ENV_SOURCE_DATE_EPOCH + " was set " +
                     "(to " + sourceEpochDate + ")");
         }
+        System.out.println("Found date comment " + dateComment + " in file " + destFile);
         long parsedSecondsSinceEpoch;
         try {
-            var d = DateTimeFormatter.RFC_1123_DATE_TIME
+            var d = DateTimeFormatter.ofPattern(dateCommentFormat)
                     .withLocale(Locale.ROOT)
                     .withZone(ZoneOffset.UTC).parse(dateComment);
             parsedSecondsSinceEpoch = Duration.between(Instant.ofEpochSecond(0), Instant.from(d)).toSeconds();
@@ -269,14 +272,16 @@ public class StoreReproducibilityTest {
         if (dateComment == null) {
             throw new RuntimeException("Date comment not found in stored properties " + destFile);
         }
+        System.out.println("Found date comment " + dateComment + " in file " + destFile);
         final Date parsedDate;
         try {
-            parsedDate = new SimpleDateFormat("EEE MMM dd hh:mm:ss zzz yyyy").parse(dateComment);
+            parsedDate = new SimpleDateFormat(dateCommentFormat).parse(dateComment);
         } catch (ParseException pe) {
             throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile);
         }
         if (!parsedDate.after(date)) {
-            throw new RuntimeException("Expected " + parsedDate + " to be after " + date);
+            throw new RuntimeException("Expected date comment " + dateComment + " to be after " + date
+                    + " but was " + parsedDate);
         }
     }
 
@@ -323,6 +328,7 @@ public class StoreReproducibilityTest {
         public static void main(final String[] args) throws Exception {
             final Path destFile = Path.of(args[0]);
             final String comment = "some user specified comment";
+            System.out.println("Current default timezone is " + TimeZone.getDefault());
             if (args[1].equals("--use-outputstream")) {
                 try (var os = Files.newOutputStream(destFile)) {
                     propsToStore.store(os, comment);

@@ -48,6 +48,8 @@ import java.util.TreeSet;
  */
 public class PropertiesStoreTest {
 
+    private static final String dateCommentFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
+
     @DataProvider(name = "propsProvider")
     private Object[][] createProps() {
         final Properties simple = new Properties();
@@ -182,7 +184,7 @@ public class PropertiesStoreTest {
             Assert.fail("No comment line found in the stored properties file " + file);
         }
         try {
-            new SimpleDateFormat("EEE MMM dd hh:mm:ss zzz yyyy").parse(comment);
+            new SimpleDateFormat(dateCommentFormat).parse(comment);
         } catch (ParseException pe) {
             Assert.fail("Unexpected date comment: " + comment);
         }
