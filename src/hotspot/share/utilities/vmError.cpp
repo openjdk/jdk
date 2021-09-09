@@ -241,6 +241,107 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 #endif // ZERO
 }
 
+/**
+ * Determines if the code unit denoted by `owner` should be printed.
+ * If this method returns true, then `owner` has been added to `printed`.
+ * If `owner` was already in `printed`, this methods returns false.
+
+ *
+ * @param owner a CodeBlob*, InterpreterCodelet* or StubCodeDesc* value
+ * @param printed array of owners that have already been printed (delimited by NULL entry)
+ * @param printed_len the length of `printed`
+ */
+static bool should_print_code(address owner, address* printed, int printed_len) {
+  for (int i = 0; i < printed_len; i++) {
+    if (printed[i] == owner) {
+      return false;
+    }
+    if (printed[i] == 0) {
+      printed[i] = owner;
+      return true;
+    }
+  }
+  // Beyond limit of code units to be printed
+  return false;
+}
+
+/**
+ * Prints the VM generated code unit, if any, containing `pc` if it has not already
+ * been printed. If the code unit is an InterpreterCodelet or StubCodeDesc, it is
+ * only printed if `is_crash_pc` is true.
+ *
+ * @param printed array of code units that have already been printed (delimited by NULL entry)
+ * @param printed_len the length of `printed`
+ */
+static bool print_code(outputStream* st, Thread* thread, address pc, bool is_crash_pc,
+                            address* printed, int printed_len) {
+  if (Interpreter::contains(pc)) {
+    if (is_crash_pc) {
+      // The interpreter CodeBlob is very large so try to print the codelet instead.
+      InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
+      if (codelet != NULL) {
+        if (should_print_code((address) codelet, printed, printed_len)) {
+          codelet->print_on(st);
+          Disassembler::decode(codelet->code_begin(), codelet->code_end(), st);
+          return true;
+        }
+      }
+    }
+  } else {
+    StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
+    if (desc != NULL) {
+      if (is_crash_pc) {
+        if (should_print_code((address) desc, printed, printed_len)) {
+          desc->print_on(st);
+          Disassembler::decode(desc->begin(), desc->end(), st);
+          return true;
+        }
+      }
+    } else if (thread != NULL) {
+      CodeBlob* cb = CodeCache::find_blob(pc);
+      if (cb != NULL && should_print_code((address) cb, printed, printed_len)) {
+        // Disassembling nmethod will incur resource memory allocation,
+        // only do so when thread is valid.
+        ResourceMark rm(thread);
+        Disassembler::decode(cb, st);
+        st->cr();
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Gets the caller frame of `fr`.
+ *
+ * @returns an invalid frame (i.e. fr.pc() === 0) if the caller cannot be obtained
+ */
+static frame next_frame(frame fr, Thread* t) {
+  // Compiled code may use EBP register on x86 so it looks like
+  // non-walkable C frame. Use frame.sender() for java frames.
+  frame invalid;
+  if (t && t->is_Java_thread()) {
+    // Catch very first native frame by using stack address.
+    // For JavaThread stack_base and stack_size should be set.
+    if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
+      return invalid;
+    }
+    if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
+      RegisterMap map(JavaThread::cast(t), false); // No update
+      return fr.sender(&map);
+    } else {
+      // is_first_C_frame() does only simple checks for frame pointer,
+      // it will pass if java compiled code has a pointer in EBP.
+      if (os::is_first_C_frame(&fr)) return invalid;
+      return os::get_sender_for_C_frame(&fr);
+    }
+  } else {
+    if (os::is_first_C_frame(&fr)) return invalid;
+    return os::get_sender_for_C_frame(&fr);
+  }
+}
+
 void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int buf_size) {
 
   // see if it's a valid frame
@@ -258,26 +359,9 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
         }
       }
       st->cr();
-      // Compiled code may use EBP register on x86 so it looks like
-      // non-walkable C frame. Use frame.sender() for java frames.
-      if (t && t->is_Java_thread()) {
-        // Catch very first native frame by using stack address.
-        // For JavaThread stack_base and stack_size should be set.
-        if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
-          break;
-        }
-        if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-          RegisterMap map(JavaThread::cast(t), false); // No update
-          fr = fr.sender(&map);
-        } else {
-          // is_first_C_frame() does only simple checks for frame pointer,
-          // it will pass if java compiled code has a pointer in EBP.
-          if (os::is_first_C_frame(&fr)) break;
-          fr = os::get_sender_for_C_frame(&fr);
-        }
-      } else {
-        if (os::is_first_C_frame(&fr)) break;
-        fr = os::get_sender_for_C_frame(&fr);
+      fr = next_frame(fr, t);
+      if (!fr.pc()) {
+        break;
       }
     }
 
@@ -821,31 +905,21 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("printing code blob if possible")
+  STEP("printing code blobs if possible")
 
      if (_verbose && _context) {
-       CodeBlob* cb = CodeCache::find_blob(_pc);
-       if (cb != NULL) {
-         if (Interpreter::contains(_pc)) {
-           // The interpreter CodeBlob is very large so try to print the codelet instead.
-           InterpreterCodelet* codelet = Interpreter::codelet_containing(_pc);
-           if (codelet != NULL) {
-             codelet->print_on(st);
-             Disassembler::decode(codelet->code_begin(), codelet->code_end(), st);
-           }
-         } else {
-           StubCodeDesc* desc = StubCodeDesc::desc_for(_pc);
-           if (desc != NULL) {
-             desc->print_on(st);
-             Disassembler::decode(desc->begin(), desc->end(), st);
-           } else if (_thread != NULL) {
-             // Disassembling nmethod will incur resource memory allocation,
-             // only do so when thread is valid.
-             ResourceMark rm(_thread);
-             Disassembler::decode(cb, st);
-             st->cr();
-           }
+       // The first 10 unique code units on the stack should be sufficient
+       // for investigating crashes.
+       int printed_len = 10;
+       address printed[printed_len];
+       memset(printed, 0, sizeof(address) * printed_len);
+
+       frame fr = os::fetch_frame_from_context(_context);
+       for (int count = 0; count < printed_len && fr.pc(); ) {
+         if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_len)) {
+           count++;
          }
+         fr = next_frame(fr, _thread);
        }
      }
 
