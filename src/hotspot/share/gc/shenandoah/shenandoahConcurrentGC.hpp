@@ -101,6 +101,7 @@ private:
   void entry_update_thread_roots();
   void entry_updaterefs();
   void entry_cleanup_complete();
+  void entry_global_coalesce_and_fill();
 
   // Actual work for the phases
   void op_reset();
@@ -120,6 +121,7 @@ private:
   void op_final_updaterefs();
   void op_final_roots();
   void op_cleanup_complete();
+  void op_global_coalesce_and_fill();
 
   // Messages for GC trace events, they have to be immortal for
   // passing around the logging/tracing systems

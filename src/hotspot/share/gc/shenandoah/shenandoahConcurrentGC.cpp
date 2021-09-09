@@ -72,6 +72,20 @@ public:
   }
 };
 
+class ShenandoahGlobalCoalesceAndFill : public ShenandoahHeapRegionClosure {
+ public:
+  virtual void heap_region_do(ShenandoahHeapRegion* region) override {
+    // old region is not in the collection set and was not immediately trashed
+    if (region->is_old() && region->is_active() && !region->is_humongous()) {
+      region->oop_fill_and_coalesce();
+    }
+  }
+
+  virtual bool is_thread_safe() override {
+    return true;
+  }
+};
+
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   _mark(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
@@ -148,6 +162,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // If so, strong_root_in_progress would be unset.
   if (heap->is_concurrent_strong_root_in_progress()) {
     entry_strong_roots();
+  }
+
+  if (heap->mode()->is_generational() && _generation->generation_mode() == GLOBAL) {
+    entry_global_coalesce_and_fill();
   }
 
   // Continue the cycle with evacuation and optional update-refs.
@@ -239,9 +257,11 @@ void ShenandoahConcurrentGC::entry_init_mark() {
                               ShenandoahWorkerPolicy::calc_workers_for_init_marking(),
                               "init marking");
 
-  if (ShenandoahHeap::heap()->mode()->is_generational() && (_generation->generation_mode() == YOUNG)) {
+  if (ShenandoahHeap::heap()->mode()->is_generational()
+    && (_generation->generation_mode() == YOUNG || (_generation->generation_mode() == GLOBAL && ShenandoahVerify))) {
     // The current implementation of swap_remembered_set() copies the write-card-table
-    // to the read-card-table.
+    // to the read-card-table. The remembered sets are also swapped for GLOBAL collections
+    // so that the verifier works with the correct copy of the card table when verifying.
     _generation->swap_remembered_set();
   }
 
@@ -477,6 +497,21 @@ void ShenandoahConcurrentGC::entry_cleanup_complete() {
   // This phase does not use workers, no need for setup
   heap->try_inject_alloc_failure();
   op_cleanup_complete();
+}
+
+void ShenandoahConcurrentGC::entry_global_coalesce_and_fill() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  const char* msg = "Coalescing and filling old regions in global collect";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::coalesce_and_fill);
+
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  EventMark em("%s", msg);
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              "concurrent coalesce and fill");
+
+  op_global_coalesce_and_fill();
 }
 
 void ShenandoahConcurrentGC::op_reset() {
@@ -1025,6 +1060,12 @@ void ShenandoahConcurrentGC::op_final_roots() {
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
   ShenandoahHeap::heap()->free_set()->recycle_trash();
+}
+
+void ShenandoahConcurrentGC::op_global_coalesce_and_fill() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  ShenandoahGlobalCoalesceAndFill coalesce;
+  heap->parallel_heap_region_iterate(&coalesce);
 }
 
 bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint point) {

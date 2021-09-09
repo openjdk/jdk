@@ -441,9 +441,7 @@ void ShenandoahHeapRegion::oop_fill_and_coalesce() {
   // explicitly marked.
   HeapWord* t = marking_context->top_at_mark_start(this);
 
-  // Expect this to be invoked only from within threads perfoming old-gen GC, and expect
-  // old-gen marking to be completed before these threads invoke this service.
-  assert(heap->active_generation()->generation_mode() == OLD, "sanity");
+  // Expect marking to be completed before these threads invoke this service.
   assert(heap->active_generation()->is_mark_complete(), "sanity");
 
   while (obj_addr < t) {

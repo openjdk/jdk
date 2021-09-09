@@ -469,7 +469,7 @@ ShenandoahScanRemembered<RememberedSet>::register_object_wo_lock(HeapWord *addr)
 
 template <typename RememberedSet>
 inline bool
-ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, size_t size_in_words) {
+ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, ShenandoahMarkingContext* ctx) {
 
   size_t index = card_index_for_addr(address);
   if (!_scc->has_object(index)) {
@@ -478,13 +478,6 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
   HeapWord* base_addr = addr_for_card_index(index);
   size_t offset = _scc->get_first_start(index);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahMarkingContext* ctx;
-
-  if (heap->doing_mixed_evacuations()) {
-    ctx = heap->marking_context();
-  } else {
-    ctx = nullptr;
-  }
 
   // Verify that I can find this object within its enclosing card by scanning forward from first_start.
   while (base_addr + offset < address) {
@@ -493,13 +486,9 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
       offset += obj->size();
     } else {
       // If this object is not live, don't trust its size(); all objects above tams are live.
-      ShenandoahHeapRegion* r = heap->heap_region_containing(base_addr + offset);
+      ShenandoahHeapRegion* r = heap->heap_region_containing(obj);
       HeapWord* tams = ctx->top_at_mark_start(r);
-      if (base_addr + offset >= tams) {
-        offset += obj->size();
-      } else {
-        offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
-      }
+      offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
     }
   }
   if (base_addr + offset != address){
@@ -521,7 +510,6 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
   size_t prev_offset;
   if (!ctx) {
     do {
-      HeapWord* obj_addr = base_addr + offset;
       oop obj = cast_to_oop(base_addr + offset);
       prev_offset = offset;
       offset += obj->size();
@@ -537,10 +525,12 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
     //        cannot use card_index_for_addr(base_addr + offset) because it asserts arg < end of whole heap
     size_t end_card_index = index + offset / CardTable::card_size_in_words;
 
-    // If there is a following object registered, it should begin where this object ends.
-    if ((base_addr + offset < _rs->whole_heap_end()) && _scc->has_object(end_card_index) &&
-        ((addr_for_card_index(end_card_index) + _scc->get_first_start(end_card_index)) != (base_addr + offset))) {
-      return false;
+    if (end_card_index > index) {
+      // If there is a following object registered on the next card, it should begin where this object ends.
+      if ((base_addr + offset < _rs->whole_heap_end()) && _scc->has_object(end_card_index) &&
+          ((addr_for_card_index(end_card_index) + _scc->get_first_start(end_card_index)) != (base_addr + offset))) {
+        return false;
+      }
     }
 
     // Assure that no other objects are registered "inside" of this one.
@@ -550,17 +540,22 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
       }
     }
   } else {
-    // This is a mixed evacuation: rely on mark bits to identify which objects need to be properly registered
-
+    // This is a mixed evacuation or a global collect: rely on mark bits to identify which objects need to be properly registered
+    assert(!ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress(), "Cannot rely on mark context here.");
     // If the object reaching or spanning the end of this card's memory is marked, then last_offset for this card
-    // should represents this object.  Otherwise, last_offset is a don't care.
-    HeapWord* end_of_interest = base_addr + max_offset;
+    // should represent this object.  Otherwise, last_offset is a don't care.
+    ShenandoahHeapRegion* region = heap->heap_region_containing(base_addr + offset);
+    HeapWord* tams = ctx->top_at_mark_start(region);
     do {
-      HeapWord* obj_addr = base_addr + offset;
-      oop obj = cast_to_oop(base_addr + offset);
       prev_offset = offset;
-      offset = ctx->get_next_marked_addr(base_addr + offset, end_of_interest) - base_addr;
-    } while (offset < max_offset);
+      oop obj = cast_to_oop(base_addr + offset);
+      if (ctx->is_marked(obj)) {
+        offset += obj->size();
+      } else {
+        offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
+        // offset will be zero if no objects are marked in this card.
+      }
+    } while (offset > 0 && offset < max_offset);
     oop last_obj = cast_to_oop(base_addr + prev_offset);
     if (prev_offset + last_obj->size() >= max_offset) {
       if (_scc->get_last_start(index) != prev_offset) {

@@ -220,6 +220,7 @@ class ShenandoahReferenceProcessor;
 class ShenandoahConcurrentMark;
 class ShenandoahHeap;
 class ShenandoahRegionIterator;
+class ShenandoahMarkingContext;
 
 class CardTable;
 
@@ -952,7 +953,7 @@ public:
   void coalesce_objects(HeapWord *addr, size_t length_in_words);
 
   // Return true iff this object is "properly" registered.
-  bool verify_registration(HeapWord* address, size_t size_in_words);
+  bool verify_registration(HeapWord* address, ShenandoahMarkingContext* ctx);
 
   // clear the cards to clean, and clear the object_starts info to no objects
   void mark_range_as_empty(HeapWord *addr, size_t length_in_words);
