@@ -80,8 +80,6 @@ public:
 
   // Supplied function to return the multiplicative opcode
   virtual int min_opcode() const = 0;
-
-  virtual MulNode* make(Node* in1, Node* in2) const = 0;
 };
 
 //------------------------------MulINode---------------------------------------
@@ -100,7 +98,6 @@ public:
   int min_opcode() const { return Op_MinI; }
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual MulNode* make(Node* in1, Node* in2) const { return new MulINode(in1, in2); }
 };
 
 //------------------------------MulLNode---------------------------------------
@@ -119,7 +116,6 @@ public:
   int min_opcode() const { return Op_MinL; }
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual MulNode* make(Node* in1, Node* in2) const { return new MulLNode(in1, in2); }
 };
 
 
@@ -138,7 +134,6 @@ public:
   int min_opcode() const { return Op_MinF; }
   const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
-  virtual MulNode* make(Node* in1, Node* in2) const { return new MulFNode(in1, in2); }
 };
 
 //------------------------------MulDNode---------------------------------------
@@ -156,7 +151,6 @@ public:
   int min_opcode() const { return Op_MinD; }
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
-  virtual MulNode* make(Node* in1, Node* in2) const { return new MulDNode(in1, in2); }
 };
 
 //-------------------------------MulHiLNode------------------------------------

@@ -71,7 +71,14 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* n21 = in2->in(1);
     if (phase->type(n11)->is_zero_type() &&
         phase->type(n21)->is_zero_type()) {
-      return make(in1->in(2), in2->in(2));
+      set_req(1, in1->in(2));
+      set_req(2, in2->in(2));
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn) {
+        igvn->_worklist.push(in1);
+        igvn->_worklist.push(in2);
+      }
+      progress = this;
     }
   }
 
