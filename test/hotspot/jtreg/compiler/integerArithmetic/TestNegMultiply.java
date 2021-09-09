@@ -23,66 +23,106 @@
 
 /**
  * @test
- * @bug 8270366
+ * @bug 8273454
  * @summary Test transformation (-a)*(-b) = a*b
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestNegMultiply
  *
  */
 
-public class TestNegMultiply {
-    private static final int[][] intParams = {
-        {Integer.MAX_VALUE, Integer.MAX_VALUE},
-        {Integer.MIN_VALUE, Integer.MIN_VALUE},
-        {Integer.MAX_VALUE, Integer.MIN_VALUE},
-        {232, 34},
-        {-23, 445},
-        {-244, -84},
-        {233, -99}
-    };
+import java.util.Random;
 
-    private static int intTest(int a, int b) {
+public class TestNegMultiply {
+    private static Random random = new Random();
+    private static final int TEST_COUNT = 2000;
+
+    private static int test(int a, int b) {
         return (-a) * (-b);
     }
-
-    private static void runIntTest() {
-        for (int index = 0; index < intParams.length; index ++) {
-            int result = intTest(intParams[index][0], intParams[index][1]);
-            for (int i = 0; i < 20_000; i++) {
-                if (result != intTest(intParams[index][0], intParams[index][1])) {
-                    throw new RuntimeException("incorrect result");
-                }
+    private static void testInt(int a, int b) {
+        int expected = (-a) * (-b);
+        for (int i = 0; i < 20_000; i++) {
+            if (expected != test(a, b)) {
+                throw new RuntimeException("Incorrect result.");
             }
         }
     }
 
-    private static final long[][] longParams = {
-        {Long.MAX_VALUE, Long.MAX_VALUE},
-        {Long.MIN_VALUE, Long.MIN_VALUE},
-        {Long.MAX_VALUE, Long.MIN_VALUE},
-        {232L, 34L},
-        {-23L, 445L},
-        {-244L, -84L},
-        {233L, -99L}
-    };
-
-    private static long longTest(long a, long b) {
+    private static long test(long a, long b) {
         return (-a) * (-b);
     }
 
-    private static void runLongTest() {
-        for (int index = 0; index < intParams.length; index ++) {
-            long result = longTest(longParams[index][0], longParams[index][1]);
-            for (int i = 0; i < 20_000; i++) {
-                if (result != longTest(longParams[index][0], longParams[index][1])) {
-                    throw new RuntimeException("incorrect result");
-                }
+    private static void testLong(long a, long b) {
+        long expected = (-a) * (-b);
+        for (int i = 0; i < 20_000; i++) {
+            if (expected != test(a, b)) {
+                throw new RuntimeException("Incorrect result.");
             }
+        }
+    }
+
+    private static float test(float a, float b) {
+        return (-a) * (-b);
+    }
+
+    private static void testFloat(float a, float b) {
+        float expected = (-a) * (-b);
+        for (int i = 0; i < 20_000; i++) {
+            if (expected != test(a, b)) {
+                throw new RuntimeException("Incorrect result.");
+            }
+        }
+    }
+
+    private static double test(double a, double b) {
+        return (-a) * (-b);
+    }
+
+    private static void testDouble(double a, double b) {
+        double expected = (-a) * (-b);
+        for (int i = 0; i < 20_000; i++) {
+            if (expected != test(a, b)) {
+                throw new RuntimeException("Incorrect result.");
+            }
+        }
+    }
+
+    private static void runIntTests() {
+        for (int index = 0; index < TEST_COUNT; index ++) {
+            int a = random.nextInt();
+            int b = random.nextInt();
+            testInt(a, b);
+        }
+    }
+
+    private static void runLongTests() {
+        for (int index = 0; index < TEST_COUNT; index ++) {
+            long a = random.nextLong();
+            long b = random.nextLong();
+            testLong(a, b);
+        }
+    }
+
+    private static void runFloatTests() {
+        for (int index = 0; index < TEST_COUNT; index ++) {
+            float a = random.nextFloat();
+            float b = random.nextFloat();
+            testFloat(a, b);
+        }
+    }
+
+    private static void runDoubleTests() {
+        for (int index = 0; index < TEST_COUNT; index ++) {
+            double a = random.nextDouble();
+            double b = random.nextDouble();
+            testDouble(a, b);
         }
     }
 
     public static void main(String[] args) {
-        runIntTest();
-        runLongTest();
+        runIntTests();
+        runLongTests();
+        runFloatTests();
+        runDoubleTests();
     }
 }

@@ -63,9 +63,19 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t2 = phase->type( in(2) );
   Node *progress = NULL;        // Progress flag
 
-  // convert "max(a,b) * min(a,b)" into "a*b".
+  // convert "(-a)*(-b)" into "a*b"
   Node *in1 = in(1);
   Node *in2 = in(2);
+  if (in1->is_Sub() && in2->is_Sub()) {
+    Node* n11 = in1->in(1);
+    Node* n21 = in2->in(1);
+    if (phase->type(n11)->is_zero_type() &&
+        phase->type(n21)->is_zero_type()) {
+      return make(in1->in(2), in2->in(2));
+    }
+  }
+
+  // convert "max(a,b) * min(a,b)" into "a*b".
   if ((in(1)->Opcode() == max_opcode() && in(2)->Opcode() == min_opcode())
       || (in(1)->Opcode() == min_opcode() && in(2)->Opcode() == max_opcode())) {
     Node *in11 = in(1)->in(1);
@@ -201,18 +211,6 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // convert "(-a)*(-b)" into "a*b"
-  Node *in1 = in(1);
-  Node *in2 = in(2);
-  if (in1->Opcode() == Op_SubI && in2->Opcode() == Op_SubI) {
-    Node* n11 = in1->in(1);
-    Node* n21 = in2->in(1);
-    if (phase->type(n11)->higher_equal(TypeInt::ZERO) &&
-        phase->type(n21)->higher_equal(TypeInt::ZERO)) {
-      return new MulINode(in1->in(2), in2->in(2));
-    }
-  }
-
   // Swap constant to right
   jint con;
   if ((con = in(1)->find_int_con(0)) != 0) {
@@ -308,18 +306,6 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // convert "(-a)*(-b)" into "a*b"
-  Node *in1 = in(1);
-  Node *in2 = in(2);
-  if (in1->Opcode() == Op_SubL && in2->Opcode() == Op_SubL) {
-    Node* n11 = in1->in(1);
-    Node* n21 = in2->in(1);
-    if (phase->type(n11)->higher_equal(TypeLong::ZERO) &&
-        phase->type(n21)->higher_equal(TypeLong::ZERO)) {
-      return new MulLNode(in1->in(2), in2->in(2));
-    }
-  }
-
   // Swap constant to right
   jlong con;
   if ((con = in(1)->find_long_con(0)) != 0) {
