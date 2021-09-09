@@ -5368,6 +5368,7 @@ bool os::start_debugging(char *buf, int buflen) {
 //    of the stack size given in pthread_attr. We work around this for
 //    threads created by the VM. (We adapt bottom to be P1 and size accordingly.)
 //
+#ifndef ZERO
 static void current_stack_region(address * bottom, size_t * size) {
   if (os::is_primordial_thread()) {
     // primordial thread needs special handling because pthread_getattr_np()
@@ -5423,6 +5424,7 @@ size_t os::current_stack_size() {
   current_stack_region(&bottom, &size);
   return size;
 }
+#endif
 
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
