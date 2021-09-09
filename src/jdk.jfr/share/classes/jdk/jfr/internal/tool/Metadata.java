@@ -28,7 +28,6 @@ package jdk.jfr.internal.tool;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -46,6 +45,8 @@ import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.TypeLibrary;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 final class Metadata extends Command {
 
@@ -197,7 +198,7 @@ final class Metadata extends Command {
             optionCount = options.size();
         }
 
-        try (PrintWriter pw = new PrintWriter(System.out, false, Charset.forName("UTF-8"))) {
+        try (PrintWriter pw = new PrintWriter(System.out, false, UTF_8)) {
             PrettyWriter prettyWriter = new PrettyWriter(pw);
             prettyWriter.setShowIds(showIds);
             if (filter != null) {

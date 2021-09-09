@@ -121,6 +121,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         vmGC(map); // vm.gc.X = true/false
+        vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
 
         dump(map.map);
@@ -288,6 +289,34 @@ public class VMProps implements Callable<Map<String, String>> {
                     () -> "" + (gc.isSupported()
                             && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
                             && (gc.isSelected() || GC.isSelectedErgonomically())));
+        }
+    }
+
+    /**
+     * "jtreg -vmoptions:-Dtest.cds.runtime.options=..." can be used to specify
+     * the GC type to be used when running with a CDS archive. Set "vm.gc" accordingly,
+     * so that tests that need to explicitly choose the GC type can be excluded
+     * with "@requires vm.gc == null".
+     *
+     * @param map - property-value pairs
+     */
+    protected void vmGCforCDS(SafeMap map) {
+        if (!GC.isSelectedErgonomically()) {
+            // The GC has been explicitly specified on the command line, so
+            // jtreg will set the "vm.gc" property. Let's not interfere with it.
+            return;
+        }
+
+        String GC_PREFIX  = "-XX:+Use";
+        String GC_SUFFIX  = "GC";
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts != null) {
+            for (String opt : jtropts.split(",")) {
+                if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX)) {
+                    String gc = opt.substring(GC_PREFIX.length(), opt.length() - GC_SUFFIX.length());
+                    map.put("vm.gc", () -> gc);
+                }
+            }
         }
     }
 

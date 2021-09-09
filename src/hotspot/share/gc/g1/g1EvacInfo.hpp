@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1EVACUATIONINFO_HPP
-#define SHARE_GC_G1_G1EVACUATIONINFO_HPP
+#ifndef SHARE_GC_G1_G1EVACINFO_HPP
+#define SHARE_GC_G1_G1EVACINFO_HPP
 
 #include "memory/allocation.hpp"
 
-class G1EvacuationInfo : public StackObj {
+class G1EvacInfo : public StackObj {
   uint _collectionset_regions;
   uint _allocation_regions;
   size_t _collectionset_used_before;
@@ -37,7 +37,7 @@ class G1EvacuationInfo : public StackObj {
   uint   _regions_freed;
 
 public:
-  G1EvacuationInfo() :
+  G1EvacInfo() :
     _collectionset_regions(0), _allocation_regions(0), _collectionset_used_before(0),
     _collectionset_used_after(0), _alloc_regions_used_before(0),
     _bytes_used(0), _regions_freed(0) { }
@@ -79,4 +79,4 @@ public:
   uint   regions_freed()             { return _regions_freed; }
 };
 
-#endif // SHARE_GC_G1_G1EVACUATIONINFO_HPP
+#endif // SHARE_GC_G1_G1EVACINFO_HPP
