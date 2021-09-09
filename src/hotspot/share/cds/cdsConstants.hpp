@@ -22,26 +22,8 @@
  *
  */
 
-#ifndef SHARE_CDS_CDSOFFSETS_HPP
-#define SHARE_CDS_CDSOFFSETS_HPP
-
-#include "memory/allocation.hpp"
-
-class CDSOffsets: public CHeapObj<mtInternal> {
- private:
-  char* _name;
-  int   _offset;
-  CDSOffsets* _next;
-  static CDSOffsets* _all;  // sole list for cds
- public:
-  CDSOffsets(const char* name, int offset, CDSOffsets* next);
-
-  char* get_name() const { return _name; }
-  int   get_offset() const { return _offset; }
-  CDSOffsets* next() const { return _next; }
-  void add_end(CDSOffsets* n);
-
-  static int find_offset(const char* name);
-};
-
-#endif // SHARE_CDS_CDSOFFSETS_HPP
+#ifndef SHARE_CDS_CDSCONSTANTS_HPP
+#define SHARE_CDS_CDSCONSTANTS_HPP
+int    get_cds_constant(const char* name);
+size_t get_cds_offset(const char* name);
+#endif // SHARE_CDS_CDSCONSTANTS_HPP
