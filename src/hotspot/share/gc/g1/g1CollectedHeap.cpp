@@ -2326,11 +2326,11 @@ void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *c
   _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id);
 }
 
-void G1CollectedHeap::par_iterate_regions_array_part_from(HeapRegionClosure* cl,
-                                                          HeapRegionClaimer* hr_claimer,
-                                                          const uint* regions,
-                                                          size_t length,
-                                                          uint worker_id) const {
+void G1CollectedHeap::par_iterate_regions_array(HeapRegionClosure* cl,
+                                                HeapRegionClaimer* hr_claimer,
+                                                const uint regions[],
+                                                size_t length,
+                                                uint worker_id) const {
   assert_at_safepoint();
   if (length == 0) {
     return;
