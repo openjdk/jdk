@@ -23,7 +23,9 @@
 
 import static java.lang.String.format;
 
-import static org.testng.Assert.fail;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -72,22 +74,12 @@ public class TransferTo {
         };
     }
 
-    @Test(dataProvider = "streamCombinations", expectedExceptions = NullPointerException.class)
-    public void testNullPointerExceptionWithEmptyStream(InputStreamProvider inputStreamProvider,
+    @Test(dataProvider = "streamCombinations")
+    public void testNullPointerException(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider) throws Exception {
-        inputStreamProvider.input().transferTo(null);
-    }
-
-    @Test(dataProvider = "streamCombinations", expectedExceptions = NullPointerException.class)
-    public void testNullPointerExceptionWithSingleByteStream(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider) throws Exception {
-        inputStreamProvider.input((byte) 1).transferTo(null);
-    }
-
-    @Test(dataProvider = "streamCombinations", expectedExceptions = NullPointerException.class)
-    public void testNullPointerExceptionWithTwoByteStream(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider) throws Exception {
-        inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null);
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input().transferTo(null));
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1).transferTo(null));
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null));
     }
 
     @Test(dataProvider = "streamCombinations")
@@ -131,12 +123,11 @@ public class TransferTo {
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
 
-            if (reported != count)
-                fail(format("reported %d bytes but should report %d", reported, count));
+            assertEquals(reported, count, format("reported %d bytes but should report %d", reported, count));
 
             byte[] outBytes = recorder.get().get();
-            if (!Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count))
-                fail(format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
+            assertTrue(Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count),
+                format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
         }
     }
 
