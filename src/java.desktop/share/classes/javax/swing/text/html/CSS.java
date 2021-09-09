@@ -35,6 +35,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -1546,7 +1547,7 @@ public class CSS implements Serializable {
     static String[] parseStrings(String value) {
         int         current, last;
         int         length = (value == null) ? 0 : value.length();
-        Vector<String> temp = new Vector<String>(4);
+        ArrayList<String> temp = new ArrayList<String>(4);
 
         current = 0;
         while (current < length) {
@@ -1569,12 +1570,11 @@ public class CSS implements Serializable {
                 current++;
             }
             if (last != current) {
-                temp.addElement(value.substring(last, current));
+                temp.add(value.substring(last, current));
             }
             current++;
         }
-        String[] retValue = new String[temp.size()];
-        temp.copyInto(retValue);
+        String[] retValue = temp.toArray(new String[0]);
         return retValue;
     }
 
