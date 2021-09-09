@@ -252,7 +252,7 @@ public class TestSnippetTag extends JavadocTester {
                 forEachNumbered(inputs, (i, n) -> {
                     methods.append(
                         """
-                                          
+
                         /**
                         %s*/
                         public void case%s() {}
