@@ -232,7 +232,7 @@ public class AquaImageFactory {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
         Icon invertedImage;
-        Icon disabledIcon;
+        private Icon disabledIcon;
         public InvertableImageIcon(final Image image) {
             super(image);
         }
@@ -241,7 +241,7 @@ public class AquaImageFactory {
         public void paintIcon(Component c, Graphics g, int x, int y) {
             if (!c.isEnabled()) {
                 if (disabledIcon == null) {
-                    disabledIcon = new ImageIconUIResource(GrayFilter.
+                    disabledIcon = new ImageIcon(GrayFilter.
                             createDisabledImage(((ImageIcon)this).getImage()));
                 }
                 disabledIcon.paintIcon(c, g, x, y);

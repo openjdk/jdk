@@ -24,7 +24,7 @@
  * @test
  * @requires (os.family == "mac")
  * @bug 8268084
- * @summary  Verifies disabled JMenuItem arrow is disabled
+ * @summary  Verifies disabled JMenuItem arrow and check is disabled
  * @run main/manual JMenuItemDisableArrowButtonTest
  */
 import java.util.concurrent.CountDownLatch;
