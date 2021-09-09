@@ -1155,7 +1155,7 @@ public:
     collection_set_iterate_increment_from(blk, NULL, worker_id);
   }
   void collection_set_iterate_increment_from(HeapRegionClosure *blk, HeapRegionClaimer* hr_claimer, uint worker_id);
-  // Iterate an array of region indexes given by offset and length, applying
+  // Iterate over the array of region indexes, uint regions[length], applying
   // the given HeapRegionClosure on each region. The worker_id will determine where
   // to start the iteration to allow for more efficient parallel iteration.
   void par_iterate_regions_array(HeapRegionClosure* cl,
