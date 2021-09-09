@@ -46,7 +46,7 @@ import java.util.TimeZone;
 
 /*
  * @test
- * @summary tests that the Properties.store() APIs generate output that is reproducible
+ * @summary Tests that the Properties.store() APIs generate output that is reproducible
  * @bug 8231640
  * @library /test/lib
  * @run driver StoreReproducibilityTest
