@@ -26,7 +26,7 @@
 #ifndef PRODUCT
 #ifndef ZERO
 
-#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "unittest.hpp"
