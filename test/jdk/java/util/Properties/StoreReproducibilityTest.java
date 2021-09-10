@@ -117,7 +117,7 @@ public class StoreReproducibilityTest {
                 grant {
                     // test writes/stores to a file, so FilePermission
                     permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // explicitly grant read permission on java.util.Properties.storeDate system property 
+                    // explicitly grant read permission on java.util.Properties.storeDate system property
                     // to verify store() APIs work fine
                     permission java.util.PropertyPermission "java.util.Properties.storeDate", "read";
                 };
@@ -162,7 +162,7 @@ public class StoreReproducibilityTest {
                     // test writes/stores to a file, so FilePermission
                     permission java.io.FilePermission "<<ALL FILES>>", "read,write";
                     // no other grants, not even "read" java.util.Properties.storeDate system property.
-                    // test should still work fine and the date comment should correspond to the value of 
+                    // test should still work fine and the date comment should correspond to the value of
                     // java.util.Properties.storeDate system property.
                 };
                 """));
