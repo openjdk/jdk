@@ -24,10 +24,11 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 8273021
  * @summary C2: Improve Add and Xor ideal optimizations
  * @library /test/lib
- * @run main/othervm -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ * @run main/othervm -XX:-TieredCompilation
  *                   -XX:CompileCommand=dontinline,compiler.c2.TestAddXorIdeal::test*
  *                   compiler.c2.TestAddXorIdeal
  */
@@ -36,6 +37,7 @@ package compiler.c2;
 import java.util.Random;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestAddXorIdeal {
 
@@ -72,26 +74,26 @@ public class TestAddXorIdeal {
     }
 
     public static void main(String... args) {
-        Random random = new Random();
-        int n = 0;
-        long n1 = 0;
+        Random random = Utils.getRandomInstance();
         for (int i = -5_000; i < 5_000; i++) {
+            int n = 0;
+            long n1 = 0;
             n = random.nextInt();
-            Asserts.assertTrue(test1(i + n) == -(i + n));
+            Asserts.assertTrue(test1(n) == -n);
             n = random.nextInt();
-            Asserts.assertTrue(test2(i - n) == -(i - n));
+            Asserts.assertTrue(test2(n) == -n);
             n1 = random.nextLong();
-            Asserts.assertTrue(test3(i + n1) == -(i + n1));
+            Asserts.assertTrue(test3(n1) == -n1);
             n1 = random.nextLong();
-            Asserts.assertTrue(test4(i - n1) == -(i - n1));
+            Asserts.assertTrue(test4(n1) == -n1);
             n = random.nextInt();
-            Asserts.assertTrue(test5(i + n) == -(i + n));
+            Asserts.assertTrue(test5(n) == -n);
             n = random.nextInt();
-            Asserts.assertTrue(test6(i - n) == -(i - n));
+            Asserts.assertTrue(test6(n) ==  -n);
             n1 = random.nextLong();
-            Asserts.assertTrue(test7(i + n1) == -(i + n1));
+            Asserts.assertTrue(test7(n1) == -n1);
             n1 = random.nextLong();
-            Asserts.assertTrue(test8(i - n1) == -(i - n1));
+            Asserts.assertTrue(test8(n1) == -n1);
         }
     }
 }
