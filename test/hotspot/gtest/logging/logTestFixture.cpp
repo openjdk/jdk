@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,15 @@ void LogTestFixture::restore_config() {
     *str++ = '\0';
 
     char* decorators = str;
+    str = strchr(str, ' ');
+    if (str != NULL) {
+      *str = '\0';
+    }
 
+// TODO: Restore following code if options for existing log output can be changed.
+//       (Output options for existing outputs are ignored.)
+//       It will attempt to restore "foldmultilines=false" (defined in LogFileStreamOutput)
+#if 0
     char* options = NULL;
     str = strchr(str, ' ');
     if (str != NULL) {
@@ -105,6 +113,8 @@ void LogTestFixture::restore_config() {
     }
 
     set_log_config(name, selection, decorators, options != NULL ? options : "");
+#endif
+    set_log_config(name, selection, decorators, NULL);
   }
 }
 
