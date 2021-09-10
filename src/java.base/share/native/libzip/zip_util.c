@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,11 @@ static void freeCEN(jzfile *);
 #define PATH_MAX 1024
 #endif
 
+#ifdef WIN32
+static int RETRY_MAX = 5;
+static DWORD RETRY_INTERVAL = 250;
+#endif
+
 static jint INITIAL_META_COUNT = 2;   /* initial number of entries in meta name array */
 
 /*
@@ -102,7 +107,6 @@ ZFILE_Open(const char *fname, int flags) {
 #ifdef WIN32
     WCHAR *wfname, *wprefixed_fname;
     size_t fname_length;
-    jlong fhandle;
     const DWORD access =
         (flags & O_RDWR)   ? (GENERIC_WRITE | GENERIC_READ) :
         (flags & O_WRONLY) ?  GENERIC_WRITE :
@@ -125,43 +129,63 @@ ZFILE_Open(const char *fname, int flags) {
     const DWORD flagsAndAttributes = maybeWriteThrough | maybeDeleteOnClose;
 
     fname_length = strlen(fname);
-    if (fname_length < MAX_PATH) {
-        return (jlong)CreateFile(
-            fname,              /* path name in multibyte char */
-            access,             /* Read and/or write permission */
-            sharing,            /* File sharing flags */
-            NULL,               /* Security attributes */
-            disposition,        /* creation disposition */
-            flagsAndAttributes, /* flags and attributes */
-            NULL);
-    } else {
-        /* Get required buffer size to convert to Unicode */
-        int wfname_len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
-                                             fname, -1, NULL, 0);
-        if (wfname_len == 0) {
-            return (jlong)INVALID_HANDLE_VALUE;
-        }
-        if ((wfname = (WCHAR*)malloc(wfname_len * sizeof(WCHAR))) == NULL) {
-            return (jlong)INVALID_HANDLE_VALUE;
-        }
-        if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
-                                fname, -1, wfname, wfname_len) == 0) {
+    HANDLE hFile = INVALID_HANDLE_VALUE;
+    int retry = 0;
+    while (retry < RETRY_MAX) {
+        if (fname_length < MAX_PATH) {
+            hFile = CreateFile(
+                fname,              /* path name in multibyte char */
+                access,             /* Read and/or write permission */
+                sharing,            /* File sharing flags */
+                NULL,               /* Security attributes */
+                disposition,        /* creation disposition */
+                flagsAndAttributes, /* flags and attributes */
+                NULL);
+        } else {
+            /* Get required buffer size to convert to Unicode */
+            int wfname_len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
+                                                 fname, -1, NULL, 0);
+            if (wfname_len == 0) {
+                return (jlong)INVALID_HANDLE_VALUE;
+            }
+            if ((wfname = (WCHAR*)malloc(wfname_len * sizeof(WCHAR))) == NULL) {
+                return (jlong)INVALID_HANDLE_VALUE;
+            }
+            if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
+                                    fname, -1, wfname, wfname_len) == 0) {
+                free(wfname);
+                return (jlong)INVALID_HANDLE_VALUE;
+            }
+            wprefixed_fname = getPrefixed(wfname, (int)fname_length);
+            hFile = CreateFileW(
+                wprefixed_fname,    /* Wide char path name */
+                access,             /* Read and/or write permission */
+                sharing,            /* File sharing flags */
+                NULL,               /* Security attributes */
+                disposition,        /* creation disposition */
+                flagsAndAttributes, /* flags and attributes */
+                NULL);
             free(wfname);
-            return (jlong)INVALID_HANDLE_VALUE;
+            free(wprefixed_fname);
         }
-        wprefixed_fname = getPrefixed(wfname, (int)fname_length);
-        fhandle = (jlong)CreateFileW(
-            wprefixed_fname,    /* Wide char path name */
-            access,             /* Read and/or write permission */
-            sharing,            /* File sharing flags */
-            NULL,               /* Security attributes */
-            disposition,        /* creation disposition */
-            flagsAndAttributes, /* flags and attributes */
-            NULL);
-        free(wfname);
-        free(wprefixed_fname);
-        return fhandle;
+        if (hFile == INVALID_HANDLE_VALUE) {
+            DWORD dwErr = GetLastError();
+            if (dwErr == ERROR_SHARING_VIOLATION) {
+                // sharing error occurd.
+                if (++retry < RETRY_MAX) {
+                    // retry CreateFile again.
+                    Sleep(RETRY_INTERVAL);
+                    continue;
+                }
+            } else {
+                // nomal error occured.
+                // dispose of this error in caller function(winFileHandleOpen).
+                break;
+            }
+        }
+        break;
     }
+    return (ZFILE)hFile;
 #else
     return open(fname, flags, 0);
 #endif

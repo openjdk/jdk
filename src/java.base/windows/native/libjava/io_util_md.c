@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,9 @@
 
 
 static DWORD MAX_INPUT_EVENTS = 2000;
+
+static int RETRY_MAX = 5;
+static DWORD RETRY_INTERVAL = 250;
 
 /* If this returns NULL then an exception is pending */
 WCHAR*
@@ -213,6 +216,33 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
     return pathbuf;
 }
 
+static HANDLE
+invoke_CreateFileW(LPWSTR fname, DWORD access, DWORD share, LPSECURITY_ATTRIBUTES security, DWORD creation, DWORD flags, HANDLE template)
+{
+    HANDLE h = INVALID_HANDLE_VALUE;
+    int retry = 0;
+    while (retry < RETRY_MAX) {
+        h = CreateFileW((LPCWSTR)fname, access, share, security, creation, flags, template);
+        if (h == INVALID_HANDLE_VALUE) {
+            DWORD error = GetLastError();
+            if (error == ERROR_SHARING_VIOLATION) {
+                // sharing error occurd.
+                if (++retry < RETRY_MAX) {
+                    // retry CreateFile again.
+                    Sleep(RETRY_INTERVAL);
+                    continue;
+                }
+            } else {
+                // nomal error occured.
+                // dispose of this error in caller function(winFileHandleOpen).
+                break;
+            }
+        }
+        break;
+    }
+    return h;
+}
+
 FD winFileHandleOpen(JNIEnv *env, jstring path, int flags)
 {
     const DWORD access =
@@ -242,7 +272,7 @@ FD winFileHandleOpen(JNIEnv *env, jstring path, int flags)
         /* Exception already pending */
         return -1;
     }
-    h = CreateFileW(
+    h = invoke_CreateFileW(
         pathbuf,            /* Wide char path name */
         access,             /* Read and/or write permission */
         sharing,            /* File sharing flags */
