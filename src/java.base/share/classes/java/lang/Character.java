@@ -11299,8 +11299,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * Returns the name of the specified character
      * {@code codePoint}, or null if the code point is
      * {@link #UNASSIGNED unassigned}.
-     *
-     * @apiNote If the specified character is not assigned a name by
+     * <p>
+     * If the specified character is not assigned a name by
      * the <i>UnicodeData</i> file (part of the Unicode Character
      * Database maintained by the Unicode Consortium), the returned
      * name is the same as the result of the expression:
@@ -11350,8 +11350,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
     /**
      * Returns the code point value of the Unicode character specified by
      * the given character name.
-     *
-     * @apiNote If a character is not assigned a name by the <i>UnicodeData</i>
+     * <p>
+     * If a character is not assigned a name by the <i>UnicodeData</i>
      * file (part of the Unicode Character Database maintained by the Unicode
      * Consortium), its name is defined as the result of the expression:
      *
