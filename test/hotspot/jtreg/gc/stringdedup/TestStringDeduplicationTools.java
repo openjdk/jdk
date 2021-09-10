@@ -99,8 +99,8 @@ class TestStringDeduplicationTools {
         public void handleNotification(Notification n, Object o) {
             if (n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
                 GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
-                // Shenandoah GC also reports GC pauses, skip them
-                if (info.getGcName().startsWith("Shenandoah")) {
+                // Shenandoah and Z GC also report GC pauses, skip them
+                if (info.getGcName().startsWith("Shenandoah") || info.getGcName().startsWith("ZGC")) {
                     if ("end of GC cycle".equals(info.getGcAction())) {
                         gcCount++;
                     }
