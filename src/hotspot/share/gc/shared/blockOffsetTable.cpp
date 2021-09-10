@@ -474,12 +474,11 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
 #endif
 }
 
-HeapWord* BlockOffsetArrayContigSpace::initialize_threshold() {
+void BlockOffsetArrayContigSpace::initialize_threshold() {
   _next_offset_index = _array->index_for(_bottom);
   _next_offset_index++;
   _next_offset_threshold =
     _array->address_for_index(_next_offset_index);
-  return _next_offset_threshold;
 }
 
 void BlockOffsetArrayContigSpace::zero_bottom_entry() {
