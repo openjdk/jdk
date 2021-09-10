@@ -518,50 +518,47 @@ public final class RemoteRecordingStream implements EventStream {
         this.endTime = endTime;
     }
 
-    @Override
-    public void start() {
-        synchronized (lock) { // ensure one starter
-            ensureStartable();
-            try {
-                try {
-                    mbean.startRecording(recordingId);
-                } catch (IllegalStateException ise) {
-                    throw ise;
-                }
-                startDownload();
-            } catch (Exception e) {
-                ManagementSupport.logDebug(e.getMessage());
-                close();
-                return;
-            }
-            stream.start();
-            started = true;
-        }
-    }
+	@Override
+	public void start() {
+		ensureStartable();
+		try {
+			try {
+				mbean.startRecording(recordingId);
+			} catch (IllegalStateException ise) {
+				throw ise;
+			}
+			startDownload();
+		} catch (Exception e) {
+			ManagementSupport.logDebug(e.getMessage());
+			close();
+			return;
+		}
+		stream.start();
+	}
 
-    @Override
-    public void startAsync() {
-        synchronized (lock) { // ensure one starter
-            ensureStartable();
-            stream.startAsync();
-            try {
-                mbean.startRecording(recordingId);
-                startDownload();
-            } catch (Exception e) {
-                ManagementSupport.logDebug(e.getMessage());
-                close();
-            }
-            started = true;
-        }
-    }
+	@Override
+	public void startAsync() {
+		ensureStartable();
+		stream.startAsync();
+		try {
+			mbean.startRecording(recordingId);
+			startDownload();
+		} catch (Exception e) {
+			ManagementSupport.logDebug(e.getMessage());
+			close();
+		}
+	}
 
     private void ensureStartable() {
-        if (closed) {
-            throw new IllegalStateException("Event stream is closed");
-        }
-        if (started) {
-            throw new IllegalStateException("Event stream can only be started once");
-        }
+    	synchronized (lock) {
+            if (closed) {
+                throw new IllegalStateException("Event stream is closed");
+            }
+            if (started) {
+                throw new IllegalStateException("Event stream can only be started once");
+            }
+            started = true;
+		}
     }
 
     /**
