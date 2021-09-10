@@ -116,13 +116,12 @@ public:
 };
 // Definitions of WorkGang methods.
 
-WorkGang::WorkGang(const char* name, uint workers, bool are_ConcurrentGC_threads) :
+WorkGang::WorkGang(const char* name, uint workers) :
     _workers(NULL),
     _total_workers(workers),
     _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
     _created_workers(0),
     _name(name),
-    _are_ConcurrentGC_threads(are_ConcurrentGC_threads),
     _dispatcher(new GangTaskDispatcher())
   { }
 
