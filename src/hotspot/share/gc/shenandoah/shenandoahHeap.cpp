@@ -1321,7 +1321,8 @@ void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_sta
   // This populates the work stack with initial objects
   // It is important to relinquish the associated locks before diving
   // into heap dumper
-  ShenandoahHeapIterationRootScanner rp;
+  uint n_workers = safepoint_workers() != NULL ? safepoint_workers()->active_workers() : 1;
+  ShenandoahHeapIterationRootScanner rp(n_workers);
   rp.roots_do(oops);
 }
 
