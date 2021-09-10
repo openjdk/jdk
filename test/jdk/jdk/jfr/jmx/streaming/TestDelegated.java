@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,16 @@ package jdk.jfr.jmx.streaming;
 
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.management.MBeanServerConnection;
 
 import jdk.jfr.Event;
+import jdk.jfr.EventType;
+import jdk.jfr.FlightRecorder;
+import jdk.jfr.consumer.MetadataEvent;
 import jdk.management.jfr.RemoteRecordingStream;
 
 /**
@@ -57,12 +62,15 @@ public class TestDelegated {
         testOrdered();
         testOnEvent();
         testOnEventName();
+        testonMetadata();
         testOnFlush();
         testOnError();
         testOnClose();
         testSetMaxAge();
         testAwaitTermination();
         testAwaitTerminationWithDuration();
+        testSetStartTime();
+        testSetEndTime();
     }
 
     private static void testSetMaxAge() throws Exception {
@@ -166,8 +174,32 @@ public class TestDelegated {
             e.commit();
             latch.await();
         }
-
     }
+    
+
+    private static void testonMetadata() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        var holder  = new AtomicReference<MetadataEvent>();
+        try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+            FlightRecorder.register(TestDelegatedEvent.class);
+            rs.onMetadata(e -> {
+                holder.set(e);
+                latch.countDown();
+            });
+            rs.startAsync();
+            TestDelegatedEvent e = new TestDelegatedEvent();
+            e.commit();
+            latch.await();
+            MetadataEvent event = holder.get();
+            for (EventType t : event.getEventTypes()) {
+                if (t.getName().equals(TestDelegatedEvent.class.getName())) {
+                    return; // OK
+                }
+            }
+            throw new Exception("Could not find metadata for event " + TestDelegatedEvent.class.getName());
+        }
+    }
+
 
     private static void testOrdered() throws Exception {
         try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
@@ -196,6 +228,34 @@ public class TestDelegated {
             if (rs.remove(r2)) {
                 throw new Exception("Expected remove to return false");
             }
+        }
+    }
+
+    private static void testSetEndTime() throws Exception {
+        Instant t = Instant.now().plus(Duration.ofDays(1));
+        try (RemoteRecordingStream stream = new RemoteRecordingStream(CONNECTION)) {
+            stream.setEndTime(t);
+            stream.onEvent(e -> {
+                stream.close();
+            });
+            stream.startAsync();
+            TestDelegatedEvent e = new TestDelegatedEvent();
+            e.commit();
+            stream.awaitTermination();
+        }
+    }
+
+    private static void testSetStartTime() throws Exception {
+        Instant t = Instant.now().minus(Duration.ofDays(1));
+        try (RemoteRecordingStream stream = new RemoteRecordingStream(CONNECTION)) {
+            stream.setStartTime(t);
+            stream.onEvent(e -> {
+                stream.close();
+            });
+            stream.startAsync();
+            TestDelegatedEvent e = new TestDelegatedEvent();
+            e.commit();
+            stream.awaitTermination();
         }
     }
 }
