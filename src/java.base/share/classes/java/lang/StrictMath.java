@@ -1461,8 +1461,8 @@ public final class StrictMath {
     /**
      * Returns the ceiling modulus of the {@code long} arguments.
      * <p>
-     * The floor modulus is {@code r = x - (ceilDiv(x, y) * y)},
-     * has the same sign as the divisor {@code y} or is zero, and
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
      * is in the range of {@code -abs(y) < r < +abs(y)}.
      *
      * <p>
