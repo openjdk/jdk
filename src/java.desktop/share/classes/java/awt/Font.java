@@ -1721,8 +1721,7 @@ public class Font implements java.io.Serializable
 
         if (sizeIndex > 0 && sizeIndex+1 < strlen) {
             try {
-                fontSize =
-                    Integer.valueOf(str.substring(sizeIndex+1)).intValue();
+                fontSize = Integer.parseInt(str.substring(sizeIndex+1));
                 if (fontSize <= 0) {
                     fontSize = 12;
                 }

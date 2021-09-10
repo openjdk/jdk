@@ -262,8 +262,7 @@ void WriteClosure::do_oop(oop* o) {
   if (*o == NULL) {
     _dump_region->append_intptr_t(0);
   } else {
-    assert(HeapShared::is_heap_object_archiving_allowed(),
-           "Archiving heap object is not allowed");
+    assert(HeapShared::can_write(), "sanity");
     _dump_region->append_intptr_t(
       (intptr_t)CompressedOops::encode_not_null(*o));
   }
@@ -308,13 +307,11 @@ void ReadClosure::do_tag(int tag) {
 
 void ReadClosure::do_oop(oop *p) {
   narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-  if (CompressedOops::is_null(o) || !HeapShared::open_regions_mapped()) {
+  if (CompressedOops::is_null(o) || !HeapShared::is_fully_available()) {
     *p = NULL;
   } else {
-    assert(HeapShared::is_heap_object_archiving_allowed(),
-           "Archived heap object is not allowed");
-    assert(HeapShared::open_regions_mapped(),
-           "Open archive heap region is not mapped");
+    assert(HeapShared::can_use(), "sanity");
+    assert(HeapShared::is_fully_available(), "must be");
     *p = HeapShared::decode_from_archive(o);
   }
 }

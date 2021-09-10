@@ -576,6 +576,46 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
     }
 
+    /**
+     * Sets the current thread's {@code JavaThread::_jvmci_reserved_oop<id>} field to {@code value}.
+     *
+     * @throws IllegalArgumentException if the {@code JavaThread::_jvmci_reserved_oop<id>} field
+     *             does not exist
+     */
+    public void setThreadLocalObject(int id, Object value) {
+        compilerToVm.setThreadLocalObject(id, value);
+    }
+
+    /**
+     * Get the value of the current thread's {@code JavaThread::_jvmci_reserved_oop<id>} field.
+     *
+     * @throws IllegalArgumentException if the {@code JavaThread::_jvmci_reserved_oop<id>} field
+     *             does not exist
+     */
+    public Object getThreadLocalObject(int id) {
+        return compilerToVm.getThreadLocalObject(id);
+    }
+
+    /**
+     * Sets the current thread's {@code JavaThread::_jvmci_reserved<id>} field to {@code value}.
+     *
+     * @throws IllegalArgumentException if the {@code JavaThread::_jvmci_reserved<id>} field does
+     *             not exist
+     */
+    public void setThreadLocalLong(int id, long value) {
+        compilerToVm.setThreadLocalLong(id, value);
+    }
+
+    /**
+     * Get the value of the current thread's {@code JavaThread::_jvmci_reserved<id>} field.
+     *
+     * @throws IllegalArgumentException if the {@code JavaThread::_jvmci_reserved<id>} field does
+     *             not exist
+     */
+    public long getThreadLocalLong(int id) {
+        return compilerToVm.getThreadLocalLong(id);
+    }
+
     HotSpotResolvedJavaType createClass(Class<?> javaClass) {
         if (javaClass.isPrimitive()) {
             return HotSpotResolvedPrimitiveType.forKind(JavaKind.fromJavaClass(javaClass));

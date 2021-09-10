@@ -48,6 +48,8 @@ const char *IdealGraphPrinter::NODE_ELEMENT = "node";
 const char *IdealGraphPrinter::NODES_ELEMENT = "nodes";
 const char *IdealGraphPrinter::REMOVE_EDGE_ELEMENT = "removeEdge";
 const char *IdealGraphPrinter::REMOVE_NODE_ELEMENT = "removeNode";
+const char *IdealGraphPrinter::COMPILATION_ID_PROPERTY = "compilationId";
+const char *IdealGraphPrinter::COMPILATION_OSR_PROPERTY = "osr";
 const char *IdealGraphPrinter::METHOD_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::METHOD_IS_PUBLIC_PROPERTY = "public";
 const char *IdealGraphPrinter::METHOD_IS_STATIC_PROPERTY = "static";
@@ -312,6 +314,12 @@ void IdealGraphPrinter::begin_method() {
   if (method->flags().is_static()) {
     print_prop(METHOD_IS_STATIC_PROPERTY, TRUE_VALUE);
   }
+
+  if (C->is_osr_compilation()) {
+      print_prop(COMPILATION_OSR_PROPERTY, TRUE_VALUE);
+  }
+
+  print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
 
   tail(PROPERTIES_ELEMENT);
 

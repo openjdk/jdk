@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public:
   }
 
   // Allocation
-  HeapWord* allocate_work(size_t size);
+  HeapWord* allocate_work(size_t size, bool verbose = true);
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual HeapWord* allocate_new_tlab(size_t min_size,
                                       size_t requested_size,
@@ -130,6 +130,10 @@ public:
 
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
+
+  // Support for loading objects from CDS archive into the heap
+  virtual bool can_load_archived_objects() const { return true; }
+  virtual HeapWord* allocate_loaded_archive_space(size_t size);
 
   virtual void print_on(outputStream* st) const;
   virtual void print_tracing_info() const;
