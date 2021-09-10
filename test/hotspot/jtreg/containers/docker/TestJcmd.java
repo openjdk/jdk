@@ -159,7 +159,6 @@ public class TestJcmd {
             .addJavaOpts("-cp", "/test-classes/")
             .addDockerOpts("--cap-add=SYS_PTRACE")
             .addDockerOpts("--name", CONTAINER_NAME)
-            .addJavaOpts("-XX:+UsePerfData") // TODO: do we really need this one
             .addClassOptions("" + TIME_TO_RUN_CONTAINER_PROCESS);
 
         // avoid large Xmx
