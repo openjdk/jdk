@@ -87,7 +87,7 @@ public class FilterInputStream extends InputStream {
      * @implSpec
      * This method simply performs the call
      * {@code read(b, 0, b.length)} and returns
-     * the  result. It is important that it does
+     * the result. It is important that it does
      * <i>not</i> do {@code in.read(b)} instead;
      * certain subclasses of  {@code FilterInputStream}
      * depend on the implementation strategy actually
