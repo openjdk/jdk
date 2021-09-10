@@ -290,8 +290,14 @@ public class LWWindowPeer
         super.setVisibleImpl(visible);
         // TODO: update graphicsConfig, see 4868278
         if (visible) {
-            // Set correct background for a window before making it visible
-            platformWindow.setOpaque(!isTranslucent());
+            // Set correct background for a window before making it visible.
+            // It is necessary for some pipelines (e.g., metal) to eliminate
+            // flashing effect (when initial background color replaced with
+            // the content layer's color)
+            Color color = getBackground();
+            if (color != null) {
+                platformWindow.setBackground(color);
+            }
         }
         platformWindow.setVisible(visible);
         if (isSimpleWindow()) {

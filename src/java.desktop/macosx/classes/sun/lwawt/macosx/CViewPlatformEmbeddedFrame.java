@@ -25,6 +25,7 @@
 
 package sun.lwawt.macosx;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.GraphicsDevice;
@@ -179,6 +180,10 @@ public class CViewPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public void setOpaque(boolean isOpaque) {
+    }
+
+    @Override
+    public void setBackground(Color color) {
     }
 
     @Override
