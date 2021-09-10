@@ -2001,8 +2001,8 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 #endif
 WB_END
 
-WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
-  return HeapShared::can_use();
+WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
+  return HeapShared::can_write();
 WB_END
 
 
@@ -2640,7 +2640,7 @@ static JNINativeMethod methods[] = {
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
   {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
-  {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
+  {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },

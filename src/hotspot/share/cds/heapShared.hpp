@@ -155,7 +155,6 @@ public:
 
   // Can this VM write heap regions into the CDS archive? Currently only G1+compressed{oops,cp}
   static bool can_write() {
-    assert(DumpSharedSpaces, "only when writing static archive");
     CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
     NOT_CDS_JAVA_HEAP(return false;)
   }
