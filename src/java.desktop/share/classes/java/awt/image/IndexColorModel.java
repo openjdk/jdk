@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1536,14 +1536,13 @@ public class IndexColorModel extends ColorModel {
      * {@code ColorModel} object.
      */
     public String toString() {
-       return new String("IndexColorModel: #pixelBits = "+pixel_bits
-                         + " numComponents = "+numComponents
-                         + " color space = "+colorSpace
-                         + " transparency = "+transparency
-                         + " transIndex   = "+transparent_index
-                         + " has alpha = "+supportsAlpha
-                         + " isAlphaPre = "+isAlphaPremultiplied
-                         );
+       return "IndexColorModel: #pixelBits = " + pixel_bits
+               + " numComponents = " + numComponents
+               + " color space = " + colorSpace
+               + " transparency = " + transparency
+               + " transIndex   = " + transparent_index
+               + " has alpha = " + supportsAlpha
+               + " isAlphaPre = " + isAlphaPremultiplied;
     }
 
     /**

@@ -496,7 +496,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 
   _max_workers = MAX2(_max_workers, 1U);
   _workers = new ShenandoahWorkGang("Shenandoah GC Threads", _max_workers,
-                            /* are_GC_task_threads */ true,
                             /* are_ConcurrentGC_threads */ true);
   if (_workers == NULL) {
     vm_exit_during_initialization("Failed necessary allocation.");
@@ -507,7 +506,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   if (ParallelGCThreads > 1) {
     _safepoint_workers = new ShenandoahWorkGang("Safepoint Cleanup Thread",
                                                 ParallelGCThreads,
-                      /* are_GC_task_threads */ false,
                  /* are_ConcurrentGC_threads */ false);
     _safepoint_workers->initialize_workers();
   }
@@ -1425,7 +1423,6 @@ private:
     // Initialize queues for every workers
     for (uint i = 0; i < _num_workers; ++i) {
       ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
-      task_queue->initialize();
       _task_queues->register_queue(i, task_queue);
     }
     // Divide roots among the workers. Assume that object referencing distribution

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ template <class T> class EventLogBase : public EventLog {
 
  public:
   EventLogBase<T>(const char* name, const char* handle, int length = LogEventsBufferEntries):
-    _mutex(Mutex::event, name, true, Mutex::_safepoint_check_never),
+    _mutex(Mutex::event, name, Mutex::_safepoint_check_never),
     _name(name),
     _handle(handle),
     _length(length),

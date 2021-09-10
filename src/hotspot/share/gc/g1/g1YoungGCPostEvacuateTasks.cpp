@@ -31,14 +31,16 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/ticks.hpp"
 
 G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
-                                                                                 G1RedirtyCardsQueueSet* rdcqs) :
+                                                                                 G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new MergePssTask(per_thread_states));
@@ -47,7 +49,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   if (RemoveSelfForwardPtrsTask::should_execute()) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(rdcqs));
+    add_parallel_task(new RemoveSelfForwardPtrsTask(per_thread_states->rdcqs(), evac_failure_regions));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
 }
@@ -99,19 +101,23 @@ bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::should_
   return G1CollectedHeap::heap()->evacuation_failed();
 }
 
-G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs) :
-  G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr), _task(rdcqs) { }
+G1PostEvacuateCollectionSetCleanupTask1::
+    RemoveSelfForwardPtrsTask::RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs,
+                                                         G1EvacFailureRegions* evac_failure_regions) :
+  G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
+  _task(rdcqs, evac_failure_regions),
+  _evac_failure_regions(evac_failure_regions) { }
 
 G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::~RemoveSelfForwardPtrsTask() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  assert(_task.num_failed_regions() == g1h->num_regions_failed_evacuation(),
+  assert(_task.num_failed_regions() == _evac_failure_regions->num_regions_failed_evacuation(),
          "Removed regions %u inconsistent with expected %u",
-         _task.num_failed_regions(), g1h->num_regions_failed_evacuation());
+         _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
 }
 
 double G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::worker_cost() const {
   assert(should_execute(), "Should not call this if not executed");
-  return G1CollectedHeap::heap()->num_regions_failed_evacuation();
+  return _evac_failure_regions->num_regions_failed_evacuation();
 }
 
 void G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::do_work(uint worker_id) {
@@ -290,6 +296,7 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   size_t _num_dirtied;
   G1CollectedHeap* _g1h;
   G1CardTable* _g1_ct;
+  G1EvacFailureRegions* _evac_failure_regions;
 
   HeapRegion* region_for_card(CardValue* card_ptr) const {
     return _g1h->heap_region_containing(_g1_ct->addr_for(card_ptr));
@@ -298,12 +305,16 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   bool will_become_free(HeapRegion* hr) const {
     // A region will be freed by during the FreeCollectionSet phase if the region is in the
     // collection set and has not had an evacuation failure.
-    return _g1h->is_in_cset(hr) && !_g1h->evacuation_failed(hr->hrm_index());
+    return _g1h->is_in_cset(hr) && !_evac_failure_regions->contains(hr->hrm_index());
   }
 
  public:
-  RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h) : G1CardTableEntryClosure(),
-    _num_dirtied(0), _g1h(g1h), _g1_ct(g1h->card_table()) { }
+  RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h, G1EvacFailureRegions* evac_failure_regions) :
+    G1CardTableEntryClosure(),
+    _num_dirtied(0),
+    _g1h(g1h),
+    _g1_ct(g1h->card_table()),
+    _evac_failure_regions(evac_failure_regions) { }
 
   void do_card_ptr(CardValue* card_ptr, uint worker_id) {
     HeapRegion* hr = region_for_card(card_ptr);
@@ -318,10 +329,13 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   size_t num_dirtied()   const { return _num_dirtied; }
 };
 
-G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask::RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs) :
+G1PostEvacuateCollectionSetCleanupTask2::
+      RedirtyLoggedCardsTask::RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs,
+                                                     G1EvacFailureRegions* evac_failure_regions) :
   G1AbstractSubTask(G1GCPhaseTimes::RedirtyCards),
   _rdcqs(rdcqs),
-  _nodes(rdcqs->all_completed_buffers()) { }
+  _nodes(rdcqs->all_completed_buffers()),
+  _evac_failure_regions(evac_failure_regions) { }
 
 G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask::~RedirtyLoggedCardsTask() {
   G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
@@ -335,7 +349,7 @@ double G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask::worker_c
 }
 
 void G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask::do_work(uint worker_id) {
-  RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap());
+  RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap(), _evac_failure_regions);
   const size_t buffer_size = _rdcqs->buffer_size();
   BufferNode* next = Atomic::load(&_nodes);
   while (next != nullptr) {
@@ -380,7 +394,7 @@ public:
     _regions_freed += other->_regions_freed;
   }
 
-  void report(G1CollectedHeap* g1h, G1EvacuationInfo* evacuation_info) {
+  void report(G1CollectedHeap* g1h, G1EvacInfo* evacuation_info) {
     evacuation_info->set_regions_freed(_regions_freed);
     evacuation_info->increment_collectionset_used_after(_after_used_bytes);
 
@@ -461,6 +475,7 @@ class FreeCSetClosure : public HeapRegionClosure {
   Tickspan         _young_time;
   Tickspan         _non_young_time;
   FreeCSetStats*   _stats;
+  G1EvacFailureRegions* _evac_failure_regions;
 
   void assert_tracks_surviving_words(HeapRegion* r) {
     assert(r->young_index_in_cset() != 0 &&
@@ -503,14 +518,16 @@ class FreeCSetClosure : public HeapRegionClosure {
 public:
   FreeCSetClosure(const size_t* surviving_young_words,
                   uint worker_id,
-                  FreeCSetStats* stats) :
+                  FreeCSetStats* stats,
+                  G1EvacFailureRegions* evac_failure_regions) :
       HeapRegionClosure(),
       _g1h(G1CollectedHeap::heap()),
       _surviving_young_words(surviving_young_words),
       _worker_id(worker_id),
       _young_time(),
       _non_young_time(),
-      _stats(stats) { }
+      _stats(stats),
+      _evac_failure_regions(evac_failure_regions) { }
 
   virtual bool do_heap_region(HeapRegion* r) {
     assert(r->in_collection_set(), "Invariant: %u missing from CSet", r->hrm_index());
@@ -524,7 +541,7 @@ public:
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
     }
 
-    if (_g1h->evacuation_failed(r->hrm_index())) {
+    if (_evac_failure_regions->contains(r->hrm_index())) {
       handle_failed_region(r);
     } else {
       handle_evacuated_region(r);
@@ -558,15 +575,18 @@ void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::report_stat
   total_stats.report(_g1h, _evacuation_info);
 }
 
-G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::FreeCollectionSetTask(G1EvacuationInfo* evacuation_info,
-                                                                                      const size_t* surviving_young_words) :
+G1PostEvacuateCollectionSetCleanupTask2::
+      FreeCollectionSetTask::FreeCollectionSetTask(G1EvacInfo* evacuation_info,
+                                                   const size_t* surviving_young_words,
+                                                   G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::FreeCollectionSet),
     _g1h(G1CollectedHeap::heap()),
     _evacuation_info(evacuation_info),
     _worker_stats(nullptr),
     _claimer(0),
     _surviving_young_words(surviving_young_words),
-    _active_workers(0) {
+    _active_workers(0),
+    _evac_failure_regions(evac_failure_regions) {
   _g1h->clear_eden();
 }
 
@@ -595,16 +615,15 @@ void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::set_max_wor
 }
 
 void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::do_work(uint worker_id) {
-  FreeCSetClosure cl(_surviving_young_words, worker_id, worker_stats(worker_id));
+  FreeCSetClosure cl(_surviving_young_words, worker_id, worker_stats(worker_id), _evac_failure_regions);
   _g1h->collection_set_par_iterate_all(&cl, &_claimer, worker_id);
   // Report per-region type timings.
   cl.report_timing();
 }
 
-G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(PreservedMarksSet* preserved_marks_set,
-                                                                                 G1RedirtyCardsQueueSet* rdcqs,
-                                                                                 G1EvacuationInfo* evacuation_info,
-                                                                                 const size_t* surviving_young_words) :
+G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
+                                                                                 G1EvacInfo* evacuation_info,
+                                                                                 G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedGangTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new ResetHotCardCacheTask());
@@ -617,8 +636,10 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   }
 
   if (RestorePreservedMarksTask::should_execute()) {
-    add_parallel_task(new RestorePreservedMarksTask(preserved_marks_set));
+    add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
   }
-  add_parallel_task(new RedirtyLoggedCardsTask(rdcqs));
-  add_parallel_task(new FreeCollectionSetTask(evacuation_info, surviving_young_words));
+  add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
+  add_parallel_task(new FreeCollectionSetTask(evacuation_info,
+                                                   per_thread_states->surviving_young_words(),
+                                                   evac_failure_regions));
 }

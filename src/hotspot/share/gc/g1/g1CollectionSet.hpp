@@ -147,8 +147,8 @@ class G1CollectionSet {
   // concurrent readers. This means we are good with using storestore and loadload
   // barriers on the writer and reader respectively only.
   uint* _collection_set_regions;
-  volatile size_t _collection_set_cur_length;
-  size_t _collection_set_max_length;
+  volatile uint _collection_set_cur_length;
+  uint _collection_set_max_length;
 
   // When doing mixed collections we can add old regions to the collection set, which
   // will be collected only if there is enough time. We call these optional regions.
@@ -262,8 +262,7 @@ class G1CollectionSet {
                          HeapRegionClaimer* hr_claimer,
                          size_t offset,
                          size_t length,
-                         uint worker_id,
-                         uint total_workers) const;
+                         uint worker_id) const;
 public:
   G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
@@ -307,7 +306,7 @@ public:
 
   // Iterate over the current collection set increment applying the given HeapRegionClosure
   // from a starting position determined by the given worker id.
-  void iterate_incremental_part_from(HeapRegionClosure* cl, HeapRegionClaimer* hr_claimer, uint worker_id, uint total_workers) const;
+  void iterate_incremental_part_from(HeapRegionClosure* cl, HeapRegionClaimer* hr_claimer, uint worker_id) const;
 
   // Returns the length of the current increment in number of regions.
   size_t increment_length() const { return _collection_set_cur_length - _inc_part_start; }
@@ -319,8 +318,7 @@ public:
   void iterate(HeapRegionClosure* cl) const;
   void par_iterate(HeapRegionClosure* cl,
                    HeapRegionClaimer* hr_claimer,
-                   uint worker_id,
-                   uint total_workers) const;
+                   uint worker_id) const;
 
   void iterate_optional(HeapRegionClosure* cl) const;
 

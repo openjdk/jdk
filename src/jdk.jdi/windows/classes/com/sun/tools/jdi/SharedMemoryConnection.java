@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import com.sun.jdi.connect.spi.*;
 
 import java.io.IOException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 class SharedMemoryConnection extends Connection {
     private long id;
     private Object receiveLock = new Object();
@@ -46,7 +48,7 @@ class SharedMemoryConnection extends Connection {
 
     // handshake with the target VM
     void handshake(long handshakeTimeout) throws IOException {
-        byte[] hello = "JDWP-Handshake".getBytes("UTF-8");
+        byte[] hello = "JDWP-Handshake".getBytes(UTF_8);
 
         for (int i=0; i<hello.length; i++) {
             sendByte0(id, hello[i]);

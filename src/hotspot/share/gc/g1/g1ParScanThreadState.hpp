@@ -32,6 +32,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/ageTable.hpp"
+#include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -43,6 +44,8 @@ class G1OopStarChunkedList;
 class G1PLABAllocator;
 class G1EvacuationRootClosures;
 class HeapRegion;
+class PreservedMarks;
+class PreservedMarksSet;
 class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
@@ -91,19 +94,27 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1OopStarChunkedList* _oops_into_optional_regions;
 
   G1NUMA* _numa;
-
   // Records how many object allocations happened at each node during copy to survivor.
   // Only starts recording when log of gc+heap+numa is enabled and its data is
   // transferred when flushed.
   size_t* _obj_alloc_stat;
 
+  // Per-thread evacuation failure data structures.
+  PreservedMarks* _preserved_marks;
+  EvacuationFailedInfo _evacuation_failed_info;
+  G1EvacFailureRegions* _evac_failure_regions;
+
+  void handle_evacuation_failure_notifications(oop obj, markWord m, size_t word_sz);
+
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
+                       PreservedMarks* preserved_marks,
                        uint worker_id,
                        uint n_workers,
                        size_t young_cset_length,
-                       size_t optional_cset_length);
+                       size_t optional_cset_length,
+                       G1EvacFailureRegions* evac_failure_regions);
   virtual ~G1ParScanThreadState();
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
@@ -213,7 +224,7 @@ public:
   void reset_trim_ticks();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markWord m);
+  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
@@ -226,20 +237,27 @@ public:
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
   G1RedirtyCardsQueueSet* _rdcqs;
+  PreservedMarksSet* _preserved_marks_set;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
   size_t _young_cset_length;
   size_t _optional_cset_length;
   uint _n_workers;
   bool _flushed;
+  G1EvacFailureRegions* _evac_failure_regions;
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                           G1RedirtyCardsQueueSet* rdcqs,
+                          PreservedMarksSet* preserved_marks_set,
                           uint n_workers,
                           size_t young_cset_length,
-                          size_t optional_cset_length);
+                          size_t optional_cset_length,
+                          G1EvacFailureRegions* evac_failure_regions);
   ~G1ParScanThreadStateSet();
+
+  G1RedirtyCardsQueueSet* rdcqs() { return _rdcqs; }
+  PreservedMarksSet* preserved_marks_set() { return _preserved_marks_set; }
 
   void flush();
   void record_unused_optional_region(HeapRegion* hr);

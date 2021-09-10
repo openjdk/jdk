@@ -68,9 +68,6 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
-extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
-                                                 // queue shared by
-                                                 // non-Java threads.
 extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
@@ -96,9 +93,6 @@ extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize acc
 #ifndef PRODUCT
 extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT safe
 #endif // PRODUCT
-extern Mutex*   Debug1_lock;                     // A bunch of pre-allocated locks that can be used for tracing
-extern Mutex*   Debug2_lock;                     // down synchronization related bugs!
-extern Mutex*   Debug3_lock;
 
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data
@@ -140,7 +134,6 @@ extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvoker
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
-extern Mutex*   JfrStream_lock;                  // protects JFR stream access
 extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
 #endif
 
@@ -262,12 +255,8 @@ class MonitorLocker: public MutexLocker {
   }
 
   bool wait(int64_t timeout = 0) {
-    if (_flag == Mutex::_safepoint_check_flag) {
-      return as_monitor()->wait(timeout);
-    } else {
-      return as_monitor()->wait_without_safepoint_check(timeout);
-    }
-    return false;
+    return _flag == Mutex::_safepoint_check_flag ?
+      as_monitor()->wait(timeout) : as_monitor()->wait_without_safepoint_check(timeout);
   }
 
   void notify_all() {
