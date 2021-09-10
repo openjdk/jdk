@@ -114,6 +114,10 @@ public:
 
   static void record_result(const s2 classpath_index, InstanceKlass* result);
   static InstanceKlass* load_class(Symbol* h_name, const char* path, TRAPS);
+  static InstanceKlass* load_class_impl(Symbol* h_name, const char* path, TRAPS);
+  static Handle create_url_classloader(Symbol* path, TRAPS);
+  static Handle create_and_add_url_classloader(Symbol* path, TRAPS);
+  static Handle get_url_classloader(Symbol* path, TRAPS);
   static void set_has_app_classes() {
     _has_app_classes = true;
   }

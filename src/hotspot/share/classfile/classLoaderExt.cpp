@@ -30,8 +30,10 @@
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/modules.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -39,6 +41,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/oopFactory.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -284,14 +287,86 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
   }
   stream->set_verify(true);
 
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  Handle protection_domain;
-  ClassLoadInfo cl_info(protection_domain);
-  InstanceKlass* k = KlassFactory::create_from_stream(stream,
-                                                      name,
-                                                      loader_data,
-                                                      cl_info,
-                                                      CHECK_NULL);
+  InstanceKlass* k = load_class_impl(name, path, CHECK_NULL);
+
+  SystemDictionaryShared::set_shared_class_misc_info(k, (ClassFileStream*)stream);
+
+  return k;
+}
+
+class URLClassLoaderTable : public ResourceHashtable<
+  Symbol*, Handle,
+  7, // prime number
+  ResourceObj::C_HEAP> {};
+
+static URLClassLoaderTable* _url_classloader_table = NULL;
+
+Handle ClassLoaderExt::create_url_classloader(Symbol* path, TRAPS) {
+  ResourceMark rm(THREAD);
+  JavaValue result(T_OBJECT);
+  Handle path_string = java_lang_String::create_from_str(path->as_C_string(), CHECK_NH);
+  JavaCalls::call_static(&result,
+                         vmClasses::jdk_internal_loader_ClassLoaders_klass(),
+                         vmSymbols::toFileURL_name(),
+                         vmSymbols::toFileURL_signature(),
+                         path_string, CHECK_NH);
+  assert(result.get_type() == T_OBJECT, "just checking");
+  oop url_h = result.get_oop();
+  objArrayHandle urls = oopFactory::new_objArray_handle(vmClasses::URL_klass(), 1, CHECK_NH);
+  urls->obj_at_put(0, url_h);
+
+  Handle url_classloader = JavaCalls::construct_new_instance(
+                             vmClasses::URLClassLoader_klass(),
+                             vmSymbols::url_array_classloader_void_signature(),
+                             urls, Handle(), CHECK_NH);
+  return url_classloader;
+}
+
+Handle ClassLoaderExt::create_and_add_url_classloader(Symbol* path, TRAPS) {
+  Handle url_classloader = create_url_classloader(path, CHECK_NH);
+  bool added = _url_classloader_table->put(path, url_classloader);
+  path->increment_refcount();
+  return url_classloader;
+}
+
+Handle ClassLoaderExt::get_url_classloader(Symbol* path, TRAPS) {
+  if (_url_classloader_table == NULL) {
+    _url_classloader_table = new (ResourceObj::C_HEAP, mtClass)URLClassLoaderTable();
+    Handle url_classloader = create_and_add_url_classloader(path, CHECK_NH);
+    return url_classloader;
+  }
+  Handle* url_classloader_ptr = _url_classloader_table->get(path);
+  if (url_classloader_ptr != NULL) {
+    return *url_classloader_ptr;
+  } else {
+    Handle url_classloader = create_and_add_url_classloader(path, CHECK_NH);
+    return url_classloader;
+  }
+}
+
+InstanceKlass* ClassLoaderExt::load_class_impl(Symbol* name, const char* path, TRAPS) {
+  assert(name != NULL, "invariant");
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
+
+  Symbol* path_symbol = SymbolTable::new_symbol(path);
+  Handle url_classloader = get_url_classloader(path_symbol, CHECK_NULL);
+  Handle ext_class_name = java_lang_String::externalize_classname(name, CHECK_NULL);
+
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args(2);
+  args.set_receiver(url_classloader);
+  args.push_oop(ext_class_name);
+  args.push_int(JNI_FALSE);
+  JavaCalls::call_virtual(&result,
+                          vmClasses::URLClassLoader_klass(),
+                          vmSymbols::loadClass_name(),
+                          vmSymbols::string_boolean_class_signature(),
+                          &args,
+                          CHECK_NULL);
+  assert(result.get_type() == T_OBJECT, "just checking");
+  oop obj = result.get_oop();
+  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(obj));
+
   return k;
 }
 

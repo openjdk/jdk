@@ -451,13 +451,7 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
 // true == class was successfully added; false == a duplicated class (with the same name) already exists.
 bool SystemDictionaryShared::add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k) {
   assert(DumpSharedSpaces, "only when dumping");
-  if (add_unregistered_class(current, k)) {
-    MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
-    SystemDictionary::add_to_hierarchy(k);
-    return true;
-  } else {
-    return false;
-  }
+  return add_unregistered_class(current, k);
 }
 
 // This function is called to lookup the super/interfaces of shared classes for

@@ -120,6 +120,13 @@ int ClassListParser::parse(TRAPS) {
         return 0; // THROW
       }
 
+      ResourceMark rm(THREAD);
+      char* ex_msg = (char*)"";
+      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+      if (message != NULL) {
+        ex_msg = java_lang_String::as_utf8_string(message);
+      }
+      log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
       // We might have an invalid class name or an bad class. Warn about it
       // and keep going to the next line.
       CLEAR_PENDING_EXCEPTION;
@@ -466,15 +473,15 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
+  // This tells JVM_FindLoadedClass to not find this class.
+  ClassLoaderExt::record_result(UNREGISTERED_INDEX, k);
+  k->clear_shared_class_loader_type();
+
   bool added = SystemDictionaryShared::add_unregistered_class_for_static_archive(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
   }
-
-  // This tells JVM_FindLoadedClass to not find this class.
-  k->set_shared_classpath_index(UNREGISTERED_INDEX);
-  k->clear_shared_class_loader_type();
 
   return k;
 }
