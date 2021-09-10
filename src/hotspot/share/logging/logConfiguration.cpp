@@ -416,6 +416,8 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   // so we have to process their options (e.g. foldmultilines) directly first.
   if (output == NULL || strlen(output) == 0 ||
       strcmp("stdout", output) == 0 || strcmp("#0", output) == 0) {
+    // else - fall-through to normal option processing which will be rejected
+    // with a warning
     if (!stdout_configured) {
       success = StdoutLog.parse_options(output_options, &ss);
       stdout_configured = true;
@@ -423,6 +425,8 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
       output_options = NULL;
     }
   } else if (strcmp("stderr", output) == 0 || strcmp("#1", output) == 0) {
+    // else - fall-through to normal option processing which will be rejected
+    // with a warning
     if (!stderr_configured) {
       success = StderrLog.parse_options(output_options, &ss);
       stderr_configured = true;
