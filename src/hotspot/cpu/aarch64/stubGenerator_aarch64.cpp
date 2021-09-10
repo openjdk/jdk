@@ -3150,7 +3150,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld1(v8, v9, v10, v11, __ T16B, __ post(in, 4 * 16));
 
       // Encrypt the counters
-      __ aesecb_encrypt(noreg, noreg, keylen, v0, 8);
+      __ aesecb_encrypt(noreg, noreg, keylen, v0, /*unrolls*/8);
 
       __ ld1(v12, v13, v14, v15, __ T16B, __ post(in, 4 * 16));
 
@@ -3172,7 +3172,8 @@ class StubGenerator: public StubCodeGenerator {
     __ lsr(len, len, exact_log2(16));  // We want the count of blocks
 
     // GHASH/CTR loop
-    __ ghash_processBlocks_wide(ghash_polynomial, state, subkeyHtbl, ct, len, 4);
+    __ ghash_processBlocks_wide(ghash_polynomial, state, subkeyHtbl, ct,
+				len, /*unrolls*/4);
 
 #ifdef ASSERT
     { Label L;
