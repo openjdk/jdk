@@ -119,6 +119,6 @@ public enum PackageType {
     private final static class Inner {
         private final static Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
                 TKit.tokenizeConfigProperty("disabledPackagers")).orElse(
-                TKit.isUbuntu() ? Set.of("rpm") : Collections.emptySet());
+                TKit.isLinuxAPT() ? Set.of("rpm") : Collections.emptySet());
     }
 }

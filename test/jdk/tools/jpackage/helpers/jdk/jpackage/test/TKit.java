@@ -184,25 +184,12 @@ final public class TKit {
         return ((OS.contains("nix") || OS.contains("nux")));
     }
 
-    public static boolean isUbuntu() {
+    public static boolean isLinuxAPT() {
         if (!isLinux()) {
             return false;
         }
-        File releaseFile = new File("/etc/os-release");
-        if (releaseFile.exists()) {
-            try (BufferedReader lineReader = new BufferedReader(new FileReader(releaseFile))) {
-                String lineText = null;
-                while ((lineText = lineReader.readLine()) != null) {
-                    if (lineText.indexOf("NAME=\"Ubuntu") != -1) {
-                        lineReader.close();
-                        return true;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return false;
+        File aptFile = new File("/usr/bin/apt-get");
+        return aptFile.exists();
     }
 
     private static String addTimestamp(String msg) {
