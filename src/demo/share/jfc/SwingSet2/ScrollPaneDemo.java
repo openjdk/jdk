@@ -31,20 +31,14 @@
  */
 
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.border.*;
-import javax.swing.colorchooser.*;
-import javax.swing.filechooser.*;
-import javax.accessibility.*;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.*;
-import java.io.*;
-import java.net.*;
+import java.awt.BorderLayout;
 
 /**
  * Scroll Pane Demo

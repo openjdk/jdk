@@ -31,20 +31,15 @@
  */
 
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.border.*;
-import javax.swing.colorchooser.*;
-import javax.swing.filechooser.*;
-import javax.accessibility.*;
+import javax.swing.Box;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.BoxLayout;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.*;
-import java.io.*;
-import java.net.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Polygon;
+import java.awt.Point;
 
 /**
  * ToolTip Demo

@@ -30,17 +30,17 @@
  */
 
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.tree.*;
-import javax.accessibility.*;
+import javax.swing.JTree;
+import javax.swing.JScrollPane;
+import javax.swing.tree.DefaultMutableTreeNode;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.*;
-import java.io.*;
-import java.net.*;
+import java.awt.BorderLayout;
+import java.awt.Insets;
+import java.io.InputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.net.URL;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

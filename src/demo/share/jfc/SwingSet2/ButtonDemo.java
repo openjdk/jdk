@@ -31,20 +31,30 @@
  */
 
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.border.*;
-import javax.swing.colorchooser.*;
-import javax.swing.filechooser.*;
-import javax.accessibility.*;
+import javax.swing.AbstractButton;
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JRadioButton;
+import javax.swing.JToggleButton;
+import javax.swing.JTabbedPane;
+import javax.swing.BoxLayout;
+import javax.swing.SingleSelectionModel;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.*;
-import java.io.*;
-import java.net.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.Vector;
 
 /**
  * JButton, JRadioButton, JToggleButton, JCheckBox Demos
@@ -72,14 +82,14 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
     JRadioButton radio;
     JToggleButton toggle;
 
-    EmptyBorder border5 = new EmptyBorder(5,5,5,5);
-    EmptyBorder border10 = new EmptyBorder(10,10,10,10);
+    EmptyBorder border5 = new EmptyBorder(5, 5, 5, 5);
+    EmptyBorder border10 = new EmptyBorder(10, 10, 10, 10);
 
     ItemListener buttonDisplayListener = null;
     ItemListener buttonPadListener = null;
 
-    Insets insets0 = new Insets(0,0,0,0);
-    Insets insets10 = new Insets(10,10,10,10);
+    Insets insets0 = new Insets(0, 0, 0, 0);
+    Insets insets10 = new Insets(10, 10, 10, 10);
 
     /**
      * main method allows us to run as a standalone demo.
@@ -124,7 +134,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         JPanel p2 = createHorizontalPanel(false);
         p1.add(p2);
         p2.setBorder(new CompoundBorder(new TitledBorder(null, getString("ButtonDemo.textbuttons"),
-                                                          TitledBorder.LEFT, TitledBorder.TOP), border5));
+                TitledBorder.LEFT, TitledBorder.TOP), border5));
 
         buttons.add(p2.add(new JButton(getString("ButtonDemo.button1"))));
         p2.add(Box.createRigidArea(HGAP10));
@@ -141,7 +151,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         p1.add(p3);
         p3.setLayout(new BoxLayout(p3, BoxLayout.X_AXIS));
         p3.setBorder(new TitledBorder(null, getString("ButtonDemo.imagebuttons"),
-                                         TitledBorder.LEFT, TitledBorder.TOP));
+                TitledBorder.LEFT, TitledBorder.TOP));
 
         // home image button
         String description = getString("ButtonDemo.phone");
@@ -149,7 +159,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         button.setPressedIcon(createImageIcon("buttons/b1p.gif", description));
         button.setRolloverIcon(createImageIcon("buttons/b1r.gif", description));
         button.setDisabledIcon(createImageIcon("buttons/b1d.gif", description));
-        button.setMargin(new Insets(0,0,0,0));
+        button.setMargin(new Insets(0, 0, 0, 0));
         p3.add(button);
         buttons.add(button);
         p3.add(Box.createRigidArea(HGAP10));
@@ -160,7 +170,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         button.setPressedIcon(createImageIcon("buttons/b2p.gif", description));
         button.setRolloverIcon(createImageIcon("buttons/b2r.gif", description));
         button.setDisabledIcon(createImageIcon("buttons/b2d.gif", description));
-        button.setMargin(new Insets(0,0,0,0));
+        button.setMargin(new Insets(0, 0, 0, 0));
         p3.add(button);
         buttons.add(button);
         p3.add(Box.createRigidArea(HGAP10));
@@ -171,7 +181,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         button.setPressedIcon(createImageIcon("buttons/b3p.gif", description));
         button.setRolloverIcon(createImageIcon("buttons/b3r.gif", description));
         button.setDisabledIcon(createImageIcon("buttons/b3d.gif", description));
-        button.setMargin(new Insets(0,0,0,0));
+        button.setMargin(new Insets(0, 0, 0, 0));
         p3.add(button);
         buttons.add(button);
 
@@ -197,24 +207,24 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         JPanel p2 = createHorizontalPanel(false);
         p1.add(p2);
         p2.setBorder(new CompoundBorder(
-                      new TitledBorder(
+                new TitledBorder(
                         null, getString("ButtonDemo.textradiobuttons"),
                         TitledBorder.LEFT, TitledBorder.TOP), border5)
         );
 
-        radio = (JRadioButton)p2.add(
+        radio = (JRadioButton) p2.add(
                 new JRadioButton(getString("ButtonDemo.radio1")));
         group.add(radio);
         radiobuttons.add(radio);
         p2.add(Box.createRigidArea(HGAP10));
 
-        radio = (JRadioButton)p2.add(
+        radio = (JRadioButton) p2.add(
                 new JRadioButton(getString("ButtonDemo.radio2")));
         group.add(radio);
         radiobuttons.add(radio);
         p2.add(Box.createRigidArea(HGAP10));
 
-        radio = (JRadioButton)p2.add(
+        radio = (JRadioButton) p2.add(
                 new JRadioButton(getString("ButtonDemo.radio3")));
         group.add(radio);
         radiobuttons.add(radio);
@@ -226,7 +236,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         p1.add(p3);
         p3.setLayout(new BoxLayout(p3, BoxLayout.X_AXIS));
         p3.setBorder(new TitledBorder(null, getString("ButtonDemo.imageradiobuttons"),
-                                         TitledBorder.LEFT, TitledBorder.TOP));
+                TitledBorder.LEFT, TitledBorder.TOP));
 
         // image radio button 1
         String description = getString("ButtonDemo.customradio");
@@ -236,7 +246,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         radio.setRolloverIcon(createImageIcon("buttons/rbr.gif", description));
         radio.setRolloverSelectedIcon(createImageIcon("buttons/rbrs.gif", description));
         radio.setSelectedIcon(createImageIcon("buttons/rbs.gif", description));
-        radio.setMargin(new Insets(0,0,0,0));
+        radio.setMargin(new Insets(0, 0, 0, 0));
         group.add(radio);
         p3.add(radio);
         radiobuttons.add(radio);
@@ -249,7 +259,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         radio.setRolloverIcon(createImageIcon("buttons/rbr.gif", description));
         radio.setRolloverSelectedIcon(createImageIcon("buttons/rbrs.gif", description));
         radio.setSelectedIcon(createImageIcon("buttons/rbs.gif", description));
-        radio.setMargin(new Insets(0,0,0,0));
+        radio.setMargin(new Insets(0, 0, 0, 0));
         group.add(radio);
         p3.add(radio);
         radiobuttons.add(radio);
@@ -262,7 +272,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         radio.setRolloverIcon(createImageIcon("buttons/rbr.gif", description));
         radio.setRolloverSelectedIcon(createImageIcon("buttons/rbrs.gif", description));
         radio.setSelectedIcon(createImageIcon("buttons/rbs.gif", description));
-        radio.setMargin(new Insets(0,0,0,0));
+        radio.setMargin(new Insets(0, 0, 0, 0));
         group.add(radio);
         radiobuttons.add(radio);
         p3.add(radio);
@@ -289,7 +299,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         JPanel p2 = createHorizontalPanel(false);
         p1.add(p2);
         p2.setBorder(new CompoundBorder(
-                      new TitledBorder(
+                new TitledBorder(
                         null, getString("ButtonDemo.textcheckboxes"),
                         TitledBorder.LEFT, TitledBorder.TOP), border5)
         );
@@ -308,7 +318,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         p1.add(p3);
         p3.setLayout(new BoxLayout(p3, BoxLayout.X_AXIS));
         p3.setBorder(new TitledBorder(null, getString("ButtonDemo.imagecheckboxes"),
-                                         TitledBorder.LEFT, TitledBorder.TOP));
+                TitledBorder.LEFT, TitledBorder.TOP));
 
         // image checkbox 1
         String description = getString("ButtonDemo.customcheck");
@@ -317,7 +327,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         check.setRolloverIcon(createImageIcon("buttons/cbr.gif", description));
         check.setRolloverSelectedIcon(createImageIcon("buttons/cbrs.gif", description));
         check.setSelectedIcon(createImageIcon("buttons/cbs.gif", description));
-        check.setMargin(new Insets(0,0,0,0));
+        check.setMargin(new Insets(0, 0, 0, 0));
         p3.add(check);
         checkboxes.add(check);
         p3.add(Box.createRigidArea(HGAP20));
@@ -328,7 +338,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         check.setRolloverIcon(createImageIcon("buttons/cbr.gif", description));
         check.setRolloverSelectedIcon(createImageIcon("buttons/cbrs.gif", description));
         check.setSelectedIcon(createImageIcon("buttons/cbs.gif", description));
-        check.setMargin(new Insets(0,0,0,0));
+        check.setMargin(new Insets(0, 0, 0, 0));
         p3.add(check);
         checkboxes.add(check);
         p3.add(Box.createRigidArea(HGAP20));
@@ -339,7 +349,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         check.setRolloverIcon(createImageIcon("buttons/cbr.gif", description));
         check.setRolloverSelectedIcon(createImageIcon("buttons/cbrs.gif", description));
         check.setSelectedIcon(createImageIcon("buttons/cbs.gif", description));
-        check.setMargin(new Insets(0,0,0,0));
+        check.setMargin(new Insets(0, 0, 0, 0));
         p3.add(check);
         checkboxes.add(check);
 
@@ -393,7 +403,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         bordered.setToolTipText(getString("ButtonDemo.paintborder_tooltip"));
         bordered.setMnemonic(getMnemonic("ButtonDemo.paintborder_mnemonic"));
         if (currentControls == buttons) {
-                bordered.setSelected(true);
+            bordered.setSelected(true);
         }
         bordered.addItemListener(buttonDisplayListener);
         leftColumn.add(bordered);
@@ -457,91 +467,91 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
 
     public void createListeners() {
         buttonDisplayListener = new ItemListener() {
-                Component c;
-                AbstractButton b;
+            Component c;
+            AbstractButton b;
 
-                public void itemStateChanged(ItemEvent e) {
-                    JCheckBox cb = (JCheckBox) e.getSource();
-                    String command = cb.getActionCommand();
-                    if(command == "Enabled") {
-                        for(int i = 0; i < currentControls.size(); i++) {
-                            c = currentControls.elementAt(i);
-                            c.setEnabled(cb.isSelected());
-                            c.invalidate();
-                        }
-                    } else if(command == "PaintBorder") {
-                        c = currentControls.elementAt(0);
-                        if(c instanceof AbstractButton) {
-                            for(int i = 0; i < currentControls.size(); i++) {
-                                b = (AbstractButton) currentControls.elementAt(i);
-                                b.setBorderPainted(cb.isSelected());
-                                b.invalidate();
-                            }
-                        }
-                    } else if(command == "PaintFocus") {
-                        c = currentControls.elementAt(0);
-                        if(c instanceof AbstractButton) {
-                            for(int i = 0; i < currentControls.size(); i++) {
-                                b = (AbstractButton) currentControls.elementAt(i);
-                                b.setFocusPainted(cb.isSelected());
-                                b.invalidate();
-                            }
-                        }
-                    } else if(command == "ContentFilled") {
-                        c = currentControls.elementAt(0);
-                        if(c instanceof AbstractButton) {
-                            for(int i = 0; i < currentControls.size(); i++) {
-                                b = (AbstractButton) currentControls.elementAt(i);
-                                b.setContentAreaFilled(cb.isSelected());
-                                b.invalidate();
-                            }
+            public void itemStateChanged(ItemEvent e) {
+                JCheckBox cb = (JCheckBox) e.getSource();
+                String command = cb.getActionCommand();
+                if (command == "Enabled") {
+                    for (int i = 0; i < currentControls.size(); i++) {
+                        c = currentControls.elementAt(i);
+                        c.setEnabled(cb.isSelected());
+                        c.invalidate();
+                    }
+                } else if (command == "PaintBorder") {
+                    c = currentControls.elementAt(0);
+                    if (c instanceof AbstractButton) {
+                        for (int i = 0; i < currentControls.size(); i++) {
+                            b = (AbstractButton) currentControls.elementAt(i);
+                            b.setBorderPainted(cb.isSelected());
+                            b.invalidate();
                         }
                     }
-                    invalidate();
-                    validate();
-                    repaint();
+                } else if (command == "PaintFocus") {
+                    c = currentControls.elementAt(0);
+                    if (c instanceof AbstractButton) {
+                        for (int i = 0; i < currentControls.size(); i++) {
+                            b = (AbstractButton) currentControls.elementAt(i);
+                            b.setFocusPainted(cb.isSelected());
+                            b.invalidate();
+                        }
+                    }
+                } else if (command == "ContentFilled") {
+                    c = currentControls.elementAt(0);
+                    if (c instanceof AbstractButton) {
+                        for (int i = 0; i < currentControls.size(); i++) {
+                            b = (AbstractButton) currentControls.elementAt(i);
+                            b.setContentAreaFilled(cb.isSelected());
+                            b.invalidate();
+                        }
+                    }
                 }
+                invalidate();
+                validate();
+                repaint();
+            }
         };
 
         buttonPadListener = new ItemListener() {
-                Component c;
-                AbstractButton b;
+            Component c;
+            AbstractButton b;
 
-                public void itemStateChanged(ItemEvent e) {
-                    // *** pad = 0
-                    int pad = -1;
-                    JRadioButton rb = (JRadioButton) e.getSource();
-                    String command = rb.getActionCommand();
-                    if(command == "ZeroPad" && rb.isSelected()) {
-                        pad = 0;
-                    } else if(command == "TenPad" && rb.isSelected()) {
-                        pad = 10;
-                    }
-
-                    for(int i = 0; i < currentControls.size(); i++) {
-                        b = (AbstractButton) currentControls.elementAt(i);
-                        if(pad == -1) {
-                            b.setMargin(null);
-                        } else if(pad == 0) {
-                            b.setMargin(insets0);
-                        } else {
-                            b.setMargin(insets10);
-                        }
-                    }
-                    invalidate();
-                    validate();
-                    repaint();
+            public void itemStateChanged(ItemEvent e) {
+                // *** pad = 0
+                int pad = -1;
+                JRadioButton rb = (JRadioButton) e.getSource();
+                String command = rb.getActionCommand();
+                if (command == "ZeroPad" && rb.isSelected()) {
+                    pad = 0;
+                } else if (command == "TenPad" && rb.isSelected()) {
+                    pad = 10;
                 }
+
+                for (int i = 0; i < currentControls.size(); i++) {
+                    b = (AbstractButton) currentControls.elementAt(i);
+                    if (pad == -1) {
+                        b.setMargin(null);
+                    } else if (pad == 0) {
+                        b.setMargin(insets0);
+                    } else {
+                        b.setMargin(insets10);
+                    }
+                }
+                invalidate();
+                validate();
+                repaint();
+            }
         };
     }
 
     public void stateChanged(ChangeEvent e) {
         SingleSelectionModel model = (SingleSelectionModel) e.getSource();
-        if(model.getSelectedIndex() == 0) {
+        if (model.getSelectedIndex() == 0) {
             currentControls = buttons;
-        } else if(model.getSelectedIndex() == 1) {
+        } else if (model.getSelectedIndex() == 1) {
             currentControls = radiobuttons;
-        } else if(model.getSelectedIndex() == 2) {
+        } else if (model.getSelectedIndex() == 2) {
             currentControls = checkboxes;
         } else {
             currentControls = togglebuttons;

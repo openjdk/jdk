@@ -31,20 +31,29 @@
  */
 
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.border.*;
-import javax.swing.colorchooser.*;
-import javax.swing.filechooser.*;
-import javax.accessibility.*;
+import javax.swing.Action;
+import javax.swing.AbstractAction;
+import javax.swing.AbstractListModel;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JList;
+import javax.swing.JCheckBox;
+import javax.swing.JScrollPane;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.*;
-import java.io.*;
-import java.net.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.util.Vector;
 
 /**
  * List Demo. This demo shows that it is not
