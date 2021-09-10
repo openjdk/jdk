@@ -66,6 +66,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -368,6 +369,42 @@ void ciEnv::cache_dtrace_flags() {
     _dtrace_alloc_probes    = DTraceAllocProbes;
   }
 }
+
+// ------------------------------------------------------------------
+// helper for -XX:+OptimizeImplicitExceptions
+ciInstanceKlass* ciEnv::exception_instanceKlass_for_reason(Deoptimization::DeoptReason reason, bool aastore) {
+  Symbol* ex_symbol = NULL;
+  switch (reason) {
+  case Deoptimization::Reason_null_check:
+    ex_symbol = vmSymbols::java_lang_NullPointerException();
+    break;
+  case Deoptimization::Reason_div0_check:
+    ex_symbol = vmSymbols::java_lang_ArithmeticException();
+    break;
+  case Deoptimization::Reason_range_check:
+    ex_symbol = vmSymbols::java_lang_ArrayIndexOutOfBoundsException();
+    break;
+  case Deoptimization::Reason_class_check:
+    if (aastore) {
+      ex_symbol = vmSymbols::java_lang_ArrayStoreException();
+    } else {
+      ex_symbol = vmSymbols::java_lang_ClassCastException();
+    }
+    break;
+  default:
+    break;
+  }
+  ciInstanceKlass* ex_ciInstKlass = NULL;
+  if (ex_symbol != NULL) {
+    VM_ENTRY_MARK;
+    InstanceKlass* ex_instKlass = SystemDictionary::find_instance_klass(ex_symbol, Handle(), Handle());
+    if (ex_instKlass != NULL) {
+      ex_ciInstKlass = get_instance_klass(ex_instKlass);
+    }
+  }
+  return ex_ciInstKlass;
+}
+
 
 // ------------------------------------------------------------------
 // helper for lazy exception creation

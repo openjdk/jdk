@@ -1032,8 +1032,8 @@ void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt
 
 #ifdef ASSERT
 bool CallJavaNode::validate_symbolic_info() const {
-  if (method() == NULL) {
-    return true; // call into runtime or uncommon trap
+  if (method() == NULL || _implicit_exception_init) {
+    return true; // call into runtime or uncommon trap or implicit exception <init>
   }
   ciMethod* symbolic_info = jvms()->method()->get_method_at_bci(jvms()->bci());
   ciMethod* callee = method();

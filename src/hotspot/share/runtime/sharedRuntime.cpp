@@ -1090,12 +1090,21 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
   methodHandle caller(current, vfst.method());
   int          bci   = vfst.bci();
 
-  Bytecode_invoke bytecode(caller, bci);
-  int bytecode_index = bytecode.index();
-  bc = bytecode.invoke_code();
+  Bytecode_invoke bytecode = Bytecode_invoke_check(caller, bci);
+  int bytecode_index = -1;
+  if (bytecode.is_valid()) {
+    // This is the normal case for invoke* bytecodes
+    bytecode_index = bytecode.index();
+    bc = bytecode.invoke_code();
+  }
+  else {
+    // This is for implicit exceptions with -XX:+OptimizeImplicitExceptions
+    // where we create an artificial call to *Exception::<init>()
+    bc = Bytecodes::_invokespecial;
+  }
 
   methodHandle attached_method(current, extract_attached_method(vfst));
-  if (attached_method.not_null()) {
+  if (attached_method.not_null() && bytecode.is_valid()) {
     Method* callee = bytecode.static_target(CHECK_NH);
     vmIntrinsics::ID id = callee->intrinsic_id();
     // When VM replaces MH.invokeBasic/linkTo* call with a direct/virtual call,

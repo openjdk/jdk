@@ -619,6 +619,41 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
     }
   }
 
+  if (treat_throw_as_hot && OptimizeImplicitExceptions) {
+    ciInstanceKlass* ex_ciInstKlass =
+      env()->exception_instanceKlass_for_reason(reason, java_bc() == Bytecodes::_aastore);
+    if (ex_ciInstKlass != NULL) {
+      const TypeKlassPtr *ex_type = TypeKlassPtr::make(ex_ciInstKlass);
+      kill_dead_locals();
+      Node* ex_node = new_instance(makecon(ex_type), NULL, NULL, true);
+      set_argument(0, ex_node);
+      ciMethod* init =  ex_ciInstKlass->find_method(ciSymbol::make("<init>"), ciSymbol::make("()V"));
+
+      // The following code is modeled after:
+      // DirectCallGenerator* cg = CallGenerator::for_direct_call(init);
+      // JVMState *new_jvms = cg->generate(sync_jvms());
+      // We can't use that code directly because it assumes at various places that we're
+      // at an invoke bytecode which is in genaral not the case for implicit exceptions.
+
+      GraphKit kit(sync_jvms());
+      address target = SharedRuntime::get_resolve_opt_virtual_call_stub();
+
+      CallStaticJavaNode *call = new CallStaticJavaNode(kit.C, TypeFunc::make(init), target, init);
+      call->set_optimized_virtual(true);
+      call->set_implicit_exception_init(true);
+      kit.set_arguments_for_java_call(call);
+      kit.set_edges_for_java_call(call, false, false);
+      Node *ret = kit.set_results_for_java_call(call, false);
+      kit.push_node(init->return_type()->basic_type(), ret);
+      JVMState *new_jvms = kit.transfer_exceptions_into_jvms();
+
+      add_exception_states_from(new_jvms);
+      set_jvms(new_jvms);
+      add_exception_state(make_exception_state(ex_node));
+      return;
+    }
+  }
+
   // %%% Maybe add entry to OptoRuntime which directly throws the exc.?
   // It won't be much cheaper than bailing to the interp., since we'll
   // have to pass up all the debug-info, and the runtime will have to

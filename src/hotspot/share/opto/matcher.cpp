@@ -1290,6 +1290,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       is_method_handle_invoke = call_java->is_method_handle_invoke();
       mcall_java->_method_handle_invoke = is_method_handle_invoke;
       mcall_java->_override_symbolic_info = call_java->override_symbolic_info();
+      mcall_java->_implicit_exception_init = call_java->implicit_exception_init();
       mcall_java->_arg_escape = call_java->arg_escape();
       if (is_method_handle_invoke) {
         C->set_has_method_handle_invokes(true);
