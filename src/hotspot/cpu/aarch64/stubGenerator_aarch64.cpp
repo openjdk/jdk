@@ -3173,7 +3173,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // GHASH/CTR loop
     __ ghash_processBlocks_wide(ghash_polynomial, state, subkeyHtbl, ct,
-				len, /*unrolls*/4);
+                                len, /*unrolls*/4);
 
 #ifdef ASSERT
     { Label L;
