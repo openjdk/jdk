@@ -94,7 +94,14 @@ public class TestPids {
                 System.out.println("DEBUG: line = " + line);
                 System.out.println("DEBUG: parts.length = " + parts.length);
                 if (expectedValue.equals("no_value_expected")) {
-                    System.out.println("No value expected for " + lineMarker);
+                    Asserts.assertEquals(parts.length, 2);
+                    String ivalue = parts[1].replaceAll("\\s","");
+                    System.out.println("Found " + lineMarker + " with value: " + ivalue);
+                    try {
+                        int ai = Integer.parseInt(ivalue);
+                    } catch (NumberFormatException ex) {
+                        throw new RuntimeException("Could not convert " + ivalue + " to an integer, log line was " + line);
+                    }
                     break;
                 }
 

@@ -286,6 +286,7 @@ jlong CgroupV1Subsystem::pids_max() {
  */
 jlong CgroupV1Subsystem::pids_current() {
   if (_pids == NULL) return OSCONTAINER_ERROR;
-  char * pidscurrent_str = pids_current_val();
-  return limit_from_str(pidscurrent_str);
+  GET_CONTAINER_INFO(jlong, _pids, "/pids.current",
+                     "Current number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pids_current);
+  return pids_current;
 }
