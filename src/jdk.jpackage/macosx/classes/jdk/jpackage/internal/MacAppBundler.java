@@ -35,7 +35,6 @@ import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class MacAppBundler extends AppImageBundler {
      public MacAppBundler() {
@@ -126,7 +125,7 @@ public class MacAppBundler extends AppImageBundler {
         }
 
         // reject explicitly set sign to true and no valid signature key
-        if (Optional.ofNullable(
+        if (Optional.ofNullable(MacAppImageBuilder.
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
             String signingIdentity =
                     DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);

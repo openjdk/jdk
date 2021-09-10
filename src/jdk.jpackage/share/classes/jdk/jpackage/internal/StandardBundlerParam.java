@@ -467,16 +467,6 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> new LinkedHashSet<>(Arrays.asList(s.split(",")))
             );
 
-    static final StandardBundlerParam<Boolean> SIGN_BUNDLE =
-            new StandardBundlerParam<>(
-                    Arguments.CLIOptions.MAC_SIGN.getId(),
-                    Boolean.class,
-                    params -> false,
-                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                    null : Boolean.valueOf(s)
-        );
-
-
     static boolean isRuntimeInstaller(Map<String, ? super Object> params) {
         if (params.containsKey(MODULE.getID()) ||
                 params.containsKey(MAIN_JAR.getID()) ||

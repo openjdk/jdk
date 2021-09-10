@@ -34,7 +34,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -42,7 +41,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
@@ -135,20 +133,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                         I18N.getString("message.app-image-requires-app-name"),
                         I18N.getString(
                             "message.app-image-requires-app-name.advice"));
-            }
-            if (Optional.ofNullable(
-                    SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
-                // if signing bundle with app-image, warn user if app-image
-                // is not allready signed.
-                try {
-                    if (!(AppImageFile.load(applicationImage).isSigned())) {
-                        Log.info(MessageFormat.format(I18N.getString(
-                                 "warning.unsigned.app.image"), getID()));
-                    }
-                } catch (IOException ioe) {
-                    // Ignore - In case of a forign or tampered with app-image,
-                    // user is notified of this when the name is extracted.
-                }
             }
         } else {
             appImageBundler.validate(params);
