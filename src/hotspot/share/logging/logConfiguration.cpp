@@ -406,19 +406,29 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   stringStream ss(errbuf, sizeof(errbuf));
   bool success = true;
 
+  // output options for stdout/err should be applied just once.
+  static bool stdout_configured = false;
+  static bool stderr_configured = false;
+
   // Normally options can't be used to change an existing output
   // (parse_log_arguments() will report an error), and
   // both StdoutLog and StderrLog are created by static initializers,
   // so we have to process their options (e.g. foldmultilines) directly first.
   if (output == NULL || strlen(output) == 0 ||
       strcmp("stdout", output) == 0 || strcmp("#0", output) == 0) {
-    success = StdoutLog.parse_options(output_options, &ss);
-    // We no longer need to pass output options to parse_log_arguments().
-    output_options = NULL;
+    if (!stdout_configured) {
+      success = StdoutLog.parse_options(output_options, &ss);
+      stdout_configured = true;
+      // We no longer need to pass output options to parse_log_arguments().
+      output_options = NULL;
+    }
   } else if (strcmp("stderr", output) == 0 || strcmp("#1", output) == 0) {
-    success = StderrLog.parse_options(output_options, &ss);
-    // We no longer need to pass output options to parse_log_arguments().
-    output_options = NULL;
+    if (!stderr_configured) {
+      success = StderrLog.parse_options(output_options, &ss);
+      stderr_configured = true;
+      // We no longer need to pass output options to parse_log_arguments().
+      output_options = NULL;
+    }
   }
 
   if (success) {
