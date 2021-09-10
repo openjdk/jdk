@@ -2708,11 +2708,11 @@ public class HTMLDocument extends DefaultStyledDocument {
         }
 
         private Element[] getPathTo(int offset) {
-            ArrayDeque<Element> elements = new ArrayDeque<Element>();
+            ArrayList<Element> elements = new ArrayList<Element>();
             Element e = getDefaultRootElement();
             int index;
             while (!e.isLeaf()) {
-                elements.push(e);
+                elements.add(e);
                 e = e.getElement(e.getElementIndex(offset));
             }
             Element[] retValue = elements.toArray(new Element[0]);
