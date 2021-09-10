@@ -53,62 +53,63 @@ import java.util.TimeZone;
  */
 public class StoreReproducibilityTest {
 
-    private static final String ENV_SOURCE_DATE_EPOCH = "SOURCE_DATE_EPOCH";
     private static final String dateCommentFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
+    private static final String SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE = "java.util.Properties.storeDate";
 
     public static void main(final String[] args) throws Exception {
         // no security manager enabled
         testWithoutSecurityManager();
-        // security manager enabled and security policy explicitly allows read permissions on getenv.SOURCE_DATE_EPOCH
+        // security manager enabled and security policy explicitly allows
+        // read permissions on java.util.Properties.storeDate system property
         testWithSecMgrExplicitPermission();
-        // security manager enabled and no explicit getenv.SOURCE_DATE_EPOCH permission
+        // security manager enabled and no explicit permission on java.util.Properties.storeDate system property
         testWithSecMgrNoSpecificPermission();
-        // invalid/unparsable value for SOURCE_DATE_EPOCH
-        testInvalidSourceDateEpochValue();
+        // invalid/unparsable value for java.util.Properties.storeDate system property
+        testInvalidStoreDateValue();
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed an environment variable value for
-     * {@code SOURCE_DATE_EPOCH} environment variable and the date comment written out to the file
-     * is expected to use this value.
-     * The program is launched multiple times with the same value for {@code SOURCE_DATE_EPOCH}
-     * and the output written out by each run of this program is verified to be exactly the same.
+     * properties to a file. The launched Java program is passed a value for the
+     * {@code java.util.Properties.storeDate} system property and the date comment written out
+     * to the file is expected to use this value.
+     * The program is launched multiple times with the same value for {@code java.util.Properties.storeDate}
+     * and the output written by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code SOURCE_DATE_EPOCH}.
+     * corresponds to the passed {@code java.util.Properties.storeDate}.
      * The launched Java program is run without any security manager
      */
     private static void testWithoutSecurityManager() throws Exception {
         final List<Path> storedFiles = new ArrayList<>();
-        final String sourceDateEpoch = "243535322";
+        final String storeDate = "243535322";
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            processBuilder.environment().put(ENV_SOURCE_DATE_EPOCH, sourceDateEpoch);
             executeJavaProcess(processBuilder);
-            assertExpectedSourceEpochDate(tmpFile, sourceDateEpoch);
+            assertExpectedStoreDate(tmpFile, storeDate);
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
         }
-        assertAllFileContentsAreSame(storedFiles, sourceDateEpoch);
+        assertAllFileContentsAreSame(storedFiles, storeDate);
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed an environment variable value for
-     * {@code SOURCE_DATE_EPOCH} environment variable and the date comment written out to the file
+     * properties to a file. The launched Java program is passed a value for the
+     * {@code java.util.Properties.storeDate} system property and the date comment written out to the file
      * is expected to use this value.
      * The launched Java program is run with the default security manager and is granted
-     * a {@code read} permission on {@code getenv.SOURCE_DATE_EPOCH}.
-     * The program is launched multiple times with the same value for {@code SOURCE_DATE_EPOCH}
-     * and the output written out by each run of this program is verified to be exactly the same.
+     * a {@code read} permission on {@code java.util.Properties.storeDate}.
+     * The program is launched multiple times with the same value for {@code java.util.Properties.storeDate}
+     * and the output written by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code SOURCE_DATE_EPOCH}.
+     * corresponds to the passed {@code java.util.Properties.storeDate}.
      */
     private static void testWithSecMgrExplicitPermission() throws Exception {
         final Path policyFile = Files.createTempFile("8231640", ".policy");
@@ -116,42 +117,43 @@ public class StoreReproducibilityTest {
                 grant {
                     // test writes/stores to a file, so FilePermission
                     permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // explicitly grant read on SOURCE_DATE_EPOCH to verifies store() APIs work fine
-                    permission java.lang.RuntimePermission "getenv.SOURCE_DATE_EPOCH", "read";
+                    // explicitly grant read permission on java.util.Properties.storeDate system property 
+                    // to verify store() APIs work fine
+                    permission java.util.PropertyPermission "java.util.Properties.storeDate", "read";
                 };
                 """));
         final List<Path> storedFiles = new ArrayList<>();
-        final String sourceDateEpoch = "1234342423";
+        final String storeDate = "1234342423";
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile.toString(),
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            processBuilder.environment().put(ENV_SOURCE_DATE_EPOCH, sourceDateEpoch);
             executeJavaProcess(processBuilder);
-            assertExpectedSourceEpochDate(tmpFile, sourceDateEpoch);
+            assertExpectedStoreDate(tmpFile, storeDate);
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
         }
-        assertAllFileContentsAreSame(storedFiles, sourceDateEpoch);
+        assertAllFileContentsAreSame(storedFiles, storeDate);
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed an environment variable value for
-     * {@code SOURCE_DATE_EPOCH} environment variable and the date comment written out to the file
+     * properties to a file. The launched Java program is passed a value for the
+     * {@code java.util.Properties.storeDate} system property and the date comment written out to the file
      * is expected to use this value.
      * The launched Java program is run with the default security manager and is NOT granted
-     * any explicit permission for {@code getenv.SOURCE_DATE_EPOCH}.
-     * The program is launched multiple times with the same value for {@code SOURCE_DATE_EPOCH}
-     * and the output written out by each run of this program is verified to be exactly the same.
+     * any explicit permission for {@code java.util.Properties.storeDate} system property.
+     * The program is launched multiple times with the same value for {@code java.util.Properties.storeDate}
+     * and the output written by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code SOURCE_DATE_EPOCH}.
+     * corresponds to the passed {@code java.util.Properties.storeDate}.
      */
     private static void testWithSecMgrNoSpecificPermission() throws Exception {
         final Path policyFile = Files.createTempFile("8231640", ".policy");
@@ -159,48 +161,49 @@ public class StoreReproducibilityTest {
                 grant {
                     // test writes/stores to a file, so FilePermission
                     permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // no other grants, not even "read" on SOURCE_DATE_EPOCH. test should still
-                    // work fine and the date comment should correspond to the value of SOURCE_DATE_EPOCH
+                    // no other grants, not even "read" java.util.Properties.storeDate system property.
+                    // test should still work fine and the date comment should correspond to the value of 
+                    // java.util.Properties.storeDate system property.
                 };
                 """));
         final List<Path> storedFiles = new ArrayList<>();
-        final String sourceDateEpoch = "1234342423";
+        final String storeDate = "1234342423";
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile.toString(),
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            processBuilder.environment().put(ENV_SOURCE_DATE_EPOCH, sourceDateEpoch);
             executeJavaProcess(processBuilder);
-            assertExpectedSourceEpochDate(tmpFile, sourceDateEpoch);
+            assertExpectedStoreDate(tmpFile, storeDate);
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
         }
-        assertAllFileContentsAreSame(storedFiles, sourceDateEpoch);
+        assertAllFileContentsAreSame(storedFiles, storeDate);
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
      * properties to a file. The launched Java program is passed an invalid value for
-     * the {@code SOURCE_DATE_EPOCH} environment variable.
-     * It is expected and verified in this test that such an invalid value for the environment variable
+     * the {@code java.util.Properties.storeDate} system property.
+     * It is expected and verified in this test that such an invalid value for the system property
      * will cause the date comment to be the "current date". The launched program is expected to complete
      * without any errors.
      */
-    private static void testInvalidSourceDateEpochValue() throws Exception {
-        final String sourceDateEpoch = "foo-bar";
+    private static void testInvalidStoreDateValue() throws Exception {
+        final String storeDate = "foo-bar";
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            processBuilder.environment().put(ENV_SOURCE_DATE_EPOCH, sourceDateEpoch);
             final Date processLaunchedAt = new Date();
             // launch with a second delay so that we can then verify that the date comment
             // written out by the program is "after" this date
@@ -232,16 +235,15 @@ public class StoreReproducibilityTest {
     }
 
     /**
-     * Verifies that the date comment in the {@code destFile} is of the expected GMT format
-     * and the time represented by it corresponds to the passed {@code sourceEpochDate}
+     * Verifies that the date comment in the {@code destFile} is of the expected format
+     * and the time represented by it corresponds to the passed {@code storeDate}
      */
-    private static void assertExpectedSourceEpochDate(final Path destFile,
-                                                      final String sourceEpochDate) throws Exception {
+    private static void assertExpectedStoreDate(final Path destFile,
+                                                final String storeDate) throws Exception {
         final String dateComment = findNthComment(destFile, 2);
         if (dateComment == null) {
             throw new RuntimeException("Date comment not found in stored properties " + destFile
-                    + " when " + ENV_SOURCE_DATE_EPOCH + " was set " +
-                    "(to " + sourceEpochDate + ")");
+                    + " when storeDate was set to " + storeDate);
         }
         System.out.println("Found date comment " + dateComment + " in file " + destFile);
         long parsedSecondsSinceEpoch;
@@ -252,11 +254,10 @@ public class StoreReproducibilityTest {
             parsedSecondsSinceEpoch = Duration.between(Instant.ofEpochSecond(0), Instant.from(d)).toSeconds();
         } catch (DateTimeParseException pe) {
             throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile
-                    + " when " + ENV_SOURCE_DATE_EPOCH + " was set " +
-                    "(to " + sourceEpochDate + ")", pe);
+                    + " when storeDate was set to " + storeDate, pe);
 
         }
-        final long expected = Long.parseLong(sourceEpochDate);
+        final long expected = Long.parseLong(storeDate);
         if (parsedSecondsSinceEpoch != expected) {
             throw new RuntimeException("Expected " + expected + " seconds since epoch but found "
                     + parsedSecondsSinceEpoch);
@@ -265,7 +266,7 @@ public class StoreReproducibilityTest {
 
     /**
      * Verifies that the date comment in the {@code destFile} can be parsed and the time
-     * represented by it is {@link Date#after(Date)} the passed {@code date}
+     * represented by it is {@link Date#after(Date) after} the passed {@code date}
      */
     private static void assertCurrentDate(final Path destFile, final Date date) throws Exception {
         final String dateComment = findNthComment(destFile, 2);
@@ -304,13 +305,13 @@ public class StoreReproducibilityTest {
 
     // verifies the byte equality of the contents in each of the files
     private static void assertAllFileContentsAreSame(final List<Path> files,
-                                                     final String sourceDateEpoch) throws Exception {
+                                                     final String storeDate) throws Exception {
         final byte[] file1Contents = Files.readAllBytes(files.get(0));
         for (int i = 1; i < files.size(); i++) {
             final byte[] otherFileContents = Files.readAllBytes(files.get(i));
             if (!Arrays.equals(file1Contents, otherFileContents)) {
-                throw new RuntimeException("Properties.store() did not generate reproducible content when "
-                        + ENV_SOURCE_DATE_EPOCH + " was set (to " + sourceDateEpoch + ")");
+                throw new RuntimeException("Properties.store() did not generate reproducible content when " +
+                        "storeDate was set to " + storeDate);
             }
         }
     }

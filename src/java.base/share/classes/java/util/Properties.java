@@ -53,6 +53,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.ISO_8859_1;
 import sun.nio.cs.UTF_8;
 
@@ -172,41 +173,9 @@ public class Properties extends Hashtable<Object,Object> {
      */
     private transient volatile ConcurrentHashMap<Object, Object> map;
 
-    @SuppressWarnings("removal")
-    private static final class LazyDateCommentProvider {
-        // format that matches the one used by java.util.Date.toString()
-        private static final String dateFormatPattern = "EEE MMM dd HH:mm:ss zzz yyyy";
-        // formatter used while writing out current date
-        private static final DateTimeFormatter currentDateFormatter = DateTimeFormatter.ofPattern(dateFormatPattern);
-        private static final String cachedDateComment;
-
-        static {
-            String sourceDateEpoch = System.getSecurityManager() == null
-                                        ? System.getenv("SOURCE_DATE_EPOCH")
-                                        : AccessController.doPrivileged((PrivilegedAction<String>)
-                                                () -> System.getenv("SOURCE_DATE_EPOCH"));
-            String dateComment = null;
-            if (sourceDateEpoch != null) {
-                try {
-                    long epochSeconds = Long.parseLong(sourceDateEpoch);
-                    dateComment = "#" + DateTimeFormatter.ofPattern(dateFormatPattern)
-                            .withLocale(Locale.ROOT)
-                            .withZone(ZoneOffset.UTC)
-                            .format(Instant.ofEpochSecond(epochSeconds));
-                } catch (NumberFormatException | DateTimeException e) {
-                    // ignore any value that cannot be parsed for the SOURCE_DATE_EPOCH.
-                    // store APIs will subsequently use current date, in their date comments
-                }
-            }
-            cachedDateComment = dateComment;
-        }
-
-        private static String getDateComment() {
-            return cachedDateComment != null
-                            ? cachedDateComment
-                            : "#" + currentDateFormatter.format(ZonedDateTime.now());
-        }
-    }
+    // used to format the date comment written out by the store() APIs.
+    // This format matches the one used by java.util.Date.toString()
+    private static final String dateFormatPattern = "EEE MMM dd HH:mm:ss zzz yyyy";
 
     /**
      * Creates an empty property list with no default values.
@@ -877,12 +846,15 @@ public class Properties extends Hashtable<Object,Object> {
      * The output stream remains open after this method returns.
      *
      * @implNote When writing the date comment, this method checks whether the
-     * {@code SOURCE_DATE_EPOCH} environment variable is set. If it is set, then instead
-     * of writing the current date and time, the date and time represented by the
-     * value of {@code SOURCE_DATE_EPOCH} will be written, using the
+     * {@systemProperty java.util.Properties.storeDate} system property is set.
+     * If it is set, then its value is expected to represent epoch seconds,
+     * which is the number of seconds, excluding leap seconds,
+     * since 01 Jan 1970 00:00:00 UTC. When this system property is set,
+     * then instead of writing the current date and time, the date and time
+     * represented by the system property value will be written, using the
      * {@code EEE MMM dd HH:mm:ss zzz yyyy} {@link DateTimeFormatter date format} with a
      * {@link Locale#ROOT root locale} and {@link ZoneOffset#UTC UTC zone offset}.
-     * If the value set for {@code SOURCE_DATE_EPOCH} cannot be parsed to a {@code long},
+     * If the value set for this system property cannot be parsed to a {@code long},
      * then the current date and time will be written.
      *
      * @param   writer      an output character stream writer.
@@ -955,8 +927,8 @@ public class Properties extends Hashtable<Object,Object> {
         if (comments != null) {
             writeComments(bw, comments);
         }
-        bw.write(LazyDateCommentProvider.getDateComment());
-        bw.newLine();
+        writeDateComment(bw);
+
         synchronized (this) {
             @SuppressWarnings("unchecked")
             var entries = new ArrayList<>(((Map<String, String>) (Map) map).entrySet());
@@ -974,6 +946,30 @@ public class Properties extends Hashtable<Object,Object> {
             }
         }
         bw.flush();
+    }
+
+    private static void writeDateComment(BufferedWriter bw) throws IOException {
+        // value of java.util.Properties.storeDate system property isn't sensitive
+        // and so doesn't need any security manager checks to make the value accessible
+        // to the callers
+        String storeDate = StaticProperty.javaUtilPropertiesStoreDate();
+        String dateComment = null;
+        if (storeDate != null) {
+            try {
+                long epochSeconds = Long.parseLong(storeDate);
+                dateComment = "#" + DateTimeFormatter.ofPattern(dateFormatPattern)
+                        .withLocale(Locale.ROOT)
+                        .withZone(ZoneOffset.UTC)
+                        .format(Instant.ofEpochSecond(epochSeconds));
+            } catch (NumberFormatException | DateTimeException e) {
+                // ignore any value that cannot be parsed for the java.util.Properties.storeDate
+                // system property and instead use the current date in the date comment.
+            }
+        }
+        bw.write(dateComment != null
+                    ? dateComment
+                    : "#" + DateTimeFormatter.ofPattern(dateFormatPattern).format(ZonedDateTime.now()));
+        bw.newLine();
     }
 
     /**

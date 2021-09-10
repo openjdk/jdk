@@ -186,7 +186,7 @@ public class PropertiesStoreTest {
         try {
             new SimpleDateFormat(dateCommentFormat).parse(comment);
         } catch (ParseException pe) {
-            Assert.fail("Unexpected date comment: " + comment);
+            Assert.fail("Unexpected date comment: " + comment, pe);
         }
     }
 
