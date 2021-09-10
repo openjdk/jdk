@@ -1145,7 +1145,7 @@ void os::print_siginfo(outputStream* os, const void* si0) {
     os->print(", si_addr: " PTR_FORMAT, p2i(si->si_addr));
 #ifdef SIGPOLL
   } else if (sig == SIGPOLL) {
-    os->print(", si_band: %ld", si->si_band);
+    os->print(", si_band: %ld", (long) si->si_band);
 #endif
   }
 }
