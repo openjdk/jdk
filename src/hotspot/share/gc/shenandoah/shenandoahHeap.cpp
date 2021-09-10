@@ -1260,12 +1260,6 @@ public:
     // the update-refs processing that follows.  After the updating of old-gen references is done, it is ok to carve
     // this remnant object into smaller pieces during the subsequent evacuation pass, as long as the PLAB is made parsable
     // again before the next update-refs phase.
-    if (plab->top() != nullptr) {
-      ShenandoahHeapRegion* r = ShenandoahHeap::heap()->heap_region_containing(plab->top());
-      log_debug(gc)("Retiring plab with top: " PTR_FORMAT ", hard_end: " PTR_FORMAT
-                    " + AlignmentReserve, in %s Region " SIZE_FORMAT,
-                    p2i(plab->top()), p2i(plab->top() + plab->words_remaining()), affiliation_name(r->affiliation()), r->index());
-    } // else, don't bother to report retirement
     ShenandoahHeap::heap()->retire_plab(plab);
     if (_resize && ShenandoahThreadLocalData::plab_size(thread) > 0) {
       ShenandoahThreadLocalData::set_plab_size(thread, 0);
