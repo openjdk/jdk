@@ -86,7 +86,6 @@ extern Monitor* Terminator_lock;                 // a lock used to guard termina
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
-extern Mutex*   ProfilePrint_lock;               // a lock used to serialize the printing of profiles
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
 extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize access to sweeper statistics
 
