@@ -355,7 +355,6 @@ ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
         _par_iterator(CodeCache::heaps()),
         _table_snapshot(NULL) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
-  assert(!Thread::current()->is_Worker_thread(), "Should not be acquired by workers");
   _table_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
 }
 
