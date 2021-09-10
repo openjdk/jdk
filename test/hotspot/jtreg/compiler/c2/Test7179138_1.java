@@ -29,7 +29,7 @@
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
  *      compiler.c2.Test7179138_1
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
- *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:RepeatCompilation=100 compiler.c2.Test7179138_1
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN compiler.c2.Test7179138_1
  *
  * @author Skip Balk
  */
