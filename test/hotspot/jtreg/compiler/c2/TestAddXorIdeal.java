@@ -75,25 +75,17 @@ public class TestAddXorIdeal {
 
     public static void main(String... args) {
         Random random = Utils.getRandomInstance();
-        for (int i = -5_000; i < 5_000; i++) {
-            int n = 0;
-            long n1 = 0;
-            n = random.nextInt();
-            Asserts.assertTrue(test1(n) == -n);
-            n = random.nextInt();
-            Asserts.assertTrue(test2(n) == -n);
-            n1 = random.nextLong();
-            Asserts.assertTrue(test3(n1) == -n1);
-            n1 = random.nextLong();
-            Asserts.assertTrue(test4(n1) == -n1);
-            n = random.nextInt();
-            Asserts.assertTrue(test5(n) == -n);
-            n = random.nextInt();
-            Asserts.assertTrue(test6(n) ==  -n);
-            n1 = random.nextLong();
-            Asserts.assertTrue(test7(n1) == -n1);
-            n1 = random.nextLong();
-            Asserts.assertTrue(test8(n1) == -n1);
+        for (int i = 0; i < 50_000; i++) {
+            int a = random.nextInt();
+            long b = random.nextLong();
+            Asserts.assertTrue(test1(a) == -a);
+            Asserts.assertTrue(test2(a) == -a);
+            Asserts.assertTrue(test3(b) == -b);
+            Asserts.assertTrue(test4(b) == -b);
+            Asserts.assertTrue(test5(a) == -a);
+            Asserts.assertTrue(test6(a) ==  -a);
+            Asserts.assertTrue(test7(b) == -b);
+            Asserts.assertTrue(test8(b) == -b);
         }
     }
 }
