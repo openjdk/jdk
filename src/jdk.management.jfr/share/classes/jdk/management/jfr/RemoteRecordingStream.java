@@ -518,39 +518,39 @@ public final class RemoteRecordingStream implements EventStream {
         this.endTime = endTime;
     }
 
-	@Override
-	public void start() {
-		ensureStartable();
-		try {
-			try {
-				mbean.startRecording(recordingId);
-			} catch (IllegalStateException ise) {
-				throw ise;
-			}
-			startDownload();
-		} catch (Exception e) {
-			ManagementSupport.logDebug(e.getMessage());
-			close();
-			return;
-		}
-		stream.start();
-	}
+    @Override
+    public void start() {
+        ensureStartable();
+        try {
+            try {
+                mbean.startRecording(recordingId);
+            } catch (IllegalStateException ise) {
+                throw ise;
+            }
+            startDownload();
+        } catch (Exception e) {
+            ManagementSupport.logDebug(e.getMessage());
+            close();
+            return;
+        }
+        stream.start();
+    }
 
-	@Override
-	public void startAsync() {
-		ensureStartable();
-		stream.startAsync();
-		try {
-			mbean.startRecording(recordingId);
-			startDownload();
-		} catch (Exception e) {
-			ManagementSupport.logDebug(e.getMessage());
-			close();
-		}
-	}
+    @Override
+    public void startAsync() {
+        ensureStartable();
+        stream.startAsync();
+        try {
+            mbean.startRecording(recordingId);
+            startDownload();
+        } catch (Exception e) {
+            ManagementSupport.logDebug(e.getMessage());
+            close();
+        }
+    }
 
     private void ensureStartable() {
-    	synchronized (lock) {
+        synchronized (lock) {
             if (closed) {
                 throw new IllegalStateException("Event stream is closed");
             }
@@ -558,7 +558,7 @@ public final class RemoteRecordingStream implements EventStream {
                 throw new IllegalStateException("Event stream can only be started once");
             }
             started = true;
-		}
+        }
     }
 
     /**

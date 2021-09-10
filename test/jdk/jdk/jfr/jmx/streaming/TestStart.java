@@ -39,7 +39,7 @@ import jdk.management.jfr.RemoteRecordingStream;
  * @run main/othervm jdk.jfr.jmx.streaming.TestStart
  */
 public class TestStart {
-    
+
     private final static MBeanServerConnection CONNECTION = ManagementFactory.getPlatformMBeanServer();
 
     public static void main(String... args) throws Exception {
