@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ public abstract class AsynchronousFileChannel
      * @param   metaData
      *          If {@code true} then this method is required to force changes
      *          to both the file's content and metadata to be written to
-     *          storage; otherwise, it needs only force content changes to be
+     *          storage; otherwise, it need only force content changes to be
      *          written
      *
      * @throws  ClosedChannelException
