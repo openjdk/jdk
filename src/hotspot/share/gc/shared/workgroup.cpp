@@ -129,13 +129,12 @@ public:
 };
 // Definitions of WorkGang methods.
 
-WorkGang::WorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads) :
+WorkGang::WorkGang(const char* name, uint workers, bool are_ConcurrentGC_threads) :
     _workers(NULL),
     _total_workers(workers),
     _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
     _created_workers(0),
     _name(name),
-    _are_GC_task_threads(are_GC_task_threads),
     _are_ConcurrentGC_threads(are_ConcurrentGC_threads),
     _dispatcher(new GangTaskDispatcher())
   { }
@@ -160,19 +159,13 @@ GangWorker* WorkGang::install_worker(uint worker_id) {
 }
 
 void WorkGang::add_workers(bool initializing) {
-  os::ThreadType worker_type;
-  if (are_ConcurrentGC_threads()) {
-    worker_type = os::cgc_thread;
-  } else {
-    worker_type = os::pgc_thread;
-  }
   uint previous_created_workers = _created_workers;
 
   _created_workers = WorkerManager::add_workers(this,
                                                 _active_workers,
                                                 _total_workers,
                                                 _created_workers,
-                                                worker_type,
+                                                os::gc_thread,
                                                 initializing);
   _active_workers = MIN2(_created_workers, _active_workers);
 

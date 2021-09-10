@@ -42,6 +42,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -216,7 +217,7 @@ public class PNGImageReader extends ImageReader {
         resetStreamSettings();
     }
 
-    private String readNullTerminatedString(String charset, int maxLen) throws IOException {
+    private String readNullTerminatedString(Charset charset, int maxLen) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int b = 0;
         int count = 0;
@@ -438,7 +439,7 @@ public class PNGImageReader extends ImageReader {
     }
 
     private void parse_iCCP_chunk(int chunkLength) throws IOException {
-        String keyword = readNullTerminatedString("ISO-8859-1", 80);
+        String keyword = readNullTerminatedString(ISO_8859_1, 80);
         int compressedProfileLength = chunkLength - keyword.length() - 2;
         if (compressedProfileLength <= 0) {
             throw new IIOException("iCCP chunk length is not proper");
@@ -458,7 +459,7 @@ public class PNGImageReader extends ImageReader {
     private void parse_iTXt_chunk(int chunkLength) throws IOException {
         long chunkStart = stream.getStreamPosition();
 
-        String keyword = readNullTerminatedString("ISO-8859-1", 80);
+        String keyword = readNullTerminatedString(ISO_8859_1, 80);
         metadata.iTXt_keyword.add(keyword);
 
         int compressionFlag = stream.readUnsignedByte();
@@ -469,7 +470,7 @@ public class PNGImageReader extends ImageReader {
 
         long pos = stream.getStreamPosition();
         int remainingLen = (int)(chunkStart + chunkLength - pos);
-        String languageTag = readNullTerminatedString("UTF8", remainingLen);
+        String languageTag = readNullTerminatedString(UTF_8, remainingLen);
         metadata.iTXt_languageTag.add(languageTag);
 
         pos = stream.getStreamPosition();
@@ -478,7 +479,7 @@ public class PNGImageReader extends ImageReader {
             throw new IIOException("iTXt chunk length is not proper");
         }
         String translatedKeyword =
-            readNullTerminatedString("UTF8", remainingLen);
+            readNullTerminatedString(UTF_8, remainingLen);
         metadata.iTXt_translatedKeyword.add(translatedKeyword);
 
         String text;
@@ -538,7 +539,7 @@ public class PNGImageReader extends ImageReader {
 
     private void parse_sPLT_chunk(int chunkLength)
         throws IOException, IIOException {
-        metadata.sPLT_paletteName = readNullTerminatedString("ISO-8859-1", 80);
+        metadata.sPLT_paletteName = readNullTerminatedString(ISO_8859_1, 80);
         int remainingChunkLength = chunkLength -
                 (metadata.sPLT_paletteName.length() + 1);
         if (remainingChunkLength <= 0) {
@@ -585,7 +586,7 @@ public class PNGImageReader extends ImageReader {
     }
 
     private void parse_tEXt_chunk(int chunkLength) throws IOException {
-        String keyword = readNullTerminatedString("ISO-8859-1", 80);
+        String keyword = readNullTerminatedString(ISO_8859_1, 80);
         int textLength = chunkLength - keyword.length() - 1;
         if (textLength < 0) {
             throw new IIOException("tEXt chunk length is not proper");
@@ -683,7 +684,7 @@ public class PNGImageReader extends ImageReader {
     }
 
     private void parse_zTXt_chunk(int chunkLength) throws IOException {
-        String keyword = readNullTerminatedString("ISO-8859-1", 80);
+        String keyword = readNullTerminatedString(ISO_8859_1, 80);
         int textLength = chunkLength - keyword.length() - 2;
         if (textLength < 0) {
             throw new IIOException("zTXt chunk length is not proper");

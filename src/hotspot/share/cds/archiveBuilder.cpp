@@ -1117,12 +1117,12 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
                                         closed_heap_regions,
                                         closed_heap_oopmaps,
                                         MetaspaceShared::first_closed_heap_region,
-                                        MetaspaceShared::max_closed_heap_region);
+                                        MetaspaceShared::max_num_closed_heap_regions);
     _total_open_heap_region_size = mapinfo->write_heap_regions(
                                         open_heap_regions,
                                         open_heap_oopmaps,
                                         MetaspaceShared::first_open_heap_region,
-                                        MetaspaceShared::max_open_heap_region);
+                                        MetaspaceShared::max_num_open_heap_regions);
   }
 
   print_region_stats(mapinfo, closed_heap_regions, open_heap_regions);

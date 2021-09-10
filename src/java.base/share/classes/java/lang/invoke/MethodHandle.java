@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
@@ -33,6 +34,7 @@ import java.lang.constant.Constable;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -449,12 +451,9 @@ public abstract class MethodHandle implements Constable {
     @interface PolymorphicSignature { }
 
     private final MethodType type;
-    /*private*/
-    final LambdaForm form;
-    // form is not private so that invokers can easily fetch it
-    /*private*/
-    MethodHandle asTypeCache;
-    // asTypeCache is not private so that invokers can easily fetch it
+    /*private*/ final LambdaForm form; // form is not private so that invokers can easily fetch it
+    private MethodHandle asTypeCache;
+    private SoftReference<MethodHandle> asTypeSoftCache;
 
     private byte customizationCount;
 
@@ -855,34 +854,120 @@ public abstract class MethodHandle implements Constable {
      * @throws WrongMethodTypeException if the conversion cannot be made
      * @see MethodHandles#explicitCastArguments
      */
-    public MethodHandle asType(MethodType newType) {
+    public final MethodHandle asType(MethodType newType) {
         // Fast path alternative to a heavyweight {@code asType} call.
         // Return 'this' if the conversion will be a no-op.
         if (newType == type) {
             return this;
         }
         // Return 'this.asTypeCache' if the conversion is already memoized.
-        MethodHandle atc = asTypeCached(newType);
-        if (atc != null) {
-            return atc;
+        MethodHandle at = asTypeCached(newType);
+        if (at != null) {
+            return at;
         }
-        return asTypeUncached(newType);
+        return setAsTypeCache(asTypeUncached(newType));
     }
 
     private MethodHandle asTypeCached(MethodType newType) {
         MethodHandle atc = asTypeCache;
         if (atc != null && newType == atc.type) {
-            return atc;
+            return atc; // cache hit
+        }
+        SoftReference<MethodHandle> softCache = asTypeSoftCache;
+        if (softCache != null) {
+            atc = softCache.get();
+            if (atc != null && newType == atc.type) {
+                return atc; // soft cache hit
+            }
         }
         return null;
+    }
+
+    private MethodHandle setAsTypeCache(MethodHandle at) {
+        // Don't introduce a strong reference in the cache if newType depends on any class loader other than
+        // current method handle already does to avoid class loader leaks.
+        if (isSafeToCache(at.type)) {
+            asTypeCache = at;
+        } else {
+            asTypeSoftCache = new SoftReference<>(at);
+        }
+        return at;
     }
 
     /** Override this to change asType behavior. */
     /*non-public*/
     MethodHandle asTypeUncached(MethodType newType) {
-        if (!type.isConvertibleTo(newType))
-            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
-        return asTypeCache = MethodHandleImpl.makePairwiseConvert(this, newType, true);
+        if (!type.isConvertibleTo(newType)) {
+            throw new WrongMethodTypeException("cannot convert " + this + " to " + newType);
+        }
+        return MethodHandleImpl.makePairwiseConvert(this, newType, true);
+    }
+
+    /**
+     * Returns true if {@code newType} does not depend on any class loader other than current method handle already does.
+     * May conservatively return false in order to be efficient.
+     */
+    private boolean isSafeToCache(MethodType newType) {
+        ClassLoader loader = getApproximateCommonClassLoader(type);
+        return keepsAlive(newType, loader);
+    }
+
+    /**
+     * Tries to find the most specific {@code ClassLoader} which keeps all the classes mentioned in {@code mt} alive.
+     * In the worst case, returns a {@code ClassLoader} which relates to some of the classes mentioned in {@code mt}.
+     */
+    private static ClassLoader getApproximateCommonClassLoader(MethodType mt) {
+        ClassLoader loader = mt.rtype().getClassLoader();
+        for (Class<?> ptype : mt.ptypes()) {
+            ClassLoader ploader = ptype.getClassLoader();
+            if (isAncestorLoaderOf(loader, ploader)) {
+                loader = ploader; // pick more specific loader
+            } else {
+                // Either loader is a descendant of ploader or loaders are unrelated. Ignore both cases.
+                // When loaders are not related, just pick one and proceed. It reduces the precision of keepsAlive, but
+                // doesn't compromise correctness.
+            }
+        }
+        return loader;
+    }
+
+    /* Returns true when {@code loader} keeps components of {@code mt} reachable either directly or indirectly through the loader delegation chain. */
+    private static boolean keepsAlive(MethodType mt, ClassLoader loader) {
+        for (Class<?> ptype : mt.ptypes()) {
+            if (!keepsAlive(ptype, loader)) {
+                return false;
+            }
+        }
+        return keepsAlive(mt.rtype(), loader);
+    }
+
+    /* Returns true when {@code loader} keeps {@code cls} either directly or indirectly through the loader delegation chain. */
+    private static boolean keepsAlive(Class<?> cls, ClassLoader loader) {
+        ClassLoader defLoader = cls.getClassLoader();
+        if (isBuiltinLoader(defLoader)) {
+            return true; // built-in loaders are always reachable
+        }
+        return isAncestorLoaderOf(defLoader, loader);
+    }
+
+    private static boolean isAncestorLoaderOf(ClassLoader ancestor, ClassLoader descendant) {
+        // Assume built-in loaders are interchangeable and all custom loaders delegate to one of them.
+        if (isBuiltinLoader(ancestor)) {
+            return true;
+        }
+        // Climb up the descendant chain until a built-in loader is encountered.
+        for (ClassLoader loader = descendant; !isBuiltinLoader(loader); loader = loader.getParent()) {
+            if (loader == ancestor) {
+                return true;
+            }
+        }
+        return false; // no direct relation between loaders is found
+    }
+
+    private static boolean isBuiltinLoader(ClassLoader loader) {
+        return loader == null ||
+               loader == ClassLoaders.platformClassLoader() ||
+               loader == ClassLoaders.appClassLoader();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,15 +94,14 @@ class RTFGenerator extends Object
 
         Dictionary<String, String> textKeywordDictionary = RTFReader.textKeywords;
         Enumeration<String> keys = textKeywordDictionary.keys();
-        Vector<CharacterKeywordPair> tempPairs = new Vector<CharacterKeywordPair>();
+        ArrayList<CharacterKeywordPair> tempPairs = new ArrayList<CharacterKeywordPair>();
         while(keys.hasMoreElements()) {
             CharacterKeywordPair pair = new CharacterKeywordPair();
             pair.keyword = keys.nextElement();
             pair.character = textKeywordDictionary.get(pair.keyword).charAt(0);
-            tempPairs.addElement(pair);
+            tempPairs.add(pair);
         }
-        textKeywords = new CharacterKeywordPair[tempPairs.size()];
-        tempPairs.copyInto(textKeywords);
+        textKeywords = tempPairs.toArray(new CharacterKeywordPair[0]);
     }
 
     static final char[] hexdigits = { '0', '1', '2', '3', '4', '5', '6', '7',
