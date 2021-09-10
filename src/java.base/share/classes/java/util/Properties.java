@@ -847,15 +847,12 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * @implNote When writing the date comment, this method checks whether the
      * {@systemProperty java.util.Properties.storeDate} system property is set.
-     * If it is set, then its value is expected to represent epoch seconds,
-     * which is the number of seconds, excluding leap seconds,
-     * since 01 Jan 1970 00:00:00 UTC. When this system property is set,
-     * then instead of writing the current date and time, the date and time
-     * represented by the system property value will be written, using the
-     * {@code EEE MMM dd HH:mm:ss zzz yyyy} {@link DateTimeFormatter date format} with a
-     * {@link Locale#ROOT root locale} and {@link ZoneOffset#UTC UTC zone offset}.
-     * If the value set for this system property cannot be parsed to a {@code long},
-     * then the current date and time will be written.
+     * If it is set and its value is not {@link String#isBlank() blank},
+     * then that value is written as a comment instead of writing the
+     * current date and time. Although this method doesn't mandate it, conventionally,
+     * the value of this system property represents a formatted
+     * date time value that can be parsed back into a {@link Date} using an appropriate
+     * {@link DateTimeFormatter}
      *
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
@@ -953,22 +950,10 @@ public class Properties extends Hashtable<Object,Object> {
         // and so doesn't need any security manager checks to make the value accessible
         // to the callers
         String storeDate = StaticProperty.javaUtilPropertiesStoreDate();
-        String dateComment = null;
-        if (storeDate != null) {
-            try {
-                long epochSeconds = Long.parseLong(storeDate);
-                dateComment = "#" + DateTimeFormatter.ofPattern(dateFormatPattern)
-                        .withLocale(Locale.ROOT)
-                        .withZone(ZoneOffset.UTC)
-                        .format(Instant.ofEpochSecond(epochSeconds));
-            } catch (NumberFormatException | DateTimeException e) {
-                // ignore any value that cannot be parsed for the java.util.Properties.storeDate
-                // system property and instead use the current date in the date comment.
-            }
-        }
-        bw.write(dateComment != null
-                    ? dateComment
-                    : "#" + DateTimeFormatter.ofPattern(dateFormatPattern).format(ZonedDateTime.now()));
+        String dateComment = (storeDate != null && !storeDate.isBlank())
+                ? "#" + storeDate
+                : "#" + DateTimeFormatter.ofPattern(dateFormatPattern).format(ZonedDateTime.now());
+        bw.write(dateComment);
         bw.newLine();
     }
 

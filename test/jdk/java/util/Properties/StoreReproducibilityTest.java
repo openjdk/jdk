@@ -30,11 +30,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +53,8 @@ public class StoreReproducibilityTest {
 
     private static final String dateCommentFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
     private static final String SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE = "java.util.Properties.storeDate";
+    private static final DateTimeFormatter reproducibleDateTimeFormatter = DateTimeFormatter.ofPattern(dateCommentFormat)
+            .withLocale(Locale.ROOT).withZone(ZoneOffset.UTC);
 
     public static void main(final String[] args) throws Exception {
         // no security manager enabled
@@ -64,8 +64,10 @@ public class StoreReproducibilityTest {
         testWithSecMgrExplicitPermission();
         // security manager enabled and no explicit permission on java.util.Properties.storeDate system property
         testWithSecMgrNoSpecificPermission();
-        // invalid/unparsable value for java.util.Properties.storeDate system property
-        testInvalidStoreDateValue();
+        // free form non-date value for java.util.Properties.storeDate system property
+        testNonDateStoreDateValue();
+        // blank value for java.util.Properties.storeDate system property
+        testBlankStoreDateValue();
     }
 
     /**
@@ -81,7 +83,7 @@ public class StoreReproducibilityTest {
      */
     private static void testWithoutSecurityManager() throws Exception {
         final List<Path> storedFiles = new ArrayList<>();
-        final String storeDate = "243535322";
+        final String storeDate = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(243535322));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
@@ -123,7 +125,7 @@ public class StoreReproducibilityTest {
                 };
                 """));
         final List<Path> storedFiles = new ArrayList<>();
-        final String storeDate = "1234342423";
+        final String storeDate = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(1234342423));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
@@ -167,7 +169,7 @@ public class StoreReproducibilityTest {
                 };
                 """));
         final List<Path> storedFiles = new ArrayList<>();
-        final String storeDate = "1234342423";
+        final String storeDate = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(1234342423));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
@@ -189,13 +191,41 @@ public class StoreReproducibilityTest {
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed an invalid value for
-     * the {@code java.util.Properties.storeDate} system property.
-     * It is expected and verified in this test that such an invalid value for the system property
-     * will cause the date comment to be the "current date". The launched program is expected to complete
+     * properties to a file. The launched Java program is passed a blank value
+     * for the {@code java.util.Properties.storeDate} system property.
+     * It is expected and verified in this test that such a value for the system property
+     * will cause the date comment to use the current date time. The launched program is expected to complete
      * without any errors.
      */
-    private static void testInvalidStoreDateValue() throws Exception {
+    private static void testBlankStoreDateValue() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            final Path tmpFile = Files.createTempFile("8231640", ".props");
+            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + "      \t",
+                    StoreTest.class.getName(),
+                    tmpFile.toString(),
+                    i % 2 == 0 ? "--use-outputstream" : "--use-writer");
+            Date launchedAt = new Date();
+            // wait for a second before launching so that we can then expect
+            // the date written out by the store() APIs to be "after" this launch date
+            Thread.sleep(1000);
+            executeJavaProcess(processBuilder);
+            if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
+                throw new RuntimeException("Unexpected properties stored in " + tmpFile);
+            }
+            assertCurrentDate(tmpFile, launchedAt);
+        }
+    }
+
+    /**
+     * Launches a Java program which is responsible for using Properties.store() to write out the
+     * properties to a file. The launched Java program is passed the {@code java.util.Properties.storeDate}
+     * system property with a value that doesn't represent a formatted date.
+     * It is expected and verified in this test that such a value for the system property
+     * will cause the comment to use that value verbatim. The launched program is expected to complete
+     * without any errors.
+     */
+    private static void testNonDateStoreDateValue() throws Exception {
         final String storeDate = "foo-bar";
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
@@ -204,15 +234,11 @@ public class StoreReproducibilityTest {
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            final Date processLaunchedAt = new Date();
-            // launch with a second delay so that we can then verify that the date comment
-            // written out by the program is "after" this date
-            Thread.sleep(1000);
             executeJavaProcess(processBuilder);
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
-            assertCurrentDate(tmpFile, processLaunchedAt);
+            assertExpectedStoreDate(tmpFile, storeDate);
         }
     }
 
@@ -235,32 +261,17 @@ public class StoreReproducibilityTest {
     }
 
     /**
-     * Verifies that the date comment in the {@code destFile} is of the expected format
-     * and the time represented by it corresponds to the passed {@code storeDate}
+     * Verifies that the date comment in the {@code destFile} is same as {@code storeDate}
      */
     private static void assertExpectedStoreDate(final Path destFile,
                                                 final String storeDate) throws Exception {
         final String dateComment = findNthComment(destFile, 2);
         if (dateComment == null) {
-            throw new RuntimeException("Date comment not found in stored properties " + destFile
-                    + " when storeDate was set to " + storeDate);
+            throw new RuntimeException("Comment \"" + storeDate + "\" not found in stored properties " + destFile);
         }
-        System.out.println("Found date comment " + dateComment + " in file " + destFile);
-        long parsedSecondsSinceEpoch;
-        try {
-            var d = DateTimeFormatter.ofPattern(dateCommentFormat)
-                    .withLocale(Locale.ROOT)
-                    .withZone(ZoneOffset.UTC).parse(dateComment);
-            parsedSecondsSinceEpoch = Duration.between(Instant.ofEpochSecond(0), Instant.from(d)).toSeconds();
-        } catch (DateTimeParseException pe) {
-            throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile
-                    + " when storeDate was set to " + storeDate, pe);
-
-        }
-        final long expected = Long.parseLong(storeDate);
-        if (parsedSecondsSinceEpoch != expected) {
-            throw new RuntimeException("Expected " + expected + " seconds since epoch but found "
-                    + parsedSecondsSinceEpoch);
+        if (!storeDate.equals(dateComment)) {
+            throw new RuntimeException("Expected comment \"" + storeDate + "\" but found \"" + dateComment + "\" " +
+                    "in stored properties " + destFile);
         }
     }
 
