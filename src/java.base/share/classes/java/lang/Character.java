@@ -9313,7 +9313,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @return the index within the char sequence
      * @throws NullPointerException if {@code seq} is null.
      * @throws IndexOutOfBoundsException if {@code index}
-     *   is negative or larger then the length of the char sequence,
+     *   is negative or larger than the length of the char sequence,
      *   or if {@code codePointOffset} is positive and the
      *   subsequence starting with {@code index} has fewer than
      *   {@code codePointOffset} code points, or if
