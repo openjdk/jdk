@@ -41,10 +41,9 @@ G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
   _pending_nodes_list(),
   _num_pending_nodes(0),
   _num_free_nodes(0)
-  // _num_allocated_nodes(0)
-  // _num_available_nodes(0)
 {
-  // assert(elem_size() >= sizeof(G1CardSetContainer), "Element instance size %u for allocator %s too small", elem_size(), name);
+  uint elem_size = G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
+  assert(elem_size >= sizeof(G1CardSetContainer), "Element instance size %u for allocator %s too small", elem_size, name);
 }
 
 template <class Elem>
@@ -114,8 +113,6 @@ template <class Elem>
 void G1CardSetAllocator<Elem>::drop_all() {
   _free_nodes_list.pop_all();
   _pending_nodes_list.pop_all();
-  // _num_available_nodes = 0;
-  // _num_allocated_nodes = 0;
   _num_pending_nodes = 0;
   _num_free_nodes = 0;
 
@@ -124,8 +121,19 @@ void G1CardSetAllocator<Elem>::drop_all() {
 
 template <class Elem>
 void G1CardSetAllocator<Elem>::print(outputStream* os) {
-  // os->print("MA " PTR_FORMAT ": %u elems pending (allocated %u available %u) used %.3f highest %u buffers %u size %zu ",
-  //               p2i(this), _num_pending_nodes, _num_allocated_nodes, _num_available_nodes, percent_of(_num_allocated_nodes - _num_pending_nodes, _num_available_nodes), _first != nullptr ? _first->num_elems() : 0, _num_buffers, mem_size());
+  uint num_allocated_nodes = G1SegmentedArray<Elem, mtGCCardSet>::num_allocated_nodes();
+  uint num_available_nodes = G1SegmentedArray<Elem, mtGCCardSet>::num_available_nodes();
+  const SegmentedArrayBuffer<mtGCCardSet>* first_array_buffer = G1SegmentedArray<Elem, mtGCCardSet>::first_array_buffer();
+  uint num_buffers = G1SegmentedArray<Elem, mtGCCardSet>::num_buffers();
+  os->print("MA " PTR_FORMAT ": %u elems pending (allocated %u available %u) used %.3f highest %u buffers %u size %zu ",
+            p2i(this),
+            _num_pending_nodes,
+            num_allocated_nodes,
+            num_available_nodes,
+            percent_of(num_allocated_nodes - _num_pending_nodes, num_available_nodes),
+            first_array_buffer != nullptr ? first_array_buffer->num_elems() : 0,
+            num_buffers,
+            mem_size());
 }
 
 G1CardSetMemoryStats::G1CardSetMemoryStats() {

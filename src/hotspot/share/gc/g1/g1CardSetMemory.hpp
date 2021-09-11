@@ -111,9 +111,6 @@ class G1CardSetAllocator : public G1SegmentedArray<Elem, mtGCCardSet> {
   volatile uint _num_pending_nodes;   // Number of nodes in the pending list.
   volatile uint _num_free_nodes;      // Number of nodes in the free list.
 
-  // volatile uint _num_allocated_nodes; // Number of total nodes allocated and in use.
-  // volatile uint _num_available_nodes; // Number of nodes available in all buffers (allocated + free + pending + not yet used).
-
   // Try to transfer nodes from _pending_nodes_list to _free_nodes_list, with a
   // synchronization delay for any in-progress pops from the _free_nodes_list
   // to solve ABA here.
@@ -139,12 +136,12 @@ public:
   size_t mem_size() const {
     return sizeof(*this) +
       G1SegmentedArray<Elem, mtGCCardSet>::num_buffers() * sizeof(G1CardSetBuffer)
-            + G1SegmentedArray<Elem, mtGCCardSet>::_num_available_nodes * G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
+            + G1SegmentedArray<Elem, mtGCCardSet>::num_available_nodes() * G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
   }
 
   size_t wasted_mem_size() const {
-    return (G1SegmentedArray<Elem, mtGCCardSet>::_num_available_nodes
-              - (G1SegmentedArray<Elem, mtGCCardSet>::_num_allocated_nodes - _num_pending_nodes))
+    return (G1SegmentedArray<Elem, mtGCCardSet>::num_available_nodes()
+              - (G1SegmentedArray<Elem, mtGCCardSet>::num_allocated_nodes() - _num_pending_nodes))
                 * G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
   }
 

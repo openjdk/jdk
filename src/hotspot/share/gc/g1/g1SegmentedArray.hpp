@@ -124,7 +124,7 @@ public:
 };
 
 
-
+// Configuration for G1SegmentedArray, e.g element size, element number of next SegmentedArrayBuffer.
 class G1SegmentedArrayAllocOptions {
 protected:
   uint _elem_size;
@@ -154,17 +154,18 @@ public:
     return _initial_num_elems;
   }
 
-  uint elem_size () const {return _elem_size;}
+  uint elem_size() const {return _elem_size;}
 
   uint alignment() const { return _alignment; }
 };
 
 
-
+// A segmented array where SegmentedArrayBuffer is the segment, and
+// SegmentedArrayBufferList is the free list to cache SegmentedArrayBuffer,
+// and G1SegmentedArrayAllocOptions is the configuration for G1SegmentedArray
+// attributes.
 template <class Elem, MEMFLAGS flag>
 class G1SegmentedArray {
-
-protected:
   // G1CardSetAllocOptions provides parameters for allocation buffer
   // sizing and expansion.
   G1SegmentedArrayAllocOptions _alloc_options;
@@ -172,7 +173,6 @@ protected:
   volatile uint _num_available_nodes; // Number of nodes available in all buffers (allocated + free + pending + not yet used).
   volatile uint _num_allocated_nodes; // Number of total nodes allocated and in use.
 
-private:
   SegmentedArrayBuffer<flag>* volatile _first;       // The (start of the) list of all buffers.
   SegmentedArrayBuffer<flag>* _last;                 // The last element of the list of all buffers.
   volatile uint _num_buffers;             // Number of assigned buffers to this allocator.
@@ -182,10 +182,13 @@ private:
   // preferentially get new buffers from.
 
 private:
-  SegmentedArrayBuffer<flag>* create_new_buffer(SegmentedArrayBuffer<flag>* const prev);
+  inline SegmentedArrayBuffer<flag>* create_new_buffer(SegmentedArrayBuffer<flag>* const prev);
 
 protected:
-  uint elem_size() const;
+  uint num_available_nodes() const { return _num_available_nodes; }
+  uint num_allocated_nodes() const { return _num_allocated_nodes; }
+  const SegmentedArrayBuffer<flag>* first_array_buffer() const { return _first; }
+  inline uint elem_size() const;
 
 public:
   G1SegmentedArray(const char* name,
@@ -199,9 +202,9 @@ public:
   // be called in a globally synchronized area.
   void drop_all();
 
-  Elem* allocate();
+  inline Elem* allocate();
 
-  uint num_buffers() const;
+  inline uint num_buffers() const;
 
   uint length();
 

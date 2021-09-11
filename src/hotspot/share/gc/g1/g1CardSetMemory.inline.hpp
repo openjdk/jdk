@@ -40,7 +40,8 @@ G1CardSetContainer* volatile* G1CardSetAllocator<Elem>::next_ptr(G1CardSetContai
 
 template <class Elem>
 Elem* G1CardSetAllocator<Elem>::allocate() {
-  // assert(G1SegmentedArray<Elem, mtGCCardSet>::elem_size() > 0, "instance size not set.");
+  uint elem_size = G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
+  assert(elem_size > 0, "instance size not set.");
 
   if (num_free_elems() > 0) {
     // Pop under critical section to deal with ABA problem
