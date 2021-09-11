@@ -186,8 +186,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         @SuppressWarnings("removal")
         String systemFonts = java.security.AccessController.doPrivileged(
                new GetPropertyAction("swing.useSystemFontSettings"));
-        useSystemFontSettings = (systemFonts == null ||
-                                 Boolean.valueOf(systemFonts).booleanValue());
+        useSystemFontSettings = systemFonts == null || Boolean.parseBoolean(systemFonts);
 
         if (useSystemFontSettings) {
             Object value = UIManager.get("Application.useSystemFontSettings");

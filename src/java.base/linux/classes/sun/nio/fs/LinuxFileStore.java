@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ class LinuxFileStore
         int[] majorMinorMicro = new int[3];
         int length = Math.min(matches.length, majorMinorMicro.length);
         for (int i = 0; i < length; i++) {
-            majorMinorMicro[i] = Integer.valueOf(matches[i]);
+            majorMinorMicro[i] = Integer.parseInt(matches[i]);
         }
         return majorMinorMicro;
     }

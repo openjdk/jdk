@@ -1708,7 +1708,7 @@ class Metacity implements SynthConstants {
     protected boolean getBooleanAttr(Node node, String name, boolean fallback) {
         String str = getStringAttr(node, name);
         if (str != null) {
-            return Boolean.valueOf(str).booleanValue();
+            return Boolean.parseBoolean(str);
         }
         return fallback;
     }

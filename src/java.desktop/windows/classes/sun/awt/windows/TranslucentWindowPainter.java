@@ -68,11 +68,11 @@ abstract class TranslucentWindowPainter {
     // REMIND: we probably would want to remove this later
     @SuppressWarnings("removal")
     private static final boolean forceOpt  =
-        Boolean.valueOf(AccessController.doPrivileged(
+        Boolean.parseBoolean(AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.twp.forceopt", "false")));
     @SuppressWarnings("removal")
     private static final boolean forceSW  =
-        Boolean.valueOf(AccessController.doPrivileged(
+        Boolean.parseBoolean(AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.twp.forcesw", "false")));
 
     /**

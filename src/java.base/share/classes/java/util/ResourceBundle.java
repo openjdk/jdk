@@ -3729,7 +3729,7 @@ public abstract class ResourceBundle {
 
     }
 
-    private static final boolean TRACE_ON = Boolean.valueOf(
+    private static final boolean TRACE_ON = Boolean.parseBoolean(
         GetPropertyAction.privilegedGetProperty("resource.bundle.debug", "false"));
 
     private static void trace(String format, Object... params) {
