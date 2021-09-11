@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1150,9 +1150,9 @@ public class BoxView extends CompositeView {
             int index = getViewIndexAtPosition(testPos);
             if(index != -1) {
                 View v = getView(index);
-                if(v != null && v instanceof CompositeView) {
-                    return ((CompositeView)v).flipEastAndWestAtEnds(position,
-                                                                    bias);
+                if (v instanceof CompositeView compositeView) {
+                    return compositeView.flipEastAndWestAtEnds(position,
+                                                               bias);
                 }
             }
         }

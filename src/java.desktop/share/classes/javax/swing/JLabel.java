@@ -1110,8 +1110,8 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             if (icon instanceof Accessible) {
                 AccessibleContext ac =
                 ((Accessible)icon).getAccessibleContext();
-                if (ac != null && ac instanceof AccessibleIcon) {
-                    return new AccessibleIcon[] { (AccessibleIcon)ac };
+                if (ac instanceof AccessibleIcon ai) {
+                    return new AccessibleIcon[] { ai };
                 }
             }
             return null;

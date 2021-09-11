@@ -842,8 +842,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                                   Element elem, AttributeSet attr, int offset,
                                   int x, int y) {
             Object useMap = attr.getAttribute(HTML.Attribute.USEMAP);
-            if (useMap != null && (useMap instanceof String)) {
-                Map m = hdoc.getMap((String)useMap);
+            if (useMap instanceof String s) {
+                Map m = hdoc.getMap(s);
                 if (m != null && offset < hdoc.getLength()) {
                     Rectangle bounds;
                     TextUI ui = html.getUI();
@@ -1474,11 +1474,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             protected void layoutMinorAxis(int targetSpan, int axis, int[] offsets, int[] spans) {
                 Container container = getContainer();
                 Container parentContainer;
-                if (container != null
-                    && (container instanceof javax.swing.JEditorPane)
-                    && (parentContainer = container.getParent()) != null
-                    && (parentContainer instanceof javax.swing.JViewport)) {
-                    JViewport viewPort = (JViewport)parentContainer;
+                if ((container instanceof JEditorPane)
+                        && (parentContainer = container.getParent()) != null
+                        && (parentContainer instanceof JViewport viewPort)) {
                     if (cachedViewPort != null) {
                         JViewport cachedObject = cachedViewPort.get();
                         if (cachedObject != null) {
@@ -2393,9 +2391,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          */
         private void doObjectAction(JEditorPane editor, Element elem) {
             View view = getView(editor, elem);
-            if (view != null && view instanceof ObjectView) {
-                Component comp = ((ObjectView)view).getComponent();
-                if (comp != null && comp instanceof Accessible) {
+            if (view instanceof ObjectView objectView) {
+                Component comp = objectView.getComponent();
+                if (comp instanceof Accessible) {
                     AccessibleContext ac = comp.getAccessibleContext();
                     if (ac != null) {
                         AccessibleAction aa = ac.getAccessibleAction();
@@ -2479,10 +2477,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             JEditorPane editor = (JEditorPane)c;
 
             Document d = editor.getDocument();
-            if (d == null || !(d instanceof HTMLDocument)) {
+            if (!(d instanceof HTMLDocument doc)) {
                 return;
             }
-            HTMLDocument doc = (HTMLDocument)d;
 
             ElementIterator ei = new ElementIterator(doc);
             int currentOffset = editor.getCaretPosition();

@@ -1620,11 +1620,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
             MediaSize mediaSize = null;
 
             Media media = (Media)asCurrent.get(Media.class);
-            if (media == null || !(media instanceof MediaSizeName)) {
+            if (!(media instanceof MediaSizeName)) {
                 media = (Media)psCurrent.getDefaultAttributeValue(Media.class);
             }
-            if (media != null && (media instanceof MediaSizeName)) {
-                MediaSizeName msn = (MediaSizeName)media;
+            if (media instanceof MediaSizeName msn) {
                 mediaSize = MediaSize.getMediaSizeForName(msn);
             }
             if (mediaSize == null) {
@@ -1706,11 +1705,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
             MediaSize mediaSize = null;
 
             Media media = (Media)asCurrent.get(Media.class);
-            if (media == null || !(media instanceof MediaSizeName)) {
+            if (!(media instanceof MediaSizeName)) {
                 media = (Media)psCurrent.getDefaultAttributeValue(Media.class);
             }
-            if (media != null && (media instanceof MediaSizeName)) {
-                MediaSizeName msn = (MediaSizeName)media;
+            if (media instanceof MediaSizeName msn) {
                 mediaSize = MediaSize.getMediaSizeForName(msn);
             }
             if (mediaSize == null) {

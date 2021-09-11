@@ -2054,8 +2054,8 @@ public class SwingUtilities implements SwingConstants
      * ImageIcon, and the image it contains is the same as <code>image</code>.
      */
     static boolean doesIconReferenceImage(Icon icon, Image image) {
-        Image iconImage = (icon != null && (icon instanceof ImageIcon)) ?
-                           ((ImageIcon)icon).getImage() : null;
+        Image iconImage = (icon instanceof ImageIcon i) ?
+                           i.getImage() : null;
         return (iconImage == image);
     }
 

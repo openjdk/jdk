@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,16 +72,16 @@ class HRuleView extends View  {
 
             noshade = (String)eAttr.getAttribute(HTML.Attribute.NOSHADE);
             Object value = eAttr.getAttribute(HTML.Attribute.SIZE);
-            if (value != null && (value instanceof String)) {
+            if (value instanceof String s) {
                 try {
-                    size = Integer.parseInt((String)value);
+                    size = Integer.parseInt(s);
                 } catch (NumberFormatException e) {
                     size = 1;
                 }
             }
             value = attr.getAttribute(CSS.Attribute.WIDTH);
-            if (value != null && (value instanceof CSS.LengthValue)) {
-                widthValue = (CSS.LengthValue)value;
+            if (value instanceof CSS.LengthValue lv) {
+                widthValue = lv;
             }
             topMargin = getLength(CSS.Attribute.MARGIN_TOP, attr);
             bottomMargin = getLength(CSS.Attribute.MARGIN_BOTTOM, attr);

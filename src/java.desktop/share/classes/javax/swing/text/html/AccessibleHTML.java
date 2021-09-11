@@ -372,8 +372,8 @@ class AccessibleHTML implements Accessible {
          */
         public Accessible getAccessibleChild(int i) {
             ElementInfo childInfo = elementInfo.getChild(i);
-            if (childInfo != null && childInfo instanceof Accessible) {
-                return (Accessible)childInfo;
+            if (childInfo instanceof Accessible accessibleChild) {
+                return accessibleChild;
             } else {
                 return null;
             }

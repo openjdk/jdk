@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -901,8 +901,8 @@ public class HTMLDocument extends DefaultStyledDocument {
         if (name != null) {
             Object     maps = getProperty(MAP_PROPERTY);
 
-            if (maps != null && (maps instanceof Hashtable)) {
-                return (Map)((Hashtable)maps).get(name);
+            if (maps instanceof Hashtable hashtable) {
+                return (Map) hashtable.get(name);
             }
         }
         return null;

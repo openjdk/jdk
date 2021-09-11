@@ -540,14 +540,13 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Check to see if two ShellFolder objects are the same
      */
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof Win32ShellFolder2)) {
+        if (!(o instanceof Win32ShellFolder2 rhs)) {
             // Short-circuit circuitous delegation path
             if (!(o instanceof File)) {
                 return super.equals(o);
             }
             return pathsEqual(getPath(), ((File) o).getPath());
         }
-        Win32ShellFolder2 rhs = (Win32ShellFolder2) o;
         if ((parent == null && rhs.parent != null) ||
             (parent != null && rhs.parent == null)) {
             return false;

@@ -438,11 +438,11 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      */
     public void setLogicalStyle(int pos, Style s) {
         Element paragraph = getParagraphElement(pos);
-        if ((paragraph != null) && (paragraph instanceof AbstractElement)) {
+        if (paragraph instanceof AbstractElement abstractElement) {
             try {
                 writeLock();
-                StyleChangeUndoableEdit edit = new StyleChangeUndoableEdit((AbstractElement)paragraph, s);
-                ((AbstractElement)paragraph).setResolveParent(s);
+                StyleChangeUndoableEdit edit = new StyleChangeUndoableEdit(abstractElement, s);
+                abstractElement.setResolveParent(s);
                 int p0 = paragraph.getStartOffset();
                 int p1 = paragraph.getEndOffset();
                 DefaultDocumentEvent e =

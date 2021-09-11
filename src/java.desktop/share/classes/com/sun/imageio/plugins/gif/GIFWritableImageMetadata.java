@@ -248,8 +248,7 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
 
                 Object applicationExtensionData =
                     applicationExtension.getUserObject();
-                if (applicationExtensionData == null ||
-                    !(applicationExtensionData instanceof byte[])) {
+                if (!(applicationExtensionData instanceof byte[])) {
                     fatal(applicationExtension,
                           "Bad user object in ApplicationExtension!");
                 }

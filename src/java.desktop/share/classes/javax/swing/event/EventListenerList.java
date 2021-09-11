@@ -283,7 +283,7 @@ public class EventListenerList implements Serializable {
         for (int i = 0; i < lList.length; i+=2) {
             Class<?> t = (Class)lList[i];
             EventListener l = (EventListener)lList[i+1];
-            if ((l!=null) && (l instanceof Serializable)) {
+            if (l instanceof Serializable) {
                 s.writeObject(t.getName());
                 s.writeObject(l);
             }

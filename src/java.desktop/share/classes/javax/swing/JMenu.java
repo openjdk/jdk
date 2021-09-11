@@ -1598,7 +1598,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
                 return;
             }
             JMenuItem mi = getItem(i);
-            if (mi != null && mi instanceof JMenu) {
+            if (mi instanceof JMenu) {
                 if (mi.isSelected()) {
                     MenuElement[] old =
                         MenuSelectionManager.defaultManager().getSelectedPath();
