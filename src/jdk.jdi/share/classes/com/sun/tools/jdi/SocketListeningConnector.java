@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,6 @@ public class SocketListeningConnector extends GenericListeningConnector {
 
     private boolean isWildcardPort(Map<String, ? extends Connector.Argument> args) {
         String port = args.get(ARG_PORT).value();
-        return port.isEmpty() || Integer.valueOf(port) == 0;
+        return port.isEmpty() || Integer.parseInt(port) == 0;
     }
 }

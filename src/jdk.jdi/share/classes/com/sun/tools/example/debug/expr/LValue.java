@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,11 +735,11 @@ abstract class LValue {
     }
 
     static LValue makeFloat(VirtualMachine vm, Token token) {
-        return make(vm, Float.valueOf(token.image).floatValue());
+        return make(vm, Float.parseFloat(token.image));
     }
 
     static LValue makeDouble(VirtualMachine vm, Token token) {
-        return make(vm, Double.valueOf(token.image).doubleValue());
+        return make(vm, Double.parseDouble(token.image));
     }
 
     static LValue makeInteger(VirtualMachine vm, Token token) {

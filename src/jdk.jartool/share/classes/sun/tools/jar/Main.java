@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,7 +631,7 @@ public class Main {
                     } else if (args[i].startsWith("--release")) {
                         int v = BASE_VERSION;
                         try {
-                            v = Integer.valueOf(args[++i]);
+                            v = Integer.parseInt(args[++i]);
                         } catch (NumberFormatException x) {
                             error(formatMsg("error.release.value.notnumber", args[i]));
                             // this will fall into the next error, thus returning false
@@ -1851,7 +1851,7 @@ public class Main {
 
         String s = name.substring(VERSIONS_DIR_LENGTH);
         s = s.substring(0, s.indexOf('/'));
-        return Integer.valueOf(s);
+        return Integer.parseInt(s);
     }
 
     /**

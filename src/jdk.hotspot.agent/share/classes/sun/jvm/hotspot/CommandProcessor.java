@@ -1138,7 +1138,7 @@ public class CommandProcessor {
                 if (t.countTokens() == 0) {
                     out.println("echo is " + doEcho);
                 } else if (t.countTokens() == 1) {
-                    doEcho = Boolean.valueOf(t.nextToken()).booleanValue();
+                    doEcho = Boolean.parseBoolean(t.nextToken());
                 } else {
                     usage();
                 }
@@ -1150,7 +1150,7 @@ public class CommandProcessor {
                     out.println("versioncheck is " +
                                 (System.getProperty("sun.jvm.hotspot.runtime.VM.disableVersionCheck") == null));
                 } else if (t.countTokens() == 1) {
-                    if (Boolean.valueOf(t.nextToken()).booleanValue()) {
+                    if (Boolean.parseBoolean(t.nextToken())) {
                         System.clearProperty("sun.jvm.hotspot.runtime.VM.disableVersionCheck");
                     } else {
                         System.setProperty("sun.jvm.hotspot.runtime.VM.disableVersionCheck", "true");
@@ -1264,7 +1264,7 @@ public class CommandProcessor {
                     // The field's Type must already be in the database -- no exceptions
                     Type fieldType = agent.getTypeDataBase().lookupType(t.nextToken());
 
-                    boolean isStatic = Boolean.valueOf(t.nextToken()).booleanValue();
+                    boolean isStatic = Boolean.parseBoolean(t.nextToken());
                     long offset = Long.parseLong(t.nextToken());
                     Address staticAddress = parseAddress(t.nextToken());
                     if (isStatic && staticAddress == null) {
@@ -1326,9 +1326,9 @@ public class CommandProcessor {
                     if (superclassName.equals("null")) {
                         superclassName = null;
                     }
-                    boolean isOop = Boolean.valueOf(t.nextToken()).booleanValue();
-                    boolean isInteger = Boolean.valueOf(t.nextToken()).booleanValue();
-                    boolean isUnsigned = Boolean.valueOf(t.nextToken()).booleanValue();
+                    boolean isOop = Boolean.parseBoolean(t.nextToken());
+                    boolean isInteger = Boolean.parseBoolean(t.nextToken());
+                    boolean isUnsigned = Boolean.parseBoolean(t.nextToken());
                     long size = Long.parseLong(t.nextToken());
 
                     BasicType type = null;
@@ -1684,7 +1684,7 @@ public class CommandProcessor {
                 if (t.countTokens() != 1) {
                     usage();
                 } else {
-                    verboseExceptions = Boolean.valueOf(t.nextToken()).booleanValue();
+                    verboseExceptions = Boolean.parseBoolean(t.nextToken());
                 }
             }
         },
@@ -1693,7 +1693,7 @@ public class CommandProcessor {
                 if (t.countTokens() != 1) {
                     usage();
                 } else {
-                    Assert.ASSERTS_ENABLED = Boolean.valueOf(t.nextToken()).booleanValue();
+                    Assert.ASSERTS_ENABLED = Boolean.parseBoolean(t.nextToken());
                 }
             }
         },

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,7 +294,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             void process(JavapTask task, String opt, String arg) throws BadArgs {
                 int sep = opt.indexOf(":");
                 try {
-                    int i = Integer.valueOf(opt.substring(sep + 1));
+                    int i = Integer.parseInt(opt.substring(sep + 1));
                     if (i > 0) // silently ignore invalid values
                         task.options.indentWidth = i;
                 } catch (NumberFormatException e) {
@@ -313,7 +313,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             void process(JavapTask task, String opt, String arg) throws BadArgs {
                 int sep = opt.indexOf(":");
                 try {
-                    int i = Integer.valueOf(opt.substring(sep + 1));
+                    int i = Integer.parseInt(opt.substring(sep + 1));
                     if (i > 0) // silently ignore invalid values
                         task.options.tabColumn = i;
                 } catch (NumberFormatException e) {

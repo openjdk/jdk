@@ -362,21 +362,21 @@ public final class ConnectorBootstrap {
                 props.getProperty(PropertyNames.USE_AUTHENTICATION,
                 DefaultValues.USE_AUTHENTICATION);
         final boolean useAuthentication =
-                Boolean.valueOf(useAuthenticationStr).booleanValue();
+                Boolean.parseBoolean(useAuthenticationStr);
 
         // Do we use SSL?
         final String useSslStr =
                 props.getProperty(PropertyNames.USE_SSL,
                 DefaultValues.USE_SSL);
         final boolean useSsl =
-                Boolean.valueOf(useSslStr).booleanValue();
+                Boolean.parseBoolean(useSslStr);
 
         // Do we use RMI Registry SSL?
         final String useRegistrySslStr =
                 props.getProperty(PropertyNames.USE_REGISTRY_SSL,
                 DefaultValues.USE_REGISTRY_SSL);
         final boolean useRegistrySsl =
-                Boolean.valueOf(useRegistrySslStr).booleanValue();
+                Boolean.parseBoolean(useRegistrySslStr);
 
         final String enabledCipherSuites =
                 props.getProperty(PropertyNames.SSL_ENABLED_CIPHER_SUITES);
@@ -406,7 +406,7 @@ public final class ConnectorBootstrap {
                 props.getProperty(PropertyNames.SSL_NEED_CLIENT_AUTH,
                 DefaultValues.SSL_NEED_CLIENT_AUTH);
         final boolean sslNeedClientAuth =
-                Boolean.valueOf(sslNeedClientAuthStr).booleanValue();
+                Boolean.parseBoolean(sslNeedClientAuthStr);
 
         // Read SSL config file name
         final String sslConfigFileName =
@@ -572,7 +572,7 @@ public final class ConnectorBootstrap {
             // Do we accept connections from local interfaces only?
             String useLocalOnlyStr = props.getProperty(
                     PropertyNames.USE_LOCAL_ONLY, DefaultValues.USE_LOCAL_ONLY);
-            boolean useLocalOnly = Boolean.valueOf(useLocalOnlyStr).booleanValue();
+            boolean useLocalOnly = Boolean.parseBoolean(useLocalOnlyStr);
             if (useLocalOnly) {
                 env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
                         new LocalRMIServerSocketFactory());

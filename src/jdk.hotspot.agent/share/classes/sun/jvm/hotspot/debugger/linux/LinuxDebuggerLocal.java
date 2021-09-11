@@ -284,11 +284,11 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
             return lines.map(s -> s.split("\\s+"))
                         .filter(a -> a.length == 3)
                         .filter(a -> a[0].equals("NSpid:"))
-                        .mapToInt(a -> Integer.valueOf(a[2]))
+                        .mapToInt(a -> Integer.parseInt(a[2]))
                         .findFirst()
                         .getAsInt();
         } catch (IOException | NoSuchElementException e) {
-            return Integer.valueOf(statusPath.getParent()
+            return Integer.parseInt(statusPath.getParent()
                                              .toFile()
                                              .getName());
         }
