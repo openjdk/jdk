@@ -1297,11 +1297,11 @@ public class DefaultMutableTreeNode implements Cloneable,
         Object[]             tValues;
 
         s.defaultWriteObject();
-        // Save the userObject, if its Serializable.
-        if(userObject != null && userObject instanceof Serializable) {
+        // Save the userObject, if it's Serializable.
+        if (userObject instanceof Serializable ser) {
             tValues = new Object[2];
             tValues[0] = "userObject";
-            tValues[1] = userObject;
+            tValues[1] = ser;
         }
         else
             tValues = new Object[0];

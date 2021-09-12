@@ -1216,9 +1216,8 @@ class AccessibleHTML implements Accessible {
             private String getText(int offset, int length)
                 throws BadLocationException {
 
-                if (model != null && model instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)model;
-                    return model.getText(offset, length);
+                if (model instanceof StyledDocument doc) {
+                    return doc.getText(offset, length);
                 } else {
                     return null;
                 }

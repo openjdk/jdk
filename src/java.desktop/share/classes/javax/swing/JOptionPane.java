@@ -2330,17 +2330,17 @@ public class JOptionPane extends JComponent implements Accessible
         Vector<Object> values = new Vector<Object>();
 
         s.defaultWriteObject();
-        // Save the icon, if its Serializable.
-        if(icon != null && icon instanceof Serializable) {
+        // Save the icon, if it's Serializable.
+        if (icon instanceof Serializable ser) {
             values.addElement("icon");
-            values.addElement(icon);
+            values.addElement(ser);
         }
-        // Save the message, if its Serializable.
-        if(message != null && message instanceof Serializable) {
+        // Save the message, if it's Serializable.
+        if (message instanceof Serializable ser) {
             values.addElement("message");
-            values.addElement(message);
+            values.addElement(ser);
         }
-        // Save the treeModel, if its Serializable.
+        // Save the treeModel, if it's Serializable.
         if(options != null) {
             ArrayList<Object> serOptions = new ArrayList<Object>();
 
@@ -2354,17 +2354,17 @@ public class JOptionPane extends JComponent implements Accessible
                 values.addElement(arrayOptions);
             }
         }
-        // Save the initialValue, if its Serializable.
-        if(initialValue != null && initialValue instanceof Serializable) {
+        // Save the initialValue, if it's Serializable.
+        if (initialValue instanceof Serializable ser) {
             values.addElement("initialValue");
-            values.addElement(initialValue);
+            values.addElement(ser);
         }
-        // Save the value, if its Serializable.
-        if(value != null && value instanceof Serializable) {
+        // Save the value, if it's Serializable.
+        if (value instanceof Serializable ser) {
             values.addElement("value");
-            values.addElement(value);
+            values.addElement(ser);
         }
-        // Save the selectionValues, if its Serializable.
+        // Save the selectionValues, if it's Serializable.
         if(selectionValues != null) {
             boolean            serialize = true;
 
@@ -2381,16 +2381,15 @@ public class JOptionPane extends JComponent implements Accessible
                 values.addElement(selectionValues);
             }
         }
-        // Save the inputValue, if its Serializable.
-        if(inputValue != null && inputValue instanceof Serializable) {
+        // Save the inputValue, if it's Serializable.
+        if (inputValue instanceof Serializable ser) {
             values.addElement("inputValue");
-            values.addElement(inputValue);
+            values.addElement(ser);
         }
-        // Save the initialSelectionValue, if its Serializable.
-        if(initialSelectionValue != null &&
-           initialSelectionValue instanceof Serializable) {
+        // Save the initialSelectionValue, if it's Serializable.
+        if (initialSelectionValue instanceof Serializable ser) {
             values.addElement("initialSelectionValue");
-            values.addElement(initialSelectionValue);
+            values.addElement(ser);
         }
         s.writeObject(values);
     }

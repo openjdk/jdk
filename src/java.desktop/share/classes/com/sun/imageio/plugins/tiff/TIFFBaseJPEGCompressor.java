@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,8 +274,8 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
 
         // Initialize the ImageWriteParam.
         if(this.JPEGParam == null) {
-            if(param != null && param instanceof JPEGImageWriteParam) {
-                JPEGParam = (JPEGImageWriteParam)param;
+            if (param instanceof JPEGImageWriteParam p) {
+                JPEGParam = p;
             } else {
                 JPEGParam =
                     new JPEGImageWriteParam(writer != null ?

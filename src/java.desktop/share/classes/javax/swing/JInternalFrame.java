@@ -1233,10 +1233,9 @@ public class JInternalFrame extends JComponent implements
     @BeanProperty(bound = false, expert = true, description
             = "Specifies what desktop layer is used.")
     public void setLayer(Integer layer) {
-        if(getParent() != null && getParent() instanceof JLayeredPane) {
+        if (getParent() instanceof JLayeredPane p) {
             // Normally we want to do this, as it causes the LayeredPane
             // to draw properly.
-            JLayeredPane p = (JLayeredPane)getParent();
             p.setLayer(this, layer.intValue(), p.getPosition(this));
         } else {
              // Try to do the right thing

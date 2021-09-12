@@ -194,8 +194,8 @@ public class ReplicateScaleFilter extends ImageFilter {
         int dx1 = (2 * x * destWidth + srcWidth - 1) / (2 * srcWidth);
         int dy1 = (2 * y * destHeight + srcHeight - 1) / (2 * srcHeight);
         byte[] outpix;
-        if (outpixbuf != null && outpixbuf instanceof byte[]) {
-            outpix = (byte[]) outpixbuf;
+        if (outpixbuf instanceof byte[] outbytes) {
+            outpix = outbytes;
         } else {
             outpix = new byte[destWidth];
             outpixbuf = outpix;
@@ -235,8 +235,8 @@ public class ReplicateScaleFilter extends ImageFilter {
         int dx1 = (2 * x * destWidth + srcWidth - 1) / (2 * srcWidth);
         int dy1 = (2 * y * destHeight + srcHeight - 1) / (2 * srcHeight);
         int[] outpix;
-        if (outpixbuf != null && outpixbuf instanceof int[]) {
-            outpix = (int[]) outpixbuf;
+        if (outpixbuf instanceof int[] outints) {
+            outpix = outints;
         } else {
             outpix = new int[destWidth];
             outpixbuf = outpix;

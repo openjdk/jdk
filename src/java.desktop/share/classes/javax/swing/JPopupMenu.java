@@ -1330,15 +1330,15 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         Vector<Object> values = new Vector<Object>();
 
         s.defaultWriteObject();
-        // Save the invoker, if its Serializable.
-        if(invoker != null && invoker instanceof Serializable) {
+        // Save the invoker if != null, (Component implements Serializable)
+        if (invoker != null) {
             values.addElement("invoker");
             values.addElement(invoker);
         }
-        // Save the popup, if its Serializable.
-        if(popup != null && popup instanceof Serializable) {
+        // Save the popup, if it's Serializable.
+        if (popup instanceof Serializable ser) {
             values.addElement("popup");
-            values.addElement(popup);
+            values.addElement(ser);
         }
         s.writeObject(values);
 
