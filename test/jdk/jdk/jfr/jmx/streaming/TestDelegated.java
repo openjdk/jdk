@@ -175,7 +175,6 @@ public class TestDelegated {
             latch.await();
         }
     }
-    
 
     private static void testonMetadata() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
