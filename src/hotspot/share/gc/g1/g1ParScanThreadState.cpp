@@ -26,6 +26,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1ConcurrentBOTFixing.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -317,6 +318,7 @@ void G1ParScanThreadState::steal_and_trim_queue(G1ScannerTasksQueueSet* task_que
 
 HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
                                                       size_t word_sz,
+                                                      size_t& actual_plab_size,
                                                       bool previous_plab_refill_failed,
                                                       uint node_index) {
 
@@ -328,6 +330,7 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
     bool plab_refill_in_old_failed = false;
     HeapWord* const obj_ptr = _plab_allocator->allocate(G1HeapRegionAttr::Old,
                                                         word_sz,
+                                                        actual_plab_size,
                                                         &plab_refill_in_old_failed,
                                                         node_index);
     // Make sure that we won't attempt to copy any other objects out
@@ -387,21 +390,30 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                                    uint age,
                                                    uint node_index) {
   HeapWord* obj_ptr = NULL;
+  size_t actual_plab_size = 0;
   // Try slow-path allocation unless we're allocating old and old is already full.
   if (!(dest_attr->is_old() && _old_gen_is_full)) {
     bool plab_refill_failed = false;
     obj_ptr = _plab_allocator->allocate_direct_or_new_plab(*dest_attr,
                                                            word_sz,
+                                                           actual_plab_size,
                                                            &plab_refill_failed,
                                                            node_index);
     if (obj_ptr == NULL) {
       obj_ptr = allocate_in_next_plab(dest_attr,
                                       word_sz,
+                                      actual_plab_size,
                                       plab_refill_failed,
                                       node_index);
     }
   }
   if (obj_ptr != NULL) {
+    if (actual_plab_size != 0) {
+      // A new plab has been allocated to accomodate the allocation. Record it.
+      if (G1UseConcurrentBOTFixing && dest_attr->is_old()) {
+        _g1h->concurrent_bot_fixing()->record_plab_allocation(obj_ptr, actual_plab_size);
+      }
+    }
     update_numa_stats(node_index);
     if (_g1h->_gc_tracer_stw->should_report_promotion_events()) {
       // The events are checked individually as part of the actual commit

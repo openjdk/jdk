@@ -124,13 +124,14 @@ inline HeapWord* G1PLABAllocator::plab_allocate(G1HeapRegionAttr dest,
 
 inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
                                            size_t word_sz,
+                                           size_t& actual_plab_size,
                                            bool* refill_failed,
                                            uint node_index) {
   HeapWord* const obj = plab_allocate(dest, word_sz, node_index);
   if (obj != NULL) {
     return obj;
   }
-  return allocate_direct_or_new_plab(dest, word_sz, refill_failed, node_index);
+  return allocate_direct_or_new_plab(dest, word_sz, actual_plab_size, refill_failed, node_index);
 }
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP

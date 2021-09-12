@@ -343,7 +343,10 @@
   product(bool, G1UsePreventiveGC, true, DIAGNOSTIC,                        \
           "Allows collections to be triggered proactively based on the      \
            number of free regions and the expected survival rates in each   \
-           section of the heap.")
+           section of the heap.")                                           \
+                                                                            \
+  product(bool, G1UseConcurrentBOTFixing, true,                             \
+          "Concurrently refine block offset table entries.")
 
 // end of GC_G1_FLAGS
 

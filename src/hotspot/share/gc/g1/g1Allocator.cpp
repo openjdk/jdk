@@ -311,6 +311,7 @@ bool G1PLABAllocator::may_throw_away_buffer(size_t const allocation_word_sz, siz
 
 HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        size_t word_sz,
+                                                       size_t& actual_plab_size,
                                                        bool* plab_refill_failed,
                                                        uint node_index) {
   size_t plab_word_size = _g1h->desired_plab_sz(dest);
@@ -324,7 +325,6 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
     PLAB* alloc_buf = alloc_buffer(dest, node_index);
     alloc_buf->retire();
 
-    size_t actual_plab_size = 0;
     HeapWord* buf = _allocator->par_allocate_during_gc(dest,
                                                        required_in_plab,
                                                        plab_word_size,

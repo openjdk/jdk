@@ -166,6 +166,7 @@ void G1GCPhaseTimes::reset() {
   _cur_expand_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
   _cur_collection_start_sec = 0.0;
+  _concurrent_bot_fixing_finalize_time_ms = 0.0;
   _root_region_scan_wait_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
   _recorded_prepare_heap_roots_time_ms = 0.0;
@@ -375,7 +376,8 @@ void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
-  const double sum_ms = _root_region_scan_wait_time_ms +
+  const double sum_ms = _concurrent_bot_fixing_finalize_time_ms +
+                        _root_region_scan_wait_time_ms +
                         _cur_prepare_tlab_time_ms +
                         _cur_concatenate_dirty_card_logs_time_ms +
                         _recorded_young_cset_choice_time_ms +
@@ -386,6 +388,9 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
+  if (_concurrent_bot_fixing_finalize_time_ms > 0.0) {
+    debug_time("Concurrent BOT Fixing Finalization", _concurrent_bot_fixing_finalize_time_ms);
+  }
   if (_root_region_scan_wait_time_ms > 0.0) {
     debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
   }

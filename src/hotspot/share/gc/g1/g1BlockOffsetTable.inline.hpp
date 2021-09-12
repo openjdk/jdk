@@ -31,6 +31,21 @@
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
 
+inline HeapWord* G1BlockOffsetTablePart::need_fixing(HeapWord* addr) const {
+  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
+  HeapWord* q = block_at_or_preceding(addr);
+  if (q + block_size(q) <= addr) {
+    return q;
+  }
+  return NULL;
+}
+
+inline void G1BlockOffsetTablePart::update(HeapWord* addr) {
+  assert(_hr->bottom() <= addr && addr < _hr->top(), "Invalid address");
+  // We use the function's side effect (to fix BOT), but not the function's result.
+  block_start(addr);
+}
+
 inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
   HeapWord* q = block_at_or_preceding(addr);

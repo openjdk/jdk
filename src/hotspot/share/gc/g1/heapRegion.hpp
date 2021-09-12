@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_HEAPREGION_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
+#include "gc/g1/g1ConcurrentBOTFixing.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
@@ -77,6 +78,7 @@ class HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _compaction_top;
 
   G1BlockOffsetTablePart _bot_part;
+  G1BOTFixingCardSet _bot_fixing_card_set;
   Mutex _par_alloc_lock;
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
@@ -198,6 +200,18 @@ public:
 
   void update_bot() {
     _bot_part.update();
+  }
+
+  HeapWord* need_fixing(HeapWord* addr) const;
+  void update_bot(HeapWord* addr);
+
+  // BOT fixing starts from here onwards.
+  void set_bot_fixing_start() {
+    _bot_fixing_card_set.set_bot_fixing_start();
+  }
+
+  G1BOTFixingCardSet* bot_fixing_card_set() {
+    return &_bot_fixing_card_set;
   }
 
 private:

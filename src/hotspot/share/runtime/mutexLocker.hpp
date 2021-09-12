@@ -108,6 +108,7 @@ extern Mutex*   FreeList_lock;                   // protects the free region lis
 extern Mutex*   OldSets_lock;                    // protects the old region sets
 extern Mutex*   Uncommit_lock;                   // protects the uncommit list when not at safepoints
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
+extern Monitor* ConcurrentBOTFixing_lock;        // synchronization between VM thread and the concurrent BOT fixing threads
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
 extern Monitor* MonitorDeflation_lock;           // a lock used for monitor deflation thread operation

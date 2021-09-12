@@ -184,6 +184,7 @@ public:
   // PLAB failed or not.
   HeapWord* allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                         size_t word_sz,
+                                        size_t& actual_plab_size,
                                         bool* plab_refill_failed,
                                         uint node_index);
 
@@ -195,6 +196,7 @@ public:
 
   inline HeapWord* allocate(G1HeapRegionAttr dest,
                             size_t word_sz,
+                            size_t& actual_plab_size,
                             bool* refill_failed,
                             uint node_index);
 

@@ -90,6 +90,7 @@ class G1ServiceThread;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1ConcurrentRefine;
+class G1ConcurrentBOTFixing;
 class GenerationCounters;
 class STWGCTimer;
 class G1NewTracer;
@@ -192,6 +193,8 @@ private:
 
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
+
+  G1ConcurrentBOTFixing* _concurrent_bot_fixing;
 
 public:
   void prepare_region_for_full_compaction(HeapRegion* hr);
@@ -792,6 +795,8 @@ private:
 
   void wait_for_root_region_scanning();
 
+  void finalize_concurrent_bot_fixing();
+
   // Perform an incremental collection at a safepoint, possibly
   // followed by a by-policy upgrade to a full collection.  Returns
   // false if unable to do the collection due to the GC locker being
@@ -1056,6 +1061,9 @@ public:
 
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }
+
+  // Concurrently refine block offset table entries.
+  G1ConcurrentBOTFixing* concurrent_bot_fixing() const { return _concurrent_bot_fixing; }
 
   // Reference Processing accessors
 

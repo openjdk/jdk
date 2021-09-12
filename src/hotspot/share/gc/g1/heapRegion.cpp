@@ -233,6 +233,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
+  _bot_fixing_card_set(this),
   _par_alloc_lock(Mutex::leaf, "HeapRegion par alloc lock", true),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
@@ -790,6 +791,8 @@ void HeapRegion::clear(bool mangle_space) {
     mangle_unused_area();
   }
   reset_bot();
+
+  _bot_fixing_card_set.clear();
 }
 
 #ifndef PRODUCT

@@ -30,6 +30,7 @@
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentBOTFixing.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
@@ -42,6 +43,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1SharedDirtyCardQueue.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -1655,6 +1657,13 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
   HeapWord* start = _ct->addr_for(card_ptr);
   // And find the region containing it.
   HeapRegion* r = _g1h->heap_region_containing(start);
+  if (G1UseConcurrentBOTFixing) {
+    G1ConcurrentBOTFixing* concurrent_bot_fixing = _g1h->concurrent_bot_fixing();
+    if (concurrent_bot_fixing->in_progress() && r->is_old()) {
+      // Fix BOT if this card points into a plab, which causes the BOT to be inaccurate.
+      concurrent_bot_fixing->fix_bot_before_refine(r, start);
+    }
+  }
   // This reload of the top is safe even though it happens after the full
   // fence, because top is stable for old, archive and unfiltered humongous
   // regions, so it must return the same value as the previous load when

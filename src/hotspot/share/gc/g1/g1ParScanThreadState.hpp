@@ -193,6 +193,7 @@ private:
   // generations or just end trying to allocate.
   HeapWord* allocate_in_next_plab(G1HeapRegionAttr* dest,
                                   size_t word_sz,
+                                  size_t& actual_plab_size,
                                   bool previous_plab_refill_failed,
                                   uint node_index);
 
