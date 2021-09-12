@@ -616,7 +616,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             if (map != null) {
                 Object obj = map.get(DefaultEditorKit.insertBreakAction);
                 if (obj instanceof DefaultEditorKit.InsertBreakAction breakAction) {
-                    Action action =  new TextActionWrapper(breakAction);
+                    Action action = new TextActionWrapper(breakAction);
                     componentMap.put(action.getValue(Action.NAME),action);
                 }
             }
