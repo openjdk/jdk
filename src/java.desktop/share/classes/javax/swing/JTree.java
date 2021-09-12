@@ -5415,14 +5415,12 @@ public class JTree extends JComponent implements Scrollable, Accessible
             public Rectangle getBounds() {
                 Rectangle r = tree.getPathBounds(path);
                 Accessible parent = getAccessibleParent();
-                if (parent != null) {
-                    if (parent instanceof AccessibleJTreeNode) {
-                        Point parentLoc = ((AccessibleJTreeNode) parent).getLocationInJTree();
-                        if (parentLoc != null && r != null) {
-                            r.translate(-parentLoc.x, -parentLoc.y);
-                        } else {
-                            return null;        // not visible!
-                        }
+                if (parent instanceof AccessibleJTreeNode treeNode) {
+                    Point parentLoc = treeNode.getLocationInJTree();
+                    if (parentLoc != null && r != null) {
+                        r.translate(-parentLoc.x, -parentLoc.y);
+                    } else {
+                        return null;        // not visible!
                     }
                 }
                 return r;

@@ -878,8 +878,7 @@ public abstract class JComponent extends Container implements Serializable,
             }
             // If we are only to paint to a specific child, determine
             // its index.
-            if (paintingChild != null &&
-                (paintingChild instanceof JComponent) &&
+            if ((paintingChild instanceof JComponent) &&
                 paintingChild.isOpaque()) {
                 for (; i >= 0; i--) {
                     if (getComponent(i) == paintingChild){

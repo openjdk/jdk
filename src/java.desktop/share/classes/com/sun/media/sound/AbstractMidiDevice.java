@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,11 +576,9 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 if (midiOutReceiver == oldR) {
                     midiOutReceiver = null;
                 }
-                if (newR != null) {
-                    if ((newR instanceof MidiOutDevice.MidiOutReceiver)
+                if ((newR instanceof MidiOutDevice.MidiOutReceiver newReceiver)
                         && (midiOutReceiver == null)) {
-                        midiOutReceiver = ((MidiOutDevice.MidiOutReceiver) newR);
-                    }
+                    midiOutReceiver = newReceiver;
                 }
                 optimizedReceiverCount =
                       ((midiOutReceiver!=null)?1:0);

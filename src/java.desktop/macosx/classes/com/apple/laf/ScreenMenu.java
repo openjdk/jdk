@@ -351,11 +351,8 @@ final class ScreenMenu extends Menu
         // Tell our parent to add/remove us
         final MenuContainer parent = getParent();
 
-        if (parent != null) {
-            if (parent instanceof ScreenMenu) {
-                final ScreenMenu sm = (ScreenMenu)parent;
-                sm.setChildVisible(fInvoker, b);
-            }
+        if (parent instanceof ScreenMenu sm) {
+            sm.setChildVisible(fInvoker, b);
         }
     }
 

@@ -1473,10 +1473,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
             protected void layoutMinorAxis(int targetSpan, int axis, int[] offsets, int[] spans) {
                 Container container = getContainer();
-                Container parentContainer;
                 if ((container instanceof JEditorPane)
-                        && (parentContainer = container.getParent()) != null
-                        && (parentContainer instanceof JViewport viewPort)) {
+                        && (container.getParent() instanceof JViewport viewPort)) {
                     if (cachedViewPort != null) {
                         JViewport cachedObject = cachedViewPort.get();
                         if (cachedObject != null) {

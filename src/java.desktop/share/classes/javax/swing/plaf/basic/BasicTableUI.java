@@ -933,24 +933,21 @@ public class BasicTableUI extends TableUI
             // the table, seems to have no effect.
 
             Component editorComp = table.getEditorComponent();
-            if (table.isEditing() && editorComp != null) {
-                if (editorComp instanceof JComponent) {
-                    JComponent component = (JComponent)editorComp;
-                    map = component.getInputMap(JComponent.WHEN_FOCUSED);
-                    Object binding = (map != null) ? map.get(keyStroke) : null;
-                    if (binding == null) {
-                        map = component.getInputMap(JComponent.
-                                         WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-                        binding = (map != null) ? map.get(keyStroke) : null;
-                    }
-                    if (binding != null) {
-                        ActionMap am = component.getActionMap();
-                        Action action = (am != null) ? am.get(binding) : null;
-                        if (action != null && SwingUtilities.
+            if (table.isEditing() && editorComp instanceof JComponent component) {
+                map = component.getInputMap(JComponent.WHEN_FOCUSED);
+                Object binding = (map != null) ? map.get(keyStroke) : null;
+                if (binding == null) {
+                    map = component.getInputMap(JComponent.
+                            WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+                    binding = (map != null) ? map.get(keyStroke) : null;
+                }
+                if (binding != null) {
+                    ActionMap am = component.getActionMap();
+                    Action action = (am != null) ? am.get(binding) : null;
+                    if (action != null && SwingUtilities.
                             notifyAction(action, keyStroke, e, component,
-                                         e.getModifiers())) {
-                            e.consume();
-                        }
+                                    e.getModifiers())) {
+                        e.consume();
                     }
                 }
             }

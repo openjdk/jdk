@@ -1131,10 +1131,8 @@ public class BasicTreeUI extends TreeUI
      * @return a default cell editor
      */
     protected TreeCellEditor createDefaultCellEditor() {
-        if(currentCellRenderer != null &&
-           (currentCellRenderer instanceof DefaultTreeCellRenderer)) {
-            DefaultTreeCellEditor editor = new DefaultTreeCellEditor
-                        (tree, (DefaultTreeCellRenderer)currentCellRenderer);
+        if (currentCellRenderer instanceof DefaultTreeCellRenderer defaultRenderer) {
+            DefaultTreeCellEditor editor = new DefaultTreeCellEditor(tree, defaultRenderer);
 
             return editor;
         }
