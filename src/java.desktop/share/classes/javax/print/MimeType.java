@@ -141,7 +141,7 @@ class MimeType implements Serializable, Cloneable {
             throw new UnsupportedOperationException();
         }
         public boolean equals(Object o) {
-            return o instanceof Map.Entry entry &&
+            return o instanceof Map.Entry<?, ?> entry &&
                     getKey().equals(entry.getKey()) &&
                     getValue().equals(entry.getValue());
         }
