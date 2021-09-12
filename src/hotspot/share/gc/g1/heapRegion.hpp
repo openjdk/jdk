@@ -149,7 +149,6 @@ private:
 
 public:
   HeapWord* block_start(const void* p);
-  HeapWord* block_start(const void* p, HeapWord*& iterated_hint);
 
   void object_iterate(ObjectClosure* blk);
 
@@ -566,12 +565,6 @@ public:
   // only happen when invoked concurrently with the mutator).
   template <bool is_gc_active, class Closure>
   inline HeapWord* oops_on_memregion_seq_iterate_careful(MemRegion mr, Closure* cl);
-  template <bool is_gc_active, class Closure>
-  // The hinted version asks for a hint which we have previously iterated up to.
-  // If we have iterated to this position, that means BOT is fixed up to the hint.
-  // This information can help BOT return a block start faster.
-  inline HeapWord* oops_on_memregion_seq_iterate_careful(MemRegion mr, Closure* cl,
-                                                         HeapWord*& iterated_hint);
 
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
