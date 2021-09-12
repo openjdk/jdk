@@ -966,7 +966,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     protected void resetInputValue() {
         if (inputComponent instanceof JTextField textField) {
             optionPane.setInputValue(textField.getText());
-        } else if (inputComponent instanceof JComboBox comboBox) {
+        } else if (inputComponent instanceof JComboBox<?> comboBox) {
             optionPane.setInputValue(comboBox.getSelectedItem());
         } else if(inputComponent != null) {
             optionPane.setInputValue(((JList)inputComponent)

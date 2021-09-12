@@ -901,7 +901,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         if (name != null) {
             Object     maps = getProperty(MAP_PROPERTY);
 
-            if (maps instanceof Hashtable hashtable) {
+            if (maps instanceof Hashtable<?, ?> hashtable) {
                 return (Map) hashtable.get(name);
             }
         }
