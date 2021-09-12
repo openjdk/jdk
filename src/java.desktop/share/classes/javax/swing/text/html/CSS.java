@@ -1609,8 +1609,8 @@ public class CSS implements Serializable {
             if (key instanceof HTML.Tag) {
                 HTML.Tag tag = (HTML.Tag)key;
                 Object o = htmlAttrSet.getAttribute(tag);
-                if (o instanceof AttributeSet attributeSet) {
-                    translateAttributes(tag, attributeSet, cssAttrSet);
+                if (o instanceof AttributeSet as) {
+                    translateAttributes(tag, as, cssAttrSet);
                 }
             } else if (key instanceof CSS.Attribute) {
                 cssAttrSet.addAttribute(key, htmlAttrSet.getAttribute(key));
