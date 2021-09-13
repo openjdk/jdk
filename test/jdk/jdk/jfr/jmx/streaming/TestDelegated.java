@@ -27,14 +27,10 @@ import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.management.MBeanServerConnection;
 
 import jdk.jfr.Event;
-import jdk.jfr.EventType;
-import jdk.jfr.FlightRecorder;
-import jdk.jfr.consumer.MetadataEvent;
 import jdk.management.jfr.RemoteRecordingStream;
 
 /**
