@@ -33,7 +33,6 @@ import com.sun.tools.attach.VirtualMachine;
 
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
-import sun.tools.common.PrintStreamPrinter;
 
 /*
  * This class is the main class for the JInfo utility. It parses its arguments
@@ -203,7 +202,8 @@ final public class JInfo {
 
     // Read the stream from the target VM until EOF, then detach
     private static void drain(VirtualMachine vm, InputStream in) throws IOException {
-        PrintStreamPrinter.drain(in, System.out);
+        in.transferTo(System.out);
+        in.close();
         vm.detach();
     }
 

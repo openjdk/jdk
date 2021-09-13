@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import com.sun.tools.attach.AttachNotSupportedException;
 
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
-import sun.tools.common.PrintStreamPrinter;
 import sun.tools.jstat.JStatLogger;
 import sun.jvmstat.monitor.Monitor;
 import sun.jvmstat.monitor.MonitoredHost;
@@ -123,9 +122,10 @@ public class JCmd {
 
             InputStream is = hvm.executeJCmd(line);
 
-            if (PrintStreamPrinter.drain(is, System.out) == 0) {
+            if (is.transferTo(System.out) == 0) {
                 System.out.println("Command executed successfully");
             }
+            is.close();
         }
         vm.detach();
     }

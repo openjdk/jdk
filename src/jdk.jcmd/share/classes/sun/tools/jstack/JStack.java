@@ -31,7 +31,6 @@ import java.util.Collection;
 import com.sun.tools.attach.VirtualMachine;
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
-import sun.tools.common.PrintStreamPrinter;
 
 /*
  * This class is the main class for the JStack utility. It parses its arguments
@@ -129,7 +128,8 @@ public class JStack {
         // method.
         InputStream in = ((HotSpotVirtualMachine)vm).remoteDataDump((Object[])args);
         // read to EOF and just print output
-        PrintStreamPrinter.drain(in, System.out);
+        in.transferTo(System.out);
+        in.close();
         vm.detach();
     }
 
