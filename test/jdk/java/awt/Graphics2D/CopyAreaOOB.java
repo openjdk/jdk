@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,7 @@ import java.awt.image.*;
 
 public class CopyAreaOOB extends Canvas {
 
-    private static boolean done;
-
     public void paint(Graphics g) {
-        synchronized (this) {
-            if (done) {
-                return;
-            }
-        }
-
         int w = getWidth();
         int h = getHeight();
 
@@ -63,11 +55,6 @@ public class CopyAreaOOB extends Canvas {
         g2d.copyArea(0, 10, 50, h-10, 60, 10);
 
         Toolkit.getDefaultToolkit().sync();
-
-        synchronized (this) {
-            done = true;
-            notifyAll();
-        }
     }
 
     public Dimension getPreferredSize() {
@@ -105,25 +92,12 @@ public class CopyAreaOOB extends Canvas {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        // Wait until the component's been painted
-        synchronized (test) {
-            while (!done) {
-                try {
-                    test.wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Failed: Interrupted");
-                }
-            }
-        }
-
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException ex) {}
-
         // Grab the screen region
         BufferedImage capture = null;
         try {
             Robot robot = new Robot();
+            robot.waitForIdle();
+            robot.delay(2000);
             Point pt1 = test.getLocationOnScreen();
             Rectangle rect = new Rectangle(pt1.x, pt1.y, 400, 400);
             capture = robot.createScreenCapture(rect);
