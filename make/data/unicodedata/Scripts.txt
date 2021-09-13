@@ -1,5 +1,5 @@
 # Scripts-14.0.0.txt
-# Date: 2021-06-08, 00:31:17 GMT
+# Date: 2021-07-10, 00:35:31 GMT
 # Copyright (c) 2021 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
@@ -1439,7 +1439,7 @@ AB11..AB16    ; Ethiopic # Lo   [6] ETHIOPIC SYLLABLE DZU..ETHIOPIC SYLLABLE DZO
 AB20..AB26    ; Ethiopic # Lo   [7] ETHIOPIC SYLLABLE CCHHA..ETHIOPIC SYLLABLE CCHHO
 AB28..AB2E    ; Ethiopic # Lo   [7] ETHIOPIC SYLLABLE BBA..ETHIOPIC SYLLABLE BBO
 1E7E0..1E7E6  ; Ethiopic # Lo   [7] ETHIOPIC SYLLABLE HHYA..ETHIOPIC SYLLABLE HHYO
-1E7E8..1E7EB  ; Ethiopic # Lo   [4] ETHIOPIC SYLLABLE GURAGE HHWA..ETHIOPIC SYLLABLE HWE
+1E7E8..1E7EB  ; Ethiopic # Lo   [4] ETHIOPIC SYLLABLE GURAGE HHWA..ETHIOPIC SYLLABLE HHWE
 1E7ED..1E7EE  ; Ethiopic # Lo   [2] ETHIOPIC SYLLABLE GURAGE MWI..ETHIOPIC SYLLABLE GURAGE MWEE
 1E7F0..1E7FE  ; Ethiopic # Lo  [15] ETHIOPIC SYLLABLE GURAGE QWI..ETHIOPIC SYLLABLE GURAGE PWEE
 

@@ -1,5 +1,5 @@
 # PropList-14.0.0.txt
-# Date: 2021-06-04, 02:19:24 GMT
+# Date: 2021-08-12, 23:13:05 GMT
 # Copyright (c) 2021 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
@@ -1148,8 +1148,12 @@ A69C..A69D    ; Other_Lowercase # Lm   [2] MODIFIER LETTER CYRILLIC HARD SIGN..M
 A770          ; Other_Lowercase # Lm       MODIFIER LETTER US
 A7F8..A7F9    ; Other_Lowercase # Lm   [2] MODIFIER LETTER CAPITAL H WITH STROKE..MODIFIER LETTER SMALL LIGATURE OE
 AB5C..AB5F    ; Other_Lowercase # Lm   [4] MODIFIER LETTER SMALL HENG..MODIFIER LETTER SMALL U WITH LEFT HOOK
+10780         ; Other_Lowercase # Lm       MODIFIER LETTER SMALL CAPITAL AA
+10783..10785  ; Other_Lowercase # Lm   [3] MODIFIER LETTER SMALL AE..MODIFIER LETTER SMALL B WITH HOOK
+10787..107B0  ; Other_Lowercase # Lm  [42] MODIFIER LETTER SMALL DZ DIGRAPH..MODIFIER LETTER SMALL V WITH RIGHT HOOK
+107B2..107BA  ; Other_Lowercase # Lm   [9] MODIFIER LETTER SMALL CAPITAL Y..MODIFIER LETTER SMALL S WITH CURL
 
-# Total code points: 189
+# Total code points: 244
 
 # ================================================
 

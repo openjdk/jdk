@@ -1,11 +1,11 @@
-# emoji-data.txt
-# Date: 2021-05-19, 06:19:22 GMT
+# emoji-data-14.0.0.txt
+# Date: 2021-08-26, 17:22:22 GMT
 # Copyright (c) 2021 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 #
 # Emoji Data for UTS #51
-# Version: 14.0
+# Used with Emoji Version 14.0 and subsequent minor revisions (if any)
 #
 # For documentation and usage, see http://www.unicode.org/reports/tr51
 #
@@ -294,7 +294,7 @@
 1F62E..1F62F  ; Emoji                # E1.0   [2] (😮..😯)    face with open mouth..hushed face
 1F630..1F633  ; Emoji                # E0.6   [4] (😰..😳)    anxious face with sweat..flushed face
 1F634         ; Emoji                # E1.0   [1] (😴)       sleeping face
-1F635         ; Emoji                # E0.6   [1] (😵)       knocked-out face
+1F635         ; Emoji                # E0.6   [1] (😵)       face with crossed-out eyes
 1F636         ; Emoji                # E1.0   [1] (😶)       face without mouth
 1F637..1F640  ; Emoji                # E0.6  [10] (😷..🙀)    face with medical mask..weary cat
 1F641..1F644  ; Emoji                # E1.0   [4] (🙁..🙄)    slightly frowning face..face with rolling eyes
@@ -580,7 +580,7 @@
 1F62E..1F62F  ; Emoji_Presentation   # E1.0   [2] (😮..😯)    face with open mouth..hushed face
 1F630..1F633  ; Emoji_Presentation   # E0.6   [4] (😰..😳)    anxious face with sweat..flushed face
 1F634         ; Emoji_Presentation   # E1.0   [1] (😴)       sleeping face
-1F635         ; Emoji_Presentation   # E0.6   [1] (😵)       knocked-out face
+1F635         ; Emoji_Presentation   # E0.6   [1] (😵)       face with crossed-out eyes
 1F636         ; Emoji_Presentation   # E1.0   [1] (😶)       face without mouth
 1F637..1F640  ; Emoji_Presentation   # E0.6  [10] (😷..🙀)    face with medical mask..weary cat
 1F641..1F644  ; Emoji_Presentation   # E1.0   [4] (🙁..🙄)    slightly frowning face..face with rolling eyes
@@ -1141,7 +1141,7 @@ E0020..E007F  ; Emoji_Component      # E0.0  [96] (󠀠..󠁿)      tag space..c
 1F62E..1F62F  ; Extended_Pictographic# E1.0   [2] (😮..😯)    face with open mouth..hushed face
 1F630..1F633  ; Extended_Pictographic# E0.6   [4] (😰..😳)    anxious face with sweat..flushed face
 1F634         ; Extended_Pictographic# E1.0   [1] (😴)       sleeping face
-1F635         ; Extended_Pictographic# E0.6   [1] (😵)       knocked-out face
+1F635         ; Extended_Pictographic# E0.6   [1] (😵)       face with crossed-out eyes
 1F636         ; Extended_Pictographic# E1.0   [1] (😶)       face without mouth
 1F637..1F640  ; Extended_Pictographic# E0.6  [10] (😷..🙀)    face with medical mask..weary cat
 1F641..1F644  ; Extended_Pictographic# E1.0   [4] (🙁..🙄)    slightly frowning face..face with rolling eyes

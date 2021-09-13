@@ -1,5 +1,5 @@
 # GraphemeBreakProperty-14.0.0.txt
-# Date: 2021-05-28, 21:49:10 GMT
+# Date: 2021-08-12, 23:13:02 GMT
 # Copyright (c) 2021 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
@@ -591,7 +591,6 @@ ABEC          ; SpacingMark # Mc       MEETEI MAYEK LUM IYEK
 116AC         ; SpacingMark # Mc       TAKRI SIGN VISARGA
 116AE..116AF  ; SpacingMark # Mc   [2] TAKRI VOWEL SIGN I..TAKRI VOWEL SIGN II
 116B6         ; SpacingMark # Mc       TAKRI SIGN VIRAMA
-11720..11721  ; SpacingMark # Mc   [2] AHOM VOWEL SIGN A..AHOM VOWEL SIGN AA
 11726         ; SpacingMark # Mc       AHOM VOWEL SIGN E
 1182C..1182E  ; SpacingMark # Mc   [3] DOGRA VOWEL SIGN AA..DOGRA VOWEL SIGN II
 11838         ; SpacingMark # Mc       DOGRA SIGN VISARGA
@@ -620,7 +619,7 @@ ABEC          ; SpacingMark # Mc       MEETEI MAYEK LUM IYEK
 1D166         ; SpacingMark # Mc       MUSICAL SYMBOL COMBINING SPRECHGESANG STEM
 1D16D         ; SpacingMark # Mc       MUSICAL SYMBOL COMBINING AUGMENTATION DOT
 
-# Total code points: 390
+# Total code points: 388
 
 # ================================================
 
