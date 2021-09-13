@@ -1471,7 +1471,7 @@ public class Gen extends JCTree.Visitor {
             }
         };
         syncEnv.info.gaps = new ListBuffer<>();
-        genTry(tree.body, List.nil(), syncEnv);
+        genTry(tree.body, List.nil(), syncEnv, false);
         code.endScopes(limit);
     }
 
@@ -1505,15 +1505,16 @@ public class Gen extends JCTree.Visitor {
 
         };
         tryEnv.info.gaps = new ListBuffer<>();
-        genTry(tree.body, tree.catchers, tryEnv);
+        genTry(tree.body, tree.catchers, tryEnv, true);
     }
     //where
         /** Generate code for a try or synchronized statement
          *  @param body      The body of the try or synchronized statement.
-         *  @param catchers  The lis of catch clauses.
-         *  @param env       the environment current for the body.
+         *  @param catchers  The list of catch clauses.
+         *  @param env       The current environment of the body.
+         *  @param actualTry Identify try or synchronized statement, true for try and false for synchronized.
          */
-        void genTry(JCTree body, List<JCCatch> catchers, Env<GenContext> env) {
+        void genTry(JCTree body, List<JCCatch> catchers, Env<GenContext> env, boolean actualTry) {
             int limit = code.nextreg;
             int startpc = code.curCP();
             Code.State stateTry = code.state.dup();
@@ -1523,7 +1524,12 @@ public class Gen extends JCTree.Visitor {
             code.statBegin(TreeInfo.endPos(body));
             genFinalizer(env);
             code.statBegin(TreeInfo.endPos(env.tree));
-            Chain exitChain = code.branch(goto_);
+            Chain exitChain;
+            if (startpc == endpc && actualTry) {
+                exitChain = code.branch(dontgoto);
+            } else {
+                exitChain = code.branch(goto_);
+            }
             endFinalizerGap(env);
             env.info.finalize.afterBody();
             boolean hasFinalizer =
@@ -1541,7 +1547,7 @@ public class Gen extends JCTree.Visitor {
                 }
                 endFinalizerGap(env);
             }
-            if (hasFinalizer) {
+            if (hasFinalizer && (startpc != endpc || !actualTry)) {
                 // Create a new register segment to avoid allocating
                 // the same variables in finalizers and other statements.
                 code.newRegSegment();
