@@ -2642,6 +2642,13 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
+    if (u->is_LoadStore()) {
+      // On AArch64, LoadStoreNodes (i.e. compare and swap
+      // instructions) only take register indirect as an operand, so
+      // any attempt to use an AddPNode as an input to a LoadStoreNode
+      // must fail.
+      return false;
+    }
     if (u->is_Mem()) {
       int opsize = u->as_Mem()->memory_size();
       assert(opsize > 0, "unexpected memory operand size");

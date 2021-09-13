@@ -175,7 +175,6 @@ void G1GCPhaseTimes::reset() {
   _recorded_prepare_heap_roots_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
-  _recorded_sample_collection_set_candidates_time_ms = 0.0;
   _recorded_preserve_cm_referents_time_ms = 0.0;
   _recorded_start_new_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
@@ -463,7 +462,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
-                        _recorded_sample_collection_set_candidates_time_ms +
                         _cur_post_evacuate_cleanup_1_time_ms +
                         _cur_post_evacuate_cleanup_2_time_ms +
                         _recorded_total_rebuild_freelist_time_ms +
@@ -487,7 +485,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
     debug_phase(_gc_par_phases[RemoveSelfForwardingPtr], 1);
   }
 
-  debug_time("Sample Collection Set Candidates", _recorded_sample_collection_set_candidates_time_ms);
   trace_phase(_gc_par_phases[RedirtyCards]);
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
   if (G1CollectedHeap::heap()->evacuation_failed()) {

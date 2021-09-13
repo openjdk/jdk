@@ -35,6 +35,11 @@ oop DiscoveredList::head() const {
     _oop_head;
 }
 
+void DiscoveredList::add_as_head(oop o) {
+  set_head(o);
+  inc_length(1);
+}
+
 void DiscoveredList::set_head(oop o) {
   if (UseCompressedOops) {
     // Must compress the head ptr.

@@ -880,7 +880,6 @@ WorkGang* OopStorageTestParIteration::workers() {
   if (_workers == NULL) {
     _workers = new WorkGang("OopStorageTestParIteration workers",
                             _max_workers,
-                            false,
                             false);
     _workers->initialize_workers();
     _workers->update_active_workers(_max_workers);

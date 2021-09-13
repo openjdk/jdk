@@ -61,7 +61,7 @@ public class FoldMultilinesTest {
 
     private static void analyzeFoldMultilinesInvalid(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Invalid option 'invalid' for foldmultilines.");
+        output.shouldContain("Invalid option: foldmultilines must be 'true' or 'false'.");
         output.shouldNotHaveExitValue(0);
     }
 

@@ -831,7 +831,7 @@ appendClassPath( JPLISAgent* agent,
  * converted it is then normalized (remove duplicate slashes, etc.).
  * If the resulting path is an absolute path (starts with a slash for
  * example) then the path will be added to the bootclasspath. Otherwise
- * if it's not absolute then we get the canoncial path of the agent jar
+ * if it's not absolute then we get the canonical path of the agent jar
  * file and then resolve the path in the context of the base path of
  * the agent jar.
  */
@@ -899,7 +899,7 @@ appendBootClassPath( JPLISAgent* agent,
          */
         {
             char platform[MAXPATHLEN];
-            int new_len = convertUft8ToPlatformString(path, len, platform, MAXPATHLEN);
+            int new_len = convertUtf8ToPlatformString(path, len, platform, MAXPATHLEN);
             free(path);
             if (new_len  < 0) {
                 /* bogus value - exceeds maximum path size or unable to convert */

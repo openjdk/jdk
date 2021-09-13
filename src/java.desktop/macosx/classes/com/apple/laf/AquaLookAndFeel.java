@@ -328,6 +328,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final ColorUIResource selectedTabTitlePressedColor = new ColorUIResource(240, 240, 240);
         final ColorUIResource selectedTabTitleDisabledColor = new ColorUIResource(new Color(1, 1, 1, 0.55f));
+        final ColorUIResource selectedTabTitleNonFocusColor = black;
         final ColorUIResource selectedTabTitleNormalColor = white;
         final Color selectedControlTextColor = AquaImageFactory.getSelectedControlColorUIResource();
         final ColorUIResource selectedTabTitleShadowDisabledColor = new ColorUIResource(new Color(0, 0, 0, 0.25f));
@@ -871,6 +872,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "TabbedPane.tabsOverlapBorder", Boolean.TRUE,
             "TabbedPane.selectedTabTitlePressedColor", selectedTabTitlePressedColor,
             "TabbedPane.selectedTabTitleDisabledColor", selectedTabTitleDisabledColor,
+            "TabbedPane.selectedTabTitleNonFocusColor", selectedTabTitleNonFocusColor,
             "TabbedPane.selectedTabTitleNormalColor", JRSUIUtils.isMacOSXBigSurOrAbove() ? selectedControlTextColor : selectedTabTitleNormalColor,
             "TabbedPane.selectedTabTitleShadowDisabledColor", selectedTabTitleShadowDisabledColor,
             "TabbedPane.selectedTabTitleShadowNormalColor", selectedTabTitleShadowNormalColor,
