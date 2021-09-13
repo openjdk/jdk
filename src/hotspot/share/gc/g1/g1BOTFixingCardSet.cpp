@@ -34,7 +34,9 @@ void G1BOTFixingCardSet::prepare(size_t plab_word_size) {
   _plab_word_size = plab_word_size;
   size_t threshold = sizeof(CardIndex) * BitsPerByte;
   // If plab is smaller than (number of bits x card size).
-  if (plab_word_size < (threshold << BOTConstants::LogN_words)) {
+  if (plab_word_size >= (threshold << BOTConstants::LogN_words)) {
+    _dynamic_container_type = Array;
+  } else {
     _dynamic_container_type = BitMap;
   }
 }

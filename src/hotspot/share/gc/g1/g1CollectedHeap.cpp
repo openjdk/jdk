@@ -2772,9 +2772,7 @@ void G1CollectedHeap::wait_for_root_region_scanning() {
 void G1CollectedHeap::finalize_concurrent_bot_fixing() {
   if (G1UseConcurrentBOTFixing) {
     double start_t = os::elapsedTime();
-    // if (_concurrent_bot_fixing->in_progress()) { // TODO
-      _concurrent_bot_fixing->abort_and_wait();
-    // }
+    _concurrent_bot_fixing->abort_and_wait();
     _concurrent_bot_fixing->clear_card_sets();
     double end_t = os::elapsedTime();
     double time_ms = (end_t - start_t) * 1000.0;

@@ -33,6 +33,7 @@ G1ConcurrentBOTFixing::G1ConcurrentBOTFixing(G1CollectedHeap* g1h) :
   _should_abort(false),
   _n_workers(ConcGCThreads),
   _inactive_count(0),
+  _stopped_count(0),
   _fixer_threads(NULL),
   _plab_word_size(0),
   _plab_recording_in_progress(false),
@@ -187,7 +188,7 @@ void G1ConcurrentBOTFixing::clear_card_sets() {
     count[card_set->is_empty()]++;
     card_set->clear();
   }
-  _current = NULL; // TODO why
+  _current = NULL;
   log_info(gc, bot)("Concurrent BOT Fixing: processed/aborted = %d/%d", count[1], count[0]);
 }
 
@@ -214,6 +215,7 @@ void G1ConcurrentBOTFixing::activate() {
   MutexLocker ml(ConcurrentBOTFixing_lock, Mutex::_no_safepoint_check_flag);
   assert(_in_progress == false, "Activated twice");
   assert(_should_abort == false, "Sanity");
+  if (_stopped_count == _n_workers) return; // No workers
   _in_progress = true;
   ConcurrentBOTFixing_lock->notify_all();
   _stats.concurrent_phase_start_time = Ticks::now();
@@ -233,6 +235,18 @@ void G1ConcurrentBOTFixing::abort_and_wait() {
   }
 }
 
+// Called by one of the workers.
+void G1ConcurrentBOTFixing::deactivate() {
+  assert(ConcurrentBOTFixing_lock->owned_by_self(), "Must be locked by self");
+  if (_in_progress && _inactive_count + _stopped_count == _n_workers) {
+    _in_progress = false;
+    _should_abort = false;
+    ConcurrentBOTFixing_lock->notify_all(); // Notify that all workers are now inactive/stopped
+    log_trace(gc, bot)("Concurrent BOT fixing: took %8.2lf ms",
+                       (Ticks::now() - _stats.concurrent_phase_start_time).seconds() * MILLIUNITS);
+  }
+}
+
 void G1ConcurrentBOTFixing::note_active() {
   assert(ConcurrentBOTFixing_lock->owned_by_self(), "Must be locked by self");
   _inactive_count--;
@@ -241,13 +255,13 @@ void G1ConcurrentBOTFixing::note_active() {
 void G1ConcurrentBOTFixing::note_inactive() {
   assert(ConcurrentBOTFixing_lock->owned_by_self(), "Must be locked by self");
   _inactive_count++;
-  if (_in_progress && _inactive_count == _n_workers) {
-    _in_progress = false;
-    _should_abort = false;
-    ConcurrentBOTFixing_lock->notify_all(); // Notify that all workers are now inactive
-    log_trace(gc, bot)("Concurrent BOT fixing: took %8.2lf ms",
-                       (Ticks::now() - _stats.concurrent_phase_start_time).seconds() * MILLIUNITS);
-  }
+  deactivate();
+}
+
+void G1ConcurrentBOTFixing::note_stopped() {
+  assert(ConcurrentBOTFixing_lock->owned_by_self(), "Must be locked by self");
+  _stopped_count++;
+  deactivate();
 }
 
 void G1ConcurrentBOTFixing::stop() {
@@ -282,7 +296,7 @@ void G1ConcurrentBOTFixingThread::run_service() {
       break;
     }
 
-    more_work = _fixer->fix_bot_step(); // TODO doesn't terminate
+    more_work = _fixer->fix_bot_step();
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - vtime_start);
@@ -292,7 +306,7 @@ void G1ConcurrentBOTFixingThread::run_service() {
   }
 
   MutexLocker ml(ConcurrentBOTFixing_lock, Mutex::_no_safepoint_check_flag);
-  _fixer->note_inactive();
+  _fixer->note_stopped();
 }
 
 void G1ConcurrentBOTFixingThread::stop_service() {

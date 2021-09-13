@@ -21,14 +21,15 @@ class G1ConcurrentBOTFixing: public CHeapObj<mtGC> {
   volatile bool _should_abort;
   // Workers.
   uint _n_workers;
-  // A counter to know when all workers have finished.
-  uint _inactive_count;
+  // Two counters to know when all workers have finished.
+  uint _inactive_count; // Number of workers waiting for jobs
+  uint _stopped_count; // Number of workers terminated
   G1ConcurrentBOTFixingThread** _fixer_threads;
 
   // The plab size recorded before evacuation.
   size_t _plab_word_size;
 
-  // A flag to know turn recording on/off. Mainly to disable recording for full gcs.
+  // A flag to turn recording on/off. Mainly to disable recording for full gcs.
   bool _plab_recording_in_progress;
 
   // A list of card sets, each recording the cards (of plabs) that need to be fixed.
@@ -50,12 +51,15 @@ public:
 
   // Signal the workers to concurrently process the card sets.
   void activate();
-  // Abort the jobs and wait for workers to stop.
+  // Abort the jobs and wait for workers to finish.
   void abort_and_wait();
-  // Workers use these to maintain _inactive_count and notify possible waiters
-  // waiting for them to finish.
+  // Signal that the workers have all finished.
+  void deactivate();
+  // Workers use these to maintain _inactive_count/_stopped_count and notify possible waiters
+  // waiting for the workers to finish.
   void note_active();
   void note_inactive();
+  void note_stopped();
   // Terminate the threads.
   void stop();
 
@@ -76,7 +80,7 @@ public:
   bool fix_bot_step();
 
   // Entry point for concurrent refinement threads or mutators that tries to do conc refinement.
-  // These threads always have a specific card in mind, that is, the dirty card it wants to refine.
+  // These threads always have a specific card in mind, that is, the dirty card to refine.
   void fix_bot_before_refine(HeapRegion* r, HeapWord* card_boundary);
 
   void threads_do(ThreadClosure* tc);
