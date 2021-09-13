@@ -110,6 +110,10 @@ public class CGLLayer extends CFLayer {
             execute(ptr -> blitTexture(ptr));
         } finally {
             rq.unlock();
+
+            // 8254841: We need to tell the peer we have finished resizing
+            // to resume posting mouseEntered and mouseExit events.
+            peer.finishResizing();
         }
     }
 }
