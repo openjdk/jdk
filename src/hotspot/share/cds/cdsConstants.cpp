@@ -31,28 +31,28 @@
 #include "cds/filemap.hpp"
 
 CDSConst CDSConstants::offsets[] = {
-  { "CDSFileMapHeaderBase::_magic",           (int)offset_of(CDSFileMapHeaderBase, _magic)           },
-  { "CDSFileMapHeaderBase::_crc",             (int)offset_of(CDSFileMapHeaderBase, _crc)             },
-  { "CDSFileMapHeaderBase::_version",         (int)offset_of(CDSFileMapHeaderBase, _version)         },
-  { "CDSFileMapHeaderBase::_space[0]",        (int)offset_of(CDSFileMapHeaderBase, _space)           },
-  { "FileMapHeader::_jvm_ident",              (int)offset_of(FileMapHeader, _jvm_ident)              },
-  { "FileMapHeader::_base_archive_name_size", (int)offset_of(FileMapHeader, _base_archive_name_size) },
-  { "CDSFileMapRegion::_crc",                 (int)offset_of(CDSFileMapRegion, _crc)                 },
-  { "CDSFileMapRegion::_used",                (int)offset_of(CDSFileMapRegion, _used)                },
-  { "DynamicArchiveHeader::_base_region_crc", (int)offset_of(DynamicArchiveHeader, _base_region_crc) }
+  { "CDSFileMapHeaderBase::_magic",           offset_of(CDSFileMapHeaderBase, _magic)           },
+  { "CDSFileMapHeaderBase::_crc",             offset_of(CDSFileMapHeaderBase, _crc)             },
+  { "CDSFileMapHeaderBase::_version",         offset_of(CDSFileMapHeaderBase, _version)         },
+  { "CDSFileMapHeaderBase::_space[0]",        offset_of(CDSFileMapHeaderBase, _space)           },
+  { "FileMapHeader::_jvm_ident",              offset_of(FileMapHeader, _jvm_ident)              },
+  { "FileMapHeader::_base_archive_name_size", offset_of(FileMapHeader, _base_archive_name_size) },
+  { "CDSFileMapRegion::_crc",                 offset_of(CDSFileMapRegion, _crc)                 },
+  { "CDSFileMapRegion::_used",                offset_of(CDSFileMapRegion, _used)                },
+  { "DynamicArchiveHeader::_base_region_crc", offset_of(DynamicArchiveHeader, _base_region_crc) }
 };
 
 CDSConst CDSConstants::constants[] = {
-  { "static_magic",                 (int)CDS_ARCHIVE_MAGIC         },
-  { "dynamic_magic",                (int)CDS_DYNAMIC_ARCHIVE_MAGIC },
-  { "int_size",                     sizeof(int)                    },
-  { "CDSFileMapRegion_size",        sizeof(CDSFileMapRegion)       },
-  { "static_file_header_size",      sizeof(FileMapHeader)          },
-  { "dynamic_archive_header_size",  sizeof(DynamicArchiveHeader)   },
-  { "size_t_size",                  sizeof(size_t)                 }
+  { "static_magic",                 (size_t)CDS_ARCHIVE_MAGIC         },
+  { "dynamic_magic",                (size_t)CDS_DYNAMIC_ARCHIVE_MAGIC },
+  { "int_size",                     sizeof(int)                       },
+  { "CDSFileMapRegion_size",        sizeof(CDSFileMapRegion)          },
+  { "static_file_header_size",      sizeof(FileMapHeader)             },
+  { "dynamic_archive_header_size",  sizeof(DynamicArchiveHeader)      },
+  { "size_t_size",                  sizeof(size_t)                    }
 };
 
-int CDSConstants::get_cds_offset(const char* name) {
+size_t CDSConstants::get_cds_offset(const char* name) {
   for (int i = 0; i < (int)ARRAY_SIZE(offsets); i++) {
     if (strcmp(name, offsets[i]._name) == 0) {
         return offsets[i]._value;
@@ -61,7 +61,7 @@ int CDSConstants::get_cds_offset(const char* name) {
   return -1;
 }
 
-int CDSConstants::get_cds_constant(const char* name) {
+size_t CDSConstants::get_cds_constant(const char* name) {
   for (int i = 0; i < (int)ARRAY_SIZE(constants); i++) {
     if (strcmp(name, constants[i]._name) == 0) {
         return constants[i]._value;
