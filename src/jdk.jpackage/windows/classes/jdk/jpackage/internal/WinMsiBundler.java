@@ -450,7 +450,9 @@ public class WinMsiBundler  extends AbstractBundler {
                 upgradeCode));
 
         data.put("JpAllowUpgrades", "yes");
-        data.put("JpAllowDowngrades", "yes");
+        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+            data.put("JpAllowDowngrades", "yes");
+        }
 
         data.put("JpAppName", APP_NAME.fetchFrom(params));
         data.put("JpAppDescription", DESCRIPTION.fetchFrom(params));
