@@ -24,6 +24,18 @@
 
 #ifndef SHARE_CDS_CDSCONSTANTS_HPP
 #define SHARE_CDS_CDSCONSTANTS_HPP
-int    get_cds_constant(const char* name);
-size_t get_cds_offset(const char* name);
+
+#include "memory/allStatic.hpp"
+typedef struct {
+  const char* _name;
+  int _value;
+} CDSConst;
+
+class CDSConstants : AllStatic {
+ public:
+  static CDSConst offsets[];
+  static CDSConst constants[];
+  static int get_cds_constant(const char* name);
+  static int get_cds_offset(const char* name);
+};
 #endif // SHARE_CDS_CDSCONSTANTS_HPP

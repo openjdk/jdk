@@ -2019,14 +2019,14 @@ WB_END
 WB_ENTRY(jint, WB_GetCDSOffsetForName(JNIEnv* env, jobject o, jstring name))
   ResourceMark rm;
   char* c_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
-  jint result = (jint)get_cds_offset(c_name);
+  jint result = (jint)CDSConstants::get_cds_offset(c_name);
   return result;
 WB_END
 
 WB_ENTRY(jint, WB_GetCDSConstantForName(JNIEnv* env, jobject o, jstring name))
   ResourceMark rm;
   char* c_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
-  jint result = (jint)get_cds_constant(c_name);
+  jint result = (jint)CDSConstants::get_cds_constant(c_name);
   return result;
 WB_END
 

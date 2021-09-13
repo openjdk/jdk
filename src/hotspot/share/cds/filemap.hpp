@@ -181,6 +181,7 @@ public:
 
 class FileMapHeader: private CDSFileMapHeaderBase {
   friend class VMStructs;
+  friend class CDSConstants;
 
 private:
   size_t _header_size;
@@ -208,11 +209,9 @@ private:
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
-public:
   char  _jvm_ident[JVM_IDENT_MAX];  // identifier string of the jvm that created this dump
   // size of the base archive name including NULL terminator
   size_t _base_archive_name_size;
-private:
 
   // The following is a table of all the boot/app/module path entries that were used
   // during dumping. At run time, we validate these entries according to their
