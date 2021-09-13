@@ -81,7 +81,7 @@ class ZStopConcurrentGCThreadClosure : public ThreadClosure {
 public:
   virtual void do_thread(Thread* thread) {
     if (thread->is_ConcurrentGC_thread()) {
-      static_cast<ConcurrentGCThread*>(thread)->stop();
+      ConcurrentGCThread::cast(thread)->stop();
     }
   }
 };
