@@ -6,6 +6,7 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 UAE English locale, based on US English orthography, formats from en_001
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
