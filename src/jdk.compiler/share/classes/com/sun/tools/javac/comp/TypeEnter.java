@@ -700,12 +700,12 @@ public class TypeEnter implements Completer {
             } else {
                 extending = null;
                 supertype = ((tree.mods.flags & Flags.ENUM) != 0)
-                ? attr.attribBase(enumBase(tree.pos, sym), baseEnv,
+                ? attr.attribBase(extending = enumBase(tree.pos, sym), baseEnv,
                                   true, false, false)
                 : (sym.fullname == names.java_lang_Object)
                 ? Type.noType
                 : sym.isRecord()
-                ? attr.attribBase(recordBase(tree.pos, sym), baseEnv,
+                ? attr.attribBase(extending = recordBase(tree.pos, sym), baseEnv,
                                   true, false, false)
                 : syms.objectType;
             }

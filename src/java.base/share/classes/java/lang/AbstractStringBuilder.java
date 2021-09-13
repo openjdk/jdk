@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,7 +458,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param codePointOffset the offset in code points
      * @return the index within this sequence
      * @throws    IndexOutOfBoundsException if {@code index}
-     *   is negative or larger then the length of this sequence,
+     *   is negative or larger than the length of this sequence,
      *   or if {@code codePointOffset} is positive and the subsequence
      *   starting with {@code index} has fewer than
      *   {@code codePointOffset} code points,

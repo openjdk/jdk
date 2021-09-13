@@ -1076,7 +1076,6 @@ bool Universe::should_verify_subset(uint subset) {
 }
 
 void Universe::verify(VerifyOption option, const char* prefix) {
-
   COMPILER2_PRESENT(
     assert(!DerivedPointerTable::is_active(),
          "DPT should not be active during verification "

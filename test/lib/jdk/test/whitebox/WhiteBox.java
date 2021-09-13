@@ -595,7 +595,7 @@ public class WhiteBox {
   public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
-  public native boolean isJavaHeapArchiveSupported();
+  public native boolean canWriteJavaHeapArchive();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
