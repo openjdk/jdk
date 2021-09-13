@@ -76,10 +76,10 @@ void ShenandoahVMRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
 }
 
 template <bool CONCURRENT>
-ShenandoahClassLoaderDataRoots<CONCURRENT>::ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase, uint n_workers, bool heapdump) :
+ShenandoahClassLoaderDataRoots<CONCURRENT>::ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase, uint n_workers, bool heap_iteration) :
   _semaphore(worker_count(n_workers)),
   _phase(phase) {
-  if (heapdump) {
+  if (heap_iteration) {
     ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
   } else {
     ClassLoaderDataGraph::clear_claimed_marks();

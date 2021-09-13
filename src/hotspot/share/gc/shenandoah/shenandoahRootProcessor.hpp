@@ -121,7 +121,7 @@ private:
   }
 
 public:
-  ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase, uint n_workers, bool heapdump);
+  ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase, uint n_workers, bool heap_iteration);
   ~ShenandoahClassLoaderDataRoots();
 
   void always_strong_cld_do(CLDClosure* clds, uint worker_id);
