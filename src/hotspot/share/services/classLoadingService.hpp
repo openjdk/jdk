@@ -35,7 +35,7 @@ class InstanceKlass;
 
 // VM monitoring and management support for the Class Loading subsystem
 class ClassLoadingService : public AllStatic {
-private:
+ private:
   // Counters for classes loaded from class files
   static PerfCounter*  _classes_loaded_count;
   static PerfCounter*  _classes_unloaded_count;
@@ -50,9 +50,7 @@ private:
 
   static PerfVariable* _class_methods_size;
 
-  static size_t compute_class_size(InstanceKlass* k);
-
-public:
+ public:
   static void init() NOT_MANAGEMENT_RETURN;
   static bool set_verbose(bool verbose) NOT_MANAGEMENT_RETURN_(false);
   static void reset_trace_class_unloading() NOT_MANAGEMENT_RETURN;

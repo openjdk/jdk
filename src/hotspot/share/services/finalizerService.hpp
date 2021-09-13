@@ -52,11 +52,8 @@ class FinalizerEntryClosure : public StackObj {
 };
 
 class FinalizerService : AllStatic {
-  friend class ParallelSPCleanupTask;
   friend class ServiceThread;
  private:
-  static void rehash() NOT_MANAGEMENT_RETURN;
-  static bool needs_rehashing() NOT_MANAGEMENT_RETURN_(false);
   static bool has_work() NOT_MANAGEMENT_RETURN_(false);
   static void do_concurrent_work(JavaThread* service_thread) NOT_MANAGEMENT_RETURN;
  public:

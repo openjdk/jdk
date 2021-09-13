@@ -76,28 +76,6 @@ PerfCounter*    ClassLoadingService::_shared_classbytes_loaded = NULL;
 PerfCounter*    ClassLoadingService::_shared_classbytes_unloaded = NULL;
 PerfVariable*   ClassLoadingService::_class_methods_size = NULL;
 
-size_t ClassLoadingService::compute_class_size(InstanceKlass* k) {
-  // lifted from ClassStatistics.do_class(Klass* k)
-
-  size_t class_size = 0;
-
-  class_size += k->size();
-
-  if (k->is_instance_klass()) {
-    class_size += k->methods()->size();
-    // FIXME: Need to count the contents of methods
-    class_size += k->constants()->size();
-    class_size += k->local_interfaces()->size();
-    if (k->transitive_interfaces() != NULL) {
-      class_size += k->transitive_interfaces()->size();
-    }
-    // We do not have to count implementors, since we only store one!
-    // FIXME: How should these be accounted for, now when they have moved.
-    //class_size += k->fields()->size();
-  }
-  return class_size * oopSize;
-}
-
 void ClassLoadingService::init() {
   EXCEPTION_MARK;
 
@@ -192,6 +170,24 @@ jlong ClassLoadingService::unloaded_shared_class_bytes() {
 
 jlong ClassLoadingService::class_method_data_size() {
   return UsePerfData ? _class_methods_size->get_value() : -1;
+}
+
+static size_t compute_class_size(InstanceKlass* k) {
+  // lifted from ClassStatistics.do_class(Klass* k)
+  size_t class_size = k->size();
+  if (k->is_instance_klass()) {
+    class_size += k->methods()->size();
+    // FIXME: Need to count the contents of methods
+    class_size += k->constants()->size();
+    class_size += k->local_interfaces()->size();
+    if (k->transitive_interfaces() != NULL) {
+      class_size += k->transitive_interfaces()->size();
+    }
+    // We do not have to count implementors, since we only store one!
+    // FIXME: How should these be accounted for, now when they have moved.
+    //class_size += k->fields()->size();
+  }
+  return class_size * oopSize;
 }
 
 void ClassLoadingService::notify_class_loaded(InstanceKlass* k, bool shared_class) {

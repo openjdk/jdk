@@ -27,9 +27,7 @@
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
@@ -84,40 +82,6 @@ void FinalizerEntry::on_complete() {
   set_atomic<dec>(&_objects_on_heap);
 }
 
-static constexpr const size_t DEFAULT_TABLE_SIZE = 2048;
-// 2^24 is max size, like StringTable.
-static constexpr const size_t MAX_SIZE = 24;
-// If a chain gets to 50, something might be wrong
-static constexpr const size_t REHASH_LEN = 50;
-static constexpr const double PREF_AVG_LIST_LEN = 8.0;
-
-static size_t _table_size = 0;
-static volatile uint64_t _entries = 0;
-static volatile uint64_t _count = 0;
-static volatile bool _has_work = 0;
-static volatile bool _needs_rehashing = false;
-static volatile bool _has_items_to_clean = false;
-
-static inline void reset_has_items_to_clean() {
-  Atomic::store(&_has_items_to_clean, false);
-}
-
-static inline void set_has_items_to_clean() {
-  Atomic::store(&_has_items_to_clean, true);
-}
-
-static inline bool has_items_to_clean() {
-  return Atomic::load(&_has_items_to_clean);
-}
-
-static inline void added() {
-  set_atomic<inc>(&_count);
-}
-
-static inline void removed() {
-  set_atomic<dec>(&_count);
-}
-
 static inline uintx hash_function(const InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
   return primitive_hash(ik);
@@ -149,41 +113,25 @@ class FinalizerTableConfig : public AllStatic {
   }
   // We use default allocation/deallocation but counted
   static void* allocate_node(void* context, size_t size, Value const& value) {
-    added();
     return AllocateHeap(size, mtStatistics);
   }
   static void free_node(void* context, void* memory, Value const& value) {
     // We get here because some threads lost a race to insert a newly created FinalizerEntry
     FreeHeap(memory);
-    removed();
   }
 };
 
 typedef ConcurrentHashTable<FinalizerTableConfig, mtStatistics> FinalizerHashtable;
 static FinalizerHashtable* _table = nullptr;
+static constexpr const size_t DEFAULT_TABLE_SIZE = 2048;
+// 2^24 is max size, like StringTable.
+static constexpr const size_t MAX_SIZE = 24;
+static volatile bool _has_work = false;
 
 static size_t ceil_log2(size_t value) {
   size_t ret;
   for (ret = 1; ((size_t)1 << ret) < value; ++ret);
   return ret;
-}
-
-static double table_load_factor() {
-  return (double)_count / _table_size;
-}
-
-static inline size_t table_size() {
-  return ((size_t)1) << _table->get_size_log2(Thread::current());
-}
-
-static inline bool table_needs_rehashing() {
-  return _needs_rehashing;
-}
-
-static inline void update_table_needs_rehash(bool rehash) {
-  if (rehash) {
-    _needs_rehashing = true;
-  }
 }
 
 class FinalizerEntryLookupResult {
@@ -210,189 +158,87 @@ class FinalizerEntryLookupGet {
   FinalizerEntry* result() const { return _result; }
 };
 
-static void trigger_table_cleanup() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  _has_work = true;
-  Service_lock->notify_all();
+static inline void set_has_work(bool value) {
+  Atomic::store(&_has_work, value);
 }
 
-static void check_table_concurrent_work() {
-  if (_has_work) {
-    return;
-  }
-  // We should clean/resize if we have
-  // more items than preferred load factor or
-  // more dead items than water mark.
-  if (has_items_to_clean() || (table_load_factor() > PREF_AVG_LIST_LEN)) {
-    trigger_table_cleanup();
+static inline bool has_work() {
+  return Atomic::load(&_has_work);
+}
+
+static void request_resize() {
+  if (!has_work()) {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    if (!has_work()) {
+      set_has_work(true);
+      Service_lock->notify_all();
+    }
   }
 }
 
 static FinalizerEntry* add_to_table_if_needed(const InstanceKlass* ik, Thread* thread) {
   FinalizerEntryLookup lookup(ik);
-  bool clean_hint = false;
-  bool rehash_warning = false;
   FinalizerEntry* entry = nullptr;
+  bool grow_hint = false;
   do {
     // We have looked up the entry once, proceed with insertion.
     entry = new FinalizerEntry(ik);
-    if (_table->insert(thread, lookup, entry, &rehash_warning, &clean_hint)) {
+    if (_table->insert(thread, lookup, entry, &grow_hint)) {
       break;
     }
     // In case another thread did a concurrent add, return value already in the table.
     // This could fail if the entry got deleted concurrently, so loop back until success.
     FinalizerEntryLookupGet felg;
-    if (_table->get(thread, lookup, felg, &rehash_warning)) {
+    if (_table->get(thread, lookup, felg, &grow_hint)) {
       entry = felg.result();
       break;
     }
   } while (true);
-  update_table_needs_rehash(rehash_warning);
-  if (clean_hint) {
-    set_has_items_to_clean();
-    check_table_concurrent_work();
+  if (grow_hint) {
+    request_resize();
   }
   assert(entry != nullptr, "invariant");
   return entry;
 }
 
-// Concurrent work
-static void grow_table(JavaThread* jt) {
-  FinalizerHashtable::GrowTask gt(_table);
-  if (!gt.prepare(jt)) {
-    return;
-  }
-  while (gt.do_task(jt)) {
-    gt.pause(jt);
-    {
-      ThreadBlockInVM tbivm(jt);
-    }
-    gt.cont(jt);
-  }
-  gt.done(jt);
-  _table_size = table_size();
-}
-
-struct FinalizerEntryDelete : StackObj {
-  size_t _deleted;
-  FinalizerEntryDelete() : _deleted(0) {}
-  void operator()(FinalizerEntry** value) {
-    assert(value != nullptr, "invariant");
-    assert(*value != nullptr, "invariant");
-    _deleted++;
-  }
-};
-
-struct FinalizerEntryDeleteCheck : StackObj {
-  size_t _processed;
-  FinalizerEntryDeleteCheck() : _processed(0) {}
-  bool operator()(FinalizerEntry** value) {
-    assert(value != nullptr, "invariant");
-    assert(*value != nullptr, "invariant");
-    _processed++;
-    return true;
-  }
-};
-
-static void clean_table_entries(JavaThread* jt) {
-  FinalizerHashtable::BulkDeleteTask bdt(_table);
-  if (!bdt.prepare(jt)) {
-    return;
-  }
-  FinalizerEntryDeleteCheck fedc;
-  FinalizerEntryDelete fed;
-  while (bdt.do_task(jt, fedc, fed)) {
-    bdt.pause(jt);
-    {
-      ThreadBlockInVM tbivm(jt);
-    }
-    bdt.cont(jt);
-  }
-  reset_has_items_to_clean();
-  bdt.done(jt);
-}
-
 static void do_table_concurrent_work(JavaThread* jt) {
-  // We prefer growing, since that also removes dead items
-  if (table_load_factor() > PREF_AVG_LIST_LEN && !_table->is_max_size_reached()) {
-    grow_table(jt);
-  } else {
-    clean_table_entries(jt);
+  if (!_table->is_max_size_reached()) {
+    FinalizerHashtable::GrowTask gt(_table);
+    if (!gt.prepare(jt)) {
+      return;
+    }
+    while (gt.do_task(jt)) {
+      gt.pause(jt);
+      {
+        ThreadBlockInVM tbivm(jt);
+      }
+      gt.cont(jt);
+    }
+    gt.done(jt);
   }
-  _has_work = false;
-}
-
-// Rehash
-static bool do_table_rehash() {
-  if (!_table->is_safepoint_safe()) {
-    return false;
-  }
-  Thread* const thread = Thread::current();
-  // We use current size
-  const size_t new_size = _table->get_size_log2(thread);
-  FinalizerHashtable* const new_table = new FinalizerHashtable(new_size, MAX_SIZE, REHASH_LEN);
-  if (!_table->try_move_nodes_to(thread, new_table)) {
-    delete new_table;
-    return false;
-  }
-  // free old table
-  delete _table;
-  _table = new_table;
-  return true;
-}
-
-bool FinalizerService::needs_rehashing() {
-  return _needs_rehashing;
-}
-
-void FinalizerService::rehash() {
-  static bool rehashed = false;
-  log_debug(finalizer)("Table imbalanced, rehashing called.");
-  // Grow instead of rehash.
-  if (table_load_factor() > PREF_AVG_LIST_LEN && !_table->is_max_size_reached()) {
-    log_debug(finalizer)("Choosing growing over rehashing.");
-    trigger_table_cleanup();
-    _needs_rehashing = false;
-    return;
-  }
-  // Already rehashed.
-  if (rehashed) {
-    log_warning(finalizer)("Rehashing already done, still long lists.");
-    trigger_table_cleanup();
-    _needs_rehashing = false;
-    return;
-  }
-  if (do_table_rehash()) {
-    rehashed = true;
-  } else {
-    log_debug(finalizer)("Resizes in progress rehashing skipped.");
-  }
-  _needs_rehashing = false;
+  set_has_work(false);
 }
 
 bool FinalizerService::has_work() {
-  return _has_work;
+  return ::has_work();
 }
 
 void FinalizerService::do_concurrent_work(JavaThread* service_thread) {
   assert(service_thread != nullptr, "invariant");
-  if (_has_work) {
-    do_table_concurrent_work(service_thread);
-  }
+  assert(has_work(), "invariant");
+  do_table_concurrent_work(service_thread);
 }
 
 void FinalizerService::init() {
   assert(_table == nullptr, "invariant");
   const size_t start_size_log_2 = ceil_log2(DEFAULT_TABLE_SIZE);
-  _table_size = ((size_t)1) << start_size_log_2;
-  _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE, REHASH_LEN);
+  _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE);
 }
 
 static FinalizerEntry* lookup_entry(const InstanceKlass* ik, Thread* thread) {
   FinalizerEntryLookup lookup(ik);
   FinalizerEntryLookupGet felg;
-  bool rehash_warning;
-  _table->get(thread, lookup, felg, &rehash_warning);
+  _table->get(thread, lookup, felg);
   return felg.result();
 }
 
