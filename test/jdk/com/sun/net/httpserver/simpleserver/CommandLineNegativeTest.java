@@ -130,10 +130,6 @@ public class CommandLineNegativeTest {
                 {"-b", "badhost"},
                 {"--bind-address", "192.168.1.220..."},
 
-//                {"-d", ""},
-                // TODO: expect failure at Path::of, not at actual file system access
-                //  need to be file system specific?
-
                 {"-o", "bad-output-level"},
                 {"--output", "bad-output-level"},
 
