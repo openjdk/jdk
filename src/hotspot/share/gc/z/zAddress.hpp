@@ -230,7 +230,7 @@ enum class zpointer        : uintptr_t { null = 0 };
 // Uncolored oop - safe to dereference
 enum class zaddress        : uintptr_t { null = 0 };
 
-// Uncolored oop - not safe to dereference
+// Uncolored oop - not safe to dereference, could point uncommitted memory
 enum class zaddress_unsafe : uintptr_t { null = 0 };
 
 class ZOffset : public AllStatic {

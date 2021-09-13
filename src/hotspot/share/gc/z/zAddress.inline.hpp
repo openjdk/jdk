@@ -281,6 +281,25 @@ inline uintptr_t untype(zaddress_unsafe addr) {
   return static_cast<uintptr_t>(addr);
 }
 
+// The zaddress_unsafe type denotes that this
+// memory isn't guaranteed to be dereferenceable.
+// The containing page could have been reclaimed
+// and/or uncommitted.
+//
+// The zaddress type denotes that this memory can
+// be dereferenced (runtime verified).
+//
+// This function can be used when the caller guarantees
+// that addr points to dereferenceable memory. Examples
+// of cases after which this function can be used:
+//
+// 1) A load good check on the colored pointer that addr was created from
+// 2) A load barrier has self-healed the pointer in addr
+// 3) A check that the addr doesn't belong to a relocation set. Since addr
+//    could denote two different objects in the two generations, a check
+//    against the colored pointer, that addr was created from, is needed to
+//    figure out what relocation set to look in.
+// 4) From the relocation code
 inline zaddress safe(zaddress_unsafe addr) {
   return to_zaddress(untype(addr));
 }
