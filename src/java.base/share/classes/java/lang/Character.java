@@ -11296,14 +11296,14 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
     }
 
     /**
-     * Returns the Unicode name of the specified character
+     * Returns the name of the specified character
      * {@code codePoint}, or null if the code point is
      * {@link #UNASSIGNED unassigned}.
      * <p>
-     * Note: if the specified character is not assigned a name by
+     * If the specified character is not assigned a name by
      * the <i>UnicodeData</i> file (part of the Unicode Character
      * Database maintained by the Unicode Consortium), the returned
-     * name is the same as the result of expression:
+     * name is the same as the result of the expression:
      *
      * <blockquote>{@code
      *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')
@@ -11312,9 +11312,15 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      *
      * }</blockquote>
      *
+     * For the {@code codePoint}s in the <i>UnicodeData</i> file, the name
+     * returned by this method follows the naming scheme in the
+     * "Unicode Name Property" section of the Unicode Standard. For other
+     * code points, such as Hangul/Ideographs, The name generation rule above
+     * differs from the one defined in the Unicode Standard.
+     *
      * @param  codePoint the character (Unicode code point)
      *
-     * @return the Unicode name of the specified character, or null if
+     * @return the name of the specified character, or null if
      *         the code point is unassigned.
      *
      * @throws IllegalArgumentException if the specified
@@ -11343,11 +11349,11 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
 
     /**
      * Returns the code point value of the Unicode character specified by
-     * the given Unicode character name.
+     * the given character name.
      * <p>
-     * Note: if a character is not assigned a name by the <i>UnicodeData</i>
+     * If a character is not assigned a name by the <i>UnicodeData</i>
      * file (part of the Unicode Character Database maintained by the Unicode
-     * Consortium), its name is defined as the result of expression:
+     * Consortium), its name is defined as the result of the expression:
      *
      * <blockquote>{@code
      *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')
@@ -11359,12 +11365,18 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * The {@code name} matching is case insensitive, with any leading and
      * trailing whitespace character removed.
      *
-     * @param  name the Unicode character name
+     * For the code points in the <i>UnicodeData</i> file, this method
+     * recognizes the name which conforms to the name defined in the
+     * "Unicode Name Property" section in the Unicode Standard. For other
+     * code points, this method recognizes the name generated with
+     * {@link #getName(int)} method.
+     *
+     * @param  name the character name
      *
      * @return the code point value of the character specified by its name.
      *
      * @throws IllegalArgumentException if the specified {@code name}
-     *         is not a valid Unicode character name.
+     *         is not a valid character name.
      * @throws NullPointerException if {@code name} is {@code null}
      *
      * @since 9
