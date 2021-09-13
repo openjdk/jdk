@@ -1886,24 +1886,23 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
   ParallelObjectIterator* _poi;
   HeapDumpLargeObjectList* _large_object_list;
 
-  static const size_t WriterType = 0;
-  static const size_t DumperType = 1;
-  static const size_t VMDumperType = 2;
+  // VMDumperType is for thread that dumps both heap and non-heap data.
+  static const size_t VMDumperType = 0;
+  static const size_t WriterType = 1;
+  static const size_t DumperType = 2;
 
   size_t get_worker_type(uint worker_id) {
     assert(_num_writer_threads >= 1, "Must be at least one writers");
-    // worker id of writer starts from 0
-    if (worker_id < _num_writer_threads) {
-        return WriterType;
-    }
-    // worker id of dumper starts from _num_dumper_threads
-    if (worker_id < _num_writer_threads + _num_dumper_threads) {
-        return DumperType;
+    // worker id of dumper starts from 0, include VMDumper
+    if (worker_id < _num_dumper_threads) {
+      if (worker_id == VMDumperWorkerId) {
+        return VMDumperType;
+      }
+      return DumperType;
     }
 
-    assert (worker_id == _num_writer_threads + _num_dumper_threads,
-            "Invalid worker id for heap dumper/writer");
-    return VMDumperType;
+    // worker id of writer starts from _num_dumper_threads
+    return WriterType;
   }
 
   void prepare_parallel_dump(uint num_total) {
@@ -1911,7 +1910,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
     assert (num_total > 0, "active workers number must >= 1");
     // Dumper threads number must not be larger than active workers number.
     if (num_total < _num_dumper_threads) {
-      _num_dumper_threads = num_total - 1 /* VMThread */;
+      _num_dumper_threads = num_total - 1;
     }
     // Calculate dumper and writer threads number.
     _num_writer_threads = num_total - _num_dumper_threads;
@@ -1921,13 +1920,13 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
       _num_writer_threads = 1;
       _num_dumper_threads = num_total - _num_writer_threads;
     }
-
-    uint total_dumper_threads = _num_dumper_threads + 1 /* VMThread */;
+    // Number of dumper threads that only iterate heap.
+    uint _heap_only_dumper_threads = _num_dumper_threads - 1;
     // Prepare parallel writer.
     if (_num_dumper_threads > 0) {
       ParDumpWriter::before_work();
-      _dumper_controller = new (std::nothrow) DumperController(_num_dumper_threads);
-      _poi = Universe::heap()->parallel_object_iterator(total_dumper_threads);
+      _dumper_controller = new (std::nothrow) DumperController(_heap_only_dumper_threads);
+      _poi = Universe::heap()->parallel_object_iterator(_num_dumper_threads);
     }
   }
 
