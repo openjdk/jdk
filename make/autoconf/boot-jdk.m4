@@ -298,6 +298,28 @@ AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
     ])
 ])
 
+# Setup CLASSPATH environment variable
+AC_DEFUN([BOOTJDK_SETUP_CLASSPATH],
+[
+  AC_ARG_WITH([classpath], [AS_HELP_STRING([--with-classpath],
+      [Optional classpath to set as CLASSPATH to all Java invocations @<:@none@:>@])])
+
+  if test "x$CLASSPATH" != x; then
+    AC_MSG_WARN([CLASSPATH is set in the environment. This will be ignored. Use --with-classpath instead.])
+  fi
+
+  CLASSPATH=
+
+  if test "x$with_classpath" != x && test "x$with_classpath" != xyes &&
+      test "x$with_classpath" != xno ; then
+    CLASSPATH="$with_classpath"
+    AC_MSG_CHECKING([for classpath to use for all Java invocations])
+    AC_MSG_RESULT([$CLASSPATH])
+  fi
+
+  AC_SUBST(CLASSPATH)
+])
+
 ###############################################################################
 #
 # We need a Boot JDK to bootstrap the build.
@@ -394,6 +416,8 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
     BOOTJDK_USE_LOCAL_CDS=false
     AC_MSG_RESULT([no, -XX:SharedArchiveFile not supported])
   fi
+
+  BOOTJDK_SETUP_CLASSPATH
 ])
 
 AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],

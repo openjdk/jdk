@@ -236,13 +236,6 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 void GenMarkSweep::mark_sweep_phase2() {
   // Now all live objects are marked, compute the new object addresses.
 
-  // It is imperative that we traverse perm_gen LAST. If dead space is
-  // allowed a range of dead object may get overwritten by a dead int
-  // array. If perm_gen is not traversed last a Klass* may get
-  // overwritten. This is fine since it is dead, but if the class has dead
-  // instances we have to skip them, and in order to find their size we
-  // need the Klass*!
-  //
   // It is not required that we traverse spaces in the same order in
   // phase2, phase3 and phase4, but the ValidateMarkSweep live oops
   // tracking expects us to do so. See comment under phase4.

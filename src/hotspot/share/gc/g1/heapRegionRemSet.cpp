@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ const char* HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPL
 
 HeapRegionRemSet::HeapRegionRemSet(HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
-  _m(Mutex::leaf + 1, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
+  _m(Mutex::leaf + 1, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), Monitor::_safepoint_check_never),
   _code_roots(),
   _card_set_mm(config, G1CardSetFreePool::free_list_pool()),
   _card_set(config, &_card_set_mm),

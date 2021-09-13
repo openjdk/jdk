@@ -746,7 +746,7 @@ public interface Elements {
      * record component is returned, in any other case {@code null} is returned.
      *
      * @param accessor the method for which the record component should be found.
-     * @return the record component, or null if the given method is not an record
+     * @return the record component, or null if the given method is not a record
      * component accessor
      * @since 16
      */
