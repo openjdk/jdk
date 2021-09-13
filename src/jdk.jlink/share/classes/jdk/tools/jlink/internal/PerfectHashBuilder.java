@@ -283,7 +283,7 @@ public class PerfectHashBuilder<E> {
         // Build bucket chains based on key hash.  Collisions end up in same chain.
         Bucket<E>[] buckets = (Bucket<E>[])Array.newInstance(bucketComponent, count);
 
-        map.values().stream().forEach((entry) -> {
+        map.values().forEach((entry) -> {
             int index = (entry.hashCode() & 0x7FFFFFFF) % count;
             Bucket<E> bucket = buckets[index];
 
@@ -327,7 +327,7 @@ public class PerfectHashBuilder<E> {
                     }
 
                     // Undo the attempted packing.
-                    undo.stream().forEach((i) -> {
+                    undo.forEach((i) -> {
                         order[i] = null;
                     });
 

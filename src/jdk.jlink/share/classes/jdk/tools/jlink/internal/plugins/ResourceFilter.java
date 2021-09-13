@@ -65,7 +65,7 @@ public class ResourceFilter implements Predicate<String> {
                         throw new UncheckedIOException(ex);
                     }
 
-                    lines.stream().forEach((line) -> {
+                    lines.forEach((line) -> {
                         matchers.add(Utils.getJRTFSPathMatcher(line.trim()));
                     });
                 } else {

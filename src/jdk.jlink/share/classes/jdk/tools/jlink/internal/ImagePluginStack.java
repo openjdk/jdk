@@ -181,7 +181,7 @@ public final class ImagePluginStack {
         this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
         this.plugins.addAll(Objects.requireNonNull(plugins));
-        plugins.stream().forEach((p) -> {
+        plugins.forEach((p) -> {
             Objects.requireNonNull(p);
             if (p instanceof ResourcePrevisitor) {
                 resourcePrevisitors.add((ResourcePrevisitor) p);
@@ -227,13 +227,13 @@ public final class ImagePluginStack {
                     resources.getStringTable()).resourcePool();
         }
         PreVisitStrings previsit = new PreVisitStrings();
-        resourcePrevisitors.stream().forEach((p) -> {
+        resourcePrevisitors.forEach((p) -> {
             p.previsit(resources.resourcePool(), previsit);
         });
 
         // Store the strings resulting from the previsit.
         List<String> sorted = previsit.getSortedStrings();
-        sorted.stream().forEach((s) -> {
+        sorted.forEach((s) -> {
             resources.getStringTable().addString(s);
         });
 
