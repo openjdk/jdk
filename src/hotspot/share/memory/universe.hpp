@@ -184,9 +184,6 @@ class Universe: AllStatic {
 
   // Debugging
   static int _verify_count;                           // number of verifies done
-
-  // True during call to verify().  Should only be set/cleared in verify().
-  static bool _verify_in_progress;
   static long verify_flags;
 
   static uintptr_t _verify_oop_mask;
@@ -348,7 +345,6 @@ class Universe: AllStatic {
   };
   static void initialize_verify_flags();
   static bool should_verify_subset(uint subset);
-  static bool verify_in_progress() { return _verify_in_progress; }
   static void verify(VerifyOption option, const char* prefix);
   static void verify(const char* prefix) {
     verify(VerifyOption_Default, prefix);
