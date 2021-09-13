@@ -96,25 +96,16 @@ void LogTestFixture::restore_config() {
     *str++ = '\0';
 
     char* decorators = str;
-    str = strchr(str, ' ');
-    if (str != NULL) {
-      *str = '\0';
-    }
 
-// TODO: Restore following code if options for existing log output can be changed.
-//       (Output options for existing outputs are ignored.)
-//       It will attempt to restore "foldmultilines=false" (defined in LogFileStreamOutput)
-#if 0
-    char* options = NULL;
     str = strchr(str, ' ');
     if (str != NULL) {
+      // This output has options. However, UL doesn't allow the options of any
+      // output to be changed, so they cannot be modified by the tests,
+      // and also we cannot change them here. So just mark the end of the
+      // decorators.
       *str++ = '\0';
-      options = str;
     }
-
-    set_log_config(name, selection, decorators, options != NULL ? options : "");
-#endif
-    set_log_config(name, selection, decorators, NULL);
+    set_log_config(name, selection, decorators, /* options = */ NULL);
   }
 }
 

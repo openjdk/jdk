@@ -120,7 +120,6 @@ class ParallelScavengeHeap : public CollectedHeap {
     _old_pool(NULL),
     _workers("GC Thread",
              ParallelGCThreads,
-             true /* are_GC_task_threads */,
              false /* are_ConcurrentGC_threads */) { }
 
   // For use by VM operations

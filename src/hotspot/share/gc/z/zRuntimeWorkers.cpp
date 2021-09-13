@@ -60,7 +60,6 @@ public:
 ZRuntimeWorkers::ZRuntimeWorkers() :
     _workers("RuntimeWorker",
              ParallelGCThreads,
-             false /* are_GC_task_threads */,
              false /* are_ConcurrentGC_threads */) {
 
   log_info_p(gc, init)("Runtime Workers: %u", _workers.total_workers());

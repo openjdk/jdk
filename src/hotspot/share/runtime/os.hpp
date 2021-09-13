@@ -441,8 +441,7 @@ class os: AllStatic {
 
   enum ThreadType {
     vm_thread,
-    cgc_thread,        // Concurrent GC thread
-    pgc_thread,        // Parallel GC thread
+    gc_thread,         // GC thread
     java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
