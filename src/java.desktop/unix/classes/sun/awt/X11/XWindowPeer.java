@@ -1540,7 +1540,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      */
     static Vector<XWindowPeer> collectJavaToplevels() {
         Vector<XWindowPeer> javaToplevels = new Vector<XWindowPeer>();
-        Vector<Long> v = new Vector<Long>();
+        ArrayList<Long> v = new ArrayList<Long>();
         X11GraphicsEnvironment ge =
             (X11GraphicsEnvironment)GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();

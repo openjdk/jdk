@@ -269,18 +269,15 @@ public class OptionModesTester {
             return this;
         }
 
-        TestResult checkUniqueLog(String... uniqueExpects) {
-            return checkUniqueLog(Log.DIRECT, uniqueExpects);
+        TestResult checkSameLog(TestResult other) {
+            return checkSameLog(Log.DIRECT, other);
         }
 
-        TestResult checkUniqueLog(Log l, String... uniqueExpects) {
-            String log = logs.get(l);
-            for (String e : uniqueExpects) {
-                if (!log.contains(e)) {
-                    error("Expected string not found: " + e);
-                } else if (log.indexOf(e) != log.lastIndexOf(e)) {
-                    error("Expected string appears more than once: " + e);
-                }
+        TestResult checkSameLog(Log l, TestResult other) {
+            String thisLog = logs.get(l);
+            String otherLog = other.logs.get(l);
+            if (!thisLog.equals(otherLog)) {
+                error("Logs are not the same.\nThis:\n" + thisLog + "\nOther:\n" + otherLog);
             }
             return this;
         }

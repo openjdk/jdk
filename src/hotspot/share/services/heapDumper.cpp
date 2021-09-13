@@ -2266,7 +2266,7 @@ void VM_HeapDumper::doit() {
     work(0);
   } else {
     prepare_parallel_dump(gang->active_workers());
-    gang->run_task(this, gang->active_workers(), true);
+    gang->run_task(this);
     finish_parallel_dump();
   }
 
@@ -2276,7 +2276,7 @@ void VM_HeapDumper::doit() {
 }
 
 void VM_HeapDumper::work(uint worker_id) {
-  if (!Thread::current()->is_VM_thread()) {
+  if (worker_id != 0) {
     if (get_worker_type(worker_id) == WriterType) {
       writer()->writer_loop();
       return;
@@ -2284,9 +2284,8 @@ void VM_HeapDumper::work(uint worker_id) {
     if (_num_dumper_threads >= 1 && get_worker_type(worker_id) == DumperType) {
       _dumper_controller->wait_for_start_signal();
     }
-  }
-  // The VM thread works on all non-heap data dumping and part of heap iteration.
-  if (Thread::current()->is_VM_thread()) {
+  } else {
+    // The worker 0 on all non-heap data dumping and part of heap iteration.
     // Write the file header - we always use 1.0.2
     const char* header = "JAVA PROFILE 1.0.2";
 
@@ -2378,7 +2377,7 @@ void VM_HeapDumper::work(uint worker_id) {
     }
   }
 
-  assert(Thread::current()->is_VM_thread(), "Heap dumper must be VM thread.");
+  assert(worker_id == 0, "Heap dumper must be worker 0.");
   // Use writer() rather than ParDumpWriter to avoid memory consumption.
   HeapObjectDumper obj_dumper(writer());
   dump_large_objects(&obj_dumper);

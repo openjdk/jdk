@@ -86,7 +86,6 @@ extern Monitor* Terminator_lock;                 // a lock used to guard termina
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
-extern Mutex*   ProfilePrint_lock;               // a lock used to serialize the printing of profiles
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
 extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize access to sweeper statistics
 
@@ -255,12 +254,8 @@ class MonitorLocker: public MutexLocker {
   }
 
   bool wait(int64_t timeout = 0) {
-    if (_flag == Mutex::_safepoint_check_flag) {
-      return as_monitor()->wait(timeout);
-    } else {
-      return as_monitor()->wait_without_safepoint_check(timeout);
-    }
-    return false;
+    return _flag == Mutex::_safepoint_check_flag ?
+      as_monitor()->wait(timeout) : as_monitor()->wait_without_safepoint_check(timeout);
   }
 
   void notify_all() {
