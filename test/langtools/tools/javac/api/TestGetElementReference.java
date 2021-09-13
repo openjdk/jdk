@@ -58,9 +58,14 @@ public class TestGetElementReference {
         analyze(false, "TestGetElementReferenceData.java");
         analyze(false, "mod/module-info.java", "mod/api/pkg/Api.java");
         analyze(true, "TestGetElementReferenceDataWithErrors.java");
+        analyze(true, new String[] {"--release", "8", "-XDshould-stop.at=FLOW"}, "TestGetElementReferenceDataWithRecord.java");
     }
 
     private static void analyze(boolean allowErrors, String... fileNames) throws IOException {
+        analyze(allowErrors, new String[0], fileNames);
+    }
+
+    private static void analyze(boolean allowErrors, String[] extraParams, String... fileNames) throws IOException {
         try (StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
             List<JavaFileObject> files = new ArrayList<>();
             for (String fileName : fileNames) {
@@ -70,7 +75,9 @@ public class TestGetElementReference {
                 }
             }
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-            List<String> options = List.of("-Xjcov");
+            List<String> options = new ArrayList<>();
+            options.add("-Xjcov");
+            options.addAll(List.of(extraParams));
             JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, options, null, files);
             Trees trees = Trees.instance(ct);
             CompilationUnitTree cut = ct.parse().iterator().next();

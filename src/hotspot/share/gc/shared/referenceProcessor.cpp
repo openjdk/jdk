@@ -88,7 +88,7 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
                                        uint      mt_processing_degree,
                                        bool      mt_discovery,
                                        uint      mt_discovery_degree,
-                                       bool      atomic_discovery,
+                                       bool      concurrent_discovery,
                                        BoolObjectClosure* is_alive_non_header)  :
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
@@ -97,11 +97,11 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
 {
   assert(is_subject_to_discovery != NULL, "must be set");
 
-  _discovery_is_atomic = atomic_discovery;
-  _discovery_is_mt     = mt_discovery;
-  _num_queues          = MAX2(1U, mt_processing_degree);
-  _max_num_queues      = MAX2(_num_queues, mt_discovery_degree);
-  _discovered_refs     = NEW_C_HEAP_ARRAY(DiscoveredList,
+  _discovery_is_concurrent = concurrent_discovery;
+  _discovery_is_mt         = mt_discovery;
+  _num_queues              = MAX2(1U, mt_processing_degree);
+  _max_num_queues          = MAX2(_num_queues, mt_discovery_degree);
+  _discovered_refs         = NEW_C_HEAP_ARRAY(DiscoveredList,
             _max_num_queues * number_of_subclasses_of_ref(), mtGC);
 
   _discoveredSoftRefs    = &_discovered_refs[0];
@@ -304,16 +304,16 @@ inline void log_enqueued_ref(const DiscoveredListIterator& iter, const char* rea
   assert(oopDesc::is_oop(iter.obj()), "Adding a bad reference");
 }
 
-size_t ReferenceProcessor::process_soft_weak_final_refs_work(DiscoveredList&    refs_list,
-                                                             BoolObjectClosure* is_alive,
-                                                             OopClosure*        keep_alive,
-                                                             bool               do_enqueue_and_clear) {
+size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_list,
+                                                        BoolObjectClosure* is_alive,
+                                                        OopClosure*        keep_alive,
+                                                        bool               do_enqueue_and_clear) {
   DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
-    iter.load_ptrs(DEBUG_ONLY(!discovery_is_atomic() /* allow_null_referent */));
+    iter.load_ptrs(DEBUG_ONLY(discovery_is_concurrent() /* allow_null_referent */));
     if (iter.referent() == NULL) {
       // Reference has been cleared since discovery; only possible if
-      // discovery is not atomic (checked by load_ptrs).  Remove
+      // discovery is concurrent (checked by load_ptrs).  Remove
       // reference from list.
       log_dropped_ref(iter, "cleared");
       iter.remove();
@@ -350,8 +350,7 @@ size_t ReferenceProcessor::process_soft_weak_final_refs_work(DiscoveredList&    
 }
 
 size_t ReferenceProcessor::process_final_keep_alive_work(DiscoveredList& refs_list,
-                                                         OopClosure*     keep_alive,
-                                                         VoidClosure*    complete_gc) {
+                                                         OopClosure*     keep_alive) {
   DiscoveredListIterator iter(refs_list, keep_alive, NULL);
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(false /* allow_null_referent */));
@@ -367,41 +366,9 @@ size_t ReferenceProcessor::process_final_keep_alive_work(DiscoveredList& refs_li
     iter.next();
   }
   iter.complete_enqueue();
-  // Close the reachable set
-  complete_gc->do_void();
   refs_list.clear();
 
   assert(iter.removed() == 0, "This phase does not remove anything.");
-  return iter.removed();
-}
-
-size_t ReferenceProcessor::process_phantom_refs_work(DiscoveredList&    refs_list,
-                                                     BoolObjectClosure* is_alive,
-                                                     OopClosure*        keep_alive,
-                                                     VoidClosure*       complete_gc) {
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
-  while (iter.has_next()) {
-    iter.load_ptrs(DEBUG_ONLY(!discovery_is_atomic() /* allow_null_referent */));
-
-    oop const referent = iter.referent();
-
-    if (referent == NULL || iter.is_referent_alive()) {
-      iter.make_referent_alive();
-      iter.remove();
-      iter.move_to_next();
-    } else {
-      iter.clear_referent();
-      iter.enqueue();
-      log_enqueued_ref(iter, "cleared Phantom");
-      iter.next();
-    }
-  }
-  iter.complete_enqueue();
-  // Close the reachable set; needed for collectors which keep_alive_closure do
-  // not immediately complete their work.
-  complete_gc->do_void();
-  refs_list.clear();
-
   return iter.removed();
 }
 
@@ -451,21 +418,47 @@ size_t ReferenceProcessor::total_reference_count(ReferenceType type) const {
   return total_count(list);
 }
 
-
-class RefProcSoftWeakFinalPhaseTask: public RefProcTask {
-  void run_phase(uint worker_id,
-                  DiscoveredList list[],
-                  BoolObjectClosure* is_alive,
-                  OopClosure* keep_alive,
-                  bool do_enqueue_and_clear,
-                  ReferenceType ref_type) {
-    size_t const removed = _ref_processor.process_soft_weak_final_refs_work(list[worker_id],
-                                                                            is_alive,
-                                                                            keep_alive,
-                                                                            do_enqueue_and_clear);
-    _phase_times->add_ref_cleared(ref_type, removed);
+void RefProcTask::process_discovered_list(uint worker_id,
+                                          ReferenceType ref_type,
+                                          BoolObjectClosure* is_alive,
+                                          OopClosure* keep_alive) {
+  ReferenceProcessor::RefProcSubPhases subphase;
+  DiscoveredList* dl;
+  switch (ref_type) {
+    case ReferenceType::REF_SOFT:
+      subphase = ReferenceProcessor::ProcessSoftRefSubPhase;
+      dl = _ref_processor._discoveredSoftRefs;
+      break;
+    case ReferenceType::REF_WEAK:
+      subphase = ReferenceProcessor::ProcessWeakRefSubPhase;
+      dl = _ref_processor._discoveredWeakRefs;
+      break;
+    case ReferenceType::REF_FINAL:
+      subphase = ReferenceProcessor::ProcessFinalRefSubPhase;
+      dl = _ref_processor._discoveredFinalRefs;
+      break;
+    case ReferenceType::REF_PHANTOM:
+      subphase = ReferenceProcessor::ProcessPhantomRefsSubPhase;
+      dl = _ref_processor._discoveredPhantomRefs;
+      break;
+    default:
+      ShouldNotReachHere();
   }
 
+  // Only Final refs are not enqueued and cleared here.
+  bool do_enqueue_and_clear = (ref_type != REF_FINAL);
+
+  {
+    RefProcSubPhasesWorkerTimeTracker tt(subphase, _phase_times, tracker_id(worker_id));
+    size_t const removed = _ref_processor.process_discovered_list_work(dl[worker_id],
+                                                                       is_alive,
+                                                                       keep_alive,
+                                                                       do_enqueue_and_clear);
+    _phase_times->add_ref_cleared(ref_type, removed);
+  }
+}
+
+class RefProcSoftWeakFinalPhaseTask: public RefProcTask {
 public:
   RefProcSoftWeakFinalPhaseTask(ReferenceProcessor& ref_processor,
                                 ReferenceProcessorPhaseTimes* phase_times)
@@ -478,18 +471,13 @@ public:
                VoidClosure* complete_gc) override {
     ResourceMark rm;
     RefProcWorkerTimeTracker t(_phase_times->soft_weak_final_refs_phase_worker_time_sec(), tracker_id(worker_id));
-    {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::ProcessSoftRefSubPhase, _phase_times, tracker_id(worker_id));
-      run_phase(worker_id, _ref_processor._discoveredSoftRefs, is_alive, keep_alive, true /* do_enqueue_and_clear */, REF_SOFT);
-    }
-    {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::ProcessWeakRefSubPhase, _phase_times, tracker_id(worker_id));
-      run_phase(worker_id, _ref_processor._discoveredWeakRefs, is_alive, keep_alive, true /* do_enqueue_and_clear */, REF_WEAK);
-    }
-    {
-      RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::ProcessFinalRefSubPhase, _phase_times, tracker_id(worker_id));
-      run_phase(worker_id, _ref_processor._discoveredFinalRefs, is_alive, keep_alive, false /* do_enqueue_and_clear */, REF_FINAL);
-    }
+
+    process_discovered_list(worker_id, REF_SOFT, is_alive, keep_alive);
+
+    process_discovered_list(worker_id, REF_WEAK, is_alive, keep_alive);
+
+    process_discovered_list(worker_id, REF_FINAL, is_alive, keep_alive);
+
     // Close the reachable set; needed for collectors which keep_alive_closure do
     // not immediately complete their work.
     complete_gc->do_void();
@@ -509,7 +497,9 @@ public:
                VoidClosure* complete_gc) override {
     ResourceMark rm;
     RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::KeepAliveFinalRefsSubPhase, _phase_times, tracker_id(worker_id));
-    _ref_processor.process_final_keep_alive_work(_ref_processor._discoveredFinalRefs[worker_id], keep_alive, complete_gc);
+    _ref_processor.process_final_keep_alive_work(_ref_processor._discoveredFinalRefs[worker_id], keep_alive);
+    // Close the reachable set
+    complete_gc->do_void();
   }
 };
 
@@ -525,12 +515,11 @@ public:
                OopClosure* keep_alive,
                VoidClosure* complete_gc) override {
     ResourceMark rm;
-    RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::ProcessPhantomRefsSubPhase, _phase_times, tracker_id(worker_id));
-    size_t const removed = _ref_processor.process_phantom_refs_work(_ref_processor._discoveredPhantomRefs[worker_id],
-                                                                    is_alive,
-                                                                    keep_alive,
-                                                                    complete_gc);
-    _phase_times->add_ref_cleared(REF_PHANTOM, removed);
+    process_discovered_list(worker_id, REF_PHANTOM, is_alive, keep_alive);
+
+    // Close the reachable set; needed for collectors which keep_alive_closure do
+    // not immediately complete their work.
+    complete_gc->do_void();
   }
 };
 
@@ -847,47 +836,73 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   return list;
 }
 
-inline void
-ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
-                                              oop             obj,
-                                              HeapWord*       discovered_addr) {
-  assert(_discovery_is_mt, "!_discovery_is_mt should have been handled by caller");
-  // First we must make sure this object is only enqueued once. CAS in a non null
-  // discovered_addr.
+inline bool ReferenceProcessor::set_discovered_link(HeapWord* discovered_addr, oop next_discovered) {
+  return discovery_is_mt() ? set_discovered_link_mt(discovered_addr, next_discovered)
+                           : set_discovered_link_st(discovered_addr, next_discovered);
+}
+
+inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list,
+                                                       oop obj,
+                                                       HeapWord* discovered_addr) {
   oop current_head = refs_list.head();
-  // The last ref must have its discovered field pointing to itself.
+  // Prepare value to put into the discovered field. The last ref must have its
+  // discovered field pointing to itself.
   oop next_discovered = (current_head != NULL) ? current_head : obj;
 
-  oop retest = HeapAccess<AS_NO_KEEPALIVE>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
-
-  if (retest == NULL) {
-    // This thread just won the right to enqueue the object.
-    // We have separate lists for enqueueing, so no synchronization
-    // is necessary.
-    refs_list.set_head(obj);
-    refs_list.inc_length(1);
-
-    log_develop_trace(gc, ref)("Discovered reference (mt) (" INTPTR_FORMAT ": %s)",
-                               p2i(obj), obj->klass()->internal_name());
+  bool added = set_discovered_link(discovered_addr, next_discovered);
+  if (added) {
+    // We can always add the object without synchronization: every thread has its
+    // own list head.
+    refs_list.add_as_head(obj);
+    log_develop_trace(gc, ref)("Discovered reference (%s) (" INTPTR_FORMAT ": %s)",
+                               discovery_is_mt() ? "mt" : "st", p2i(obj), obj->klass()->internal_name());
   } else {
-    // If retest was non NULL, another thread beat us to it:
-    // The reference has already been discovered...
-    log_develop_trace(gc, ref)("Already discovered reference (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Already discovered reference (mt) (" INTPTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
   }
 }
 
+inline bool ReferenceProcessor::set_discovered_link_st(HeapWord* discovered_addr,
+                                                       oop next_discovered) {
+  assert(!discovery_is_mt(), "must be");
+
+  if (discovery_is_stw()) {
+    // Do a raw store here: the field will be visited later when processing
+    // the discovered references.
+    RawAccess<>::oop_store(discovered_addr, next_discovered);
+  } else {
+    HeapAccess<AS_NO_KEEPALIVE>::oop_store(discovered_addr, next_discovered);
+  }
+  // Always successful.
+  return true;
+}
+
+inline bool ReferenceProcessor::set_discovered_link_mt(HeapWord* discovered_addr,
+                                                       oop next_discovered) {
+  assert(discovery_is_mt(), "must be");
+
+  // We must make sure this object is only enqueued once. Try to CAS into the discovered_addr.
+  oop retest;
+  if (discovery_is_stw()) {
+    // Try a raw store here, still making sure that we enqueue only once: the field
+    // will be visited later when processing the discovered references.
+    retest = RawAccess<>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
+  } else {
+    retest = HeapAccess<AS_NO_KEEPALIVE>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
+  }
+  return retest == NULL;
+}
+
 #ifndef PRODUCT
-// Non-atomic (i.e. concurrent) discovery might allow us
-// to observe j.l.References with NULL referents, being those
-// cleared concurrently by mutators during (or after) discovery.
+// Concurrent discovery might allow us to observe j.l.References with NULL
+// referents, being those cleared concurrently by mutators during (or after) discovery.
 void ReferenceProcessor::verify_referent(oop obj) {
-  bool da = discovery_is_atomic();
+  bool concurrent = discovery_is_concurrent();
   oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
-  assert(da ? oopDesc::is_oop(referent) : oopDesc::is_oop_or_null(referent),
+  assert(concurrent ? oopDesc::is_oop_or_null(referent) : oopDesc::is_oop(referent),
          "Bad referent " INTPTR_FORMAT " found in Reference "
-         INTPTR_FORMAT " during %satomic discovery ",
-         p2i(referent), p2i(obj), da ? "" : "non-");
+         INTPTR_FORMAT " during %sconcurrent discovery ",
+         p2i(referent), p2i(obj), concurrent ? "" : "non-");
 }
 #endif
 
@@ -897,7 +912,7 @@ bool ReferenceProcessor::is_subject_to_discovery(oop const obj) const {
 
 // We mention two of several possible choices here:
 // #0: if the reference object is not in the "originating generation"
-//     (or part of the heap being collected, indicated by our "span"
+//     (or part of the heap being collected, indicated by our "span")
 //     we don't treat it specially (i.e. we scan it as we would
 //     a normal oop, treating its references as strong references).
 //     This means that references can't be discovered unless their
@@ -909,18 +924,18 @@ bool ReferenceProcessor::is_subject_to_discovery(oop const obj) const {
 //     the referent is in the generation (span) being currently collected
 //     then we can discover the reference object, provided
 //     the object has not already been discovered by
-//     a different concurrently running collector (as may be the
-//     case, for instance, if the reference object is in CMS and
-//     the referent in DefNewGeneration), and provided the processing
+//     a different concurrently running discoverer (as may be the
+//     case, for instance, if the reference object is in G1 old gen and
+//     the referent in G1 young gen), and provided the processing
 //     of this reference object by the current collector will
-//     appear atomic to every other collector in the system.
-//     (Thus, for instance, a concurrent collector may not
+//     appear atomically to every other discoverer in the system.
+//     (Thus, for instance, a concurrent discoverer may not
 //     discover references in other generations even if the
 //     referent is in its own generation). This policy may,
 //     in certain cases, enqueue references somewhat sooner than
 //     might Policy #0 above, but at marginally increased cost
 //     and complexity in processing these references.
-//     We call this choice the "RefeferentBasedDiscovery" policy.
+//     We call this choice the "ReferentBasedDiscovery" policy.
 bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // Make sure we are discovering refs (rather than processing discovered refs).
   if (!_discovering_refs || !RegisterReferences) {
@@ -991,9 +1006,9 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     verify_referent(obj);
     // Discover if and only if EITHER:
     // .. reference is in our span, OR
-    // .. we are an atomic collector and referent is in our span
+    // .. we are a stw discoverer and referent is in our span
     if (is_subject_to_discovery(obj) ||
-        (discovery_is_atomic() &&
+        (discovery_is_stw() &&
          is_subject_to_discovery(java_lang_ref_Reference::unknown_referent_no_keepalive(obj)))) {
     } else {
       return false;
@@ -1009,22 +1024,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;   // nothing special needs to be done
   }
 
-  if (_discovery_is_mt) {
-    add_to_discovered_list_mt(*list, obj, discovered_addr);
-  } else {
-    // We do a raw store here: the field will be visited later when processing
-    // the discovered references.
-    oop current_head = list->head();
-    // The last ref must have its discovered field pointing to itself.
-    oop next_discovered = (current_head != NULL) ? current_head : obj;
+  add_to_discovered_list(*list, obj, discovered_addr);
 
-    assert(discovered == NULL, "control point invariant");
-    RawAccess<>::oop_store(discovered_addr, next_discovered);
-    list->set_head(obj);
-    list->inc_length(1);
-
-    log_develop_trace(gc, ref)("Discovered reference (" INTPTR_FORMAT ": %s)", p2i(obj), obj->klass()->internal_name());
-  }
   assert(oopDesc::is_oop(obj), "Discovered a bad reference");
   verify_referent(obj);
   return true;

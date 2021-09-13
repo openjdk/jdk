@@ -367,6 +367,11 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(typeArrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(Symbol));
 
+  // Need to do this first, as subsequent steps may call virtual functions
+  // in archived Metadata objects.
+  CppVtables::serialize(soc);
+  soc->do_tag(--tag);
+
   // Dump/restore miscellaneous metadata.
   JavaClasses::serialize_offsets(soc);
   Universe::serialize(soc);
@@ -386,9 +391,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   // Dump/restore well known classes (pointers)
   SystemDictionaryShared::serialize_vm_classes(soc);
-  soc->do_tag(--tag);
-
-  CppVtables::serialize(soc);
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
@@ -827,7 +829,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
-  if(!HeapShared::is_heap_object_archiving_allowed()) {
+  if(!HeapShared::can_write()) {
     log_info(cds)(
       "Archived java heap is not supported as UseG1GC, "
       "UseCompressedOops and UseCompressedClassPointers are required."
@@ -864,7 +866,7 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
 }
 
 void VM_PopulateDumpSharedSpace::dump_heap_oopmaps() {
-  if (HeapShared::is_heap_object_archiving_allowed()) {
+  if (HeapShared::can_write()) {
     _closed_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
     dump_heap_oopmaps(_closed_heap_regions, _closed_heap_oopmaps);
 
@@ -1136,7 +1138,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
           // map_heap_regions() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
-          static_mapinfo->map_heap_regions();
+          static_mapinfo->map_or_load_heap_regions();
         }
       });
     log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
@@ -1420,7 +1422,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
 
   // Verify various attributes of the archive, plus initialize the
-  // shared string/symbol tables
+  // shared string/symbol tables.
   char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
@@ -1429,7 +1431,10 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Initialize the run-time symbol table.
   SymbolTable::create_table();
 
+  // Finish up archived heap initialization. These must be
+  // done after ReadClosure.
   static_mapinfo->patch_heap_embedded_pointers();
+  HeapShared::verify_loaded_heap();
 
   // Close the mapinfo file
   static_mapinfo->close();
@@ -1512,8 +1517,15 @@ bool MetaspaceShared::use_full_module_graph() {
     return true;
   }
 #endif
-  bool result = _use_optimized_module_handling && _use_full_module_graph &&
-    (UseSharedSpaces || DumpSharedSpaces) && HeapShared::is_heap_object_archiving_allowed();
+  bool result = _use_optimized_module_handling && _use_full_module_graph;
+  if (DumpSharedSpaces) {
+    result &= HeapShared::can_write();
+  } else if (UseSharedSpaces) {
+    result &= HeapShared::can_use();
+  } else {
+    result = false;
+  }
+
   if (result && UseSharedSpaces) {
     // Classes used by the archived full module graph are loaded in JVMTI early phase.
     assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),

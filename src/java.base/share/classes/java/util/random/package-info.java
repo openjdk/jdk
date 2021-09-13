@@ -599,32 +599,32 @@
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
- *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
+ *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
  *   <tr><td style="text-align:left">"L64X256MixRandom"</td>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoshiro256}, version 1.0</td>
  *       <td style="text-align:left">{@code (17, 45)}</td>
- *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
+ *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
  *   <tr><td style="text-align:left">"L64X1024MixRandom"</td>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro1024}, version 1.0</td>
  *       <td style="text-align:left">{@code (25, 27, 36)}</td>
- *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
+ *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
  *   <tr><td style="text-align:left">"L128X128MixRandom"</td>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
- *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
+ *       <td style="text-align:left">mixLea64{@code (sh+x0)}</td></tr>
  *   <tr><td style="text-align:left">"L128X256MixRandom"</td>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoshiro256}, version 1.0</td>
  *       <td style="text-align:left">{@code (17, 45)}</td>
- *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
+ *       <td style="text-align:left">mixLea64{@code (sh+x0)}</td></tr>
  *   <tr><td style="text-align:left">"L128X1024MixRandom"</td>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoroshiro1024}, version 1.0</td>
  *       <td style="text-align:left">{@code (25, 27, 36)}</td>
- *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
+ *       <td style="text-align:left">mixLea64{@code (sh+x0)}</td></tr>
  * </tbody>
  * </table>
  *

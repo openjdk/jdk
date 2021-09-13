@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3406,16 +3406,14 @@ public class DecimalFormat extends NumberFormat {
                             // opening quote or two quotes, which is a quote
                             // literal. That is, we have the first quote in 'do'
                             // or o''clock.
-                            if (ch == QUOTE) {
-                                if ((pos+1) < pattern.length() &&
-                                    pattern.charAt(pos+1) == QUOTE) {
-                                    ++pos;
-                                    affix.append("''"); // o''clock
-                                } else {
-                                    inQuote = true; // 'do'
-                                }
-                                continue;
+                            if ((pos+1) < pattern.length() &&
+                                pattern.charAt(pos+1) == QUOTE) {
+                                ++pos;
+                                affix.append("''"); // o''clock
+                            } else {
+                                inQuote = true; // 'do'
                             }
+                            continue;
                         } else if (ch == separator) {
                             // Don't allow separators before we see digit
                             // characters of phase 1, and don't allow separators
