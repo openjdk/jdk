@@ -62,7 +62,6 @@ public class TestDelegated {
         testOrdered();
         testOnEvent();
         testOnEventName();
-        testonMetadata();
         testOnFlush();
         testOnError();
         testOnClose();
@@ -175,30 +174,6 @@ public class TestDelegated {
             latch.await();
         }
     }
-
-    private static void testonMetadata() throws Exception {
-        CountDownLatch latch = new CountDownLatch(1);
-        var holder  = new AtomicReference<MetadataEvent>();
-        try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-            FlightRecorder.register(TestDelegatedEvent.class);
-            rs.onMetadata(e -> {
-                holder.set(e);
-                latch.countDown();
-            });
-            rs.startAsync();
-            TestDelegatedEvent e = new TestDelegatedEvent();
-            e.commit();
-            latch.await();
-            MetadataEvent event = holder.get();
-            for (EventType t : event.getEventTypes()) {
-                if (t.getName().equals(TestDelegatedEvent.class.getName())) {
-                    return; // OK
-                }
-            }
-            throw new Exception("Could not find metadata for event " + TestDelegatedEvent.class.getName());
-        }
-    }
-
 
     private static void testOrdered() throws Exception {
         try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
