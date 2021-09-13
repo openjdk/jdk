@@ -79,17 +79,12 @@ public class CloseDescriptors {
             selThread = new SelectorThread();
             selThread.start();
 
-            boolean result = true;
             for (int i = 0 ; i < 100 ; ++i) {
                 System.out.println(i);
                 doIt(port);
-                if (!check()) {
-                    result = false;
-                    break;
-                }
             }
             System.out.println("end");
-            if (!result) {
+            if (!check()) {
                 cleanup(port);
                 throw new RuntimeException("Failed: detected unclosed FD.");
             }
