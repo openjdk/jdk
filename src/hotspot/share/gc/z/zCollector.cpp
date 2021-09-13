@@ -699,9 +699,7 @@ void ZMajorCollector::roots_remap() {
     ZGenerationPagesIterator iter(_page_table, ZGenerationId::old, _page_allocator);
     for (ZPage* page; iter.next(&page);) {
       // Visit all entries pointing into young gen
-      page->oops_do_current_remembered([&](volatile zpointer* p) {
-        ZBarrier::load_barrier_on_oop_field(p);
-      });
+      page->oops_do_current_remembered(ZBarrier::load_barrier_on_oop_field);
     }
   }
 

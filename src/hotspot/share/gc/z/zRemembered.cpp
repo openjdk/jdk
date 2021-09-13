@@ -85,9 +85,7 @@ template <typename Function>
 void ZRemembered::oops_do_forwarded(ZForwarding* forwarding, Function function) const {
   // All objects have been forwarded, and the page could have been detached.
   // Visit all objects via the forwarding table.
-  forwarding->oops_do_in_forwarded_via_table([&](volatile zpointer* p) {
-    function(p);
-  });
+  forwarding->oops_do_in_forwarded_via_table(function);
 }
 
 bool ZRemembered::should_scan_page(ZPage* page) const {
