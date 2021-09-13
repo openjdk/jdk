@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 /*
  * @test
- * @summary Exercise GC with shared strings
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.gc == null
- * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
- * @build HelloStringGC sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run driver ExerciseGC
+ * @bug 8273358
+ * @summary Verify logical fonts are as expected.
+ * @run main/othervm LogicalFontsTest
  */
-public class ExerciseGC {
-    public static void main(String[] args) throws Exception {
-        SharedStringsUtils.run(args, ExerciseGC::test);
-    }
-    public static void test(String[] args) throws Exception {
-        SharedStringsUtils.buildJarAndWhiteBox("HelloStringGC");
 
-        SharedStringsUtils.dumpWithWhiteBox(TestCommon.list("HelloStringGC"),
-            "SharedStringsBasic.txt", "-Xlog:cds,cds+hashtables");
+import java.awt.Font;
 
-        SharedStringsUtils.runWithArchiveAndWhiteBox("HelloStringGC",
-            "-XX:+UnlockDiagnosticVMOptions", "-XX:+VerifyBeforeGC");
-    }
+public class LogicalFontsTest {
+
+    public static void main(String[] args) {
+        test(Font.SANS_SERIF);
+        test(Font.SERIF);
+        test(Font.MONOSPACED);
+        test(Font.DIALOG);
+        test(Font.DIALOG_INPUT);
+     }
+
+     static void test(String fontName) {
+         System.out.println("name="+fontName);
+         Font font = new Font(fontName, Font.PLAIN, 12);
+         System.out.println("font = " + font);
+         if (!fontName.equalsIgnoreCase(font.getFamily())) {
+             throw new RuntimeException("Requested " + fontName + " but got " + font);
+         }
+     }
 }
