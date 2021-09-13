@@ -92,7 +92,6 @@ Monitor* Terminator_lock              = NULL;
 Monitor* InitCompleted_lock           = NULL;
 Monitor* BeforeExit_lock              = NULL;
 Monitor* Notify_lock                  = NULL;
-Mutex*   ProfilePrint_lock            = NULL;
 Mutex*   ExceptionCache_lock          = NULL;
 Mutex*   NMethodSweeperStats_lock     = NULL;
 #ifndef PRODUCT
@@ -257,8 +256,7 @@ void mutex_init() {
   def(JNIHandleBlockFreeList_lock  , PaddedMutex  , leaf-1,      true,  _safepoint_check_never);      // handles are used by VM thread
   def(SignatureHandlerLibrary_lock , PaddedMutex  , leaf,        false, _safepoint_check_always);
   def(SymbolArena_lock             , PaddedMutex  , leaf+2,      true,  _safepoint_check_never);
-  def(ProfilePrint_lock            , PaddedMutex  , leaf,        false, _safepoint_check_always); // serial profile printing
-  def(ExceptionCache_lock          , PaddedMutex  , leaf,        false, _safepoint_check_always); // serial profile printing
+  def(ExceptionCache_lock          , PaddedMutex  , leaf,        false, _safepoint_check_always);
 #ifndef PRODUCT
   def(FullGCALot_lock              , PaddedMutex  , leaf,        false, _safepoint_check_always); // a lock to make FullGCALot MT safe
 #endif

@@ -432,7 +432,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers = ConcGCThreads;
   _max_concurrent_workers = _num_concurrent_workers;
 
-  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers, false, true);
+  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers, true);
   _concurrent_workers->initialize_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {

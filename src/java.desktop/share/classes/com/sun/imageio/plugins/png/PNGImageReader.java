@@ -228,7 +228,7 @@ public class PNGImageReader extends ImageReader {
         if (b != 0) {
             throw new IIOException("Found non null terminated string");
         }
-        return new String(baos.toByteArray(), charset);
+        return baos.toString(charset);
     }
 
     private void readHeader() throws IIOException {
