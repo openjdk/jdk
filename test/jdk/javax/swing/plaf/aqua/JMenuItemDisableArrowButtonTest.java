@@ -57,8 +57,11 @@ public class JMenuItemDisableArrowButtonTest {
 
     private static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n"
             + "Click on \"SubMenuTest\" menu.\n "
-            + "If arrow icon is disabled along with \"Submenu\" menuitem\n"
-            + "and\n"
+            + "If in 1st menuitem\n"
+            + "arrow icon is disabled along with \"Submenu\" menuitem\n"
+            + "and in 2nd menuitem\n"
+            + " If selected arrow icon is disabled along with \"Submenu\" menuitem\n"
+            + "and in 3rd menuitem\n"
             + "If checkmark icon is disabled along with \"Submenu\" CheckBox menuitem\n"
             + "then press Pass \n"
             + "otherwise if arrow or checkmark icon is not disabled, press Fail.";
@@ -156,7 +159,12 @@ public class JMenuItemDisableArrowButtonTest {
         JMenu subMenuTestmenu = new JMenu("SubMenuTest");
         JMenu disabledSubmenu = new JMenu("Submenu");
         disabledSubmenu.setEnabled(false);
+
+        JMenu disabledSubmenu1 = new JMenu("Submenu");
+        disabledSubmenu1.setSelected(true);
+        disabledSubmenu1.setEnabled(false);
         subMenuTestmenu.add(disabledSubmenu);
+        subMenuTestmenu.add(disabledSubmenu1);
 
         JCheckBoxMenuItem myItem = new JCheckBoxMenuItem("Submenu");
         myItem.setSelected(true);

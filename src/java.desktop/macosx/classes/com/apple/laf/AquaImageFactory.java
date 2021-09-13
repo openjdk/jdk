@@ -253,7 +253,7 @@ public class AquaImageFactory {
         @Override
         public Icon getInvertedIcon() {
             if (invertedImage != null) return invertedImage;
-            return invertedImage = new IconUIResource(new ImageIcon(AquaUtils.generateLightenedImage(getImage(), 100)));
+            return invertedImage = new InvertableImageIcon(AquaUtils.generateLightenedImage(getImage(), 100));
         }
     }
 
