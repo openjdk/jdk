@@ -26,6 +26,8 @@ package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
 
+import java.lang.reflect.Modifier;
+
 import static java.lang.invoke.MethodHandleInfo.*;
 import static sun.invoke.util.Wrapper.forPrimitiveType;
 import static sun.invoke.util.Wrapper.forWrapperType;
@@ -291,7 +293,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         for (int i=samStart; i<implArity; i++) {
             Class<?> implParamType = implMethodType.parameterType(i);
             Class<?> dynamicParamType = dynamicMethodType.parameterType(i - capturedArity);
-            if (!isAdaptableTo(dynamicParamType, implParamType, true)) {
+            if (!isAdaptableTo(dynamicParamType, implParamType, true, true)) {
                 throw new LambdaConversionException(
                         String.format("Type mismatch for lambda argument %d: %s is not convertible to %s",
                                       i, dynamicParamType, implParamType));
@@ -319,9 +321,11 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         for (int i = 0; i < dynamicMethodType.parameterCount(); i++) {
             Class<?> dynamicParamType = dynamicMethodType.parameterType(i);
             Class<?> descriptorParamType = descriptor.parameterType(i);
-            if (!descriptorParamType.isAssignableFrom(dynamicParamType)) {
-                String msg = String.format("Type mismatch for dynamic parameter %d: %s is not a subtype of %s",
-                                           i, dynamicParamType, descriptorParamType);
+            if (!descriptorParamType.isAssignableFrom(dynamicParamType) &&
+                    (descriptorParamType.isPrimitive() || dynamicParamType.isPrimitive() ||
+                            !sideCastExists(descriptorParamType, dynamicParamType))) {
+                String msg = String.format("Type mismatch for dynamic parameter %d: %s is not convertible to %s",
+                        i, dynamicParamType, descriptorParamType);
                 throw new LambdaConversionException(msg);
             }
         }
@@ -343,6 +347,18 @@ import static sun.invoke.util.Wrapper.isWrapperType;
      * @return True if 'fromType' can be passed to an argument of 'toType'
      */
     private boolean isAdaptableTo(Class<?> fromType, Class<?> toType, boolean strict) {
+        return isAdaptableTo(fromType, toType, strict, false);
+    }
+
+    /**
+     * Check type adaptability for parameter types.
+     * @param fromType Type to convert from
+     * @param toType Type to convert to
+     * @param strict If true, do strict checks, else allow that fromType may be parameterized
+     * @param allowSideCast If true, then sicasts are allowed
+     * @return True if 'fromType' can be passed to an argument of 'toType'
+     */
+    private boolean isAdaptableTo(Class<?> fromType, Class<?> toType, boolean strict, boolean allowSideCast) {
         if (fromType.equals(toType)) {
             return true;
         }
@@ -369,10 +385,30 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                     return !strict;
                 }
             } else {
-                // both are reference types: fromType should be a superclass of toType.
-                return !strict || toType.isAssignableFrom(fromType);
+                // both are reference types: fromType should be a superclass of toType or there should exist
+                // a sidecast from fromType to toType
+                return !strict || toType.isAssignableFrom(fromType) || (allowSideCast && sideCastExists(fromType, toType));
             }
         }
+    }
+
+    /**
+     * Check if a sidecas exist
+     * @param fromType Type to convert from
+     * @param toType Type to convert to
+     * @return True if a sidecast exists from 'fromType' to 'toType'
+     */
+    private boolean sideCastExists(Class<?> fromType, Class<?> toType) {
+        if (toType.isInterface() && fromType.isInterface()) {
+            return true;
+        } else if (toType.isInterface()) {
+            return ((fromType.getModifiers() & Modifier.FINAL) == 0);
+        } else if (fromType.isInterface()) {
+            return ((toType.getModifiers() & Modifier.FINAL) == 0);
+        } else if (toType.isArray() && fromType.isArray()) {
+            return sideCastExists(fromType.getComponentType(), toType.getComponentType());
+        }
+        return false;
     }
 
     /**

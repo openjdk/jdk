@@ -44,7 +44,6 @@ import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Type.IntersectionClassType;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Types;
@@ -1085,60 +1084,11 @@ public class LambdaToMethod extends TreeTranslator {
     }
 
     private MethodType typeToMethodType(Type mt) {
-        return typeToMethodType(mt, null);
-    }
-
-    private MethodType typeToMethodType(Type mt, MethodType interfaceMethodType) {
         Type type = types.erasure(mt);
-        List<Type> adaptedParams = List.nil();
-        if (interfaceMethodType != null && !areParametersAssignable(type, interfaceMethodType)) {
-            adaptedParams = adaptParameters(mt, interfaceMethodType);
-        }
-        return new MethodType(
-                adaptedParams.isEmpty() ? type.getParameterTypes() : adaptedParams,
-                type.getReturnType(),
-                type.getThrownTypes(),
-                syms.methodClass);
-    }
-
-    boolean areParametersAssignable(Type erasedMT, MethodType interfaceMethodType) {
-        List<Type> interfaceMParams = interfaceMethodType.getParameterTypes();
-        for (Type paramType : erasedMT.getParameterTypes()) {
-            if (!types.isAssignable(paramType, interfaceMParams.head)) {
-                return false;
-            }
-            interfaceMParams = interfaceMParams.tail;
-        }
-        return true;
-    }
-
-    List<Type> adaptParameters(Type mt, MethodType interfaceMethodType) {
-        ListBuffer<Type> parameterTypes = new ListBuffer<>();
-        if (mt.getParameterTypes().stream().anyMatch(Type::isIntersection)) {
-            List<Type> interfaceParamTypes = interfaceMethodType.getParameterTypes();
-            for (Type paramType : mt.getParameterTypes()) {
-                if (paramType.isIntersection()) {
-                    parameterTypes.add(selectIntersectionComponent((IntersectionClassType) paramType, interfaceParamTypes.head));
-                } else {
-                    parameterTypes.add(types.erasure(paramType));
-                }
-                interfaceParamTypes = interfaceParamTypes.tail;
-            }
-        }
-        return parameterTypes.toList();
-    }
-
-    private Type selectIntersectionComponent(IntersectionClassType intersection, Type interfaceParamType) {
-        for (Type component : intersection.getComponents()) {
-            // skip object
-            if (component.tsym == syms.objectType.tsym) { continue; }
-            Type erasedComponent = types.erasure(component);
-            if (types.isAssignable(erasedComponent, interfaceParamType)) {
-                return erasedComponent;
-            }
-        }
-        // bail out
-        return types.erasure(intersection);
+        return new MethodType(type.getParameterTypes(),
+                        type.getReturnType(),
+                        type.getThrownTypes(),
+                        syms.methodClass);
     }
 
     /**
@@ -1149,11 +1099,10 @@ public class LambdaToMethod extends TreeTranslator {
         JCFunctionalExpression tree = context.tree;
         //determine the static bsm args
         MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.target.tsym);
-        MethodType intMethodType = typeToMethodType(samSym.type);
         List<LoadableConstant> staticArgs = List.of(
-                intMethodType,
+                typeToMethodType(samSym.type),
                 refSym.asHandle(),
-                typeToMethodType(tree.getDescriptorType(types), intMethodType));
+                typeToMethodType(tree.getDescriptorType(types)));
 
         //computed indy arg types
         ListBuffer<Type> indy_args_types = new ListBuffer<>();

@@ -26,7 +26,10 @@
  * @bug 8035776 8173587
  * @summary metafactory should fail if instantiatedMethodType does not match sam/bridge descriptors
  */
+
 import java.lang.invoke.*;
+import java.lang.reflect.Modifier;
+
 import java.util.*;
 
 public class MetafactoryDescriptorTest {
@@ -36,8 +39,6 @@ public class MetafactoryDescriptorTest {
     static MethodType mt(Class<?> ret, Class<?>... params) {
         return MethodType.methodType(ret, params);
     }
-
-    public interface I {}
 
     public static class C {
         public static void m_void(String arg) {}
@@ -52,6 +53,10 @@ public class MetafactoryDescriptorTest {
         public static String m_String(String arg) { return ""; }
         public static Integer m_Integer(String arg) { return 23; }
         public static Object m_Object(String arg) { return new Object(); }
+        public static I m_I(String arg) { return new I() {}; }
+        public static J m_J(String arg) { return new J() {}; }
+        public static CC m_CC(String arg) { return new CC(); }
+        public static FF m_FF(String arg) { return new FF(); }
 
         public static String n_boolean(boolean arg) { return ""; }
         public static String n_char(char arg) { return ""; }
@@ -64,6 +69,10 @@ public class MetafactoryDescriptorTest {
         public static String n_String(String arg) { return ""; }
         public static String n_Integer(Integer arg) { return ""; }
         public static String n_Object(Object arg) { return ""; }
+        public static String n_I(I arg) { return ""; }
+        public static String n_J(J arg) { return ""; }
+        public static String n_CC(CC arg) { return ""; }
+        public static String n_FF(FF arg) { return ""; }
 
         public static MethodHandle getM(Class<?> c) {
             try {
@@ -89,12 +98,14 @@ public class MetafactoryDescriptorTest {
     public static void main(String... args) {
         Class<?>[] t = { void.class, boolean.class, char.class,
                          byte.class, short.class, int.class, long.class, float.class, double.class,
-                         String.class, Integer.class, Object.class };
+                         String.class, Integer.class, Object.class,
+                         I.class, J.class, CC.class, FF.class};
 
         for (int i = 0; i < t.length; i++) {
             MethodHandle m = C.getM(t[i]);
             MethodHandle n = C.getN(t[i]); // null for void.class
             for (int j = 0; j < t.length; j++) {
+                //if (i == j) continue;
                 boolean correctRet = t[j].isAssignableFrom(t[i]) || conversions.contains(t[i], t[j]);
                 test(correctRet, m, mt(t[i], String.class), mt(t[j], String.class));
                 testBridge(correctRet, m, mt(t[i], String.class), mt(t[i], String.class),
@@ -103,7 +114,10 @@ public class MetafactoryDescriptorTest {
                            mt(t[i], CharSequence.class), mt(t[j], Object.class));
 
                 if (t[i] != void.class && t[j] != void.class) {
-                    boolean correctParam = t[j].isAssignableFrom(t[i]);
+                    //boolean correctParam = t[j].isAssignableFrom(t[i]) || sideCastExists(t[i], t[j]);
+                    boolean correctParam = t[j].isAssignableFrom(t[i]) ||
+                            (!t[j].isPrimitive() && !t[i].isPrimitive() && sideCastExists(t[j], t[i]));
+                    System.out.println("testing correctParam = " + correctParam + " t[i] = " + t[i] + " t[j] = " + t[j]);
                     test(correctParam, n, mt(String.class, t[i]), mt(String.class, t[j]));
                     testBridge(correctParam, n, mt(String.class, t[i]), mt(String.class, t[i]),
                             mt(Object.class, t[j]));
@@ -266,4 +280,28 @@ public class MetafactoryDescriptorTest {
         conversions.put(Boolean.class, boolean.class);
     }
 
+    // test if a sidecast exist from fromType to toType
+    static boolean sideCastExists(Class<?> fromType, Class<?> toType) {
+        if (fromType.isPrimitive() || toType.isPrimitive()) {
+            return false;
+        }
+        if (toType.isInterface() && fromType.isInterface()) {
+            return true;
+        } else if (toType.isInterface()) {
+            return ((fromType.getModifiers() & Modifier.FINAL) == 0);
+        } else if (fromType.isInterface()) {
+            return ((toType.getModifiers() & Modifier.FINAL) == 0);
+        } else if (toType.isArray() && fromType.isArray()) {
+            return sideCastExists(fromType.getComponentType(), toType.getComponentType());
+        }
+        return false;
+    }
+
+    public interface I {}
+
+    public interface J {}
+
+    public static class CC {}
+
+    public static final class FF {}
 }
