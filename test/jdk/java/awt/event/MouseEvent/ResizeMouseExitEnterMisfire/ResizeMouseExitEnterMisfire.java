@@ -104,7 +104,7 @@ public class ResizeMouseExitEnterMisfire {
         });
     }
 
-    public void resizeFromInsideWindowTest() {
+    public void resizeFromInsideWindowTest() throws RuntimeException {
         // Testing for resizing while cursor starts from inside the window
         robot.mouseMove(xLocInnerCorner, yLocInnerCorner);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -118,31 +118,7 @@ public class ResizeMouseExitEnterMisfire {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(500);
         robot.waitForIdle();
-    }
 
-    public void resizeFromOutsideWindowTest() {
-        // Testing for resizing while cursor starts outside the window
-        robot.mouseMove(xLocOuterCorner, yLocOuterCorner);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseMove(xLocNewEdge, yLocNewEdge);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(100);
-
-        robot.mouseMove(xLocNewEdge, yLocNewEdge);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseMove(xLocOuterCorner, yLocOuterCorner);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(500);
-        robot.waitForIdle();
-    }
-
-    public static void main (String[] args) throws Exception {
-        ResizeMouseExitEnterMisfire test = new ResizeMouseExitEnterMisfire();
-        test.createAndShowFrame();
-        test.getFrameCoords();
-        test.createRobot();
-
-        test.resizeFromInsideWindowTest();
         /* Expected behavior should be a mouseEntered event when the mouse initially
          * enters the window, then no mouse events when the window size is changed.
          */
@@ -157,9 +133,23 @@ public class ResizeMouseExitEnterMisfire {
         }
         mouseEntered = 0;
         mouseExited = 0;
+    }
 
+    public void resizeFromOutsideWindowTest() throws RuntimeException {
+        // Testing for resizing while cursor starts outside the window
+        robot.mouseMove(xLocOuterCorner, yLocOuterCorner);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseMove(xLocNewEdge, yLocNewEdge);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.delay(100);
 
-        test.resizeFromOutsideWindowTest();
+        robot.mouseMove(xLocNewEdge, yLocNewEdge);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseMove(xLocOuterCorner, yLocOuterCorner);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.delay(500);
+        robot.waitForIdle();
+
         /* Expected behavior should be a mouseExit event when the mouse initially
          * exits the window, then no mouse events when the window size is changed.
          */
@@ -171,5 +161,15 @@ public class ResizeMouseExitEnterMisfire {
             throw new RuntimeException("mouseExited = " + mouseExited
                     + ", expected value =  " + 1);
         }
+    }
+
+    public static void main (String[] args) throws Exception {
+        ResizeMouseExitEnterMisfire test = new ResizeMouseExitEnterMisfire();
+        test.createAndShowFrame();
+        test.getFrameCoords();
+        test.createRobot();
+
+        test.resizeFromInsideWindowTest();
+        test.resizeFromOutsideWindowTest();
     }
 }
