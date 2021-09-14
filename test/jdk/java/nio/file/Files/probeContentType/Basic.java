@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624 8146215 8162745
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -155,22 +155,54 @@ public class Basic {
             Files.delete(file);
         }
 
-        // Verify that certain media extensions are mapped to the correct type.
+        // Verify that certain extensions are mapped to the correct type.
         String[] extensions = new String[]{
-            "jpg",
-            "mp3",
-            "mp4",
-            "pdf",
-            "png",
-            "webm"
+                "jpg",
+                "mp3",
+                "mp4",
+                "pdf",
+                "png",
+                "webm",
+                "css",
+                "js",
+                "bz2",
+                "csv",
+                "doc",
+                "docx",
+                "jar",
+                "json",
+                "php",
+                "ppt",
+                "pptx",
+                "rar",
+                "rtf",
+                "xls",
+                "xlsx",
+                "7z"
         };
         String[] expectedTypes = new String[] {
-            "image/jpeg",
-            "audio/mpeg",
-            "video/mp4",
-            "application/pdf",
-            "image/png",
-            "video/webm"
+                "image/jpeg",
+                "audio/mpeg",
+                "video/mp4",
+                "application/pdf",
+                "image/png",
+                "video/webm",
+                "text/css",
+                "text/javascript",
+                "application/bz2",
+                "application/csv",
+                "application/doc",
+                "application/docx",
+                "application/jar",
+                "application/json",
+                "application/php",
+                "application/pptx",
+                "application/pptx",
+                "application/rar",
+                "application/rtf",
+                "application/xls",
+                "application/xlsx",
+                "application/7z"
         };
         failures += checkContentTypes(extensions, expectedTypes);
 
