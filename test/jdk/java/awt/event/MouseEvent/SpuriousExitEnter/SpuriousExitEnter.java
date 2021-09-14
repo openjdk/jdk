@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 6479820
+  @bug 6479820 8254841
   @summary Spurious entry/exit mouse events
   @author Andrei Dmitriev: area=awt.event
   @run main/manual SpuriousExitEnter
