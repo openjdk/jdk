@@ -285,8 +285,6 @@ public class Headers implements Map<String,List<String>> {
         return sb.toString();
     }
 
-    private static final Headers EMPTY = new UnmodifiableHeaders(new Headers());
-
     /**
      * Returns an immutable {@code Headers} with the given name value pairs as
      * its set of headers.
@@ -306,7 +304,7 @@ public class Headers implements Map<String,List<String>> {
     public static Headers of(String... headers) {
         Objects.requireNonNull(headers);
         if (headers.length == 0) {
-            return EMPTY;
+            return new UnmodifiableHeaders(new Headers());
         }
         if (headers.length % 2 != 0) {
             throw new IllegalArgumentException("wrong number, %d, of elements"
