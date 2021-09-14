@@ -26,7 +26,7 @@
  * @bug 8238274
  * @summary Potential leak file descriptor for SCTP
  * @requires (os.family == "linux")
- * @run main CloseDescriptors
+ * @run main/othervm CloseDescriptors
  */
 
 import java.io.BufferedReader;
