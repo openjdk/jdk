@@ -122,6 +122,26 @@ static jmethodID sjm_getAccessibleName = NULL;
     return isAccessibleChildSelected;
 }
 
+- (TableRowAccessibility *)createRowWithIndex:(NSUInteger)index
+{
+    return [[TableRowAccessibility alloc] initWithParent:self
+                                                      withEnv:[ThreadUtilities getJNIEnv]
+                                               withAccessible:NULL
+                                                    withIndex:index
+                                                     withView:[self view]
+                                                 withJavaRole:JavaAccessibilityIgnore];
+}
+
+- (ColumnAccessibility *)createColumnWithIndex:(NSUInteger)index
+{
+    return [[ColumnAccessibility alloc] initWithParent:self
+                                               withEnv:[ThreadUtilities getJNIEnv]
+                                        withAccessible:NULL
+                                             withIndex:index
+                                              withView:self->fView
+                                          withJavaRole:JavaAccessibilityIgnore];
+}
+
 // NSAccessibilityElement protocol methods
 
 - (NSArray *)accessibilityChildren
@@ -139,12 +159,7 @@ static jmethodID sjm_getAccessibleName = NULL;
     int rowCount = [self accessibilityRowCount];
     NSMutableArray *children = [NSMutableArray arrayWithCapacity:rowCount];
     for (int i = 0; i < rowCount; i++) {
-        [children addObject:[[TableRowAccessibility alloc] initWithParent:self
-                                                                      withEnv:[ThreadUtilities getJNIEnv]
-                                                               withAccessible:NULL
-                                                                    withIndex:i
-                                                                     withView:[self view]
-                                                                 withJavaRole:JavaAccessibilityIgnore]];
+        [children addObject:[self createRowWithIndex:i]];
     }
     return [NSArray arrayWithArray:children];
 }
@@ -154,12 +169,7 @@ static jmethodID sjm_getAccessibleName = NULL;
     NSArray<NSNumber *> *selectedRowIndexses = [self getTableSelectedInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_ROWS];
     NSMutableArray *children = [NSMutableArray arrayWithCapacity:[selectedRowIndexses count]];
     for (NSNumber *index in selectedRowIndexses) {
-        [children addObject:[[TableRowAccessibility alloc] initWithParent:self
-                                                                      withEnv:[ThreadUtilities getJNIEnv]
-                                                               withAccessible:NULL
-                                                                    withIndex:index.unsignedIntValue
-                                                                     withView:[self view]
-                                                                 withJavaRole:JavaAccessibilityIgnore]];
+        [children addObject:[self createRowWithIndex:index.unsignedIntValue]];
     }
     return [NSArray arrayWithArray:children];
 }
@@ -184,12 +194,7 @@ static jmethodID sjm_getAccessibleName = NULL;
     int colCount = [self accessibilityColumnCount];
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:colCount];
     for (int i = 0; i < colCount; i++) {
-        [columns addObject:[[ColumnAccessibility alloc] initWithParent:self
-                                                                   withEnv:[ThreadUtilities getJNIEnv]
-                                                            withAccessible:NULL
-                                                                 withIndex:i
-                                                                  withView:self->fView
-                                                              withJavaRole:JavaAccessibilityIgnore]];
+        [columns addObject:[self createColumnWithIndex:i]];
     }
     return [NSArray arrayWithArray:columns];
 }
@@ -199,12 +204,7 @@ static jmethodID sjm_getAccessibleName = NULL;
     NSArray<NSNumber *> *indexes = [self getTableSelectedInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_COLS];
     NSMutableArray *columns = [NSMutableArray arrayWithCapacity:[indexes count]];
     for (NSNumber *i in indexes) {
-        [columns addObject:[[ColumnAccessibility alloc] initWithParent:self
-                                                                   withEnv:[ThreadUtilities getJNIEnv]
-                                                            withAccessible:NULL
-                                                                 withIndex:i.unsignedIntValue
-                                                                  withView:self->fView
-                                                              withJavaRole:JavaAccessibilityIgnore]];
+        [columns addObject:[self createColumnWithIndex:i.unsignedIntValue]];
     }
     return [NSArray arrayWithArray:columns];
 }
@@ -219,8 +219,9 @@ static jmethodID sjm_getAccessibleName = NULL;
     return [[self getTableInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_COLS] integerValue];
 }
 
-- (id)accessibilityCellForColumn:(NSInteger)column row:(NSInteger)row {
-    return [[(TableRowAccessibility *)[[self accessibilityRows] objectAtIndex:row] accessibilityChildren] objectAtIndex:column];
+- (id)accessibilityCellForColumn:(NSInteger)column row:(NSInteger)row
+{
+    return [[[self createRowWithIndex:row] accessibilityChildren] objectAtIndex:column];
 }
 
 - (NSArray *)accessibilitySelectedCells
