@@ -233,12 +233,20 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * @throws    IOException if an I/O error has occurred
      */
     public void close() throws IOException {
-        if (!closed) {
-            finish();
-            if (usesDefaultDeflater)
+        try {
+            if (!closed) {
+                finish();
+                if (usesDefaultDeflater)
+                   def.end();
+                out.close();
+                closed = true;
+            }
+        } catch(IOException ioe) {
+             if (usesDefaultDeflater)
                 def.end();
-            out.close();
-            closed = true;
+             out.close();
+             closed = true;
+             throw ioe;
         }
     }
 
