@@ -265,8 +265,6 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
     return to_addr;
   }
 
-  // FIXME: Assert that it's correct that we are here. Old/young addr vs major/minor relocation ...
-
   // Relocate object
   if (forwarding->retain_page()) {
     to_addr = relocate_object_inner(forwarding, safe(from_addr), &cursor);
