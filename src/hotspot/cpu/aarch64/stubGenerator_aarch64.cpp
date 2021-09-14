@@ -5611,7 +5611,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_ghash_processBlocks_wide() {
     address small = generate_ghash_processBlocks();
 
-    StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+    StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks_wide");
     __ align(wordSize * 2);
     address p = __ pc();
     __ emit_int64(0x87);  // The low-order bits of the field

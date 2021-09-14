@@ -1297,10 +1297,6 @@ public:
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
 
-  void ghash_modmul_wide (int index, FloatRegister result,
-                          FloatRegister result_lo, FloatRegister result_hi, FloatRegister b,
-                          FloatRegister a, FloatRegister vzr, FloatRegister a1_xor_a0, FloatRegister p,
-                          FloatRegister t1, FloatRegister t2, FloatRegister t3);
   void ghash_modmul (FloatRegister result,
                      FloatRegister result_lo, FloatRegister result_hi, FloatRegister b,
                      FloatRegister a, FloatRegister vzr, FloatRegister a1_xor_a0, FloatRegister p,
