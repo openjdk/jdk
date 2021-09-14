@@ -26,6 +26,7 @@
  * @bug 8251496 8268960
  * @summary Tests for methods in Headers class
  * @modules jdk.httpserver/com.sun.net.httpserver:+open
+ *          jdk.httpserver/sun.net.httpserver:+open
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
  * @run testng/othervm HeadersTest
@@ -55,10 +56,12 @@ import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import sun.net.httpserver.UnmodifiableHeaders;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -314,4 +317,131 @@ public class HeadersTest {
         h2.put("b", List.of("22"));
         assertTrue(h1.equals(h2));
     }
+
+    @Test
+    public static void test1ArgConstructorNull() {
+        assertThrows(NPE, () -> new Headers(null));
+        {
+            final var m = new HashMap<String, List<String>>();
+            m.put(null, List.of("Bar"));
+            assertThrows(NPE, () -> new Headers(m));
+        }
+        {
+            final var m = new HashMap<String, List<String>>();
+            m.put("Foo", null);
+            assertThrows(NPE, () -> new Headers(m));
+        }
+        {
+            final var m = new HashMap<String, List<String>>();
+            final var list = new LinkedList<String>();
+            list.add(null);
+            m.put("Foo", list);
+            assertThrows(NPE, () -> new Headers(m));
+        }
+    }
+
+    @Test
+    public static void test1ArgConstructor() {
+        {
+            var h = new Headers(new Headers());
+            assertTrue(h.isEmpty());
+        }
+        {
+            var h = new Headers(Map.of("Foo", List.of("Bar")));
+            assertEquals(h.get("Foo"), List.of("Bar"));
+            assertEquals(h.size(), 1);
+        }
+        {
+            var h1 = new Headers(new UnmodifiableHeaders(new Headers()));
+            assertTrue(h1.isEmpty());
+            h1.put("Foo", List.of("Bar"));  // modifiable
+            assertEquals(h1.get("Foo"), List.of("Bar"));
+            assertEquals(h1.size(), 1);
+
+            var h2 = new Headers(h1);
+            assertEquals(h2.get("Foo"), List.of("Bar"));
+            assertEquals(h2.size(), 1);
+
+            assertEquals(h1, h2);
+            h1.set("Foo", "Barbar");
+            assertNotEquals(h1, h2);
+        }
+    }
+
+    @Test
+    public static void testMutableHeaders() {
+        {
+            var h = new Headers();
+            h.add("Foo", "Bar");
+            h.add("Foo", "Bazz");
+            h.get("Foo").remove(0);
+            h.remove("Foo");
+            h.clear();
+        }
+        {
+            var h = new Headers(Map.of("Foo", List.of("Bar")));
+            h.get("Foo").add("Bazz");
+            h.get("Foo").remove(0);
+            h.remove("Foo");
+            h.clear();
+        }
+    }
+
+    @Test
+    public static void testOfNull() {
+        assertThrows(NPE, () -> Headers.of((String[])null));
+        assertThrows(NPE, () -> Headers.of(null, "Bar"));
+        assertThrows(NPE, () -> Headers.of("Foo", null));
+
+        assertThrows(NPE, () -> Headers.of((Map<String, List<String>>) null));
+        {
+            final var m = new HashMap<String, List<String>>();
+            m.put(null, List.of("Bar"));
+            assertThrows(NPE, () -> Headers.of(m));
+        }
+        {
+            final var m = new HashMap<String, List<String>>();
+            m.put("Foo", null);
+            assertThrows(NPE, () -> Headers.of(m));
+        }
+        {
+            final var m = new HashMap<String, List<String>>();
+            final var list = new LinkedList<String>();
+            list.add(null);
+            m.put("Foo", list);
+            assertThrows(NPE, () -> Headers.of(m));
+        }
+    }
+
+    @Test
+    public static void testOf() {
+        final var h = Headers.of("a", "1", "b", "2");
+        assertEquals(h.size(), 2);
+        List.of("a", "b").forEach(n -> assertTrue(h.containsKey(n)));
+        List.of("1", "2").forEach(v -> assertTrue(h.containsValue(List.of(v))));
+    }
+
+    @Test
+    public static void testOfEmpty() {
+        for (var h : List.of(Headers.of(), Headers.of(new String[] { }))) {
+            assertEquals(h.size(), 0);
+            assertTrue(h.isEmpty());
+        }
+    }
+
+    @Test
+    public static void testOfNumberOfElements() {
+        assertThrows(IAE, () -> Headers.of("a"));
+        assertThrows(IAE, () -> Headers.of("a", "1", "b"));
+    }
+
+    @Test
+    public static void testOfMultipleValues() {
+        final var h = Headers.of("a", "1", "b", "1", "b", "2", "b", "3");
+        assertEquals(h.size(), 2);
+        List.of("a", "b").forEach(n -> assertTrue(h.containsKey(n)));
+        List.of(List.of("1"), List.of("1", "2", "3")).forEach(v -> assertTrue(h.containsValue(v)));
+    }
+
+    // Immutability tests in UnmodifiableHeadersTest.java
 }

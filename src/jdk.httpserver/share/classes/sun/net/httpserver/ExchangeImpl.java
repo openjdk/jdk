@@ -85,7 +85,7 @@ class ExchangeImpl {
         String m, URI u, Request req, long len, HttpConnection connection
     ) throws IOException {
         this.req = req;
-        this.reqHdrs = new UnmodifiableHeaders(req.headers());
+        this.reqHdrs = Headers.of(req.headers());
         this.rspHdrs = new Headers();
         this.method = m;
         this.uri = u;
