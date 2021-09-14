@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,4 +142,29 @@ public class ChannelInputStream
         ch.close();
     }
 
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+
+        if (out instanceof ChannelOutputStream cos
+                && ch instanceof FileChannel fc
+                && cos.channel() instanceof FileChannel dst) {
+            return transfer(fc, dst);
+        }
+
+        return super.transferTo(out);
+    }
+
+    private static long transfer(FileChannel src, FileChannel dst) throws IOException {
+        long initialPos = src.position();
+        long pos = initialPos;
+        try {
+            while (pos < src.size()) {
+                pos += src.transferTo(pos, Long.MAX_VALUE, dst);
+            }
+        } finally {
+            src.position(pos);
+        }
+        return pos - initialPos;
+    }
 }

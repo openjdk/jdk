@@ -474,7 +474,7 @@ public final class HttpCookie implements Cloneable {
 
     /**
      * Returns {@code true} if sending this cookie should be restricted to a
-     * secure protocol, or {@code false} if the it can be sent using any
+     * secure protocol, or {@code false} if it can be sent using any
      * protocol.
      *
      * @return  {@code false} if the cookie can be sent over any standard

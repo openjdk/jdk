@@ -258,7 +258,6 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
  }
 
  void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
-   assert(Thread::current()->is_VM_thread(), "Only by VM thread");
    // Must use _claim_none to avoid interfering with concurrent CLDG iteration
    CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
    MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);

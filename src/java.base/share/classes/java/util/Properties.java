@@ -277,7 +277,7 @@ public class Properties extends Hashtable<Object,Object> {
      * If a logical line is spread across several natural lines, the
      * backslash escaping the line terminator sequence, the line
      * terminator sequence, and any white space at the start of the
-     * following line have no affect on the key or element values.
+     * following line have no effect on the key or element values.
      * The remainder of the discussion of key and element parsing
      * (when loading) will assume all the characters constituting
      * the key and element appear on a single natural line after
