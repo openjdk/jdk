@@ -2401,7 +2401,10 @@ void VM_HeapDumper::dump_stack_traces() {
     oop threadObj = thread->threadObj();
     if (threadObj != NULL && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
       // dump thread stack trace
-      ResourceMark rm;
+      Thread* current_thread = Thread::current();
+      ResourceMark rm(current_thread);
+      HandleMark hm(current_thread);
+
       ThreadStackTrace* stack_trace = new ThreadStackTrace(thread, false);
       stack_trace->dump_stack_at_safepoint(-1);
       _stack_traces[_num_threads++] = stack_trace;
