@@ -46,7 +46,7 @@ import java.util.concurrent.RecursiveTask;
  *
  * @version 2020.06.14
  *
- * @since 1.7 * 14 & 17
+ * @since 1.7 * 14 & 18
  */
 final class DualPivotQuicksort {
 
