@@ -24,11 +24,11 @@
 
 #include "precompiled.hpp"
 
-#include <cstddef>
 #include "cds.h"
 #include "cds/cdsConstants.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 CDSConst CDSConstants::offsets[] = {
   { "CDSFileMapHeaderBase::_magic",           offset_of(CDSFileMapHeaderBase, _magic)           },
