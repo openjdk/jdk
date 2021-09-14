@@ -873,7 +873,7 @@ public final class SocketPermission extends Permission
 
     /**
      * Checks if the incoming Permission's action are a proper subset of
-     * the this object's actions.
+     * this object's actions.
      * <P>
      * Check, in the following order:
      * <ul>
