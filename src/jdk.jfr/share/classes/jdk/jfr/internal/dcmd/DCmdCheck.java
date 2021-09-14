@@ -134,12 +134,7 @@ final class DCmdCheck extends AbstractDCmd {
     private static List<EventType> sortByEventPath(Collection<EventType> events) {
         List<EventType> sorted = new ArrayList<>();
         sorted.addAll(events);
-        sorted.sort(new Comparator<EventType>() {
-            @Override
-            public int compare(EventType e1, EventType e2) {
-                return e1.getName().compareTo(e2.getName());
-            }
-        });
+        sorted.sort(Comparator.comparing(EventType::getName));
         return sorted;
     }
 

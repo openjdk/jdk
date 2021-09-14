@@ -125,11 +125,7 @@ public class FinalizerInfo extends Tool {
              */
             ArrayList<ObjectHistogramElement> list = new ArrayList<>();
             list.addAll(map.values());
-            list.sort(new Comparator<>() {
-              public int compare(ObjectHistogramElement o1, ObjectHistogramElement o2) {
-                  return o1.compare(o2);
-              }
-            });
+            list.sort(ObjectHistogramElement::compare);
 
             /*
              * Print summary of objects in queue
