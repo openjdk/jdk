@@ -21,20 +21,19 @@
  * questions.
  */
 
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.InputEvent;
+import javax.swing.SwingUtilities;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * @test
  * @bug 8254841
  * @summary Tests spurious firing of mouseEntered and mouseExit on resize
- * @author Alisen Chung: area=MouseEvent
- * @library /test/lib
  * @run main ResizeMouseExitEnterMisfire
  */
 public class ResizeMouseExitEnterMisfire {
@@ -43,38 +42,69 @@ public class ResizeMouseExitEnterMisfire {
     private static volatile int mouseEntered = 0;
     private static volatile int mouseExited = 0;
 
-    public static void main (String[] args) throws Exception {
+    JFrame frame;
+    JLabel label;
+    int xLocInnerCorner;
+    int yLocInnerCorner;
+    int xLocOuterCorner;
+    int yLocOuterCorner;
+    int xLocNewEdge;
+    int yLocNewEdge;
 
-        JFrame frame = new JFrame();
-        frame.setSize(200, 200);
-        JLabel label = new JLabel();
-        label.addMouseListener(new MouseAdapter() {
+    Robot robot;
+
+    public void createAndShowFrame() throws Exception {
+        SwingUtilities.invokeLater(new Runnable() {
             @Override
-            public void mouseEntered (MouseEvent ev) {
-                System.err.println("mouseEntered");
-                mouseEntered++;
-            }
-            @Override
-            public void mouseExited (MouseEvent ev) {
-                System.err.println("mouseExited");
-                mouseExited++;
+            public void run() {
+                frame = new JFrame();
+                frame.setSize(200, 200);
+                label = new JLabel();
+                label.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered (MouseEvent ev) {
+                        System.err.println("mouseEntered");
+                        mouseEntered++;
+                    }
+                    @Override
+                    public void mouseExited (MouseEvent ev) {
+                        System.err.println("mouseExited");
+                        mouseExited++;
+                    }
+                });
+
+                frame.add(label);
+                frame.setVisible(true);
             }
         });
-        frame.add(label);
-        frame.setVisible(true);
+    }
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(100);
-        robot.waitForIdle();
+    public void createRobot() throws Exception {
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(100);
+            robot.waitForIdle();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-        Rectangle rect = frame.getBounds();
-        int xLocInnerCorner = rect.x + rect.width - 5;
-        int yLocInnerCorner = rect.y + rect.height - 5;
-        int xLocOuterCorner = rect.x + rect.width + 3;
-        int yLocOuterCorner = rect.y + rect.height + 3;
-        int xLocNewEdge = rect.x + rect.width + 500;
-        int yLocNewEdge = rect.y + rect.height + 500;
+    public void getFrameCoords() {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                Rectangle rect = frame.getBounds();
+                xLocInnerCorner = rect.x + rect.width - 5;
+                yLocInnerCorner = rect.y + rect.height - 5;
+                xLocOuterCorner = rect.x + rect.width + 3;
+                yLocOuterCorner = rect.y + rect.height + 3;
+                xLocNewEdge = rect.x + rect.width + 500;
+                yLocNewEdge = rect.y + rect.height + 500;
+            }
+        });
+    }
 
+    public void resizeFromInsideWindowTest() {
         // Testing for resizing while cursor starts from inside the window
         robot.mouseMove(xLocInnerCorner, yLocInnerCorner);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -86,24 +116,11 @@ public class ResizeMouseExitEnterMisfire {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseMove(xLocInnerCorner, yLocInnerCorner);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(100);
-
-        /* Expected behavior should be a mouseEntered event when the mouse initially
-         * enters the window, then no mouse events when the window size is changed.
-         */
-        if(mouseEntered != 1) {
-            throw new RuntimeException("mouseEntered = " + mouseEntered
-                    + ", expected value =  " + 1);
-        }
-        if(mouseExited != 0) {
-            throw new RuntimeException("mouseExited = " + mouseExited
-                    + ", expected value =  " + 0);
-        }
-        mouseEntered = 0;
-        mouseExited = 0;
-
         robot.delay(500);
+        robot.waitForIdle();
+    }
 
+    public void resizeFromOutsideWindowTest() {
         // Testing for resizing while cursor starts outside the window
         robot.mouseMove(xLocOuterCorner, yLocOuterCorner);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -115,9 +132,34 @@ public class ResizeMouseExitEnterMisfire {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseMove(xLocOuterCorner, yLocOuterCorner);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(100);
+        robot.delay(500);
         robot.waitForIdle();
+    }
 
+    public static void main (String[] args) throws Exception {
+        ResizeMouseExitEnterMisfire test = new ResizeMouseExitEnterMisfire();
+        test.createAndShowFrame();
+        test.getFrameCoords();
+        test.createRobot();
+
+        test.resizeFromInsideWindowTest();
+        /* Expected behavior should be a mouseEntered event when the mouse initially
+         * enters the window, then no mouse events when the window size is changed.
+         */
+        if(mouseEntered != 1) {
+
+            throw new RuntimeException("mouseEntered = " + mouseEntered
+                    + ", expected value =  " + 1);
+        }
+        if(mouseExited != 0) {
+            throw new RuntimeException("mouseExited = " + mouseExited
+                    + ", expected value =  " + 0);
+        }
+        mouseEntered = 0;
+        mouseExited = 0;
+
+
+        test.resizeFromOutsideWindowTest();
         /* Expected behavior should be a mouseExit event when the mouse initially
          * exits the window, then no mouse events when the window size is changed.
          */
