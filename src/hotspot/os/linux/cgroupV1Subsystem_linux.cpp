@@ -252,15 +252,6 @@ char* CgroupV1Subsystem::pids_max_val() {
   return os::strdup(pidsmax);
 }
 
-char* CgroupV1Subsystem::pids_current_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _pids, "/pids.current",
-                     "Current number of tasks is: %s", "%s %*d", pids_current, 1024);
-  if (pids_current == NULL) {
-    return NULL;
-  }
-  return os::strdup(pids_current);
-}
-
 /* pids_max
  *
  * Return the maximum number of tasks available to the process

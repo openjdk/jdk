@@ -107,7 +107,6 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     CgroupV1Controller* _pids = NULL;
 
     char * pids_max_val();
-    char * pids_current_val();
 
   public:
     CgroupV1Subsystem(CgroupV1Controller* cpuset,

@@ -61,7 +61,6 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     char *mem_soft_limit_val();
     char *cpu_quota_val();
     char *pids_max_val();
-    char *pids_current_val();
 
   public:
     CgroupV2Subsystem(CgroupController * unified) {

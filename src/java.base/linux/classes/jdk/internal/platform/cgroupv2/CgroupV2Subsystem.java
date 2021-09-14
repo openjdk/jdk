@@ -313,8 +313,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
 
     @Override
     public long getPidsCurrent() {
-        String pidsCurrentStr = CgroupSubsystemController.getStringValue(unified, "pids.current");
-        return CgroupSubsystem.limitFromString(pidsCurrentStr);
+        return getLongVal("pids.current");
     }
 
     @Override
