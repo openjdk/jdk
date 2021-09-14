@@ -848,6 +848,9 @@ public class Properties extends Hashtable<Object,Object> {
      * After the entries have been written, the output stream is flushed.
      * The output stream remains open after this method returns.
      *
+     * @implNote This method writes out the property list (key and element pairs)
+     * in the natural sort order of the property keys.
+     *
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
      * @throws     IOException if writing this property list to the specified
