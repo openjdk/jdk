@@ -72,6 +72,8 @@ public class StoreReproducibilityTest {
         testEmptyStoreDateValue();
         // value for java.util.Properties.storeDate system property contains line terminator characters
         testMultiLineStoreDateValue();
+        // value for java.util.Properties.storeDate system property contains backslash character
+        testBackSlashInStoreDateValue();
     }
 
     /**
@@ -202,10 +204,13 @@ public class StoreReproducibilityTest {
      * The launched program is expected to complete without any errors.
      */
     private static void testBlankStoreDateValue() throws Exception {
+        final List<Path> storedFiles = new ArrayList<>();
+        final String storeDate = "      \t";
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
+            storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + "      \t",
+                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -222,6 +227,7 @@ public class StoreReproducibilityTest {
                 throw new RuntimeException("Expected comment line to be blank but was " + blankCommentLine);
             }
         }
+        assertAllFileContentsAreSame(storedFiles, storeDate);
     }
 
     /**
@@ -262,8 +268,10 @@ public class StoreReproducibilityTest {
      */
     private static void testNonDateStoreDateValue() throws Exception {
         final String storeDate = "foo-bar";
+        final List<Path> storedFiles = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
+            storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
                     StoreTest.class.getName(),
@@ -275,6 +283,7 @@ public class StoreReproducibilityTest {
             }
             assertExpectedStoreDate(tmpFile, storeDate);
         }
+        assertAllFileContentsAreSame(storedFiles, storeDate);
     }
 
     /**
@@ -288,8 +297,10 @@ public class StoreReproducibilityTest {
     private static void testMultiLineStoreDateValue() throws Exception {
         final String[] storeDates = {"hello-world\nc=d", "hello-world\rc=d", "hello-world\r\nc=d"};
         for (final String storeDate : storeDates) {
+            final List<Path> storedFiles = new ArrayList<>();
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
+                storedFiles.add(tmpFile);
                 final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
                         StoreTest.class.getName(),
@@ -312,6 +323,59 @@ public class StoreReproducibilityTest {
                     throw new RuntimeException("Unexpected comment line " + commentLine2 + " in " + tmpFile);
                 }
             }
+            assertAllFileContentsAreSame(storedFiles, storeDate);
+        }
+    }
+
+    /**
+     * Launches a Java program which is responsible for using Properties.store() to write out the
+     * properties to a file. The launched Java program is passed the {@code java.util.Properties.storeDate}
+     * system property with a value that has backslash character.
+     * It is expected and verified in this test that such a value for the system property
+     * will not cause any malformed comments or introduce any new properties in the stored content.
+     * The launched program is expected to complete without any errors.
+     */
+    private static void testBackSlashInStoreDateValue() throws Exception {
+        final String[] storeDates = {"\\hello-world", "hello-world\\", "hello-world\\c=d",
+                "newline-plus-backslash\\\nc=d"};
+        for (final String storeDate : storeDates) {
+            final List<Path> storedFiles = new ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                final Path tmpFile = Files.createTempFile("8231640", ".props");
+                storedFiles.add(tmpFile);
+                final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                        "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                        StoreTest.class.getName(),
+                        tmpFile.toString(),
+                        i % 2 == 0 ? "--use-outputstream" : "--use-writer");
+                executeJavaProcess(processBuilder);
+                if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
+                    throw new RuntimeException("Unexpected properties stored in " + tmpFile);
+                }
+                String commentLine1 = findNthComment(tmpFile, 2);
+                if (commentLine1 == null) {
+                    throw new RuntimeException("Did not find the expected comment line in " + tmpFile);
+                }
+                if (storeDate.contains("newline-plus-backslash")) {
+                    if (!commentLine1.equals("newline-plus-backslash\\")) {
+                        throw new RuntimeException("Unexpected comment line " + commentLine1 + " in " + tmpFile);
+                    }
+                    // we expect this specific system property value to be written out into 2 separate comment lines
+                    String commentLine2 = findNthComment(tmpFile, 3);
+                    if (commentLine2 == null) {
+                        throw new RuntimeException(storeDate + " was expected to be split into 2 comment line, " +
+                                "but wasn't, in " + tmpFile);
+                    }
+                    if (!commentLine2.equals("c=d")) {
+                        throw new RuntimeException("Unexpected comment line " + commentLine2 + " in " + tmpFile);
+                    }
+                } else {
+                    if (!commentLine1.equals(storeDate)) {
+                        throw new RuntimeException("Unexpected comment line " + commentLine1 + " in " + tmpFile);
+                    }
+                }
+            }
+            assertAllFileContentsAreSame(storedFiles, storeDate);
         }
     }
 
