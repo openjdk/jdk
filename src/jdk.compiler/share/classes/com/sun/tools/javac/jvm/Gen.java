@@ -1471,7 +1471,7 @@ public class Gen extends JCTree.Visitor {
             }
         };
         syncEnv.info.gaps = new ListBuffer<>();
-        genTry(tree.body, List.nil(), syncEnv, false);
+        genTry(tree.body, List.nil(), syncEnv);
         code.endScopes(limit);
     }
 
@@ -1505,16 +1505,15 @@ public class Gen extends JCTree.Visitor {
 
         };
         tryEnv.info.gaps = new ListBuffer<>();
-        genTry(tree.body, tree.catchers, tryEnv, true);
+        genTry(tree.body, tree.catchers, tryEnv);
     }
     //where
         /** Generate code for a try or synchronized statement
          *  @param body      The body of the try or synchronized statement.
          *  @param catchers  The list of catch clauses.
          *  @param env       The current environment of the body.
-         *  @param actualTry Identify try or synchronized statement, true for try and false for synchronized.
          */
-        void genTry(JCTree body, List<JCCatch> catchers, Env<GenContext> env, boolean actualTry) {
+        void genTry(JCTree body, List<JCCatch> catchers, Env<GenContext> env) {
             int limit = code.nextreg;
             int startpc = code.curCP();
             Code.State stateTry = code.state.dup();
@@ -1525,6 +1524,7 @@ public class Gen extends JCTree.Visitor {
             genFinalizer(env);
             code.statBegin(TreeInfo.endPos(env.tree));
             Chain exitChain;
+            boolean actualTry = env.tree.hasTag(TRY);
             if (startpc == endpc && actualTry) {
                 exitChain = code.branch(dontgoto);
             } else {
