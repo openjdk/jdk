@@ -392,6 +392,10 @@ final class SMFParser {
                         // meta
                         int metaType = readUnsigned();
                         int metaLength = (int) readVarInt();
+                        if (metaLength < 0) {
+                            throw new InvalidMidiDataException("length out of bounds: "
+                                    + metaLength);
+                        }
                         final byte[] metaData;
                         try {
                             metaData = new byte[metaLength];
