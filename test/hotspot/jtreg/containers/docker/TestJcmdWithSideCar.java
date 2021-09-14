@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,10 +82,8 @@ public class TestJcmdWithSideCar {
             // mainContainer.assertIsAlive();
             // testCase02(mainProcPid);
 
-            // JCMD does not work in sidecar configuration, except for "jcmd -l".
-            // Including this test case to assist in reproduction of the problem.
-            // mainContainer.assertIsAlive();
-            // testCase03(mainProcPid);
+            mainContainer.assertIsAlive();
+            testCase03(mainProcPid);
 
             mainContainer.waitForAndCheck(TIME_TO_RUN_MAIN_PROCESS * 1000);
         } finally {

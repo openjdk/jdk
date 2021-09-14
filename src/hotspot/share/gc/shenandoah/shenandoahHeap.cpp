@@ -495,9 +495,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
   _max_workers = MAX2(_max_workers, 1U);
-  _workers = new ShenandoahWorkGang("Shenandoah GC Threads", _max_workers,
-                            /* are_GC_task_threads */ true,
-                            /* are_ConcurrentGC_threads */ true);
+  _workers = new ShenandoahWorkGang("Shenandoah GC Threads", _max_workers);
   if (_workers == NULL) {
     vm_exit_during_initialization("Failed necessary allocation.");
   } else {
@@ -506,9 +504,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 
   if (ParallelGCThreads > 1) {
     _safepoint_workers = new ShenandoahWorkGang("Safepoint Cleanup Thread",
-                                                ParallelGCThreads,
-                      /* are_GC_task_threads */ false,
-                 /* are_ConcurrentGC_threads */ false);
+                                                ParallelGCThreads);
     _safepoint_workers->initialize_workers();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,6 +265,19 @@ public class OptionModesTester {
             for (String e: expects) {
                 if (!logs.get(l).contains(e))
                     error("expected string not found: " + e);
+            }
+            return this;
+        }
+
+        TestResult checkSameLog(TestResult other) {
+            return checkSameLog(Log.DIRECT, other);
+        }
+
+        TestResult checkSameLog(Log l, TestResult other) {
+            String thisLog = logs.get(l);
+            String otherLog = other.logs.get(l);
+            if (!thisLog.equals(otherLog)) {
+                error("Logs are not the same.\nThis:\n" + thisLog + "\nOther:\n" + otherLog);
             }
             return this;
         }

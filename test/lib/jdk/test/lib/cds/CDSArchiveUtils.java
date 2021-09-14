@@ -213,6 +213,24 @@ public class CDSArchiveUtils {
         return true;
     }
 
+    public static void modifyRegionCrc(File jsaFile, int region, int value) throws Exception {
+        long regionCrcOffset = spOffset + region * spOffsetCrc;
+        writeData(jsaFile, regionCrcOffset, value);
+    }
+
+    public static void  modifyAllRegionsCrc(File jsaFile) throws Exception {
+        int value = 0xbadebabe;
+        long[] used = new long[num_regions];
+        for (int i = 0; i < num_regions; i++) {
+            used[i] = usedRegionSizeAligned(jsaFile, i);
+            if (used[i] == 0) {
+                // skip empty region
+                continue;
+            }
+            modifyRegionCrc(jsaFile, i, value);
+        }
+    }
+
     public static void modifyFileHeader(File jsaFile) throws Exception {
         // screw up header info
         byte[] buf = new byte[fileHeaderSize];
@@ -272,6 +290,13 @@ public class CDSArchiveUtils {
     public static long writeData(File file, long offset, byte[] array) throws Exception {
         try (FileChannel fc = getFileChannel(file)) {
             ByteBuffer bbuf = ByteBuffer.wrap(array);
+            return writeData(fc, offset, bbuf);
+         }
+    }
+
+    public static long writeData(File file, long offset, int value) throws Exception {
+        try (FileChannel fc = getFileChannel(file)) {
+            ByteBuffer bbuf = ByteBuffer.allocate(4).putInt(value).position(0);
             return writeData(fc, offset, bbuf);
          }
     }

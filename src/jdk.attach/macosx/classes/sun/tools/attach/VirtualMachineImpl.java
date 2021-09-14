@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import com.sun.tools.attach.spi.AttachProvider;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
  * Bsd implementation of HotSpotVirtualMachine
@@ -274,12 +276,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      */
     private void writeString(int fd, String s) throws IOException {
         if (s.length() > 0) {
-            byte b[];
-            try {
-                b = s.getBytes("UTF-8");
-            } catch (java.io.UnsupportedEncodingException x) {
-                throw new InternalError(x);
-            }
+            byte[] b = s.getBytes(UTF_8);
             VirtualMachineImpl.write(fd, b, 0, b.length);
         }
         byte b[] = new byte[1];

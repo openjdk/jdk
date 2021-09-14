@@ -80,9 +80,8 @@ void ZCollectedHeap::initialize_serviceability() {
 class ZStopConcurrentGCThreadClosure : public ThreadClosure {
 public:
   virtual void do_thread(Thread* thread) {
-    if (thread->is_ConcurrentGC_thread() &&
-        !thread->is_GC_task_thread()) {
-      static_cast<ConcurrentGCThread*>(thread)->stop();
+    if (thread->is_ConcurrentGC_thread()) {
+      ConcurrentGCThread::cast(thread)->stop();
     }
   }
 };

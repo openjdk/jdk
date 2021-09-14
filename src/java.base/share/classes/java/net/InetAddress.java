@@ -400,7 +400,7 @@ public class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the InetAddress is an link local address.
+     * Utility routine to check if the InetAddress is a link local address.
      *
      * @return a {@code boolean} indicating if the InetAddress is
      * a link local address; or false if address is not a link local unicast address.
@@ -486,7 +486,7 @@ public class InetAddress implements java.io.Serializable {
     /**
      * Test whether that address is reachable. Best effort is made by the
      * implementation to try to reach the host, but firewalls and server
-     * configuration may block requests resulting in a unreachable status
+     * configuration may block requests resulting in an unreachable status
      * while some specific ports may be accessible.
      * A typical implementation will use ICMP ECHO REQUESTs if the
      * privilege can be obtained, otherwise it will try to establish
