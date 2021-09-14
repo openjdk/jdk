@@ -34,17 +34,6 @@
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
 
-static void run_foreground_task_if_needed(AbstractGangTask* task, uint num_workers,
-                                          bool add_foreground_work) {
-  if (add_foreground_work) {
-    log_develop_trace(gc, workgang)("Running work gang: %s task: %s worker: foreground",
-      Thread::current()->name(), task->name());
-    task->work(num_workers);
-    log_develop_trace(gc, workgang)("Finished work gang: %s task: %s worker: foreground "
-      "thread: " PTR_FORMAT, Thread::current()->name(), task->name(), p2i(Thread::current()));
-  }
-}
-
 // WorkGang dispatcher implemented with semaphores.
 //
 // Semaphores don't require the worker threads to re-claim the lock when they wake up.
@@ -79,15 +68,13 @@ public:
 
   // Distributes the task out to num_workers workers.
   // Returns when the task has been completed by all workers.
-  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers, bool add_foreground_work) {
+  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) {
     // No workers are allowed to read the state variables until they have been signaled.
     _task         = task;
     _not_finished = num_workers;
 
     // Dispatch 'num_workers' number of tasks.
     _start_semaphore->signal(num_workers);
-
-    run_foreground_task_if_needed(task, num_workers, add_foreground_work);
 
     // Wait for the last worker to signal the coordinator.
     _end_semaphore->wait();
@@ -129,14 +116,12 @@ public:
 };
 // Definitions of WorkGang methods.
 
-WorkGang::WorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads) :
+WorkGang::WorkGang(const char* name, uint workers) :
     _workers(NULL),
     _total_workers(workers),
     _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
     _created_workers(0),
     _name(name),
-    _are_GC_task_threads(are_GC_task_threads),
-    _are_ConcurrentGC_threads(are_ConcurrentGC_threads),
     _dispatcher(new GangTaskDispatcher())
   { }
 
@@ -160,19 +145,13 @@ GangWorker* WorkGang::install_worker(uint worker_id) {
 }
 
 void WorkGang::add_workers(bool initializing) {
-  os::ThreadType worker_type;
-  if (are_ConcurrentGC_threads()) {
-    worker_type = os::cgc_thread;
-  } else {
-    worker_type = os::pgc_thread;
-  }
   uint previous_created_workers = _created_workers;
 
   _created_workers = WorkerManager::add_workers(this,
                                                 _active_workers,
                                                 _total_workers,
                                                 _created_workers,
-                                                worker_type,
+                                                os::gc_thread,
                                                 initializing);
   _active_workers = MIN2(_created_workers, _active_workers);
 
@@ -205,14 +184,14 @@ void WorkGang::run_task(AbstractGangTask* task) {
   run_task(task, active_workers());
 }
 
-void WorkGang::run_task(AbstractGangTask* task, uint num_workers, bool add_foreground_work) {
+void WorkGang::run_task(AbstractGangTask* task, uint num_workers) {
   guarantee(num_workers <= total_workers(),
             "Trying to execute task %s with %u workers which is more than the amount of total workers %u.",
             task->name(), num_workers, total_workers());
   guarantee(num_workers > 0, "Trying to execute task %s with zero workers", task->name());
   uint old_num_workers = _active_workers;
   update_active_workers(num_workers);
-  _dispatcher->coordinator_execute_on_workers(task, num_workers, add_foreground_work);
+  _dispatcher->coordinator_execute_on_workers(task, num_workers);
   update_active_workers(old_num_workers);
 }
 
@@ -269,11 +248,6 @@ WorkGangBarrierSync::WorkGangBarrierSync()
   : _monitor(Mutex::safepoint, "work gang barrier sync",
              Monitor::_safepoint_check_never),
     _n_workers(0), _n_completed(0), _should_reset(false), _aborted(false) {
-}
-
-WorkGangBarrierSync::WorkGangBarrierSync(uint n_workers, const char* name)
-  : _monitor(Mutex::safepoint, name, Monitor::_safepoint_check_never),
-    _n_workers(n_workers), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 
 void WorkGangBarrierSync::set_n_workers(uint n_workers) {

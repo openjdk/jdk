@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -862,7 +862,7 @@ public class Throwable implements Serializable {
      * @param   stackTrace the stack trace elements to be associated with
      * this {@code Throwable}.  The specified array is copied by this
      * call; changes in the specified array after the method invocation
-     * returns will have no affect on this {@code Throwable}'s stack
+     * returns will have no effect on this {@code Throwable}'s stack
      * trace.
      *
      * @throws NullPointerException if {@code stackTrace} is

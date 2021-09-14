@@ -1683,9 +1683,7 @@ jint G1CollectedHeap::initialize() {
     _humongous_reclaim_candidates.initialize(reserved(), granularity);
   }
 
-  _workers = new WorkGang("GC Thread", ParallelGCThreads,
-                          true /* are_GC_task_threads */,
-                          false /* are_ConcurrentGC_threads */);
+  _workers = new WorkGang("GC Thread", ParallelGCThreads);
   if (_workers == NULL) {
     return JNI_ENOMEM;
   }
@@ -2326,12 +2324,11 @@ void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *c
   _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id);
 }
 
-void G1CollectedHeap::par_iterate_regions_array_part_from(HeapRegionClosure* cl,
-                                                          HeapRegionClaimer* hr_claimer,
-                                                          const uint* regions,
-                                                          size_t offset,
-                                                          size_t length,
-                                                          uint worker_id) const {
+void G1CollectedHeap::par_iterate_regions_array(HeapRegionClosure* cl,
+                                                HeapRegionClaimer* hr_claimer,
+                                                const uint regions[],
+                                                size_t length,
+                                                uint worker_id) const {
   assert_at_safepoint();
   if (length == 0) {
     return;
@@ -2342,7 +2339,7 @@ void G1CollectedHeap::par_iterate_regions_array_part_from(HeapRegionClosure* cl,
   size_t cur_pos = start_pos;
 
   do {
-    uint region_idx = regions[cur_pos + offset];
+    uint region_idx = regions[cur_pos];
     if (hr_claimer == NULL || hr_claimer->claim_region(region_idx)) {
       HeapRegion* r = region_at(region_idx);
       bool result = cl->do_heap_region(r);
