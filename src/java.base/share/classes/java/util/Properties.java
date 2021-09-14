@@ -827,11 +827,11 @@ public class Properties extends Hashtable<Object,Object> {
      * after that line separator.
      * <p>
      * If the {@systemProperty java.util.Properties.storeDate} is set and
-     * is non-blank (as determined by {@link String#isBlank String.isBlank}),
+     * is non-empty (as determined by {@link String#isEmpty()  String.isEmpty}),
      * a comment line is written as follows.
      * First, a {@code #} character is written, followed by the contents
      * of the property, followed by a line separator.
-     * If the system property is not set or is blank, a comment line is written
+     * If the system property is not set or is empty, a comment line is written
      * as follows.
      * First, a {@code #} character is written, followed by the current date and time
      * formatted as if by {@link DateTimeFormatter} with the format
@@ -850,12 +850,6 @@ public class Properties extends Hashtable<Object,Object> {
      * <p>
      * After the entries have been written, the output stream is flushed.
      * The output stream remains open after this method returns.
-     *
-     * @implNote Although this method doesn't mandate it, conventionally,
-     * the value of the {@systemProperty java.util.Properties.storeDate}
-     * system property, if set, represents a formatted date time value that can be
-     * parsed back into a {@link Date} using an appropriate
-     * {@link DateTimeFormatter}
      *
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
@@ -953,11 +947,12 @@ public class Properties extends Hashtable<Object,Object> {
         // and so doesn't need any security manager checks to make the value accessible
         // to the callers
         String storeDate = StaticProperty.javaUtilPropertiesStoreDate();
-        String dateComment = (storeDate != null && !storeDate.isBlank())
-                ? "#" + storeDate
-                : "#" + DateTimeFormatter.ofPattern(dateFormatPattern).format(ZonedDateTime.now());
-        bw.write(dateComment);
-        bw.newLine();
+        if (storeDate != null && !storeDate.isEmpty()) {
+            writeComments(bw, storeDate);
+        } else {
+            bw.write("#" + DateTimeFormatter.ofPattern(dateFormatPattern).format(ZonedDateTime.now()));
+            bw.newLine();
+        }
     }
 
     /**

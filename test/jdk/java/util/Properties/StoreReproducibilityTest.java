@@ -68,6 +68,10 @@ public class StoreReproducibilityTest {
         testNonDateStoreDateValue();
         // blank value for java.util.Properties.storeDate system property
         testBlankStoreDateValue();
+        // empty value for java.util.Properties.storeDate system property
+        testEmptyStoreDateValue();
+        // value for java.util.Properties.storeDate system property contains line terminator characters
+        testMultiLineStoreDateValue();
     }
 
     /**
@@ -191,17 +195,48 @@ public class StoreReproducibilityTest {
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed a blank value
+     * properties to a file. The launched Java program is passed a {@link String#isBlank() blank} value
      * for the {@code java.util.Properties.storeDate} system property.
      * It is expected and verified in this test that such a value for the system property
-     * will cause the date comment to use the current date time. The launched program is expected to complete
-     * without any errors.
+     * will cause a comment line to be written out with only whitespaces.
+     * The launched program is expected to complete without any errors.
      */
     private static void testBlankStoreDateValue() throws Exception {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + "      \t",
+                    StoreTest.class.getName(),
+                    tmpFile.toString(),
+                    i % 2 == 0 ? "--use-outputstream" : "--use-writer");
+            executeJavaProcess(processBuilder);
+            if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
+                throw new RuntimeException("Unexpected properties stored in " + tmpFile);
+            }
+            String blankCommentLine = findNthComment(tmpFile, 2);
+            if (blankCommentLine == null) {
+                throw new RuntimeException("Comment line representing the value of "
+                        + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + " system property is missing in file " + tmpFile);
+            }
+            if (!blankCommentLine.isBlank()) {
+                throw new RuntimeException("Expected comment line to be blank but was " + blankCommentLine);
+            }
+        }
+    }
+
+    /**
+     * Launches a Java program which is responsible for using Properties.store() to write out the
+     * properties to a file. The launched Java program is passed a {@link String#isEmpty() empty} value
+     * for the {@code java.util.Properties.storeDate} system property.
+     * It is expected and verified in this test that such a value for the system property
+     * will cause the current date and time to be written out as a comment.
+     * The launched program is expected to complete without any errors.
+     */
+    private static void testEmptyStoreDateValue() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            final Path tmpFile = Files.createTempFile("8231640", ".props");
+            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + "",
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -242,6 +277,44 @@ public class StoreReproducibilityTest {
         }
     }
 
+    /**
+     * Launches a Java program which is responsible for using Properties.store() to write out the
+     * properties to a file. The launched Java program is passed the {@code java.util.Properties.storeDate}
+     * system property with a value that has line terminator characters.
+     * It is expected and verified in this test that such a value for the system property
+     * will cause the comment written out to be multiple separate comments. The launched program is expected
+     * to complete without any errors.
+     */
+    private static void testMultiLineStoreDateValue() throws Exception {
+        final String[] storeDates = {"hello-world\nc=d", "hello-world\rc=d", "hello-world\r\nc=d"};
+        for (final String storeDate : storeDates) {
+            for (int i = 0; i < 2; i++) {
+                final Path tmpFile = Files.createTempFile("8231640", ".props");
+                final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                        "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                        StoreTest.class.getName(),
+                        tmpFile.toString(),
+                        i % 2 == 0 ? "--use-outputstream" : "--use-writer");
+                executeJavaProcess(processBuilder);
+                if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
+                    throw new RuntimeException("Unexpected properties stored in " + tmpFile);
+                }
+                // verify this results in 2 separate comment lines in the stored file
+                String commentLine1 = findNthComment(tmpFile, 2);
+                String commentLine2 = findNthComment(tmpFile, 3);
+                if (commentLine1 == null || commentLine2 == null) {
+                    throw new RuntimeException("Did not find the expected multi-line comments in " + tmpFile);
+                }
+                if (!commentLine1.equals("hello-world")) {
+                    throw new RuntimeException("Unexpected comment line " + commentLine1 + " in " + tmpFile);
+                }
+                if (!commentLine2.equals("c=d")) {
+                    throw new RuntimeException("Unexpected comment line " + commentLine2 + " in " + tmpFile);
+                }
+            }
+        }
+    }
+
     // launches the java process and waits for it to exit. throws an exception if exit value is non-zero
     private static void executeJavaProcess(ProcessBuilder pb) throws Exception {
         final OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
@@ -276,8 +349,9 @@ public class StoreReproducibilityTest {
     }
 
     /**
-     * Verifies that the date comment in the {@code destFile} can be parsed and the time
-     * represented by it is {@link Date#after(Date) after} the passed {@code date}
+     * Verifies that the date comment in the {@code destFile} can be parsed using the
+     * "EEE MMM dd HH:mm:ss zzz yyyy" format and the time represented by it is {@link Date#after(Date) after}
+     * the passed {@code date}
      */
     private static void assertCurrentDate(final Path destFile, final Date date) throws Exception {
         final String dateComment = findNthComment(destFile, 2);
