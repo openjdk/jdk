@@ -2781,8 +2781,13 @@ assertEquals("[x, y, z]", pb.command().toString());
          * to be initialized if it has not been already initialized,
          * as specified in JVMS {@jvms 5.5}.
          *
+         * <p>
+         * This method returns when {@code targetClass} is fully initialized, or
+         * when {@code targetClass} is being initialized by the current thread.
+         *
          * @param targetClass the class to be initialized
-         * @return {@code targetClass} that has been initialized
+         * @return {@code targetClass} that has been initialized, or that is being
+         *         initialized by the current thread.
          *
          * @throws  IllegalArgumentException if {@code targetClass} is a primitive type or {@code void}
          *          or array class

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ import java.io.IOException;
  * directory. The {@link #getRootDirectories getRootDirectories} method may be
  * used to iterate over the root directories in the file system. A file system
  * is typically composed of one or more underlying {@link FileStore file-stores}
- * that provide the storage for the files. Theses file stores can also vary in
+ * that provide the storage for the files. These file stores can also vary in
  * the features they support, and the file attributes or <em>meta-data</em> that
  * they associate with files.
  *

@@ -1972,7 +1972,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         return con_type;
       }
     }
-  } else if (tp->base() == Type::KlassPtr) {
+  } else if (tp->base() == Type::KlassPtr || tp->base() == Type::InstKlassPtr || tp->base() == Type::AryKlassPtr) {
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects
             tp->is_klassptr()->klass()->is_java_lang_Object() ||

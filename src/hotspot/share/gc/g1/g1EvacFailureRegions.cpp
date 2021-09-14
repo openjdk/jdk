@@ -49,12 +49,11 @@ void G1EvacFailureRegions::initialize(uint max_regions) {
 void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                        HeapRegionClaimer* _hrclaimer,
                                        uint worker_id) {
-  G1CollectedHeap::heap()->par_iterate_regions_array_part_from(closure,
-                                                               _hrclaimer,
-                                                               _evac_failure_regions,
-                                                               0,
-                                                               Atomic::load(&_evac_failure_regions_cur_length),
-                                                               worker_id);
+  G1CollectedHeap::heap()->par_iterate_regions_array(closure,
+                                                     _hrclaimer,
+                                                     _evac_failure_regions,
+                                                     Atomic::load(&_evac_failure_regions_cur_length),
+                                                     worker_id);
 }
 
 void G1EvacFailureRegions::reset() {
