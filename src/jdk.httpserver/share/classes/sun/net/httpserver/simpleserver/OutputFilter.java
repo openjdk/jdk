@@ -62,9 +62,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * of the exchange.
  */
 public final class OutputFilter extends Filter {
-    private static final DateTimeFormatter FORMATTER =
-			DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z");
-
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z");
     private final PrintStream printStream;
     private final OutputLevel outputLevel;
     private final Filter filter;
