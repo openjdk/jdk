@@ -21,9 +21,11 @@ Value of `InstallerVersion` attribute of `Package` WiX element. Default value is
 - JpAllowDowngrades
 Should be defined to enable downgrades and undefined to disable downgrades.
 By default it is defined for applications and undefined for Runtime installer.
+Use <?define JpAllowUpgrades = "foo" ?> to enable or <?undef JpAllowUpgrades?>
+to disable (the value doesn't mater).
 
 - JpAllowUpgrades
 Should be defined to enable upgrades and undefined to disable upgrades.
-By default it is defined.
+By default it is defined, use <?undef JpAllowUpgrades?> to disable.
 -->
 <Include/>
