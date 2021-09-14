@@ -250,11 +250,6 @@ WorkGangBarrierSync::WorkGangBarrierSync()
     _n_workers(0), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 
-WorkGangBarrierSync::WorkGangBarrierSync(uint n_workers, const char* name)
-  : _monitor(Mutex::safepoint, name, Monitor::_safepoint_check_never),
-    _n_workers(n_workers), _n_completed(0), _should_reset(false), _aborted(false) {
-}
-
 void WorkGangBarrierSync::set_n_workers(uint n_workers) {
   _n_workers    = n_workers;
   _n_completed  = 0;

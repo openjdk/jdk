@@ -237,7 +237,6 @@ protected:
 
 public:
   WorkGangBarrierSync();
-  WorkGangBarrierSync(uint n_workers, const char* name);
 
   // Set the number of workers that will use the barrier.
   // Must be called before any of the workers start running.
