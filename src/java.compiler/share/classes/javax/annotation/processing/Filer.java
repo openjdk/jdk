@@ -407,5 +407,5 @@ public interface Filer {
      */
     FileObject getResource(JavaFileManager.Location location,
                            CharSequence moduleAndPkg,
-                           CharSequence relativeName) throws IOException;//TODO: originatingElements???
+                           CharSequence relativeName) throws IOException;
 }
