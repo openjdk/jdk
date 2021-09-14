@@ -29,6 +29,7 @@
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -465,7 +466,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  InstanceKlass* k = ClassLoaderExt::load_class(class_name, _source, CHECK_NULL);
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, _source, CHECK_NULL);
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);
@@ -473,7 +474,6 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
-  // This tells JVM_FindLoadedClass to not find this class.
   ClassLoaderExt::record_result(UNREGISTERED_INDEX, k);
   k->clear_shared_class_loader_type();
 

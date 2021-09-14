@@ -59,7 +59,6 @@ private:
   static bool _has_non_jar_in_classpath;
 
   static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text);
-  static ClassPathEntry* find_classpath_entry_from_cache(JavaThread* current, const char* path);
 
 public:
   static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry, bool check_for_duplicates);
@@ -113,11 +112,6 @@ public:
   }
 
   static void record_result(const s2 classpath_index, InstanceKlass* result);
-  static InstanceKlass* load_class(Symbol* h_name, const char* path, TRAPS);
-  static InstanceKlass* load_class_impl(Symbol* h_name, const char* path, TRAPS);
-  static Handle create_url_classloader(Symbol* path, TRAPS);
-  static Handle create_and_add_url_classloader(Symbol* path, TRAPS);
-  static Handle get_url_classloader(Symbol* path, TRAPS);
   static void set_has_app_classes() {
     _has_app_classes = true;
   }
