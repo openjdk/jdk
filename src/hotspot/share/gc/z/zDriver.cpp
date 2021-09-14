@@ -200,6 +200,37 @@ public:
   }
 };
 
+static uint select_active_worker_threads_dynamic(const ZDriverRequest& request) {
+  // Use requested number of worker threads
+  return request.nworkers();
+}
+
+static uint select_active_worker_threads_static(const ZDriverRequest& request) {
+  const GCCause::Cause cause = request.cause();
+  const uint nworkers = request.nworkers();
+
+  // Boost number of worker threads if implied by the GC cause
+  if (cause == GCCause::_wb_full_gc ||
+      cause == GCCause::_java_lang_system_gc ||
+      cause == GCCause::_metadata_GC_clear_soft_refs ||
+      cause == GCCause::_z_major_allocation_stall) {
+    // Boost
+    const uint boosted_nworkers = MAX2(nworkers, ParallelGCThreads);
+    return boosted_nworkers;
+  }
+
+  // Use requested number of worker threads
+  return nworkers;
+}
+
+static uint select_active_worker_threads(const ZDriverRequest& request) {
+  if (UseDynamicNumberOfGCThreads) {
+    return select_active_worker_threads_dynamic(request);
+  } else {
+    return select_active_worker_threads_static(request);
+  }
+}
+
 // Macro to execute a termination check after a concurrent phase. Note
 // that it's important that the abortion check comes after the call
 // to the function f, since we can't abort between pause_relocate_start()
@@ -390,6 +421,12 @@ public:
       _tracer(ZCollectorId::_minor) {
     // Update statistics
     ZHeap::heap()->minor_collector()->stat_cycle()->at_start();
+
+    ZMinorCollector* collector = ZHeap::heap()->minor_collector();
+
+    // Select number of worker threads to use
+    const uint nworkers = select_active_worker_threads(request);
+    collector->set_active_workers(nworkers);
   }
 
   ~ZDriverMinorGCScope() {
@@ -401,7 +438,7 @@ public:
 };
 
 void ZDriverMinor::gc(const ZDriverRequest& request) {
-  ZDriverMinorGCScope scope(request.cause());
+  ZDriverMinorGCScope scope(request);
 
   // Phase 1: Pause Mark Start
   pause_mark_start();
@@ -477,10 +514,17 @@ public:
 
     ZCollectedHeap::heap()->increment_total_collections(true /* full */);
 
-    ZHeap::heap()->major_collector()->mark_start();
+    ZMinorCollector* minor_collector = ZHeap::heap()->minor_collector();
+    ZMajorCollector* major_collector = ZHeap::heap()->major_collector();
 
-    ZHeap::heap()->minor_collector()->mark_start();
-    ZHeap::heap()->minor_collector()->skip_mark_start();
+    major_collector->mark_start();
+
+    // Active workers is expected to be set in mark_start. It isn't set yet,
+    // but will be set to ConcGCThreads. We set it explicitly now to match
+    // the expectations.
+    minor_collector->set_active_workers(ConcGCThreads);
+    minor_collector->mark_start();
+    minor_collector->skip_mark_start();
     return true;
   }
 };
@@ -742,37 +786,6 @@ static bool should_clear_soft_references(const ZDriverRequest& request) {
 
   // Don't clear
   return false;
-}
-
-static uint select_active_worker_threads_dynamic(const ZDriverRequest& request) {
-  // Use requested number of worker threads
-  return request.nworkers();
-}
-
-static uint select_active_worker_threads_static(const ZDriverRequest& request) {
-  const GCCause::Cause cause = request.cause();
-  const uint nworkers = request.nworkers();
-
-  // Boost number of worker threads if implied by the GC cause
-  if (cause == GCCause::_wb_full_gc ||
-      cause == GCCause::_java_lang_system_gc ||
-      cause == GCCause::_metadata_GC_clear_soft_refs ||
-      cause == GCCause::_z_major_allocation_stall) {
-    // Boost
-    const uint boosted_nworkers = MAX2(nworkers, ParallelGCThreads);
-    return boosted_nworkers;
-  }
-
-  // Use requested number of worker threads
-  return nworkers;
-}
-
-static uint select_active_worker_threads(const ZDriverRequest& request) {
-  if (UseDynamicNumberOfGCThreads) {
-    return select_active_worker_threads_dynamic(request);
-  } else {
-    return select_active_worker_threads_static(request);
-  }
 }
 
 class ZDriverMajorGCScope : public StackObj {
