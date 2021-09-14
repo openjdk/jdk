@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,9 +126,6 @@ public class DocTreeMaker implements DocTreeFactory {
      */
     public int pos = Position.NOPOS;
 
-    /** Access to diag factory for ErroneousTrees. */
-    private final JCDiagnostic.Factory diags;
-
     private final JavacTrees trees;
 
     /** Utility class to parse reference signatures. */
@@ -138,7 +135,6 @@ public class DocTreeMaker implements DocTreeFactory {
      */
     protected DocTreeMaker(Context context) {
         context.put(treeMakerKey, this);
-        diags = JCDiagnostic.Factory.instance(context);
         this.pos = Position.NOPOS;
         trees = JavacTrees.instance(context);
         referenceParser = new ReferenceParser(ParserFactory.instance(context));
@@ -150,13 +146,6 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocTreeMaker at(int pos) {
         this.pos = pos;
-        return this;
-    }
-
-    /** Reassign current position.
-     */
-    public DocTreeMaker at(DiagnosticPosition pos) {
-        this.pos = (pos == null ? Position.NOPOS : pos.getStartPosition());
         return this;
     }
 
@@ -285,12 +274,6 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCErroneous newErroneousTree(String text, Diagnostic<JavaFileObject> diag) {
         DCErroneous tree = new DCErroneous(text, (JCDiagnostic) diag);
-        tree.pos = pos;
-        return tree;
-    }
-
-    public DCErroneous newErroneousTree(String text, DiagnosticSource diagSource, String code, Object... args) {
-        DCErroneous tree = new DCErroneous(text, diags, diagSource, code, args);
         tree.pos = pos;
         return tree;
     }

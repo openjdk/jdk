@@ -1,12 +1,12 @@
 EndWithIdentifierTest.java:17: error: syntax error in reference
     /**{@link*/
-       ^
+             ^
 EndWithIdentifierTest.java:22: error: reference not found
      * @see List*/
             ^
 EndWithIdentifierTest.java:25: error: semicolon missing
     /**&amp*/
-       ^
+          ^
 EndWithIdentifierTest.java:28: error: malformed HTML
     /**<a*/
        ^
