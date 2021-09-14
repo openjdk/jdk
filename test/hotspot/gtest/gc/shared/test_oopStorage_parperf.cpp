@@ -76,9 +76,7 @@ WorkGang* OopStorageParIterPerf::_workers = NULL;
 
 WorkGang* OopStorageParIterPerf::workers() const {
   if (_workers == NULL) {
-    WorkGang* wg = new WorkGang("OopStorageParIterPerf workers",
-                                _num_workers,
-                                false);
+    WorkGang* wg = new WorkGang("OopStorageParIterPerf workers", _num_workers);
     wg->initialize_workers();
     wg->update_active_workers(_num_workers);
     _workers = wg;

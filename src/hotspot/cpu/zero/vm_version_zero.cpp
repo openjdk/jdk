@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,6 +44,11 @@ void VM_Version::initialize() {
     warning("Prefetching is not available for a Zero VM");
   }
   FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
+
+  // If lock diagnostics is needed, always call to runtime
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    FLAG_SET_DEFAULT(UseHeavyMonitors, true);
+  }
 
   // Not implemented
   UNSUPPORTED_OPTION(CriticalJNINatives);
