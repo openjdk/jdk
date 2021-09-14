@@ -1916,7 +1916,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
     }
     // Calculate dumper and writer threads number.
     _num_writer_threads = num_total - _num_dumper_threads;
-    // If dumper threads number is zero, only the VMThread works as a dumper.
+    // If dumper threads number is 1, only the VMThread works as a dumper.
     // If dumper threads number is equal to active workers, need at lest one worker thread as writer.
     if (_num_dumper_threads > 0 && _num_writer_threads == 0) {
       _num_writer_threads = 1;
@@ -1925,7 +1925,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
     // Number of dumper threads that only iterate heap.
     uint _heap_only_dumper_threads = _num_dumper_threads - 1 /* VMDumper thread */;
     // Prepare parallel writer.
-    if (_num_dumper_threads > 0) {
+    if (_num_dumper_threads > 1) {
       ParDumpWriter::before_work();
       _dumper_controller = new (std::nothrow) DumperController(_heap_only_dumper_threads);
       _poi = Universe::heap()->parallel_object_iterator(_num_dumper_threads);
@@ -1933,7 +1933,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
   }
 
   void finish_parallel_dump() {
-    if (_num_dumper_threads > 0) {
+    if (_num_dumper_threads > 1) {
       ParDumpWriter::after_work();
     }
   }
@@ -1992,7 +1992,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
     _klass_map = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
     _stack_traces = NULL;
     _num_threads = 0;
-    _num_dumper_threads = num_dump_threads - 1; // consider vm thread.
+    _num_dumper_threads = num_dump_threads;
     _dumper_controller = NULL;
     _poi = NULL;
     _large_object_list = new (std::nothrow) HeapDumpLargeObjectList();
@@ -2282,7 +2282,7 @@ void VM_HeapDumper::work(uint worker_id) {
       writer()->writer_loop();
       return;
     }
-    if (_num_dumper_threads >= 1 && get_worker_type(worker_id) == DumperType) {
+    if (_num_dumper_threads > 1 && get_worker_type(worker_id) == DumperType) {
       _dumper_controller->wait_for_start_signal();
     }
   } else {
@@ -2340,7 +2340,7 @@ void VM_HeapDumper::work(uint worker_id) {
   // segment is started.
   // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
   // of the heap dump.
-  if (_num_dumper_threads == 0) {
+  if (_num_dumper_threads == 1) {
     HeapObjectDumper obj_dumper(writer());
     Universe::heap()->object_iterate(&obj_dumper);
   } else {

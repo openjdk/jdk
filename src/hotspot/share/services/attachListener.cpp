@@ -251,7 +251,7 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(path, out, (int)level, (uint)parallel_thread_num);
+    dumper.dump(path, out, (int)level, false, (uint)parallel_thread_num);
   }
   return JNI_OK;
 }
