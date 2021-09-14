@@ -30,26 +30,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 import javax.swing.AbstractAction;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JPanel;
 import javax.swing.JCheckBox;
-import javax.swing.JTextField;
-import javax.swing.JInternalFrame;
-import javax.swing.JScrollPane;
-import javax.swing.JLabel;
 import javax.swing.JDesktopPane;
-import javax.swing.BoxLayout;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Insets;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 
 /**

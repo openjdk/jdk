@@ -30,14 +30,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JColorChooser;
-import javax.swing.JDialog;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JColorChooser;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
 
 import java.awt.Color;
 import java.awt.Component;

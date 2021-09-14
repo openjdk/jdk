@@ -30,20 +30,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
-import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkEvent.EventType;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-import javax.swing.text.html.HTMLFrameHyperlinkEvent;
 import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLFrameHyperlinkEvent;
 
 import java.awt.BorderLayout;
 import java.io.IOException;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Html Demo

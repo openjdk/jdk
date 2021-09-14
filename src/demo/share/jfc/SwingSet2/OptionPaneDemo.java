@@ -30,16 +30,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-import javax.swing.Action;
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JTextField;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.BoxLayout;
+import javax.swing.JTextField;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;

@@ -30,18 +30,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+import javax.swing.BoundedRangeModel;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import javax.swing.BoxLayout;
-import javax.swing.BoundedRangeModel;
-import javax.swing.DefaultBoundedRangeModel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;

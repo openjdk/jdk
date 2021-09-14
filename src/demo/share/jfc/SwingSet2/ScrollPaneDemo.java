@@ -30,11 +30,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JPanel;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 

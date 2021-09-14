@@ -30,16 +30,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+import javax.accessibility.AccessibleRelation;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JPanel;
-import javax.swing.JLabel;
 import javax.swing.JComboBox;
-import javax.swing.BoxLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.border.BevelBorder;
-import javax.accessibility.AccessibleRelation;
 
 import java.awt.BorderLayout;
 import java.awt.Component;

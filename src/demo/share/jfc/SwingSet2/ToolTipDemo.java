@@ -30,16 +30,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.BoxLayout;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Polygon;
 import java.awt.Point;
+import java.awt.Polygon;
 
 /**
  * ToolTip Demo

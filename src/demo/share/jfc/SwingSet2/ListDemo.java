@@ -30,20 +30,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-import javax.swing.Action;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractListModel;
-import javax.swing.DefaultListCellRenderer;
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
-import javax.swing.JList;
 import javax.swing.JCheckBox;
-import javax.swing.JScrollPane;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
