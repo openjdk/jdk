@@ -30,6 +30,8 @@
 #include "cds/filemap.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#include <cstddef>
+
 CDSConst CDSConstants::offsets[] = {
   { "CDSFileMapHeaderBase::_magic",           offset_of(CDSFileMapHeaderBase, _magic)           },
   { "CDSFileMapHeaderBase::_crc",             offset_of(CDSFileMapHeaderBase, _crc)             },
