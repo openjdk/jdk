@@ -32,9 +32,10 @@ typedef struct {
 } CDSConst;
 
 class CDSConstants : AllStatic {
- public:
+ private:
   static CDSConst offsets[];
   static CDSConst constants[];
+ public:
   static size_t get_cds_constant(const char* name);
   static size_t get_cds_offset(const char* name);
 };
