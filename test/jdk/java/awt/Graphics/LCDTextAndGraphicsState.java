@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6576507
  * @summary Both lines of text should be readable
@@ -165,7 +165,7 @@ public class LCDTextAndGraphicsState extends Component {
         instructionFrame.setVisible(true);
     }
 
-    public static void creatUI() {
+    public static void createUI() {
         Frame f = new Frame("Composite and Text Test");
         f.add(new LCDTextAndGraphicsState(), BorderLayout.CENTER);
         f.pack();
@@ -176,7 +176,7 @@ public class LCDTextAndGraphicsState extends Component {
     public static void main(String[] args) throws InterruptedException {
         countDownLatch = new CountDownLatch(1);
         createInstructionUI();
-        creatUI();
+        createUI();
         if (!countDownLatch.await(15, TimeUnit.MINUTES)) {
             throw new RuntimeException("Timeout : No action was performed on the test UI.");
         }
