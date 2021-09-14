@@ -595,12 +595,14 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
 
   // Register assignments, replicated across 4 clones, v0 ... v23
   //
-  // v0: current state, result of multiply/reduce
+  // v0: input / output: current state, result of multiply/reduce
   // v1: temp
-  // v2: one block of data (the ciphertext)
+  // v2: input: one block of data (the ciphertext)
+  //     also used as a temp once the data has been consumed
   // v3: temp
-  // v4: high part of product
-  // v5: low part ...
+  // v4: output: high part of product
+  // v5: output: low part ...
+  // v6: unused
   //
   // Not replicated:
   //
@@ -633,7 +635,7 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
                            /*temps*/v1, v3, /* reuse b*/v2) .unroll();
 
     // NB: GHASHReduceGenerator also loads the next #unrolls blocks of
-    // data into current state.
+    // data into v0, v0+ofs, the current state.
     GHASHReduceGenerator (this, unrolls,
                           /*result*/v0, /*lo*/v5, /*hi*/v4, p, vzr,
                           /*data*/v2, /*temp*/v3) .unroll();

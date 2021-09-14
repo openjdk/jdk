@@ -2855,39 +2855,48 @@ class StubGenerator: public StubCodeGenerator {
 
     const unsigned char block_size = 16;
     const int bulk_width = 4;
-
+    // NB: bulk_width can be 4 or 8. 8 gives slightly faster
+    // performance with larger data sizes, but it also means that the
+    // fast path isn't used until you have at least 8 blocks, and up
+    // to 127 bytes of data will be executed on the slow path. For
+    // that reason, and also so as not to blow away too much icache, 4
+    // blocks seems like a sensible compromise.
 
     // Algorithm:
     //
-    // int result = len;
-    // while (len-- > 0) {
-    //     if (used >= blockSize) {
-    //         if (len >= bulk_width * blockSize()) {
-    //             CTR_large_block();
-    //             if (len == 0)
-    //                 break; /* goto DONE; */
-    //         }
-    //         for (;;) {
-    //             16ByteVector v0 = counter;
-    //             embeddedCipher.encryptBlock(v0, 0, encryptedCounter, 0);
-    //             used = 0;
-    //             if (len < blockSize)
-    //                 break;  /* goto NEXT */
-    //             16ByteVector v1 = load16Bytes(in, offset);
-    //             v1 = v1 ^ encryptedCounter;
-    //             store16Bytes(out, offset);
-    //             used = blockSize;
-    //             offset += blockSize;
-    //             len -= blockSize;
-    //             if (len == 0)
-    //                 goto DONE;
-    //         }
-    //     }
-    //     NEXT:
-    //     out[outOff++] = (byte)(in[inOff++] ^ encryptedCounter[used++]);
-    // }
-    // DONE:
-    // return result;
+    //    if (len == 0) {
+    //        goto DONE;
+    //    }
+    //    int result = len;
+    //    do {
+    //        if (used >= blockSize) {
+    //            if (len >= bulk_width * blockSize) {
+    //                CTR_large_block();
+    //                if (len == 0)
+    //                    goto DONE;
+    //            }
+    //            for (;;) {
+    //                16ByteVector v0 = counter;
+    //                embeddedCipher.encryptBlock(v0, 0, encryptedCounter, 0);
+    //                used = 0;
+    //                if (len < blockSize)
+    //                    break;    /* goto NEXT */
+    //                16ByteVector v1 = load16Bytes(in, offset);
+    //                v1 = v1 ^ encryptedCounter;
+    //                store16Bytes(out, offset);
+    //                used = blockSize;
+    //                offset += blockSize;
+    //                len -= blockSize;
+    //                if (len == 0)
+    //                    goto DONE;
+    //            }
+    //        }
+    //      NEXT:
+    //        out[outOff++] = (byte)(in[inOff++] ^ encryptedCounter[used++]);
+    //        len--;
+    //    } while (len != 0);
+    //  DONE:
+    //    return result;
     //
     // CTR_large_block()
     //    Wide bulk encryption of whole blocks.
