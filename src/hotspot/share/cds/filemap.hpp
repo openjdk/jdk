@@ -180,8 +180,8 @@ public:
 };
 
 class FileMapHeader: private CDSFileMapHeaderBase {
-  friend class VMStructs;
   friend class CDSConstants;
+  friend class VMStructs;
 
 private:
   size_t _header_size;
