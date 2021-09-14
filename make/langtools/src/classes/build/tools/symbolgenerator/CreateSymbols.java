@@ -123,6 +123,7 @@ import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.InnerClasses_attribute.Info;
 import com.sun.tools.classfile.Method;
 import com.sun.tools.classfile.MethodParameters_attribute;
+import com.sun.tools.classfile.ModuleMainClass_attribute;
 import com.sun.tools.classfile.ModuleResolution_attribute;
 import com.sun.tools.classfile.ModuleTarget_attribute;
 import com.sun.tools.classfile.Module_attribute;
@@ -927,6 +928,12 @@ public class CreateSymbols {
             int targetIdx = addString(cp, header.moduleTarget);
             attributes.put(Attribute.ModuleTarget,
                            new ModuleTarget_attribute(attrIdx, targetIdx));
+        }
+        if (header.moduleMainClass != null) {
+            int attrIdx = addString(cp, Attribute.ModuleMainClass);
+            int targetIdx = addString(cp, header.moduleMainClass);
+            attributes.put(Attribute.ModuleMainClass,
+                           new ModuleMainClass_attribute(attrIdx, targetIdx));
         }
         int attrIdx = addString(cp, Attribute.Module);
         attributes.put(Attribute.Module,
@@ -2294,6 +2301,13 @@ public class CreateSymbols {
                 chd.isSealed = true;
                 break;
             }
+            case Attribute.ModuleMainClass: {
+                ModuleMainClass_attribute moduleMainClass = (ModuleMainClass_attribute) attr;
+                assert feature instanceof ModuleHeaderDescription;
+                ModuleHeaderDescription mhd = (ModuleHeaderDescription) feature;
+                mhd.moduleMainClass = moduleMainClass.getMainClassName(cf.constant_pool);
+                break;
+            }
             default:
                 throw new IllegalStateException("Unhandled attribute: " +
                                                 attrName);
@@ -2731,6 +2745,7 @@ public class CreateSymbols {
         List<ProvidesDescription> provides = new ArrayList<>();
         Integer moduleResolution;
         String moduleTarget;
+        String moduleMainClass;
 
         @Override
         public int hashCode() {
@@ -2743,6 +2758,7 @@ public class CreateSymbols {
             hash = 83 * hash + Objects.hashCode(this.provides);
             hash = 83 * hash + Objects.hashCode(this.moduleResolution);
             hash = 83 * hash + Objects.hashCode(this.moduleTarget);
+            hash = 83 * hash + Objects.hashCode(this.moduleMainClass);
             return hash;
         }
 
@@ -2779,6 +2795,10 @@ public class CreateSymbols {
             }
             if (!Objects.equals(this.moduleResolution,
                                 other.moduleResolution)) {
+                return false;
+            }
+            if (!Objects.equals(this.moduleMainClass,
+                                other.moduleMainClass)) {
                 return false;
             }
             return true;
@@ -2818,6 +2838,8 @@ public class CreateSymbols {
                 output.append(" resolution " +
                               quote(Integer.toHexString(moduleResolution),
                                     true));
+            if (moduleMainClass != null)
+                output.append(" moduleMainClass " + quote(moduleMainClass, true));
             writeAttributes(output);
             output.append("\n");
             writeInnerClasses(output, baselineVersion, version);
@@ -2861,6 +2883,8 @@ public class CreateSymbols {
                         reader.attributes.get("resolution");
                 moduleResolution = Integer.parseInt(resolutionFlags, 16);
             }
+
+            moduleMainClass = reader.attributes.get("moduleMainClass");
 
             readAttributes(reader);
             reader.moveNext();
