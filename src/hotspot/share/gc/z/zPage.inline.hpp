@@ -320,6 +320,20 @@ inline size_t ZPage::live_bytes() const {
   return _livemap.live_bytes();
 }
 
+template <typename Function>
+inline void ZPage::object_iterate(Function function) {
+  auto do_bit = [&](BitMap::idx_t index) -> bool {
+    const oop obj = object_from_bit_index(index);
+
+    // Apply function
+    function(obj);
+
+    return true;
+  };
+
+  _livemap.iterate(generation_id(), do_bit);
+}
+
 inline void ZPage::remember(volatile zpointer* p) {
   const zaddress addr = to_zaddress((uintptr_t)p);
   const uintptr_t l_offset = local_offset(addr);

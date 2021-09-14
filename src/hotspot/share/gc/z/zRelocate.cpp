@@ -940,21 +940,6 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   _queue.clear();
 }
 
-// FIXME: Temporary here because of accessBackend.inline.hpp circular dependencies
-template <typename Function>
-inline void ZPage::object_iterate(Function function) {
-  auto do_bit = [&](BitMap::idx_t index) -> bool {
-    const oop obj = object_from_bit_index(index);
-
-    // Apply function
-    function(obj);
-
-    return true;
-  };
-
-  _livemap.iterate(generation_id(), do_bit);
-}
-
 class ZPromotePagesTask : public ZTask {
 private:
   ZArrayParallelIterator<ZPage*> _iter;
