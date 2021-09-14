@@ -1890,6 +1890,8 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
   static const size_t VMDumperType = 0;
   static const size_t WriterType = 1;
   static const size_t DumperType = 2;
+  // worker id of VMDumper thread.
+  static const size_t VMDumperWorkerId = 0;
 
   size_t get_worker_type(uint worker_id) {
     assert(_num_writer_threads >= 1, "Must be at least one writers");
@@ -1921,7 +1923,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
       _num_dumper_threads = num_total - _num_writer_threads;
     }
     // Number of dumper threads that only iterate heap.
-    uint _heap_only_dumper_threads = _num_dumper_threads - 1;
+    uint _heap_only_dumper_threads = _num_dumper_threads - 1 /* VMDumper thread */;
     // Prepare parallel writer.
     if (_num_dumper_threads > 0) {
       ParDumpWriter::before_work();
