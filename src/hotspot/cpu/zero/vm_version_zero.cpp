@@ -45,6 +45,11 @@ void VM_Version::initialize() {
   }
   FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
 
+  // If lock diagnostics is needed, always call to runtime
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    FLAG_SET_DEFAULT(UseHeavyMonitors, true);
+  }
+
   // Not implemented
   UNSUPPORTED_OPTION(CriticalJNINatives);
 }

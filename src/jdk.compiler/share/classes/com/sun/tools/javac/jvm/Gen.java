@@ -1510,8 +1510,8 @@ public class Gen extends JCTree.Visitor {
     //where
         /** Generate code for a try or synchronized statement
          *  @param body      The body of the try or synchronized statement.
-         *  @param catchers  The lis of catch clauses.
-         *  @param env       the environment current for the body.
+         *  @param catchers  The list of catch clauses.
+         *  @param env       The current environment of the body.
          */
         void genTry(JCTree body, List<JCCatch> catchers, Env<GenContext> env) {
             int limit = code.nextreg;
@@ -1523,7 +1523,13 @@ public class Gen extends JCTree.Visitor {
             code.statBegin(TreeInfo.endPos(body));
             genFinalizer(env);
             code.statBegin(TreeInfo.endPos(env.tree));
-            Chain exitChain = code.branch(goto_);
+            Chain exitChain;
+            boolean actualTry = env.tree.hasTag(TRY);
+            if (startpc == endpc && actualTry) {
+                exitChain = code.branch(dontgoto);
+            } else {
+                exitChain = code.branch(goto_);
+            }
             endFinalizerGap(env);
             env.info.finalize.afterBody();
             boolean hasFinalizer =
@@ -1541,7 +1547,7 @@ public class Gen extends JCTree.Visitor {
                 }
                 endFinalizerGap(env);
             }
-            if (hasFinalizer) {
+            if (hasFinalizer && (startpc != endpc || !actualTry)) {
                 // Create a new register segment to avoid allocating
                 // the same variables in finalizers and other statements.
                 code.newRegSegment();

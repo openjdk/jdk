@@ -561,7 +561,7 @@ void ParHeapInspectTask::work(uint worker_id) {
   _poi->object_iterate(&ric, worker_id);
   missed_count = ric.missed_count();
   {
-    MutexLocker x(&_mutex);
+    MutexLocker x(&_mutex, Mutex::_no_safepoint_check_flag);
     merge_success = _shared_cit->merge(&cit);
   }
   if (merge_success) {

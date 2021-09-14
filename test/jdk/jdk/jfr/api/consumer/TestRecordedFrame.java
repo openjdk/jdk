@@ -43,7 +43,7 @@ import jdk.test.lib.jfr.SimpleEvent;
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -Xint  -XX:+UseInterpreter -Dinterpreted=true  jdk.jfr.api.consumer.TestRecordedFrame
- * @run main/othervm -Xcomp -XX:-UseInterpreter -Dinterpreted=false jdk.jfr.api.consumer.TestRecordedFrame
+ * @run main/othervm/timeout=180 -Xcomp -XX:-UseInterpreter -Dinterpreted=false jdk.jfr.api.consumer.TestRecordedFrame
  */
 public final class TestRecordedFrame {
 

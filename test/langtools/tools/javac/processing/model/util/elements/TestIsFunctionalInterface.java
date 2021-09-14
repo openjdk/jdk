@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
-import static javax.tools.Diagnostic.Kind.*;
 import static javax.tools.StandardLocation.*;
 import java.io.*;
 
@@ -57,14 +56,13 @@ public class TestIsFunctionalInterface extends JavacTestingAbstractProcessor {
                 System.out.println(type);
                 if (elements.isFunctionalInterface(type) !=
                     type.getAnnotation(ExpectedIsFunInt.class).value()) {
-                    messager.printMessage(ERROR,
-                                          "Mismatch between expected and computed isFunctionalInterface",
-                                          type);
+                    messager.printError("Mismatch between expected and computed isFunctionalInterface",
+                                        type);
                 }
             }
         } else {
             if (count <= 0)
-                messager.printMessage(ERROR, "No types with ExpectedIsFunInt processed.");
+                messager.printError("No types with ExpectedIsFunInt processed.");
             }
     return true;
     }

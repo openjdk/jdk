@@ -1382,14 +1382,6 @@ const char* os::dll_file_extension() { return ".so"; }
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
-static bool file_exists(const char* filename) {
-  struct stat statbuf;
-  if (filename == NULL || strlen(filename) == 0) {
-    return false;
-  }
-  return os::stat(filename, &statbuf) == 0;
-}
-
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
@@ -2433,7 +2425,7 @@ static void print_sys_devices_cpu_info(outputStream* st, char* buf, size_t bufle
       snprintf(hbuf_type, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/type", i);
       snprintf(hbuf_size, 60, "/sys/devices/system/cpu/cpu0/cache/index%u/size", i);
       snprintf(hbuf_coherency_line_size, 80, "/sys/devices/system/cpu/cpu0/cache/index%u/coherency_line_size", i);
-      if (file_exists(hbuf_level)) {
+      if (os::file_exists(hbuf_level)) {
         _print_ascii_file_h("cache level", hbuf_level, st);
         _print_ascii_file_h("cache type", hbuf_type, st);
         _print_ascii_file_h("cache size", hbuf_size, st);
@@ -3374,6 +3366,9 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 
     if (mincore((address)stack_extent, os::vm_page_size(), vec) == -1) {
       // Fallback to slow path on all errors, including EAGAIN
+      assert((uintptr_t)addr >= stack_extent,
+             "Sanity: addr should be larger than extent, " PTR_FORMAT " >= " PTR_FORMAT,
+             p2i(addr), stack_extent);
       stack_extent = (uintptr_t) get_stack_commited_bottom(
                                                            os::Linux::initial_thread_stack_bottom(),
                                                            (size_t)addr - stack_extent);

@@ -70,28 +70,28 @@ abstract class KeyWrapCipher extends CipherSpi {
     // for AES/KW/NoPadding
     public static final class AES_KW_PKCS5Padding extends KeyWrapCipher {
         public AES_KW_PKCS5Padding() {
-            super(new AESKeyWrap(), new PKCS5Padding(16), -1);
+            super(new AESKeyWrap(), new PKCS5Padding(8), -1);
         }
     }
 
     // for AES_128/KW/NoPadding
     public static final class AES128_KW_PKCS5Padding extends KeyWrapCipher {
         public AES128_KW_PKCS5Padding() {
-            super(new AESKeyWrap(), new PKCS5Padding(16), 16);
+            super(new AESKeyWrap(), new PKCS5Padding(8), 16);
         }
     }
 
     // for AES_192/KW/NoPadding
     public static final class AES192_KW_PKCS5Padding extends KeyWrapCipher {
         public AES192_KW_PKCS5Padding() {
-            super(new AESKeyWrap(), new PKCS5Padding(16), 24);
+            super(new AESKeyWrap(), new PKCS5Padding(8), 24);
         }
     }
 
     // for AES_256/KW/NoPadding
     public static final class AES256_KW_PKCS5Padding extends KeyWrapCipher {
         public AES256_KW_PKCS5Padding() {
-            super(new AESKeyWrap(), new PKCS5Padding(16), 32);
+            super(new AESKeyWrap(), new PKCS5Padding(8), 32);
         }
     }
 
@@ -230,13 +230,11 @@ abstract class KeyWrapCipher extends CipherSpi {
     }
 
     /**
-     * Returns the block size (in bytes). i.e. 16 bytes.
-     *
-     * @return the block size (in bytes), i.e. 16 bytes.
+     * @return the block size (in bytes)
      */
     @Override
     protected int engineGetBlockSize() {
-        return cipher.getBlockSize();
+        return 8;
     }
 
     /**
