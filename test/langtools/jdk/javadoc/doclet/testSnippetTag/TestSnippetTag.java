@@ -243,8 +243,7 @@ public class TestSnippetTag extends JavadocTester {
         class Capture {
             static final AtomicInteger counter = new AtomicInteger();
 
-            record TestCase(String input, String expectedError) {
-            }
+            record TestCase(String input, String expectedError) { }
 
             void testErrors(List<TestCase> testCases) throws IOException {
                 List<String> inputs = testCases.stream().map(s -> s.input).toList();
@@ -2143,5 +2142,89 @@ public class TestSnippetTag extends JavadocTester {
                         %s</pre>
                         </div>""".formatted(index, t.expectedOutput()));
         });
+    }
+
+    @Test
+    public void testInvalidRegexDiagnostics(Path base) throws Exception {
+
+        record TestCase(String input, String expectedError) { }
+
+        // WARNING: debugging these test cases by reading .jtr files might prove
+        // confusing. This is because of how jtharness, which is used by jtreg,
+        // represents special symbols it encounters in standard streams. While
+        // CR, LR and TAB are output as they are, \ is output as \\ and the rest
+        // of the escape sequences are output using the \\uxxxx notation. This
+        // might affect relative symbol positioning on adjacent lines. For
+        // example, it might be hard to judge the true (i.e. console) position
+        // of the caret. Try using -show:System.out jtreg option to remediate
+        // that.
+
+        final var testCases = List.of(
+                new TestCase("""
+{@snippet :
+hello there //   @highlight   regex ="\t**"
+}""",
+                             """
+error: snippet markup error: "Dangling meta character '*'"
+hello there //   @highlight   regex ="\t**"
+                                      \t ^
+"""),
+                new TestCase("""
+{@snippet :
+hello there //   @highlight   regex ="\\t**"
+}""",
+                        """
+error: snippet markup error: "Dangling meta character '*'"
+hello there //   @highlight   regex ="\\t**"
+                                         ^
+"""),
+                new TestCase("""
+{@snippet :
+hello there // @highlight regex="\\.\\*\\+\\E"
+}""",
+                             """
+error: snippet markup error: "Illegal/unsupported escape sequence"
+hello there // @highlight regex="\\.\\*\\+\\E"
+                                 \s\s\s\s   ^
+"""), // use \s to counteract shift introduced by \\ so as to visually align ^ right below E
+                new TestCase("""
+{@snippet :
+hello there //   @highlight  type="italics" regex ="  ["
+}""",
+                        """
+error: snippet markup error: "Unclosed character class"
+hello there //   @highlight  type="italics" regex ="  ["
+                                                      ^
+""")
+                );
+
+        List<String> inputs = testCases.stream().map(s -> s.input).toList();
+        StringBuilder methods = new StringBuilder();
+        forEachNumbered(inputs, (i, n) -> {
+            methods.append(
+                    """
+
+                    /**
+                    %s*/
+                    public void case%s() {}
+                    """.formatted(i, n));
+        });
+
+        String classString =
+                """
+                public class A {
+                %s
+                }
+                """.formatted(methods.toString());
+
+        Path src = Files.createDirectories(base.resolve("src"));
+        tb.writeJavaFiles(src, classString);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.ERROR);
+        checkOrder(Output.OUT, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
+        checkNoCrashes();
     }
 }

@@ -289,21 +289,20 @@ public final class Parser {
             // this Pattern.compile *should not* throw an exception
             pattern = Pattern.compile(defaultRegex);
         } else {
-            // Unlike string literals in Java source, attribute values in
-            // snippet markup do not use escapes. This is why indices of
-            // characters in the regex pattern directly map to their
-            // corresponding positions in snippet source.
             final String value = regex.get().value();
-            assert value.equals(Pattern.compile(value).pattern()) : value;
             try {
                 pattern = Pattern.compile(value);
             } catch (PatternSyntaxException e) {
+                // Unlike string literals in Java source, attribute values in
+                // snippet markup do not use escape sequences. This is why
+                // indices of characters in the regex pattern directly map to
+                // their corresponding positions in snippet source. Refine
+                // position using e.getIndex() only if that index is relevant to
+                // the regex in the attribute value. Index might be irrelevant
+                // because it refers to an internal representation of regex,
+                // e.getPattern(), which might be a normalized or partial view
+                // of the original pattern.
                 int pos = offset + regex.get().valueStartPosition();
-                // Refine position using e.getIndex() only if that index is
-                // relevant to the regex in the attribute value. Index might be
-                // irrelevant because it refers to an internal representation of
-                // regex, e.getPattern(), which might be a normalized or partial
-                // view of the original pattern.
                 if (e.getIndex() > -1 && value.equals(e.getPattern())) {
                     pos += e.getIndex();
                 }
