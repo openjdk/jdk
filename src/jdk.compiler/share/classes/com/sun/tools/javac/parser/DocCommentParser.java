@@ -1063,16 +1063,10 @@ public class DocCommentParser {
     }
 
     protected boolean isHorizontalWhitespace(char ch) {
-        // Should `\f` (FORM FEED) break a line? Relevant specifications have
-        // different opinions on this:
-        //
-        //      No: https://docs.oracle.com/javase/specs/jls/se14/html/jls-3.html#jls-3.4
-        //     Yes: https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf, "5.8 Newline Guidelines"
-        //      No: https://html.spec.whatwg.org/multipage/syntax.html#newlines
-        //
-        // This parser treats `\f` as a line break (see `nextChar`). To be
-        // consistent with that behaviour, this method does the same.
-        return ch == ' ' || ch == '\t' /* || ch == '\f'*/;
+        // This parser treats `\f` as a line break (see `nextChar`).
+        // To be consistent with that behaviour, this method does the same.
+        // (see JDK-8273809)
+        return ch == ' ' || ch == '\t';
     }
 
     protected void skipWhitespace() {

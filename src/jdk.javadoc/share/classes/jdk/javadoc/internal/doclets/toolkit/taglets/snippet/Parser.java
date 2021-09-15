@@ -82,7 +82,6 @@ public final class Parser {
 
     // Incomplete actions waiting for their complementary @end
     private final Regions regions = new Regions();
-    // List of tags; consumed from top to bottom
     private final Queue<Tag> tags = new LinkedList<>();
 
     public Result parse(String source) throws ParseException {

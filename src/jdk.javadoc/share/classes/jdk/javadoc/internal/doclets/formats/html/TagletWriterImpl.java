@@ -401,7 +401,7 @@ public class TagletWriterImpl extends TagletWriter {
                         t = l.target();
                         e = getLinkedElement(element, t);
                         if (e == null) {
-                            // diagnostic output
+                            // TODO: diagnostic output
                         }
                     } else if (s instanceof Style.Markup) {
                     } else {
@@ -441,7 +441,7 @@ public class TagletWriterImpl extends TagletWriter {
      * Returns the element that is linked from the context of the referrer using
      * the provided signature; returns null if such element could not be found.
      *
-     * This method is to be used when it's the target of the link that is
+     * This method is to be used when it is the target of the link that is
      * important, not the container of the link (e.g. was it an @see,
      * @link/@linkplain or @snippet tags, etc.)
      */

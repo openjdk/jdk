@@ -185,7 +185,7 @@ public class SnippetTaglet extends BaseTaglet {
             }
         }
 
-        // FIXME cache parsed external snippet (WeakHashMap)
+        // TODO cache parsed external snippet (WeakHashMap)
 
         StyledText inlineSnippet = null;
         StyledText externalSnippet = null;
@@ -197,7 +197,7 @@ public class SnippetTaglet extends BaseTaglet {
         } catch (ParseException e) {
             var path = writer.configuration().utils.getCommentHelper(holder)
                 .getDocTreePath(snippetTag.getBody());
-            // FIXME: there should be a method in Messages; that method should mirror Reporter's; use that method instead accessing Reporter.
+            // TODO: there should be a method in Messages; that method should mirror Reporter's; use that method instead accessing Reporter.
             String msg = writer.configuration().getDocResources()
                 .getText("doclet.snippet.markup", e.getMessage());
             writer.configuration().getReporter().print(Diagnostic.Kind.ERROR,
