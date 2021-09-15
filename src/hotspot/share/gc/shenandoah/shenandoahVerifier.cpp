@@ -1052,7 +1052,7 @@ void ShenandoahVerifier::verify_after_fullgc() {
   );
 }
 
-class ShenandoahVerifyNoForwared : public OopClosure {
+class ShenandoahVerifyNoForwared : public BasicOopIterateClosure {
 private:
   template <class T>
   void do_oop_work(T* p) {
@@ -1072,7 +1072,7 @@ public:
   void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-class ShenandoahVerifyInToSpaceClosure : public OopClosure {
+class ShenandoahVerifyInToSpaceClosure : public BasicOopIterateClosure {
 private:
   template <class T>
   void do_oop_work(T* p) {

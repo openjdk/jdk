@@ -810,27 +810,6 @@ ShenandoahScanRemembered<RememberedSet>::cluster_for_addr(HeapWordImpl **addr) {
   return result;
 }
 
-class ShenandoahOopIterateAdapter : public BasicOopIterateClosure {
- private:
-  OopClosure* _cl;
- public:
-  explicit ShenandoahOopIterateAdapter(OopClosure* cl) : _cl(cl) {}
-
-  void do_oop(oop* o) {
-    _cl->do_oop(o);
-  }
-
-  void do_oop(narrowOop* o) {
-    _cl->do_oop(o);
-  }
-};
-
-template<typename RememberedSet>
-inline void ShenandoahScanRemembered<RememberedSet>::oops_do(OopClosure* cl) {
-  ShenandoahOopIterateAdapter adapter(cl);
-  roots_do(&adapter);
-}
-
 template<typename RememberedSet>
 inline void ShenandoahScanRemembered<RememberedSet>::roots_do(OopIterateClosure* cl) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
