@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ class JImageTask {
             if (options.version || options.fullVersion) {
                 if (options.task == null && !unhandled.isEmpty()) {
                     throw TASK_HELPER.newBadArgs("err.not.a.task",
-                        Stream.of(args).collect(Collectors.joining(" ")));
+                        String.join(" ", args));
                 }
 
                 TASK_HELPER.showVersion(options.fullVersion);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,15 +384,13 @@ public class JShellTool implements MessageHandler {
                 return parse(oset);
             } catch (OptionException ex) {
                 if (ex.options().isEmpty()) {
-                    msg("jshell.err.opt.invalid", stream(args).collect(joining(", ")));
+                    msg("jshell.err.opt.invalid", String.join(", ", args));
                 } else {
                     boolean isKnown = parser.recognizedOptions().containsKey(ex.options().iterator().next());
                     msg(isKnown
                             ? "jshell.err.opt.arg"
                             : "jshell.err.opt.unknown",
-                            ex.options()
-                            .stream()
-                            .collect(joining(", ")));
+                            String.join(", ", ex.options()));
                 }
                 exitCode = 1;
                 return null;
@@ -2062,16 +2060,14 @@ public class JShellTool implements MessageHandler {
         if (matches.length == 0) {
             // There are no matching sub-commands
             errormsg("jshell.err.arg", cmd, sub);
-            fluffmsg("jshell.msg.use.one.of", Arrays.stream(subs)
-                    .collect(Collectors.joining(", "))
+            fluffmsg("jshell.msg.use.one.of", String.join(", ", subs)
             );
             return null;
         }
         if (matches.length > 1) {
             // More than one sub-command matches the initial characters provided
             errormsg("jshell.err.sub.ambiguous", cmd, sub);
-            fluffmsg("jshell.msg.use.one.of", Arrays.stream(matches)
-                    .collect(Collectors.joining(", "))
+            fluffmsg("jshell.msg.use.one.of", String.join(", ", matches)
             );
             return null;
         }

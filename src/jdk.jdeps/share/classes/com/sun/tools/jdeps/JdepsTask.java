@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -562,7 +562,7 @@ class JdepsTask {
                       .sorted(Map.Entry.comparingByKey())
                       .forEach(e -> warning("warn.split.package",
                                             e.getKey(),
-                                            e.getValue().stream().collect(joining(" "))));
+                                            String.join(" ", e.getValue())));
             }
 
             // check if any module specified in --add-modules, --require, and -m is missing

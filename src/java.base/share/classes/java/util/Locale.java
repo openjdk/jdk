@@ -2257,7 +2257,7 @@ public final class Locale implements Cloneable, Serializable {
         // If we have no list patterns, compose the list in a simple,
         // non-localized way.
         if (pattern == null) {
-            return Arrays.stream(stringList).collect(Collectors.joining(","));
+            return String.join(",", stringList);
         }
 
         return switch (stringList.length) {

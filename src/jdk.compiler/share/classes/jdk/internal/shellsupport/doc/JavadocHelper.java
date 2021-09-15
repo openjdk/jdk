@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,7 +564,7 @@ public abstract class JavadocHelper implements AutoCloseable {
             for (Entry<int[], List<String>> e : replace.entrySet()) {
                 replacedInheritDoc.delete(e.getKey()[0] - offset, e.getKey()[1] - offset);
                 replacedInheritDoc.insert(e.getKey()[0] - offset,
-                                          e.getValue().stream().collect(Collectors.joining("")));
+                                          String.join("", e.getValue()));
             }
 
             return replacedInheritDoc.toString();

@@ -788,7 +788,7 @@ class ConsoleIOContext extends IOContext {
         public Result perform(String text, int cursor) throws IOException {
             in.getTerminal().writer().println();
             in.getTerminal().writer().println(repl.getResourceString("jshell.console.completion.current.signatures"));
-            in.getTerminal().writer().println(doc.stream().collect(Collectors.joining(LINE_SEPARATOR)));
+            in.getTerminal().writer().println(String.join(LINE_SEPARATOR, doc));
             return Result.FINISH;
         }
 

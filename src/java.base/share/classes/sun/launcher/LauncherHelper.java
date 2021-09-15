@@ -1153,7 +1153,7 @@ public final class LauncherHelper {
             ostream.format("uses %s%n", s);
         }
         for (Provides ps : md.provides()) {
-            String names = ps.providers().stream().collect(Collectors.joining(" "));
+            String names = String.join(" ", ps.providers());
             ostream.format("provides %s with %s%n", ps.service(), names);
 
         }
@@ -1161,7 +1161,7 @@ public final class LauncherHelper {
         // qualified exports
         for (Exports e : md.exports()) {
             if (e.isQualified()) {
-                String who = e.targets().stream().collect(Collectors.joining(" "));
+                String who = String.join(" ", e.targets());
                 ostream.format("qualified exports %s to %s%n", e.source(), who);
             }
         }
@@ -1175,7 +1175,7 @@ public final class LauncherHelper {
                     .collect(Collectors.joining(" "));
             ostream.format("opens %s", sourceAndMods);
             if (opens.isQualified()) {
-                String who = opens.targets().stream().collect(Collectors.joining(" "));
+                String who = String.join(" ", opens.targets());
                 ostream.format(" to %s", who);
             }
             ostream.println();

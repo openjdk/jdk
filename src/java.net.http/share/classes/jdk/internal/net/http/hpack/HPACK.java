@@ -65,7 +65,7 @@ public final class HPACK {
                 LOGGER = new RootLogger(NONE);
                 LOGGER.log(System.Logger.Level.INFO,
                         () -> format("%s value '%s' not recognized (use %s); logging disabled",
-                                     PROPERTY, value, logLevels.keySet().stream().collect(joining(", "))));
+                                     PROPERTY, value, String.join(", ", logLevels.keySet())));
             } else {
                 LOGGER = new RootLogger(l);
                 LOGGER.log(System.Logger.Level.DEBUG,

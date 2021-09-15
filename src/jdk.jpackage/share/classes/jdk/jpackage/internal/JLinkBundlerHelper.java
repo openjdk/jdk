@@ -208,8 +208,7 @@ final class JLinkBundlerHelper {
     }
 
     private static String getStringList(Set<String> strings) {
-        return Matcher.quoteReplacement(strings.stream().collect(
-                Collectors.joining(",")));
+        return Matcher.quoteReplacement(String.join(",", strings));
     }
 
     // The token for "all modules on the module path".
