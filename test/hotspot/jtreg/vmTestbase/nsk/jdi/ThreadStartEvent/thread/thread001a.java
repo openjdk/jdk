@@ -56,8 +56,8 @@ class thread001a {
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         // creating threads
-        threads[0] = new thread001aThread("Thread1");
-        threads[1] = new thread001aThread("Thread2");
+        threads[0] = JDIThreadFactory.newThread(new thread001aThread("Thread1"));
+        threads[1] = JDIThreadFactory.newThread(new thread001aThread("Thread2"));
         threads[1].setDaemon(true);
 
         // lock monitor to prevent threads from finishing after they started
@@ -102,7 +102,7 @@ class thread001a {
     }
 }
 
-class thread001aThread extends Thread {
+class thread001aThread extends JDITask {
     thread001aThread (String name) {
         super(name);
     }

@@ -54,7 +54,7 @@ public class filter_rt001a {
 
     //====================================================== test program
 
-    static filter_rt001aThread1 thread1 = null;
+    static Thread thread1 = null;
 //    static Thread2filter_rt001a thread2 = null;
 
     static filter_rt001aTestClass10 obj10 = new filter_rt001aTestClass10();
@@ -105,8 +105,7 @@ public class filter_rt001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new filter_rt001aThread1("thread1");
-
+                            thread1 = JDIThreadFactory.newThread(new filter_rt001aThread1("thread1"));
                             log1("new filter_rt001a().run1(thread1);");
                             new filter_rt001a().run1(thread1);
 
@@ -160,7 +159,7 @@ class filter_rt001aTestClass11 extends filter_rt001aTestClass10{
     }
 }
 
-class filter_rt001aThread1 extends Thread {
+class filter_rt001aThread1 extends JDITask {
 
     String tName = null;
 

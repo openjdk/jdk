@@ -54,8 +54,8 @@ public class filter001a {
 
     //====================================================== test program
 
-    static Thread1filter001a thread1 = null;
-    static Thread2filter001a thread2 = null;
+    static Thread thread1 = null;
+    static Thread thread2 = null;
 
     //------------------------------------------------------ common section
 
@@ -96,7 +96,7 @@ public class filter001a {
             //------------------------------------------------------  section tested
 
             case 0:
-                thread1 = new Thread1filter001a("thread1");
+                thread1 = JDIThreadFactory.newThread(new Thread1filter001a("thread1"));
 
                 synchronized (lockObj) {
                     threadStart(thread1);
@@ -111,7 +111,7 @@ public class filter001a {
 
 
             case 1:
-                thread2 = new Thread2filter001a("thread2");
+                thread2 = JDIThreadFactory.newThread(new Thread2filter001a("thread2"));
 
                 synchronized (lockObj) {
                     threadStart(thread2);
@@ -161,7 +161,7 @@ public class filter001a {
     }
 }
 
-class Thread1filter001a extends Thread {
+class Thread1filter001a extends JDITask {
 
     class TestClass10{
         void m10() {
@@ -203,7 +203,7 @@ class Thread1filter001a extends Thread {
     }
 }
 
-class Thread2filter001a extends Thread {
+class Thread2filter001a extends JDITask {
 
     class TestClass20{
         void m20() {

@@ -54,7 +54,7 @@ public class filter002a {
 
     //====================================================== test program
 
-    static Thread1filter002a thread1 = null;
+    static Thread thread1 = null;
 
     //------------------------------------------------------ common section
 
@@ -101,7 +101,7 @@ public class filter002a {
 //------------------------------------------------------  section tested
 
                 case 0:
-                thread1 = new Thread1filter002a("thread1");
+                thread1 = JDIThreadFactory.newThread(new Thread1filter002a("thread1"));
                 log1("run1(thread1);");
                 run1(thread1);
 
@@ -143,7 +143,7 @@ public class filter002a {
 
 }
 
-class Thread1filter002a extends Thread {
+class Thread1filter002a extends JDITask {
 
     class TestClass10{
         int var10 = 0;

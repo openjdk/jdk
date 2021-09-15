@@ -54,8 +54,8 @@ public class filter_rt003a {
 
     //====================================================== test program
 
-    static filter_rt003aThread1 thread1 = null;
-    static filter_rt003aThread2 thread2 = null;
+    static Thread thread1 = null;
+    static Thread thread2 = null;
 
     //------------------------------------------------------ common section
 
@@ -84,8 +84,8 @@ public class filter_rt003a {
         filter_rt003aTestClass11 obj1 = new filter_rt003aTestClass11();
         filter_rt003aTestClass21 obj2 = new filter_rt003aTestClass21();
 
-        thread1 = new filter_rt003aThread1("thread1");
-        thread2 = new filter_rt003aThread2("thread2");
+        thread1 = JDIThreadFactory.newThread(new filter_rt003aThread1("thread1"));
+        thread2 = JDIThreadFactory.newThread(new filter_rt003aThread2("thread2"));
 
         log1("debuggee started!");
 
@@ -163,7 +163,7 @@ class filter_rt003aTestClass11 extends filter_rt003aTestClass10{
     }
 }
 
-class filter_rt003aThread1 extends Thread {
+class filter_rt003aThread1 extends JDITask {
 
     String tName = null;
 
@@ -193,7 +193,7 @@ class filter_rt003aTestClass21 extends filter_rt003aTestClass20{
     }
 }
 
-class filter_rt003aThread2 extends Thread {
+class filter_rt003aThread2 extends JDITask {
 
     String tName = null;
 

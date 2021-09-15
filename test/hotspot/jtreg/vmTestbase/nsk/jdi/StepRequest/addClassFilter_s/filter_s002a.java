@@ -54,7 +54,7 @@ public class filter_s002a {
 
     //====================================================== test program
 
-    static Thread1filter_s002a thread1 = null;
+    static Thread thread1 = null;
 
     static TestClass objTC = new TestClass();
 
@@ -98,7 +98,7 @@ public class filter_s002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1filter_s002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1filter_s002a("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -146,7 +146,7 @@ public class filter_s002a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class Thread1filter_s002a extends Thread {
+    static class Thread1filter_s002a extends JDITask {
 
         String tName = null;
         int tNumber;

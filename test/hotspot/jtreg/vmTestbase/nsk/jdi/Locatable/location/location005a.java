@@ -94,8 +94,8 @@ public class location005a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadlocation005a thread2 =
-                             new Threadlocation005a("Thread2");
+                         Thread thread2 =
+                             JDIThreadFactory.newThread(new Threadlocation005a("Thread2"));
                          log1("       thread2 is created");
 
                          label:
@@ -145,7 +145,7 @@ public class location005a {
     }
 }
 
-class Threadlocation005a extends Thread {
+class Threadlocation005a extends JDITask {
 
     public Threadlocation005a(String threadName) {
         super(threadName);

@@ -64,11 +64,11 @@ public class filters001a {
     }
 }
 
-class filters001b extends Thread {
+class filters001b extends JDITask {
 
     static Log log;
     filters001b(String nameObj) {
-        setName(nameObj);
+        super(nameObj);
     }
 
     public void run() {

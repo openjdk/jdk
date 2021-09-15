@@ -98,8 +98,8 @@ public class filter_rt001a {
 
 
                     case 1:
-                            filter_rt001aThread1 thread1 = new filter_rt001aThread1("thread1");
-                            filter_rt001aThread2 thread2 = new filter_rt001aThread2("thread2");
+                            Thread thread1 = JDIThreadFactory.newThread(new filter_rt001aThread1("thread1"));
+                            Thread thread2 = JDIThreadFactory.newThread(new filter_rt001aThread2("thread2"));
 
                             log1("new filter_rt001a().run1(thread1);");
                             new filter_rt001a().run1(thread1);
@@ -155,7 +155,7 @@ class filter_rt001aTestClass10{
 class filter_rt001aTestClass11 extends filter_rt001aTestClass10{
     static int var11 = 0;
 }
-class filter_rt001aThread1 extends Thread {
+class filter_rt001aThread1 extends JDITask {
 
     String tName = null;
 
@@ -178,7 +178,7 @@ class filter_rt001aTestClass20 {
 class filter_rt001aTestClass21 {
     static int var21 = 0;
 }
-class filter_rt001aThread2 extends Thread {
+class filter_rt001aThread2 extends JDITask {
 
     String tName = null;
 

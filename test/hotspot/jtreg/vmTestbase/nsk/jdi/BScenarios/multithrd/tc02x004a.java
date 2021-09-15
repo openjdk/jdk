@@ -38,7 +38,7 @@ public class tc02x004a {
     static Log log;
 
     public final static int checkClassBrkpLine = 79;
-    Thready [] thrds = new Thready [threadCount];
+    Thread[] thrds = new Thread[threadCount];
 
     public static void main (String argv[]) {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
@@ -58,12 +58,12 @@ public class tc02x004a {
 
     tc02x004a() {
         for (int i = 0; i < thrds.length; i++ ) {
-            thrds[i] = new Thready("Thread-" + (i+1));
+            thrds[i] = JDIThreadFactory.newThread(new Thready("Thread-" + (i+1)));
             thrds[i].start();
         }
     }
 
-    static class Thready extends Thread {
+    static class Thready extends JDITask {
         Thready(String name) {
             super(name);
         }

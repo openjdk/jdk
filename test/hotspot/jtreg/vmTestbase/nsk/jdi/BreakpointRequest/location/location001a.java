@@ -54,7 +54,7 @@ public class location001a {
 
     //====================================================== test program
 
-    static Threadlocation001a thread1 = null;
+    static Thread thread1 = null;
 
     static TestClass objTC = new TestClass();
 
@@ -98,7 +98,7 @@ public class location001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Threadlocation001a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Threadlocation001a("thread1"));
                             break;
 
     //-------------------------------------------------    standard end section
@@ -137,7 +137,7 @@ public class location001a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class Threadlocation001a extends Thread {
+    static class Threadlocation001a extends JDITask {
 
         String tName = null;
         int tNumber;

@@ -98,13 +98,13 @@ public class filter_s001a {
 //------------------------------------------------------  section tested
 
                 case 0:
-                Thread1filter_s001a thread1 = new Thread1filter_s001a("thread1");
+                Thread thread1 = JDIThreadFactory.newThread(new Thread1filter_s001a("thread1"));
                 log1("new filter_s001a().run1(thread1);");
                 new filter_s001a().run1(thread1);
                 break;
 
                 case 1:
-                Thread2filter_s001a thread2 = new Thread2filter_s001a("thread2");
+                Thread thread2 = JDIThreadFactory.newThread(new Thread2filter_s001a("thread2"));
                 log1("new filter_s001a().run1(thread2);");
                 new filter_s001a().run1(thread2);
 
@@ -146,7 +146,7 @@ public class filter_s001a {
 
 }
 
-class Thread1filter_s001a extends Thread {
+class Thread1filter_s001a extends JDITask {
 
     class TestClass10{
         int var10 = 0;
@@ -170,7 +170,7 @@ class Thread1filter_s001a extends Thread {
     }
 }
 
-class Thread2filter_s001a extends Thread {
+class Thread2filter_s001a extends JDITask {
 
     String tName = null;
 

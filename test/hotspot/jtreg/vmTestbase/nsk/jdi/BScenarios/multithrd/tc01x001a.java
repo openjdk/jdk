@@ -42,7 +42,7 @@ public class tc01x001a {
     public final static int threadCount = 3;
     private static Log log;
 
-    Thready [] thrds = new Thready [threadCount];
+    Thread[] thrds = new Thread[threadCount];
 
     public static void main (String argv[]) {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
@@ -76,7 +76,7 @@ public class tc01x001a {
 
     tc01x001a() {
         for (int i = 0; i < thrds.length; i++ ) {
-            thrds[i] = new Thready("Thread-" + (i+1));
+            thrds[i] = JDIThreadFactory.newThread(new Thready("Thread-" + (i+1)));
             thrds[i].start();
         }
     }
@@ -90,7 +90,7 @@ public class tc01x001a {
         log.display(caller + "::bar_step"); // checkStepLine
     }
 
-    static class Thready extends Thread {
+    static class Thready extends JDITask {
         Thready(String name) {
             super(name);
         }

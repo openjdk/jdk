@@ -38,7 +38,7 @@ public class tc04x001a {
     static Log log;
 
     public final static int checkMethodBrkpLine = 74;
-    Thready [] thrds = new Thready [threadCount];
+    Thread[] thrds = new Thread[threadCount];
 
     public static void main (String argv[]) {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
@@ -65,7 +65,7 @@ public class tc04x001a {
 
     tc04x001a() {
         for (int i = 0; i < thrds.length; i++ ) {
-            thrds[i] = new Thready("Thread-" + (i+1));
+            thrds[i] = JDIThreadFactory.newThread(new Thready("Thread-" + (i+1)));
             thrds[i].start();
         }
     }
@@ -78,7 +78,7 @@ public class tc04x001a {
         log.display(caller + "::bar is called");
     }
 
-    static class Thready extends Thread {
+    static class Thready extends JDITask {
         Thready(String name) {
             super(name);
         }

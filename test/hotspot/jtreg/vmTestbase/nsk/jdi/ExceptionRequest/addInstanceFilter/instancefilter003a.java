@@ -55,7 +55,7 @@ public class instancefilter003a {
 
     //====================================================== test program
 
-    static instancefilter003aThread thread1 = null;
+    static Thread thread1 = null;
 
     static instancefilter003aTestClass objTC[] = { new instancefilter003aTestClass(), new instancefilter003aTestClass() };
 
@@ -100,7 +100,7 @@ public class instancefilter003a {
 
 
                     case 0:
-                            thread1 = new instancefilter003aThread("thread1");
+                            thread1 = JDIThreadFactory.newThread(new instancefilter003aThread("thread1"));
                             break;
 
     //-------------------------------------------------    standard end section
@@ -139,7 +139,7 @@ public class instancefilter003a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class instancefilter003aThread extends Thread {
+    static class instancefilter003aThread extends JDITask {
 
         String tName = null;
         int tNumber;

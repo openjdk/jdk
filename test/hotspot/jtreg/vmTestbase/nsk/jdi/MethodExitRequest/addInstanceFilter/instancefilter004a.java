@@ -54,8 +54,8 @@ public class instancefilter004a {
 
     //====================================================== test program
 
-    static instancefilter004aThread thread1 = null;
-    static instancefilter004aThread thread2 = null;
+    static Thread thread1 = null;
+    static Thread thread2 = null;
 
     static instancefilter004aTestClass objTC[] = { new instancefilter004aTestClass(), new instancefilter004aTestClass(), new instancefilter004aTestClass() };
 
@@ -83,8 +83,8 @@ public class instancefilter004a {
         argHandler = new ArgumentHandler(argv);
         log = argHandler.createDebugeeLog();
 
-        thread1 = new instancefilter004aThread("thread1");
-        thread2 = new instancefilter004aThread("thread2");
+        thread1 = JDIThreadFactory.newThread(new instancefilter004aThread("thread1"));
+        thread2 = JDIThreadFactory.newThread(new instancefilter004aThread("thread2"));
 
         log1("debuggee started!");
 
@@ -147,7 +147,7 @@ public class instancefilter004a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class instancefilter004aThread extends Thread {
+    static class instancefilter004aThread extends JDITask {
 
         String tName = null;
         int tNumber;
