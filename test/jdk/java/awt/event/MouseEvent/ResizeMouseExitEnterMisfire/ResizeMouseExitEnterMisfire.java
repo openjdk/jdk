@@ -163,6 +163,10 @@ public class ResizeMouseExitEnterMisfire {
         }
     }
 
+    public void done() {
+        frame.dispose();
+    }
+
     public static void main (String[] args) throws Exception {
         ResizeMouseExitEnterMisfire test = new ResizeMouseExitEnterMisfire();
         test.createAndShowFrame();
@@ -171,5 +175,7 @@ public class ResizeMouseExitEnterMisfire {
 
         test.resizeFromInsideWindowTest();
         test.resizeFromOutsideWindowTest();
+
+        test.done();
     }
 }
