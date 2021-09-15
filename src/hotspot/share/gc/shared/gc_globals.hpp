@@ -528,6 +528,7 @@
           "0: No check; "                                                   \
           "1: Basic verification with VM_Verify (no side effects); "        \
           "2: Detailed verification by forcing a GC (with side effects)")   \
+          range(0, 2)                                                       \
                                                                             \
   product(ccstrlist, VerifyGCType, "", DIAGNOSTIC,                          \
              "GC type(s) to verify when Verify*GC is enabled."              \
