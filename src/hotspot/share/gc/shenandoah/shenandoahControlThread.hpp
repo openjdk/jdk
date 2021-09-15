@@ -105,7 +105,10 @@ private:
   void resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause);
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
-  void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
+
+  // Return true if degenerated cycle finishes normally.  Return false if the degenerated cycle transformed itself
+  // into a full GC.
+  bool service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
   void service_uncommit(double shrink_before, size_t shrink_until);
 
   bool try_set_alloc_failure_gc();

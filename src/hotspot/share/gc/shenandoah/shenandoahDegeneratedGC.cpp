@@ -46,7 +46,8 @@
 ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation) :
   ShenandoahGC(),
   _degen_point(degen_point),
-  _generation(generation) {
+  _generation(generation),
+  _upgraded_to_full(false) {
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
@@ -331,15 +332,13 @@ void ShenandoahDegenGC::op_cleanup_complete() {
 }
 
 void ShenandoahDegenGC::op_degenerated_fail() {
-  log_info(gc)("Cannot finish degeneration, upgrading to Full GC");
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
-
+  upgrade_to_full();
   ShenandoahFullGC full_gc;
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }
 
 void ShenandoahDegenGC::op_degenerated_futile() {
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
+  upgrade_to_full();
   ShenandoahFullGC full_gc;
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }
@@ -360,4 +359,14 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
       ShouldNotReachHere();
       return "ERROR";
   }
+}
+
+void ShenandoahDegenGC::upgrade_to_full() {
+  log_info(gc)("Degenerate GC upgrading to Full GC");
+  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
+  _upgraded_to_full = true;
+}
+
+bool ShenandoahDegenGC::upgraded_to_full() {
+  return _upgraded_to_full;
 }

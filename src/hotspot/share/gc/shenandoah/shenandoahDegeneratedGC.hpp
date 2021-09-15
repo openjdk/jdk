@@ -35,10 +35,12 @@ class ShenandoahDegenGC : public ShenandoahGC {
 private:
   const ShenandoahDegenPoint  _degen_point;
   ShenandoahGeneration* _generation;
+  bool _upgraded_to_full;
 
 public:
   ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation);
   bool collect(GCCause::Cause cause);
+  bool upgraded_to_full();
 
 private:
   void vmop_degenerated();
@@ -61,6 +63,7 @@ private:
   void op_degenerated_fail();
 
   const char* degen_event_message(ShenandoahDegenPoint point) const;
+  void upgrade_to_full();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHDEGENERATEDGC_HPP
