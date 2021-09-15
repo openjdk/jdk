@@ -394,19 +394,33 @@ import static sun.invoke.util.Wrapper.isWrapperType;
 
     /**
      * Check if a sidecas exist
-     * @param fromType Type to convert from
-     * @param toType Type to convert to
-     * @return True if a sidecast exists from 'fromType' to 'toType'
+     * @param aType first type
+     * @param anotherType second type
+     * @return True if 'aType' is not disjoint from 'anotherType'
      */
-    private boolean sideCastExists(Class<?> fromType, Class<?> toType) {
-        if (toType.isInterface() && fromType.isInterface()) {
+    private boolean sideCastExists(Class<?> aType, Class<?> anotherType) {
+        if (aType.isAssignableFrom(anotherType)) {
             return true;
-        } else if (toType.isInterface()) {
-            return ((fromType.getModifiers() & Modifier.FINAL) == 0);
-        } else if (fromType.isInterface()) {
-            return ((toType.getModifiers() & Modifier.FINAL) == 0);
-        } else if (toType.isArray() && fromType.isArray()) {
-            return sideCastExists(fromType.getComponentType(), toType.getComponentType());
+        }
+        // if non is sealed
+        if (!anotherType.isSealed() && !aType.isSealed()) {
+            if (anotherType.isInterface() && aType.isInterface()) {
+                return true;
+            } else if (anotherType.isInterface()) {
+                return ((aType.getModifiers() & Modifier.FINAL) == 0);
+            } else if (aType.isInterface()) {
+                return ((anotherType.getModifiers() & Modifier.FINAL) == 0);
+            } else if (anotherType.isArray() && aType.isArray()) {
+                return sideCastExists(aType.getComponentType(), anotherType.getComponentType());
+            }
+        } else {
+            Class<?> sealedOne = aType.isSealed() ? aType : anotherType;
+            Class<?> other = sealedOne == aType ? anotherType : aType;
+            for (Class<?> subclass : sealedOne.getPermittedSubclasses()) {
+                if (sideCastExists(subclass, other)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
