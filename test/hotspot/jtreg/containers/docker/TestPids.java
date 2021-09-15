@@ -46,6 +46,8 @@ import jdk.test.lib.Utils;
 public class TestPids {
     private static final String imageName = Common.imageName("pids");
 
+    static final String warning_kernel_no_pids_support = "WARNING: Your kernel does not support pids limit capabilities";
+
     public static void main(String[] args) throws Exception {
         if (!DockerTestUtils.canTestDocker()) {
             return;
@@ -83,7 +85,7 @@ public class TestPids {
         boolean lineMarkerFound = false;
 
         for (String line : lines) {
-            if (line.contains("WARNING: Your kernel does not support pids limit capabilities")) {
+            if (line.contains(warning_kernel_no_pids_support)) {
                 System.out.println("Docker pids limitation seems not to work, avoiding check");
                 return;
             }
@@ -93,12 +95,12 @@ public class TestPids {
                 String[] parts = line.split(":");
                 System.out.println("DEBUG: line = " + line);
                 System.out.println("DEBUG: parts.length = " + parts.length);
-                if (expectedValue.equals("no_value_expected")) {
+                if (expectedValue.equals("any_integer")) {
                     Asserts.assertEquals(parts.length, 2);
                     String ivalue = parts[1].replaceAll("\\s","");
-                    System.out.println("Found " + lineMarker + " with value: " + ivalue);
                     try {
                         int ai = Integer.parseInt(ivalue);
+                        System.out.println("Found " + lineMarker + " with value: " + ai + ". PASS.");
                     } catch (NumberFormatException ex) {
                         throw new RuntimeException("Could not convert " + ivalue + " to an integer, log line was " + line);
                     }
@@ -149,7 +151,7 @@ public class TestPids {
             checkResult(lines, "Maximum number of tasks is: ", value);
         }
         // current number of tasks value is hard to predict, so better expect no value
-        checkResult(lines, "Current number of tasks is: ", "no_value_expected");
+        checkResult(lines, "Current number of tasks is: ", "any_integer");
     }
 
 }
