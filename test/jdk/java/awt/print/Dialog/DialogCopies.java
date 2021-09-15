@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,284 +29,76 @@
  */
 
 import java.awt.Frame;
-import java.awt.Button;
 import java.awt.TextArea;
-import java.awt.Dialog;
 import java.awt.Panel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.BorderLayout;
 import java.awt.print.PrinterJob;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class DialogCopies {
 
-    private static void init() {
-        String[] instructions = {
-                "This test assumes and requires that you have a printer installed",
-                "When the dialog appears, increment the number of copies then press OK.",
-        };
-        String[] errorMessage = {
-                "Since you did not increase the number of copies in the print dialog the testcase is failed. " +
-                "Please click fail button."
-        };
+    private static final Frame instructionFrame = new Frame();
+    private static volatile boolean testResult;
+    private static volatile CountDownLatch countDownLatch;
 
-        String[] successMessage = {
-                "You have increased the number of copies in the print dialog the testcase is passed. " +
-                "Please click pass button"
-        };
-        Sysout.createDialog();
-        Sysout.printInstructions(instructions);
+    private static void createInstructionUI() {
 
+        final String instruction = """
+                This test assumes and requires that you have a printer installed
+                When the dialog appears, increment the number of copies then
+                press OK/Print.The test will throw an exception if you fail
+                to do this, since,it cannot distinguish that from a failure.""";
+
+        Panel mainControlPanel = new Panel(new BorderLayout());
+        TextArea instructionTextArea = new TextArea();
+        instructionTextArea.setText(instruction);
+        instructionTextArea.setEditable(false);
+        mainControlPanel.add(instructionTextArea, BorderLayout.CENTER);
+        instructionFrame.add(mainControlPanel);
+        instructionFrame.pack();
+        instructionFrame.setVisible(true);
+    }
+
+    public static void showPrintDialog() {
         PrinterJob job = PrinterJob.getPrinterJob();
-        if (job.getPrintService() == null || !job.printDialog()) {
+        if (job.getPrintService() == null) {
+            System.out.println("Looks like printer is not configured. Please install printer and " +
+                    "re-run the test case.");
+            testResult = false;
+            countDownLatch.countDown();
             return;
         }
-        if (job.getCopies() == 1) {
-            Sysout.printInstructions(errorMessage);
-        }
-
-        if (job.getCopies() > 1) {
-            Sysout.printInstructions(successMessage);
-        }
+        checkNoOfCopies(job, job.printDialog());
     }
 
-    /*****************************************************
-     Standard Test Machinery Section
-     DO NOT modify anything in this section -- it's a
-     standard chunk of code which has all of the
-     synchronisation necessary for the test harness.
-     By keeping it the same in all tests, it is easier
-     to read and understand someone else's test, as
-     well as insuring that all tests behave correctly
-     with the test harness.
-     There is a section following this for test-defined
-     classes
-     ******************************************************/
-    private static boolean theTestPassed = false;
-    private static boolean testGeneratedInterrupt = false;
-    private static String failureMessage = "";
-
-    private static Thread mainThread = null;
-
-    private static int sleepTime = 300000;
-
-    public static void main(String args[]) throws InterruptedException {
-        mainThread = Thread.currentThread();
-        try {
-            init();
-        } catch (TestPassedException e) {
-            //The test passed, so just return from main and harness will interpret this return as a pass
-            return;
-        }
-
-        /*
-            At this point, neither test passed nor test failed has been
-            called -- either would have thrown an exception and ended the
-            test, so we know we have multiple threads.
-            Test involves other threads, so sleep and wait for them to
-            called pass() or fail()
-         */
-        try {
-            Thread.sleep(sleepTime);
-            //Timed out, so fail the test
-            throw new RuntimeException("Timed out after " + sleepTime / 1000 + " seconds");
-        } catch (InterruptedException e) {
-            if (!testGeneratedInterrupt) throw e;
-
-            //reset flag in case hit this code more than once for some reason (just safety)
-            testGeneratedInterrupt = false;
-            if (theTestPassed == false) {
-                throw new RuntimeException(failureMessage);
-            }
-        }
-
-    }
-
-    public static synchronized void setTimeoutTo(int seconds) {
-        sleepTime = seconds * 1000;
-    }
-
-    public static synchronized void pass() {
-        Sysout.println("The test passed.");
-        Sysout.println("The test is over, hit  Ctl-C to stop Java VM");
-
-        // first check if this is executing in main thread
-        if (mainThread == Thread.currentThread()) {
-            /*
-             * Still in the main thread, so set the flag just for kicks,
-             * and throw a test passed exception which will be caught
-             * and end the test.
-             */
-            theTestPassed = true;
-            throw new TestPassedException();
-        }
-        /*
-         * pass was called from a different thread, so set the flag and interrupt the main thead.
-         */
-        theTestPassed = true;
-        testGeneratedInterrupt = true;
-        mainThread.interrupt();
-    }
-
-    public static synchronized void fail() {
-        // test writer didn't specify why test failed, so give generic
-        fail("it just plain failed! :-)");
-    }
-
-    public static synchronized void fail(String whyFailed) {
-        Sysout.println("The test failed: " + whyFailed);
-        Sysout.println("The test is over, hit  Ctl-C to stop Java VM");
-        //check if this called from main thread
-        if (mainThread == Thread.currentThread()) {
-            //If main thread, fail now 'cause not sleeping
-            throw new RuntimeException(whyFailed);
-        }
-        theTestPassed = false;
-        testGeneratedInterrupt = true;
-        failureMessage = whyFailed;
-        mainThread.interrupt();
-    }
-}
-
-/**
- * This exception is used to exit from any level of call nesting
- * when it's determined that the test has passed, and immediately
- * end the test.
- */
-class TestPassedException extends RuntimeException {
-}
-
-/****************************************************
- Standard Test Machinery
- DO NOT modify anything below -- it's a standard
- chunk of code whose purpose is to make user
- interaction uniform, and thereby make it simpler
- to read and understand someone else's test.
- ****************************************************/
-
-/**
- * This is part of the standard test machinery.
- * It creates a dialog (with the instructions), and is the interface
- * for sending text messages to the user.
- * To print the instructions, send an array of strings to Sysout.createDialog
- * WithInstructions method.  Put one line of instructions per array entry.
- * To display a message for the tester to see, simply call Sysout.println
- * with the string to be displayed.
- * This mimics System.out.println but works within the test harness as well
- * as standalone.
- */
-
-class Sysout {
-    private static TestDialog dialog;
-
-    public static void createDialogWithInstructions(String[] instructions) {
-        dialog = new TestDialog(new Frame(), "Instructions");
-        dialog.printInstructions(instructions);
-        dialog.show();
-        println("Any messages for the tester will display here.");
-    }
-
-    public static void createDialog() {
-        dialog = new TestDialog(new Frame(), "Instructions");
-        String[] defInstr = {"Instructions will appear here. ", ""};
-        dialog.printInstructions(defInstr);
-        dialog.show();
-        println("Any messages for the tester will display here.");
-    }
-
-    public static void printInstructions(String[] instructions) {
-        dialog.printInstructions(instructions);
-    }
-
-    public static void println(String messageIn) {
-        dialog.displayMessage(messageIn);
-    }
-}
-
-/**
- * This is part of the standard test machinery.  It provides a place for the
- * test instructions to be displayed, and a place for interactive messages
- * to the user to be displayed.
- * To have the test instructions displayed, see Sysout.
- * To have a message to the user be displayed, see Sysout.
- * Do not call anything in this dialog directly.
- */
-class TestDialog extends Dialog implements ActionListener {
-
-    TextArea instructionsText;
-    TextArea messageText;
-    int maxStringLength = 80;
-    Panel buttonP = new Panel();
-    Button passB = new Button("pass");
-    Button failB = new Button("fail");
-
-    //DO NOT call this directly, go through Sysout
-    public TestDialog(Frame frame, String name) {
-        super(frame, name);
-        int scrollBoth = TextArea.SCROLLBARS_BOTH;
-        instructionsText = new TextArea("", 15, maxStringLength, scrollBoth);
-        add("North", instructionsText);
-
-        messageText = new TextArea("", 5, maxStringLength, scrollBoth);
-        add("Center", messageText);
-
-        passB = new Button("pass");
-        passB.setActionCommand("pass");
-        passB.addActionListener(this);
-        buttonP.add("East", passB);
-
-        failB = new Button("fail");
-        failB.setActionCommand("fail");
-        failB.addActionListener(this);
-        buttonP.add("West", failB);
-
-        add("South", buttonP);
-        pack();
-        setVisible(true);
-    }
-
-    //DO NOT call this directly, go through Sysout
-    public void printInstructions(String[] instructions) {
-        instructionsText.setText("");
-
-        String printStr, remainingStr;
-        for (int i = 0; i < instructions.length; i++) {
-            //chop up each into pieces maxSringLength long
-            remainingStr = instructions[i];
-            while (remainingStr.length() > 0) {
-                //if longer than max then chop off first max chars to print
-                if (remainingStr.length() >= maxStringLength) {
-                    //Try to chop on a word boundary
-                    int posOfSpace = remainingStr.
-                            lastIndexOf(' ', maxStringLength - 1);
-
-                    if (posOfSpace <= 0) posOfSpace = maxStringLength - 1;
-
-                    printStr = remainingStr.substring(0, posOfSpace + 1);
-                    remainingStr = remainingStr.substring(posOfSpace + 1);
-                } else {
-                    printStr = remainingStr;
-                    remainingStr = "";
-                }
-
-                instructionsText.append(printStr + "\n");
-            }
-        }
-    }
-
-    //DO NOT call this directly, go through Sysout
-    public void displayMessage(String messageIn) {
-        messageText.append(messageIn + "\n");
-    }
-
-    /**
-     * Catch presses of the passed and failed buttons. Wimply call the standard pass() or fail()
-     * static methods of XparColor
-     */
-    public void actionPerformed(ActionEvent e) {
-        if (e.getActionCommand() == "pass") {
-            DialogCopies.pass();
+    public static void checkNoOfCopies(PrinterJob job, boolean pdReturnValue) {
+        if (pdReturnValue) {
+            System.out.println("User has selected OK/Print button on the PrintDialog");
         } else {
-            DialogCopies.fail();
+            System.out.println("User has selected Cancel button on the PrintDialog");
+        }
+        int copies = job.getCopies();
+        if (copies <= 1) {
+            testResult = false;
+            System.out.println("Expected the number of copies to be more than 1 but got " + copies);
+        } else {
+            testResult = true;
+            System.out.println("Total number of copies : " + copies);
+        }
+        countDownLatch.countDown();
+        instructionFrame.dispose();
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        countDownLatch = new CountDownLatch(1);
+        createInstructionUI();
+        showPrintDialog();
+        if (!countDownLatch.await(5, TimeUnit.MINUTES)) {
+            throw new RuntimeException("Timeout : No action was performed on the test UI.");
+        }
+        if (!testResult) {
+            throw new RuntimeException("Test failed!");
         }
     }
 }
