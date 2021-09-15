@@ -28,7 +28,7 @@
  * @summary Test transformation (-a)*(-b) = a*b
  *
  * @library /test/lib
- * 
+ *
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileCommand="dontinline,TestNegMultiply::test*" TestNegMultiply
  *
  */
@@ -36,7 +36,6 @@
 import java.util.Random;
 import jdk.test.lib.Utils;
 import jdk.test.lib.Asserts;
-
 
 public class TestNegMultiply {
     private static final Random random = Utils.getRandomInstance();
