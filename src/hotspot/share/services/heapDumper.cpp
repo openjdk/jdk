@@ -1894,12 +1894,14 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
   static const size_t VMDumperWorkerId = 0;
 
   size_t get_worker_type(uint worker_id) {
-    assert(_num_writer_threads >= 1, "Must be at least one writers");
-    // worker id of dumper starts from 0, include VMDumper
+    assert(_num_writer_threads >= 1, "Must be at least one writer");
+    // worker id of VMDumper that dump heap and non-heap data
+    if (worker_id == VMDumperWorkerId) {
+      return VMDumperType;
+    }
+
+    // worker id of dumper starts from 1, which only dump heap datar
     if (worker_id < _num_dumper_threads) {
-      if (worker_id == VMDumperWorkerId) {
-        return VMDumperType;
-      }
       return DumperType;
     }
 
@@ -2340,7 +2342,7 @@ void VM_HeapDumper::work(uint worker_id) {
   // segment is started.
   // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
   // of the heap dump.
-  if (_num_dumper_threads == 1) {
+  if (_num_dumper_threads <= 1) {
     HeapObjectDumper obj_dumper(writer());
     Universe::heap()->object_iterate(&obj_dumper);
   } else {
@@ -2358,8 +2360,7 @@ void VM_HeapDumper::work(uint worker_id) {
        ParDumpWriter pw(writer());
        {
          HeapObjectDumper obj_dumper(&pw, _large_object_list);
-         uint dumper_id = worker_id - _num_writer_threads;
-         _poi->object_iterate(&obj_dumper, dumper_id);
+         _poi->object_iterate(&obj_dumper, worker_id);
        }
 
        if (get_worker_type(worker_id) == VMDumperType) {
@@ -2378,7 +2379,7 @@ void VM_HeapDumper::work(uint worker_id) {
     }
   }
 
-  assert(worker_id == 0, "Heap dumper must be worker 0.");
+  assert(get_worker_type(worker_id) == VMDumperType, "Heap dumper must be VMDumper");
   // Use writer() rather than ParDumpWriter to avoid memory consumption.
   HeapObjectDumper obj_dumper(writer());
   dump_large_objects(&obj_dumper);
