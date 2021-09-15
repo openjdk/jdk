@@ -576,9 +576,7 @@ public class CatalogFeatures {
      * @param builder the CatalogFeatures builder
      */
     private void setProperties(Builder builder) {
-        builder.values.entrySet().stream().forEach((entry) -> {
-            setProperty(entry.getKey(), State.APIPROPERTY, entry.getValue());
-        });
+        builder.values.forEach((feature, value) -> setProperty(feature, State.APIPROPERTY, value));
     }
     /**
      * Sets the value of a property, updates only if it shall override.
