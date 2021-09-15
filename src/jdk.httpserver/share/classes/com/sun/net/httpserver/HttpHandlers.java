@@ -125,10 +125,11 @@ public final class HttpHandlers {
      *
      * <p> {@code headers} are the effective headers of the response. The
      * response <i>body bytes</i> are a {@code UTF-8} encoded byte sequence of
-     * {@code body}. The response {@linkplain HttpExchange#sendResponseHeaders(int, long) is sent}
-     * with the given {@code statusCode} and the body bytes' length. The body
-     * bytes are then sent as response body, unless they are of length zero,
-     * in which case no response body is sent.
+     * {@code body}. The response headers
+     * {@linkplain HttpExchange#sendResponseHeaders(int, long) are sent} with
+     * the given {@code statusCode} and the body bytes' length (or {@code -1}
+     * if the body is empty). The body bytes are then sent as response body,
+     * unless the body is empty, in which case no response body is sent.
      *
      * @param statusCode a response status code
      * @param headers a headers
