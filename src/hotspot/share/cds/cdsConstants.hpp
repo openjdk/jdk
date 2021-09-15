@@ -26,6 +26,7 @@
 #define SHARE_CDS_CDSCONSTANTS_HPP
 
 #include "memory/allStatic.hpp"
+
 typedef struct {
   const char* _name;
   size_t _value;
