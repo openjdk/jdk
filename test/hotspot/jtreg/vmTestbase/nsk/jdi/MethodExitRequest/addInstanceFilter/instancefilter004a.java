@@ -149,29 +149,28 @@ public class instancefilter004a {
 
     static class instancefilter004aThread extends JDITask {
 
-        String tName = null;
+
         int tNumber;
 
         public instancefilter004aThread(String threadName) {
             super(threadName);
-            tName = threadName;
             tNumber = number;
             number++;
             lockingObj[tNumber] = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             if (lockingObj[tNumber] == null)
                 log1("lockingObj[tNumber] == null");
             synchronized(lockingObj[tNumber]) {
                 synchronized (waitnotifyObj) {
                     waitnotifyObj.notify();
                 }
-                log1(" objTC[tNumber].method();  :: threadName == " + tName + "  tNumber == " + tNumber);
+                log1(" objTC[tNumber].method();  :: threadName == " + getName() + "  tNumber == " + tNumber);
                 objTC[tNumber].method();
             }
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }

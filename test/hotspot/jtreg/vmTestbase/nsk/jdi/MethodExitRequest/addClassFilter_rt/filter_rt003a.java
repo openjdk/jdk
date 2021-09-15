@@ -165,18 +165,15 @@ class filter_rt003aTestClass11 extends filter_rt003aTestClass10{
 
 class filter_rt003aThread1 extends JDITask {
 
-    String tName = null;
-
     public filter_rt003aThread1(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_rt003a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt003a.log1("  'run': enter  :: threadName == " + getName());
         filter_rt003aTestClass11.m11();
         filter_rt003aTestClass21.m21();
-        filter_rt003a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt003a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
@@ -195,17 +192,14 @@ class filter_rt003aTestClass21 extends filter_rt003aTestClass20{
 
 class filter_rt003aThread2 extends JDITask {
 
-    String tName = null;
-
     public filter_rt003aThread2(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_rt003a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt003a.log1("  'run': enter  :: threadName == " + getName());
         filter_rt003aTestClass21.m21();
-        filter_rt003a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt003a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

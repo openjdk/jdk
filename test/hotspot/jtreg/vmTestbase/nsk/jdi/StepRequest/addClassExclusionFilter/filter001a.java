@@ -180,15 +180,12 @@ class Thread1filter001a extends JDITask {
     }
 
 
-    String tName = null;
-
     public Thread1filter001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter001a.log1("  'run': enter  :: threadName == " + tName);
+        filter001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(filter001a.waitnotifyObj) {
             filter001a.waitnotifyObj.notify();
         }
@@ -198,7 +195,7 @@ class Thread1filter001a extends JDITask {
             } catch ( NullPointerException e) {
             }
         }
-        filter001a.log1("  'run': exit   :: threadName == " + tName);
+        filter001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
@@ -221,15 +218,13 @@ class Thread2filter001a extends JDITask {
         }
     }
 
-    String tName = null;
 
     public Thread2filter001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter001a.log1("  'run': enter  :: threadName == " + tName);
+        filter001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(filter001a.waitnotifyObj) {
             filter001a.waitnotifyObj.notify();
         }
@@ -239,7 +234,7 @@ class Thread2filter001a extends JDITask {
             } catch ( NullPointerException e) {
             }
         }
-        filter001a.log1("  'run': exit   :: threadName == " + tName);
+        filter001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

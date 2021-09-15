@@ -171,22 +171,19 @@ class TestClass11 extends TestClass10{
 
 class Thread1filter_s001a extends JDITask {
 
-    String tName = null;
-
     public Thread1filter_s001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(filter_s001a.waitnotifyObj) {
             filter_s001a.waitnotifyObj.notify();
         }
         synchronized(filter_s001a.lockObj) {
             TestClass11.m11();
         }
-        filter_s001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
@@ -205,22 +202,20 @@ class Thread2filter_s001a extends JDITask {
         }
     }
 
-    String tName = null;
 
     public Thread2filter_s001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(filter_s001a.waitnotifyObj) {
             filter_s001a.waitnotifyObj.notify();
         }
         synchronized(filter_s001a.lockObj) {
             TestClass21.m21();
         }
-        filter_s001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

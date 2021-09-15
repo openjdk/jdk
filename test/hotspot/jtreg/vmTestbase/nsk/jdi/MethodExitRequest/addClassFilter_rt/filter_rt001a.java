@@ -161,18 +161,15 @@ class filter_rt001aTestClass11 extends filter_rt001aTestClass10{
 
 class filter_rt001aThread1 extends JDITask {
 
-    String tName = null;
-
     public filter_rt001aThread1(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_rt001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt001a.log1("  'run': enter  :: threadName == " + getName());
         filter_rt001aTestClass21.m21();
         filter_rt001aTestClass11.m11();
-        filter_rt001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

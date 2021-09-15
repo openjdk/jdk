@@ -155,34 +155,28 @@ class Thread1filter_s001a extends JDITask {
         int var11 = 0;
     }
 
-    String tName = null;
-
     public Thread1filter_s001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s001a.log1("  'run': enter  :: threadName == " + getName());
         TestClass11 obj1 = new TestClass11();
-        filter_s001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
 
 class Thread2filter_s001a extends JDITask {
 
-    String tName = null;
-
     public Thread2filter_s001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s001a.log1("  'run': enter  :: threadName == " + getName());
         filter_s001aTestClass21 obj2 = new filter_s001aTestClass21();
-        filter_s001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

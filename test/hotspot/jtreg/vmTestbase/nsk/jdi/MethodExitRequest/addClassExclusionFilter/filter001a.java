@@ -160,21 +160,17 @@ class Thread1filter001a extends JDITask {
         }
     }
 
-
-    String tName = null;
-
     public Thread1filter001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter001a.log1("  'run': enter  :: threadName == " + tName);
+        filter001a.log1("  'run': enter  :: threadName == " + getName());
         try {
             (new TestClass11()).m11();
         } catch ( NullPointerException e) {
         }
-        filter001a.log1("  'run': exit   :: threadName == " + tName);
+        filter001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

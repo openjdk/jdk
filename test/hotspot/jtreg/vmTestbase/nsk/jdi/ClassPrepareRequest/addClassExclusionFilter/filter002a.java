@@ -152,17 +152,14 @@ class Thread1filter002a extends JDITask {
         int var11 = 0;
     }
 
-    String tName = null;
-
     public Thread1filter002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter002a.log1("  'run': enter  :: threadName == " + tName);
+        filter002a.log1("  'run': enter  :: threadName == " + getName());
         TestClass11 obj1 = new TestClass11();
-        filter002a.log1("  'run': exit   :: threadName == " + tName);
+        filter002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

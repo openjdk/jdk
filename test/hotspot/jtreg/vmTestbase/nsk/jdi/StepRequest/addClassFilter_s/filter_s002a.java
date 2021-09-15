@@ -148,19 +148,17 @@ public class filter_s002a {
 
     static class Thread1filter_s002a extends JDITask {
 
-        String tName = null;
         int tNumber;
 
         public Thread1filter_s002a(String threadName) {
             super(threadName);
-            tName = threadName;
             tNumber = number;
             number++;
             lockingObj[tNumber] = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             synchronized(lockingObj[tNumber]) {
                 synchronized (waitnotifyObj) {
                     waitnotifyObj.notify();
@@ -171,7 +169,7 @@ public class filter_s002a {
 //                    objTC[tNumber].method();
                 }
             }
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }
