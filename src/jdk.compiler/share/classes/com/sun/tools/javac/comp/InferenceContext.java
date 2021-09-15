@@ -393,7 +393,7 @@ public class InferenceContext {
         Map<Type, Set<Type>> minMap = new LinkedHashMap<>();
 
         void scan(List<Type> roots) {
-            roots.stream().forEach(this::visit);
+            roots.forEach(this::visit);
         }
 
         @Override

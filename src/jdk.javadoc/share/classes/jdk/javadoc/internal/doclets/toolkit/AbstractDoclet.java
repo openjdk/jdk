@@ -278,7 +278,7 @@ public abstract class AbstractDoclet implements Doclet {
         // handle classes specified in modules and packages on the command line
         SortedSet<PackageElement> packages = new TreeSet<>(utils.comparators.makePackageComparator());
         packages.addAll(configuration.getSpecifiedPackageElements());
-        configuration.modulePackages.values().stream().forEach(packages::addAll);
+        configuration.modulePackages.values().forEach(packages::addAll);
         for (PackageElement pkg : packages) {
             classes.addAll(utils.getAllClasses(pkg));
         }

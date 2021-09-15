@@ -340,16 +340,15 @@ public class JShellTool implements MessageHandler {
         // return a new Options, with parameter options overriding receiver options
         Options override(Options newer) {
             Options result = new Options(this);
-            newer.optMap.entrySet().stream()
-                    .forEach(e -> {
-                        if (e.getKey().onlyOne) {
-                            // Only one allowed, override last
-                            result.optMap.put(e.getKey(), e.getValue());
-                        } else {
-                            // Additive
-                            result.addAll(e.getKey(), e.getValue());
-                        }
-                    });
+            newer.optMap.forEach((optionKind, values) -> {
+                if (optionKind.onlyOne) {
+                    // Only one allowed, override last
+                    result.optMap.put(optionKind, values);
+                } else {
+                    // Additive
+                    result.addAll(optionKind, values);
+                }
+            });
             return result;
         }
     }
@@ -3537,8 +3536,7 @@ public class JShellTool implements MessageHandler {
             errormsg(d.isError() ? "jshell.msg.error" : "jshell.msg.warning");
             List<String> disp = new ArrayList<>();
             displayableDiagnostic(source, d, disp);
-            disp.stream()
-                    .forEach(l -> error("%s", l));
+            disp.forEach(l -> error("%s", l));
         }
     }
 

@@ -2304,8 +2304,7 @@ public class HtmlDocletWriter {
     private Content withPreviewFeatures(String key, String className, String featureName, List<String> features) {
         String[] sep = new String[] {""};
         ContentBuilder featureCodes = new ContentBuilder();
-        features.stream()
-                .forEach(c -> {
+        features.forEach(c -> {
                     featureCodes.add(sep[0]);
                     featureCodes.add(HtmlTree.CODE(new ContentBuilder().add(c)));
                     sep[0] = ", ";

@@ -1642,7 +1642,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     List<? extends RecordComponent> recordComponents = node.sym.getRecordComponents();
                     for (RecordComponent rc : recordComponents) {
                         List<JCAnnotation> originalAnnos = rc.getOriginalAnnos();
-                        originalAnnos.stream().forEach(a -> visitAnnotation(a));
+                        originalAnnos.forEach(this::visitAnnotation);
                     }
                     // we should empty the list of permitted subclasses for next round
                     node.sym.permitted = List.nil();
