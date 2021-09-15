@@ -26,7 +26,7 @@
  * @test id=passive
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach
-
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
@@ -43,6 +43,7 @@
  * @test id=aggressive
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
@@ -63,6 +64,7 @@
  * @test id=adaptive
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
@@ -74,6 +76,7 @@
  * @test id=static
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
@@ -84,6 +87,7 @@
  * @test id=compact
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
@@ -94,6 +98,7 @@
  * @test id=iu-aggressive
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
