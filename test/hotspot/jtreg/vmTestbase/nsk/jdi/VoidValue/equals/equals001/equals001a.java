@@ -94,8 +94,8 @@ public class equals001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread thread2 =
-                             JDIThreadFactory.newThread(new Threadequals001a("Thread2"));
+                         Threadequals001a thread2 =
+                             new Threadequals001a("Thread2");
                          log1("       thread2 is created");
 
                          label:
@@ -145,7 +145,7 @@ public class equals001a {
     }
 }
 
-class Threadequals001a extends JDITask {
+class Threadequals001a extends Thread {
 
     public Threadequals001a(String threadName) {
         super(threadName);

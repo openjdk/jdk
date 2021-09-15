@@ -94,8 +94,8 @@ public class hashcode001a {
     //------------------------------------------------------  section tested
 
                  case 0:
-                         Thread thread2 =
-                             JDIThreadFactory.newThread(new Threadhashcode001a("Thread2"));
+                         Threadhashcode001a thread2 =
+                             new Threadhashcode001a("Thread2");
                          log1("       thread2 is created");
 
                          label:
@@ -145,7 +145,7 @@ public class hashcode001a {
     }
 }
 
-class Threadhashcode001a extends JDITask {
+class Threadhashcode001a extends Thread {
 
     public Threadhashcode001a(String threadName) {
         super(threadName);
