@@ -23,100 +23,92 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 8273454
  * @summary Test transformation (-a)*(-b) = a*b
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestNegMultiply
+ * @library /test/lib
+ * 
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileCommand="dontinline,TestNegMultiply::test*" TestNegMultiply
  *
  */
 
 import java.util.Random;
+import jdk.test.lib.Utils;
+import jdk.test.lib.Asserts;
+
 
 public class TestNegMultiply {
-    private static Random random = new Random();
+    private static final Random random = Utils.getRandomInstance();
     private static final int TEST_COUNT = 2000;
 
-    private static int test(int a, int b) {
+    private static int testInt(int a, int b) {
         return (-a) * (-b);
     }
-
-    private static void testInt(int a, int b) {
-        int expected = (-a) * (-b);
-        for (int i = 0; i < 20_000; i++) {
-            if (expected != test(a, b)) {
-                throw new RuntimeException("Incorrect result.");
-            }
-        }
-    }
-
-    private static long test(long a, long b) {
+    private static long testLong(long a, long b) {
         return (-a) * (-b);
     }
-
-    private static void testLong(long a, long b) {
-        long expected = (-a) * (-b);
-        for (int i = 0; i < 20_000; i++) {
-            if (expected != test(a, b)) {
-                throw new RuntimeException("Incorrect result.");
-            }
-        }
-    }
-
-    private static float test(float a, float b) {
+    private static float testFloat(float a, float b) {
         return (-a) * (-b);
     }
-
-    private static void testFloat(float a, float b) {
-        float expected = (-a) * (-b);
-        for (int i = 0; i < 20_000; i++) {
-            if (expected != test(a, b)) {
-                throw new RuntimeException("Incorrect result.");
-            }
-        }
-    }
-
-    private static double test(double a, double b) {
+    private static double testDouble(double a, double b) {
         return (-a) * (-b);
-    }
-
-    private static void testDouble(double a, double b) {
-        double expected = (-a) * (-b);
-        for (int i = 0; i < 20_000; i++) {
-            if (expected != test(a, b)) {
-                throw new RuntimeException("Incorrect result.");
-            }
-        }
     }
 
     private static void runIntTests() {
+        // Ensure testInt() is JIT-ed
+        for (int i = 0; i < 20_000; i++) {
+            testInt(1, 2);
+        }
         for (int index = 0; index < TEST_COUNT; index ++) {
             int a = random.nextInt();
             int b = random.nextInt();
-            testInt(a, b);
+            int expected = (-a) * (-b);
+            int res = testInt(a, b);
+            Asserts.assertEQ(res, expected);
         }
     }
 
     private static void runLongTests() {
+        // Ensure testLong() is JIT-ed
+        for (int i = 0; i < 20_000; i++) {
+            testLong(1L, 2L);
+        }
+
         for (int index = 0; index < TEST_COUNT; index ++) {
             long a = random.nextLong();
             long b = random.nextLong();
-            testLong(a, b);
+            long expected = (-a) * (-b);
+            long res = testLong(a, b);
+            Asserts.assertEQ(res, expected);
         }
     }
 
     private static void runFloatTests() {
+        // Ensure testFloat() is JIT-ed
+        for (int i = 0; i < 20_000; i++) {
+            testFloat(1.0f, 2.0f);
+        }
         for (int index = 0; index < TEST_COUNT; index ++) {
             float a = random.nextFloat();
             float b = random.nextFloat();
-            testFloat(a, b);
+            float expected = (-a) * (-b);
+            float res = testFloat(a, b);
+            Asserts.assertEQ(res, expected);
         }
     }
 
     private static void runDoubleTests() {
+        // Ensure testDouble() is JIT-ed
+        for (int i = 0; i < 20_000; i++) {
+            testDouble(1.0, 2.0);
+        }
         for (int index = 0; index < TEST_COUNT; index ++) {
             double a = random.nextDouble();
             double b = random.nextDouble();
-            testDouble(a, b);
+            double expected = (-a) * (-b);
+            double res = testDouble(a, b);
+            Asserts.assertEQ(res, expected);
         }
     }
 
