@@ -29,6 +29,8 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.font.FontManager;
+import sun.awt.X11FontManager;
 
 public class PlatformGraphicsInfo {
 
@@ -38,6 +40,10 @@ public class PlatformGraphicsInfo {
 
     public static Toolkit createToolkit() {
         return new sun.awt.X11.XToolkit();
+    }
+
+    public static FontManager createFontManager() {
+        return new X11FontManager();
     }
 
     /**

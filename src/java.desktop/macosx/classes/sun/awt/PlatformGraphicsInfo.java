@@ -29,6 +29,8 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.font.FontManager;
+import sun.font.CFontManager;
 
 @SuppressWarnings("removal")
 public class PlatformGraphicsInfo {
@@ -48,6 +50,9 @@ public class PlatformGraphicsInfo {
         return new sun.lwawt.macosx.LWCToolkit();
     }
 
+    public static FontManager createFontManager() {
+        return new CFontManager();
+    }
     /**
      * Returns true if the WindowServer is available, false otherwise.
      *

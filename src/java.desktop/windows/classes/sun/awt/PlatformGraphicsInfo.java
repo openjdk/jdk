@@ -27,6 +27,8 @@ package sun.awt;
 
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
+import sun.font.FontManager;
+import sun.awt.Win32FontManager;
 
 public class PlatformGraphicsInfo {
 
@@ -36,6 +38,10 @@ public class PlatformGraphicsInfo {
 
     public static Toolkit createToolkit() {
         return new sun.awt.windows.WToolkit();
+    }
+
+    public static FontManager createFontManager() {
+        return new Win32FontManager();
     }
 
     public static boolean getDefaultHeadlessProperty() {
