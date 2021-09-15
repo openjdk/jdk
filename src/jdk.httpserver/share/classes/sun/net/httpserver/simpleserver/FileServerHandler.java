@@ -23,6 +23,7 @@
 
 package sun.net.httpserver.simpleserver;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -81,7 +82,8 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     private static String pathForSecurityCheck(String path) {
-        return path.endsWith("/") ? path + "-" : path + "/-";
+        var separator = String.valueOf(File.separatorChar);
+        return path.endsWith(separator) ? (path + "-") : (path + separator + "-");
     }
 
     private static final HttpHandler NOT_IMPLEMENTED_HANDLER =
