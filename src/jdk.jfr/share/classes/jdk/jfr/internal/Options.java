@@ -25,8 +25,15 @@
 
 package jdk.jfr.internal;
 
+import java.io.IOException;
+
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.internal.misc.Unsafe;
+
+import static java.nio.file.LinkOption.*;
 
 /**
  * Options that control Flight Recorder.
@@ -113,10 +120,19 @@ public final class Options {
     }
 
     public static synchronized void setDumpPath(SafePath path) {
-        if (!path.toFile().canWrite()) {
-            throw new IllegalArgumentException("Cannot write JFR emergency dump to " + path.toString());
+        if (path.toFile().canWrite()) {
+            try {
+                jvm.setDumpPath(path.toPath().toRealPath(NOFOLLOW_LINKS).toString());
+            } catch (IOException e) {
+                if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
+                    Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Error occurred in path resolution: " + e.toString());
+                }
+            }
+        } else {
+            if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
+                Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Cannot write JFR emergency dump to " + path.toString());
+            }
         }
-        jvm.setDumpPath(path.toPath().toAbsolutePath().toString());
     }
 
     public static synchronized SafePath getDumpPath() {
