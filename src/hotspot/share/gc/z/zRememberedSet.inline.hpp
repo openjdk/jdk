@@ -59,7 +59,7 @@ inline bool ZRememberedSet::get(uintptr_t offset) const {
 
 inline bool ZRememberedSet::set(uintptr_t offset) {
   const BitMap::idx_t index = to_index(offset);
-  return current()->par_set_bit(index);
+  return current()->par_set_bit(index, memory_order_relaxed);
 }
 
 inline void ZRememberedSet::unset_non_par(uintptr_t offset) {
