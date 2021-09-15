@@ -26,7 +26,7 @@
  * @test
  * @summary run with -XX:VerifyArchivedFields=2 for more expensive verification
  *          of the archived heap objects.
- * @requires vm.cds
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar Hello.jar Hello
