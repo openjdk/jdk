@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,31 @@
  * questions.
  */
 
-package gc.epsilon;
-
-/**
- * @test TestAlwaysPretouch
- * @requires vm.gc.Epsilon
- * @summary Basic sanity test for Epsilon
- * @library /test/lib
- *
- * @run main/othervm -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
- *                   gc.epsilon.TestEpsilonEnabled
+/*
+ * @test
+ * @bug 8273358
+ * @summary Verify logical fonts are as expected.
+ * @run main/othervm LogicalFontsTest
  */
 
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
+import java.awt.Font;
 
-public class TestEpsilonEnabled {
-  public static void main(String[] args) throws Exception {
-    if (!isEpsilonEnabled()) {
-      throw new IllegalStateException("Debug builds should have Epsilon enabled");
-    }
-  }
+public class LogicalFontsTest {
 
-  public static boolean isEpsilonEnabled() {
-    for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
-      if (bean.getName().contains("Epsilon")) {
-        return true;
-      }
-    }
-    return false;
-  }
+    public static void main(String[] args) {
+        test(Font.SANS_SERIF);
+        test(Font.SERIF);
+        test(Font.MONOSPACED);
+        test(Font.DIALOG);
+        test(Font.DIALOG_INPUT);
+     }
+
+     static void test(String fontName) {
+         System.out.println("name="+fontName);
+         Font font = new Font(fontName, Font.PLAIN, 12);
+         System.out.println("font = " + font);
+         if (!fontName.equalsIgnoreCase(font.getFamily())) {
+             throw new RuntimeException("Requested " + fontName + " but got " + font);
+         }
+     }
 }

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2021, Arm Limited. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -22,13 +21,18 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
-#define OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
+#include <jni.h>
+#include <string.h>
+#include <stdint.h>
 
-inline address pauth_strip_pointer(address ptr) {
-  // No PAC support in windows as of yet.
-  return ptr;
+JNIEXPORT jlong JNICALL
+Java_TestStringCriticalWithDedup_pin(JNIEnv *env, jclass unused, jstring s) {
+  const jchar* a = (*env)->GetStringCritical(env, s, NULL);
+  return (jlong)(uintptr_t)a;
 }
 
-#endif // OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
-
+JNIEXPORT void JNICALL
+Java_TestStringCriticalWithDedup_unpin(JNIEnv *env, jclass unused, jstring s, jlong v) {
+  jchar* a = (jchar*)(uintptr_t)v;
+  (*env)->ReleaseStringCritical(env, s, a);
+}
