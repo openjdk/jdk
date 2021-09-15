@@ -32,8 +32,8 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,7 +48,7 @@ import java.util.TreeSet;
  */
 public class PropertiesStoreTest {
 
-    private static final String dateCommentFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
+    private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
 
     @DataProvider(name = "propsProvider")
     private Object[][] createProps() {
@@ -184,8 +184,8 @@ public class PropertiesStoreTest {
             Assert.fail("No comment line found in the stored properties file " + file);
         }
         try {
-            new SimpleDateFormat(dateCommentFormat).parse(comment);
-        } catch (ParseException pe) {
+            DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).parse(comment);
+        } catch (DateTimeParseException pe) {
             Assert.fail("Unexpected date comment: " + comment, pe);
         }
     }

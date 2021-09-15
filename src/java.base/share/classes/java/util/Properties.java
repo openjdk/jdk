@@ -41,8 +41,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -167,10 +165,6 @@ public class Properties extends Hashtable<Object,Object> {
      * as in Hashtable.
      */
     private transient volatile ConcurrentHashMap<Object, Object> map;
-
-    // used to format the date comment written out by the store() APIs.
-    // This format matches the one used by java.util.Date.toString()
-    private static final String dateFormatPattern = "EEE MMM dd HH:mm:ss zzz yyyy";
 
     /**
      * Creates an empty property list with no default values.
@@ -831,8 +825,8 @@ public class Properties extends Hashtable<Object,Object> {
      * If the system property is not set or is empty, a comment line is written
      * as follows.
      * First, a {@code #} character is written, followed by the current date and time
-     * formatted as if by {@link DateTimeFormatter} with the format
-     * {@code "EEE MMM dd HH:mm:ss zzz yyyy"}, followed by a line separator.
+     * formatted as if by the {@link Date#toString() Date.toString} method,
+     * followed by a line separator.
      * <p>
      * Then every entry in this {@code Properties} table is
      * written out, one per line. For each entry the key string is
@@ -950,7 +944,7 @@ public class Properties extends Hashtable<Object,Object> {
         if (storeDate != null && !storeDate.isEmpty()) {
             writeComments(bw, storeDate);
         } else {
-            bw.write("#" + DateTimeFormatter.ofPattern(dateFormatPattern).format(ZonedDateTime.now()));
+            bw.write("#" + new Date());
             bw.newLine();
         }
     }

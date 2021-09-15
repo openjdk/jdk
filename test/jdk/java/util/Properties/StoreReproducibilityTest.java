@@ -28,11 +28,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,9 +50,9 @@ import java.util.TimeZone;
  */
 public class StoreReproducibilityTest {
 
-    private static final String dateCommentFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
+    private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
     private static final String SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE = "java.util.Properties.storeDate";
-    private static final DateTimeFormatter reproducibleDateTimeFormatter = DateTimeFormatter.ofPattern(dateCommentFormat)
+    private static final DateTimeFormatter reproducibleDateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN)
             .withLocale(Locale.ROOT).withZone(ZoneOffset.UTC);
 
     public static void main(final String[] args) throws Exception {
@@ -425,8 +424,9 @@ public class StoreReproducibilityTest {
         System.out.println("Found date comment " + dateComment + " in file " + destFile);
         final Date parsedDate;
         try {
-            parsedDate = new SimpleDateFormat(dateCommentFormat).parse(dateComment);
-        } catch (ParseException pe) {
+            Instant instant = Instant.from(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).parse(dateComment));
+            parsedDate = new Date(instant.toEpochMilli());
+        } catch (DateTimeParseException pe) {
             throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile);
         }
         if (!parsedDate.after(date)) {
