@@ -21,16 +21,23 @@
  * questions.
  */
 
+import java.awt.Toolkit;
+
 /**
  * @test
  * @bug 8273581
- * @summary verify the "sun.font.fontmanage" system property is not set
+ * @summary verify the "sun.font.fontmanager" system property is not set
  */
 
 public class CheckFontManagerSystemProperty {
 
     public static void main(String[] args) {
-        String tkProp = System.getProperty("sun.font.fontmanage");
+        // force AWT library loading
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (toolkit == null) {
+            throw new RuntimeException("Toolkit not found!");
+        }
+        String tkProp = System.getProperty("sun.font.fontmanager");
         if (tkProp != null) {
             throw new RuntimeException("tkProp = " + tkProp);
         }
