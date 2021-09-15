@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -308,7 +309,7 @@ final class LauncherData {
         return getPathParam(params, paramName, () -> {
             String value = (String) params.get(paramName);
             return (value == null) ? List.of() :
-                    List.of(value.split(File.pathSeparator)).stream()
+                    Arrays.stream(value.split(File.pathSeparator))
                     .map(Path::of)
                     .collect(Collectors.toUnmodifiableList());
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +295,7 @@ public class PerfectHashBuilder<E> {
         });
 
         // Sort chains, longest first.
-        Bucket<E>[] sorted = Arrays.asList(buckets).stream()
+        Bucket<E>[] sorted = Arrays.stream(buckets)
                 .filter((bucket) -> (bucket != null))
                 .sorted()
                 .toArray((length) -> {
