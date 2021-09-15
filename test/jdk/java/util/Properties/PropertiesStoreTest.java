@@ -36,8 +36,11 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeSet;
 
 /*
@@ -70,38 +73,50 @@ public class PropertiesStoreTest {
         simple.setProperty("3", "three");
         simple.setProperty("0", "zero");
 
+        final Properties overrideCallsSuper = new OverridesEntrySetCallsSuper();
+        overrideCallsSuper.putAll(simple);
+
+        final OverridesEntrySet overridesEntrySet = new OverridesEntrySet();
+        overridesEntrySet.putAll(simple);
+
+        final Properties doesNotOverrideEntrySet = new DoesNotOverrideEntrySet();
+        doesNotOverrideEntrySet.putAll(simple);
+
         return new Object[][]{
-                {simple},
-                {specialChars}
+                {simple, naturalOrder(simple)},
+                {specialChars, naturalOrder(specialChars)},
+                {overrideCallsSuper, naturalOrder(overrideCallsSuper)},
+                {overridesEntrySet, overridesEntrySet.expectedKeyOrder()},
+                {doesNotOverrideEntrySet, naturalOrder(doesNotOverrideEntrySet)}
         };
     }
 
     /**
      * Tests that the {@link Properties#store(Writer, String)} API writes out the properties
-     * in the natural order of the property keys
+     * in the expected order
      */
     @Test(dataProvider = "propsProvider")
-    public void testStoreWriterKeyOrder(final Properties props) throws Exception {
+    public void testStoreWriterKeyOrder(final Properties props, final String[] expectedOrder) throws Exception {
         // Properties.store(...) to a temp file
         final Path tmpFile = Files.createTempFile("8231640", "props");
         try (final Writer writer = Files.newBufferedWriter(tmpFile)) {
             props.store(writer, null);
         }
-        testStoreKeyOrder(props, tmpFile);
+        testStoreKeyOrder(props, tmpFile, expectedOrder);
     }
 
     /**
      * Tests that the {@link Properties#store(OutputStream, String)} API writes out the properties
-     * in the natural order of the property keys
+     * in the expected order
      */
     @Test(dataProvider = "propsProvider")
-    public void testStoreOutputStreamKeyOrder(final Properties props) throws Exception {
+    public void testStoreOutputStreamKeyOrder(final Properties props, final String[] expectedOrder) throws Exception {
         // Properties.store(...) to a temp file
         final Path tmpFile = Files.createTempFile("8231640", "props");
         try (final OutputStream os = Files.newOutputStream(tmpFile)) {
             props.store(os, null);
         }
-        testStoreKeyOrder(props, tmpFile);
+        testStoreKeyOrder(props, tmpFile, expectedOrder);
     }
 
     /**
@@ -109,9 +124,10 @@ public class PropertiesStoreTest {
      * {@code Path} and then verifies that:
      * - the loaded properties instance "equals" the passed (original) "props" instance
      * - the order in which the properties appear in the file represented by the path
-     * is the expected natural order of the property keys.
+     * is the same as the passed "expectedOrder"
      */
-    private void testStoreKeyOrder(final Properties props, final Path storedProps) throws Exception {
+    private void testStoreKeyOrder(final Properties props, final Path storedProps,
+                                   final String[] expectedOrder) throws Exception {
         // Properties.load(...) from that stored file and verify that the loaded
         // Properties has expected content
         final Properties loaded = new Properties();
@@ -126,7 +142,6 @@ public class PropertiesStoreTest {
         try (final BufferedReader reader = Files.newBufferedReader(storedProps)) {
             actualOrder = readInOrder(reader);
         }
-        final String[] expectedOrder = expectedKeyOrder(props);
         Assert.assertEquals(actualOrder.size(), expectedOrder.length,
                 "Unexpected number of keys read from stored properties");
         if (!Arrays.equals(actualOrder.toArray(new String[0]), expectedOrder)) {
@@ -191,7 +206,7 @@ public class PropertiesStoreTest {
     }
 
     // returns the property keys in their natural order
-    private static String[] expectedKeyOrder(final Properties props) {
+    private static String[] naturalOrder(final Properties props) {
         return new TreeSet<>(props.stringPropertyNames()).toArray(new String[0]);
     }
 
@@ -219,4 +234,42 @@ public class PropertiesStoreTest {
         return readKeys;
     }
 
+    // Extends java.util.Properties and overrides entrySet() to return a reverse
+    // sorted entries set
+    private static class OverridesEntrySet extends Properties {
+        @Override
+        @SuppressWarnings("unchecked")
+        public Set<Map.Entry<Object, Object>> entrySet() {
+            // return a reverse sorted entries set
+            var entries = super.entrySet();
+            Comparator<Map.Entry<String, String>> comparator = Map.Entry.comparingByKey(Comparator.reverseOrder());
+            TreeSet<Map.Entry<String, String>> reverseSorted = new TreeSet<>(comparator);
+            reverseSorted.addAll((Set) entries);
+            return (Set) reverseSorted;
+        }
+
+        String[] expectedKeyOrder() {
+            // returns in reverse order of the property keys' natural ordering
+            var keys = new ArrayList<>(stringPropertyNames());
+            keys.sort(Comparator.reverseOrder());
+            return keys.toArray(new String[0]);
+        }
+    }
+
+    // Extends java.util.Properties and overrides entrySet() to just return "super.entrySet()"
+    private static class OverridesEntrySetCallsSuper extends Properties {
+        @Override
+        public Set<Map.Entry<Object, Object>> entrySet() {
+            return super.entrySet();
+        }
+    }
+
+    // Extends java.util.Properties but doesn't override entrySet() method
+    private static class DoesNotOverrideEntrySet extends Properties {
+
+        @Override
+        public String toString() {
+            return "DoesNotOverrideEntrySet - " + super.toString();
+        }
+    }
 }

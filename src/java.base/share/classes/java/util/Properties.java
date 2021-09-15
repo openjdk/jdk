@@ -842,8 +842,12 @@ public class Properties extends Hashtable<Object,Object> {
      * After the entries have been written, the output stream is flushed.
      * The output stream remains open after this method returns.
      *
-     * @implNote This method writes out the property list (key and element pairs)
-     * in the natural sort order of the property keys.
+     * @implNote This method invokes the {@link #entrySet()} method
+     * and writes out the returned key and element pairs
+     * in the natural sort order of those keys. If subclasses override
+     * the {@code entrySet} method and return a different {@code Set} instance,
+     * then the property list is written out in the iteration order of
+     * that returned {@code Set}
      *
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
@@ -919,8 +923,15 @@ public class Properties extends Hashtable<Object,Object> {
 
         synchronized (this) {
             @SuppressWarnings("unchecked")
-            var entries = new ArrayList<>(((Map<String, String>) (Map) map).entrySet());
-            entries.sort(Map.Entry.comparingByKey());
+            Collection<Map.Entry<String, String>> entries = (Set<Map.Entry<String, String>>) (Set) entrySet();
+            // entrySet() can be overridden by subclasses. Here we check to see if the returned instance is the one
+            // returned by the Properties.entrySet() implementation.If yes, then we sort those entries
+            // in the natural order of their key. Else we just use the iteration order of the returned instance.
+            if (entries instanceof Collections.SynchronizedSet<?> ss
+                    && ss.c instanceof EntrySet) {
+                entries = new ArrayList<>(entries);
+                ((List<Map.Entry<String, String>>) entries).sort(Map.Entry.comparingByKey());
+            }
             for (Map.Entry<String, String> e : entries) {
                 String key = e.getKey();
                 String val = e.getValue();
