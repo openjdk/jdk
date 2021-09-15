@@ -130,7 +130,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                                 Arrays.stream(CLDR_PARENT_LOCALES.getOrDefault(
                                     Locale.forLanguageTag(child), new String[0]))
                                         .filter(grandchild -> !grandchild.isEmpty()),
-                                List.of(child).stream()))
+                                Stream.of(child)))
                         .distinct()
                         .forEach(children::add);
                     return new AbstractMap.SimpleEntry<String, List<String>>(parent, children);
@@ -404,6 +404,6 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 break;
         }
 
-        return tags == null ? List.of(tag).stream() : tags.stream();
+        return tags == null ? Stream.of(tag) : tags.stream();
     }
 }
