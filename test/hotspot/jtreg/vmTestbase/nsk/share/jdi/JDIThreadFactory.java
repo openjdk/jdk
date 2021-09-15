@@ -25,6 +25,10 @@ package nsk.share.jdi;
 
 import java.util.concurrent.ThreadFactory;
 
+/*
+    This factory is used to run new threads in debuggee in JDI tests.
+ */
+
 public class JDIThreadFactory {
 
     private static ThreadFactory threadFactory = r -> new Thread(r);
