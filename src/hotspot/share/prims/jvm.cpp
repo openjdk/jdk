@@ -29,7 +29,6 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
-#include "cds/unregisteredClasses.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -843,7 +842,7 @@ static jclass jvm_define_class_common(const char *name,
                                       jobject loader, const jbyte *buf,
                                       jsize len, jobject pd, const char *source,
                                       TRAPS) {
-  const char* final_source = (source != NULL) ? source : "__JVM_DefineClass__";
+  if (source == NULL)  source = "__JVM_DefineClass__";
 
   JavaThread* jt = THREAD;
 
@@ -864,7 +863,7 @@ static jclass jvm_define_class_common(const char *name,
                                            CHECK_NULL);
 
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*)buf, len, final_source, ClassFileStream::verify);
+  ClassFileStream st((u1*)buf, len, source, ClassFileStream::verify);
   Handle class_loader (THREAD, JNIHandles::resolve(loader));
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
   ClassLoadInfo cl_info(protection_domain);
@@ -876,18 +875,6 @@ static jclass jvm_define_class_common(const char *name,
   if (log_is_enabled(Debug, class, resolve)) {
     trace_class_resolution(k);
   }
-
-#if INCLUDE_CDS
-  if (DumpSharedSpaces) {
-    // Calculate size and crc of the ClassFileStream if the loader is one of the
-    // URL class loaders used for unregistered classes.
-    if (source != NULL &&
-        UnregisteredClasses::seen_classloader(source, class_loader)) {
-      st.set_verify(true);
-      SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass::cast(k), &st);
-    }
-  }
-#endif // INCLUDE_CDS
 
   return (jclass) JNIHandles::make_local(THREAD, k->java_mirror());
 }

@@ -474,7 +474,6 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
-  ClassLoaderExt::record_result(UNREGISTERED_INDEX, k);
   k->clear_shared_class_loader_type();
 
   bool added = SystemDictionaryShared::add_unregistered_class_for_static_archive(THREAD, k);

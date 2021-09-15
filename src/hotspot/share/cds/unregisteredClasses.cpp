@@ -78,19 +78,6 @@ class URLClassLoaderTable : public ResourceHashtable<
 
 static URLClassLoaderTable* _url_classloader_table = NULL;
 
-
-bool UnregisteredClasses::seen_classloader(const char* path, Handle loader) {
-  if (_url_classloader_table == NULL) {
-    return false;
-  }
-  TempNewSymbol path_symbol = SymbolTable::new_symbol(path);
-  Handle* url_classloader_ptr = _url_classloader_table->get(path_symbol);
-  if (url_classloader_ptr == NULL) {
-    return false;
-  }
-  return(*url_classloader_ptr == loader);
-}
-
 Handle UnregisteredClasses::create_url_classloader(Symbol* path, TRAPS) {
   ResourceMark rm(THREAD);
   JavaValue result(T_OBJECT);
