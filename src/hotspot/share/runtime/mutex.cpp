@@ -372,11 +372,14 @@ Mutex* Mutex::get_least_ranked_lock_besides_this(Mutex* locks) {
 void Mutex::check_rank(Thread* thread) {
   Mutex* locks_owned = thread->owned_locks();
 
-  // We expect the locks already acquired to be in increasing rank order.
-  for (Mutex* tmp = locks_owned; tmp != NULL; tmp = tmp->next()) {
-    if (tmp->next() != NULL) {
-      assert(tmp->rank() < tmp->next()->rank()
+  if (!SafepointSynchronize::is_at_safepoint()) {
+    // We expect the locks already acquired to be in increasing rank order,
+    // modulo locks acquired in try_lock_without_rank_check()
+    for (Mutex* tmp = locks_owned; tmp != NULL; tmp = tmp->next()) {
+      if (tmp->next() != NULL) {
+        assert(tmp->rank() < tmp->next()->rank()
                || tmp->skip_rank_check(), "mutex rank anomaly?");
+      }
     }
   }
 
