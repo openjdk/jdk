@@ -37,7 +37,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"

@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1FULLGCTASK_HPP
 #define SHARE_GC_G1_G1FULLGCTASK_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "utilities/ticks.hpp"
 
 class G1FullCollector;

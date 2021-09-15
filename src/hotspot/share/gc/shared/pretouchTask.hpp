@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_PRETOUCH_HPP
 #define SHARE_GC_SHARED_PRETOUCH_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 
 class PretouchTask : public WorkerTask {
   char* volatile _cur_addr;

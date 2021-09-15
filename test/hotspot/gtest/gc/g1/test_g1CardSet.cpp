@@ -27,7 +27,7 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "unittest.hpp"
 #include "utilities/powerOfTwo.hpp"

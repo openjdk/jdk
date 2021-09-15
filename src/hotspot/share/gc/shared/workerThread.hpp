@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_WORKGROUP_HPP
-#define SHARE_GC_SHARED_WORKGROUP_HPP
+#ifndef SHARE_GC_SHARED_WORKERTHREAD_HPP
+#define SHARE_GC_SHARED_WORKERTHREAD_HPP
 
 #include "gc/shared/gcId.hpp"
 #include "memory/allocation.hpp"
@@ -161,4 +161,4 @@ public:
   }
 };
 
-#endif // SHARE_GC_SHARED_WORKGROUP_HPP
+#endif // SHARE_GC_SHARED_WORKERTHREAD_HPP

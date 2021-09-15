@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1PageBasedVirtualSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"

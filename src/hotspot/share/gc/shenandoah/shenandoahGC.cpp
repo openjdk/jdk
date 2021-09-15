@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 
 #include "compiler/oopMap.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"

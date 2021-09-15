@@ -28,7 +28,7 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/instanceRefKlass.hpp"
 

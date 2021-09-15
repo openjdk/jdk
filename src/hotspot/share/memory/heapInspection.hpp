@@ -25,12 +25,12 @@
 #ifndef SHARE_MEMORY_HEAPINSPECTION_HPP
 #define SHARE_MEMORY_HEAPINSPECTION_HPP
 
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
 #include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
-#include "gc/shared/workgroup.hpp"
 
 class ParallelObjectIterator;
 

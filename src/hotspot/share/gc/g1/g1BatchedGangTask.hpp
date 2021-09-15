@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1BATCHEDGANGTASK_HPP
 
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 
 template <typename E, MEMFLAGS F>

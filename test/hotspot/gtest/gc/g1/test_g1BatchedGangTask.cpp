@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 
 #include "gc/g1/g1BatchedGangTask.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "runtime/atomic.hpp"
 #include "unittest.hpp"
 

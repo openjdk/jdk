@@ -28,6 +28,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -59,7 +60,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
-#include "gc/shared/workgroup.hpp"
 
 ShenandoahFullGC::ShenandoahFullGC() :
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),

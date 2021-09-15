@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/allocation.hpp"
 

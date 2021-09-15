@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZTASK_HPP
 #define SHARE_GC_Z_ZTASK_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 
 class ZTask : public StackObj {

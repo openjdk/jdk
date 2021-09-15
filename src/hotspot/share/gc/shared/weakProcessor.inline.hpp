@@ -32,7 +32,7 @@
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/weakProcessorTimes.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"

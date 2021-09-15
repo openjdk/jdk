@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/allocation.inline.hpp"
