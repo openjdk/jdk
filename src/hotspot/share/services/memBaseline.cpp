@@ -25,6 +25,7 @@
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/memBaseline.hpp"
@@ -147,7 +148,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 bool MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
-  MetaspaceSnapshot::snapshot(_metaspace_snapshot);
+  _metaspace_stats = MetaspaceUtils::get_combined_statistics();
   return true;
 }
 

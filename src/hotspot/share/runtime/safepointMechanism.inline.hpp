@@ -25,8 +25,10 @@
 #ifndef SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
 #define SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/safepointMechanism.hpp"
+
+#include "runtime/atomic.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -60,13 +62,34 @@ bool SafepointMechanism::global_poll() {
   return (SafepointSynchronize::_state != SafepointSynchronize::_not_synchronized);
 }
 
-bool SafepointMechanism::should_process(JavaThread* thread) {
-  return local_poll_armed(thread);
+bool SafepointMechanism::should_process_no_suspend(JavaThread* thread) {
+  if (global_poll() || thread->handshake_state()->has_a_non_suspend_operation()) {
+    return true;
+  } else {
+    // We ignore suspend requests if any and just check before returning if we need
+    // to fix the thread's oops and first few frames due to a possible safepoint.
+    StackWatermarkSet::on_safepoint(thread);
+    update_poll_values(thread);
+    OrderAccess::cross_modify_fence();
+    return false;
+  }
 }
 
-void SafepointMechanism::process_if_requested(JavaThread* thread) {
+bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {
+  if (!local_poll_armed(thread)) {
+    return false;
+  } else if (allow_suspend) {
+    return true;
+  }
+  return should_process_no_suspend(thread);
+}
+
+void SafepointMechanism::process_if_requested(JavaThread* thread, bool allow_suspend) {
+  // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
+  thread->check_possible_safepoint();
+
   if (local_poll_armed(thread)) {
-    process_if_requested_slow(thread);
+    process(thread, allow_suspend);
   }
 }
 

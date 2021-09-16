@@ -33,6 +33,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
@@ -47,23 +48,6 @@
 // the entry in the constant pool is a klass object and not a Symbol*.
 
 class SymbolHashMap;
-
-class CPSlot {
- friend class ConstantPool;
-  intptr_t _ptr;
-  enum TagBits  {_pseudo_bit = 1};
- public:
-
-  CPSlot(intptr_t ptr): _ptr(ptr) {}
-  CPSlot(Symbol* ptr, int tag_bits = 0): _ptr((intptr_t)ptr | tag_bits) {}
-
-  intptr_t value()   { return _ptr; }
-  bool is_pseudo_string() { return (_ptr & _pseudo_bit) != 0; }
-
-  Symbol* get_symbol() {
-    return (Symbol*)(_ptr & ~_pseudo_bit);
-  }
-};
 
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
@@ -152,13 +136,6 @@ class ConstantPool : public Metadata {
  private:
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(ConstantPool)); }
 
-  CPSlot slot_at(int which) const;
-
-  void slot_at_put(int which, CPSlot s) const {
-    assert(is_within_bounds(which), "index out of bounds");
-    assert(s.value() != 0, "Caught something");
-    *(intptr_t*)&base()[which] = s.value();
-  }
   intptr_t* obj_at_addr(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
     return (intptr_t*) &base()[which];
@@ -310,8 +287,7 @@ class ConstantPool : public Metadata {
     *int_at_addr(which) = name_index;
   }
 
-  // Unsafe anonymous class support:
-  void klass_at_put(int class_index, int name_index, int resolved_klass_index, Klass* k, Symbol* name);
+  // Hidden class support:
   void klass_at_put(int class_index, Klass* k);
 
   void unresolved_klass_at_put(int which, int name_index, int resolved_klass_index) {
@@ -344,8 +320,12 @@ class ConstantPool : public Metadata {
   }
 
   void unresolved_string_at_put(int which, Symbol* s) {
-    release_tag_at_put(which, JVM_CONSTANT_String);
-    slot_at_put(which, CPSlot(s));
+    assert(s->refcount() != 0, "should have nonzero refcount");
+    // Note that release_tag_at_put is not needed here because this is called only
+    // when constructing a ConstantPool in a single thread, with no possibility
+    // of concurrent access.
+    tag_at_put(which, JVM_CONSTANT_String);
+    *symbol_at_addr(which) = s;
   }
 
   void int_at_put(int which, jint i) {
@@ -485,26 +465,6 @@ class ConstantPool : public Metadata {
   // Version that can be used before string oop array is created.
   oop uncached_string_at(int which, TRAPS);
 
-  // A "pseudo-string" is an non-string oop that has found its way into
-  // a String entry.
-  // This can happen if the user patches a live
-  // object into a CONSTANT_String entry of an unsafe anonymous class.
-  // Methods internally created for method handles may also
-  // use pseudo-strings to link themselves to related metaobjects.
-
-  bool is_pseudo_string_at(int which);
-
-  oop pseudo_string_at(int which, int obj_index);
-
-  oop pseudo_string_at(int which);
-
-  void pseudo_string_at_put(int which, int obj_index, oop x) {
-    assert(tag_at(which).is_string(), "Corrupted constant pool");
-    Symbol* sym = unresolved_string_at(which);
-    slot_at_put(which, CPSlot(sym, CPSlot::_pseudo_bit));
-    string_at_put(which, obj_index, x);    // this works just fine
-  }
-
   // only called when we are sure a string entry is already resolved (via an
   // earlier string_at call.
   oop resolved_string_at(int which) {
@@ -518,8 +478,7 @@ class ConstantPool : public Metadata {
 
   Symbol* unresolved_string_at(int which) {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
-    Symbol* sym = slot_at(which).get_symbol();
-    return sym;
+    return *symbol_at_addr(which);
   }
 
   // Returns an UTF8 for a CONSTANT_String entry at a given index.
@@ -853,9 +812,6 @@ class ConstantPool : public Metadata {
   void set_resolved_references(OopHandle s) { _cache->set_resolved_references(s); }
   Array<u2>* reference_map() const        {  return (_cache == NULL) ? NULL :  _cache->reference_map(); }
   void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
-
-  // patch JSR 292 resolved references after the class is linked.
-  void patch_resolved_references(GrowableArray<Handle>* cp_patches);
 
   Symbol* impl_name_ref_at(int which, bool uncached);
   Symbol* impl_signature_ref_at(int which, bool uncached);

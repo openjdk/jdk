@@ -398,10 +398,7 @@ public class TestCommon extends CDSTestUtils {
     public static OutputAnalyzer runWithArchive(AppCDSOptions opts)
         throws Exception {
 
-        ArrayList<String> cmd = new ArrayList<String>();
-
-        for (String p : opts.prefix) cmd.add(p);
-
+        ArrayList<String> cmd = opts.getRuntimePrefix();
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-showversion");
         cmd.add("-XX:SharedArchiveFile=" + getCurrentArchiveName());

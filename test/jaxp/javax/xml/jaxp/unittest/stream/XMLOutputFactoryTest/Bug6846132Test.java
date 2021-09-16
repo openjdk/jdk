@@ -37,7 +37,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6846132
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLOutputFactoryTest.Bug6846132Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLOutputFactoryTest.Bug6846132Test
  * @run testng/othervm stream.XMLOutputFactoryTest.Bug6846132Test
  * @summary Test createXMLStreamWriter with SAXResult won't throw a NullPointerException.
  */

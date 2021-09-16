@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.CoalesceTest.CoalesceTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.CoalesceTest.CoalesceTest
  * @run testng/othervm stream.CoalesceTest.CoalesceTest
  * @summary Test Coalesce property works.
  */

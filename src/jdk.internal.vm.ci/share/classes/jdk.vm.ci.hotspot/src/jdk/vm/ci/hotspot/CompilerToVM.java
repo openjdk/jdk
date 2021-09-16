@@ -724,11 +724,6 @@ final class CompilerToVM {
     native Object getFlagValue(String name);
 
     /**
-     * Gets the host class for {@code type}.
-     */
-    native HotSpotResolvedObjectTypeImpl getHostClass(HotSpotResolvedObjectTypeImpl type);
-
-    /**
      * @see ResolvedJavaType#getInterfaces()
      */
     native HotSpotResolvedObjectTypeImpl[] getInterfaces(HotSpotResolvedObjectTypeImpl type);
@@ -739,7 +734,7 @@ final class CompilerToVM {
     native HotSpotResolvedJavaType getComponentType(HotSpotResolvedObjectTypeImpl type);
 
     /**
-     * Get the array class for {@code type}. This can't be done symbolically since anonymous types
+     * Get the array class for {@code type}. This can't be done symbolically since hidden classes
      * can't be looked up by name.
      */
     native HotSpotResolvedObjectTypeImpl getArrayType(HotSpotResolvedJavaType type);
@@ -952,6 +947,26 @@ final class CompilerToVM {
      * @see JFR.Ticks#now
      */
     native long ticksNow();
+
+    /**
+     * @see HotSpotJVMCIRuntime#setThreadLocalObject(int, Object)
+     */
+    native void setThreadLocalObject(int id, Object value);
+
+    /**
+     * @see HotSpotJVMCIRuntime#getThreadLocalObject(int)
+     */
+    native Object getThreadLocalObject(int id);
+
+    /**
+     * @see HotSpotJVMCIRuntime#setThreadLocalLong(int, long)
+     */
+    native void setThreadLocalLong(int id, long value);
+
+    /**
+     * @see HotSpotJVMCIRuntime#getThreadLocalLong(int)
+     */
+    native long getThreadLocalLong(int id);
 
     /**
      * Adds phases in HotSpot JFR.

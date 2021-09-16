@@ -51,7 +51,7 @@ public class CPlatformView extends CFRetainedResource {
 
     private LWWindowPeer peer;
     private SurfaceData surfaceData;
-    private CFRetainedResource windowLayer;
+    private CFLayer windowLayer;
     private CPlatformResponder responder;
 
     public CPlatformView() {
@@ -62,6 +62,7 @@ public class CPlatformView extends CFRetainedResource {
         initializeBase(peer, responder);
 
         this.windowLayer = CGraphicsDevice.usingMetalPipeline()? createMTLLayer() : createCGLayer();
+
         setPtr(nativeCreateView(0, 0, 0, 0, getWindowLayerPtr()));
     }
 
@@ -104,10 +105,7 @@ public class CPlatformView extends CFRetainedResource {
     // PAINTING METHODS
     // ----------------------------------------------------------------------
     public SurfaceData replaceSurfaceData() {
-        surfaceData = (CGraphicsDevice.usingMetalPipeline()) ?
-                    ((MTLLayer)windowLayer).replaceSurfaceData() :
-                    ((CGLLayer)windowLayer).replaceSurfaceData()
-        ;
+        surfaceData = windowLayer.replaceSurfaceData();
         return surfaceData;
     }
 
@@ -122,9 +120,7 @@ public class CPlatformView extends CFRetainedResource {
     }
 
     public long getWindowLayerPtr() {
-        return CGraphicsDevice.usingMetalPipeline() ?
-                ((MTLLayer)windowLayer).getPointer() :
-                ((CGLLayer)windowLayer).getPointer();
+        return windowLayer.getPointer();
     }
 
     public void setAutoResizable(boolean toResize) {
@@ -137,6 +133,10 @@ public class CPlatformView extends CFRetainedResource {
             ref.set(nativeIsViewUnderMouse(ptr));
         });
         return ref.get();
+    }
+
+    public void setWindowLayerOpaque(boolean opaque) {
+        windowLayer.setOpaque(opaque);
     }
 
     public GraphicsDevice getGraphicsDevice() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@ import java.awt.font.FontRenderContext;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.UnsupportedEncodingException;
-import java.lang.ref.WeakReference;
 import java.util.Locale;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
  * Ideally there would be no native fonts used, and this class would be
@@ -213,23 +213,11 @@ public class NativeFont extends PhysicalFont {
             pos = sb.indexOf("-0-", pos);
         };
         String xlfd = sb.toString();
-        byte[] bytes = null;
-        try {
-            bytes = xlfd.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            bytes = xlfd.getBytes();
-        }
-        return haveBitmapFonts(bytes);
+        return haveBitmapFonts(xlfd.getBytes(UTF_8));
     }
 
     public static boolean fontExists(String xlfd) {
-        byte[] bytes = null;
-        try {
-            bytes = xlfd.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            bytes = xlfd.getBytes();
-        }
-        return fontExists(bytes);
+        return fontExists(xlfd.getBytes(UTF_8));
     }
 
     private static native boolean haveBitmapFonts(byte[] xlfd);
@@ -380,13 +368,7 @@ public class NativeFont extends PhysicalFont {
         }
 
         String xlfd = sb.toString();
-        byte[] bytes = null;
-        try {
-            bytes = xlfd.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            bytes = xlfd.getBytes();
-        }
-        return bytes;
+        return xlfd.getBytes(UTF_8);
     }
 
     public String toString() {

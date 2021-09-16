@@ -606,6 +606,15 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           igvn->replace_input_of(outer, LoopNode::LoopBackControl, igvn->C->top());
         }
       }
+      if (is_CountedLoop()) {
+        Node* opaq = as_CountedLoop()->is_canonical_loop_entry();
+        if (opaq != NULL) {
+          // This is not a loop anymore. No need to keep the Opaque1 node on the test that guards the loop as it won't be
+          // subject to further loop opts.
+          assert(opaq->Opcode() == Op_Opaque1, "");
+          igvn->replace_node(opaq, opaq->in(1));
+        }
+      }
       Node *parent_ctrl;
       if( cnt == 0 ) {
         assert( req() == 1, "no inputs expected" );
@@ -1131,7 +1140,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   // convert the one to the other.
   const TypePtr* ttp = _type->make_ptr();
   const TypeInstPtr* ttip = (ttp != NULL) ? ttp->isa_instptr() : NULL;
-  const TypeKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_klassptr() : NULL;
+  const TypeKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
   bool is_intf = false;
   if (ttip != NULL) {
     ciKlass* k = ttip->klass();
@@ -1224,7 +1233,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // because the type system doesn't interact well with interfaces.
     const TypePtr *jtp = jt->make_ptr();
     const TypeInstPtr *jtip = (jtp != NULL) ? jtp->isa_instptr() : NULL;
-    const TypeKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_klassptr() : NULL;
+    const TypeKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
     if( jtip && ttip ) {
       if( jtip->is_loaded() &&  jtip->klass()->is_interface() &&
           ttip->is_loaded() && !ttip->klass()->is_interface() ) {
@@ -1969,18 +1978,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Wait until after parsing for the type information to propagate from the casts.
       assert(can_reshape, "Invalid during parsing");
       const Type* phi_type = bottom_type();
-      assert(phi_type->isa_int() || phi_type->isa_ptr() || phi_type->isa_long(), "bad phi type");
       // Add casts to carry the control dependency of the Phi that is
       // going away
       Node* cast = NULL;
-      if (phi_type->isa_int()) {
-        cast = ConstraintCastNode::make_cast(Op_CastII, r, uin, phi_type, true);
-      } else if (phi_type->isa_long()) {
-        cast = ConstraintCastNode::make_cast(Op_CastLL, r, uin, phi_type, true);
-      } else {
+      if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, true);
+          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
           // a cast to a new klass (and both if both null-ness and
@@ -1990,7 +1994,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // null, uin's type must be casted to not null
           if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
               uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL, true);
+            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency);
           }
 
           // If the type of phi and uin, both casted to not null,
@@ -2002,12 +2006,14 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, true);
+            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, ConstraintCastNode::StrongDependency);
           }
           if (cast == NULL) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, true);
+            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency);
           }
         }
+      } else {
+        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::StrongDependency);
       }
       assert(cast != NULL, "cast should be set");
       cast = phase->transform(cast);
@@ -2037,7 +2043,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* opt = NULL;
   int true_path = is_diamond_phi();
-  if( true_path != 0 ) {
+  if (true_path != 0 &&
+      // If one of the diamond's branch is in the process of dying then, the Phi's input for that branch might transform
+      // to top. If that happens replacing the Phi with an operation that consumes the Phi's inputs will cause the Phi
+      // to be replaced by top. To prevent that, delay the transformation until the branch has a chance to be removed.
+      !(can_reshape && wait_for_region_igvn(phase))) {
     // Check for CMove'ing identity. If it would be unsafe,
     // handle it here. In the safe case, let Identity handle it.
     Node* unsafe_id = is_cmove_id(phase, true_path);
@@ -2707,7 +2717,7 @@ const Type* NeverBranchNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Check for no longer being part of a loop
 Node *NeverBranchNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (can_reshape && !in(0)->is_Loop()) {
+  if (can_reshape && !in(0)->is_Region()) {
     // Dead code elimination can sometimes delete this projection so
     // if it's not there, there's nothing to do.
     Node* fallthru = proj_out_or_null(0);

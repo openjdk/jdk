@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
 
 #include "gc/parallel/psParallelCompact.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/stack.hpp"
 
@@ -38,14 +40,13 @@ class ParallelCompactData;
 class ParMarkBitMap;
 
 class ParCompactionManager : public CHeapObj<mtGC> {
+  friend class MarkFromRootsTask;
+  friend class ParallelCompactRefProcProxyTask;
+  friend class ParallelScavengeRefProcProxyTask;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
-  friend class CompactionWithStealingTask;
-  friend class UpdateAndFillClosure;
-  friend class RefProcTaskExecutor;
-  friend class PCRefProcTask;
-  friend class MarkFromRootsTask;
   friend class UpdateDensePrefixAndCompactionTask;
+
  private:
   typedef GenericTaskQueue<oop, mtGC>             OopTaskQueue;
   typedef GenericTaskQueueSet<OopTaskQueue, mtGC> OopTaskQueueSet;
@@ -88,6 +89,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   oop _last_query_obj;
   size_t _last_query_ret;
 
+  StringDedup::Requests _string_dedup_requests;
+
   static PSOldGen* old_gen()             { return _old_gen; }
   static ObjectStartArray* start_array() { return _start_array; }
   static OopTaskQueueSet* oop_task_queues()  { return _oop_task_queues; }
@@ -125,6 +128,10 @@ class ParCompactionManager : public CHeapObj<mtGC> {
     _last_query_ret = 0;
   }
 
+  void flush_string_dedup_requests() {
+    _string_dedup_requests.flush();
+  }
+
   // Bitmap query support, cache last query and result
   HeapWord* last_query_begin() { return _last_query_beg; }
   oop last_query_object() { return _last_query_obj; }
@@ -135,6 +142,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   void set_last_query_return(size_t new_ret) { _last_query_ret = new_ret; }
 
   static void reset_all_bitmap_query_caches();
+
+  static void flush_all_string_dedup_requests();
 
   RegionTaskQueue* region_stack()                { return &_region_stack; }
 
@@ -187,8 +196,11 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   class FollowStackClosure: public VoidClosure {
    private:
     ParCompactionManager* _compaction_manager;
+    TaskTerminator* _terminator;
+    uint _worker_id;
    public:
-    FollowStackClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+    FollowStackClosure(ParCompactionManager* cm, TaskTerminator* terminator, uint worker_id)
+      : _compaction_manager(cm), _terminator(terminator), _worker_id(worker_id) { }
     virtual void do_void();
   };
 

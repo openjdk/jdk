@@ -58,7 +58,7 @@ import java.util.PropertyPermission;
  * @summary Make sure equivalent ProtectionDomains are granted the same
  *          permissions when the CodeSource URLs are different but resolve
  *          to the same ip address after name service resolution.
- * @run main/othervm DefineClass
+ * @run main/othervm -Djava.security.manager=allow DefineClass
  */
 
 public class DefineClass {

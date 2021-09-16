@@ -31,17 +31,17 @@ import jdk.test.lib.Utils;
 
 public class DebugdUtils {
     private static final String GOLDEN = "Debugger attached";
-    private final String id;
+    private String serverID;
     private int registryPort;
     private boolean disableRegistry;
-    private String prefix;
+    private String serverName;
     private Process debugdProcess;
 
-    public DebugdUtils(String id) {
-        this.id = id;
+    public DebugdUtils() {
+        this.serverID = null;
         this.registryPort = 0;
         this.disableRegistry = false;
-        this.prefix = null;
+        this.serverName = null;
         debugdProcess = null;
     }
 
@@ -53,22 +53,23 @@ public class DebugdUtils {
         this.disableRegistry = disableRegistry;
     }
 
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
+    public void setServerID(String serverID) {
+        this.serverID = serverID;
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
     }
 
     public void attach(long pid) throws IOException {
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         jhsdbLauncher.addVMArgs(Utils.getTestJavaOpts());
-        if (prefix != null) {
-            jhsdbLauncher.addToolArg("-J-Dsun.jvm.hotspot.rmi.serverNamePrefix=" + prefix);
-        }
         jhsdbLauncher.addToolArg("debugd");
         jhsdbLauncher.addToolArg("--pid");
         jhsdbLauncher.addToolArg(Long.toString(pid));
-        if (id != null) {
+        if (serverID != null) {
             jhsdbLauncher.addToolArg("--serverid");
-            jhsdbLauncher.addToolArg(id);
+            jhsdbLauncher.addToolArg(serverID);
         }
         if (registryPort != 0) {
             jhsdbLauncher.addToolArg("--registryport");
@@ -76,6 +77,10 @@ public class DebugdUtils {
         }
         if (disableRegistry) {
             jhsdbLauncher.addToolArg("--disable-registry");
+        }
+        if (serverName != null) {
+            jhsdbLauncher.addToolArg("--servername");
+            jhsdbLauncher.addToolArg(serverName);
         }
         debugdProcess = (new ProcessBuilder(jhsdbLauncher.getCommand())).start();
 

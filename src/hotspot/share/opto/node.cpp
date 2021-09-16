@@ -308,7 +308,7 @@ inline int Node::Init(int req) {
   // Allocate memory for the necessary number of edges.
   if (req > 0) {
     // Allocate space for _in array to have double alignment.
-    _in = (Node **) ((char *) (C->node_arena()->Amalloc_D(req * sizeof(void*))));
+    _in = (Node **) ((char *) (C->node_arena()->AmallocWords(req * sizeof(void*))));
   }
   // If there are default notes floating around, capture them:
   Node_Notes* nn = C->default_node_notes();
@@ -499,7 +499,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 Node *Node::clone() const {
   Compile* C = Compile::current();
   uint s = size_of();           // Size of inherited Node
-  Node *n = (Node*)C->node_arena()->Amalloc_D(size_of() + _max*sizeof(Node*));
+  Node *n = (Node*)C->node_arena()->AmallocWords(size_of() + _max*sizeof(Node*));
   Copy::conjoint_words_to_lower((HeapWord*)this, (HeapWord*)n, s);
   // Set the new input pointer array
   n->_in = (Node**)(((char*)n)+s);
@@ -527,6 +527,10 @@ Node *Node::clone() const {
     // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+  }
+  if (n->is_reduction()) {
+    // Do not copy reduction information. This must be explicitly set by the calling code.
+    n->remove_flag(Node::Flag_is_reduction);
   }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
@@ -558,8 +562,6 @@ Node *Node::clone() const {
     }
   }
   if (n->is_Call()) {
-    // cloning CallNode may need to clone JVMState
-    n->as_Call()->clone_jvms(C);
     // CallGenerator is linked to the original node.
     CallGenerator* cg = n->as_Call()->generator();
     if (cg != NULL) {
@@ -572,6 +574,9 @@ Node *Node::clone() const {
     }
   }
   if (n->is_SafePoint()) {
+    // Scalar replacement and macro expansion might modify the JVMState.
+    // Clone it to make sure it's not shared between SafePointNodes.
+    n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
   return n;                     // Return the clone
@@ -2211,22 +2216,16 @@ void Node::verify_edges(Unique_Node_List &visited) {
 }
 
 // Verify all nodes if verify_depth is negative
-void Node::verify(Node* n, int verify_depth) {
+void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
   assert(verify_depth != 0, "depth should not be 0");
-  ResourceMark rm;
-  VectorSet old_space;
-  VectorSet new_space;
-  Node_List worklist;
-  worklist.push(n);
   Compile* C = Compile::current();
-  uint last_index_on_current_depth = 0;
+  uint last_index_on_current_depth = worklist.size() - 1;
   verify_depth--; // Visiting the first node on depth 1
   // Only add nodes to worklist if verify_depth is negative (visit all nodes) or greater than 0
   bool add_to_worklist = verify_depth != 0;
 
-
   for (uint list_index = 0; list_index < worklist.size(); list_index++) {
-    n = worklist[list_index];
+    Node* n = worklist[list_index];
 
     if (n->is_Con() && n->bottom_type() == Type::TOP) {
       if (C->cached_top_node() == NULL) {
@@ -2235,17 +2234,28 @@ void Node::verify(Node* n, int verify_depth) {
       assert(C->cached_top_node() == n, "TOP node must be unique");
     }
 
-    for (uint i = 0; i < n->len(); i++) {
-      Node* x = n->in(i);
+    uint in_len = n->len();
+    for (uint i = 0; i < in_len; i++) {
+      Node* x = n->_in[i];
       if (!x || x->is_top()) {
         continue;
       }
 
       // Verify my input has a def-use edge to me
       // Count use-def edges from n to x
-      int cnt = 0;
-      for (uint j = 0; j < n->len(); j++) {
-        if (n->in(j) == x) {
+      int cnt = 1;
+      for (uint j = 0; j < i; j++) {
+        if (n->_in[j] == x) {
+          cnt++;
+          break;
+        }
+      }
+      if (cnt == 2) {
+        // x is already checked as n's previous input, skip its duplicated def-use count checking
+        continue;
+      }
+      for (uint j = i + 1; j < in_len; j++) {
+        if (n->_in[j] == x) {
           cnt++;
         }
       }
@@ -2259,11 +2269,7 @@ void Node::verify(Node* n, int verify_depth) {
       }
       assert(cnt == 0, "mismatched def-use edge counts");
 
-      // Contained in new_space or old_space?
-      VectorSet* v = C->node_arena()->contains(x) ? &new_space : &old_space;
-      // Check for visited in the proper space. Numberings are not unique
-      // across spaces so we need a separate VectorSet for each space.
-      if (add_to_worklist && !v->test_set(x->_idx)) {
+      if (add_to_worklist && !visited.test_set(x->_idx)) {
         worklist.push(x);
       }
     }

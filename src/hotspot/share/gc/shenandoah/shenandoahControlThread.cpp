@@ -41,13 +41,14 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/metaspaceStats.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
-  _alloc_failure_waiters_lock(Mutex::leaf, "ShenandoahAllocFailureGC_lock", true, Monitor::_safepoint_check_always),
-  _gc_waiters_lock(Mutex::leaf, "ShenandoahRequestedGC_lock", true, Monitor::_safepoint_check_always),
+  _alloc_failure_waiters_lock(Mutex::leaf, "ShenandoahAllocFailureGC_lock", Monitor::_safepoint_check_always, true),
+  _gc_waiters_lock(Mutex::leaf, "ShenandoahRequestedGC_lock", Monitor::_safepoint_check_always, true),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
@@ -187,8 +188,7 @@ void ShenandoahControlThread::run_service() {
 
       heap->reset_bytes_allocated_since_gc_start();
 
-      // Use default constructor to snapshot the Metaspace state before GC.
-      metaspace::MetaspaceSizesSnapshot meta_sizes;
+      MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
       // If GC was requested, we are sampling the counters even without actual triggers
       // from allocation machinery. This captures GC phases more accurately.

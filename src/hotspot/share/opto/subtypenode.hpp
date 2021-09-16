@@ -49,6 +49,14 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::CC; }
   bool depends_only_on_test() const { return false; };
+
+#ifdef ASSERT
+private:
+  bool verify(PhaseGVN* phase);
+  bool verify_helper(PhaseGVN* phase, Node* subklass, const Type* cached_t);
+
+  static bool is_oop(PhaseGVN* phase, Node* n);
+#endif // ASSERT
 };
 
 #endif // SHARE_OPTO_SUBTYPENODE_HPP

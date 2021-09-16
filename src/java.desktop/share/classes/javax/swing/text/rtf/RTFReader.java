@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text.rtf;
 
-import java.lang.*;
-import java.util.*;
-import java.io.*;
 import java.awt.Color;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.StreamTokenizer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import javax.swing.text.*;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.TabStop;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * Takes a sequence of RTF tokens and text and appends the text
@@ -567,6 +586,7 @@ getCharacterSet(final String name)
 {
     char[] set = characterSets.get(name);
     if (set == null) {
+        @SuppressWarnings("removal")
         InputStream charsetStream = AccessController.doPrivileged(
                 new PrivilegedAction<InputStream>() {
                     public InputStream run() {
@@ -591,7 +611,7 @@ static char[] readCharset(InputStream strm)
     char[] values = new char[256];
     int i;
     StreamTokenizer in = new StreamTokenizer(new BufferedReader(
-            new InputStreamReader(strm, "ISO-8859-1")));
+            new InputStreamReader(strm, ISO_8859_1)));
 
     in.eolIsSignificant(false);
     in.commentChar('#');

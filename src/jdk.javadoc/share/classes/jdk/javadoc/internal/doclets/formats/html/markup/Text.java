@@ -55,7 +55,7 @@ public class Text extends Content {
     }
 
     /**
-     * Constructor to construct FixedStringContent object.
+     * Constructs an immutable text object.
      *
      * @param content content for the object
      */

@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CONCURRENTMARKBITMAP_INLINE_HPP
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
+
 #include "gc/shared/markBitMap.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/align.hpp"

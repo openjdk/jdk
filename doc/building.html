@@ -488,7 +488,7 @@
 <li><code>CONF</code> and <code>CONF_NAME</code> - Selecting the configuration(s) to use. See <a href="#using-multiple-configurations">Using Multiple Configurations</a></li>
 </ul>
 <h4 id="test-make-control-variables">Test Make Control Variables</h4>
-<p>These make control variables only make sense when running tests. Please see <a href="testing.html">Testing the JDK</a> for details.</p>
+<p>These make control variables only make sense when running tests. Please see <strong>Testing the JDK</strong> (<a href="testing.html">html</a>, <a href="testing.md">markdown</a>) for details.</p>
 <ul>
 <li><code>TEST</code></li>
 <li><code>TEST_JOBS</code></li>
@@ -506,7 +506,7 @@
 </ul>
 <h2 id="running-tests">Running Tests</h2>
 <p>Most of the JDK tests are using the <a href="http://openjdk.java.net/jtreg">JTReg</a> test framework. Make sure that your configuration knows where to find your installation of JTReg. If this is not picked up automatically, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc.</p>
-<p>The <a href="https://wiki.openjdk.java.net/display/Adoption">Adoption Group</a> provides recent builds of jtreg <a href="https://ci.adoptopenjdk.net/view/Dependencies/job/jtreg/lastSuccessfulBuild/artifact">here</a>. Download the latest <code>.tar.gz</code> file, unpack it, and point <code>--with-jtreg</code> to the <code>jtreg</code> directory that you just unpacked.</p>
+<p>The <a href="https://wiki.openjdk.java.net/display/Adoption">Adoption Group</a> provides recent builds of jtreg <a href="https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/">here</a>. Download the latest <code>.tar.gz</code> file, unpack it, and point <code>--with-jtreg</code> to the <code>jtreg</code> directory that you just unpacked.</p>
 <p>Building of Hotspot Gtest suite requires the source code of Google Test framework. The top directory, which contains both <code>googletest</code> and <code>googlemock</code> directories, should be specified via <code>--with-gtest</code>. The supported version of Google Test is 1.8.1, whose source code can be obtained:</p>
 <ul>
 <li>by downloading and unpacking the source bundle from <a href="https://github.com/google/googletest/releases/tag/release-1.8.1">here</a></li>
@@ -514,7 +514,7 @@
 </ul>
 <p>To execute the most basic tests (tier 1), use:</p>
 <pre><code>make run-test-tier1</code></pre>
-<p>For more details on how to run tests, please see the <a href="testing.html">Testing the JDK</a> document.</p>
+<p>For more details on how to run tests, please see <strong>Testing the JDK</strong> (<a href="testing.html">html</a>, <a href="testing.md">markdown</a>).</p>
 <h2 id="cross-compiling">Cross-compiling</h2>
 <p>Cross-compiling means using one platform (the <em>build</em> platform) to generate output that can ran on another platform (the <em>target</em> platform).</p>
 <p>The typical reason for cross-compiling is that the build is performed on a more powerful desktop computer, but the resulting binaries will be able to run on a different, typically low-performing system. Most of the complications that arise when building for embedded is due to this separation of <em>build</em> and <em>target</em> systems.</p>

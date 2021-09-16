@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jtreg.SkippedException;
  * @summary Test clhsdb dumpclass command
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm ClhsdbDumpclass
+ * @run driver ClhsdbDumpclass
  */
 
 public class ClhsdbDumpclass {
@@ -70,8 +70,8 @@ public class ClhsdbDumpclass {
             // Run javap on the generated class file to make sure it's valid.
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("javap");
             launcher.addVMArgs(Utils.getTestJavaOpts());
-            launcher.addToolArg(APP_DOT_CLASSNAME);
-            System.out.println("> javap " + APP_DOT_CLASSNAME);
+            launcher.addToolArg(classFile.toString());
+            System.out.println("> javap " + classFile.toString());
             List<String> cmdStringList = Arrays.asList(launcher.getCommand());
             ProcessBuilder pb = new ProcessBuilder(cmdStringList);
             Process javap = pb.start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,17 +142,20 @@ import jdk.jfr.internal.settings.JDKSettingControl;
 @MetadataDefinition
 public abstract class SettingControl {
 
+    @SuppressWarnings("removal")
     private final AccessControlContext context;
     private final boolean initialized;
 
     /**
      * Constructor for invocation by subclass constructors.
      */
+    @SuppressWarnings("removal")
     protected SettingControl() {
         context = this instanceof JDKSettingControl ? null : AccessController.getContext();
         initialized = true;
     }
 
+    @SuppressWarnings("removal")
     final AccessControlContext getContext() {
         // Ensure object state is safe
         if (!initialized) {

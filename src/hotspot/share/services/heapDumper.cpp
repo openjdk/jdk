@@ -444,7 +444,7 @@ class DumpWriter : public StackObj {
   void finish_dump_segment();
 
   // Called by threads used for parallel writing.
-  void writer_loop()                    { _backend.thread_loop(false); }
+  void writer_loop()                    { _backend.thread_loop(); }
   // Called when finished to release the threads.
   void deactivate()                     { flush(); _backend.deactivate(); }
 };
@@ -1305,7 +1305,7 @@ class SymbolTableDumper : public SymbolClosure {
 
 void SymbolTableDumper::do_symbol(Symbol** p) {
   ResourceMark rm;
-  Symbol* sym = load_symbol(p);
+  Symbol* sym = *p;
   int len = sym->utf8_length();
   if (len > 0) {
     char* s = sym->as_utf8();
@@ -1771,7 +1771,7 @@ void VM_HeapDumper::doit() {
   if (gang == NULL) {
     work(0);
   } else {
-    gang->run_task(this, gang->active_workers(), true);
+    gang->run_task(this);
   }
 
   // Now we clear the global variables, so that a future dumper can run.
@@ -1780,7 +1780,7 @@ void VM_HeapDumper::doit() {
 }
 
 void VM_HeapDumper::work(uint worker_id) {
-  if (!Thread::current()->is_VM_thread()) {
+  if (worker_id != 0) {
     writer()->writer_loop();
     return;
   }
@@ -1862,7 +1862,10 @@ void VM_HeapDumper::dump_stack_traces() {
     oop threadObj = thread->threadObj();
     if (threadObj != NULL && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
       // dump thread stack trace
-      ResourceMark rm;
+      Thread* current_thread = Thread::current();
+      ResourceMark rm(current_thread);
+      HandleMark hm(current_thread);
+
       ThreadStackTrace* stack_trace = new ThreadStackTrace(thread, false);
       stack_trace->dump_stack_at_safepoint(-1);
       _stack_traces[_num_threads++] = stack_trace;
@@ -1905,7 +1908,7 @@ void VM_HeapDumper::dump_stack_traces() {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path, outputStream* out, int compression) {
+int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
   // print message in interactive case
@@ -1928,7 +1931,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression) {
     }
   }
 
-  DumpWriter writer(new (std::nothrow) FileWriter(path), compressor);
+  DumpWriter writer(new (std::nothrow) FileWriter(path, overwrite), compressor);
 
   if (writer.error() != NULL) {
     set_error(writer.error());

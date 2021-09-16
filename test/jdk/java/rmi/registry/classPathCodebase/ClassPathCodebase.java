@@ -85,7 +85,7 @@ public class ClassPathCodebase {
             File rmiregistryDir =
                   new File(System.getProperty("user.dir", "."), importCodebase);
             rmiregistry = RegistryVM.createRegistryVMWithRunner("RMIRegistryRunner",
-                            " -Denv.class.path=."
+                            " -Denv.class.path=. -Djava.security.manager=allow"
                             + " -Djava.rmi.server.codebase=" + exportCodebaseURL
                             + " -Duser.dir=" + rmiregistryDir.getAbsolutePath());
             rmiregistry.start();

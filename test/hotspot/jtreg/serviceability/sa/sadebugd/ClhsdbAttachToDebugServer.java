@@ -38,7 +38,7 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires os.family != "windows"
  * @library /test/lib
- * @run main/othervm ClhsdbAttachToDebugServer
+ * @run driver ClhsdbAttachToDebugServer
  */
 
 public class ClhsdbAttachToDebugServer {
@@ -54,7 +54,7 @@ public class ClhsdbAttachToDebugServer {
         try {
             theApp = LingeredApp.startApp();
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
-            debugd = new DebugdUtils(null);
+            debugd = new DebugdUtils();
             debugd.attach(theApp.getPid());
 
             JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");

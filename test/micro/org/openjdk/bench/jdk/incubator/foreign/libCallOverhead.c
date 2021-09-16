@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@ EXPORT void* identity_memory_address(void* p) {
     return p;
 }
 
+EXPORT void args1(long long a0) {}
+EXPORT void args2(long long a0, double a1) {}
+EXPORT void args3(long long a0, double a1, long long a2) {}
+EXPORT void args4(long long a0, double a1, long long a2, double a3) {}
 EXPORT void args5(long long a0, double a1, long long a2, double a3, long long a4) {}
 EXPORT void args10(long long a0, double a1, long long a2, double a3, long long a4,
                    double a5, long long a6, double a7, long long a8, double a9) {}

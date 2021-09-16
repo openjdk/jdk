@@ -90,14 +90,16 @@ public final class SecuritySupport {
 
     static final class SecureRecorderListener implements FlightRecorderListener {
 
+        @SuppressWarnings("removal")
         private final AccessControlContext context;
         private final FlightRecorderListener changeListener;
 
-        SecureRecorderListener(AccessControlContext context, FlightRecorderListener changeListener) {
+        SecureRecorderListener(@SuppressWarnings("removal") AccessControlContext context, FlightRecorderListener changeListener) {
             this.context = Objects.requireNonNull(context);
             this.changeListener = Objects.requireNonNull(changeListener);
         }
 
+        @SuppressWarnings("removal")
         @Override
         public void recordingStateChanged(Recording recording) {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -111,6 +113,7 @@ public final class SecuritySupport {
             }, context);
         }
 
+        @SuppressWarnings("removal")
         @Override
         public void recorderInitialized(FlightRecorder recorder) {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -205,6 +208,7 @@ public final class SecuritySupport {
         public T call();
     }
 
+    @SuppressWarnings("removal")
     private static <U> U doPrivilegedIOWithReturn(Callable<U> function) throws IOException {
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<U>() {
@@ -229,6 +233,7 @@ public final class SecuritySupport {
         });
     }
 
+    @SuppressWarnings("removal")
     private static void doPrivileged(Runnable function, Permission... perms) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
@@ -239,6 +244,7 @@ public final class SecuritySupport {
         }, null, perms);
     }
 
+    @SuppressWarnings("removal")
     private static void doPrivileged(Runnable function) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
@@ -249,6 +255,7 @@ public final class SecuritySupport {
         });
     }
 
+    @SuppressWarnings("removal")
     private static <T> T doPrivilegedWithReturn(CallableWithoutCheckException<T> function, Permission... perms) {
         return AccessController.doPrivileged(new PrivilegedAction<T>() {
             @Override
@@ -432,6 +439,7 @@ public final class SecuritySupport {
         doPrivileged(() -> constructor.setAccessible(true), new ReflectPermission("suppressAccessChecks"));
     }
 
+    @SuppressWarnings("removal")
     static void ensureClassIsInitialized(Class<?> clazz) {
         try {
             MethodHandles.Lookup lookup;
@@ -453,6 +461,7 @@ public final class SecuritySupport {
         }
     }
 
+    @SuppressWarnings("removal")
     static Class<?> defineClass(Class<?> lookupClass, byte[] bytes) {
         return AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
             @Override

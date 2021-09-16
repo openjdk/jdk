@@ -150,7 +150,7 @@ public class Main {
      * pflag: preserve/don't strip leading slash and .. component from file name
      * dflag: print module descriptor
      */
-    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag;
+    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag, validate;
 
     boolean suppressDeprecateMsg = false;
 
@@ -193,7 +193,7 @@ public class Main {
         try {
             return (rsrc.getString(key));
         } catch (MissingResourceException e) {
-            throw new Error("Error in message file");
+            throw new Error("Error in message file", e);
         }
     }
 
@@ -401,6 +401,17 @@ public class Main {
                 }
                 if (!found)
                     error(getMsg("error.module.descriptor.not.found"));
+            } else if (validate) {
+                File file;
+                if (fname != null) {
+                    file = new File(fname);
+                } else {
+                    file = createTemporaryFile("tmpJar", ".jar");
+                    try (InputStream in = new FileInputStream(FileDescriptor.in)) {
+                        Files.copy(in, file.toPath());
+                    }
+                }
+                ok = validateJar(file);
             }
         } catch (IOException e) {
             fatalError(e);
@@ -420,15 +431,20 @@ public class Main {
         return ok;
     }
 
+    private boolean validateJar(File file) throws IOException {
+        try (ZipFile zf = new ZipFile(file)) {
+            return Validator.validate(this, zf);
+        } catch (IOException e) {
+            error(formatMsg2("error.validator.jarfile.exception", fname, e.getMessage()));
+            return true;
+        }
+    }
+
     private void validateAndClose(File tmpfile) throws IOException {
         if (ok && isMultiRelease) {
-            try (ZipFile zf = new ZipFile(tmpfile)) {
-                ok = Validator.validate(this, zf);
-                if (!ok) {
-                    error(formatMsg("error.validator.jarfile.invalid", fname));
-                }
-            } catch (IOException e) {
-                error(formatMsg2("error.validator.jarfile.exception", fname, e.getMessage()));
+            ok = validateJar(tmpfile);
+            if (!ok) {
+                error(formatMsg("error.validator.jarfile.invalid", fname));
             }
         }
         Path path = tmpfile.toPath();
@@ -576,7 +592,7 @@ public class Main {
             usageError(getMsg("main.usage.summary"));
             return false;
         }
-        if (!cflag && !tflag && !xflag && !uflag && !iflag && !dflag) {
+        if (!cflag && !tflag && !xflag && !uflag && !iflag && !dflag && !validate) {
             usageError(getMsg("error.bad.option"));
             return false;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -752,6 +752,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
 
             for (PrivilegedAction<InputStream> action : actions) {
                 try {
+                    @SuppressWarnings("removal")
                     InputStream is = AccessController.doPrivileged(action);
                     if(is == null) continue;
                     Soundbank sbk;
@@ -780,6 +781,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                 /*
                  * Save generated soundbank to disk for faster future use.
                  */
+                @SuppressWarnings("removal")
                 OutputStream out = AccessController
                         .doPrivileged((PrivilegedAction<OutputStream>) () -> {
                             try {
@@ -899,6 +901,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
         return info;
     }
 
+    @SuppressWarnings("removal")
     private Properties getStoredProperties() {
         return AccessController
                 .doPrivileged((PrivilegedAction<Properties>) () -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ public class IOUtils {
         t.start();
 
         int ret = p.waitFor();
-        Log.verbose(pb.command(), list, ret);
+        Log.verbose(pb.command(), list, ret, IOUtils.getPID(p));
 
         result.clear();
         result.addAll(list);
@@ -333,6 +333,17 @@ public class IOUtils {
             throw iae;
         }
         return filename;
+    }
+
+    public static long getPID(Process p) {
+        try {
+            return p.pid();
+        } catch (UnsupportedOperationException ex) {
+            Log.verbose(ex); // Just log exception and ignore it. This method
+                             // is used for verbose output, so not a problem
+                             // if unsupported.
+            return -1;
+        }
     }
 
     private static class PrettyPrintHandler implements InvocationHandler {

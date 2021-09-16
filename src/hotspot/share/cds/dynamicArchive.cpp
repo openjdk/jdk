@@ -83,6 +83,7 @@ public:
 
   void init_header();
   void release_header();
+  void post_dump();
   void sort_methods();
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
@@ -107,7 +108,13 @@ public:
 
     verify_universe("Before CDS dynamic dump");
     DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
+
+    // Block concurrent class unloading from changing the _dumptime_table
+    MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
     SystemDictionaryShared::check_excluded_classes();
+
+    // save dumptime tables
+    SystemDictionaryShared::clone_dumptime_tables();
 
     init_header();
     gather_source_objs();
@@ -155,6 +162,11 @@ public:
     write_archive(serialized_data);
     release_header();
 
+    post_dump();
+
+    // Restore dumptime tables
+    SystemDictionaryShared::restore_dumptime_tables();
+
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
   }
@@ -170,7 +182,6 @@ void DynamicArchiveBuilder::init_header() {
   assert(FileMapInfo::dynamic_info() == mapinfo, "must be");
   _header = mapinfo->dynamic_header();
 
-  Thread* THREAD = Thread::current();
   FileMapInfo* base_info = FileMapInfo::current_info();
   _header->set_base_header_crc(base_info->crc());
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
@@ -190,6 +201,10 @@ void DynamicArchiveBuilder::release_header() {
   delete mapinfo;
   assert(!DynamicArchive::is_mapped(), "must be");
   _header = NULL;
+}
+
+void DynamicArchiveBuilder::post_dump() {
+  ArchivePtrMarker::reset_map_and_vs();
 }
 
 void DynamicArchiveBuilder::sort_methods() {
@@ -251,13 +266,18 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   }
 #endif
 
-  Thread* THREAD = Thread::current();
   Method::sort_methods(ik->methods(), /*set_idnums=*/true, dynamic_dump_method_comparator);
   if (ik->default_methods() != NULL) {
     Method::sort_methods(ik->default_methods(), /*set_idnums=*/false, dynamic_dump_method_comparator);
   }
-  ik->vtable().initialize_vtable();
-  ik->itable().initialize_itable();
+  if (ik->is_linked()) {
+    // If the class has already been linked, we must relayout the i/v tables, whose order depends
+    // on the method sorting order.
+    // If the class is unlinked, we cannot layout the i/v tables yet. This is OK, as the
+    // i/v tables will be initialized at runtime after bytecode verification.
+    ik->vtable().initialize_vtable();
+    ik->itable().initialize_itable();
+  }
 
   // Set all the pointer marking bits after sorting.
   remark_pointers_for_instance_klass(ik, true);
@@ -318,7 +338,7 @@ public:
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
-    if (SystemDictionaryShared::empty_dumptime_table()) {
+    if (SystemDictionaryShared::is_dumptime_table_empty()) {
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
       return;
     }
@@ -332,33 +352,39 @@ public:
   }
 };
 
-bool DynamicArchive::_has_been_dumped_once = false;
+void DynamicArchive::prepare_for_dynamic_dumping() {
+  EXCEPTION_MARK;
+  ResourceMark rm(THREAD);
+  MetaspaceShared::link_shared_classes(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    log_error(cds)("Dynamic dump has failed");
+    log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                   java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+    // We cannot continue to dump the archive anymore.
+    DynamicDumpSharedSpaces = false;
+    CLEAR_PENDING_EXCEPTION;
+  }
+}
 
 void DynamicArchive::dump(const char* archive_name, TRAPS) {
   assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp?");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp?");
-  // During dynamic archive dumping, some of the data structures are overwritten so
-  // we cannot dump the dynamic archive again. TODO: this should be fixed.
-  if (has_been_dumped_once()) {
-    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
-        "Dynamic dump has been done, and should only be done once");
-  } else {
-    // prevent multiple dumps.
-    set_has_been_dumped_once();
-    ArchiveClassesAtExit = archive_name;
-    if (Arguments::init_shared_archive_paths()) {
+  ArchiveClassesAtExit = archive_name;
+  if (Arguments::init_shared_archive_paths()) {
+    prepare_for_dynamic_dumping();
+    if (DynamicDumpSharedSpaces) {
       dump(CHECK);
-    } else {
-      ArchiveClassesAtExit = nullptr;
-      THROW_MSG(vmSymbols::java_lang_RuntimeException(),
-              "Could not setup SharedDynamicArchivePath");
     }
-    // prevent do dynamic dump at exit.
+  } else {
     ArchiveClassesAtExit = nullptr;
-    if (!Arguments::init_shared_archive_paths()) {
-      THROW_MSG(vmSymbols::java_lang_RuntimeException(),
-             "Could not restore SharedDynamicArchivePath");
-    }
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+              "Could not setup SharedDynamicArchivePath");
+  }
+  // prevent do dynamic dump at exit.
+  ArchiveClassesAtExit = nullptr;
+  if (!Arguments::init_shared_archive_paths()) {
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+              "Could not restore SharedDynamicArchivePath");
   }
 }
 
@@ -368,10 +394,8 @@ void DynamicArchive::dump(TRAPS) {
     return;
   }
 
-  // regenerate lambdaform holder classes
-  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...");
-  LambdaFormInvokers::regenerate_holder_classes(CHECK);
-  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...done");
+  // copy shared path table to saved.
+  FileMapInfo::clone_shared_path_table(CHECK);
 
   VM_PopulateDynamicDumpSharedSpace op;
   VMThread::execute(&op);

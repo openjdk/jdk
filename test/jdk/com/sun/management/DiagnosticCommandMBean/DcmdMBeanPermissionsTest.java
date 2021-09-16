@@ -30,7 +30,7 @@
  * @modules java.logging
  *          java.management
  *
- * @run main/othervm DcmdMBeanPermissionsTest
+ * @run main/othervm -Djava.security.manager=allow DcmdMBeanPermissionsTest
  */
 
 import java.lang.management.ManagementFactory;

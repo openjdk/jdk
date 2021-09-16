@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.util.Objects;
  *
  * <p>The identity of a function object produced by deserializing the serialized
  * form is unpredictable, and therefore identity-sensitive operations (such as
- * reference equality, object locking, and {@code System.identityHashCode()} may
+ * reference equality, object locking, and {@code System.identityHashCode()}) may
  * produce different results in different implementations, or even upon
  * different deserializations in the same implementation.
  *
@@ -265,6 +265,7 @@ public final class SerializedLambda implements Serializable {
     @java.io.Serial
     private Object readResolve() throws ObjectStreamException {
         try {
+            @SuppressWarnings("removal")
             Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 @Override
                 public Method run() throws Exception {

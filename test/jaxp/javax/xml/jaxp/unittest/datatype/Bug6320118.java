@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6320118
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true datatype.Bug6320118
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow datatype.Bug6320118
  * @run testng/othervm datatype.Bug6320118
  * @summary Test xml datatype XMLGregorianCalendar.
  */

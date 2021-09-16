@@ -468,7 +468,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         if (tsym == null || tsym.name == null) {
             sb.append("<none>");
         } else {
-            sb.append(tsym.name);
+            sb.append(tsym.name.toString());
         }
         if (moreInfo && hasTag(TYPEVAR)) {
             sb.append(hashCode());
@@ -877,7 +877,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
                 kind == UNBOUND;
         }
         public boolean isUnbound() {
-            return kind == UNBOUND;
+            // is it `?` or `? extends Object`?
+            return kind == UNBOUND ||
+                    (kind == EXTENDS && type.tsym.flatName() == type.tsym.name.table.names.java_lang_Object);
         }
 
         @Override
@@ -1486,7 +1488,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Type              getReturnType()     { return restype; }
         @DefinedBy(Api.LANGUAGE_MODEL)
-        public Type              getReceiverType()   { return recvtype; }
+        public Type              getReceiverType()   {
+            return (recvtype == null) ? Type.noType : recvtype;
+        }
         @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type>        getThrownTypes()    { return thrown; }
 

@@ -1651,6 +1651,7 @@ public final class Files {
             loadInstalledDetectors();
 
         // creates the default file type detector
+        @SuppressWarnings("removal")
         private static FileTypeDetector createDefaultFileTypeDetector() {
             return AccessController
                 .doPrivileged(new PrivilegedAction<>() {
@@ -1660,6 +1661,7 @@ public final class Files {
         }
 
         // loads all installed file type detectors
+        @SuppressWarnings("removal")
         private static List<FileTypeDetector> loadInstalledDetectors() {
             return AccessController
                 .doPrivileged(new PrivilegedAction<>() {
@@ -1839,7 +1841,7 @@ public final class Files {
      *          installed, its {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file. If this
      *          method is invoked to read security sensitive attributes then the
-     *          security manager may be invoke to check for additional permissions.
+     *          security manager may be invoked to check for additional permissions.
      */
     public static <A extends BasicFileAttributes> A readAttributes(Path path,
                                                                    Class<A> type,
@@ -2073,7 +2075,7 @@ public final class Files {
      *          installed, its {@link SecurityManager#checkRead(String) checkRead}
      *          method denies read access to the file. If this method is invoked
      *          to read security sensitive attributes then the security manager
-     *          may be invoke to check for additional permissions.
+     *          may be invoked to check for additional permissions.
      */
     public static Map<String,Object> readAttributes(Path path, String attributes,
                                                     LinkOption... options)
@@ -2801,40 +2803,37 @@ public final class Files {
         try (FileTreeWalker walker = new FileTreeWalker(options, maxDepth)) {
             FileTreeWalker.Event ev = walker.walk(start);
             do {
-                FileVisitResult result;
-                switch (ev.type()) {
-                    case ENTRY :
+                FileVisitResult result = switch (ev.type()) {
+                    case ENTRY -> {
                         IOException ioe = ev.ioeException();
                         if (ioe == null) {
                             assert ev.attributes() != null;
-                            result = visitor.visitFile(ev.file(), ev.attributes());
+                            yield visitor.visitFile(ev.file(), ev.attributes());
                         } else {
-                            result = visitor.visitFileFailed(ev.file(), ioe);
+                            yield visitor.visitFileFailed(ev.file(), ioe);
                         }
-                        break;
-
-                    case START_DIRECTORY :
-                        result = visitor.preVisitDirectory(ev.file(), ev.attributes());
+                    }
+                    case START_DIRECTORY -> {
+                        var res = visitor.preVisitDirectory(ev.file(), ev.attributes());
 
                         // if SKIP_SIBLINGS and SKIP_SUBTREE is returned then
                         // there shouldn't be any more events for the current
                         // directory.
-                        if (result == FileVisitResult.SKIP_SUBTREE ||
-                            result == FileVisitResult.SKIP_SIBLINGS)
+                        if (res == FileVisitResult.SKIP_SUBTREE ||
+                            res == FileVisitResult.SKIP_SIBLINGS)
                             walker.pop();
-                        break;
-
-                    case END_DIRECTORY :
-                        result = visitor.postVisitDirectory(ev.file(), ev.ioeException());
+                        yield res;
+                    }
+                    case END_DIRECTORY -> {
+                        var res = visitor.postVisitDirectory(ev.file(), ev.ioeException());
 
                         // SKIP_SIBLINGS is a no-op for postVisitDirectory
-                        if (result == FileVisitResult.SKIP_SIBLINGS)
-                            result = FileVisitResult.CONTINUE;
-                        break;
-
-                    default :
-                        throw new AssertionError("Should not get here");
-                }
+                        if (res == FileVisitResult.SKIP_SIBLINGS)
+                            res = FileVisitResult.CONTINUE;
+                        yield res;
+                    }
+                    default -> throw new AssertionError("Should not get here");
+                };
 
                 if (Objects.requireNonNull(result) != FileVisitResult.CONTINUE) {
                     if (result == FileVisitResult.TERMINATE) {

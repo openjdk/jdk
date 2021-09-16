@@ -21,6 +21,15 @@
  * questions.
  */
 
+// Tests here test the VM-global NMT facility.
+//  The tests must *not* modify global state! E.g. switch NMT on or off. Instead, they
+//  should work passively with whatever setting the gtestlauncher had been started with
+//  - if NMT is enabled, test NMT, otherwise do whatever minimal tests make sense if NMT
+//  is off.
+//
+// The gtestLauncher then are called with various levels of -XX:NativeMemoryTracking during
+//  jtreg-controlled gtests (see test/hotspot/jtreg/gtest/NMTGtests.java)
+
 #include "precompiled.hpp"
 
 // Included early because the NMT flags don't include it.
@@ -28,10 +37,15 @@
 
 #if INCLUDE_NMT
 
+#include "memory/virtualspace.hpp"
 #include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
+#include <stdio.h>
+
+// #define LOG(...) printf(__VA_ARGS__); printf("\n"); fflush(stdout);
+#define LOG(...)
 
 namespace {
   struct R {
@@ -47,10 +61,21 @@ namespace {
     check_inner((rmr), NULL, 0, __FILE__, __LINE__);  \
   } while (false)
 
+static void diagnostic_print(ReservedMemoryRegion* rmr) {
+  CommittedRegionIterator iter = rmr->iterate_committed_regions();
+  LOG("In reserved region " PTR_FORMAT ", size " SIZE_FORMAT_HEX ":", p2i(rmr->base()), rmr->size());
+  for (const CommittedMemoryRegion* region = iter.next(); region != NULL; region = iter.next()) {
+    LOG("   committed region: " PTR_FORMAT ", size " SIZE_FORMAT_HEX, p2i(region->base()), region->size());
+  }
+}
+
 static void check_inner(ReservedMemoryRegion* rmr, R* regions, size_t regions_size, const char* file, int line) {
   CommittedRegionIterator iter = rmr->iterate_committed_regions();
   size_t i = 0;
   size_t size = 0;
+
+  // Helpful log
+  diagnostic_print(rmr);
 
 #define WHERE " from " << file << ":" << line
 
@@ -69,11 +94,10 @@ static void check_inner(ReservedMemoryRegion* rmr, R* regions, size_t regions_si
 class VirtualMemoryTrackerTest {
 public:
   static void test_add_committed_region_adjacent() {
-    VirtualMemoryTracker::initialize(NMT_detail);
-    VirtualMemoryTracker::late_initialize(NMT_detail);
 
-    address addr = (address)0x10000000;
     size_t size  = 0x01000000;
+    ReservedSpace rs(size);
+    address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
     address frame2 = (address)0x1235;
@@ -81,10 +105,7 @@ public:
     NativeCallStack stack(&frame1, 1);
     NativeCallStack stack2(&frame2, 1);
 
-    // Add the reserved memory
-    VirtualMemoryTracker::add_reserved_region(addr, size, stack, mtTest);
-
-    // Fetch the added RMR added above
+    // Fetch the added RMR for the space
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(addr, size));
 
     ASSERT_EQ(rmr->size(), size);
@@ -147,11 +168,10 @@ public:
   }
 
   static void test_add_committed_region_adjacent_overlapping() {
-    VirtualMemoryTracker::initialize(NMT_detail);
-    VirtualMemoryTracker::late_initialize(NMT_detail);
 
-    address addr = (address)0x10000000;
     size_t size  = 0x01000000;
+    ReservedSpace rs(size);
+    address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
     address frame2 = (address)0x1235;
@@ -162,7 +182,7 @@ public:
     // Add the reserved memory
     VirtualMemoryTracker::add_reserved_region(addr, size, stack, mtTest);
 
-    // Fetch the added RMR added above
+    // Fetch the added RMR for the space
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(addr, size));
 
     ASSERT_EQ(rmr->size(), size);
@@ -235,11 +255,10 @@ public:
   }
 
   static void test_add_committed_region_overlapping() {
-    VirtualMemoryTracker::initialize(NMT_detail);
-    VirtualMemoryTracker::late_initialize(NMT_detail);
 
-    address addr = (address)0x10000000;
     size_t size  = 0x01000000;
+    ReservedSpace rs(size);
+    address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
     address frame2 = (address)0x1235;
@@ -247,10 +266,7 @@ public:
     NativeCallStack stack(&frame1, 1);
     NativeCallStack stack2(&frame2, 1);
 
-    // Add the reserved memory
-    VirtualMemoryTracker::add_reserved_region(addr, size, stack, mtTest);
-
-    // Fetch the added RMR added above
+    // Fetch the added RMR for the space
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(addr, size));
 
     ASSERT_EQ(rmr->size(), size);
@@ -410,11 +426,10 @@ public:
   }
 
   static void test_remove_uncommitted_region() {
-    VirtualMemoryTracker::initialize(NMT_detail);
-    VirtualMemoryTracker::late_initialize(NMT_detail);
 
-    address addr = (address)0x10000000;
     size_t size  = 0x01000000;
+    ReservedSpace rs(size);
+    address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
     address frame2 = (address)0x1235;
@@ -422,10 +437,7 @@ public:
     NativeCallStack stack(&frame1, 1);
     NativeCallStack stack2(&frame2, 1);
 
-    // Add the reserved memory
-    VirtualMemoryTracker::add_reserved_region(addr, size, stack, mtTest);
-
-    // Fetch the added RMR added above
+    // Fetch the added RMR for the space
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(addr, size));
 
     ASSERT_EQ(rmr->size(), size);
@@ -539,12 +551,20 @@ public:
   }
 };
 
-TEST_VM(VirtualMemoryTracker, add_committed_region) {
-  VirtualMemoryTrackerTest::test_add_committed_region();
+TEST_VM(NMT_VirtualMemoryTracker, add_committed_region) {
+  if (MemTracker::tracking_level() >= NMT_detail) {
+    VirtualMemoryTrackerTest::test_add_committed_region();
+  } else {
+    tty->print_cr("skipped.");
+  }
 }
 
-TEST_VM(VirtualMemoryTracker, remove_uncommitted_region) {
-  VirtualMemoryTrackerTest::test_remove_uncommitted_region();
+TEST_VM(NMT_VirtualMemoryTracker, remove_uncommitted_region) {
+  if (MemTracker::tracking_level() >= NMT_detail) {
+    VirtualMemoryTrackerTest::test_remove_uncommitted_region();
+  } else {
+    tty->print_cr("skipped.");
+  }
 }
 
 #endif // INCLUDE_NMT

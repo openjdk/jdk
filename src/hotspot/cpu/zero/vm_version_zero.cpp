@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
@@ -44,6 +44,11 @@ void VM_Version::initialize() {
     warning("Prefetching is not available for a Zero VM");
   }
   FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
+
+  // If lock diagnostics is needed, always call to runtime
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    FLAG_SET_DEFAULT(UseHeavyMonitors, true);
+  }
 
   // Not implemented
   UNSUPPORTED_OPTION(CriticalJNINatives);

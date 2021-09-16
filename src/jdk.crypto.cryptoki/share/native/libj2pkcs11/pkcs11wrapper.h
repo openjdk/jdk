@@ -307,6 +307,7 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr);
  */
 
 jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue);
+jlong ckAssertReturnValueOK2(JNIEnv *env, CK_RV returnValue, const char *msg);
 void throwOutOfMemoryError(JNIEnv *env, const char *message);
 void throwNullPointerException(JNIEnv *env, const char *message);
 void throwIOException(JNIEnv *env, const char *message);

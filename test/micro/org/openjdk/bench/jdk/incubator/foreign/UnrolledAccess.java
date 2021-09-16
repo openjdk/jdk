@@ -32,9 +32,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import sun.misc.Unsafe;
 import java.util.concurrent.TimeUnit;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -48,7 +46,7 @@ public class UnrolledAccess {
 
     final static int SIZE = 1024;
 
-    static final VarHandle LONG_HANDLE = MemoryLayout.ofSequence(SIZE, MemoryLayouts.JAVA_LONG)
+    static final VarHandle LONG_HANDLE = MemoryLayout.sequenceLayout(SIZE, MemoryLayouts.JAVA_LONG)
             .varHandle(long.class, MemoryLayout.PathElement.sequenceElement());
 
     @State(Scope.Benchmark)
@@ -67,8 +65,8 @@ public class UnrolledAccess {
             this.outputArray = new double[SIZE];
             this.inputAddress = U.allocateMemory(8 * SIZE);
             this.outputAddress = U.allocateMemory(8 * SIZE);
-            this.inputSegment = MemoryAddress.ofLong(inputAddress).asSegmentRestricted(8*SIZE);
-            this.outputSegment = MemoryAddress.ofLong(outputAddress).asSegmentRestricted(8*SIZE);
+            this.inputSegment = MemoryAddress.ofLong(inputAddress).asSegment(8*SIZE, ResourceScope.globalScope());
+            this.outputSegment = MemoryAddress.ofLong(outputAddress).asSegment(8*SIZE, ResourceScope.globalScope());
         }
     }
 

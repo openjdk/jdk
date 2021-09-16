@@ -95,9 +95,9 @@ ifeq ($(call And, $(call isTargetOs, windows) $(call isTargetCpu, x86)), true)
 endif
 DEFAULT_CFG_VARIANT ?= server
 
-# Any variant other than server, client or minimal is represented as server in
+# Any variant other than server, client, minimal, or zero is represented as server in
 # the cfg file.
-VALID_CFG_VARIANTS := server client minimal
+VALID_CFG_VARIANTS := server client minimal zero
 CFG_VARIANTS := $(filter $(VALID_CFG_VARIANTS), $(JVM_VARIANTS)) \
     $(if $(filter-out $(VALID_CFG_VARIANTS), $(JVM_VARIANTS)), server)
 

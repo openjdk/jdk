@@ -66,7 +66,6 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _has_nonstatic_concrete_methods = ik->has_nonstatic_concrete_methods();
-  _is_unsafe_anonymous = ik->is_unsafe_anonymous();
   _is_hidden = ik->is_hidden();
   _is_record = ik->is_record();
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
@@ -81,11 +80,11 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   oop holder = ik->klass_holder();
   if (ik->class_loader_data()->has_class_mirror_holder()) {
     // Though ciInstanceKlass records class loader oop, it's not enough to keep
-    // non-strong hidden classes and VM unsafe anonymous classes alive (loader == NULL). Klass holder should
+    // non-strong hidden classes alive (loader == NULL). Klass holder should
     // be used instead. It is enough to record a ciObject, since cached elements are never removed
     // during ciObjectFactory lifetime. ciObjectFactory itself is created for
     // every compilation and lives for the whole duration of the compilation.
-    assert(holder != NULL, "holder of hidden or unsafe anonymous class is the mirror which is never null");
+    assert(holder != NULL, "holder of hidden class is the mirror which is never null");
     (void)CURRENT_ENV->get_object(holder);
   }
 
@@ -128,7 +127,6 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
   _has_injected_fields = -1;
-  _is_unsafe_anonymous = false;
   _is_hidden = false;
   _is_record = false;
   _loader = loader;
@@ -207,12 +205,12 @@ ciConstantPoolCache* ciInstanceKlass::field_cache() {
 //
 ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
   #ifdef ASSERT
-  if (!(offset >= 0 && offset < layout_helper())) {
+  if (!(offset >= 0 && offset < layout_helper_size_in_bytes())) {
     tty->print("*** get_canonical_holder(%d) on ", offset);
     this->print();
     tty->print_cr(" ***");
   };
-  assert(offset >= 0 && offset < layout_helper(), "offset must be tame");
+  assert(offset >= 0 && offset < layout_helper_size_in_bytes(), "offset must be tame");
   #endif
 
   if (offset < instanceOopDesc::base_offset_in_bytes()) {
@@ -229,7 +227,9 @@ ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
     for (;;) {
       assert(self->is_loaded(), "must be loaded to have size");
       ciInstanceKlass* super = self->super();
-      if (super == NULL || super->nof_nonstatic_fields() == 0) {
+      if (super == NULL ||
+          super->nof_nonstatic_fields() == 0 ||
+          super->layout_helper_size_in_bytes() <= offset) {
         return self;
       } else {
         self = super;  // return super->get_canonical_holder(offset)
@@ -660,16 +660,6 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
   return impl;
 }
 
-ciInstanceKlass* ciInstanceKlass::unsafe_anonymous_host() {
-  assert(is_loaded(), "must be loaded");
-  if (is_unsafe_anonymous()) {
-    VM_ENTRY_MARK
-    Klass* unsafe_anonymous_host = get_instanceKlass()->unsafe_anonymous_host();
-    return CURRENT_ENV->get_instance_klass(unsafe_anonymous_host);
-  }
-  return NULL;
-}
-
 // Utility class for printing of the contents of the static fields for
 // use by compilation replay.  It only prints out the information that
 // could be consumed by the compiler, so for primitive types it prints
@@ -743,6 +733,9 @@ class StaticFinalFieldPrinter : public FieldClosure {
   }
 };
 
+const char *ciInstanceKlass::replay_name() const {
+  return CURRENT_ENV->replay_name(get_instanceKlass());
+}
 
 void ciInstanceKlass::dump_replay_data(outputStream* out) {
   ResourceMark rm;
@@ -753,8 +746,18 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   // Try to record related loaded classes
   Klass* sub = ik->subklass();
   while (sub != NULL) {
-    if (sub->is_instance_klass() && !sub->is_hidden() && !InstanceKlass::cast(sub)->is_unsafe_anonymous()) {
-      out->print_cr("instanceKlass %s", sub->name()->as_quoted_ascii());
+    if (sub->is_instance_klass()) {
+      InstanceKlass *isub = InstanceKlass::cast(sub);
+      if (isub->is_hidden()) {
+        const char *name = CURRENT_ENV->dyno_name(isub);
+        if (name != NULL) {
+          out->print_cr("instanceKlass %s # %s", name, sub->name()->as_quoted_ascii());
+        } else {
+          out->print_cr("# instanceKlass %s", sub->name()->as_quoted_ascii());
+        }
+      } else {
+        out->print_cr("instanceKlass %s", sub->name()->as_quoted_ascii());
+      }
     }
     sub = sub->next_sibling();
   }
@@ -763,7 +766,8 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   // tags will be validated for things which shouldn't change and
   // classes will be resolved if the tags indicate that they were
   // resolved at compile time.
-  out->print("ciInstanceKlass %s %d %d %d", ik->name()->as_quoted_ascii(),
+  const char *name = replay_name();
+  out->print("ciInstanceKlass %s %d %d %d", name,
              is_linked(), is_initialized(), cp->length());
   for (int index = 1; index < cp->length(); index++) {
     out->print(" %d", cp->tags()->at(index));
@@ -772,7 +776,7 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   if (is_initialized()) {
     //  Dump out the static final fields in case the compilation relies
     //  on their value for correct replay.
-    StaticFinalFieldPrinter sffp(out, ik->name()->as_quoted_ascii());
+    StaticFinalFieldPrinter sffp(out, name);
     ik->do_local_static_fields(&sffp);
   }
 }

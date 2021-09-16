@@ -106,8 +106,8 @@ public class TestMemberInheritance extends JavadocTester {
                     ab1 method-summary-table-tab4"><code>static java.time.Period</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab1 method-summary-table-tab4"><code><a href="#between(java.time.LocalDate,java\
-                    .time.LocalDate)" class="member-name-link">between</a>&#8203;(java.time.LocalDat\
-                    e&nbsp;startDateInclusive,
+                    .time.LocalDate)" class="member-name-link">between</a><wbr>(java.time.LocalDate&\
+                    nbsp;startDateInclusive,
                      java.time.LocalDate&nbsp;endDateExclusive)</code></div>""");
 
         checkOutput("pkg1/Implementer.html", false,
@@ -132,7 +132,7 @@ public class TestMemberInheritance extends JavadocTester {
                     ethod-summary-table-tab3"><code>protected abstract java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
                     method-summary-table-tab3"><code><a href="#parentMethod(T)" class="member-name-link">\
-                    parentMethod</a>&#8203;(java.lang.String&nbsp;t)</code></div>
+                    parentMethod</a><wbr>(java.lang.String&nbsp;t)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-tab2 me\
                     thod-summary-table-tab3">
                     <div class="block">Returns some value with an inherited search tag.</div>
@@ -143,9 +143,9 @@ public class TestMemberInheritance extends JavadocTester {
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
-                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">p\
-                    arentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
-                    t)</span>
+                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element\
+                    -name">parentMethod</span><wbr><span class="parameters">(java.lang.String&nbsp;t\
+                    )</span>
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
                     java.lang.IllegalStateException</span></div>
@@ -181,13 +181,13 @@ public class TestMemberInheritance extends JavadocTester {
                     ab2 method-summary-table-tab4"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method(T)" class="member-name-li\
-                    nk">method</a>&#8203;(java.lang.String&nbsp;t)</code></div>""",
+                    nk">method</a><wbr>(java.lang.String&nbsp;t)</code></div>""",
                 """
                     <section class="detail" id="method(T)">
                     <h3 id="method(java.lang.Object)">method</h3>
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">metho\
-                    d</span>&#8203;<span class="parameters">(java.lang.String&nbsp;t)</span></div>
+                    d</span><wbr><span class="parameters">(java.lang.String&nbsp;t)</span></div>
                     </section>""");
 
         checkOutput("index-all.html", true,
@@ -232,9 +232,9 @@ public class TestMemberInheritance extends JavadocTester {
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
-                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">p\
-                    arentMethod</span>&#8203;<span class="parameters">(java.lang.String&nbsp;\
-                    t)</span>
+                    nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element\
+                    -name">parentMethod</span><wbr><span class="parameters">(java.lang.String&nbsp;t\
+                    )</span>
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
                     java.lang.IllegalStateException</span></div>

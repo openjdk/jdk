@@ -247,7 +247,7 @@ public class TestRedirectLinks extends JavadocTester {
             // 3: The original URL is still used in the generated docs, to avoid assuming
             //    that all the other files at that link have been redirected as well.
             checkOutput(Output.OUT, true,
-                    "javadoc: warning - URL " + oldURL + "/element-list was redirected to " + newURL + "/element-list");
+                    "warning: URL " + oldURL + "/element-list was redirected to " + newURL + "/element-list");
             checkOutput("mC/p5/C5.html", true,
                     "extends <a href=\"" + oldURL + """
                         /mA/p1/C1.html" title="class or interface in p1" class="external-link">C1</a>""");

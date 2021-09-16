@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
-#include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -91,7 +91,7 @@ bool G1Allocator::is_retained_old_region(HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
-void G1Allocator::reuse_retained_old_region(G1EvacuationInfo& evacuation_info,
+void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                             OldGCAllocRegion* old,
                                             HeapRegion** retained_old) {
   HeapRegion* retained_region = *retained_old;
@@ -120,11 +120,11 @@ void G1Allocator::reuse_retained_old_region(G1EvacuationInfo& evacuation_info,
     _g1h->old_set_remove(retained_region);
     old->set(retained_region);
     _g1h->hr_printer()->reuse(retained_region);
-    evacuation_info.set_alloc_regions_used_before(retained_region->used());
+    evacuation_info->set_alloc_regions_used_before(retained_region->used());
   }
 }
 
-void G1Allocator::init_gc_alloc_regions(G1EvacuationInfo& evacuation_info) {
+void G1Allocator::init_gc_alloc_regions(G1EvacInfo* evacuation_info) {
   assert_at_safepoint_on_vm_thread();
 
   _survivor_is_full = false;
@@ -140,14 +140,14 @@ void G1Allocator::init_gc_alloc_regions(G1EvacuationInfo& evacuation_info) {
                             &_retained_old_gc_alloc_region);
 }
 
-void G1Allocator::release_gc_alloc_regions(G1EvacuationInfo& evacuation_info) {
+void G1Allocator::release_gc_alloc_regions(G1EvacInfo* evacuation_info) {
   uint survivor_region_count = 0;
   for (uint node_index = 0; node_index < _num_alloc_regions; node_index++) {
     survivor_region_count += survivor_gc_alloc_region(node_index)->count();
     survivor_gc_alloc_region(node_index)->release();
   }
-  evacuation_info.set_allocation_regions(survivor_region_count +
-                                         old_gc_alloc_region()->count());
+  evacuation_info->set_allocation_regions(survivor_region_count +
+                                          old_gc_alloc_region()->count());
 
   // If we have an old GC alloc region to release, we'll save it in
   // _retained_old_gc_alloc_region. If we don't
@@ -248,11 +248,16 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
                                                                               actual_word_size);
   if (result == NULL && !survivor_is_full()) {
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = survivor_gc_alloc_region(node_index)->attempt_allocation_locked(min_word_size,
-                                                                             desired_word_size,
-                                                                             actual_word_size);
-    if (result == NULL) {
-      set_survivor_full();
+    // Multiple threads may have queued at the FreeList_lock above after checking whether there
+    // actually is still memory available. Redo the check under the lock to avoid unnecessary work;
+    // the memory may have been used up as the threads waited to acquire the lock.
+    if (!survivor_is_full()) {
+      result = survivor_gc_alloc_region(node_index)->attempt_allocation_locked(min_word_size,
+                                                                              desired_word_size,
+                                                                              actual_word_size);
+      if (result == NULL) {
+        set_survivor_full();
+      }
     }
   }
   if (result != NULL) {
@@ -272,11 +277,16 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
                                                                actual_word_size);
   if (result == NULL && !old_is_full()) {
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
-                                                              desired_word_size,
-                                                              actual_word_size);
-    if (result == NULL) {
-      set_old_full();
+    // Multiple threads may have queued at the FreeList_lock above after checking whether there
+    // actually is still memory available. Redo the check under the lock to avoid unnecessary work;
+    // the memory may have been used up as the threads waited to acquire the lock.
+    if (!old_is_full()) {
+      result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
+                                                                desired_word_size,
+                                                                actual_word_size);
+      if (result == NULL) {
+        set_old_full();
+      }
     }
   }
   return result;
@@ -429,7 +439,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   _max = _bottom + HeapRegion::min_region_size_in_words();
 
   // Since we've modified the old set, call update_sizes.
-  _g1h->g1mm()->update_sizes();
+  _g1h->monitoring_support()->update_sizes();
   return true;
 }
 
@@ -452,26 +462,29 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
          PTR_FORMAT " <= " PTR_FORMAT " <= " PTR_FORMAT,
          p2i(_bottom), p2i(old_top), p2i(_max));
 
-  // Allocate the next word_size words in the current allocation chunk.
-  // If allocation would cross the _max boundary, insert a filler and begin
-  // at the base of the next min_region_size'd chunk. Also advance to the next
-  // chunk if we don't yet cross the boundary, but the remainder would be too
-  // small to fill.
-  HeapWord* new_top = old_top + word_size;
-  size_t remainder = pointer_delta(_max, new_top);
-  if ((new_top > _max) ||
-      ((new_top < _max) && (remainder < CollectedHeap::min_fill_size()))) {
+  // Try to allocate word_size in the current allocation chunk. Two cases
+  // require special treatment:
+  // 1. no enough space for word_size
+  // 2. after allocating word_size, there's non-zero space left, but too small for the minimal filler
+  // In both cases, we retire the current chunk and move on to the next one.
+  size_t free_words = pointer_delta(_max, old_top);
+  if (free_words < word_size ||
+      ((free_words - word_size != 0) && (free_words - word_size < CollectedHeap::min_fill_size()))) {
+    // Retiring the current chunk
     if (old_top != _max) {
-      size_t fill_size = pointer_delta(_max, old_top);
+      // Non-zero space; need to insert the filler
+      size_t fill_size = free_words;
       CollectedHeap::fill_with_object(old_top, fill_size);
       _summary_bytes_used += fill_size * HeapWordSize;
     }
+    // Set the current chunk as "full"
     _allocation_region->set_top(_max);
-    old_top = _bottom = _max;
 
     // Check if we've just used up the last min_region_size'd chunk
     // in the current region, and if so, allocate a new one.
-    if (_bottom != _allocation_region->end()) {
+    if (_max != _allocation_region->end()) {
+      // Shift to the next chunk
+      old_top = _bottom = _max;
       _max = _bottom + HeapRegion::min_region_size_in_words();
     } else {
       if (!alloc_new_region()) {
@@ -480,6 +493,7 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
       old_top = _allocation_region->bottom();
     }
   }
+  assert(pointer_delta(_max, old_top) >= word_size, "enough space left");
   _allocation_region->set_top(old_top + word_size);
   _summary_bytes_used += word_size * HeapWordSize;
 

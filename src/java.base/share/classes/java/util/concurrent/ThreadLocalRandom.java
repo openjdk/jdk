@@ -303,7 +303,7 @@ public class ThreadLocalRandom extends Random {
     }
 
     static final void setInheritedAccessControlContext(Thread thread,
-                                                       AccessControlContext acc) {
+                                                       @SuppressWarnings("removal") AccessControlContext acc) {
         U.putReferenceRelease(thread, INHERITEDACCESSCONTROLCONTEXT, acc);
     }
 

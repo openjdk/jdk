@@ -26,6 +26,7 @@
  * @bug 8007458
  * @summary Tests CardLayout encoding
  * @modules java.desktop/java.awt:open
+ * @run main/othervm -Djava.security.manager=allow java_awt_CardLayout
  * @author Sergey Malenkov
  */
 

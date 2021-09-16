@@ -852,3 +852,5 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
 
   phase->igvn().replace_node(ac, call);
 }
+
+#undef XTOP

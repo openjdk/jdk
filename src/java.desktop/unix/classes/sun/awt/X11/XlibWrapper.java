@@ -592,6 +592,7 @@ static native String XSetLocaleModifiers(String modifier_list);
     static final boolean isBuildInternal;
 
     static {
+        @SuppressWarnings("removal")
         String dataModelProp = AccessController.doPrivileged(
             new GetPropertyAction("sun.arch.data.model"));
         try {
@@ -645,6 +646,7 @@ static native String XSetLocaleModifiers(String modifier_list);
     }
 
     private static boolean getBuildInternal() {
+        @SuppressWarnings("removal")
         String javaVersion = AccessController.doPrivileged(
                                  new GetPropertyAction("java.version"));
         return javaVersion != null && javaVersion.contains("internal");

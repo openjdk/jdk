@@ -38,11 +38,12 @@ import java.util.Objects;
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
  * BigDecimal} consists of an arbitrary precision integer
  * <i>{@linkplain unscaledValue() unscaled value}</i> and a 32-bit
- * integer <i>{@linkplain scale() scale}</i>.  If zero or positive,
- * the scale is the number of digits to the right of the decimal
- * point.  If negative, the unscaled value of the number is multiplied
- * by ten to the power of the negation of the scale.  The value of the
- * number represented by the {@code BigDecimal} is therefore
+ * integer <i>{@linkplain scale() scale}</i>.  If the
+ * scale is zero or positive, the scale is the number of digits to
+ * the right of the decimal point.  If the scale is negative, the
+ * unscaled value of the number is multiplied by ten to the power of
+ * the negation of the scale.  The value of the number represented by
+ * the {@code BigDecimal} is therefore
  * <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
  *
  * <p>The {@code BigDecimal} class provides operations for
@@ -4706,19 +4707,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             else { // half-way
                 assert cmpFracHalf == 0;
 
-                switch(roundingMode) {
-                case ROUND_HALF_DOWN:
-                    return false;
+                return switch (roundingMode) {
+                    case ROUND_HALF_DOWN -> false;
+                    case ROUND_HALF_UP   -> true;
+                    case ROUND_HALF_EVEN -> oddQuot;
 
-                case ROUND_HALF_UP:
-                    return true;
-
-                case ROUND_HALF_EVEN:
-                    return oddQuot;
-
-                default:
-                    throw new AssertionError("Unexpected rounding mode" + roundingMode);
-                }
+                    default -> throw new AssertionError("Unexpected rounding mode" + roundingMode);
+                };
             }
         }
     }

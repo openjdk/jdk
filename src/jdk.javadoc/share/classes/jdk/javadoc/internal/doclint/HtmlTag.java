@@ -392,7 +392,7 @@ public enum HtmlTag {
         }
     },
 
-    WBR(BlockType.INLINE, EndKind.REQUIRED),
+    WBR(BlockType.INLINE, EndKind.NONE),
 
     VAR(BlockType.INLINE, EndKind.REQUIRED);
 

@@ -483,7 +483,6 @@ public class ClassUseMapper {
     private <T extends Element> void mapTypeParameters(final Map<TypeElement, List<T>> map,
             Element element, final T holder) {
 
-        @SuppressWarnings("preview")
         SimpleElementVisitor14<Void, Void> elementVisitor
                 = new SimpleElementVisitor14<Void, Void>() {
 
@@ -561,7 +560,6 @@ public class ClassUseMapper {
      * @param e whose type parameters are being checked.
      * @param holder owning the type parameters.
      */
-    @SuppressWarnings("preview")
     private <T extends Element> void mapAnnotations(final Map<TypeElement, List<T>> map,
             Element e, final T holder) {
         new SimpleElementVisitor14<Void, Void>() {

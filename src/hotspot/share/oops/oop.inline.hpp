@@ -25,13 +25,14 @@
 #ifndef SHARE_OOPS_OOP_INLINE_HPP
 #define SHARE_OOPS_OOP_INLINE_HPP
 
+#include "oops/oop.hpp"
+
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/markWord.inline.hpp"
-#include "oops/oop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -44,8 +45,11 @@
 // We need a separate file to avoid circular references
 
 markWord oopDesc::mark() const {
-  uintptr_t v = HeapAccess<MO_RELAXED>::load_at(as_oop(), mark_offset_in_bytes());
-  return markWord(v);
+  return Atomic::load(&_mark);
+}
+
+markWord oopDesc::mark_acquire() const {
+  return Atomic::load_acquire(&_mark);
 }
 
 markWord* oopDesc::mark_addr() const {
@@ -53,7 +57,7 @@ markWord* oopDesc::mark_addr() const {
 }
 
 void oopDesc::set_mark(markWord m) {
-  HeapAccess<MO_RELAXED>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
+  Atomic::store(&_mark, m);
 }
 
 void oopDesc::set_mark(HeapWord* mem, markWord m) {
@@ -61,12 +65,11 @@ void oopDesc::set_mark(HeapWord* mem, markWord m) {
 }
 
 void oopDesc::release_set_mark(markWord m) {
-  HeapAccess<MO_RELEASE>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
+  Atomic::release_store(&_mark, m);
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
-  uintptr_t v = HeapAccess<>::atomic_cmpxchg_at(as_oop(), mark_offset_in_bytes(), old_mark.value(), new_mark.value());
-  return markWord(v);
+  return Atomic::cmpxchg(&_mark, old_mark, new_mark);
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order) {
@@ -74,7 +77,7 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 }
 
 void oopDesc::init_mark() {
-  set_mark(markWord::prototype_for_klass(klass()));
+  set_mark(markWord::prototype());
 }
 
 Klass* oopDesc::klass() const {
@@ -233,7 +236,6 @@ inline jshort oopDesc::short_field(int offset) const                { return Hea
 inline void   oopDesc::short_field_put(int offset, jshort value)    { HeapAccess<>::store_at(as_oop(), offset, value); }
 
 inline jint oopDesc::int_field(int offset) const                    { return HeapAccess<>::load_at(as_oop(), offset);  }
-inline jint oopDesc::int_field_raw(int offset) const                { return RawAccess<>::load_at(as_oop(), offset);   }
 inline void oopDesc::int_field_put(int offset, jint value)          { HeapAccess<>::store_at(as_oop(), offset, value); }
 
 inline jlong oopDesc::long_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
@@ -251,10 +253,6 @@ bool oopDesc::is_locked() const {
 
 bool oopDesc::is_unlocked() const {
   return mark().is_unlocked();
-}
-
-bool oopDesc::has_bias_pattern() const {
-  return mark().has_bias_pattern();
 }
 
 // Used only for markSweep, scavenging
@@ -277,14 +275,6 @@ void oopDesc::forward_to(oop p) {
   set_mark(m);
 }
 
-// Used by parallel scavengers
-bool oopDesc::cas_forward_to(oop p, markWord compare, atomic_memory_order order) {
-  verify_forwardee(p);
-  markWord m = markWord::encode_pointer_as_mark(p);
-  assert(m.decode_pointer() == p, "encoding must be reversable");
-  return cas_set_mark(m, compare, order) == compare;
-}
-
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
   verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
@@ -302,13 +292,6 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
   return cast_to_oop(mark().decode_pointer());
-}
-
-// Note that the forwardee is not the same thing as the displaced_mark.
-// The forwardee is used when copying during scavenge and mark-sweep.
-// It does need to clear the low two locking- and GC-related bits.
-oop oopDesc::forwardee_acquire() const {
-  return cast_to_oop(Atomic::load_acquire(&_mark).decode_pointer());
 }
 
 // The following method needs to be MT safe.
@@ -396,34 +379,12 @@ void oopDesc::set_displaced_mark(markWord m) {
   mark().set_displaced_mark_helper(m);
 }
 
-// Supports deferred calling of obj->klass().
-class DeferredObjectToKlass {
-  const oopDesc* _obj;
-
-public:
-  DeferredObjectToKlass(const oopDesc* obj) : _obj(obj) {}
-
-  // Implicitly convertible to const Klass*.
-  operator const Klass*() const {
-    return _obj->klass();
-  }
-};
-
 bool oopDesc::mark_must_be_preserved() const {
   return mark_must_be_preserved(mark());
 }
 
 bool oopDesc::mark_must_be_preserved(markWord m) const {
-  // There's a circular dependency between oop.inline.hpp and
-  // markWord.inline.hpp because markWord::must_be_preserved wants to call
-  // oopDesc::klass(). This could be solved by calling klass() here. However,
-  // not all paths inside must_be_preserved calls klass(). Defer the call until
-  // the klass is actually needed.
-  return m.must_be_preserved(DeferredObjectToKlass(this));
-}
-
-bool oopDesc::mark_must_be_preserved_for_promotion_failure(markWord m) const {
-  return m.must_be_preserved_for_promotion_failure(DeferredObjectToKlass(this));
+  return m.must_be_preserved(this);
 }
 
 #endif // SHARE_OOPS_OOP_INLINE_HPP

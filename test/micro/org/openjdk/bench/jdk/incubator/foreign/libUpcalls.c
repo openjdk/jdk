@@ -34,3 +34,15 @@ EXPORT void blank(void (*cb)(void)) {
 EXPORT int identity(int x, int (*cb)(int)) {
     return cb(x);
 }
+
+EXPORT void args5(long long a0, double a1, long long a2, double a3, long long a4,
+                  void (*cb)(long long, double, long long, double, long long)) {
+    cb(a0, a1, a2, a3, a4);
+}
+
+EXPORT void args10(long long a0, double a1, long long a2, double a3, long long a4,
+                   double a5, long long a6, double a7, long long a8, double a9,
+                   void (*cb)(long long, double, long long, double, long long,
+                              double, long long, double, long long, double)) {
+    cb(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+}

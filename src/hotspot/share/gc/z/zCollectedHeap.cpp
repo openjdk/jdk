@@ -50,8 +50,8 @@ ZCollectedHeap::ZCollectedHeap() :
     _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
-    _director(new ZDirector()),
     _driver(new ZDriver()),
+    _director(new ZDirector(_driver)),
     _stat(new ZStat()),
     _runtime_workers() {}
 
@@ -80,9 +80,8 @@ void ZCollectedHeap::initialize_serviceability() {
 class ZStopConcurrentGCThreadClosure : public ThreadClosure {
 public:
   virtual void do_thread(Thread* thread) {
-    if (thread->is_ConcurrentGC_thread() &&
-        !thread->is_GC_task_thread()) {
-      static_cast<ConcurrentGCThread*>(thread)->stop();
+    if (thread->is_ConcurrentGC_thread()) {
+      ConcurrentGCThread::cast(thread)->stop();
     }
   }
 };

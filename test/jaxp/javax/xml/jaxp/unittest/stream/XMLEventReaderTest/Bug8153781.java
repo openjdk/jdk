@@ -40,7 +40,7 @@ import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
  * @test
  * @bug 8153781
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Bug8153781
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.Bug8153781
  * @run testng/othervm stream.XMLEventReaderTest.Bug8153781
  * @summary Test if method skipDTD of class XMLDTDScannerImpl will correctly skip the DTD section,
  *          even if a call to XMLEntityScanner.scanData for skipping to the closing ']' returns true.

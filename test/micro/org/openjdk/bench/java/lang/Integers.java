@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,36 +24,48 @@ package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tests java.lang.Integer
+ * Test various java.lang.Integer operations
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Fork(3)
 public class Integers {
 
     @Param("500")
     private int size;
 
     private String[] strings;
+    private int[] intsSmall;
+    private int[] intsBig;
 
     @Setup
     public void setup() {
         Random r = new Random(0);
         strings = new String[size];
+        intsSmall = new int[size];
+        intsBig = new int[size];
         for (int i = 0; i < size; i++) {
-            strings[i] = "" + (r.nextInt(10000) - 5000);
+            strings[i] = "" + (r.nextInt(10000) - (5000));
+            intsSmall[i] = 100 * i + i + 103;
+            intsBig[i] = ((100 * i + i) << 24) + 4543 + i * 4;
         }
     }
 
@@ -61,6 +73,29 @@ public class Integers {
     public void parseInt(Blackhole bh) {
         for (String s : strings) {
             bh.consume(Integer.parseInt(s));
+        }
+    }
+
+    @Benchmark
+    public void decode(Blackhole bh) {
+        for (String s : strings) {
+            bh.consume(Integer.decode(s));
+        }
+    }
+
+    /** Performs toString on small values, just a couple of digits. */
+    @Benchmark
+    public void toStringSmall(Blackhole bh) {
+        for (int i : intsSmall) {
+            bh.consume(Integer.toString(i));
+        }
+    }
+
+    /** Performs toString on large values, roughly 10 digits. */
+    @Benchmark
+    public void toStringBig(Blackhole bh) {
+        for (int i : intsBig) {
+            bh.consume(Integer.toString(i));
         }
     }
 }

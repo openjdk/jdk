@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 /**
- * @test @bug 5015163
+ * @test
+ * @bug 5015163 8267529
  * @summary test String merge/join that is the inverse of String.split()
  * @run testng StringJoinTest
  * @author Jim Gish
  */
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -110,5 +112,15 @@ public class StringJoinTest {
     @Test(expectedExceptions = {NullPointerException.class})
     public void testJoinNullDelimiter() {
         String.join(null, JIM, JOHN);
+    }
+
+    public void testIgnoreDelimiterCoderJoin() {
+        // 8267529: Ensure that joining zero or one latin-1 Strings with a UTF-16
+        // delimiter produce a String with a latin-1 coder, since the delimiter
+        // is not added.
+        assertEquals("", new StringJoiner("\u2013").toString());
+        assertEquals("foo", new StringJoiner("\u2013").add("foo").toString());
+        assertEquals("", String.join("\u2013"));
+        assertEquals("foo", String.join("\u2013", "foo"));
     }
 }

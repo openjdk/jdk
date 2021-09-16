@@ -26,12 +26,18 @@
 #define SHARE_GC_SHARED_REFERENCEPROCESSOR_INLINE_HPP
 
 #include "gc/shared/referenceProcessor.hpp"
+
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.hpp"
 
 oop DiscoveredList::head() const {
   return UseCompressedOops ?  CompressedOops::decode(_compressed_head) :
     _oop_head;
+}
+
+void DiscoveredList::add_as_head(oop o) {
+  set_head(o);
+  inc_length(1);
 }
 
 void DiscoveredList::set_head(oop o) {

@@ -41,13 +41,6 @@
 #include "utilities/quickSort.hpp"
 #include "unittest.hpp"
 
-// --- FIXME: Disable some tests on 32bit Windows, because SafeFetch
-//     (which is used by allocation_status) doesn't currently provide
-//     protection in the context where gtests are run; see JDK-8185734.
-#ifdef _WIN32
-#define DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
-#endif
-
 // Access storage internals.
 class OopStorage::TestAccess : public AllStatic {
 public:
@@ -885,10 +878,7 @@ WorkGang* OopStorageTestParIteration::_workers = NULL;
 
 WorkGang* OopStorageTestParIteration::workers() {
   if (_workers == NULL) {
-    _workers = new WorkGang("OopStorageTestParIteration workers",
-                            _max_workers,
-                            false,
-                            false);
+    _workers = new WorkGang("OopStorageTestParIteration workers", _max_workers);
     _workers->initialize_workers();
     _workers->update_active_workers(_max_workers);
   }
@@ -1056,9 +1046,7 @@ TEST_VM_F(OopStorageTestWithAllocation, allocation_status) {
 
   EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
   EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, _storage.allocation_status(released));
-#ifndef DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
   EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
-#endif
 
   for (size_t i = 0; i < _max_entries; ++i) {
     if ((_entries[i] != retained) && (_entries[i] != released)) {
@@ -1072,10 +1060,8 @@ TEST_VM_F(OopStorageTestWithAllocation, allocation_status) {
     while (_storage.delete_empty_blocks()) {}
   }
   EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
-#ifndef DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
   EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(released));
   EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
-#endif // DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
 }
 
 TEST_VM_F(OopStorageTest, usage_info) {

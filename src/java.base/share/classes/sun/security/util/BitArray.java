@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.security.util;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
+
+import jdk.internal.util.Preconditions;
 
 /**
  * A packed array of booleans.
@@ -125,9 +127,7 @@ public class BitArray {
      *  Returns the indexed bit in this BitArray.
      */
     public boolean get(int index) throws ArrayIndexOutOfBoundsException {
-        if (index < 0 || index >= length) {
-            throw new ArrayIndexOutOfBoundsException(Integer.toString(index));
-        }
+        Preconditions.checkIndex(index, length, Preconditions.AIOOBE_FORMATTER);
 
         return (repn[subscript(index)] & position(index)) != 0;
     }
@@ -137,9 +137,7 @@ public class BitArray {
      */
     public void set(int index, boolean value)
     throws ArrayIndexOutOfBoundsException {
-        if (index < 0 || index >= length) {
-            throw new ArrayIndexOutOfBoundsException(Integer.toString(index));
-        }
+        Preconditions.checkIndex(index, length, Preconditions.AIOOBE_FORMATTER);
         int idx = subscript(index);
         int bit = position(index);
 
@@ -263,7 +261,7 @@ public class BitArray {
             out.write(get(i) ? '1' : '0');
         }
 
-        return new String(out.toByteArray());
+        return out.toString();
 
     }
 

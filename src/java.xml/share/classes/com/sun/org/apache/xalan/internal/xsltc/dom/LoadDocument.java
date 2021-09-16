@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.DOMCache;
 import com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
@@ -35,11 +34,12 @@ import com.sun.org.apache.xml.internal.dtm.ref.EmptyIterator;
 import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
 import java.io.FileNotFoundException;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.SecuritySupport;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Sep 2017
+ * @LastModified: May 2021
  */
 public final class LoadDocument {
 
@@ -194,7 +194,7 @@ public final class LoadDocument {
                 throw new TransletException(e);
             }
         } else {
-            String accessError = SecuritySupport.checkAccess(uri, translet.getAllowedProtocols(), XalanConstants.ACCESS_EXTERNAL_ALL);
+            String accessError = SecuritySupport.checkAccess(uri, translet.getAllowedProtocols(), JdkConstants.ACCESS_EXTERNAL_ALL);
             if (accessError != null) {
                 ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
                         SecuritySupport.sanitizePath(uri), accessError);
