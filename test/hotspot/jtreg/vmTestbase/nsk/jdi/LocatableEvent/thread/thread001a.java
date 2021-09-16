@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,9 +107,9 @@ public class thread001a {
                     case 0:
                           for (int n1 = 0; n1 < threadsN; n1++) {
                               if (n1 < threadsN-1)
-                                  threads[n1] =  new Thread1thread001a(threadNames[n1]);
+                                  threads[n1] = JDIThreadFactory.newThread(new Thread1thread001a(threadNames[n1]));
                               else
-                                  threads[n1] =  new Thread2thread001a(threadNames[n1]);
+                                  threads[n1] = JDIThreadFactory.newThread(new Thread2thread001a(threadNames[n1]));
                           }
                           log1("       threads has been created");
 
@@ -174,7 +174,7 @@ public class thread001a {
 
     static volatile int n = 0;
 
-    static class Thread1thread001a extends Thread {
+    static class Thread1thread001a extends JDITask {
 
         int threadIndex;
 
@@ -205,7 +205,7 @@ public class thread001a {
 
     }
 
-    static class Thread2thread001a extends Thread {
+    static class Thread2thread001a extends JDITask {
 
         int threadIndex;
 
