@@ -97,8 +97,8 @@ public class newinstance001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadnewinstance001a test_thread =
-                             new Threadnewinstance001a("testedThread");
+                         Thread test_thread =
+                                 JDIThreadFactory.newThread(new Threadnewinstance001a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
@@ -169,7 +169,7 @@ class TestClass {
 
 }
 
-class Threadnewinstance001a extends Thread {
+class Threadnewinstance001a extends JDITask {
 
     public Threadnewinstance001a(String threadName) {
         super(threadName);
