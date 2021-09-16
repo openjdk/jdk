@@ -178,12 +178,6 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
     return;
   }
 
-  if (ZLargePages::is_explicit() && os::large_page_size() != ZGranuleSize) {
-    log_error_p(gc)("Incompatible large page size configured " SIZE_FORMAT " (expected " SIZE_FORMAT ")",
-                    os::large_page_size(), ZGranuleSize);
-    return;
-  }
-
   // Make sure the filesystem block size is compatible
   if (ZGranuleSize % _block_size != 0) {
     log_error_p(gc)("Filesystem backing the heap has incompatible block size (" SIZE_FORMAT ")",
@@ -213,7 +207,7 @@ int ZPhysicalMemoryBacking::create_mem_fd(const char* name) const {
     ZErrno err;
     log_debug_p(gc, init)("Failed to create memfd file (%s)",
                           (ZLargePages::is_explicit() && (err == EINVAL || err == ENODEV)) ?
-                          "Hugepages (2M) not supported" : err.to_string());
+                          "Hugepages (2M) not available" : err.to_string());
     return -1;
   }
 
@@ -449,7 +443,7 @@ ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap_tmpfs(size_t offset, size_t
   }
 
   // Advise mapping to use transparent huge pages
-  os::realign_memory((char*)addr, length, os::large_page_size());
+  os::realign_memory((char*)addr, length, ZGranuleSize);
 
   // Touch the mapping (safely) to make sure it's backed by memory
   const bool backed = safe_touch_mapping(addr, length, _block_size);
