@@ -433,7 +433,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
             defaultClassLoader = EnvHelp.resolveServerClassLoader(
                     attributes, getMBeanServer());
         } catch (InstanceNotFoundException infc) {
-            throw new IllegalArgumentException("ClassLoader not found: "+infc, infc);
+            throw new IllegalArgumentException("ClassLoader not found: " + infc, infc);
         }
 
         if (tracing) logger.trace("start", "setting RMIServer object");
