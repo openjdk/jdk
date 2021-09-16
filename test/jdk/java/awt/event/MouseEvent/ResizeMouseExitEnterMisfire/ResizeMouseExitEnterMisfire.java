@@ -24,6 +24,7 @@
 import javax.swing.SwingUtilities;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
@@ -59,6 +60,7 @@ public class ResizeMouseExitEnterMisfire {
             public void run() {
                 frame = new JFrame();
                 frame.setSize(200, 200);
+                frame.setLocationRelativeTo(null);
                 label = new JLabel();
                 label.addMouseListener(new MouseAdapter() {
                     @Override
@@ -93,13 +95,14 @@ public class ResizeMouseExitEnterMisfire {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
+                Point pt = frame.getLocationOnScreen();
                 Rectangle rect = frame.getBounds();
-                xLocInnerCorner = rect.x + rect.width - 5;
-                yLocInnerCorner = rect.y + rect.height - 5;
-                xLocOuterCorner = rect.x + rect.width + 3;
-                yLocOuterCorner = rect.y + rect.height + 3;
-                xLocNewEdge = rect.x + rect.width + 500;
-                yLocNewEdge = rect.y + rect.height + 500;
+                xLocInnerCorner = pt.x + rect.width - 5;
+                yLocInnerCorner = pt.y + rect.height - 5;
+                xLocOuterCorner = pt.x + rect.width + 3;
+                yLocOuterCorner = pt.y + rect.height + 3;
+                xLocNewEdge = pt.x + rect.width + 200;
+                yLocNewEdge = pt.y + rect.height + 200;
             }
         });
     }
@@ -164,7 +167,12 @@ public class ResizeMouseExitEnterMisfire {
     }
 
     public void done() {
-        frame.dispose();
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                frame.dispose();
+            }
+        });
     }
 
     public static void main (String[] args) throws Exception {

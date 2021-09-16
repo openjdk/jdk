@@ -131,9 +131,6 @@ public class LWWindowPeer
     // events between MOUSE_PRESSED and MOUSE_RELEASED for particular button
     private static int mouseClickButtons = 0;
 
-    // 8254841: Keep track of whether the window is currently being resized
-    private volatile boolean isResizing = false;
-
     private volatile boolean isOpaque = true;
 
     private static final Font DEFAULT_FONT = new Font("Lucida Grande", Font.PLAIN, 13);
@@ -310,14 +307,6 @@ public class LWWindowPeer
                 }
             }
         }
-    }
-
-    public void startResizing() {
-        isResizing = true;
-    }
-
-    public void finishResizing() {
-        isResizing = false;
     }
 
     @Override
@@ -715,10 +704,6 @@ public class LWWindowPeer
      */
     @Override
     public void notifyReshape(int x, int y, int w, int h) {
-        // 8254841: We need to tell the peer we have begun resizing
-        // to stop posting mouseEntered and mouseExit events.
-        startResizing();
-
         final Rectangle pBounds = getBounds();
         final boolean invalid = updateInsets(platformWindow.getInsets());
         final boolean pMoved = (x != pBounds.x) || (y != pBounds.y);
@@ -997,14 +982,11 @@ public class LWWindowPeer
 
         updateSecurityWarningVisibility();
 
-        // 8254841: If currently resizing, prevent mouseEntered event from posting
-        if (!isResizing) {
-            postEvent(new MouseEvent(target,
-                    MouseEvent.MOUSE_ENTERED,
-                    when, modifiers,
-                    loc.x, loc.y, xAbs, yAbs,
-                    clickCount, popupTrigger, button));
-        }
+        postEvent(new MouseEvent(target,
+                MouseEvent.MOUSE_ENTERED,
+                when, modifiers,
+                loc.x, loc.y, xAbs, yAbs,
+                clickCount, popupTrigger, button));
     }
 
     private void postMouseExitedEvent(Component target, long when, int modifiers,
@@ -1013,14 +995,11 @@ public class LWWindowPeer
 
         updateSecurityWarningVisibility();
 
-        // 8254841: If currently resizing, prevent mouseExit event from posting
-        if (!isResizing) {
-            postEvent(new MouseEvent(target,
-                    MouseEvent.MOUSE_EXITED,
-                    when, modifiers,
-                    loc.x, loc.y, xAbs, yAbs,
-                    clickCount, popupTrigger, button));
-        }
+        postEvent(new MouseEvent(target,
+                MouseEvent.MOUSE_EXITED,
+                when, modifiers,
+                loc.x, loc.y, xAbs, yAbs,
+                clickCount, popupTrigger, button));
     }
 
     @Override
