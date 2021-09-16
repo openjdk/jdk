@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,7 +374,7 @@ public class X509CRLSelector implements CRLSelector {
                 try {
                     x500Principals.add(new X500Principal((byte[])nameObject));
                 } catch (IllegalArgumentException e) {
-                    throw (IOException)new IOException("Invalid name").initCause(e);
+                    throw new IOException("Invalid name", e);
                 }
             }
         }

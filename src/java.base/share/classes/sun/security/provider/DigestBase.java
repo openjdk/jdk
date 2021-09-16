@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,8 +184,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         try {
             engineDigest(b, 0, b.length);
         } catch (DigestException e) {
-            throw (ProviderException)
-                new ProviderException("Internal error").initCause(e);
+            throw new ProviderException("Internal error", e);
         }
         return b;
     }

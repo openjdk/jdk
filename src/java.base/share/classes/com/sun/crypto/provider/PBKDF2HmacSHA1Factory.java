@@ -151,10 +151,8 @@ public final class PBKDF2HmacSHA1Factory extends SecretKeyFactorySpi {
                 try {
                     return new PBKDF2KeyImpl(spec, "HmacSHA1");
                 } catch (InvalidKeySpecException re) {
-                    InvalidKeyException ike = new InvalidKeyException
-                        ("Invalid key component(s)");
-                    ike.initCause(re);
-                    throw ike;
+                    throw new InvalidKeyException
+                        ("Invalid key component(s)", re);
                 } finally {
                     if (password != null) {
                         Arrays.fill(password, (char) 0);

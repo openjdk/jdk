@@ -270,17 +270,15 @@ public abstract class Configuration {
                 } catch (PrivilegedActionException e) {
                     Exception ee = e.getException();
                     if (ee instanceof InstantiationException) {
-                        throw (SecurityException) new
-                            SecurityException
+                        throw new SecurityException
                                     ("Configuration error:" +
                                      ee.getCause().getMessage() +
-                                     "\n").initCause(ee.getCause());
+                                     "\n", ee.getCause());
                     } else {
-                        throw (SecurityException) new
-                            SecurityException
+                        throw new SecurityException
                                     ("Configuration error: " +
                                      ee.toString() +
-                                     "\n").initCause(ee);
+                                     "\n", ee);
                     }
                 }
             }

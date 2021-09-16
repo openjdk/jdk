@@ -810,9 +810,9 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                 if (!MessageDigest.isEqual(computed, actual)) {
                     Throwable t = new UnrecoverableKeyException
                             ("Password verification failed");
-                    throw (IOException) new IOException
+                    throw new IOException
                             ("Keystore was tampered with, or "
-                                    + "password was incorrect").initCause(t);
+                                    + "password was incorrect", t);
                 }
             }
         }
