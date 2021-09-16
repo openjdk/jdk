@@ -946,7 +946,7 @@ public class URLClassPath {
             if (entry != null)
                 return checkResource(name, check, entry);
 
-            if (index == null || !ENABLE_JAR_INDEX)
+            if (index == null)
                 return null;
 
             HashSet<String> visited = new HashSet<>();
