@@ -1096,8 +1096,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     // This is the normal case for invoke* bytecodes
     bytecode_index = bytecode.index();
     bc = bytecode.invoke_code();
-  }
-  else {
+  } else {
     // This is for implicit exceptions with -XX:+OptimizeImplicitExceptions
     // where we create an artificial call to *Exception::<init>()
     bc = Bytecodes::_invokespecial;

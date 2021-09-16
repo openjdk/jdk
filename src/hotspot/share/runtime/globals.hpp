@@ -639,7 +639,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, OmitStackTraceInFastThrow, true,                            \
           "Omit backtraces for some 'hot' exceptions in optimized code")    \
                                                                             \
-  product(bool, OptimizeImplicitExceptions, true,                           \
+  product(bool, OptimizeImplicitExceptions, true, DIAGNOSTIC,               \
           "Create implicit, 'non-hot' exceptions right in compiled code "   \
           "rather than deoptimizing and resorting back to the interpreter") \
                                                                             \

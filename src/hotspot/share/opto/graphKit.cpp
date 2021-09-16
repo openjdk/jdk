@@ -627,7 +627,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       kill_dead_locals();
       Node* ex_node = new_instance(makecon(ex_type), NULL, NULL, true);
       set_argument(0, ex_node);
-      ciMethod* init =  ex_ciInstKlass->find_method(ciSymbol::make("<init>"), ciSymbol::make("()V"));
+      ciMethod* init = ex_ciInstKlass->find_method(ciSymbol::make("<init>"), ciSymbol::make("()V"));
 
       // The following code is modeled after:
       // DirectCallGenerator* cg = CallGenerator::for_direct_call(init);

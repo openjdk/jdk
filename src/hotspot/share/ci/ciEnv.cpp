@@ -372,7 +372,7 @@ void ciEnv::cache_dtrace_flags() {
 
 // ------------------------------------------------------------------
 // helper for -XX:+OptimizeImplicitExceptions
-ciInstanceKlass* ciEnv::exception_instanceKlass_for_reason(Deoptimization::DeoptReason reason, bool aastore) {
+ciInstanceKlass* ciEnv::exception_instanceKlass_for_reason(Deoptimization::DeoptReason reason, bool is_aastore) {
   Symbol* ex_symbol = NULL;
   switch (reason) {
   case Deoptimization::Reason_null_check:
@@ -385,7 +385,7 @@ ciInstanceKlass* ciEnv::exception_instanceKlass_for_reason(Deoptimization::Deopt
     ex_symbol = vmSymbols::java_lang_ArrayIndexOutOfBoundsException();
     break;
   case Deoptimization::Reason_class_check:
-    if (aastore) {
+    if (is_aastore) {
       ex_symbol = vmSymbols::java_lang_ArrayStoreException();
     } else {
       ex_symbol = vmSymbols::java_lang_ClassCastException();
