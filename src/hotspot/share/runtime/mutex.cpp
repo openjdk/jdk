@@ -297,6 +297,7 @@ Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check
          "Safepoint check never locks should always allow the vm to block: %s", name);
 
   assert(_rank >= 0, "Bad lock rank: %s", name);
+  assert(_rank <= nonleaf, "Bad lock rank: %s", name);
 #endif
 }
 

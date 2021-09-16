@@ -748,7 +748,7 @@ class ParDumpWriter : public AbstractDumpWriter {
 
   static void before_work() {
     assert(_lock == NULL, "ParDumpWriter lock must be initialized only once");
-    _lock = new (std::nothrow) PaddedMonitor(Mutex::leaf, "Parallel HProf writer lock", Mutex::_safepoint_check_never);
+    _lock = new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "Parallel HProf writer lock", Mutex::_safepoint_check_never);
   }
 
   static void after_work() {
@@ -1814,7 +1814,7 @@ class DumperController : public CHeapObj<mtInternal> {
  public:
    DumperController(uint number) :
      _started(false),
-     _lock(new (std::nothrow) PaddedMonitor(Mutex::leaf, "Dumper Controller lock",
+     _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "Dumper Controller lock",
     Mutex::_safepoint_check_never)),
      _dumper_number(number),
      _complete_number(0) { }
