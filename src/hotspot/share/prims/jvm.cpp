@@ -1030,6 +1030,7 @@ JVM_ENTRY(jclass, JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *
 JVM_END
 
 JVM_ENTRY(jclass, JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd, const char *source))
+
   return jvm_define_class_common(name, loader, buf, len, pd, source, THREAD);
 JVM_END
 
