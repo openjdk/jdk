@@ -26,8 +26,6 @@ package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
 
-import java.lang.reflect.Modifier;
-
 import static java.lang.invoke.MethodHandleInfo.*;
 import static sun.invoke.util.Wrapper.forPrimitiveType;
 import static sun.invoke.util.Wrapper.forWrapperType;
@@ -283,9 +281,9 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         for (int i=capturedStart; i<capturedArity; i++) {
             Class<?> implParamType = implMethodType.parameterType(i);
             Class<?> capturedParamType = factoryType.parameterType(i);
-            if (!capturedParamType.equals(implParamType)) {
+            if (!canConvert(capturedParamType, implParamType)) {
                 throw new LambdaConversionException(
-                        String.format("Type mismatch in captured lambda parameter %d: expecting %s, found %s",
+                        String.format("Type mismatch in captured lambda parameter %d: %s is not convertible to %s",
                                       i, capturedParamType, implParamType));
             }
         }
@@ -293,7 +291,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         for (int i=samStart; i<implArity; i++) {
             Class<?> implParamType = implMethodType.parameterType(i);
             Class<?> dynamicParamType = dynamicMethodType.parameterType(i - capturedArity);
-            if (!isAdaptableTo(dynamicParamType, implParamType, true, true)) {
+            if (!canConvert(dynamicParamType, implParamType)) {
                 throw new LambdaConversionException(
                         String.format("Type mismatch for lambda argument %d: %s is not convertible to %s",
                                       i, dynamicParamType, implParamType));
@@ -303,7 +301,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         // Adaptation match: return type
         Class<?> expectedType = dynamicMethodType.returnType();
         Class<?> actualReturnType = implMethodType.returnType();
-        if (!isAdaptableToAsReturn(actualReturnType, expectedType)) {
+        if (!canConvert(actualReturnType, expectedType)) {
             throw new LambdaConversionException(
                     String.format("Type mismatch for lambda return: %s is not convertible to %s",
                                   actualReturnType, expectedType));
@@ -321,21 +319,71 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         for (int i = 0; i < dynamicMethodType.parameterCount(); i++) {
             Class<?> dynamicParamType = dynamicMethodType.parameterType(i);
             Class<?> descriptorParamType = descriptor.parameterType(i);
-            if (!descriptorParamType.isAssignableFrom(dynamicParamType) &&
-                    (descriptorParamType.isPrimitive() || dynamicParamType.isPrimitive() ||
-                            !sideCastExists(descriptorParamType, dynamicParamType))) {
-                String msg = String.format("Type mismatch for dynamic parameter %d: %s is not convertible to %s",
-                        i, dynamicParamType, descriptorParamType);
+            if (!canConvert(dynamicParamType, descriptorParamType)) {
+                String msg = String.format("Type mismatch for dynamic parameter %d: %s is not a subtype of %s",
+                                           i, dynamicParamType, descriptorParamType);
                 throw new LambdaConversionException(msg);
             }
         }
 
         Class<?> dynamicReturnType = dynamicMethodType.returnType();
         Class<?> descriptorReturnType = descriptor.returnType();
-        if (!isAdaptableToAsReturnStrict(dynamicReturnType, descriptorReturnType)) {
+        if (!canConvert(dynamicReturnType, descriptorReturnType)) {
             String msg = String.format("Type mismatch for lambda expected return: %s is not convertible to %s",
                                        dynamicReturnType, descriptorReturnType);
             throw new LambdaConversionException(msg);
+        }
+    }
+
+    private static boolean canConvert(Class<?> src, Class<?> dst) {
+        // short-circuit a few cases:
+        if (src == dst || src == Object.class || dst == Object.class)  return true;
+        // the remainder of this logic is documented in MethodHandle.asType
+        if (src.isPrimitive()) {
+            // can force void to an explicit null, a la reflect.Method.invoke
+            // can also force void to a primitive zero, by analogy
+            if (src == void.class)  return true;  //or !dst.isPrimitive()?
+            Wrapper sw = Wrapper.forPrimitiveType(src);
+            if (dst.isPrimitive()) {
+                // P->P must widen
+                return Wrapper.forPrimitiveType(dst).isConvertibleFrom(sw);
+            } else {
+                // P->R must box and widen
+                return dst.isAssignableFrom(sw.wrapperType());
+            }
+        } else if (dst.isPrimitive()) {
+            // any value can be dropped
+            if (dst == void.class)  return true;
+            Wrapper dw = Wrapper.forPrimitiveType(dst);
+            // R->P must be able to unbox (from a dynamically chosen type) and widen
+            // For example:
+            //   Byte/Number/Comparable/Object -> dw:Byte -> byte.
+            //   Character/Comparable/Object -> dw:Character -> char
+            //   Boolean/Comparable/Object -> dw:Boolean -> boolean
+            // This means that dw must be cast-compatible with src.
+            if (src.isAssignableFrom(dw.wrapperType())) {
+                return true;
+            }
+            // The above does not work if the source reference is strongly typed
+            // to a wrapper whose primitive must be widened.  For example:
+            //   Byte -> unbox:byte -> short/int/long/float/double
+            //   Character -> unbox:char -> int/long/float/double
+            if (Wrapper.isWrapperType(src) &&
+                    dw.isConvertibleFrom(Wrapper.forWrapperType(src))) {
+                // can unbox from src and then widen to dst
+                return true;
+            }
+            // We have already covered cases which arise due to runtime unboxing
+            // of a reference type which covers several wrapper types:
+            //   Object -> cast:Integer -> unbox:int -> long/float/double
+            //   Serializable -> cast:Byte -> unbox:byte -> byte/short/int/long/float/double
+            // An marginal case is Number -> dw:Character -> char, which would be OK if there were a
+            // subclass of Number which wraps a value that can convert to char.
+            // Since there is none, we don't need an extra check here to cover char or boolean.
+            return false;
+        } else {
+            // R->R always works, since null is always valid dynamically
+            return true;
         }
     }
 
@@ -347,18 +395,6 @@ import static sun.invoke.util.Wrapper.isWrapperType;
      * @return True if 'fromType' can be passed to an argument of 'toType'
      */
     private boolean isAdaptableTo(Class<?> fromType, Class<?> toType, boolean strict) {
-        return isAdaptableTo(fromType, toType, strict, false);
-    }
-
-    /**
-     * Check type adaptability for parameter types.
-     * @param fromType Type to convert from
-     * @param toType Type to convert to
-     * @param strict If true, do strict checks, else allow that fromType may be parameterized
-     * @param allowSideCast If true, then sicasts are allowed
-     * @return True if 'fromType' can be passed to an argument of 'toType'
-     */
-    private boolean isAdaptableTo(Class<?> fromType, Class<?> toType, boolean strict, boolean allowSideCast) {
         if (fromType.equals(toType)) {
             return true;
         }
@@ -385,44 +421,10 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                     return !strict;
                 }
             } else {
-                // both are reference types: fromType should be a superclass of toType or there should exist
-                // a sidecast from fromType to toType
-                return !strict || toType.isAssignableFrom(fromType) || (allowSideCast && sideCastExists(fromType, toType));
+                // both are reference types: fromType should be a superclass of toType.
+                return !strict || toType.isAssignableFrom(fromType);
             }
         }
-    }
-
-    /**
-     * Check if a sidecas exist
-     * @param aType first type
-     * @param anotherType second type
-     * @return True if 'aType' is not disjoint from 'anotherType'
-     */
-    private boolean sideCastExists(Class<?> aType, Class<?> anotherType) {
-        if (aType.isAssignableFrom(anotherType)) {
-            return true;
-        }
-        // if non is sealed
-        if (!anotherType.isSealed() && !aType.isSealed()) {
-            if (anotherType.isInterface() && aType.isInterface()) {
-                return true;
-            } else if (anotherType.isInterface()) {
-                return ((aType.getModifiers() & Modifier.FINAL) == 0);
-            } else if (aType.isInterface()) {
-                return ((anotherType.getModifiers() & Modifier.FINAL) == 0);
-            } else if (anotherType.isArray() && aType.isArray()) {
-                return sideCastExists(aType.getComponentType(), anotherType.getComponentType());
-            }
-        } else {
-            Class<?> sealedOne = aType.isSealed() ? aType : anotherType;
-            Class<?> other = sealedOne == aType ? anotherType : aType;
-            for (Class<?> subclass : sealedOne.getPermittedSubclasses()) {
-                if (sideCastExists(subclass, other)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**

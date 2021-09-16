@@ -23,9 +23,12 @@
 
 /*
  * @test
- * @bug 8035776 8173587
+ * @bug 8035776 8173587 8269121
  * @summary metafactory should fail if instantiatedMethodType does not match sam/bridge descriptors
+ * @modules java.base/sun.invoke.util
  */
+
+import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.*;
 import java.lang.reflect.Modifier;
@@ -106,7 +109,7 @@ public class MetafactoryDescriptorTest {
             MethodHandle n = C.getN(t[i]); // null for void.class
             for (int j = 0; j < t.length; j++) {
                 //if (i == j) continue;
-                boolean correctRet = t[j].isAssignableFrom(t[i]) || conversions.contains(t[i], t[j]);
+                boolean correctRet = canConvert(t[i], t[j]) || conversions.contains(t[i], t[j]);
                 test(correctRet, m, mt(t[i], String.class), mt(t[j], String.class));
                 testBridge(correctRet, m, mt(t[i], String.class), mt(t[i], String.class),
                            mt(t[j], Object.class));
@@ -115,8 +118,7 @@ public class MetafactoryDescriptorTest {
 
                 if (t[i] != void.class && t[j] != void.class) {
                     //boolean correctParam = t[j].isAssignableFrom(t[i]) || sideCastExists(t[i], t[j]);
-                    boolean correctParam = t[j].isAssignableFrom(t[i]) ||
-                            (!t[j].isPrimitive() && !t[i].isPrimitive() && sideCastExists(t[j], t[i]));
+                    boolean correctParam = canConvert(t[i], t[j]);
                     System.out.println("testing correctParam = " + correctParam + " t[i] = " + t[i] + " t[j] = " + t[j]);
                     test(correctParam, n, mt(String.class, t[i]), mt(String.class, t[j]));
                     testBridge(correctParam, n, mt(String.class, t[i]), mt(String.class, t[i]),
@@ -140,6 +142,10 @@ public class MetafactoryDescriptorTest {
 
     static void tryMetafactory(boolean correct, MethodHandle mh, MethodType instMT, MethodType samMT) {
         try {
+            System.err.println("invoking metafactory:" +
+                    " impl=" + mh +
+                    ", inst=" + instMT +
+                    ", sam=" + samMT);
             LambdaMetafactory.metafactory(lookup, "run", mt(I.class),
                                           samMT, mh, instMT);
             if (!correct) {
@@ -280,21 +286,56 @@ public class MetafactoryDescriptorTest {
         conversions.put(Boolean.class, boolean.class);
     }
 
-    // test if a sidecast exist from fromType to toType
-    static boolean sideCastExists(Class<?> fromType, Class<?> toType) {
-        if (fromType.isPrimitive() || toType.isPrimitive()) {
+    private static boolean canConvert(Class<?> src, Class<?> dst) {
+        // short-circuit a few cases:
+        if (src == dst || src == Object.class || dst == Object.class)  return true;
+        // the remainder of this logic is documented in MethodHandle.asType
+        if (src.isPrimitive()) {
+            // can force void to an explicit null, a la reflect.Method.invoke
+            // can also force void to a primitive zero, by analogy
+            if (src == void.class)  return true;  //or !dst.isPrimitive()?
+            Wrapper sw = Wrapper.forPrimitiveType(src);
+            if (dst.isPrimitive()) {
+                // P->P must widen
+                return Wrapper.forPrimitiveType(dst).isConvertibleFrom(sw);
+            } else {
+                // P->R must box and widen
+                return dst.isAssignableFrom(sw.wrapperType());
+            }
+        } else if (dst.isPrimitive()) {
+            // any value can be dropped
+            if (dst == void.class)  return true;
+            Wrapper dw = Wrapper.forPrimitiveType(dst);
+            // R->P must be able to unbox (from a dynamically chosen type) and widen
+            // For example:
+            //   Byte/Number/Comparable/Object -> dw:Byte -> byte.
+            //   Character/Comparable/Object -> dw:Character -> char
+            //   Boolean/Comparable/Object -> dw:Boolean -> boolean
+            // This means that dw must be cast-compatible with src.
+            if (src.isAssignableFrom(dw.wrapperType())) {
+                return true;
+            }
+            // The above does not work if the source reference is strongly typed
+            // to a wrapper whose primitive must be widened.  For example:
+            //   Byte -> unbox:byte -> short/int/long/float/double
+            //   Character -> unbox:char -> int/long/float/double
+            if (Wrapper.isWrapperType(src) &&
+                    dw.isConvertibleFrom(Wrapper.forWrapperType(src))) {
+                // can unbox from src and then widen to dst
+                return true;
+            }
+            // We have already covered cases which arise due to runtime unboxing
+            // of a reference type which covers several wrapper types:
+            //   Object -> cast:Integer -> unbox:int -> long/float/double
+            //   Serializable -> cast:Byte -> unbox:byte -> byte/short/int/long/float/double
+            // An marginal case is Number -> dw:Character -> char, which would be OK if there were a
+            // subclass of Number which wraps a value that can convert to char.
+            // Since there is none, we don't need an extra check here to cover char or boolean.
             return false;
-        }
-        if (toType.isInterface() && fromType.isInterface()) {
+        } else {
+            // R->R always works, since null is always valid dynamically
             return true;
-        } else if (toType.isInterface()) {
-            return ((fromType.getModifiers() & Modifier.FINAL) == 0);
-        } else if (fromType.isInterface()) {
-            return ((toType.getModifiers() & Modifier.FINAL) == 0);
-        } else if (toType.isArray() && fromType.isArray()) {
-            return sideCastExists(fromType.getComponentType(), toType.getComponentType());
         }
-        return false;
     }
 
     public interface I {}
