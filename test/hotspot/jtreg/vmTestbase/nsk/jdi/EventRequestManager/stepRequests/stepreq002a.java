@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class stepreq002a {
 
     //====================================================== test program
 
-    static Thread1stepreq002a testField[] = new Thread1stepreq002a[10];
+    static Thread testField[] = new Thread[10];
 
     //------------------------------------------------------ common section
 
@@ -98,7 +98,7 @@ public class stepreq002a {
                     case 0:
                             synchronized (lockObj1) {
                                 for (int ii = 0; ii < 10; ii++) {
-                                    testField[ii] = new Thread1stepreq002a("thread" + ii);
+                                    testField[ii] = JDIThreadFactory.newThread(new Thread1stepreq002a("thread" + ii));
                                     threadStart(testField[ii]);
                                 }
                                 methodForCommunication();
@@ -137,7 +137,7 @@ public class stepreq002a {
 
 }
 
-class Thread1stepreq002a extends Thread {
+class Thread1stepreq002a extends JDITask {
 
     String tName = null;
 

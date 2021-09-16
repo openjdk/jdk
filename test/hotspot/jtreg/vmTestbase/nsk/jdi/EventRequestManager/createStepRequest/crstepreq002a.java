@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class crstepreq002a {
 
     //====================================================== test program
 
-    static Thread1crstepreq002a thread1 = null;
+    static Thread thread1 = null;
 
     static TestClass10 obj = new TestClass10();
 
@@ -98,7 +98,7 @@ public class crstepreq002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1crstepreq002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1crstepreq002a("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -149,24 +149,21 @@ class TestClass11 extends TestClass10{
     }
 }
 
-class Thread1crstepreq002a extends Thread {
-
-    String tName = null;
+class Thread1crstepreq002a extends JDITask {
 
     public Thread1crstepreq002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        crstepreq002a.log1("  'run': enter  :: threadName == " + tName);
+        crstepreq002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(crstepreq002a.waitnotifyObj) {
             crstepreq002a.waitnotifyObj.notify();
         }
         synchronized(crstepreq002a.lockObj) {
             TestClass11.m11();
         }
-        crstepreq002a.log1("  'run': exit   :: threadName == " + tName);
+        crstepreq002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
