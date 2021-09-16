@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6357858
  * @summary Job must reports the number of copies set in the dialog.
@@ -33,40 +33,36 @@ import java.awt.TextArea;
 import java.awt.Panel;
 import java.awt.BorderLayout;
 import java.awt.print.PrinterJob;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class DialogCopies {
 
-    private static final Frame instructionFrame = new Frame();
-    private static volatile boolean testResult;
-    private static volatile CountDownLatch countDownLatch;
-
-    private static void createInstructionUI() {
-
+    private static Frame createInstructionUI() {
         final String instruction = """
-                This test assumes and requires that you have a printer installed
-                When the dialog appears, increment the number of copies then
-                press OK/Print.The test will throw an exception if you fail
-                to do this, since,it cannot distinguish that from a failure.""";
+                This test assumes and requires that you have a printer / PDF printer
+                / XPS writer is installed. If none of them is installed and user sees
+                PrintDialog press Cancel button. If printer/PDF printer / XPS writer
+                is installed & when the Print Dialog appears increment the number of
+                copies then press OK/Print.""";
 
         Panel mainControlPanel = new Panel(new BorderLayout());
         TextArea instructionTextArea = new TextArea();
         instructionTextArea.setText(instruction);
         instructionTextArea.setEditable(false);
+
+        Frame instructionFrame = new Frame();
         mainControlPanel.add(instructionTextArea, BorderLayout.CENTER);
         instructionFrame.add(mainControlPanel);
         instructionFrame.pack();
+        instructionFrame.setLocationRelativeTo(null);
         instructionFrame.setVisible(true);
+        return instructionFrame;
     }
 
     public static void showPrintDialog() {
         PrinterJob job = PrinterJob.getPrinterJob();
         if (job.getPrintService() == null) {
-            System.out.println("Looks like printer is not configured. Please install printer and " +
-                    "re-run the test case.");
-            testResult = false;
-            countDownLatch.countDown();
+            System.out.println("Looks like printer is not configured. Please install printer " +
+                    "/ PDF printer, XPS writer and re-run the test case.");
             return;
         }
         checkNoOfCopies(job, job.printDialog());
@@ -75,31 +71,27 @@ public class DialogCopies {
     public static void checkNoOfCopies(PrinterJob job, boolean pdReturnValue) {
         if (pdReturnValue) {
             System.out.println("User has selected OK/Print button on the PrintDialog");
+            int copies = job.getCopies();
+            if (copies <= 1) {
+                throw new RuntimeException("Expected the number of copies to be more than 1 but got " + copies);
+            } else {
+                System.out.println("Total number of copies : " + copies);
+            }
         } else {
+            /*
+                Treat pressing Cancel button as pass. This is need in case if printer / PDF printers / XPS writer
+                is not installed
+             */
             System.out.println("User has selected Cancel button on the PrintDialog");
         }
-        int copies = job.getCopies();
-        if (copies <= 1) {
-            testResult = false;
-            System.out.println("Expected the number of copies to be more than 1 but got " + copies);
-        } else {
-            testResult = true;
-            System.out.println("Total number of copies : " + copies);
-        }
-        countDownLatch.countDown();
-        instructionFrame.dispose();
     }
 
     public static void main(String[] args) throws InterruptedException {
-        countDownLatch = new CountDownLatch(1);
-        createInstructionUI();
-        showPrintDialog();
-        if (!countDownLatch.await(5, TimeUnit.MINUTES)) {
-            throw new RuntimeException("Timeout : No action was performed on the test UI.");
-        }
-        if (!testResult) {
-            throw new RuntimeException("Test failed!");
+        Frame frame = createInstructionUI();
+        try {
+            showPrintDialog();
+        } finally {
+            frame.dispose();
         }
     }
 }
-
