@@ -409,17 +409,15 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
-        OutputStream dataOut = fos;
-        hprofBufferedOut = dataOut;
+        hprofBufferedOut = fos;
         if (useSegmentedHeapDump) {
             if (isCompression()) {
-                dataOut = new GZIPOutputStream(fos) {
+                hprofBufferedOut = new GZIPOutputStream(fos) {
                     {
                         this.def.setLevel(gzLevel);
                     }
                 };
             }
-            hprofBufferedOut = dataOut;
         }
         out = new DataOutputStream(hprofBufferedOut);
         dbg = vm.getDebugger();
@@ -504,23 +502,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             Instance instance = (Instance) oop;
             Klass klass = instance.getKlass();
             Symbol name = klass.getName();
-            if (name.equals(javaLangString)) {
-                return calculateStringDumpRecordSize(instance);
-            } else if (name.equals(javaLangClass)) {
+            if (name.equals(javaLangClass)) {
                 return calculateClassInstanceDumpRecordSize(instance);
-            } else if (name.equals(javaLangThread)) {
-                return calculateThreadDumpRecordSize(instance);
-            } else {
-                klass = klass.getSuper();
-                while (klass != null) {
-                    name = klass.getName();
-                    if (name.equals(javaLangThread)) {
-                        return calculateThreadDumpRecordSize(instance);
-                    }
-                    klass = klass.getSuper();
-                }
-                return calculateInstanceDumpRecordSize(instance);
             }
+            return calculateInstanceDumpRecordSize(instance);
         } else {
             // not-a-Java-visible oop
             return 0;
@@ -541,10 +526,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
         List<Field> fields = cd.fields;
         return (int) BYTE_SIZE + (int)OBJ_ID_SIZE * 2 + (int)INT_SIZE * 2 + getSizeForFields(fields);
-    }
-
-    private int calculateThreadDumpRecordSize(Instance instance) {
-        return calculateInstanceDumpRecordSize(instance);
     }
 
     private int calculateClassDumpRecordSize(Klass k) throws IOException {
@@ -632,10 +613,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             return calculateInstanceDumpRecordSize(instance);
         }
         return 0;
-    }
-
-    private int calculateStringDumpRecordSize(Instance instance) {
-        return calculateInstanceDumpRecordSize(instance);
     }
 
     private int calculateObjectArrayDumpRecordSize(ObjArray array) throws IOException {
