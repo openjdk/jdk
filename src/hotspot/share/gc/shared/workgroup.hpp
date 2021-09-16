@@ -94,9 +94,6 @@ class WorkGang : public CHeapObj<mtInternal> {
   // Printing support.
   const char* _name;
 
-  // Initialize only instance data.
-  const bool _are_ConcurrentGC_threads;
-
   // To get access to the GangTaskDispatcher instance.
   friend class GangWorker;
   GangTaskDispatcher* const _dispatcher;
@@ -115,14 +112,12 @@ class WorkGang : public CHeapObj<mtInternal> {
   GangWorker* allocate_worker(uint which);
 
  public:
-  WorkGang(const char* name, uint workers, bool are_ConcurrentGC_threads);
+  WorkGang(const char* name, uint workers);
 
   ~WorkGang();
 
   // Initialize workers in the gang.  Return true if initialization succeeded.
   void initialize_workers();
-
-  bool are_ConcurrentGC_threads() const { return _are_ConcurrentGC_threads; }
 
   uint total_workers() const { return _total_workers; }
 
@@ -213,9 +208,6 @@ protected:
 public:
   GangWorker(WorkGang* gang, uint id);
 
-  // Predicate for Thread
-  bool is_ConcurrentGC_thread() const override { return gang()->are_ConcurrentGC_threads(); }
-
   // Printing
   const char* type_name() const override { return "GCTaskThread"; }
 };
@@ -245,7 +237,6 @@ protected:
 
 public:
   WorkGangBarrierSync();
-  WorkGangBarrierSync(uint n_workers, const char* name);
 
   // Set the number of workers that will use the barrier.
   // Must be called before any of the workers start running.

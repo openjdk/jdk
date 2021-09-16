@@ -193,7 +193,7 @@ public:
 
   // Initialize the threshold to reflect the first boundary after the
   // bottom of the covered region.
-  HeapWord* initialize_threshold();
+  void initialize_threshold();
 
   void reset_bot() {
     zero_bottom_entry_raw();
