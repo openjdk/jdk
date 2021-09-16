@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class filter002a {
 
     //====================================================== test program
 
-    static Thread1filter002a thread1 = null;
-    static Thread2filter002a thread2 = null;
+    static Thread thread1 = null;
+    static Thread thread2 = null;
 
     static filter002aTestClass10 obj10 = new filter002aTestClass10();
     static filter002aTestClass11 obj11 = new filter002aTestClass11();
@@ -107,14 +107,14 @@ public class filter002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1filter002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1filter002a("thread1"));
                             log1("run1(thread1);");
                             run1(thread1);
 
                             break;
 
                     case 1:
-                            thread2 = new Thread2filter002a("thread2");
+                            thread2 = JDIThreadFactory.newThread(new Thread2filter002a("thread2"));
                             log1("run1(thread2);");
                             run1(thread2);
 
@@ -156,28 +156,25 @@ public class filter002a {
     }
 
 
-    static class Thread1filter002a extends Thread {
-
-        String tName = null;
+    static class Thread1filter002a extends JDITask {
 
         public Thread1filter002a(String threadName) {
             super(threadName);
-            tName = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             synchronized (waitnotifyObj) {
                 waitnotifyObj.notify();
             }
                 obj10.method();
                 obj11.method();
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }
 
-    static class Thread2filter002a extends Thread {
+    static class Thread2filter002a extends JDITask {
 
         String tName = null;
 

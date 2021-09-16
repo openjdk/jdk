@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class addthreadfilter003a {
 
     //====================================================== test program
 
-    static Threadaddthreadfilter003a thread1 = null;
+    static Thread thread1 = null;
 
     static addthreadfilter003aTestClass objTC = new addthreadfilter003aTestClass();
 
@@ -98,7 +98,7 @@ public class addthreadfilter003a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Threadaddthreadfilter003a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Threadaddthreadfilter003a("thread1"));
                             break;
 
     //-------------------------------------------------    standard end section
@@ -137,7 +137,7 @@ public class addthreadfilter003a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class Threadaddthreadfilter003a extends Thread {
+    static class Threadaddthreadfilter003a extends JDITask {
 
         String tName = null;
         int tNumber;
