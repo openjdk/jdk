@@ -1675,7 +1675,7 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
    public:
     HeapDumpLargeObjectListElem(oop obj) : _obj(obj), _next(NULL) { }
     oop _obj;
-    volatile HeapDumpLargeObjectListElem* _next;
+    HeapDumpLargeObjectListElem* _next;
   };
 
   volatile HeapDumpLargeObjectListElem* _head;
@@ -1693,11 +1693,10 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
     assert (entry->_obj != NULL, "sanity check");
     while (true) {
       volatile HeapDumpLargeObjectListElem* old_head = Atomic::load_acquire(&_head);
-      volatile HeapDumpLargeObjectListElem* new_head = entry;
+      HeapDumpLargeObjectListElem* new_head = entry;
       if (Atomic::cmpxchg(&_head, old_head, new_head) == old_head) {
         // successfully push
-        new_head->_next = old_head;
-        assert(new_head->_obj == obj, "must equal");
+        new_head->_next = (HeapDumpLargeObjectListElem*)old_head;
         return;
       }
     }
@@ -1707,7 +1706,7 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
     if (_head == NULL) {
       return NULL;
     }
-    volatile HeapDumpLargeObjectListElem* entry = _head;
+    HeapDumpLargeObjectListElem* entry = (HeapDumpLargeObjectListElem*)_head;
     _head = _head->_next;
     assert (entry != NULL, "illegal larger object list entry");
     oop ret = entry->_obj;
