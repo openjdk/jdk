@@ -1,8 +1,32 @@
+/*
+ *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 only, as
+ *  published by the Free Software Foundation.
+ *
+ *  This code is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ *  version 2 for more details (a copy is included in the LICENSE file that
+ *  accompanied this code).
+ *
+ *  You should have received a copy of the GNU General Public License version
+ *  2 along with this work; if not, write to the Free Software Foundation,
+ *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ *  or visit www.oracle.com if you need additional information or have any
+ *  questions.
+ *
+ */
+
 package org.openjdk.bench.jdk.incubator.vector;
 
 
 import jdk.incubator.vector.ByteVector;
-import jdk.incubator.vector.FloatVector;
+import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.LongVector;
 import jdk.incubator.vector.VectorMask;
@@ -18,8 +42,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.BenchmarkParams;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.random.RandomGenerator;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
@@ -41,25 +65,17 @@ public class ArrayMismatchBenchmark {
     long[] longData1;
     long[] longData2;
 
-    float[] floatData1;
-    float[] floatData2;
+    double[] doubleData1;
+    double[] doubleData2;
 
     static final VectorSpecies<Byte> BYTE_SPECIES_PREFERRED = ByteVector.SPECIES_PREFERRED;
     static final VectorSpecies<Integer> INT_SPECIES_PREFERRED = IntVector.SPECIES_PREFERRED;
-    static final VectorSpecies<Float> FLOAT_SPECIES_PREFERRED = FloatVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Double> FLOAT_SPECIES_PREFERRED = DoubleVector.SPECIES_PREFERRED;
     static final VectorSpecies<Long> LONG_SPECIES_PREFERRED = LongVector.SPECIES_PREFERRED;
-
-    static final Random random = new Random();
-
-    private float[] createRandomFloats(int size) {
-        float[] array = new float[size];
-        for (int i = 0; i < size; i++)
-            array[i] = random.nextFloat();
-        return array;
-    }
 
     @Setup
     public void setup(BenchmarkParams params) {
+        RandomGenerator random = RandomGenerator.getDefault();
         int common = (int) (prefix * size);
 
         if (params.getBenchmark().endsWith("Byte")) {
@@ -80,13 +96,13 @@ public class ArrayMismatchBenchmark {
             int[] commonInts = random.ints(common).toArray();
             System.arraycopy(commonInts, 0, intData1, 0, common);
             System.arraycopy(commonInts, 0, intData2, 0, common);
-        } else if (params.getBenchmark().endsWith("Float")) {
-            floatData1 = createRandomFloats(size);
-            floatData2 = createRandomFloats(size);
+        } else if (params.getBenchmark().endsWith("Double")) {
+            doubleData1 = random.doubles(size).toArray();
+            doubleData2 = random.doubles(size).toArray();
 
-            float[] commonFloats = createRandomFloats(common);
-            System.arraycopy(commonFloats, 0, floatData1, 0, common);
-            System.arraycopy(commonFloats, 0, floatData2, 0, common);
+            double[] commonDoubles = random.doubles(size).toArray();
+            System.arraycopy(commonDoubles, 0, doubleData1, 0, common);
+            System.arraycopy(commonDoubles, 0, doubleData2, 0, common);
         } else if (params.getBenchmark().endsWith("Long")) {
             longData1 = random.longs(size).toArray();
             longData2 = random.longs(size).toArray();
@@ -154,18 +170,18 @@ public class ArrayMismatchBenchmark {
     }
 
     @Benchmark
-    public int mismatchIntrinsicFloat() {
-        return Arrays.mismatch(floatData1, floatData2);
+    public int mismatchIntrinsicDouble() {
+        return Arrays.mismatch(doubleData1, doubleData2);
     }
 
     @Benchmark
-    public int mismatchVectorFloat() {
-        int length = Math.min(floatData1.length, floatData2.length);
+    public int mismatchVectorDouble() {
+        int length = Math.min(doubleData1.length, doubleData2.length);
         int index = 0;
         for (; index < FLOAT_SPECIES_PREFERRED.loopBound(length); index += FLOAT_SPECIES_PREFERRED.length()) {
-            FloatVector vector1 = FloatVector.fromArray(FLOAT_SPECIES_PREFERRED, floatData1, index);
-            FloatVector vector2 = FloatVector.fromArray(FLOAT_SPECIES_PREFERRED, floatData2, index);
-            VectorMask<Float> mask = vector1.compare(VectorOperators.NE, vector2);
+            DoubleVector vector1 = DoubleVector.fromArray(FLOAT_SPECIES_PREFERRED, doubleData1, index);
+            DoubleVector vector2 = DoubleVector.fromArray(FLOAT_SPECIES_PREFERRED, doubleData2, index);
+            VectorMask<Double> mask = vector1.compare(VectorOperators.NE, vector2);
             if (mask.anyTrue()) {
                 return index + mask.firstTrue();
             }
@@ -173,7 +189,7 @@ public class ArrayMismatchBenchmark {
         // process the tail
         int mismatch = -1;
         for (int i = index; i < length; ++i) {
-            if (floatData1[i] != floatData2[i]) {
+            if (doubleData1[i] != doubleData2[i]) {
                 mismatch = i;
                 break;
             }
