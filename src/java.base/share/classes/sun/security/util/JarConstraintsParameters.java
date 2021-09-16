@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,27 +98,11 @@ public class JarConstraintsParameters implements ConstraintsParameters {
         this.timestamp = latestTimestamp;
     }
 
-    public JarConstraintsParameters(List<X509Certificate> chain, Timestamp timestamp) {
-        this.keys = new HashSet<>();
-        this.certsIssuedByAnchor = new HashSet<>();
-        init(chain);
-        if (timestamp != null) {
-            init(timestamp.getSignerCertPath());
-            this.timestamp = timestamp.getTimestamp();
-        } else {
-            this.timestamp = null;
-        }
-    }
-
     // extract last certificate and key from chain
     private void init(CertPath cp) {
         @SuppressWarnings("unchecked")
         List<X509Certificate> chain =
             (List<X509Certificate>)cp.getCertificates();
-        init(chain);
-    }
-
-    private void init(List<X509Certificate> chain) {
         if (!chain.isEmpty()) {
             this.certsIssuedByAnchor.add(chain.get(chain.size() - 1));
             this.keys.add(chain.get(0).getPublicKey());

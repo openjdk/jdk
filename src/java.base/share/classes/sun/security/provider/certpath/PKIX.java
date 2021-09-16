@@ -88,7 +88,6 @@ class PKIX {
         private Set<TrustAnchor> anchors;
         private List<X509Certificate> certs;
         private Timestamp timestamp;
-        private Date timestampDate;
         private String variant = Validator.VAR_GENERIC;
 
         ValidatorParams(CertPath cp, PKIXParameters params)
@@ -209,14 +208,6 @@ class PKIX {
 
         String variant() {
             return variant;
-        }
-        Date timestamp() {
-            // return timestamp date if set, otherwise use date parameter
-            if (timestampDate == null) {
-                timestampDate = (timestamp != null)
-                    ? timestamp.getTimestamp() : date();
-            }
-            return timestampDate;
         }
     }
 

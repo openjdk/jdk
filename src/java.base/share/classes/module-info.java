@@ -318,8 +318,7 @@ module java.base {
         jdk.crypto.ec,
         jdk.security.auth;
     exports sun.security.provider.certpath to
-        java.naming,
-        jdk.jartool;
+        java.naming;
     exports sun.security.rsa to
         jdk.crypto.cryptoki;
     exports sun.security.timestamp to

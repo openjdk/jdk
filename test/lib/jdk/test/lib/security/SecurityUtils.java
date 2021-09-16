@@ -61,18 +61,11 @@ public final class SecurityUtils {
                                List.<String>of(protocols));
     }
 
-    /**
-     * Removes constraints that contain the specified constraint from the
-     * specified security property. For example, List.of("SHA1") will remove
-     * any constraint containing "SHA1".
-     */
-    public static void removeFromDisabledAlgs(String prop,
-            List<String> constraints) {
+    private static void removeFromDisabledAlgs(String prop, List<String> algs) {
         String value = Security.getProperty(prop);
         value = Arrays.stream(value.split(","))
                       .map(s -> s.trim())
-                      .filter(s -> constraints.stream()
-                          .allMatch(constraint -> !s.contains(constraint)))
+                      .filter(s -> !algs.contains(s))
                       .collect(Collectors.joining(","));
         Security.setProperty(prop, value);
     }

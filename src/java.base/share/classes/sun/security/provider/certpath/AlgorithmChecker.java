@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *     certificate
      * @param constraints the algorithm constraints (or null)
      * @param date the date specified by the PKIXParameters date, or the
-     *             timestamp if JAR files are being validated and the
+     *             JAR timestamp if jar files are being validated and the
      *             JAR is timestamped. May be null if no timestamp or
      *             PKIXParameter date is set.
      * @param variant the Validator variant of the operation. A null value
@@ -160,19 +160,17 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
 
     /**
      * Create a new {@code AlgorithmChecker} with the given {@code TrustAnchor},
-     * {@code PKIXParameter} date, and {@code variant}.
+     * {@code PKIXParameter} date, and {@code varient}
      *
      * @param anchor the trust anchor selected to validate the target
      *     certificate
-     * @param date the date specified by the PKIXParameters date, or the
-     *             timestamp if JAR files are being validated and the
-     *             JAR is timestamped. May be null if no timestamp or
-     *             PKIXParameter date is set.
+     * @param pkixdate Date the constraints are checked against. The value is
+     *             either the PKIXParameters date or null for the current date.
      * @param variant the Validator variant of the operation. A null value
      *                passed will set it to Validator.GENERIC.
      */
-    public AlgorithmChecker(TrustAnchor anchor, Date date, String variant) {
-        this(anchor, certPathDefaultConstraints, date, variant);
+    public AlgorithmChecker(TrustAnchor anchor, Date pkixdate, String variant) {
+        this(anchor, certPathDefaultConstraints, pkixdate, variant);
     }
 
     @Override
