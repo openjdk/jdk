@@ -73,8 +73,9 @@ void ZArguments::initialize() {
   }
 
   // Only 2M large pages are supported
-  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != 2 * M) {
-    vm_exit_during_initialization("Incompatible -XX:LargePageSizeInBytes, only 2M large pages are supported by ZGC");
+  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != ZGranuleSize) {
+    vm_exit_during_initialization(err_msg("Incompatible -XX:LargePageSizeInBytes, only " SIZE_FORMAT "M large pages are supported by ZGC",
+                                          ZGranuleSize / M));
   }
 
   // The heuristics used when UseDynamicNumberOfGCThreads is
