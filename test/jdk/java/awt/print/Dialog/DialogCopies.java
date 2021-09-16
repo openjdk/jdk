@@ -30,7 +30,6 @@
 
 import java.awt.Frame;
 import java.awt.TextArea;
-import java.awt.Panel;
 import java.awt.BorderLayout;
 import java.awt.print.PrinterJob;
 
@@ -38,20 +37,20 @@ public class DialogCopies {
 
     private static Frame createInstructionUI() {
         final String instruction = """
-                This test assumes and requires that you have a printer / PDF printer
-                / XPS writer is installed. If none of them is installed and user sees
-                PrintDialog press Cancel button. If printer/PDF printer / XPS writer
-                is installed & when the Print Dialog appears increment the number of
-                copies then press OK/Print.""";
+                This test requires that you have a printer. In case if the test
+                system has a virtual printers such as Microsoft Print to PDF or
+                Microsoft XPS Document Writer is installed. Press Cancel
+                button since neither Microsoft Print to PDF or Microsoft XPS
+                Document Writer does not allow setting copies to anything but 1.
+                If printer is installed then PrintDialog is visible increase the
+                number of copies and press OK/Cancel button.""";
 
-        Panel mainControlPanel = new Panel(new BorderLayout());
-        TextArea instructionTextArea = new TextArea();
+        TextArea instructionTextArea = new TextArea(instruction);
         instructionTextArea.setText(instruction);
         instructionTextArea.setEditable(false);
 
         Frame instructionFrame = new Frame();
-        mainControlPanel.add(instructionTextArea, BorderLayout.CENTER);
-        instructionFrame.add(mainControlPanel);
+        instructionFrame.add(instructionTextArea, BorderLayout.CENTER);
         instructionFrame.pack();
         instructionFrame.setLocationRelativeTo(null);
         instructionFrame.setVisible(true);
@@ -62,7 +61,7 @@ public class DialogCopies {
         PrinterJob job = PrinterJob.getPrinterJob();
         if (job.getPrintService() == null) {
             System.out.println("Looks like printer is not configured. Please install printer " +
-                    "/ PDF printer, XPS writer and re-run the test case.");
+                    " and re-run the test case.");
             return;
         }
         checkNoOfCopies(job, job.printDialog());
@@ -78,11 +77,7 @@ public class DialogCopies {
                 System.out.println("Total number of copies : " + copies);
             }
         } else {
-            /*
-                Treat pressing Cancel button as pass. This is need in case if printer / PDF printers / XPS writer
-                is not installed
-             */
-            System.out.println("User has selected Cancel button on the PrintDialog");
+            System.out.println("User has selected Cancel button on the PrintDialog.");
         }
     }
 
