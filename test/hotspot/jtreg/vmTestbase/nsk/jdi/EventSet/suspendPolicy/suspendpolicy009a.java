@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,13 @@ public class suspendpolicy009a {
 
     //====================================================== test program
 
-    static Threadsuspendpolicy009a thread0 = null;
-    static Threadsuspendpolicy009a thread1 = null;
-    static Threadsuspendpolicy009a thread2 = null;
-    static Threadsuspendpolicy009a thread3 = null;
-    static Threadsuspendpolicy009a thread4 = null;
-    static Threadsuspendpolicy009a thread5 = null;
-    static Threadsuspendpolicy009a thread6 = null;
+    static Thread thread0 = null;
+    static Thread thread1 = null;
+    static Thread thread2 = null;
+    static Thread thread3 = null;
+    static Thread thread4 = null;
+    static Thread thread5 = null;
+    static Thread thread6 = null;
 
     //------------------------------------------------------ common section
 
@@ -105,7 +105,7 @@ public class suspendpolicy009a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread0 = new Threadsuspendpolicy009a("thread0");
+                            thread0 = JDIThreadFactory.newThread(new Threadsuspendpolicy009a("thread0"));
                             methodForCommunication();
 
                             threadStart(thread0);
@@ -113,7 +113,7 @@ public class suspendpolicy009a {
                                 thread0.join();
                             } catch (InterruptedException e) {
                             }
-                            thread1 = new Threadsuspendpolicy009a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Threadsuspendpolicy009a("thread1"));
                             methodForCommunication();
                             break;
 
@@ -123,7 +123,7 @@ public class suspendpolicy009a {
                                 thread1.join();
                             } catch (InterruptedException e) {
                             }
-                            thread2 = new Threadsuspendpolicy009a("thread2");
+                            thread2 = JDIThreadFactory.newThread(new Threadsuspendpolicy009a("thread2"));
                             methodForCommunication();
                             break;
 
@@ -133,7 +133,7 @@ public class suspendpolicy009a {
                                 thread2.join();
                             } catch (InterruptedException e) {
                             }
-                            thread3 = new Threadsuspendpolicy009a("thread3");
+                            thread3 = JDIThreadFactory.newThread(new Threadsuspendpolicy009a("thread3"));
                             methodForCommunication();
                             break;
 
@@ -143,7 +143,7 @@ public class suspendpolicy009a {
                                 thread3.join();
                             } catch (InterruptedException e) {
                             }
-                            thread4 = new Threadsuspendpolicy009a("thread4");
+                            thread4 = JDIThreadFactory.newThread(new Threadsuspendpolicy009a("thread4"));
                             methodForCommunication();
                             break;
 
@@ -153,7 +153,7 @@ public class suspendpolicy009a {
                                 thread4.join();
                             } catch (InterruptedException e) {
                             }
-                            thread5 = new Threadsuspendpolicy009a("thread5");
+                            thread5 = JDIThreadFactory.newThread(new Threadsuspendpolicy009a("thread5"));
                             methodForCommunication();
                             break;
 
@@ -163,7 +163,7 @@ public class suspendpolicy009a {
                                 thread5.join();
                             } catch (InterruptedException e) {
                             }
-                            thread6 = new Threadsuspendpolicy009a("thread6");
+                            thread6 = JDIThreadFactory.newThread(new Threadsuspendpolicy009a("thread6"));
                             methodForCommunication();
                             break;
 
@@ -201,21 +201,18 @@ public class suspendpolicy009a {
         return PASSED;
     }
 
-    static class Threadsuspendpolicy009a extends Thread {
-
-        String tName = null;
+    static class Threadsuspendpolicy009a extends JDITask {
 
         public Threadsuspendpolicy009a(String threadName) {
             super(threadName);
-            tName = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             synchronized (waitnotifyObj) {
                     waitnotifyObj.notify();
             }
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }
