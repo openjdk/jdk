@@ -29,7 +29,7 @@
  *
  * @library /test/lib
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileCommand="dontinline,TestNegMultiply::test*" TestNegMultiply
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand="dontinline,TestNegMultiply::test*" TestNegMultiply
  *
  */
 
@@ -39,7 +39,8 @@ import jdk.test.lib.Asserts;
 
 public class TestNegMultiply {
     private static final Random random = Utils.getRandomInstance();
-    private static final int TEST_COUNT = 2000;
+    // Enough cycles to ensure test methods are JIT-ed
+    private static final int TEST_COUNT = 20_000;
 
     private static int testInt(int a, int b) {
         return (-a) * (-b);
@@ -55,10 +56,6 @@ public class TestNegMultiply {
     }
 
     private static void runIntTests() {
-        // Ensure testInt() is JIT-ed
-        for (int i = 0; i < 20_000; i++) {
-            testInt(1, 2);
-        }
         for (int index = 0; index < TEST_COUNT; index ++) {
             int a = random.nextInt();
             int b = random.nextInt();
@@ -69,11 +66,6 @@ public class TestNegMultiply {
     }
 
     private static void runLongTests() {
-        // Ensure testLong() is JIT-ed
-        for (int i = 0; i < 20_000; i++) {
-            testLong(1L, 2L);
-        }
-
         for (int index = 0; index < TEST_COUNT; index ++) {
             long a = random.nextLong();
             long b = random.nextLong();
@@ -84,10 +76,6 @@ public class TestNegMultiply {
     }
 
     private static void runFloatTests() {
-        // Ensure testFloat() is JIT-ed
-        for (int i = 0; i < 20_000; i++) {
-            testFloat(1.0f, 2.0f);
-        }
         for (int index = 0; index < TEST_COUNT; index ++) {
             float a = random.nextFloat();
             float b = random.nextFloat();
@@ -98,10 +86,6 @@ public class TestNegMultiply {
     }
 
     private static void runDoubleTests() {
-        // Ensure testDouble() is JIT-ed
-        for (int i = 0; i < 20_000; i++) {
-            testDouble(1.0, 2.0);
-        }
         for (int index = 0; index < TEST_COUNT; index ++) {
             double a = random.nextDouble();
             double b = random.nextDouble();
