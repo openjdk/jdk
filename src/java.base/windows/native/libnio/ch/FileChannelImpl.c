@@ -32,6 +32,7 @@
 #include "nio_util.h"
 #include "sun_nio_ch_FileChannelImpl.h"
 #include "java_lang_Integer.h"
+#include "java_lang_Long.h"
 
 #include <Mswsock.h>
 #pragma comment(lib, "Mswsock.lib")
@@ -145,6 +146,45 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
     return 0;
 }
 
+#define READ_WRITE_TRANSFER_SIZE  32768
+#define READ_WRITE_TRANSFER_LIMIT 2097152
+
+DWORD transfer_read_write(JNIEnv* env, HANDLE src, DWORD position, DWORD count,
+                          HANDLE dst)
+{
+    LARGE_INTEGER where;
+    where.QuadPart = (LONGLONG)position;
+    if (SetFilePointerEx(src, where, &where, FILE_BEGIN) == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "SetFilePointerEx failed");
+        return IOS_THROWN;
+    }
+
+    char buf[READ_WRITE_TRANSFER_SIZE];
+
+    DWORD tw = 0;
+    while (tw < count) {
+        DWORD remaining = count - tw;
+        DWORD nr = remaining < READ_WRITE_TRANSFER_SIZE ?
+            remaining : READ_WRITE_TRANSFER_SIZE;
+        if (ReadFile(src, (LPVOID)&buf, nr, &nr, NULL) == 0) {
+            JNU_ThrowIOExceptionWithLastError(env, "ReadFile failed");
+            return IOS_THROWN;
+        }
+
+        DWORD nw = 0;
+        if (WriteFile(dst, &buf, nr, &nw, NULL) == 0) {
+            JNU_ThrowIOExceptionWithLastError(env, "WriteFile failed");
+            return IOS_THROWN;
+        }
+        tw += nw;
+
+        if (nw != nr)
+            return tw;
+    }
+
+    return tw;
+}
+
 // Integer.MAX_VALUE - 1 is the maximum transfer size for TransmitFile()
 #define MAX_TRANSMIT_SIZE (java_lang_Integer_MAX_VALUE - 1)
 
@@ -159,9 +199,17 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
     LARGE_INTEGER where;
     HANDLE src = (HANDLE)(handleval(env, srcFD));
     SOCKET dst = (SOCKET)(fdval(env, dstFD));
+    HANDLE dstHandle = (HANDLE)(handleval(env, dstFD));
     DWORD chunkSize = (count > MAX_TRANSMIT_SIZE) ?
         MAX_TRANSMIT_SIZE : (DWORD)count;
     BOOL result;
+
+    if (GetFileType(dstHandle) == FILE_TYPE_DISK) {
+        if (src != dstHandle && count < READ_WRITE_TRANSFER_LIMIT)
+            return transfer_read_write(env, src, (DWORD)position, (DWORD)count,
+                                       dstHandle);
+        return IOS_UNSUPPORTED_SUBCASE;
+    }
 
     where.QuadPart = position;
     result = SetFilePointerEx(src, where, &where, FILE_BEGIN);
@@ -194,8 +242,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 }
 
 
-JNIEXPORT jint JNICALL
+JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
 {
-    return MAX_TRANSMIT_SIZE;
+    return java_lang_Long_MAX_VALUE;
 }

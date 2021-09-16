@@ -48,6 +48,7 @@
 #include "nio_util.h"
 #include "sun_nio_ch_FileChannelImpl.h"
 #include "java_lang_Integer.h"
+#include "java_lang_Long.h"
 #include <assert.h>
 
 static jfieldID chan_fd;        /* jobject 'fd' in sun.nio.ch.FileChannelImpl */
@@ -158,6 +159,51 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
                   "Unmap failed");
 }
 
+#if defined(__APPLE__)
+#define RESTARTABLE(_cmd, _result) do { \
+  do { \
+    _result = _cmd; \
+  } while((_result == -1) && (errno == EINTR)); \
+} while(0)
+
+#define READ_WRITE_TRANSFER_SIZE 32768
+
+long transfer_read_write(JNIEnv* env, jint src, jlong position, jlong count,
+                         jint dst)
+{
+    char buf[READ_WRITE_TRANSFER_SIZE];
+
+    ssize_t tw = 0;
+    off_t offset = (off_t)position;
+    while (tw < count) {
+        ssize_t remaining = count - tw;
+        ssize_t nr = remaining < READ_WRITE_TRANSFER_SIZE ?
+            remaining : READ_WRITE_TRANSFER_SIZE;
+        RESTARTABLE(pread((int)src, &buf, nr, offset), nr);
+        if (nr <= 0) {
+            if (nr < 0) {
+                JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+                return IOS_THROWN;
+            }
+            return tw;
+        }
+        offset += nr;
+
+        ssize_t nw;
+        RESTARTABLE(write((int)dst, &buf, nr), nw);
+        if (nw == -1) {
+            JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+            return IOS_THROWN;
+        }
+        tw += nw;
+        if (nw != nr)
+            return tw;
+    }
+
+    return tw;
+}
+#endif
+
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFDO,
@@ -183,6 +229,15 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
     }
     return n;
 #elif defined(__APPLE__)
+    struct stat stat_dst;
+    if (fstat(dstFD, &stat_dst) == 0) {
+        if((stat_dst.st_mode & (S_IFREG | S_IFSOCK)) == S_IFREG)
+            return transfer_read_write(env, srcFD, position, count, dstFD);
+    } else {
+        JNU_ThrowIOExceptionWithLastError(env, "fstat failed");
+        return IOS_THROWN;
+    }
+
     off_t numBytes;
     int result;
 
@@ -252,11 +307,13 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 #endif
 }
 
-JNIEXPORT jint JNICALL
+JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
 {
 #if defined(LINUX)
     return 0x7ffff000; // 2,147,479,552 maximum for sendfile()
+#elif defined(__APPLE__)
+    return java_lang_Long_MAX_VALUE;
 #else
     return java_lang_Integer_MAX_VALUE;
 #endif

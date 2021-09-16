@@ -39,6 +39,7 @@ public final class IOStatus {
     @Native public static final int UNSUPPORTED = -4;      // Operation not supported
     @Native public static final int THROWN = -5;           // Exception thrown in JNI code
     @Native public static final int UNSUPPORTED_CASE = -6; // This case not supported
+    @Native public static final int UNSUPPORTED_SUBCASE = -7; // This subcase not supported
 
     // The following two methods are for use in try/finally blocks where a
     // status value needs to be normalized before being returned to the invoker
@@ -78,7 +79,7 @@ public final class IOStatus {
 
     // Return true iff n is not one of the IOStatus values
     public static boolean checkAll(long n) {
-        return ((n > EOF) || (n < UNSUPPORTED_CASE));
+        return ((n > EOF) || (n < UNSUPPORTED_SUBCASE));
     }
 
     /**
