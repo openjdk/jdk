@@ -35,6 +35,7 @@
 import java.io.IOException;
 import java.lang.module.Configuration;
 import java.lang.module.FindException;
+import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
 import java.lang.module.ModuleFinder;
@@ -449,10 +450,10 @@ public class AutomaticModulesTest {
                 }
                 throw new AssertionError(
                     """
-                        Unexpected detail message in InvalidModuleDescriptorException:
-                          Expected message -> '%s'
-                            Actual message -> '%s'
-                        """.formatted(expectedMessage, actualMessage));
+                    Unexpected detail message in InvalidModuleDescriptorException:
+                      Expected message -> '%s'
+                        Actual message -> '%s'
+                    """.formatted(expectedMessage, actualMessage));
             }
             throw new AssertionError("Unexpected exception cause: " + exception.getCause());
         }
