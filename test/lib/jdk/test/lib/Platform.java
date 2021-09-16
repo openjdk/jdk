@@ -79,7 +79,7 @@ public class Platform {
     }
 
     public static boolean isTieredSupported() {
-        return compiler.contains("Tiered Compilers");
+        return (compiler != null) && compiler.contains("Tiered Compilers");
     }
 
     public static boolean isInt() {
@@ -365,10 +365,7 @@ public class Platform {
         } else if (Platform.isMinimal()) {
             return "minimal";
         } else if (Platform.isZero()) {
-            // This name is used to search for libjvm.so. Weirdly, current
-            // build system puts libjvm.so into default location, which is
-            // "server". See JDK-8273494.
-            return "server";
+            return "zero";
         } else {
             throw new Error("TESTBUG: unsupported vm variant");
         }

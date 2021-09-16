@@ -33,11 +33,11 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS],
   # Setup the target toolchain
 
   # On some platforms (mac) the linker warns about non existing -L dirs.
-  # For any of the variants server, client or minimal, the dir matches the
+  # For any of the variants server, client, minimal or zero, the dir matches the
   # variant name. The "main" variant should be used for linking. For the
   # rest, the dir is just server.
   if HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client) \
-      || HOTSPOT_CHECK_JVM_VARIANT(minimal); then
+      || HOTSPOT_CHECK_JVM_VARIANT(minimal) || HOTSPOT_CHECK_JVM_VARIANT(zero); then
     TARGET_JVM_VARIANT_PATH=$JVM_VARIANT_MAIN
   else
     TARGET_JVM_VARIANT_PATH=server
