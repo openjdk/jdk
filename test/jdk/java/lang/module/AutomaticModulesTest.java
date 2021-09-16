@@ -434,10 +434,28 @@ public class AutomaticModulesTest {
         Files.write(services.resolve("p.S"), Set.of("q.P"));
 
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        JarUtils.createJarFile(dir.resolve("m.jar"), tmpdir);
+        Path jarfile = dir.resolve("m.jar");
+        JarUtils.createJarFile(jarfile, tmpdir);
 
-        // should throw FindException
-        ModuleFinder.of(dir).findAll();
+        // catch FindException, inspect its cause's type and details, and rethrow
+        var expectedMessage = "Provider class q.P not in module created for " + jarfile;
+        try {
+            ModuleFinder.of(dir).findAll();
+        } catch (FindException exception) {
+            if (exception.getCause() instanceof InvalidModuleDescriptorException imde) {
+                var actualMessage = imde.getMessage();
+                if (actualMessage.equals(expectedMessage)) {
+                    throw exception; // rethrow as expected
+                }
+                throw new AssertionError(
+                    """
+                        Unexpected detail message in InvalidModuleDescriptorException:
+                          Expected message -> '%s'
+                            Actual message -> '%s'
+                        """.formatted(expectedMessage, actualMessage));
+            }
+            throw new AssertionError("Unexpected exception cause: " + exception.getCause());
+        }
     }
 
     /**
