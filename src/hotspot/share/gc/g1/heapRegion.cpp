@@ -799,13 +799,12 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
-HeapWord* HeapRegion::initialize_threshold() {
-  return _bot_part.initialize_threshold();
+void HeapRegion::initialize_bot_threshold() {
+  _bot_part.initialize_threshold();
 }
 
-HeapWord* HeapRegion::cross_threshold(HeapWord* start, HeapWord* end) {
+void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
   _bot_part.alloc_block(start, end);
-  return _bot_part.threshold();
 }
 
 void HeapRegion::object_iterate(ObjectClosure* blk) {
