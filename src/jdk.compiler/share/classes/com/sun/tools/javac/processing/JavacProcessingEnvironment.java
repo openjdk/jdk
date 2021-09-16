@@ -224,7 +224,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         // Initialize services before any processors are initialized
         // in case processors use them.
-        filer = new JavacFiler(context);
+        filer = JavacFiler.instance(context);
         messager = new JavacMessager(context, this);
         elementUtils = JavacElements.instance(context);
         typeUtils = JavacTypes.instance(context);

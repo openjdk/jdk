@@ -108,6 +108,17 @@ import com.sun.tools.javac.main.Option;
  * deletion without notice.</b>
  */
 public class JavacFiler implements Filer, Closeable {
+
+    protected static final Context.Key<JavacFiler> filerKey = new Context.Key<>();
+
+    /** Get the JavacFiler instance for this context. */
+    public static JavacFiler instance(Context context) {
+        JavacFiler instance = context.get(filerKey);
+        if (instance == null)
+            instance = new JavacFiler(context);
+        return instance;
+    }
+
     // TODO: Implement different transaction model for updating the
     // Filer's record keeping on file close.
 
@@ -398,7 +409,9 @@ public class JavacFiler implements Filer, Closeable {
 
     private final String defaultTargetModule;
 
-    JavacFiler(Context context) {
+    protected JavacFiler(Context context) {
+        context.put(filerKey, this);
+
         this.context = context;
         fileManager = context.get(JavaFileManager.class);
         elementUtils = JavacElements.instance(context);
