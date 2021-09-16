@@ -134,3 +134,8 @@ jlong OSContainer::pids_max() {
   assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
   return cgroup_subsystem->pids_max();
 }
+
+jlong OSContainer::pids_current() {
+  assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
+  return cgroup_subsystem->pids_current();
+}

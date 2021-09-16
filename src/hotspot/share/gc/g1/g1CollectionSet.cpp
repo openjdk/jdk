@@ -207,9 +207,8 @@ void G1CollectionSet::iterate(HeapRegionClosure* cl) const {
 
 void G1CollectionSet::par_iterate(HeapRegionClosure* cl,
                                   HeapRegionClaimer* hr_claimer,
-                                  uint worker_id,
-                                  uint total_workers) const {
-  iterate_part_from(cl, hr_claimer, 0, cur_length(), worker_id, total_workers);
+                                  uint worker_id) const {
+  iterate_part_from(cl, hr_claimer, 0, cur_length(), worker_id);
 }
 
 void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
@@ -224,38 +223,20 @@ void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
 
 void G1CollectionSet::iterate_incremental_part_from(HeapRegionClosure* cl,
                                                     HeapRegionClaimer* hr_claimer,
-                                                    uint worker_id,
-                                                    uint total_workers) const {
-  iterate_part_from(cl, hr_claimer, _inc_part_start, increment_length(), worker_id, total_workers);
+                                                    uint worker_id) const {
+  iterate_part_from(cl, hr_claimer, _inc_part_start, increment_length(), worker_id);
 }
 
 void G1CollectionSet::iterate_part_from(HeapRegionClosure* cl,
                                         HeapRegionClaimer* hr_claimer,
                                         size_t offset,
                                         size_t length,
-                                        uint worker_id,
-                                        uint total_workers) const {
-  assert_at_safepoint();
-  if (length == 0) {
-    return;
-  }
-
-  size_t start_pos = (worker_id * length) / total_workers;
-  size_t cur_pos = start_pos;
-
-  do {
-    uint region_idx = _collection_set_regions[cur_pos + offset];
-    if (hr_claimer == NULL || hr_claimer->claim_region(region_idx)) {
-      HeapRegion* r = _g1h->region_at(region_idx);
-      bool result = cl->do_heap_region(r);
-      guarantee(!result, "Must not cancel iteration");
-    }
-
-    cur_pos++;
-    if (cur_pos == length) {
-      cur_pos = 0;
-    }
-  } while (cur_pos != start_pos);
+                                        uint worker_id) const {
+  _g1h->par_iterate_regions_array(cl,
+                                  hr_claimer,
+                                  &_collection_set_regions[offset],
+                                  length,
+                                  worker_id);
 }
 
 void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,

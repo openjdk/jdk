@@ -2001,8 +2001,8 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 #endif
 WB_END
 
-WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
-  return HeapShared::is_heap_object_archiving_allowed();
+WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
+  return HeapShared::can_write();
 WB_END
 
 
@@ -2383,22 +2383,19 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
 WB_END
 
 WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean update_map))
-  intx tty_token = -1;
-  if (log) {
-    tty_token = ttyLocker::hold_tty();
-    tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
-  }
   ResourceMark rm; // for verify
+  stringStream st;
   for (StackFrameStream fst(JavaThread::current(), update_map, true); !fst.is_done(); fst.next()) {
     frame* current_frame = fst.current();
     if (log) {
-      current_frame->print_value();
+      current_frame->print_value_on(&st, NULL);
     }
     current_frame->verify(fst.register_map());
   }
   if (log) {
+    tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
+    tty->print_raw(st.as_string());
     tty->print_cr("[WhiteBox::VerifyFrames] Done");
-    ttyLocker::release_tty(tty_token);
   }
 WB_END
 
@@ -2643,7 +2640,7 @@ static JNINativeMethod methods[] = {
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
   {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
-  {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
+  {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },

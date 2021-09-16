@@ -27,6 +27,19 @@ package gc.stringdedup;
  * @test TestStringDeduplicationPrintOptions
  * @summary Test string deduplication print options
  * @bug 8029075
+ * @requires vm.gc.Serial
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions Serial
+ */
+
+/*
+ * @test TestStringDeduplicationPrintOptions
+ * @summary Test string deduplication print options
+ * @bug 8029075
  * @requires vm.gc.G1
  * @library /test/lib
  * @library /
@@ -34,6 +47,19 @@ package gc.stringdedup;
  * @modules java.base/java.lang:open
  *          java.management
  * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions G1
+ */
+
+/*
+ * @test TestStringDeduplicationPrintOptions
+ * @summary Test string deduplication print options
+ * @bug 8029075
+ * @requires vm.gc.Parallel
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationPrintOptions Parallel
  */
 
 /*
