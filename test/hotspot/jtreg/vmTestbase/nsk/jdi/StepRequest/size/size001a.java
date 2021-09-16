@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class size001a {
 
     //====================================================== test program
 
-    static Thread1size001a thread1 = null;
+    static Thread thread1 = null;
 
     static TestClass10 obj = new TestClass10();
 
@@ -98,7 +98,7 @@ public class size001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1size001a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1size001a("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -156,24 +156,21 @@ class TestClass11 extends TestClass10{
     }
 }
 
-class Thread1size001a extends Thread {
-
-    String tName = null;
+class Thread1size001a extends JDITask {
 
     public Thread1size001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        size001a.log1("  'run': enter  :: threadName == " + tName);
+        size001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(size001a.waitnotifyObj) {
             size001a.waitnotifyObj.notify();
         }
         synchronized(size001a.lockObj) {
             TestClass11.m11();
         }
-        size001a.log1("  'run': exit   :: threadName == " + tName);
+        size001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

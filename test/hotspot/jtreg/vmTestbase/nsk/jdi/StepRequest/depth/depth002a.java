@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class depth002a {
 
     //====================================================== test program
 
-    static Thread1depth002a thread1 = null;
+    static Thread thread1 = null;
 
     static depth002aTestClass10 obj = new depth002aTestClass10();
 
@@ -98,7 +98,7 @@ public class depth002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1depth002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1depth002a("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -156,24 +156,21 @@ class depth002aTestClass11 extends depth002aTestClass10{
     }
 }
 
-class Thread1depth002a extends Thread {
-
-    String tName = null;
+class Thread1depth002a extends JDITask {
 
     public Thread1depth002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        depth002a.log1("  'run': enter  :: threadName == " + tName);
+        depth002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(depth002a.waitnotifyObj) {
             depth002a.waitnotifyObj.notify();
         }
         synchronized(depth002a.lockObj) {
             depth002aTestClass11.m11();
         }
-        depth002a.log1("  'run': exit   :: threadName == " + tName);
+        depth002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
