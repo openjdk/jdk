@@ -46,7 +46,6 @@ public class DialogCopies {
                 number of copies and press OK/Cancel button.""";
 
         TextArea instructionTextArea = new TextArea(instruction);
-        instructionTextArea.setText(instruction);
         instructionTextArea.setEditable(false);
 
         Frame instructionFrame = new Frame();
