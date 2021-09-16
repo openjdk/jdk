@@ -26,6 +26,7 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/classListParser.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
@@ -332,7 +333,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   return false; // false == k should NOT be excluded
 }
 
-bool SystemDictionaryShared::is_sharing_possible(ClassLoaderData* loader_data) {
+bool SystemDictionaryShared::is_builtin_loader(ClassLoaderData* loader_data) {
   oop class_loader = loader_data->class_loader();
   return (class_loader == NULL ||
           SystemDictionary::is_system_class_loader(class_loader) ||
@@ -424,8 +425,6 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
 class UnregisteredClassesTable : public ResourceHashtable<
   Symbol*, InstanceKlass*,
-  primitive_hash<Symbol*>,
-  primitive_equals<Symbol*>,
   15889, // prime number
   ResourceObj::C_HEAP> {};
 
@@ -435,7 +434,7 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   // We don't allow duplicated unregistered classes with the same name.
   // We only archive the first class with that name that succeeds putting
   // itself into the table.
-  Arguments::assert_is_dumping_archive();
+  assert(Arguments::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
   MutexLocker ml(current, UnregisteredClassesTable_lock);
   Symbol* name = klass->name();
   if (_unregistered_classes_table == NULL) {
@@ -549,7 +548,9 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
 }
 
 void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
-  remove_dumptime_info(klass);
+  if (Arguments::is_dumping_archive()) {
+    remove_dumptime_info(klass);
+  }
 
   if (_unregistered_classes_table != NULL) {
     // Remove the class from _unregistered_classes_table: keep the entry but
@@ -560,6 +561,11 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
     if (v != NULL) {
       *v = NULL;
     }
+  }
+
+  if (ClassListWriter::is_enabled()) {
+    ClassListWriter cw;
+    cw.handle_class_unloading((const InstanceKlass*)klass);
   }
 }
 
@@ -1654,7 +1660,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaPr
 }
 
 void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::open_regions_mapped()) {
+  if (!HeapShared::are_archived_mirrors_available()) {
     return;
   }
   if (MetaspaceShared::relocation_delta() == 0) {

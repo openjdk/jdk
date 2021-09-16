@@ -156,10 +156,11 @@ public:
 class DumpTimeLambdaProxyClassDictionary
   : public ResourceHashtable<LambdaProxyClassKey,
                              DumpTimeLambdaProxyClassInfo,
-                             LambdaProxyClassKey::DUMPTIME_HASH,
-                             LambdaProxyClassKey::DUMPTIME_EQUALS,
                              137, // prime number
-                             ResourceObj::C_HEAP> {
+                             ResourceObj::C_HEAP,
+                             mtClassShared,
+                             LambdaProxyClassKey::DUMPTIME_HASH,
+                             LambdaProxyClassKey::DUMPTIME_EQUALS> {
 public:
   DumpTimeLambdaProxyClassDictionary() : _count(0) {}
   int _count;

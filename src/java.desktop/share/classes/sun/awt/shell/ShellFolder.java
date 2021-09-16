@@ -34,11 +34,10 @@ import java.io.Serial;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.Callable;
 
 import javax.swing.SwingConstants;
@@ -136,11 +135,11 @@ public abstract class ShellFolder extends File {
         File[] files = super.listFiles();
 
         if (!includeHiddenFiles) {
-            Vector<File> v = new Vector<>();
+            ArrayList<File> v = new ArrayList<>();
             int nameCount = (files == null) ? 0 : files.length;
             for (int i = 0; i < nameCount; i++) {
                 if (!files[i].isHidden()) {
-                    v.addElement(files[i]);
+                    v.add(files[i]);
                 }
             }
             files = v.toArray(new File[v.size()]);
@@ -346,7 +345,7 @@ public abstract class ShellFolder extends File {
                 if (commonParent instanceof ShellFolder) {
                     ((ShellFolder) commonParent).sortChildren(files);
                 } else {
-                    Collections.sort(files, FILE_COMPARATOR);
+                    files.sort(FILE_COMPARATOR);
                 }
 
                 return null;
@@ -359,7 +358,7 @@ public abstract class ShellFolder extends File {
         // synchronize the whole code of the sort method once
         invoke(new Callable<Void>() {
             public Void call() {
-                Collections.sort(files, FILE_COMPARATOR);
+                files.sort(FILE_COMPARATOR);
 
                 return null;
             }

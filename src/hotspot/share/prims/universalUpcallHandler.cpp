@@ -83,20 +83,12 @@ JavaThread* ProgrammableUpcallHandler::on_entry(OptimizedEntryBlob::FrameData* c
   // since it can potentially block.
   context->new_handles = JNIHandleBlock::allocate_block(thread);
 
+  // clear any pending exception in thread (native calls start with no exception pending)
+  thread->clear_pending_exception();
+
   // After this, we are officially in Java Code. This needs to be done before we change any of the thread local
   // info, since we cannot find oops before the new information is set up completely.
-  ThreadStateTransition::transition_from_native(thread, _thread_in_Java);
-
-  // Make sure that we handle asynchronous stops and suspends _before_ we clear all thread state
-  // in OptimizedEntryBlob::FrameData. This way, we can decide if we need to do any pd actions
-  // to prepare for stop/suspend (cache sp, or other state).
-  bool clear_pending_exception = true;
-  if (thread->has_special_runtime_exit_condition()) {
-    thread->handle_special_runtime_exit_condition();
-    if (thread->has_pending_exception()) {
-      clear_pending_exception = false;
-    }
-  }
+  ThreadStateTransition::transition_from_native(thread, _thread_in_Java, true /* check_asyncs */);
 
   context->old_handles = thread->active_handles();
 
@@ -110,11 +102,6 @@ JavaThread* ProgrammableUpcallHandler::on_entry(OptimizedEntryBlob::FrameData* c
 
   debug_only(thread->inc_java_call_counter());
   thread->set_active_handles(context->new_handles);     // install new handle block and reset Java frame linkage
-
-  // clear any pending exception in thread (native calls start with no exception pending)
-  if (clear_pending_exception) {
-    thread->clear_pending_exception();
-  }
 
   MACOS_AARCH64_ONLY(thread->enable_wx(WXExec));
 

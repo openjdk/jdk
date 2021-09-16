@@ -159,6 +159,8 @@ void G1ConcurrentMarkThread::run_service() {
 }
 
 void G1ConcurrentMarkThread::stop_service() {
+  _cm->abort_marking_threads();
+
   MutexLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   CGC_lock->notify_all();
 }
@@ -323,6 +325,8 @@ void G1ConcurrentMarkThread::concurrent_undo_cycle_do() {
   // We can (and should) abort if there has been a concurrent cycle abort for
   // some reason.
   if (_cm->has_aborted()) { return; }
+
+  _cm->flush_all_task_caches();
 
   // Phase 1: Clear bitmap for next mark.
   phase_clear_bitmap_for_next_mark();

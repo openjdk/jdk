@@ -49,6 +49,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
 
@@ -272,7 +273,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  *     JOptionPane pane = new JOptionPane(<i>arguments</i>);
  *     pane.set<i>.Xxxx(...); // Configure</i>
  *     JDialog dialog = pane.createDialog(<i>parentComponent, title</i>);
- *     dialog.show();
+ *     dialog.setVisible(true);
  *     Object selectedValue = pane.getValue();
  *     if(selectedValue == null)
  *       return CLOSED_OPTION;
@@ -2341,17 +2342,14 @@ public class JOptionPane extends JComponent implements Accessible
         }
         // Save the treeModel, if its Serializable.
         if(options != null) {
-            Vector<Object> serOptions = new Vector<Object>();
+            ArrayList<Object> serOptions = new ArrayList<Object>();
 
             for(int counter = 0, maxCounter = options.length;
                 counter < maxCounter; counter++)
                 if(options[counter] instanceof Serializable)
-                    serOptions.addElement(options[counter]);
+                    serOptions.add(options[counter]);
             if(serOptions.size() > 0) {
-                int             optionCount = serOptions.size();
-                Object[]        arrayOptions = new Object[optionCount];
-
-                serOptions.copyInto(arrayOptions);
+                Object[] arrayOptions = serOptions.toArray(new Object[0]);
                 values.addElement("options");
                 values.addElement(arrayOptions);
             }

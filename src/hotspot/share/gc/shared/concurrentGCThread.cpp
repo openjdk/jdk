@@ -35,7 +35,7 @@ ConcurrentGCThread::ConcurrentGCThread() :
     _has_terminated(false) {}
 
 void ConcurrentGCThread::create_and_start(ThreadPriority prio) {
-  if (os::create_thread(this, os::cgc_thread)) {
+  if (os::create_thread(this, os::gc_thread)) {
     os::set_priority(this, prio);
     os::start_thread(this);
   }
