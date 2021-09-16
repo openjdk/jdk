@@ -2984,7 +2984,25 @@ void LIR_Assembler::membar_loadstore() { __ membar(MacroAssembler::LoadStore); }
 void LIR_Assembler::membar_storeload() { __ membar(MacroAssembler::StoreLoad); }
 
 void LIR_Assembler::on_spin_wait() {
-  Unimplemented();
+  switch (VM_Version::pause_impl_desc().inst()) {
+    case NOP:
+      for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+        __ nop();
+      }
+      break;
+    case ISB:
+      for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+        __ isb();
+      }
+      break;
+    case YIELD:
+      for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+        __ yield();
+      }
+      break;
+    default:
+      ShouldNotReachHere();
+  }
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {

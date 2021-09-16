@@ -46,6 +46,31 @@ int VM_Version::_dcache_line_size;
 int VM_Version::_icache_line_size;
 int VM_Version::_initial_sve_vector_length;
 
+PauseImplDesc VM_Version::_pause_impl_desc;
+
+static PauseImplDesc get_pause_impl_desc() {
+  const char *s = UsePauseImpl;
+  unsigned int count = 1;
+  if (isdigit(*s)) {
+    count = *s - '0';
+    if (count == 0) {
+      vm_exit_during_initialization("Invalid value for UsePauseImpl: zero instruction count", UsePauseImpl);
+    }
+    s += 1;
+  }
+  if (strcmp(s, "nop") == 0) {
+    return PauseImplDesc(NOP, count);
+  } else if (strcmp(s, "isb") == 0) {
+    return PauseImplDesc(ISB, count);
+  } else if (strcmp(s, "yield") == 0) {
+    return PauseImplDesc(YIELD, count);
+  } else if (strcmp(s, "none") != 0) {
+    vm_exit_during_initialization("Invalid value for UsePauseImpl", UsePauseImpl);
+  }
+
+  return PauseImplDesc{};
+}
+
 void VM_Version::initialize() {
   _supports_cx8 = true;
   _supports_atomic_getset4 = true;
@@ -447,6 +472,8 @@ void VM_Version::initialize() {
     AlignVector = AvoidUnalignedAccesses;
   }
 #endif
+
+  _pause_impl_desc = get_pause_impl_desc();
 
   UNSUPPORTED_OPTION(CriticalJNINatives);
 }

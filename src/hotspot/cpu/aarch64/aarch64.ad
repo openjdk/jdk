@@ -2373,6 +2373,8 @@ const bool Matcher::match_rule_supported(int opcode) {
 
   bool ret_value = true;
   switch (opcode) {
+    case Op_OnSpinWait:
+      return VM_Version::supports_on_spin_wait();
     case Op_CacheWB:
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
@@ -14344,6 +14346,60 @@ instruct signumF_reg(vRegF dst, vRegF src, vRegF zero, vRegF one) %{
     __ bsl(dst, __ T8B, one, src);
   %}
   ins_pipe(fp_uop_d);
+%}
+
+instruct onspinwait() %{
+  match(OnSpinWait);
+  ins_cost(INSN_COST);
+
+  format %{
+    $$template
+    switch (VM_Version::pause_impl_desc().inst()) {
+      case NOP:
+        $$emit$$"nop\t! membar_onspinwait\n"
+        for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+          $$emit$$"\tnop\n"
+        }
+        break;
+      case ISB:
+        $$emit$$"isb\t! membar_onspinwait\n"
+        for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+          $$emit$$"\tisb\n"
+        }
+        break;
+      case YIELD:
+        $$emit$$"yield\t! membar_onspinwait\n"
+        for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+          $$emit$$"\tyield\n"
+        }
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+
+  ins_encode %{
+    switch (VM_Version::pause_impl_desc().inst()) {
+      case NOP:
+        for (unsigned int i = 0; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+          __ nop();
+        }
+        break;
+      case ISB:
+        for (unsigned int i = 0; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+          __ isb();
+        }
+        break;
+      case YIELD:
+        for (unsigned int i = 0; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+          __ yield();
+        }
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_empty);
 %}
 
 // ============================================================================
