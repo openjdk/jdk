@@ -1675,14 +1675,13 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
    public:
     HeapDumpLargeObjectListElem(oop obj) : _obj(obj), _next(NULL) { }
     oop _obj;
-    HeapDumpLargeObjectListElem* _next;
+    volatile HeapDumpLargeObjectListElem* _next;
   };
 
-  HeapDumpLargeObjectListElem* _head;
-  uint _length;
+  volatile HeapDumpLargeObjectListElem* _head;
 
  public:
-  HeapDumpLargeObjectList() : _head(NULL),  _length(0) { }
+  HeapDumpLargeObjectList() : _head(NULL) { }
 
   void atomic_push(oop obj) {
     assert (obj != NULL, "sanity check");
@@ -1693,12 +1692,11 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
     }
     assert (entry->_obj != NULL, "sanity check");
     while (true) {
-      HeapDumpLargeObjectListElem* old_head = Atomic::load_acquire(&_head);
-      HeapDumpLargeObjectListElem* new_head = entry;
+      volatile HeapDumpLargeObjectListElem* old_head = Atomic::load_acquire(&_head);
+      volatile HeapDumpLargeObjectListElem* new_head = entry;
       if (Atomic::cmpxchg(&_head, old_head, new_head) == old_head) {
         // successfully push
         new_head->_next = old_head;
-        Atomic::inc(&_length);
         assert(new_head->_obj == obj, "must equal");
         return;
       }
@@ -1707,15 +1705,10 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
 
   oop pop() {
     if (_head == NULL) {
-      assert(_length == 0, "sanity check");
       return NULL;
     }
-    HeapDumpLargeObjectListElem* entry = _head;
-    if (_head->_next != NULL) {
-      _head = _head->_next;
-    }
-    entry->_next = NULL;
-    _length--;
+    volatile HeapDumpLargeObjectListElem* entry = _head;
+    _head = _head->_next;
     assert (entry != NULL, "illegal larger object list entry");
     oop ret = entry->_obj;
     delete entry;
@@ -1724,16 +1717,14 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
   }
 
   void drain(ObjectClosure* cl) {
-    while (_length > 0) {
+    while (_head !=  NULL) {
       cl->do_object(pop());
     }
   }
 
   bool is_empty() {
-    return _length == 0;
+    return _head == NULL;
   }
-
-  uint length() { return _length; }
 
   static const size_t LargeObjectSizeThreshold = 1 << 20; // 1 MB
 };
@@ -1793,8 +1784,8 @@ void HeapObjectDumper::do_object(oop o) {
 bool HeapObjectDumper::is_large(oop o) {
   size_t size = 0;
   if (o->is_instance()) {
-    InstanceKlass* ik = InstanceKlass::cast(o->klass());
-    size = DumperSupport::instance_size(ik);
+    // Use o->size() * 8 as the upper limit of instance size to avoid iterating static fields
+    size = o->size() * 8;
   } else if (o->is_objArray()) {
     objArrayOop array = objArrayOop(o);
     BasicType type = ArrayKlass::cast(array->klass())->element_type();
@@ -1819,7 +1810,6 @@ class DumperController : public CHeapObj<mtInternal> {
    bool     _started;
    Monitor* _lock;
    uint   _dumper_number;
-   uint   _waiting_number;
    uint   _complete_number;
 
  public:
@@ -1828,7 +1818,6 @@ class DumperController : public CHeapObj<mtInternal> {
      _lock(new (std::nothrow) PaddedMonitor(Mutex::leaf, "Dumper Controller lock",
     Mutex::_safepoint_check_never)),
      _dumper_number(number),
-     _waiting_number(0),
      _complete_number(0) { }
 
    ~DumperController() { delete _lock; }
@@ -1836,11 +1825,9 @@ class DumperController : public CHeapObj<mtInternal> {
    void wait_for_start_signal() {
      MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
      while (_started == false) {
-       _waiting_number++;
        ml.wait();
      }
      assert(_started == true,  "dumper woke up with wrong state");
-     _waiting_number--;
    }
 
    void start_dump() {
@@ -2449,9 +2436,6 @@ void VM_HeapDumper::dump_stack_traces() {
 
 // dump the large objects.
 void VM_HeapDumper::dump_large_objects(ObjectClosure* cl) {
-  if (_large_object_list->is_empty()) {
-    return;
-  }
   _large_object_list->drain(cl);
 }
 
