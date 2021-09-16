@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,8 @@ public class setvalue003a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadsetvalue003a test_thread =
-                             new Threadsetvalue003a("testedThread");
+                         Thread test_thread =
+                                 JDIThreadFactory.newThread(new Threadsetvalue003a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
@@ -146,7 +146,7 @@ public class setvalue003a {
 
 
 
-class Threadsetvalue003a extends Thread {
+class Threadsetvalue003a extends JDITask {
 
     public Threadsetvalue003a(String threadName) {
         super(threadName);

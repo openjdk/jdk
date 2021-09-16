@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,8 +94,8 @@ public class visiblevariables002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadvisiblevariables002a test_thread =
-                             new Threadvisiblevariables002a("testedThread");
+                         Thread test_thread =
+                             JDIThreadFactory.newThread(new Threadvisiblevariables002a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
@@ -146,7 +146,7 @@ public class visiblevariables002a {
 }
 
 
-class Threadvisiblevariables002a extends Thread {
+class Threadvisiblevariables002a extends JDITask {
 
     public Threadvisiblevariables002a(String threadName) {
         super(threadName);
