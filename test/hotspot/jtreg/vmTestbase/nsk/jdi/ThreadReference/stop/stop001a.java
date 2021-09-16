@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class stop001a {
 
     //====================================================== test program
 
-    private static Threadstop001a thread2 = null;
+    private static Thread thread2 = null;
 
     public static String strException = "testException";
 
@@ -108,8 +108,8 @@ public class stop001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         thread2 = new
-                              Threadstop001a("Thread2");
+                         thread2 = JDIThreadFactory.newThread(new
+                              Threadstop001a("Thread2"));
                          log1("       thread2 is created");
 
 
@@ -179,13 +179,10 @@ public class stop001a {
     }
 }
 
-class Threadstop001a extends Thread {
+class Threadstop001a extends JDITask {
 
     public Threadstop001a(String threadName) {
         super(threadName);
-    }
-    public Threadstop001a(ThreadGroup groupName, String threadName) {
-        super(groupName, threadName);
     }
 
     public static Object waitnotifyObj = new Object();

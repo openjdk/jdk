@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class popframes003a {
 
     //====================================================== test program
 
-    static Thread2popframes003a thread2 = null;
-    static Thread3popframes003a thread3 = null;
+    static Thread thread2 = null;
+    static Thread thread3 = null;
 
     //------------------------------------------------------ common section
     static int instruction = 1;
@@ -85,9 +85,9 @@ public class popframes003a {
 
         label0:
             {
-                 thread2 =  new Thread2popframes003a("thread2");
+                 thread2 = JDIThreadFactory.newThread(new Thread2popframes003a("thread2"));
                  log1("       thread2 is created");
-                 thread3 =  new Thread3popframes003a("thread3");
+                 thread3 = JDIThreadFactory.newThread(new Thread3popframes003a("thread3"));
                  log1("       thread3 is created");
 
                  synchronized (lockingObject1) {
@@ -180,7 +180,7 @@ public class popframes003a {
 
     static Object lockingObject2 = new Object();
 
-    static class Thread2popframes003a extends Thread {
+    static class Thread2popframes003a extends JDITask {
 
         public Thread2popframes003a(String threadName) {
             super(threadName);
@@ -205,7 +205,7 @@ public class popframes003a {
 
     static Object lockingObject3 = new Object();
 
-    static class Thread3popframes003a extends Thread {
+    static class Thread3popframes003a extends JDITask {
 
         public Thread3popframes003a(String threadName) {
             super(threadName);

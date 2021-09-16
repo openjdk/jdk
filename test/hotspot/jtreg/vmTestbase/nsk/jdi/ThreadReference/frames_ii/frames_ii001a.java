@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,8 +94,8 @@ public class frames_ii001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadframes_ii001a test_thread =
-                             new Threadframes_ii001a("testedThread");
+                         Thread test_thread =
+                             JDIThreadFactory.newThread(new Threadframes_ii001a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
@@ -146,7 +146,7 @@ public class frames_ii001a {
 }
 
 
-class Threadframes_ii001a extends Thread {
+class Threadframes_ii001a extends JDITask {
 
     public Threadframes_ii001a(String threadName) {
         super(threadName);

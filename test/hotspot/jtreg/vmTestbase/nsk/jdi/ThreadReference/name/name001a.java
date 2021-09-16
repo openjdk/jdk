@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,8 +94,8 @@ public class name001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadname001a test_thread =
-                             new Threadname001a("testedThread");
+                         Thread test_thread =
+                                 JDIThreadFactory.newThread(new Threadname001a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
@@ -145,7 +145,7 @@ public class name001a {
     }
 }
 
-class Threadname001a extends Thread {
+class Threadname001a extends JDITask {
 
     public Threadname001a(String threadName) {
         super(threadName);
