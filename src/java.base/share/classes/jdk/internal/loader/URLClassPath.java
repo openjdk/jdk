@@ -112,7 +112,7 @@ public class URLClassPath {
         DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
 
         p = props.getProperty("jdk.net.URLClassPath.enableJarIndex");
-        ENABLE_JAR_INDEX = p != null ? p.equals("true") : false;
+        ENABLE_JAR_INDEX = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
     /* The original search path of URLs. */
