@@ -185,7 +185,7 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
   T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr_raw(obj);
 
   log_develop_trace(gc, ref)("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
-  if (java_lang_ref_Reference::is_phantom(obj)) {
+  if (reference_type() == REF_PHANTOM) {
     log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
                                p2i(referent_addr), p2i((oop)HeapAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(referent_addr)));
   } else {

@@ -126,7 +126,7 @@ class InstanceRefKlass: public InstanceKlass {
   static void oop_oop_iterate_fields_except_referent(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T>
-  static void trace_reference_gc(const char *s, oop obj) NOT_DEBUG_RETURN;
+  void trace_reference_gc(const char *s, oop obj) NOT_DEBUG_RETURN;
 
  public:
   // Update non-static oop maps so 'referent', 'nextPending' and

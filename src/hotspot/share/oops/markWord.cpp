@@ -94,24 +94,3 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     st->print(" age=%d)", age());
   }
 }
-
-#ifdef _LP64
-narrowKlass markWord::narrow_klass() const {
-  return narrowKlass(value() >> klass_shift);
-}
-
-Klass* markWord::klass() const {
-  return CompressedKlassPointers::decode(narrow_klass());
-}
-
-markWord markWord::set_narrow_klass(const narrowKlass nklass) const {
-  return markWord((value() & ~klass_mask_in_place) | ((uintptr_t) nklass << klass_shift));
-}
-
-markWord markWord::set_klass(const Klass* klass) const {
-  assert(UseCompressedClassPointers, "expect compressed klass pointers");
-  // TODO: Don't cast to non-const, change CKP::encode() to accept const Klass* instead.
-  narrowKlass nklass = CompressedKlassPointers::encode(const_cast<Klass*>(klass));
-  return set_narrow_klass(nklass);
-}
-#endif

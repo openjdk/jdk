@@ -87,6 +87,9 @@ HeapWord* SlidingForwarding::decode_forwarding(HeapWord* original, uintptr_t enc
 void SlidingForwarding::forward_to(oop original, oop target) {
 #ifdef _LP64
   markWord header = original->mark();
+  if (header.has_displaced_mark_helper()) {
+    header = header.displaced_mark_helper();
+  }
   uintptr_t encoded = encode_forwarding(cast_from_oop<HeapWord*>(original), cast_from_oop<HeapWord*>(target));
   assert((encoded & markWord::klass_mask_in_place) == 0, "encoded forwardee must not overlap with Klass*: " PTR_FORMAT, encoded);
   header = markWord((header.value() & markWord::klass_mask_in_place) | encoded);

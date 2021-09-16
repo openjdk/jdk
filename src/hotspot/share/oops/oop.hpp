@@ -77,6 +77,7 @@ class oopDesc {
   inline Klass* klass_or_null() const;
   inline Klass* klass_or_null_acquire() const;
 
+  narrowKlass narrow_klass_legacy() const { return _metadata._compressed_klass; }
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline void set_klass(Klass* k);
   static inline void release_set_klass(HeapWord* mem, Klass* k);

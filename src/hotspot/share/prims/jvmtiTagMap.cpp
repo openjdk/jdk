@@ -1438,7 +1438,7 @@ inline void ObjectMarker::mark(oop o) {
   }
 
   // mark the object
-  o->set_mark(markWord::prototype().set_marked());
+  o->set_mark(o->klass()->prototype_header().set_marked());
 }
 
 // return true if object is marked

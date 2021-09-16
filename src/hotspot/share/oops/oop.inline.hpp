@@ -32,10 +32,12 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/markWord.hpp"
+#include "oops/markWord.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -80,39 +82,63 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 }
 
 void oopDesc::init_mark() {
-  markWord header = markWord::prototype();
 #ifdef _LP64
+  markWord header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
+  assert(_metadata._compressed_klass == header.narrow_klass(), "klass must match: " PTR_FORMAT, header.value());
   assert(UseCompressedClassPointers, "expect compressed klass pointers");
-  narrowKlass nklass = _metadata._compressed_klass;
-  assert(nklass != 0, "expect klass");
-  header = header.set_narrow_klass(nklass);
+  header = markWord((header.value() & markWord::klass_mask_in_place) | markWord::prototype().value());
+#else
+  markWord header = markWord::prototype();
 #endif
   set_mark(header);
 }
 
 Klass* oopDesc::klass() const {
-  if (UseCompressedClassPointers) {
-    return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass);
-  } else {
-    return _metadata._klass;
+#ifdef _LP64
+  assert(UseCompressedClassPointers, "only with compressed class pointers");
+  markWord header = mark();
+  if (!header.is_neutral()) {
+    header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
   }
+  assert(_metadata._compressed_klass == header.narrow_klass(), "narrow klass must be equal, header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
+  Klass* klass = header.klass();
+  assert(klass == CompressedKlassPointers::decode_not_null(_metadata._compressed_klass), "klass must match: header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
+  return klass;
+#else
+  return _metadata._klass;
+#endif
 }
 
 Klass* oopDesc::klass_or_null() const {
-  if (UseCompressedClassPointers) {
-    return CompressedKlassPointers::decode(_metadata._compressed_klass);
-  } else {
-    return _metadata._klass;
+#ifdef _LP64
+  assert(UseCompressedClassPointers, "only with compressed class pointers");
+  markWord header = mark();
+  if (!header.is_neutral()) {
+    header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
   }
+  assert(_metadata._compressed_klass == header.narrow_klass(), "narrow klass must be equal, header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
+  Klass* klass = header.klass_or_null();
+  assert(klass == CompressedKlassPointers::decode(_metadata._compressed_klass), "klass must match: header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
+  return klass;
+#else
+  return _metadata._klass;
+#endif
 }
 
 Klass* oopDesc::klass_or_null_acquire() const {
-  if (UseCompressedClassPointers) {
-    narrowKlass nklass = Atomic::load_acquire(&_metadata._compressed_klass);
-    return CompressedKlassPointers::decode(nklass);
-  } else {
-    return Atomic::load_acquire(&_metadata._klass);
+#ifdef _LP64
+  assert(UseCompressedClassPointers, "only with compressed class pointers");
+  markWord header = mark_acquire();
+  if (!header.is_neutral()) {
+    header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
   }
+  assert(_metadata._compressed_klass == header.narrow_klass(), "narrow klass must be equal, header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
+  Klass* klass = header.klass_or_null();
+  assert(klass == CompressedKlassPointers::decode(_metadata._compressed_klass), "klass must match: header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
+  return klass;
+#else
+  return Atomic::load_acquire(&_metadata._klass);
+#endif
 }
 
 void oopDesc::set_klass(Klass* k) {
@@ -288,7 +314,13 @@ void oopDesc::forward_to(oop p) {
 
 void oopDesc::forward_to_self() {
   verify_forwardee(this);
-  markWord m = mark().set_self_forwarded();
+  markWord m = mark();
+  // If mark is displaced, we need to preserve the Klass* from real header.
+  assert(SafepointSynchronize::is_at_safepoint(), "we can only safely fetch the displaced header at safepoint");
+  if (m.has_displaced_mark_helper()) {
+    m = m.displaced_mark_helper();
+  }
+  m = m.set_self_forwarded();
   assert(forwardee(m) == cast_to_oop(this), "encoding must be reversable");
   set_mark(m);
 }
@@ -307,7 +339,13 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 
 oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order) {
   verify_forwardee(this);
-  markWord m = compare.set_self_forwarded();
+  markWord m = compare;
+  // If mark is displaced, we need to preserve the Klass* from real header.
+  assert(SafepointSynchronize::is_at_safepoint(), "we can only safely fetch the displaced header at safepoint");
+  if (m.has_displaced_mark_helper()) {
+    m = m.displaced_mark_helper();
+  }
+  m = m.set_self_forwarded();
   assert(forwardee(m) == cast_to_oop(this), "encoding must be reversable");
   markWord old_mark = cas_set_mark(m, compare, order);
   if (old_mark == compare) {
@@ -386,7 +424,6 @@ void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
-  assert(k == klass(), "wrong klass");
   OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, k);
 }
 
