@@ -75,7 +75,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  *     <th scope="col">Unicode version</th></tr>
  * </thead>
  * <tbody>
- * <tr><td>Java SE 18</td>
+ * <tr><td>Java SE 19</td>
  *     <td>Unicode 14.0</td></tr>
  * <tr><td>Java SE 15</td>
  *     <td>Unicode 13.0</td></tr>
@@ -3429,7 +3429,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Arabic Extended-B" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock ARABIC_EXTENDED_B =
             new UnicodeBlock("ARABIC_EXTENDED_B",
@@ -3439,7 +3439,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Vithkuqi" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock VITHKUQI =
             new UnicodeBlock("VITHKUQI");
@@ -3447,7 +3447,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Latin Extended-F" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock LATIN_EXTENDED_F =
             new UnicodeBlock("LATIN_EXTENDED_F",
@@ -3457,7 +3457,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Old Uyghur" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock OLD_UYGHUR =
             new UnicodeBlock("OLD_UYGHUR",
@@ -3467,7 +3467,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Unified Canadian Aboriginal Syllabics Extended-A" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED_A =
             new UnicodeBlock("UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED_A",
@@ -3477,7 +3477,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Cypro-Minoan" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock CYPRO_MINOAN =
             new UnicodeBlock("CYPRO_MINOAN",
@@ -3487,7 +3487,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Tangsa" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock TANGSA =
             new UnicodeBlock("TANGSA");
@@ -3495,7 +3495,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Kana Extended-B" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock KANA_EXTENDED_B =
             new UnicodeBlock("KANA_EXTENDED_B",
@@ -3505,7 +3505,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Znamenny Musical Notation" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock ZNAMENNY_MUSICAL_NOTATION =
             new UnicodeBlock("ZNAMENNY_MUSICAL_NOTATION",
@@ -3515,7 +3515,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Latin Extended-G" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock LATIN_EXTENDED_G =
             new UnicodeBlock("LATIN_EXTENDED_G",
@@ -3525,7 +3525,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Toto" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock TOTO =
             new UnicodeBlock("TOTO");
@@ -3533,7 +3533,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Constant for the "Ethiopic Extended-B" Unicode
          * character block.
-         * @since 18
+         * @since 19
          */
         public static final UnicodeBlock ETHIOPIC_EXTENDED_B =
             new UnicodeBlock("ETHIOPIC_EXTENDED_B",
@@ -5252,31 +5252,31 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
 
         /**
          * Unicode script "Vithkuqi".
-         * @since 18
+         * @since 19
          */
         VITHKUQI,
 
         /**
          * Unicode script "Old Uyghur".
-         * @since 18
+         * @since 19
          */
         OLD_UYGHUR,
 
         /**
          * Unicode script "Cypro Minoan".
-         * @since 18
+         * @since 19
          */
         CYPRO_MINOAN,
 
         /**
          * Unicode script "Tangsa".
-         * @since 18
+         * @since 19
          */
         TANGSA,
 
         /**
          * Unicode script "Toto".
-         * @since 18
+         * @since 19
          */
         TOTO,
 
