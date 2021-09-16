@@ -815,8 +815,8 @@ public class Properties extends Hashtable<Object,Object> {
      * character in comments is not character {@code #} or character {@code !} then
      * an ASCII {@code #} is written out after that line separator.
      * <p>
-     * If the {@systemProperty java.util.Properties.storeDate} is set and
-     * is non-empty (as determined by {@link String#isEmpty()  String.isEmpty}),
+     * If the {@systemProperty java.util.Properties.storeDate} is set on the command line
+     * and is non-empty (as determined by {@link String#isEmpty()  String.isEmpty}),
      * a comment line is written as follows.
      * First, a {@code #} character is written, followed by the contents
      * of the property, followed by a line separator. Any line terminator characters
@@ -842,12 +842,9 @@ public class Properties extends Hashtable<Object,Object> {
      * After the entries have been written, the output stream is flushed.
      * The output stream remains open after this method returns.
      *
-     * @implNote This method invokes the {@link #entrySet()} method
-     * and writes out the returned key and element pairs
-     * in the natural sort order of those keys. If subclasses override
-     * the {@code entrySet} method and return a different {@code Set} instance,
-     * then the property list is written out in the iteration order of
-     * that returned {@code Set}
+     * @implSpec The keys and elements are written in the natural sort order
+     * of the keys in the {@code Properties.entrySet()} unless {@code entrySet()}
+     * is overridden by a subclass to return a different set implementation.
      *
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
@@ -924,9 +921,10 @@ public class Properties extends Hashtable<Object,Object> {
         synchronized (this) {
             @SuppressWarnings("unchecked")
             Collection<Map.Entry<String, String>> entries = (Set<Map.Entry<String, String>>) (Set) entrySet();
-            // entrySet() can be overridden by subclasses. Here we check to see if the returned instance is the one
-            // returned by the Properties.entrySet() implementation.If yes, then we sort those entries
-            // in the natural order of their key. Else we just use the iteration order of the returned instance.
+            // entrySet() can be overridden by subclasses. Here we check to see if the returned instance type is the one
+            // returned by the Properties.entrySet() implementation. If yes, then we sort those entries
+            // in the natural order of their key. Else, we consider that the subclassed implementation may potentially
+            // have returned a differently ordered entries and so we just use the iteration order of the returned instance.
             if (entries instanceof Collections.SynchronizedSet<?> ss
                     && ss.c instanceof EntrySet) {
                 entries = new ArrayList<>(entries);
