@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,8 @@ public class suspend001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         VMsuspend001a thread2 =
-                             new VMsuspend001a("Thread2");
+                         Thread thread2 =
+                             JDIThreadFactory.newThread(new VMsuspend001a("Thread2"));
                          log1("       thread2 is created");
 
                          label:
@@ -160,7 +160,7 @@ public class suspend001a {
 }
 
 
-class VMsuspend001a extends Thread {
+class VMsuspend001a extends JDITask {
 
     public VMsuspend001a(String threadName) {
         super(threadName);

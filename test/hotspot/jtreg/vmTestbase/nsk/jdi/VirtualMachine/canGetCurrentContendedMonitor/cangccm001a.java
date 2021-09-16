@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class cangccm001a {
 
     //====================================================== test program
 
-    private static Threadcangccm001a thread2 = null;
+    private static Thread thread2 = null;
 
     //----------------------------------------------------   main method
 
@@ -97,8 +97,8 @@ public class cangccm001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         thread2 = new
-                              Threadcangccm001a("Thread2");
+                         thread2 = JDIThreadFactory.newThread(new
+                              Threadcangccm001a("Thread2"));
                          log1("       thread2 is created");
 
 
@@ -154,13 +154,10 @@ public class cangccm001a {
 }
 
 
-class Threadcangccm001a extends Thread {
+class Threadcangccm001a extends JDITask {
 
     public Threadcangccm001a(String threadName) {
         super(threadName);
-    }
-    public Threadcangccm001a(ThreadGroup groupName, String threadName) {
-        super(groupName, threadName);
     }
 
     public static Object waitnotifyObj = new Object();
