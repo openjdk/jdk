@@ -58,6 +58,9 @@
 #ifndef MFD_HUGETLB
 #define MFD_HUGETLB                      0x0004U
 #endif
+#ifndef MFD_HUGE_2MB
+#define MFD_HUGE_2MB                     0x54000000U
+#endif
 
 // open(2) flags
 #ifndef O_CLOEXEC
@@ -204,12 +207,13 @@ int ZPhysicalMemoryBacking::create_mem_fd(const char* name) const {
   snprintf(filename, sizeof(filename), "%s%s", name, ZLargePages::is_explicit() ? ".hugetlb" : "");
 
   // Create file
-  const int extra_flags = ZLargePages::is_explicit() ? MFD_HUGETLB : 0;
+  const int extra_flags = ZLargePages::is_explicit() ? (MFD_HUGETLB | MFD_HUGE_2MB) : 0;
   const int fd = ZSyscall::memfd_create(filename, MFD_CLOEXEC | extra_flags);
   if (fd == -1) {
     ZErrno err;
     log_debug_p(gc, init)("Failed to create memfd file (%s)",
-                          ((ZLargePages::is_explicit() && err == EINVAL) ? "Hugepages not supported" : err.to_string()));
+                          (ZLargePages::is_explicit() && (err == EINVAL || err == ENODEV)) ?
+                          "Hugepages (2M) not supported" : err.to_string());
     return -1;
   }
 

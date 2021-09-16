@@ -72,6 +72,11 @@ void ZArguments::initialize() {
     vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=0");
   }
 
+  // Only 2M large pages is supported
+  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != 2 * M) {
+    vm_exit_during_initialization("Invalid -XX:LargePageSizeInBytes (only 2M large pages is supported)");
+  }
+
   // The heuristics used when UseDynamicNumberOfGCThreads is
   // enabled defaults to using a ZAllocationSpikeTolerance of 1.
   if (UseDynamicNumberOfGCThreads && FLAG_IS_DEFAULT(ZAllocationSpikeTolerance)) {
