@@ -31,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
+class G1EvacFailureRegions;
 class G1RedirtyCardsQueueSet;
 
 // Task to fixup self-forwarding pointers
@@ -41,10 +42,11 @@ protected:
   G1RedirtyCardsQueueSet* _rdcqs;
   HeapRegionClaimer _hrclaimer;
 
+  G1EvacFailureRegions* _evac_failure_regions;
   uint volatile _num_failed_regions;
 
 public:
-  G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs);
+  G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions);
 
   void work(uint worker_id);
 

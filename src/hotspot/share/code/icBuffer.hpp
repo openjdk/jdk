@@ -56,8 +56,7 @@ class ICStub: public Stub {
  protected:
   friend class ICStubInterface;
   // This will be called only by ICStubInterface
-  void    initialize(int size,
-                     CodeStrings strings)        { _size = size; _ic_site = NULL; }
+  void    initialize(int size)                   { _size = size; _ic_site = NULL; }
   void    finalize(); // called when a method is removed
 
   // General info

@@ -233,7 +233,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::leaf, "HeapRegion par alloc lock", Mutex::_safepoint_check_always, true),
+  _par_alloc_lock(Mutex::service-2, "HeapRegionParAlloc_lock", Mutex::_safepoint_check_never),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
   _hrm_index(hrm_index),
@@ -799,13 +799,12 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
-HeapWord* HeapRegion::initialize_threshold() {
-  return _bot_part.initialize_threshold();
+void HeapRegion::initialize_bot_threshold() {
+  _bot_part.initialize_threshold();
 }
 
-HeapWord* HeapRegion::cross_threshold(HeapWord* start, HeapWord* end) {
+void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
   _bot_part.alloc_block(start, end);
-  return _bot_part.threshold();
 }
 
 void HeapRegion::object_iterate(ObjectClosure* blk) {

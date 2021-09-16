@@ -564,8 +564,6 @@ java/lang/invoke/RicochetTest.java                              8251969 generic-
 java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all
 java/lang/instrument/RetransformBigClass.sh                     8065756 generic-all
 
-java/lang/instrument/BootClassPath/BootClassPathTest.sh         8273188 generic-all
-
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
@@ -832,7 +830,6 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
-jdk/jfr/event/oldobject/TestObjectSize.java                     8269418 macosx-x64
 
 ############################################################################
 

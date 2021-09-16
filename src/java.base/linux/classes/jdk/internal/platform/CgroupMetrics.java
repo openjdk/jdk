@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2021, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,11 @@ public class CgroupMetrics implements Metrics {
     @Override
     public long getPidsMax() {
         return subsystem.getPidsMax();
+    }
+
+    @Override
+    public long getPidsCurrent() {
+        return subsystem.getPidsCurrent();
     }
 
     @Override
