@@ -33,7 +33,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import sun.security.action.GetPropertyAction;
-import sun.awt.PlatformGraphicsInfo;
 
 
 /**
@@ -56,7 +55,7 @@ public final class FontManagerFactory {
     public static synchronized FontManager getInstance() {
 
         if (instance == null) {
-            instance = PlatformGraphicsInfo.createFontManager();
+            instance = PlatformFontInfo.createFontManager();
         }
         return instance;
     }
