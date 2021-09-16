@@ -2449,8 +2449,10 @@ public class Basic {
             long start = System.nanoTime();
 
             if (p.waitFor(10, TimeUnit.MILLISECONDS)) {
-                System.out.println("WaitFor didn't wait long enough: " + (System.nanoTime() - start));
-            };
+                var msg = "External sleep process terminated early: exitValue: %d, (%dns)%n"
+                        .formatted(p.exitValue(), (System.nanoTime() - start));
+                fail(msg);
+            }
 
             long end = System.nanoTime();
             if ((end - start) < TimeUnit.MILLISECONDS.toNanos(10))
