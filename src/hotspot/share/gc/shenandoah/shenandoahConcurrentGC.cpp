@@ -114,6 +114,11 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   {
     ShenandoahBreakpointMarkScope breakpoint_mark_scope;
 
+    // Reset task queue stats here, rather than in mark_concurrent_roots
+    // because remembered set scan will `push` oops into the queues and
+    // resetting after this happens will lose those counts.
+    TASKQUEUE_STATS_ONLY(_mark.task_queues()->reset_taskqueue_stats());
+
     // Concurrent remembered set scanning
     if (_generation->generation_mode() == YOUNG) {
       _generation->scan_remembered_set();

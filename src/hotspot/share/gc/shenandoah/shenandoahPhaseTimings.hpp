@@ -53,9 +53,10 @@ class outputStream;
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
   f(init_mark,                                      "Pause Init Mark (N)")             \
   f(init_manage_tlabs,                              "  Manage TLABs")                  \
-  f(init_scan_rset,                                 "  Scan Remembered Set")           \
-  SHENANDOAH_PAR_PHASE_DO(init_scan_rset_,          "    RS: ", f)                     \
   f(init_update_region_states,                      "  Update Region States")          \
+                                                                                       \
+  f(init_scan_rset,                                 "Concurrent Scan Remembered Set")  \
+  SHENANDOAH_PAR_PHASE_DO(init_scan_rset_,          "  RS: ", f)                       \
                                                                                        \
   f(conc_mark_roots,                                "Concurrent Mark Roots ")          \
   SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "  CMR: ", f)                      \

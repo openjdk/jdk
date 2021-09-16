@@ -213,8 +213,6 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(!heap->has_forwarded_objects(), "Not expected");
 
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
-
   WorkGang* workers = heap->workers();
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   _generation->reserve_task_queues(workers->active_workers());
