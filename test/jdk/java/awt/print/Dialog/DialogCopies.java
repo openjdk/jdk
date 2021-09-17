@@ -41,7 +41,7 @@ public class DialogCopies {
 
                 Press Cancel if your system has only virtual printers such as
                 Microsoft Print to PDF or Microsoft XPS Document Writer since
-                neither allows setting copies to anything but 1.
+                they don't allow setting copies to anything but 1.
 
                 If a real printer is installed, select it from the drop-down
                 list in the Print dialog and increase the number of copies,
