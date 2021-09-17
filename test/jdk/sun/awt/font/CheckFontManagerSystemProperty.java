@@ -27,6 +27,7 @@ import java.awt.Toolkit;
  * @test
  * @bug 8273581
  * @summary verify the "sun.font.fontmanager" system property is not set
+ * @run main/othervm -Djava.awt.headless=true CheckFontManagerSystemProperty
  */
 
 public class CheckFontManagerSystemProperty {
