@@ -492,14 +492,14 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             ObjArrayKlass oak = (ObjArrayKlass) klass;
             Klass bottomType = oak.getBottomKlass();
             if (bottomType instanceof InstanceKlass ||
-                    bottomType instanceof TypeArrayKlass) {
+                bottomType instanceof TypeArrayKlass) {
                 return calculateObjectArrayDumpRecordSize((ObjArray)oop);
             } else {
-                // internal object, nothing to write.
+                // Internal object, nothing to write.
                 return 0;
             }
         } else if (oop instanceof Instance) {
-            Instance instance = (Instance) oop;
+            Instance instance = (Instance)oop;
             Klass klass = instance.getKlass();
             Symbol name = klass.getName();
             if (name.equals(javaLangClass)) {
@@ -607,8 +607,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private int calculateClassInstanceDumpRecordSize(Instance instance) {
         Klass reflectedKlass = java_lang_Class.asKlass(instance);
-        // dump instance record only for primitive type Class objects.
-        // all other Class objects are covered by writeClassDumpRecords.
+        // Dump instance record only for primitive type Class objects.
+        // All other Class objects are covered by writeClassDumpRecords.
         if (reflectedKlass == null) {
             return calculateInstanceDumpRecordSize(instance);
         }
@@ -639,7 +639,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     @Override
     protected void writeHeapRecordPrologue(int size) throws IOException {
-        if (size == 0 || (currentSegmentStart > 0)) {
+        if (size == 0 || currentSegmentStart > 0) {
             return;
         }
         // write heap data header
@@ -648,9 +648,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             out.writeInt(0);
             out.writeInt(size);
         } else {
-            out.writeByte((byte) (HPROF_HEAP_DUMP));
+            out.writeByte((byte)HPROF_HEAP_DUMP);
             out.writeInt(0);
-            // record position of the length slot
+            // record the current position in file, it will be use for calculating the size of written data
             currentSegmentStart = fos.getChannel().position();
             // write dummy zero for length
             out.writeInt(0);
@@ -718,7 +718,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     // Check if we need to truncate an array.
-    // The limitation is that the size of "heap dump" or "heap dump segment" must be <= MAX_U4_VALUE
+    // The limitation is that the size of "heap dump" or "heap dump segment" must be <= MAX_U4_VALUE.
     private int calculateArrayMaxLength(long originalArrayLength,
                                         int headerSize,
                                         long typeSize,
@@ -729,7 +729,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         long originalLengthInBytes = originalArrayLength * typeSize;
 
         // Calculate the max bytes we can use.
-        long maxBytes = (MAX_U4_VALUE - headerSize);
+        long maxBytes = MAX_U4_VALUE - headerSize;
 
         if (originalLengthInBytes > maxBytes) {
             length = maxBytes/typeSize;
