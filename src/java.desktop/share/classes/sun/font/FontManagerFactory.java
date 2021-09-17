@@ -29,7 +29,7 @@ package sun.font;
  * Factory class used to retrieve a valid FontManager instance for the current
  * platform.
  *
- * A default implementation is given for Linux, Solaris and Windows.
+ * A default implementation is given for Linux, Mac OS and Windows.
  */
 public final class FontManagerFactory {
 
