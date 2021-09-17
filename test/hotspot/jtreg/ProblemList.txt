@@ -91,22 +91,6 @@ gc/stringdedup/TestStringDeduplicationInterned.java#Z     8273695 generic-all
 gc/stringdedup/TestStringDeduplicationTableResize.java#Z  8273695 generic-all
 gc/stringdedup/TestStringDeduplicationYoungGC.java#Z      8273695 generic-all
 
-
-
-
-
-
-
-# TESTING
-
-compiler/loopopts/TestRangeCheckPredicatesControl.java#Z    8273695 generic-all
-
-
-
-
-
-
-
 #############################################################################
 
 # :hotspot_runtime
