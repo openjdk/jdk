@@ -51,8 +51,15 @@ class WindowsUserDefinedFileAttributeView
             throw new NullPointerException("'name' is null");
         return file + ":" + name;
     }
+
     private String join(WindowsPath file, String name) throws WindowsException {
-        return join(file.getPathForWin32Calls(), name);
+        if (name == null)
+            throw new NullPointerException("'name' is null");
+        WindowsPath wp = WindowsPath.parse(file.getFileSystem(),
+                                           file + "." + name);
+        StringBuilder sb = new StringBuilder(wp.getPathForWin32Calls());
+        sb.setCharAt(sb.length() - name.length() - 1, ':');
+        return sb.toString();
     }
 
     private final WindowsPath file;
