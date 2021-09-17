@@ -48,7 +48,7 @@
 package vm.mlvm.hiddenloader.stress.parallelLoad;
 
 import vm.mlvm.hiddenloader.share.StressClassLoadingTest;
-import vm.mlvm.hiddenloader.share.AnonkTestee01;
+import vm.mlvm.hiddenloader.share.HiddenkTestee01;
 import vm.mlvm.share.MlvmTestExecutor;
 import vm.mlvm.share.MultiThreadedTest;
 import vm.share.FileUtils;
@@ -60,7 +60,7 @@ import vm.share.FileUtils;
  *
  */
 public class Test extends MultiThreadedTest {
-    private static final Class<?> HOST_CLASS = AnonkTestee01.class;
+    private static final Class<?> HOST_CLASS = HiddenkTestee01.class;
     private static final String NAME_PREFIX = "thread%03d";
 
     private final byte[] classBytes;
@@ -89,7 +89,7 @@ public class Test extends MultiThreadedTest {
 
     /**
      * Constructs a sub-test class and runs it. The sub-test class loads
-     * {@link vm.mlvm.hiddenloader.share.AnonkTestee01} class bytecodes
+     * {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class bytecodes
      * using {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass}
      * @param numThread Number of the thread
      * @throws Exception if there any exceptions thrown in the sub-test

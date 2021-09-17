@@ -72,9 +72,9 @@ public class Test extends StressClassLoadingTest {
     };
 
     /**
-     * Returns {@link vm.mlvm.hiddenloader.share.AnonkTestee01} class to the
+     * Returns {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class to the
      * parent.
-     * @return {@link vm.mlvm.hiddenloader.share.AnonkTestee01} class.
+     * @return {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class.
      */
     @Override
     protected Class<?> getHostClass() {
