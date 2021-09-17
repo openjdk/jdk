@@ -44,17 +44,21 @@ import sun.security.action.GetPropertyAction;
 public final class FontManagerFactory {
 
     /** Our singleton instance. */
-    private static FontManager instance = null;
+    private static volatile FontManager instance = null;
 
     /**
      * Get a valid FontManager implementation for the current platform.
      *
      * @return a valid FontManager instance for the current platform
      */
-    public static synchronized FontManager getInstance() {
+    public static FontManager getInstance() {
 
         if (instance == null) {
-            instance = PlatformFontInfo.createFontManager();
+            synchronized (FontManagerFactory.class) {
+                if (instance == null) {
+                    instance = PlatformFontInfo.createFontManager();
+                }
+            }
         }
         return instance;
     }
