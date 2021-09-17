@@ -40,7 +40,7 @@ import java.security.interfaces.*;
 import sun.security.pkcs11.wrapper.*;
 import sun.security.util.KnownOIDs;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * RSASSA-PSS Signature implementation class. This class currently supports the
@@ -298,7 +298,7 @@ final class P11PSSSignature extends SignatureSpi {
                 }
             }
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
                 // call. If the operation inside the token was already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
@@ -705,16 +705,9 @@ final class P11PSSSignature extends SignatureSpi {
             return true;
         } catch (PKCS11Exception pe) {
             doCancel = false;
-            long errorCode = pe.getErrorCode();
-            if (errorCode == CKR_SIGNATURE_INVALID) {
-                return false;
-            }
-            if (errorCode == CKR_SIGNATURE_LEN_RANGE) {
-                // return false rather than throwing an exception
-                return false;
-            }
-            // ECF bug?
-            if (errorCode == CKR_DATA_LEN_RANGE) {
+            if (pe.match(CKR_SIGNATURE_INVALID) ||
+                    pe.match(CKR_SIGNATURE_LEN_RANGE) ||
+                    pe.match(CKR_DATA_LEN_RANGE)) {
                 return false;
             }
             throw new ProviderException(pe);

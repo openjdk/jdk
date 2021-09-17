@@ -72,37 +72,8 @@ public class PKCS11Exception extends Exception {
 
     protected String errorMsg;
 
-    public static final long CKR_GENERAL_ERROR = RV.CKR_GENERAL_ERROR.value;
-    public static final long CKR_ATTRIBUTE_TYPE_INVALID =
-            RV.CKR_ATTRIBUTE_TYPE_INVALID.value;
-    public static final long CKR_DATA_LEN_RANGE = RV.CKR_DATA_LEN_RANGE.value;
-    public static final long CKR_ENCRYPTED_DATA_INVALID =
-            RV.CKR_ENCRYPTED_DATA_INVALID.value;
-    public static final long CKR_ENCRYPTED_DATA_LEN_RANGE =
-            RV.CKR_ENCRYPTED_DATA_LEN_RANGE.value;
-    public static final long CKR_MECHANISM_INVALID =
-            RV.CKR_MECHANISM_INVALID.value;
-    public static final long CKR_MECHANISM_PARAM_INVALID =
-            RV.CKR_MECHANISM_PARAM_INVALID.value;
-    public static final long CKR_OPERATION_NOT_INITIALIZED =
-            RV.CKR_OPERATION_NOT_INITIALIZED.value;
-    public static final long CKR_PIN_INCORRECT =
-            RV.CKR_PIN_INCORRECT.value;
-    public static final long CKR_SIGNATURE_INVALID =
-            RV.CKR_SIGNATURE_INVALID.value;
-    public static final long CKR_SIGNATURE_LEN_RANGE =
-            RV.CKR_SIGNATURE_LEN_RANGE.value;
-    public static final long CKR_USER_ALREADY_LOGGED_IN =
-            RV.CKR_USER_ALREADY_LOGGED_IN.value;
-    public static final long CKR_USER_NOT_LOGGED_IN =
-            RV.CKR_USER_NOT_LOGGED_IN.value;
-    public static final long CKR_BUFFER_TOO_SMALL =
-            RV.CKR_BUFFER_TOO_SMALL.value;
-    public static final long CKR_CRYPTOKI_ALREADY_INITIALIZED =
-            RV.CKR_CRYPTOKI_ALREADY_INITIALIZED.value;
-
     // enum for all PKCS#11 return value
-    static enum RV {
+    public static enum RV {
         CKR_OK(0x00000000L),
         CKR_CANCEL(0x00000001L),
         CKR_HOST_MEMORY(0x00000002L),
@@ -254,5 +225,15 @@ public class PKCS11Exception extends Exception {
      */
     public long getErrorCode() {
         return errorCode;
+    }
+
+    /**
+     * Returns true if the error code matches the the specified enum value.
+     * @return true if the error code matches the the specified enum value.
+     * @preconditions
+     * @postconditions
+     */
+    public boolean match(RV errorEnum) {
+        return (errorCode == errorEnum.value);
     }
 }

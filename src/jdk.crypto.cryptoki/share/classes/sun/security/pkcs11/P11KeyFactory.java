@@ -27,8 +27,12 @@ package sun.security.pkcs11;
 
 import java.security.*;
 import java.security.spec.*;
-
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Locale;
 import sun.security.pkcs11.wrapper.PKCS11Exception;
+import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+
 
 /**
  * KeyFactory base class. Provides common infrastructure for the RSA, DSA,
@@ -53,6 +57,28 @@ abstract class P11KeyFactory extends KeyFactorySpi {
         super();
         this.token = token;
         this.algorithm = algorithm;
+    }
+
+    private static final Map<String,Long> keyTypes;
+
+    static {
+        keyTypes = new HashMap<String,Long>();
+        addKeyType("RSA", CKK_RSA);
+        addKeyType("DSA", CKK_DSA);
+        addKeyType("DH",  CKK_DH);
+        addKeyType("EC",  CKK_EC);
+    }
+
+    private static void addKeyType(String name, long id) {
+        Long l = Long.valueOf(id);
+        keyTypes.put(name, l);
+        keyTypes.put(name.toUpperCase(Locale.ENGLISH), l);
+    }
+
+    // returns the PKCS11 key type of the specified algorithm
+    static long getPKCS11KeyType(String algorithm) {
+        Long kt = keyTypes.get(algorithm);
+        return (kt != null) ? kt.longValue() : -1;
     }
 
     /**

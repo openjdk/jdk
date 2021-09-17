@@ -36,7 +36,7 @@ import sun.nio.ch.DirectBuffer;
 
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * MAC implementation class. This class currently supports HMAC using
@@ -152,7 +152,7 @@ final class P11Mac extends MacSpi {
         try {
             token.p11.C_SignFinal(session.id(), 0);
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
                 // call. If the operation inside the token was already cancelled,
                 // do not fail here. This is part of a defensive mechanism for

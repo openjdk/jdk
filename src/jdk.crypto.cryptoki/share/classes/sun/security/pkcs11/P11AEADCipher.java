@@ -39,7 +39,7 @@ import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * P11 AEAD Cipher implementation class. This class currently supports
@@ -393,7 +393,7 @@ final class P11AEADCipher extends CipherSpi {
         try {
             initialize();
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_MECHANISM_PARAM_INVALID) {
+            if (e.match(CKR_MECHANISM_PARAM_INVALID)) {
                 throw new InvalidAlgorithmParameterException("Bad params", e);
             }
             throw new InvalidKeyException("Could not initialize cipher", e);
@@ -416,7 +416,7 @@ final class P11AEADCipher extends CipherSpi {
                         0, buffer, 0, bufLen);
             }
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
                 // call. If the operation inside the token was already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
@@ -812,17 +812,16 @@ final class P11AEADCipher extends CipherSpi {
     private void handleException(PKCS11Exception e)
             throws ShortBufferException, IllegalBlockSizeException,
             BadPaddingException {
-        long errorCode = e.getErrorCode();
-        if (errorCode == CKR_BUFFER_TOO_SMALL) {
+        if (e.match(CKR_BUFFER_TOO_SMALL)) {
             throw (ShortBufferException)
                     (new ShortBufferException().initCause(e));
-        } else if (errorCode == CKR_DATA_LEN_RANGE ||
-                   errorCode == CKR_ENCRYPTED_DATA_LEN_RANGE) {
+        } else if (e.match(CKR_DATA_LEN_RANGE) ||
+                e.match(CKR_ENCRYPTED_DATA_LEN_RANGE)) {
             throw (IllegalBlockSizeException)
                     (new IllegalBlockSizeException(e.toString()).initCause(e));
-        } else if (errorCode == CKR_ENCRYPTED_DATA_INVALID ||
-                // Solaris-specific
-                errorCode == CKR_GENERAL_ERROR) {
+        } else if (e.match(CKR_ENCRYPTED_DATA_INVALID) ||
+                e.match(CKR_GENERAL_ERROR)) {
+            // CKR_GENERAL_ERROR is Solaris-specific workaround
             throw (AEADBadTagException)
                     (new AEADBadTagException(e.toString()).initCause(e));
         }
