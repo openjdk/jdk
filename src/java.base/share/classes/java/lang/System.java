@@ -761,6 +761,9 @@ public final class System {
      * <tr><th scope="row">{@systemProperty native.encoding}</th>
      *     <td>Character encoding name derived from the host environment and/or
      *     the user's settings. Setting this system property has no effect.</td></tr>
+     * <tr><th scope="row">{@systemProperty java.properties.date}</th>
+     *     <td>Text for the comment that must replace the default date comment
+     *     written out by {@code Properties.store()} methods <em>(optional)</em> </td></tr>
      * </tbody>
      * </table>
      * <p>
