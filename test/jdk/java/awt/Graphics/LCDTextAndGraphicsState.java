@@ -36,37 +36,29 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
+import java.awt.GridLayout;
 import java.awt.RenderingHints;
 import java.awt.AlphaComposite;
 import java.awt.GradientPaint;
-import java.awt.TextArea;
 import java.awt.Shape;
 import java.awt.Panel;
-import java.awt.Insets;
 
 import java.awt.event.ActionEvent;
 import java.awt.geom.RoundRectangle2D;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class LCDTextAndGraphicsState extends Component {
 
-    private static final Frame instructionFrame = new Frame();
-    private static volatile boolean testResult = false;
+    private static final Frame testFrame = new Frame("Composite and Text Test");
+    private static final String text = "This test passes only if this text appears SIX TIMES else fail";
+    private static volatile boolean testResult;
     private static volatile CountDownLatch countDownLatch;
-    private static String text = "This test passes only if this text appears SIX TIMES";
-    private static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n" +
-            "You should see the text \' " + text + " \' on the frame. \n" +
-            "If you see the same then test pass else test fail.";
 
     public void paint(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g.create();
+        Graphics2D g2d = (Graphics2D)g.create();
         g2d.setColor(Color.white);
-        g2d.fillRect(0, 0, getSize().width, getSize().height);
+        g2d.fillRect(0,0,getSize().width, getSize().height);
 
         test1(g.create(0, 0, 500, 200));
         test2(g.create(0, 200, 500, 200));
@@ -74,31 +66,31 @@ public class LCDTextAndGraphicsState extends Component {
     }
 
     public void test1(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
+        Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+                             RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
         g2d.setColor(Color.black);
         g2d.drawString(text, 10, 50);
         g2d.setComposite(AlphaComposite.getInstance(
-                AlphaComposite.SRC_OVER, 0.9f));
+                         AlphaComposite.SRC_OVER, 0.9f));
         g2d.drawString(text, 10, 80);
     }
 
     public void test2(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
+        Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+                             RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
         g2d.setColor(Color.black);
         g2d.drawString(text, 10, 50);
         g2d.setPaint(new GradientPaint(
-                0f, 0f, Color.BLACK, 100f, 100f, Color.GRAY));
+                     0f, 0f, Color.BLACK, 100f, 100f, Color.GRAY));
         g2d.drawString(text, 10, 80);
     }
 
     public void test3(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
+        Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+                             RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
         g2d.setColor(Color.black);
         g2d.drawString(text, 10, 50);
         Shape s = new RoundRectangle2D.Double(0, 60, 400, 50, 5, 5);
@@ -107,77 +99,40 @@ public class LCDTextAndGraphicsState extends Component {
     }
 
     public Dimension getPreferredSize() {
-        return new Dimension(500, 600);
+        return new Dimension(500,600);
     }
 
-    private static void createInstructionUI() {
-        GridBagLayout layout = new GridBagLayout();
-        Panel mainControlPanel = new Panel(layout);
-        Panel resultButtonPanel = new Panel(layout);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.insets = new Insets(5, 15, 5, 15);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+    public static void disposeUI() {
+        countDownLatch.countDown();
+        testFrame.dispose();
+    }
 
-        TextArea instructionTextArea = new TextArea();
-        instructionTextArea.setText(INSTRUCTIONS);
-        instructionTextArea.setEditable(false);
-        instructionTextArea.setBackground(Color.white);
-        mainControlPanel.add(instructionTextArea, gbc);
-
+    public static void createTestUI() {
+        testFrame.add(new LCDTextAndGraphicsState(), BorderLayout.NORTH);
+        Panel resultButtonPanel = new Panel(new GridLayout(1, 2));
         Button passButton = new Button("Pass");
-        passButton.setActionCommand("Pass");
         passButton.addActionListener((ActionEvent e) -> {
             testResult = true;
-            countDownLatch.countDown();
+            disposeUI();
         });
 
         Button failButton = new Button("Fail");
-        failButton.setActionCommand("Fail");
         failButton.addActionListener(e -> {
-            countDownLatch.countDown();
+            testResult = false;
+            disposeUI();
         });
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-
-        resultButtonPanel.add(passButton, gbc);
-
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        resultButtonPanel.add(failButton, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        mainControlPanel.add(resultButtonPanel, gbc);
-
-        instructionFrame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                super.windowClosing(e);
-                countDownLatch.countDown();
-            }
-        });
-        instructionFrame.pack();
-        instructionFrame.add(mainControlPanel);
-        instructionFrame.pack();
-        instructionFrame.setVisible(true);
-    }
-
-    public static void createUI() {
-        Frame f = new Frame("Composite and Text Test");
-        f.add(new LCDTextAndGraphicsState(), BorderLayout.CENTER);
-        f.pack();
-        f.setLocationRelativeTo(null);
-        f.setVisible(true);
+        resultButtonPanel.add(passButton);
+        resultButtonPanel.add(failButton);
+        testFrame.add(resultButtonPanel, BorderLayout.SOUTH);
+        testFrame.pack();
+        testFrame.setLocationRelativeTo(null);
+        testFrame.setVisible(true);
     }
 
     public static void main(String[] args) throws InterruptedException {
         countDownLatch = new CountDownLatch(1);
-        createInstructionUI();
-        createUI();
-        if (!countDownLatch.await(15, TimeUnit.MINUTES)) {
+        createTestUI();
+        if (!countDownLatch.await(10, TimeUnit.MINUTES)) {
             throw new RuntimeException("Timeout : No action was performed on the test UI.");
         }
         if (!testResult) {
