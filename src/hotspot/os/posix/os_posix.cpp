@@ -185,12 +185,7 @@ size_t os::lasterror(char *buf, size_t len) {
 
 // Return true if user is running as root.
 bool os::have_special_privileges() {
-  static bool init = false;
-  static bool privileges = false;
-  if (!init) {
-    privileges = (getuid() != geteuid()) || (getgid() != getegid());
-    init = true;
-  }
+  static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
   return privileges;
 }
 
