@@ -98,7 +98,7 @@ public:
             scanner->reset_object_range(humongous_region->bottom(), humongous_region->end());
             region_index++;
             humongous_region = heap->get_region(region_index);
-          } while (humongous_region->bottom() < end_object);
+          } while (humongous_region->top() < end_object);
 
           // Then register the humongous object and DIRTY relevant remembered set cards
           scanner->register_object_wo_lock(obj_addr);
