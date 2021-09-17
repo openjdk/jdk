@@ -34,20 +34,20 @@
  *          /test/lib
  *
  * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.stress.oome.heap.Test
+ * @build vm.mlvm.hiddenloader.stress.oome.heap.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm -XX:-UseGCOverheadLimit -Xmx128m vm.mlvm.anonloader.stress.oome.heap.Test
+ * @run main/othervm -XX:-UseGCOverheadLimit -Xmx128m vm.mlvm.hiddenloader.stress.oome.heap.Test
  */
 
-package vm.mlvm.anonloader.stress.oome.heap;
+package vm.mlvm.hiddenloader.stress.oome.heap;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.util.List;
 import java.io.IOException;
 
-import vm.mlvm.anonloader.share.AnonkTestee01;
+import vm.mlvm.hiddenloader.share.AnonkTestee01;
 import vm.mlvm.share.MlvmOOMTest;
 import vm.mlvm.share.MlvmTestExecutor;
 import vm.mlvm.share.Env;

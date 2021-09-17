@@ -21,7 +21,7 @@
  * questions.
  */
 
-package vm.mlvm.anonloader.share;
+package vm.mlvm.hiddenloader.share;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
