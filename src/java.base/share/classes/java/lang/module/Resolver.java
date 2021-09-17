@@ -439,13 +439,19 @@ final class Resolver {
     }
 
 
+    private record HashCheck(ModuleHashes hashes,
+                             String dn,
+                             ModuleReferenceImpl mref,
+                             ModuleDescriptor descriptor) {}
+
     /**
      * Checks the hashes in the module descriptor to ensure that they match
      * any recorded hashes.
      */
     private void checkHashes() {
+        // Do initial checks, collect modules for hashing.
+        List<HashCheck> hashChecks = new ArrayList<>();
         for (ModuleReference mref : nameToReference.values()) {
-
             // get the recorded hashes, if any
             if (!(mref instanceof ModuleReferenceImpl))
                 continue;
@@ -471,19 +477,27 @@ final class Resolver {
 
                 ModuleReferenceImpl other = (ModuleReferenceImpl)mref2;
                 if (other != null) {
-                    byte[] recordedHash = hashes.hashFor(dn);
-                    byte[] actualHash = other.computeHash(algorithm);
-                    if (actualHash == null)
-                        findFail("Unable to compute the hash of module %s", dn);
-                    if (!Arrays.equals(recordedHash, actualHash)) {
-                        HexFormat hex = HexFormat.of();
-                        findFail("Hash of %s (%s) differs to expected hash (%s)" +
-                                 " recorded in %s", dn, hex.formatHex(actualHash),
-                                hex.formatHex(recordedHash), descriptor.name());
-                    }
+                    hashChecks.add(new HashCheck(hashes, dn, other, descriptor));
                 }
             }
+        }
 
+        // Parallel hash computation, populating the cache for descriptors
+        hashChecks.stream().parallel().forEach(hc -> hc.mref().computeHash(hc.hashes().algorithm()));
+
+        // Check the hashing results
+        for (HashCheck hc : hashChecks) {
+            byte[] recordedHash = hc.hashes().hashFor(hc.dn());
+            byte[] actualHash = hc.mref().computeHash(hc.hashes().algorithm());
+            if (actualHash == null) {
+                findFail("Unable to compute the hash of module %s", hc.dn());
+            }
+            if (!Arrays.equals(recordedHash, actualHash)) {
+                HexFormat hex = HexFormat.of();
+                findFail("Hash of %s (%s) differs to expected hash (%s)" +
+                         " recorded in %s", hc.dn(), hex.formatHex(actualHash),
+                         hex.formatHex(recordedHash), hc.descriptor().name());
+            }
         }
     }
 

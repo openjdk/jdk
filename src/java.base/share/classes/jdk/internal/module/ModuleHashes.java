@@ -39,9 +39,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import jdk.internal.module.ModuleReferenceImpl;
 
 /**
  * The result of hashing the contents of a number of module artifacts.
@@ -162,16 +166,28 @@ public final class ModuleHashes {
      * @throws UncheckedIOException if an I/O error occurs
      */
     static ModuleHashes generate(Set<ModuleReference> mrefs, String algorithm) {
-        Map<String, byte[]> nameToHash = new TreeMap<>();
-        for (ModuleReference mref : mrefs) {
-            try (ModuleReader reader = mref.open()) {
-                byte[] hash = computeHash(reader, algorithm);
-                nameToHash.put(mref.descriptor().name(), hash);
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe);
+        Map<String, byte[]> nameToHash = new ConcurrentHashMap<>();
+        mrefs.stream().parallel().forEach(mref -> {
+            byte[] hash = null;
+
+            // Try to ask the internal cache first
+            if (mref instanceof ModuleReferenceImpl mri) {
+                hash = mri.computeHash(algorithm);
             }
-        }
-        return new ModuleHashes(algorithm, nameToHash);
+
+            // Compute the hash directly otherwise
+            if (hash == null) {
+                try (ModuleReader reader = mref.open()) {
+                    hash = computeHash(reader, algorithm);
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
+            }
+
+            nameToHash.put(mref.descriptor().name(), hash);
+        });
+        // nameToHash needs to be sorted by name for reproducibility
+        return new ModuleHashes(algorithm, new TreeMap<>(nameToHash));
     }
 
     @Override
