@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,10 +161,10 @@ public class Debug {
         if (args == null)
             return false;
         else {
-            if (args.indexOf("all") != -1)
+            if (args.contains("all"))
                 return true;
             else
-                return (args.indexOf(option) != -1);
+                return (args.contains(option));
         }
     }
 
