@@ -157,8 +157,13 @@ class PKIX {
         }
         Date date() {
             if (!gotDate) {
-                // use timestamp if checking signed code that is
-                // timestamped, otherwise use date parameter
+                // Use timestamp if checking signed code that is
+                // timestamped, otherwise use date parameter.
+                // Note that TSA server certificates do not use the
+                // timestamp, which means that an expired TSA certificate
+                // is considered a validation failure. This policy means
+                // that signed and timestamped code is valid until the TSA
+                // certificate expires (assuming all other checks are valid).
                 if (timestamp != null &&
                     variant.equals(Validator.VAR_CODE_SIGNING)) {
                     date = timestamp.getTimestamp();
@@ -210,6 +215,9 @@ class PKIX {
         String variant() {
             return variant;
         }
+        // The timestamp param is passed as the date param when creating an
+        // AlgorithmChecker. An AlgorithmChecker always uses the timestamp
+        // if specified in order to enforce the denyAfter constraint.
         Date timestamp() {
             // return timestamp date if set, otherwise use date parameter
             if (timestampDate == null) {

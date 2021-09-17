@@ -184,7 +184,7 @@ public class JarConstraintsParameters implements ConstraintsParameters {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[\n");
-        sb.append("\n  Variant: ").append(getVariant());
+        sb.append("  Variant: ").append(getVariant());
         sb.append("\n  Certs Issued by Anchor:");
         for (X509Certificate cert : certsIssuedByAnchor) {
             sb.append("\n    Cert Issuer: ")

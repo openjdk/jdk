@@ -103,7 +103,7 @@ public class CertPathConstraintsParameters implements ConstraintsParameters {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[\n");
-        sb.append("\n  Variant: ").append(variant);
+        sb.append("  Variant: ").append(variant);
         if (anchor != null) {
             sb.append("\n  Anchor: ").append(anchor);
         }
