@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1399,7 +1399,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * a new array of type {@code arrayType}, whose elements
      * comprise (in order) the replaced arguments.
      * <p>
-     * The caller type must provides as least enough arguments,
+     * The caller type must provide at least enough arguments,
      * and of the correct type, to satisfy the target's requirement for
      * positional arguments before the trailing array argument.
      * Thus, the caller must supply, at a minimum, {@code N-1} arguments,
@@ -1493,7 +1493,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * array or a single element of an array to be collected.
      * Note that the dynamic type of the trailing argument has no
      * effect on this decision, only a comparison between the symbolic
-     * type descriptor of the call site and the type descriptor of the method handle.)
+     * type descriptor of the call site and the type descriptor of the method handle.
      *
      * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
      * @return a new method handle which can collect any number of trailing arguments
@@ -1548,7 +1548,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * except that {@link #isVarargsCollector isVarargsCollector}
      * will be false.
      * The fixed-arity method handle may (or may not) be the
-     * a previous argument to {@code asVarargsCollector}.
+     * previous argument to {@code asVarargsCollector}.
      * <p>
      * Here is an example, of a list-making variable arity method handle:
      * <blockquote><pre>{@code

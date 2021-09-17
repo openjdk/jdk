@@ -271,7 +271,7 @@ public interface DocTree {
         VERSION("version"),
 
         /**
-         * An implementation-reserved node. This is the not the node
+         * An implementation-reserved node. This is not the node
          * you are looking for.
          */
         OTHER;
