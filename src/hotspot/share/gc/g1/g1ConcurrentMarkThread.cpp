@@ -159,6 +159,8 @@ void G1ConcurrentMarkThread::run_service() {
 }
 
 void G1ConcurrentMarkThread::stop_service() {
+  _cm->abort_marking_threads();
+
   MutexLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   CGC_lock->notify_all();
 }

@@ -188,3 +188,10 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
 
   return flush() ? written : -1;
 }
+
+void LogFileStreamOutput::describe(outputStream *out) {
+  LogOutput::describe(out);
+  out->print(" ");
+
+  out->print("foldmultilines=%s", _fold_multilines ? "true" : "false");
+}

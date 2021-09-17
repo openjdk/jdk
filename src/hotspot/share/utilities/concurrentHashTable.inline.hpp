@@ -1014,7 +1014,7 @@ inline ConcurrentHashTable<CONFIG, F>::
 {
   _stats_rate = TableRateStatistics();
   _resize_lock =
-    new Mutex(Mutex::leaf, "ConcurrentHashTable",
+    new Mutex(Mutex::leaf-2, "ConcurrentHashTableResize_lock",
               Mutex::_safepoint_check_never);
   _table = new InternalTable(log2size);
   assert(log2size_limit >= log2size, "bad ergo");
