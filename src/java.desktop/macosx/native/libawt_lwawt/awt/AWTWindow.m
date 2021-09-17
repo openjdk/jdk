@@ -654,6 +654,9 @@ AWT_ASSERT_APPKIT_THREAD;
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, platformWindow);
 
+    if (![self.nsWindow inLiveResize]) {
+        [AWTWindow synthesizeMouseEnteredExitedEventsForAllWindows];
+    }
 }
 
 - (void)windowDidMove:(NSNotification *)notification {
