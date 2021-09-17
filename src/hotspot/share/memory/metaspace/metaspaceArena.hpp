@@ -110,10 +110,13 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 #ifdef ASSERT
   // Allocation guards: When active, arena allocations are interleaved with
   //  fence allocations. An overwritten fence indicates a buffer overrun in either
-  //  the preceding or the following block.
+  //  the preceding or the following user block. All fences are linked together;
+  //  validating the fences just means walking that linked list.
+  // Note that for the Arena, fence blocks are just another form of user blocks.
   class Fence {
     static const uintx EyeCatcher =
       NOT_LP64(0x77698465) LP64_ONLY(0x7769846577698465ULL); // "META" resp "METAMETA"
+    // Two eyecatchers to easily spot a corrupted _next pointer
     const uintx _eye1;
     const Fence* const _next;
     const uintx _eye2;

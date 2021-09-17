@@ -228,23 +228,25 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   MutexLocker cl(lock(), Mutex::_no_safepoint_check_flag);
   UL2(trace, "requested " SIZE_FORMAT " words.", requested_word_size);
 
+  MetaWord* p = NULL;
+  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
+
   // Before bothering the arena proper, attempt to re-use a block from the free blocks list
   if (Settings::handle_deallocations() && _fbl != NULL && !_fbl->is_empty()) {
-    size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
-    MetaWord* p = _fbl->remove_block(raw_word_size);
+    p = _fbl->remove_block(raw_word_size);
     if (p != NULL) {
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
       UL2(trace, "taken from fbl (now: %d, " SIZE_FORMAT ").",
           _fbl->count(), _fbl->total_size());
-      // Note: Space which is kept in the freeblock dictionary still counts as used as far
-      //  as statistics go; therefore we skip the epilogue in this function to avoid double
-      //  accounting.
+      // Note: free blocks in freeblock dictionary still count as "used" as far as statistics go;
+      // therefore we have no need to adjust any usage counters (see epilogue of allocate_inner())
+      // and can just return here.
       return p;
     }
   }
 
   // Primary allocation
-  MetaWord* p = allocate_inner(requested_word_size);
+  p = allocate_inner(requested_word_size);
 
 #ifdef ASSERT
   // Fence allocation
@@ -252,10 +254,11 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
     STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
     MetaWord* guard = allocate_inner(sizeof(Fence) / BytesPerWord);
     if (guard != NULL) {
-      // For now, we just ignore allocation errors for the fence to keep things simple.
-      // We may miss adding a fence, but that is not such a big deal, esp. since this
-      // should be rare (chances are much higher we would have failed the primary
-      // allocation too).
+      // Ignore allocation errors for the fence to keep coding simple. If this
+      // happens (e.g. because right at this time we hit the Metaspace GC threshold)
+      // we miss adding this one fence. Not a big deal. Note that his would
+      // be pretty rare. Chances are much higher the primary allocation above
+      // would have already failed).
       Fence* f = new(guard) Fence(_first_fence);
       _first_fence = f;
     }
