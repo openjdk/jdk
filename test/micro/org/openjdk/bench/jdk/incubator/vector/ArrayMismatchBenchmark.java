@@ -100,7 +100,7 @@ public class ArrayMismatchBenchmark {
             doubleData1 = random.doubles(size).toArray();
             doubleData2 = random.doubles(size).toArray();
 
-            double[] commonDoubles = random.doubles(size).toArray();
+            double[] commonDoubles = random.doubles(common).toArray();
             System.arraycopy(commonDoubles, 0, doubleData1, 0, common);
             System.arraycopy(commonDoubles, 0, doubleData2, 0, common);
         } else if (params.getBenchmark().endsWith("Long")) {
