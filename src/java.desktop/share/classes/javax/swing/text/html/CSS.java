@@ -38,7 +38,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -891,8 +890,8 @@ public class CSS implements Serializable {
                               (CSS.Attribute.VERTICAL_ALIGN);
         if ((vAlignV != null)) {
             String vAlign = vAlignV.toString();
-            if ((vAlign.indexOf("sup") >= 0) ||
-                (vAlign.indexOf("sub") >= 0)) {
+            if ((vAlign.contains("sup")) ||
+                (vAlign.contains("sub"))) {
                 size -= 2;
             }
         }
@@ -908,7 +907,7 @@ public class CSS implements Serializable {
             style |= Font.BOLD;
         }
         Object fs = a.getAttribute(CSS.Attribute.FONT_STYLE);
-        if ((fs != null) && (fs.toString().indexOf("italic") >= 0)) {
+        if ((fs != null) && (fs.toString().contains("italic"))) {
             style |= Font.ITALIC;
         }
         if (family.equalsIgnoreCase("monospace")) {
@@ -1965,12 +1964,12 @@ public class CSS implements Serializable {
          */
         Object toStyleConstants(StyleConstants key, View v) {
             if (key == StyleConstants.Italic) {
-                if (svalue.indexOf("italic") >= 0) {
+                if (svalue.contains("italic")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Underline) {
-                if (svalue.indexOf("underline") >= 0) {
+                if (svalue.contains("underline")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
@@ -1984,17 +1983,17 @@ public class CSS implements Serializable {
                 }
                 return StyleConstants.ALIGN_LEFT;
             } else if (key == StyleConstants.StrikeThrough) {
-                if (svalue.indexOf("line-through") >= 0) {
+                if (svalue.contains("line-through")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Superscript) {
-                if (svalue.indexOf("super") >= 0) {
+                if (svalue.contains("super")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Subscript) {
-                if (svalue.indexOf("sub") >= 0) {
+                if (svalue.contains("sub")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
@@ -2004,23 +2003,23 @@ public class CSS implements Serializable {
 
         // Used by ViewAttributeSet
         boolean isItalic() {
-            return (svalue.indexOf("italic") != -1);
+            return (svalue.contains("italic"));
         }
 
         boolean isStrike() {
-            return (svalue.indexOf("line-through") != -1);
+            return (svalue.contains("line-through"));
         }
 
         boolean isUnderline() {
-            return (svalue.indexOf("underline") != -1);
+            return (svalue.contains("underline"));
         }
 
         boolean isSub() {
-            return (svalue.indexOf("sub") != -1);
+            return (svalue.contains("sub"));
         }
 
         boolean isSup() {
-            return (svalue.indexOf("sup") != -1);
+            return (svalue.contains("sup"));
         }
     }
 
