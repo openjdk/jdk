@@ -439,7 +439,7 @@ public class AutomaticModulesTest {
         JarUtils.createJarFile(jarfile, tmpdir);
 
         // catch FindException, inspect its cause's type and details, and rethrow
-        var expectedMessage = "Provider class q.P not in module created for " + jarfile;
+        var expectedMessage = "Provider class q.P not in module created for " + jarfile.getFileName();
         try {
             ModuleFinder.of(dir).findAll();
         } catch (FindException exception) {
