@@ -51,7 +51,6 @@ public final class FontManagerFactory {
      *
      * @return a valid FontManager instance for the current platform
      */
-    @SuppressWarnings("removal")
     public static synchronized FontManager getInstance() {
 
         if (instance == null) {
