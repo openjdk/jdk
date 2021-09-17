@@ -815,7 +815,7 @@ public class Properties extends Hashtable<Object,Object> {
      * character in comments is not character {@code #} or character {@code !} then
      * an ASCII {@code #} is written out after that line separator.
      * <p>
-     * If the {@systemProperty java.util.Properties.storeDate} is set on the command line
+     * If the {@systemProperty java.properties.date} is set on the command line
      * and is non-empty (as determined by {@link String#isEmpty()  String.isEmpty}),
      * a comment line is written as follows.
      * First, a {@code #} character is written, followed by the contents
@@ -946,12 +946,12 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     private static void writeDateComment(BufferedWriter bw) throws IOException {
-        // value of java.util.Properties.storeDate system property isn't sensitive
+        // value of java.properties.date system property isn't sensitive
         // and so doesn't need any security manager checks to make the value accessible
         // to the callers
-        String storeDate = StaticProperty.javaUtilPropertiesStoreDate();
-        if (storeDate != null && !storeDate.isEmpty()) {
-            writeComments(bw, storeDate);
+        String sysPropVal = StaticProperty.javaPropertiesDate();
+        if (sysPropVal != null && !sysPropVal.isEmpty()) {
+            writeComments(bw, sysPropVal);
         } else {
             bw.write("#" + new Date());
             bw.newLine();

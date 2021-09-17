@@ -51,7 +51,7 @@ import java.util.TimeZone;
 public class StoreReproducibilityTest {
 
     private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
-    private static final String SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE = "java.util.Properties.storeDate";
+    private static final String SYS_PROP_JAVA_PROPERTIES_DATE = "java.properties.date";
     private static final DateTimeFormatter reproducibleDateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN)
             .withLocale(Locale.ROOT).withZone(ZoneOffset.UTC);
 
@@ -59,64 +59,64 @@ public class StoreReproducibilityTest {
         // no security manager enabled
         testWithoutSecurityManager();
         // security manager enabled and security policy explicitly allows
-        // read permissions on java.util.Properties.storeDate system property
+        // read permissions on java.properties.date system property
         testWithSecMgrExplicitPermission();
-        // security manager enabled and no explicit permission on java.util.Properties.storeDate system property
+        // security manager enabled and no explicit permission on java.properties.date system property
         testWithSecMgrNoSpecificPermission();
-        // free form non-date value for java.util.Properties.storeDate system property
-        testNonDateStoreDateValue();
-        // blank value for java.util.Properties.storeDate system property
-        testBlankStoreDateValue();
-        // empty value for java.util.Properties.storeDate system property
-        testEmptyStoreDateValue();
-        // value for java.util.Properties.storeDate system property contains line terminator characters
-        testMultiLineStoreDateValue();
-        // value for java.util.Properties.storeDate system property contains backslash character
-        testBackSlashInStoreDateValue();
+        // free form non-date value for java.properties.date system property
+        testNonDateSysPropValue();
+        // blank value for java.properties.date system property
+        testBlankSysPropValue();
+        // empty value for java.properties.date system property
+        testEmptySysPropValue();
+        // value for java.properties.date system property contains line terminator characters
+        testMultiLineSysPropValue();
+        // value for java.properties.date system property contains backslash character
+        testBackSlashInSysPropValue();
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
      * properties to a file. The launched Java program is passed a value for the
-     * {@code java.util.Properties.storeDate} system property and the date comment written out
+     * {@code java.properties.date} system property and the date comment written out
      * to the file is expected to use this value.
-     * The program is launched multiple times with the same value for {@code java.util.Properties.storeDate}
+     * The program is launched multiple times with the same value for {@code java.properties.date}
      * and the output written by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code java.util.Properties.storeDate}.
+     * corresponds to the passed {@code java.properties.date}.
      * The launched Java program is run without any security manager
      */
     private static void testWithoutSecurityManager() throws Exception {
         final List<Path> storedFiles = new ArrayList<>();
-        final String storeDate = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(243535322));
+        final String sysPropVal = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(243535322));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
             executeJavaProcess(processBuilder);
-            assertExpectedStoreDate(tmpFile, storeDate);
+            assertExpectedComment(tmpFile, sysPropVal);
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
         }
-        assertAllFileContentsAreSame(storedFiles, storeDate);
+        assertAllFileContentsAreSame(storedFiles, sysPropVal);
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
      * properties to a file. The launched Java program is passed a value for the
-     * {@code java.util.Properties.storeDate} system property and the date comment written out to the file
+     * {@code java.properties.date} system property and the date comment written out to the file
      * is expected to use this value.
      * The launched Java program is run with the default security manager and is granted
-     * a {@code read} permission on {@code java.util.Properties.storeDate}.
-     * The program is launched multiple times with the same value for {@code java.util.Properties.storeDate}
+     * a {@code read} permission on {@code java.properties.date}.
+     * The program is launched multiple times with the same value for {@code java.properties.date}
      * and the output written by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code java.util.Properties.storeDate}.
+     * corresponds to the passed {@code java.properties.date}.
      */
     private static void testWithSecMgrExplicitPermission() throws Exception {
         final Path policyFile = Files.createTempFile("8231640", ".policy");
@@ -124,43 +124,43 @@ public class StoreReproducibilityTest {
                 grant {
                     // test writes/stores to a file, so FilePermission
                     permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // explicitly grant read permission on java.util.Properties.storeDate system property
+                    // explicitly grant read permission on java.properties.date system property
                     // to verify store() APIs work fine
-                    permission java.util.PropertyPermission "java.util.Properties.storeDate", "read";
+                    permission java.util.PropertyPermission "java.properties.date", "read";
                 };
                 """));
         final List<Path> storedFiles = new ArrayList<>();
-        final String storeDate = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(1234342423));
+        final String sysPropVal = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(1234342423));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile.toString(),
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
             executeJavaProcess(processBuilder);
-            assertExpectedStoreDate(tmpFile, storeDate);
+            assertExpectedComment(tmpFile, sysPropVal);
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
         }
-        assertAllFileContentsAreSame(storedFiles, storeDate);
+        assertAllFileContentsAreSame(storedFiles, sysPropVal);
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
      * properties to a file. The launched Java program is passed a value for the
-     * {@code java.util.Properties.storeDate} system property and the date comment written out to the file
+     * {@code java.properties.date} system property and the date comment written out to the file
      * is expected to use this value.
      * The launched Java program is run with the default security manager and is NOT granted
-     * any explicit permission for {@code java.util.Properties.storeDate} system property.
-     * The program is launched multiple times with the same value for {@code java.util.Properties.storeDate}
+     * any explicit permission for {@code java.properties.date} system property.
+     * The program is launched multiple times with the same value for {@code java.properties.date}
      * and the output written by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code java.util.Properties.storeDate}.
+     * corresponds to the passed {@code java.properties.date}.
      */
     private static void testWithSecMgrNoSpecificPermission() throws Exception {
         final Path policyFile = Files.createTempFile("8231640", ".policy");
@@ -168,48 +168,48 @@ public class StoreReproducibilityTest {
                 grant {
                     // test writes/stores to a file, so FilePermission
                     permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // no other grants, not even "read" java.util.Properties.storeDate system property.
+                    // no other grants, not even "read" java.properties.date system property.
                     // test should still work fine and the date comment should correspond to the value of
-                    // java.util.Properties.storeDate system property.
+                    // java.properties.date system property.
                 };
                 """));
         final List<Path> storedFiles = new ArrayList<>();
-        final String storeDate = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(1234342423));
+        final String sysPropVal = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(1234342423));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile.toString(),
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
             executeJavaProcess(processBuilder);
-            assertExpectedStoreDate(tmpFile, storeDate);
+            assertExpectedComment(tmpFile, sysPropVal);
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
         }
-        assertAllFileContentsAreSame(storedFiles, storeDate);
+        assertAllFileContentsAreSame(storedFiles, sysPropVal);
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
      * properties to a file. The launched Java program is passed a {@link String#isBlank() blank} value
-     * for the {@code java.util.Properties.storeDate} system property.
+     * for the {@code java.properties.date} system property.
      * It is expected and verified in this test that such a value for the system property
      * will cause a comment line to be written out with only whitespaces.
      * The launched program is expected to complete without any errors.
      */
-    private static void testBlankStoreDateValue() throws Exception {
+    private static void testBlankSysPropValue() throws Exception {
         final List<Path> storedFiles = new ArrayList<>();
-        final String storeDate = "      \t";
+        final String sysPropVal = "      \t";
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -220,28 +220,28 @@ public class StoreReproducibilityTest {
             String blankCommentLine = findNthComment(tmpFile, 2);
             if (blankCommentLine == null) {
                 throw new RuntimeException("Comment line representing the value of "
-                        + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + " system property is missing in file " + tmpFile);
+                        + SYS_PROP_JAVA_PROPERTIES_DATE + " system property is missing in file " + tmpFile);
             }
             if (!blankCommentLine.isBlank()) {
                 throw new RuntimeException("Expected comment line to be blank but was " + blankCommentLine);
             }
         }
-        assertAllFileContentsAreSame(storedFiles, storeDate);
+        assertAllFileContentsAreSame(storedFiles, sysPropVal);
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
      * properties to a file. The launched Java program is passed a {@link String#isEmpty() empty} value
-     * for the {@code java.util.Properties.storeDate} system property.
+     * for the {@code java.properties.date} system property.
      * It is expected and verified in this test that such a value for the system property
      * will cause the current date and time to be written out as a comment.
      * The launched program is expected to complete without any errors.
      */
-    private static void testEmptyStoreDateValue() throws Exception {
+    private static void testEmptySysPropValue() throws Exception {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + "",
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + "",
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -259,20 +259,20 @@ public class StoreReproducibilityTest {
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed the {@code java.util.Properties.storeDate}
+     * properties to a file. The launched Java program is passed the {@code java.properties.date}
      * system property with a value that doesn't represent a formatted date.
      * It is expected and verified in this test that such a value for the system property
      * will cause the comment to use that value verbatim. The launched program is expected to complete
      * without any errors.
      */
-    private static void testNonDateStoreDateValue() throws Exception {
-        final String storeDate = "foo-bar";
+    private static void testNonDateSysPropValue() throws Exception {
+        final String sysPropVal = "foo-bar";
         final List<Path> storedFiles = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -280,28 +280,28 @@ public class StoreReproducibilityTest {
             if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
                 throw new RuntimeException("Unexpected properties stored in " + tmpFile);
             }
-            assertExpectedStoreDate(tmpFile, storeDate);
+            assertExpectedComment(tmpFile, sysPropVal);
         }
-        assertAllFileContentsAreSame(storedFiles, storeDate);
+        assertAllFileContentsAreSame(storedFiles, sysPropVal);
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed the {@code java.util.Properties.storeDate}
+     * properties to a file. The launched Java program is passed the {@code java.properties.date}
      * system property with a value that has line terminator characters.
      * It is expected and verified in this test that such a value for the system property
      * will cause the comment written out to be multiple separate comments. The launched program is expected
      * to complete without any errors.
      */
-    private static void testMultiLineStoreDateValue() throws Exception {
-        final String[] storeDates = {"hello-world\nc=d", "hello-world\rc=d", "hello-world\r\nc=d"};
-        for (final String storeDate : storeDates) {
+    private static void testMultiLineSysPropValue() throws Exception {
+        final String[] sysPropVals = {"hello-world\nc=d", "hello-world\rc=d", "hello-world\r\nc=d"};
+        for (final String sysPropVal : sysPropVals) {
             final List<Path> storedFiles = new ArrayList<>();
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
                 storedFiles.add(tmpFile);
                 final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                        "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                        "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
                         i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -322,28 +322,28 @@ public class StoreReproducibilityTest {
                     throw new RuntimeException("Unexpected comment line " + commentLine2 + " in " + tmpFile);
                 }
             }
-            assertAllFileContentsAreSame(storedFiles, storeDate);
+            assertAllFileContentsAreSame(storedFiles, sysPropVal);
         }
     }
 
     /**
      * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed the {@code java.util.Properties.storeDate}
+     * properties to a file. The launched Java program is passed the {@code java.properties.date}
      * system property with a value that has backslash character.
      * It is expected and verified in this test that such a value for the system property
      * will not cause any malformed comments or introduce any new properties in the stored content.
      * The launched program is expected to complete without any errors.
      */
-    private static void testBackSlashInStoreDateValue() throws Exception {
-        final String[] storeDates = {"\\hello-world", "hello-world\\", "hello-world\\c=d",
+    private static void testBackSlashInSysPropValue() throws Exception {
+        final String[] sysPropVals = {"\\hello-world", "hello-world\\", "hello-world\\c=d",
                 "newline-plus-backslash\\\nc=d"};
-        for (final String storeDate : storeDates) {
+        for (final String sysPropVal : sysPropVals) {
             final List<Path> storedFiles = new ArrayList<>();
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
                 storedFiles.add(tmpFile);
                 final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                        "-D" + SYS_PROP_JAVA_UTIL_PROPERTIES_STOREDATE + "=" + storeDate,
+                        "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
                         i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -355,26 +355,26 @@ public class StoreReproducibilityTest {
                 if (commentLine1 == null) {
                     throw new RuntimeException("Did not find the expected comment line in " + tmpFile);
                 }
-                if (storeDate.contains("newline-plus-backslash")) {
+                if (sysPropVal.contains("newline-plus-backslash")) {
                     if (!commentLine1.equals("newline-plus-backslash\\")) {
                         throw new RuntimeException("Unexpected comment line " + commentLine1 + " in " + tmpFile);
                     }
                     // we expect this specific system property value to be written out into 2 separate comment lines
                     String commentLine2 = findNthComment(tmpFile, 3);
                     if (commentLine2 == null) {
-                        throw new RuntimeException(storeDate + " was expected to be split into 2 comment line, " +
+                        throw new RuntimeException(sysPropVal + " was expected to be split into 2 comment line, " +
                                 "but wasn't, in " + tmpFile);
                     }
                     if (!commentLine2.equals("c=d")) {
                         throw new RuntimeException("Unexpected comment line " + commentLine2 + " in " + tmpFile);
                     }
                 } else {
-                    if (!commentLine1.equals(storeDate)) {
+                    if (!commentLine1.equals(sysPropVal)) {
                         throw new RuntimeException("Unexpected comment line " + commentLine1 + " in " + tmpFile);
                     }
                 }
             }
-            assertAllFileContentsAreSame(storedFiles, storeDate);
+            assertAllFileContentsAreSame(storedFiles, sysPropVal);
         }
     }
 
@@ -397,23 +397,24 @@ public class StoreReproducibilityTest {
     }
 
     /**
-     * Verifies that the date comment in the {@code destFile} is same as {@code storeDate}
+     * Verifies that the comment in the {@code destFile} is same as {@code expectedComment},
+     * instead of the default date comment.
      */
-    private static void assertExpectedStoreDate(final Path destFile,
-                                                final String storeDate) throws Exception {
-        final String dateComment = findNthComment(destFile, 2);
-        if (dateComment == null) {
-            throw new RuntimeException("Comment \"" + storeDate + "\" not found in stored properties " + destFile);
+    private static void assertExpectedComment(final Path destFile,
+                                              final String expectedComment) throws Exception {
+        final String actualComment = findNthComment(destFile, 2);
+        if (actualComment == null) {
+            throw new RuntimeException("Comment \"" + expectedComment + "\" not found in stored properties " + destFile);
         }
-        if (!storeDate.equals(dateComment)) {
-            throw new RuntimeException("Expected comment \"" + storeDate + "\" but found \"" + dateComment + "\" " +
+        if (!expectedComment.equals(actualComment)) {
+            throw new RuntimeException("Expected comment \"" + expectedComment + "\" but found \"" + actualComment + "\" " +
                     "in stored properties " + destFile);
         }
     }
 
     /**
      * Verifies that the date comment in the {@code destFile} can be parsed using the
-     * "EEE MMM dd HH:mm:ss zzz yyyy" format and the time represented by it is {@link Date#after(Date) after}
+     * "EEE MMM dd HH:mm:ss zzz uuuu" format and the time represented by it is {@link Date#after(Date) after}
      * the passed {@code date}
      */
     private static void assertCurrentDate(final Path destFile, final Date date) throws Exception {
@@ -454,13 +455,13 @@ public class StoreReproducibilityTest {
 
     // verifies the byte equality of the contents in each of the files
     private static void assertAllFileContentsAreSame(final List<Path> files,
-                                                     final String storeDate) throws Exception {
+                                                     final String sysPropVal) throws Exception {
         final byte[] file1Contents = Files.readAllBytes(files.get(0));
         for (int i = 1; i < files.size(); i++) {
             final byte[] otherFileContents = Files.readAllBytes(files.get(i));
             if (!Arrays.equals(file1Contents, otherFileContents)) {
                 throw new RuntimeException("Properties.store() did not generate reproducible content when " +
-                        "storeDate was set to " + storeDate);
+                        SYS_PROP_JAVA_PROPERTIES_DATE + " was set to " + sysPropVal);
             }
         }
     }
