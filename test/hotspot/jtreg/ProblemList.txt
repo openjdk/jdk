@@ -85,6 +85,11 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
+gc/stringdedup/TestStringDeduplicationAgeThreshold.java#id4 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationPrintOptions.java#id4 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationInterned.java#id4 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationTableResize.java#id4 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationYoungGC.java#id4 8273695 generic-all
 
 #############################################################################
 
@@ -92,7 +97,9 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 
 runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
 runtime/cds/DeterministicDump.java 8253495 generic-all
-runtime/InvocationTests/invokevirtualTests.java 8271125 generic-all
+runtime/InvocationTests/invokevirtualTests.java#current-int 8271125 generic-all
+runtime/InvocationTests/invokevirtualTests.java#current-comp 8271125 generic-all
+runtime/InvocationTests/invokevirtualTests.java#old-int 8271125 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64

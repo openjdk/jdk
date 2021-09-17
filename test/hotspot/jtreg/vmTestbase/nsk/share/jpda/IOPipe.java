@@ -84,7 +84,7 @@ public class IOPipe extends SocketIOPipe {
     /**
      * Creates and starts listening <code>IOPipe</code> at debugger side.
      */
-    public static IOPipe startDebuggerPipe(Binder binder) {
+    public static IOPipe startDebuggerPipe(DebugeeBinder binder) {
         IOPipe ioPipe = new IOPipe(binder.getLog(),
                 binder.getArgumentHandler().getDebugeeHost(),
                 binder.getArgumentHandler().getPipePortNumber(),
@@ -94,7 +94,6 @@ public class IOPipe extends SocketIOPipe {
         ioPipe.startListening();
         return ioPipe;
     }
-
 
     protected void connect() {
         super.connect();

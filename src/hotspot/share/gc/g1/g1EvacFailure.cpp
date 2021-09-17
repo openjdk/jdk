@@ -27,6 +27,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
@@ -153,7 +154,7 @@ public:
 
       HeapWord* obj_end = obj_addr + obj_size;
       _last_forwarded_object_end = obj_end;
-      _hr->cross_threshold(obj_addr, obj_end);
+      _hr->alloc_block_in_bot(obj_addr, obj_end);
     }
   }
 
@@ -170,13 +171,13 @@ public:
       CollectedHeap::fill_with_objects(start, gap_size);
 
       HeapWord* end_first_obj = start + cast_to_oop(start)->size();
-      _hr->cross_threshold(start, end_first_obj);
+      _hr->alloc_block_in_bot(start, end_first_obj);
       // Fill_with_objects() may have created multiple (i.e. two)
       // objects, as the max_fill_size() is half a region.
       // After updating the BOT for the first object, also update the
       // BOT for the second object to make the BOT complete.
       if (end_first_obj != end) {
-        _hr->cross_threshold(end_first_obj, end);
+        _hr->alloc_block_in_bot(end_first_obj, end);
 #ifdef ASSERT
         size_t size_second_obj = cast_to_oop(end_first_obj)->size();
         HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
@@ -203,14 +204,19 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   UpdateLogBuffersDeferred _log_buffer_cl;
 
   uint volatile* _num_failed_regions;
+  G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs, uint worker_id, uint volatile* num_failed_regions) :
+  RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs,
+                                uint worker_id,
+                                uint volatile* num_failed_regions,
+                                G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
     _rdc_local_qset(rdcqs),
     _log_buffer_cl(&_rdc_local_qset),
-    _num_failed_regions(num_failed_regions) {
+    _num_failed_regions(num_failed_regions),
+    _evac_failure_regions(evac_failure_regions) {
   }
 
   ~RemoveSelfForwardPtrHRClosure() {
@@ -234,7 +240,7 @@ public:
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
 
-    if (_g1h->evacuation_failed(hr->hrm_index())) {
+    if (_evac_failure_regions->contains(hr->hrm_index())) {
       hr->clear_index_in_opt_cset();
 
       bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
@@ -259,22 +265,20 @@ public:
   }
 };
 
-G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs) :
+G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs,
+                                                               G1EvacFailureRegions* evac_failure_regions) :
   AbstractGangTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _rdcqs(rdcqs),
   _hrclaimer(_g1h->workers()->active_workers()),
+  _evac_failure_regions(evac_failure_regions),
   _num_failed_regions(0) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id, &_num_failed_regions);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id, &_num_failed_regions, _evac_failure_regions);
 
-  // We need to check all collection set regions whether they need self forward
-  // removals, not only the last collection set increment. The reason is that
-  // reference processing (e.g. finalizers) can make it necessary to resurrect an
-  // otherwise unreachable object at the very end of the collection. That object
-  // might cause an evacuation failure in any region in the collection set.
-  _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
+  // Iterate through all regions that failed evacuation during the entire collection.
+  _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {

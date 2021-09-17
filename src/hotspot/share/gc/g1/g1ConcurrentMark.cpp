@@ -27,6 +27,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1BatchedGangTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -40,6 +41,7 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/gcId.hpp"
@@ -430,7 +432,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers = ConcGCThreads;
   _max_concurrent_workers = _num_concurrent_workers;
 
-  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers, false, true);
+  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers);
   _concurrent_workers->initialize_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
@@ -471,6 +473,8 @@ void G1ConcurrentMark::reset() {
     _top_at_rebuild_starts[i] = NULL;
     _region_mark_stats[i].clear();
   }
+
+  _root_regions.reset();
 }
 
 void G1ConcurrentMark::clear_statistics_in_region(uint region_idx) {
@@ -729,25 +733,89 @@ void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers) {
   clear_next_bitmap(workers, false);
 }
 
+class G1PreConcurrentStartTask : public G1BatchedGangTask {
+  // Concurrent start needs claim bits to keep track of the marked-through CLDs.
+  class CLDClearClaimedMarksTask;
+  // Reset marking state.
+  class ResetMarkingStateTask;
+  // For each region note start of marking.
+  class NoteStartOfMarkTask;
+
+public:
+  G1PreConcurrentStartTask(GCCause::Cause cause, G1ConcurrentMark* cm);
+};
+
+class G1PreConcurrentStartTask::CLDClearClaimedMarksTask : public G1AbstractSubTask {
+public:
+  CLDClearClaimedMarksTask() : G1AbstractSubTask(G1GCPhaseTimes::CLDClearClaimedMarks) { }
+
+  double worker_cost() const override { return 1.0; }
+  void do_work(uint worker_id) override;
+};
+
+class G1PreConcurrentStartTask::ResetMarkingStateTask : public G1AbstractSubTask {
+  G1ConcurrentMark* _cm;
+public:
+  ResetMarkingStateTask(G1ConcurrentMark* cm) : G1AbstractSubTask(G1GCPhaseTimes::ResetMarkingState), _cm(cm) { }
+
+  double worker_cost() const override { return 1.0; }
+  void do_work(uint worker_id) override;
+};
+
+class G1PreConcurrentStartTask::NoteStartOfMarkTask : public G1AbstractSubTask {
+  HeapRegionClaimer _claimer;
+public:
+  NoteStartOfMarkTask() : G1AbstractSubTask(G1GCPhaseTimes::NoteStartOfMark), _claimer(0) { }
+
+  double worker_cost() const override {
+    // The work done per region is very small, therefore we choose this magic number to cap the number
+    // of threads used when there are few regions.
+    const uint regions_per_thread = 1000;
+    return _claimer.n_regions() / regions_per_thread;
+  }
+
+  void set_max_workers(uint max_workers) override;
+  void do_work(uint worker_id) override;
+};
+
+void G1PreConcurrentStartTask::CLDClearClaimedMarksTask::do_work(uint worker_id) {
+  ClassLoaderDataGraph::clear_claimed_marks();
+}
+
+void G1PreConcurrentStartTask::ResetMarkingStateTask::do_work(uint worker_id) {
+  // Reset marking state.
+  _cm->reset();
+}
+
 class NoteStartOfMarkHRClosure : public HeapRegionClosure {
 public:
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) override {
     r->note_start_of_marking();
     return false;
   }
 };
 
+void G1PreConcurrentStartTask::NoteStartOfMarkTask::do_work(uint worker_id) {
+  NoteStartOfMarkHRClosure start_cl;
+  G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&start_cl, &_claimer, worker_id);
+}
+
+void G1PreConcurrentStartTask::NoteStartOfMarkTask::set_max_workers(uint max_workers) {
+  _claimer.set_n_workers(max_workers);
+}
+
+G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1ConcurrentMark* cm) :
+  G1BatchedGangTask("Pre Concurrent Start", G1CollectedHeap::heap()->phase_times()) {
+  add_serial_task(new CLDClearClaimedMarksTask());
+  add_serial_task(new ResetMarkingStateTask(cm));
+  add_parallel_task(new NoteStartOfMarkTask());
+};
+
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
 
-  // Reset marking state.
-  reset();
-
-  // For each region note start of marking.
-  NoteStartOfMarkHRClosure startcl;
-  _g1h->heap_region_iterate(&startcl);
-
-  _root_regions.reset();
+  G1PreConcurrentStartTask cl(cause, this);
+  G1CollectedHeap::heap()->run_batch_task(&cl);
 
   _gc_tracer_cm->set_gc_cause(cause);
 }
@@ -826,7 +894,6 @@ class G1CMConcurrentMarkingTask : public AbstractGangTask {
 
 public:
   void work(uint worker_id) {
-    assert(Thread::current()->is_ConcurrentGC_thread(), "Not a concurrent GC thread");
     ResourceMark rm;
 
     double start_vtime = os::elapsedVTime();
@@ -911,9 +978,6 @@ public:
     AbstractGangTask("G1 Root Region Scan"), _cm(cm) { }
 
   void work(uint worker_id) {
-    assert(Thread::current()->is_ConcurrentGC_thread(),
-           "this should only be done by a conc GC thread");
-
     G1CMRootMemRegions* root_regions = _cm->root_regions();
     const MemRegion* region = root_regions->claim_next();
     while (region != NULL) {
@@ -1972,9 +2036,8 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   for (uint i = 0; i < _max_num_tasks; ++i) {
     _tasks[i]->clear_region_fields();
   }
-  _first_overflow_barrier_sync.abort();
-  _second_overflow_barrier_sync.abort();
-  _has_aborted = true;
+
+  abort_marking_threads();
 
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
@@ -1983,6 +2046,12 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   satb_mq_set.set_active_all_threads(
                                  false, /* new active value */
                                  satb_mq_set.is_active() /* expected_active */);
+}
+
+void G1ConcurrentMark::abort_marking_threads() {
+  _has_aborted = true;
+  _first_overflow_barrier_sync.abort();
+  _second_overflow_barrier_sync.abort();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,

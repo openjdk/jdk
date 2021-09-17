@@ -34,14 +34,18 @@
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/cpCache.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -257,7 +261,7 @@ class CompileReplay : public StackObj {
     }
   }
 
-  const char* parse_escaped_string() {
+  char* parse_escaped_string() {
     char* result = parse_quoted_string();
     if (result != NULL) {
       unescape_string(result);
@@ -340,7 +344,7 @@ class CompileReplay : public StackObj {
   }
 
   // Parse a possibly quoted version of a symbol into a symbolOop
-  Symbol* parse_symbol(TRAPS) {
+  Symbol* parse_symbol() {
     const char* str = parse_escaped_string();
     if (str != NULL) {
       Symbol* sym = SymbolTable::new_symbol(str);
@@ -349,9 +353,180 @@ class CompileReplay : public StackObj {
     return NULL;
   }
 
+  bool parse_terminator() {
+    char* terminator = parse_string();
+    if (terminator != NULL && strcmp(terminator, ";") == 0) {
+      return true;
+    }
+    return false;
+  }
+
+  // Parse a special hidden klass location syntax
+  // syntax: @bci <klass> <name> <signature> <bci> <location>* ;
+  // syntax: @cpi <klass> <cpi> <location>* ;
+  Klass* parse_cp_ref(TRAPS) {
+    JavaThread* thread = THREAD;
+    oop obj = NULL;
+    char* ref = parse_string();
+    if (strcmp(ref, "bci") == 0) {
+      Method* m = parse_method(CHECK_NULL);
+      if (m == NULL) {
+        return NULL;
+      }
+
+      InstanceKlass* ik = m->method_holder();
+      const constantPoolHandle cp(Thread::current(), ik->constants());
+
+      // invokedynamic or invokehandle
+
+      methodHandle caller(Thread::current(), m);
+      int bci = parse_int("bci");
+      if (m->validate_bci(bci) != bci) {
+        report_error("bad bci");
+        return NULL;
+      }
+
+      ik->link_class(CHECK_NULL);
+
+      Bytecode_invoke bytecode(caller, bci);
+      int index = bytecode.index();
+
+      ConstantPoolCacheEntry* cp_cache_entry = NULL;
+      CallInfo callInfo;
+      Bytecodes::Code bc = bytecode.invoke_code();
+      LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_NULL);
+      if (bytecode.is_invokedynamic()) {
+        cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
+        cp_cache_entry->set_dynamic_call(cp, callInfo);
+      } else if (bytecode.is_invokehandle()) {
+#ifdef ASSERT
+        Klass* holder = cp->klass_ref_at(index, CHECK_NULL);
+        Symbol* name = cp->name_ref_at(index);
+        assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");
+#endif
+        cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
+        cp_cache_entry->set_method_handle(cp, callInfo);
+      } else {
+        report_error("no dynamic invoke found");
+        return NULL;
+      }
+      char* dyno_ref = parse_string();
+      if (strcmp(dyno_ref, "<appendix>") == 0) {
+        obj = cp_cache_entry->appendix_if_resolved(cp);
+      } else if (strcmp(dyno_ref, "<adapter>") == 0) {
+        if (!parse_terminator()) {
+          report_error("no dynamic invoke found");
+          return NULL;
+        }
+        Method* adapter = cp_cache_entry->f1_as_method();
+        if (adapter == NULL) {
+          report_error("no adapter found");
+          return NULL;
+        }
+        return adapter->method_holder();
+      } else if (strcmp(dyno_ref, "<bsm>") == 0) {
+        int pool_index = cp_cache_entry->constant_pool_index();
+        BootstrapInfo bootstrap_specifier(cp, pool_index, index);
+        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
+      } else {
+        report_error("unrecognized token");
+        return NULL;
+      }
+    } else {
+      // constant pool ref (MethodHandle)
+      if (strcmp(ref, "cpi") != 0) {
+        report_error("unexpected token");
+        return NULL;
+      }
+
+      Klass* k = parse_klass(CHECK_NULL);
+      if (k == NULL) {
+        return NULL;
+      }
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      const constantPoolHandle cp(Thread::current(), ik->constants());
+
+      int cpi = parse_int("cpi");
+
+      if (cpi >= cp->length()) {
+        report_error("bad cpi");
+        return NULL;
+      }
+      if (!cp->tag_at(cpi).is_method_handle()) {
+        report_error("no method handle found at cpi");
+        return NULL;
+      }
+      {
+        bool found_it;
+        obj = cp->find_cached_constant_at(cpi, found_it, thread);
+      }
+    }
+    Klass* k = NULL;
+    if (obj != NULL) {
+      skip_ws();
+      // loop: read fields
+      char* field = NULL;
+      do {
+        field = parse_string();
+        if (field == NULL) {
+          report_error("no field found");
+          return NULL;
+        }
+        if (strcmp(field, ";") == 0) {
+          break;
+        }
+        // raw Method*
+        if (strcmp(field, "<vmtarget>") == 0) {
+          Method* vmtarget = java_lang_invoke_MemberName::vmtarget(obj);
+          k = (vmtarget == NULL) ? NULL : vmtarget->method_holder();
+          if (k == NULL) {
+            report_error("null vmtarget found");
+            return NULL;
+          }
+          if (!parse_terminator()) {
+            report_error("missing terminator");
+            return NULL;
+          }
+          return k;
+        }
+        obj = ciReplay::obj_field(obj, field);
+        // array
+        if (obj != NULL && obj->is_objArray()) {
+          objArrayOop arr = (objArrayOop)obj;
+          int index = parse_int("index");
+          if (index >= arr->length()) {
+            report_error("bad array index");
+            return NULL;
+          }
+          obj = arr->obj_at(index);
+        }
+      } while (obj != NULL);
+      if (obj == NULL) {
+        report_error("null field found");
+        return NULL;
+      }
+      k = obj->klass();
+    }
+    return k;
+  }
+
   // Parse a valid klass name and look it up
+  // syntax: <name>
+  // syntax: <constant pool ref>
   Klass* parse_klass(TRAPS) {
-    const char* str = parse_escaped_string();
+    skip_ws();
+    // check for constant pool object reference (for a dynamic/hidden class)
+    bool cp_ref = (*_bufptr == '@');
+    if (cp_ref) {
+      ++_bufptr;
+      Klass* k = parse_cp_ref(CHECK_NULL);
+      if (k != NULL && !k->is_hidden()) {
+        report_error("expected hidden class");
+        return NULL;
+      }
+      return k;
+    }
+    char* str = parse_escaped_string();
     Symbol* klass_name = SymbolTable::new_symbol(str);
     if (klass_name != NULL) {
       Klass* k = NULL;
@@ -389,8 +564,8 @@ class CompileReplay : public StackObj {
       report_error("Can't find holder klass");
       return NULL;
     }
-    Symbol* method_name = parse_symbol(CHECK_NULL);
-    Symbol* method_signature = parse_symbol(CHECK_NULL);
+    Symbol* method_name = parse_symbol();
+    Symbol* method_signature = parse_symbol();
     Method* m = k->find_method(method_name, method_signature);
     if (m == NULL) {
       report_error("Can't find method");
@@ -679,12 +854,26 @@ class CompileReplay : public StackObj {
   }
 
   // instanceKlass <name>
+  // instanceKlass <constant pool ref> # <original hidden class name>
   //
   // Loads and initializes the klass 'name'.  This can be used to
   // create particular class loading environments
   void process_instanceKlass(TRAPS) {
     // just load the referenced class
     Klass* k = parse_klass(CHECK);
+    if (k == NULL) {
+      return;
+    }
+    const char* comment = parse_string();
+    bool is_comment = comment != NULL && strcmp(comment, "#") == 0;
+    if (k->is_hidden() != is_comment) {
+      report_error("hidden class with comment expected");
+      return;
+    }
+    if (is_comment && Verbose) {
+      const char* hidden = parse_string();
+      tty->print_cr("Found %s for %s", k->name()->as_quoted_ascii(), hidden);
+    }
   }
 
   // ciInstanceKlass <name> <is_linked> <is_initialized> <length> tag*
@@ -1279,3 +1468,40 @@ bool ciReplay::is_loaded(Method* method) {
   return rec != NULL;
 }
 #endif // PRODUCT
+
+oop ciReplay::obj_field(oop obj, Symbol* name) {
+  InstanceKlass* ik = InstanceKlass::cast(obj->klass());
+
+  do {
+    if (!ik->has_nonstatic_fields()) {
+      ik = ik->java_super();
+      continue;
+    }
+
+    for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
+      if (fs.access_flags().is_static()) {
+        continue;
+      }
+      if (fs.name() == name) {
+        int offset = fs.offset();
+#ifdef ASSERT
+        fieldDescriptor fd = fs.field_descriptor();
+        assert(fd.offset() == ik->field_offset(fd.index()), "!");
+#endif
+        oop f = obj->obj_field(offset);
+        return f;
+      }
+    }
+
+    ik = ik->java_super();
+  } while (ik != NULL);
+  return NULL;
+}
+
+oop ciReplay::obj_field(oop obj, const char *name) {
+  Symbol* fname = SymbolTable::probe(name, (int)strlen(name));
+  if (fname == NULL) {
+    return NULL;
+  }
+  return obj_field(obj, fname);
+}

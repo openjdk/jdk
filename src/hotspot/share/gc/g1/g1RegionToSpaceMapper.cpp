@@ -167,7 +167,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                        MEMFLAGS type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _regions_per_page((page_size * commit_factor) / alloc_granularity),
-    _lock(Mutex::leaf, "G1 mapper lock", Mutex::_safepoint_check_never) {
+    _lock(Mutex::service-3, "G1Mapper_lock", Mutex::_safepoint_check_never) {
 
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
   }

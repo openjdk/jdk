@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,10 +147,6 @@ static void (*fp_gtk_paint_arrow)(GtkStyle* style, GdkWindow* window,
         GdkRectangle* area, GtkWidget* widget, const gchar* detail,
         GtkArrowType arrow_type, gboolean fill, gint x, gint y,
         gint width, gint height);
-static void (*fp_gtk_paint_diamond)(GtkStyle* style, GdkWindow* window,
-        GtkStateType state_type, GtkShadowType shadow_type,
-        GdkRectangle* area, GtkWidget* widget, const gchar* detail,
-        gint x, gint y, gint width, gint height);
 static void (*fp_gtk_paint_box)(GtkStyle* style, GdkWindow* window,
         GtkStateType state_type, GtkShadowType shadow_type,
         GdkRectangle* area, GtkWidget* widget, const gchar* detail,
@@ -595,7 +591,6 @@ GtkApi* gtk2_load(JNIEnv *env, const char* lib_name)
         fp_gtk_paint_vline = dl_symbol("gtk_paint_vline");
         fp_gtk_paint_shadow = dl_symbol("gtk_paint_shadow");
         fp_gtk_paint_arrow = dl_symbol("gtk_paint_arrow");
-        fp_gtk_paint_diamond = dl_symbol("gtk_paint_diamond");
         fp_gtk_paint_box = dl_symbol("gtk_paint_box");
         fp_gtk_paint_flat_box = dl_symbol("gtk_paint_flat_box");
         fp_gtk_paint_check = dl_symbol("gtk_paint_check");
@@ -1846,19 +1841,6 @@ static void gtk2_paint_check(WidgetType widget_type, gint synth_state,
             shadow_type, NULL, gtk2_widget, detail,
             x, y, width, height);
     (*fp_gtk_paint_check)(gtk2_widget->style, gtk2_black_pixmap, state_type,
-            shadow_type, NULL, gtk2_widget, detail,
-            x, y, width, height);
-}
-
-static void gtk2_paint_diamond(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height)
-{
-    gtk2_widget = gtk2_get_widget(widget_type);
-    (*fp_gtk_paint_diamond)(gtk2_widget->style, gtk2_white_pixmap, state_type,
-            shadow_type, NULL, gtk2_widget, detail,
-            x, y, width, height);
-    (*fp_gtk_paint_diamond)(gtk2_widget->style, gtk2_black_pixmap, state_type,
             shadow_type, NULL, gtk2_widget, detail,
             x, y, width, height);
 }

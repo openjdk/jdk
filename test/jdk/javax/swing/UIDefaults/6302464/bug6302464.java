@@ -119,7 +119,7 @@ public class bug6302464 {
         setMetalLookAndFeel();
 
         boolean isMacOSX14 = false;
-        boolean isMacOSXBigSur = false;
+        boolean isMacOSXBigSurOrAbove = false;
         if (System.getProperty("os.name").contains("OS X")) {
             String version = System.getProperty("os.version", "");
             if (version.startsWith("10.")) {
@@ -133,11 +133,17 @@ public class bug6302464 {
                     isMacOSX14 = (v >= 14);
                 } catch (NumberFormatException e) {
                 }
-            } else if (version.startsWith("11.")) {
-                isMacOSXBigSur = true;
+            } else {
+                String majorVersion = version.substring(0, version.indexOf("."));
+                System.out.println(majorVersion);
+                try {
+                    int ver = Integer.parseInt(majorVersion);
+                    isMacOSXBigSurOrAbove = (ver >= 11);
+                } catch (NumberFormatException e){
+                }
             }
         }
-        if (!isMacOSX14 && !isMacOSXBigSur) {
+        if (!isMacOSX14 && !isMacOSXBigSurOrAbove) {
             HashSet colorsAAOff = getAntialiasedColors(VALUE_TEXT_ANTIALIAS_OFF, 100);
 
             if (colorsAAOff.size() > 2) {
