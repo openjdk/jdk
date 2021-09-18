@@ -5882,8 +5882,8 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
         BoundMethodHandle result = target.rebind();
         LambdaForm lform = result.editor().collectReturnValueForm(filterType.basicType());
         MethodType newType = targetType.changeReturnType(filterType.returnType());
-        if (filterType.parameterList().size() > 1) {
-            for (int i = 0 ; i < filterType.parameterList().size() - 1 ; i++) {
+        if (filterType.parameterCount() > 1) {
+            for (int i = 0 ; i < filterType.parameterCount() - 1 ; i++) {
                 newType = newType.appendParameterTypes(filterType.parameterType(i));
             }
         }
@@ -6735,7 +6735,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                         filter(t -> t.parameterCount() > skipSize).
                         map(MethodType::parameterList).
                         reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
-        return longest.size() == 0 ? empty : longest.subList(skipSize, longest.size());
+        return longest.isEmpty() ? empty : longest.subList(skipSize, longest.size());
     }
 
     private static List<Class<?>> longestParameterList(List<List<Class<?>>> lists) {
@@ -7019,7 +7019,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         List<Class<?>> outerList = innerList;
         if (returnType == void.class) {
             // OK
-        } else if (innerList.size() == 0 || innerList.get(0) != returnType) {
+        } else if (innerList.isEmpty() || innerList.get(0) != returnType) {
             // leading V argument missing => error
             MethodType expected = bodyType.insertParameterTypes(0, returnType);
             throw misMatchedTypes("body function", bodyType, expected);
@@ -7349,7 +7349,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         List<Class<?>> innerList = bodyType.parameterList();
         // strip leading V value if present
         int vsize = (returnType == void.class ? 0 : 1);
-        if (vsize != 0 && (innerList.size() == 0 || innerList.get(0) != returnType)) {
+        if (vsize != 0 && (innerList.isEmpty() || innerList.get(0) != returnType)) {
             // argument list has no "V" => error
             MethodType expected = bodyType.insertParameterTypes(0, returnType);
             throw misMatchedTypes("body function", bodyType, expected);
@@ -7573,7 +7573,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         List<Class<?>> internalParamList = bodyType.parameterList();
         // strip leading V value if present
         int vsize = (returnType == void.class ? 0 : 1);
-        if (vsize != 0 && (internalParamList.size() == 0 || internalParamList.get(0) != returnType)) {
+        if (vsize != 0 && (internalParamList.isEmpty() || internalParamList.get(0) != returnType)) {
             // argument list has no "V" => error
             MethodType expected = bodyType.insertParameterTypes(0, returnType);
             throw misMatchedTypes("body function", bodyType, expected);
