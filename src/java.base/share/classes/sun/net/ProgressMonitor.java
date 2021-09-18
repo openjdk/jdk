@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.net;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.net.URL;
 
 /**
@@ -70,7 +69,7 @@ public class ProgressMonitor
             synchronized(progressSourceList)    {
                 for (ProgressSource pi : progressSourceList) {
                     // Clone ProgressSource and add to snapshot
-                    snapshot.add((ProgressSource)pi.clone());
+                    snapshot.add((ProgressSource) pi.clone());
                 }
             }
         }
@@ -215,10 +214,10 @@ public class ProgressMonitor
     private static ProgressMonitor pm = new ProgressMonitor();
 
     // ArrayList for outstanding progress sources
-    private ArrayList<ProgressSource> progressSourceList = new ArrayList<ProgressSource>();
+    private final ArrayList<ProgressSource> progressSourceList = new ArrayList<ProgressSource>();
 
     // ArrayList for progress listeners
-    private ArrayList<ProgressListener> progressListenerList = new ArrayList<ProgressListener>();
+    private final ArrayList<ProgressListener> progressListenerList = new ArrayList<ProgressListener>();
 }
 
 
