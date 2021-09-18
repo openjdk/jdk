@@ -843,8 +843,8 @@ public class Properties extends Hashtable<Object,Object> {
      * The output stream remains open after this method returns.
      *
      * @implSpec The keys and elements are written in the natural sort order
-     * of the keys in the {@code Properties.entrySet()} unless {@code entrySet()}
-     * is overridden by a subclass to return a different set implementation.
+     * of the keys in the {@code entrySet()} unless {@code entrySet()} is
+     * overridden by a subclass to return a different value than {@code super.entrySet()}.
      *
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
