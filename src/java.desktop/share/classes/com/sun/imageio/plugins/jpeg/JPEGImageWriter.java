@@ -1382,9 +1382,7 @@ public class JPEGImageWriter extends ImageWriter {
         List<SOSMarkerSegment> segments = new ArrayList<>();
         int SCAN_SIZE = 9;
         int MAX_COMPS_PER_SCAN = 4;
-        for (Iterator<MarkerSegment> iter = metadata.markerSequence.iterator();
-             iter.hasNext();) {
-            MarkerSegment seg = iter.next();
+        for (MarkerSegment seg : metadata.markerSequence) {
             if (seg instanceof SOSMarkerSegment) {
                 segments.add((SOSMarkerSegment) seg);
             }

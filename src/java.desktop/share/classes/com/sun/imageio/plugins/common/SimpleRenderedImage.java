@@ -285,8 +285,8 @@ public abstract class SimpleRenderedImage implements RenderedImage {
         // Copy the strings from the Vector over to a String array.
         String[] prefixNames = new String[names.size()];
         int count = 0;
-        for (Iterator<String> it = names.iterator(); it.hasNext(); ) {
-            prefixNames[count++] = it.next();
+        for (String name : names) {
+            prefixNames[count++] = name;
         }
 
         return prefixNames;

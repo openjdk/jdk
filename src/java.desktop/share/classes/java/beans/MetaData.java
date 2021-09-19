@@ -521,8 +521,8 @@ static class java_util_Collection_PersistenceDelegate extends DefaultPersistence
         if (newO.size() != 0) {
             invokeStatement(oldInstance, "clear", new Object[]{}, out);
         }
-        for (Iterator<?> i = oldO.iterator(); i.hasNext();) {
-            invokeStatement(oldInstance, "add", new Object[]{i.next()}, out);
+        for (Object o : oldO) {
+            invokeStatement(oldInstance, "add", new Object[]{o}, out);
         }
     }
 }
