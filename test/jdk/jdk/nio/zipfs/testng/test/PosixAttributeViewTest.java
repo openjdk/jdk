@@ -23,6 +23,7 @@
  */
 package test;
 
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -48,12 +49,25 @@ public class PosixAttributeViewTest extends ZipFsBaseTest {
     public static final String ZIP_ENTRY = "Entry-0";
     private static final Path ZIP_FILE = Path.of("posixTest.zip");
 
+    /**
+     * Create initial Zip File
+     * @throws IOException if an error occurs
+     */
     @BeforeTest
     public void setup() throws IOException {
         Files.deleteIfExists(ZIP_FILE);
         Entry e0 = Entry.of(ZIP_ENTRY, ZipEntry.DEFLATED,
                 "Tennis Anyone");
         zip(ZIP_FILE, Map.of("create", "true"), e0);
+    }
+
+    /**
+     * Remove Zip File used by Test
+     * @throws IOException if an error occurs
+     */
+    @AfterTest
+    public void cleanup() throws IOException {
+        Files.deleteIfExists(ZIP_FILE);
     }
 
     /**
