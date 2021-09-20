@@ -41,7 +41,7 @@ import java.util.zip.ZipEntry;
 /**
  * @test
  * @bug 8273935
- * @summary Validate that Files.getFileAttributeView will not throw
+ * @summary Validate that Files.getFileAttributeView will not throw an
  * Exception when the attribute view PosixFileAttributeView is not available
  */
 public class PosixAttributeViewTest extends ZipFsBaseTest {
