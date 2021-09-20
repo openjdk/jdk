@@ -2421,6 +2421,14 @@ public class ObjectInputStream
                          * thrown a new CNFException of its own.
                          */
                         handles.markException(passHandle, ex);
+                    } catch (IOException ioe) {
+                        if (ioe.getCause() instanceof ClassNotFoundException cnfe) {
+                            // Work around for wrapped CNFE in GetField.get(String, Object);
+                            // As above, mark CNFE and propagate to dependencies
+                            handles.markException(passHandle, cnfe);
+                        } else {
+                            throw ioe;
+                        }
                     } finally {
                         do {
                             try {
@@ -2645,13 +2653,17 @@ public class ObjectInputStream
             return (off >= 0) ? Bits.getDouble(primValues, off) : val;
         }
 
-        public Object get(String name, Object val) {
+        public Object get(String name, Object val) throws IOException {
             int off = getFieldOffset(name, Object.class);
             if (off >= 0) {
                 int objHandle = objHandles[off];
                 handles.markDependency(passHandle, objHandle);
-                return (handles.lookupException(objHandle) == null) ?
-                    objValues[off] : null;
+                ClassNotFoundException ex = handles.lookupException(objHandle);
+                if (ex != null) {
+                    // Wrap the exception so it can be handled in GetField.get(String, Object)
+                    throw new IOException(ex);
+                }
+                return objValues[off];
             } else {
                 return val;
             }
