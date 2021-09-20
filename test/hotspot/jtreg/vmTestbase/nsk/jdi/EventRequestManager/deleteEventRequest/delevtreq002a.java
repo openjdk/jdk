@@ -138,20 +138,17 @@ public class delevtreq002a {
 
 class Thread1delevtreq002a extends JDITask {
 
-    String tName = null;
-
     public Thread1delevtreq002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        delevtreq002a.log1("  'run': enter  :: threadName == " + tName);
+        delevtreq002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(delevtreq002a.waitnotifyObj) {
             delevtreq002a.waitnotifyObj.notify();
         }
         synchronized(delevtreq002a.lockObj1) {
-            delevtreq002a.log1("  'run': exit   :: threadName == " + tName);
+            delevtreq002a.log1("  'run': exit   :: threadName == " + getName());
         }
         return;
     }

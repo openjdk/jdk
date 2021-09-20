@@ -166,12 +166,10 @@ class TestClass11 extends TestClass10{
 
 class Thread1filter_rt001a extends JDITask {
 
-    private String tName = null;
     private ThreadState threadState = null;
 
     public Thread1filter_rt001a(String threadName, ThreadState threadState) {
         super(threadName);
-        tName = threadName;
         this.threadState = threadState;
     }
 
@@ -180,10 +178,10 @@ class Thread1filter_rt001a extends JDITask {
     }
 
     public void run() {
-        filter_rt001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt001a.log1("  'run': enter  :: threadName == " + getName());
         threadState.setAndWait(filter_rt001a.STATE_THREAD_STARTED, filter_rt001a.STATE_JDI_INITED);
         TestClass11.m11();
-        filter_rt001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
@@ -201,13 +199,11 @@ class TestClass21 extends TestClass20{
 }
 
 class Thread2filter_rt001a extends JDITask {
-
-    private String tName = null;
+;
     private ThreadState threadState = null;
 
     public Thread2filter_rt001a(String threadName, ThreadState threadState) {
         super(threadName);
-        tName = threadName;
         this.threadState = threadState;
     }
 
@@ -216,10 +212,10 @@ class Thread2filter_rt001a extends JDITask {
     }
 
     public void run() {
-        filter_rt001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt001a.log1("  'run': enter  :: threadName == " + getName());
         threadState.setAndWait(filter_rt001a.STATE_THREAD_STARTED, filter_rt001a.STATE_JDI_INITED);
         TestClass21.m21();
-        filter_rt001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

@@ -139,20 +139,17 @@ public class stepreq002a {
 
 class Thread1stepreq002a extends JDITask {
 
-    String tName = null;
-
     public Thread1stepreq002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        stepreq002a.log1("  'run': enter  :: threadName == " + tName);
+        stepreq002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(stepreq002a.waitnotifyObj) {
             stepreq002a.waitnotifyObj.notify();
         }
         synchronized(stepreq002a.lockObj1) {
-            stepreq002a.log1("  'run': exit   :: threadName == " + tName);
+            stepreq002a.log1("  'run': exit   :: threadName == " + getName());
         }
         return;
     }

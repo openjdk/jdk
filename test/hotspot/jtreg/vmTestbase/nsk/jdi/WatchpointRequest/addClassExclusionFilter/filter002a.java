@@ -176,21 +176,18 @@ public class filter002a {
 
     static class Thread2filter002a extends JDITask {
 
-        String tName = null;
-
         public Thread2filter002a(String threadName) {
             super(threadName);
-            tName = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             synchronized (waitnotifyObj) {
                 waitnotifyObj.notify();
             }
             obj20.method();
             obj21.method();
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }

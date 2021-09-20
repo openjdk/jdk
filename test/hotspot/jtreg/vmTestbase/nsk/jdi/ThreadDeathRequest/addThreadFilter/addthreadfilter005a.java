@@ -154,12 +154,10 @@ public class addthreadfilter005a {
 
     static class Threadaddthreadfilter005a extends JDITask {
 
-        String tName = null;
         int tNumber;
 
         public Threadaddthreadfilter005a(String threadName) {
             super(threadName);
-            tName = threadName;
             tNumber = number;
             number++;
             lockingObj[tNumber] = threadName;

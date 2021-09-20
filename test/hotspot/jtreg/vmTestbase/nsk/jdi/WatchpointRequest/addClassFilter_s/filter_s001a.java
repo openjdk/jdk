@@ -220,21 +220,18 @@ class TestClass20 {
 
 class Thread2filter_s001a extends JDITask {
 
-    String tName = null;
-
     public Thread2filter_s001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized (filter_s001a.waitnotifyObj) {
             filter_s001a.waitnotifyObj.notify();
         }
             TestClass20.method();
             TestClass21.method();
-        filter_s001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 

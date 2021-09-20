@@ -172,12 +172,10 @@ class filter_rt003aTestClass11 extends filter_rt003aTestClass10{
 
 class Thread1filter_rt003a extends JDITask {
 
-    private String tName = null;
     private ThreadState threadState = null;
 
     public Thread1filter_rt003a(String threadName, ThreadState threadState) {
         super(threadName);
-        tName = threadName;
         this.threadState = threadState;
     }
 
@@ -186,10 +184,10 @@ class Thread1filter_rt003a extends JDITask {
     }
 
     public void run() {
-        filter_rt003a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt003a.log1("  'run': enter  :: threadName == " + getName());
         threadState.setAndWait(filter_rt001a.STATE_THREAD_STARTED, filter_rt001a.STATE_JDI_INITED);
         filter_rt003aTestClass11.m11();
-        filter_rt003a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt003a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

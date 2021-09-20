@@ -251,19 +251,16 @@ public class request001a {
 
     static class Thread3request001a extends JDITask {
 
-        String tName = null;
-
         public Thread3request001a(String threadName) {
             super(threadName);
-            tName = threadName;
         }
 
         public void run() {
-            log3("  'run': enter  :: threadName == " + tName);
+            log3("  'run': enter  :: threadName == " + getName());
             synchronized (waitnotifyObj) {
                     waitnotifyObj.notify();
             }
-            log3("  'run': exit   :: threadName == " + tName);
+            log3("  'run': exit   :: threadName == " + getName());
         }
     }
 

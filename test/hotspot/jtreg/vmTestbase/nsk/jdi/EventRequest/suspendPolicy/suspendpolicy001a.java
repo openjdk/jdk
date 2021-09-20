@@ -204,22 +204,19 @@ class TestClass11 extends TestClass10{
 
 class Thread1suspendpolicy001a extends JDITask {
 
-    String tName = null;
-
     public Thread1suspendpolicy001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        suspendpolicy001a.log1("  'run': enter  :: threadName == " + tName);
+        suspendpolicy001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(suspendpolicy001a.waitnotifyObj) {
             suspendpolicy001a.waitnotifyObj.notify();
         }
         synchronized(suspendpolicy001a.lockObj) {
             TestClass11.method11();
         }
-        suspendpolicy001a.log1("  'run': exit   :: threadName == " + tName);
+        suspendpolicy001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
