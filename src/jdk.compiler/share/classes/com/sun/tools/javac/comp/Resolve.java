@@ -4787,11 +4787,7 @@ public class Resolve {
                     DiagnosticPosition preferredPos, DiagnosticSource preferredSource,
                     DiagnosticType preferredKind, JCDiagnostic d) {
                 JCDiagnostic cause = (JCDiagnostic)d.getArgs()[causeIndex];
-                DiagnosticPosition pos = d.getDiagnosticPosition();
-                if (pos == null) {
-                    pos = preferredPos;
-                }
-                return diags.create(preferredKind, preferredSource, pos,
+                return diags.create(preferredKind, preferredSource, preferredPos,
                         "prob.found.req", cause);
             }
         }
