@@ -42,6 +42,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.inline.hpp"
@@ -1312,6 +1313,38 @@ int VMError::prepare_log_file(const char* pattern, const char* default_pattern, 
   return fd;
 }
 
+// Attempt to set the state to Native in VMError.
+// By setting it to Native, it allows os::fork_and_exec to execute cmd such as jcmd %p.
+// Otherwise, it may end up with a deadlock when cmd tries to synchronize all Java threads
+// at safepoints.
+class VMErrorThreadToNativeFromVM : public StackObj {
+ private:
+   JavaThread* _thread;
+
+ public:
+  VMErrorThreadToNativeFromVM(Thread* t) : _thread(nullptr) {
+    if (t != nullptr && t->is_Java_thread() &&
+        !Threads_lock->owned_by_self()) { // VMError::controlled_crash() grabs Threads_lock.
+      _thread = JavaThread::cast(t);
+      assert(_thread == Thread::current(), "must be current thread");
+      assert(_thread->thread_state() == _thread_in_vm, "must be in VM");
+    }
+
+    if (_thread != nullptr) {
+      assert(!_thread->owns_locks(), "must release all locks when leaving VM");
+      ThreadStateTransition::transition_from_vm(_thread, _thread_in_native);
+    }
+  }
+
+  ~VMErrorThreadToNativeFromVM() {
+    if (_thread != nullptr) {
+      ThreadStateTransition::transition_from_native(_thread, _thread_in_vm);
+      assert(!_thread->is_pending_jni_exception_check(), "Pending JNI Exception Check");
+      // We don't need to clear_walkable because it will happen automagically when we return to java
+    }
+  }
+};
+
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
                              void* context, const char* detail_fmt, ...)
 {
@@ -1627,6 +1660,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       out.print_raw   (cmd);
       out.print_raw_cr("\" ...");
 
+      VMErrorThreadToNativeFromVM ttnfv(JavaThread::current_or_null());
       if (os::fork_and_exec(cmd) < 0) {
         out.print_cr("os::fork_and_exec failed: %s (%s=%d)",
                      os::strerror(errno), os::errno_name(errno), errno);
