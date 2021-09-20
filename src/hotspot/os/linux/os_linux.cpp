@@ -308,19 +308,6 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
   return true;
 }
 
-// Return true if user is running as root.
-
-bool os::have_special_privileges() {
-  static bool init = false;
-  static bool privileges = false;
-  if (!init) {
-    privileges = (getuid() != geteuid()) || (getgid() != getegid());
-    init = true;
-  }
-  return privileges;
-}
-
-
 #ifndef SYS_gettid
 // i386: 224, ia64: 1105, amd64: 186, sparc: 143
   #ifdef __ia64__
