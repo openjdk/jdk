@@ -327,12 +327,32 @@ public final class FileServerHandler implements HttpHandler {
         return fileTime.toInstant().atZone(ZoneId.of("GMT")).format(HTTP_DATE_FORMATTER);
     }
 
+    // Checks if this path's or any of its subpaths' files are hidden or symlinks.
     private static boolean isHiddenOrSymLink(Path path) {
         try {
-            return Files.isHidden(path) || Files.isSymbolicLink(path);
+            int segmentCount = path.getNameCount();
+            for (int i = 1; i <= segmentCount; i++) {
+                Path p = path.getRoot().resolve(path.subpath(0, i));
+                if (Files.isHidden(p) || Files.isSymbolicLink(p)) {
+                    return true;
+                }
+            }
+            return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    // Checks if this path's and any of its subpaths files are readable.
+    private static boolean isReadable(Path path) {
+        int segmentCount = path.getNameCount();
+        for (int i = 1; i <= segmentCount; i++) {
+            Path p = path.getRoot().resolve(path.subpath(0, i));
+            if (!Files.isReadable(p)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // Default for unknown content types, as per RFC 2046
@@ -371,7 +391,7 @@ public final class FileServerHandler implements HttpHandler {
                 exchange.setAttribute("request-path", path.toString());  // store for OutputFilter
                 if (!Files.exists(path) || isHiddenOrSymLink(path)) {
                     handleNotFound(exchange);
-                } else if (!Files.isReadable(path)) {
+                } else if (!isReadable(path)) {
                     handleForbidden(exchange);
                 } else if (exchange.getRequestMethod().equals("HEAD")) {
                     handleHEAD(exchange, path);

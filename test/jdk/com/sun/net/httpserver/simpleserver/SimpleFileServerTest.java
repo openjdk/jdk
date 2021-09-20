@@ -246,9 +246,9 @@ public class SimpleFileServerTest {
     }
 
     @Test
-    public void testForbiddenGET() throws Exception {
+    public void testForbiddenFileGET() throws Exception {
         if (!Platform.isWindows()) {  // not applicable on Windows
-            var root = Files.createDirectory(TEST_DIR.resolve("testForbidden"));
+            var root = Files.createDirectory(TEST_DIR.resolve("testForbiddenGET"));
             var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
 
             file.toFile().setReadable(false, false);
@@ -265,6 +265,32 @@ public class SimpleFileServerTest {
             } finally {
                 server.stop(0);
                 file.toFile().setReadable(true, false);
+            }
+        }
+    }
+
+    @Test
+    public void testForbiddenSegmentGET() throws Exception {
+        if (!Platform.isWindows()) {  // not applicable on Windows
+            var root = Files.createDirectory(TEST_DIR.resolve("testForbiddenSegmentGET"));
+            var dir = Files.createDirectory(root.resolve("dir"));
+            var file = Files.writeString(dir.resolve("aFile.txt"), "some text", CREATE);
+
+            dir.toFile().setReadable(false, false);
+            assert !Files.isReadable(dir);
+            assert Files.isReadable(file);
+
+            var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+            server.start();
+            try {
+                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+                var request = HttpRequest.newBuilder(uri(server, "dir/aFile.txt")).build();
+                var response = client.send(request, BodyHandlers.ofString());
+                assertEquals(response.statusCode(), 403);
+                assertEquals(response.headers().firstValue("content-length").get(), "0");
+            } finally {
+                server.stop(0);
+                dir.toFile().setReadable(true, false);
             }
         }
     }
@@ -366,6 +392,33 @@ public class SimpleFileServerTest {
     }
 
     @Test
+    public void testSymlinkElementGET() throws Exception {
+        var expectedBody = openHTML + """
+                <h1>File not found</h1>
+                <p>&#x2F;symlink&#x2F;aFile.txt</p>
+                """ + closeHTML;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+        var root = Files.createDirectory(TEST_DIR.resolve("testSymlinkElementGET"));
+        var symlink = root.resolve("symlink");
+        var target = Files.createDirectory(root.resolve("target"));
+        Files.writeString(target.resolve("aFile.txt"), "some text", CREATE);
+        Files.createSymbolicLink(symlink, target);
+
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "symlink/aFile.txt")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), expectedBody);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     public void testHiddenFileGET() throws Exception {
         var root = Files.createDirectory(TEST_DIR.resolve("testHiddenFileGET"));
         var file = createHiddenFile(root);
@@ -392,6 +445,32 @@ public class SimpleFileServerTest {
         }
     }
 
+    @Test
+    public void testHiddenSegmentGET() throws Exception {
+        var root = Files.createDirectory(TEST_DIR.resolve("testHiddenSegmentGET"));
+        var file = createFileInHiddenDirectory(root);
+        var expectedBody = openHTML + """
+                <h1>File not found</h1>
+                <p>&#x2F;.hiddenDirectory&#x2F;aFile.txt</p>
+                """ + closeHTML;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, ".hiddenDirectory/aFile.txt")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            System.out.println(response.body());
+
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), expectedBody);
+        } finally {
+            server.stop(0);
+        }
+    }
+
     private Path createHiddenFile(Path root) throws IOException {
         Path file;
         if (Platform.isWindows()) {
@@ -401,6 +480,21 @@ public class SimpleFileServerTest {
             file = Files.writeString(root.resolve(".aFile.txt"), "some text", CREATE);
         }
         assertTrue(Files.isHidden(file));
+        return file;
+    }
+
+    private Path createFileInHiddenDirectory(Path root) throws IOException {
+        Path dir;
+        Path file;
+        if (Platform.isWindows()) {
+            dir = Files.createDirectory(root.resolve("hiddenDirectory"));
+            Files.setAttribute(dir, "dos:hidden", true, LinkOption.NOFOLLOW_LINKS);
+        } else {
+            dir = Files.createDirectory(root.resolve(".hiddenDirectory"));
+        }
+        file = Files.writeString(dir.resolve("aFile.txt"), "some text", CREATE);
+        assertTrue(Files.isHidden(dir));
+        assertFalse(Files.isHidden(file));
         return file;
     }
 

@@ -29,6 +29,9 @@ grant codeBase "file:${test.classes}/../../../../../../test/lib/-" {
 grant codeBase "file:${test.classes}/*" {
     permission java.net.URLPermission "http://localhost:*/*", "GET";
 
+    // for all segments of the test directory path
+    permission java.io.FilePermission "<<ALL FILES>>", "read";
+
     // for test directory tree
     permission java.io.FilePermission "${user.dir}${/}SecurityManagerTest", "read,write,delete";
     permission java.io.FilePermission "${user.dir}${/}SecurityManagerTest/-", "read,write,delete";
