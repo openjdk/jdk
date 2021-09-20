@@ -601,7 +601,7 @@ public class Symtab {
         // For serialization lint checking; may be moved elsewhere
         objectStreamFieldType = enterClass("java.io.ObjectStreamField");
         objectInputStreamType = enterClass("java.io.ObjectInputStream");
-        objectOutputStreamType = enterClass("java.io.ObjecOutputStream");
+        objectOutputStreamType = enterClass("java.io.ObjectOutputStream");
         ioExceptionType = enterClass("java.io.IOException");
         objectStreamExceptionType = enterClass("java.io.ObjectStreamException");
         externalizableType = enterClass("java.io.Externalizable");
