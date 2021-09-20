@@ -43,13 +43,15 @@ public final class FontManagerFactory {
      */
     public static FontManager getInstance() {
 
-        if (instance == null) {
+        FontManager result = instance;
+        if (result == null) {
             synchronized (FontManagerFactory.class) {
-                if (instance == null) {
-                    instance = PlatformFontInfo.createFontManager();
+                result = instance;
+                if (result == null) {
+                    instance = result = PlatformFontInfo.createFontManager();
                 }
             }
         }
-        return instance;
+        return result;
     }
 }
