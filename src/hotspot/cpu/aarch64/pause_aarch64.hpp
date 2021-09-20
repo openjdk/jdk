@@ -35,13 +35,13 @@ enum PauseInst {
 class PauseImplDesc {
 private:
   PauseInst _inst;
-  unsigned int _count;
+  int _count;
 
 public:
   PauseImplDesc(PauseInst inst = NONE, unsigned int count = 0) : _inst(inst), _count(count) {}
 
   PauseInst inst() const { return _inst; }
-  unsigned int inst_count() const { return _count; }
+  int inst_count() const { return _count; }
 };
 
 #endif // CPU_AARCH64_PAUSE_AARCH64_HPP

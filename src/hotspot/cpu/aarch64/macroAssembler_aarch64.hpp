@@ -1415,4 +1415,7 @@ struct tableswitch {
   Label _branches;
 };
 
+#define EMIT_N_INST(n, inst) \
+  for (int i = 0; i < (n); ++i) __ inst()
+
 #endif // CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP

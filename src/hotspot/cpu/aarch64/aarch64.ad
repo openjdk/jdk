@@ -14354,46 +14354,37 @@ instruct onspinwait() %{
 
   format %{
     $$template
+    int inst_count = VM_Version::pause_impl_desc().inst_count();
+    #define PRINT_N_INST(inst) \
+      st->print("%s\t! membar_onspinwait\n", #inst); \
+      for (int i = 1; i < inst_count; ++i) st->print("\t%s\n", #inst);
     switch (VM_Version::pause_impl_desc().inst()) {
       case NOP:
-        $$emit$$"nop\t! membar_onspinwait\n"
-        for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
-          $$emit$$"\tnop\n"
-        }
+        PRINT_N_INST(nop)
         break;
       case ISB:
-        $$emit$$"isb\t! membar_onspinwait\n"
-        for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
-          $$emit$$"\tisb\n"
-        }
+        PRINT_N_INST(isb)
         break;
       case YIELD:
-        $$emit$$"yield\t! membar_onspinwait\n"
-        for (unsigned int i = 1; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
-          $$emit$$"\tyield\n"
-        }
+        PRINT_N_INST(yield)
         break;
       default:
         ShouldNotReachHere();
     }
+    #undef EMIT_N_ASM_STRINGS
   %}
 
   ins_encode %{
+    int inst_count = VM_Version::pause_impl_desc().inst_count();
     switch (VM_Version::pause_impl_desc().inst()) {
       case NOP:
-        for (unsigned int i = 0; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
-          __ nop();
-        }
+        EMIT_N_INST(inst_count, nop);
         break;
       case ISB:
-        for (unsigned int i = 0; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
-          __ isb();
-        }
+        EMIT_N_INST(inst_count, isb);
         break;
       case YIELD:
-        for (unsigned int i = 0; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
-          __ yield();
-        }
+        EMIT_N_INST(inst_count, yield);
         break;
       default:
         ShouldNotReachHere();
