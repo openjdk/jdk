@@ -52,8 +52,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
        oopstorage     = special        +   3,
        nosafepoint    = oopstorage     +   6,
        leaf           = nosafepoint    +   6,
-       safepoint      = leaf           +  10,
-       barrier        = safepoint      +   1,
+       barrier        = leaf           +  10,
        nonleaf        = barrier        +   1,
        max_nonleaf    = nonleaf        + 900
   };
