@@ -287,6 +287,7 @@ public:
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
+  void set_base_archive_path_offset();
   void set_base_archive_name_size(size_t s)      { _base_archive_name_size = s; }
   void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
   void set_header_size(size_t s)                 { _header_size = s; }
@@ -363,7 +364,7 @@ private:
 
 public:
   static bool get_base_archive_name_from_header(const char* archive_name,
-                                                int* size, char** base_archive_name);
+                                                char** base_archive_name);
   static bool check_archive(const char* archive_name, bool is_static);
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
@@ -398,6 +399,7 @@ public:
   int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
+  void   set_header_base_archive_path_offset()               { header()->set_base_archive_path_offset(); }
   void   set_header_base_archive_name_size(size_t size)      { header()->set_base_archive_name_size(size); }
   void   set_header_base_archive_is_default(bool is_default) { header()->set_base_archive_is_default(is_default); }
 

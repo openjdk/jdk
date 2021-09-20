@@ -245,7 +245,8 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment)
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
   _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
-  // the following 2 fields will be set in write_header for dynamic archive header
+  // the following 3 fields will be set in ArchiveBuilder::write_archive for dynamic archive header
+  _base_archive_path_offset = 0;
   _base_archive_name_size = 0;
   _base_archive_is_default = false;
 
@@ -285,6 +286,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
   st->print_cr("- base_archive_is_default:        %d", _base_archive_is_default);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
+  st->print_cr("- base_archive_path_offset:         " INT32_FORMAT, _base_archive_path_offset);
   st->print_cr("- base_archive_name_size:         " SIZE_FORMAT, _base_archive_name_size);
   st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_HEX, _shared_path_table_offset);
   st->print_cr("- shared_path_table_size:         %d", _shared_path_table_size);
@@ -1054,17 +1056,15 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
 }
 
 bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
-                                                    int* size, char** base_archive_name) {
+                                                    char** base_archive_name) {
   int fd = os::open(archive_name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
-    *size = 0;
     return false;
   }
-
   // read the header as a dynamic archive header
   size_t sz = sizeof(DynamicArchiveHeader);
   DynamicArchiveHeader* dynamic_header = (DynamicArchiveHeader*)os::malloc(sz, mtInternal);
-  size_t n = os::read(fd, dynamic_header, (unsigned int)sz);
+  size_t n = os::read(fd, (void*)dynamic_header, (unsigned int)sz);
   if (n != sz) {
     fail_continue("Unable to read the file header.");
     os::free(dynamic_header);
@@ -1073,7 +1073,6 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   }
   if (dynamic_header->magic() != CDS_DYNAMIC_ARCHIVE_MAGIC) {
     // Not a dynamic header, no need to proceed further.
-    *size = 0;
     os::free(dynamic_header);
     os::close(fd);
     return false;
@@ -2345,6 +2344,15 @@ bool FileMapHeader::validate() {
   }
 
   return true;
+}
+
+void FileMapHeader::set_base_archive_path_offset() {
+  if (_magic == CDS_ARCHIVE_MAGIC) {
+    _base_archive_path_offset = 0;
+  } else {
+    assert(_magic == CDS_DYNAMIC_ARCHIVE_MAGIC, "Must be dynamic archive");
+    _base_archive_path_offset = sizeof(DynamicArchiveHeader);
+  }
 }
 
 bool FileMapInfo::validate_header() {

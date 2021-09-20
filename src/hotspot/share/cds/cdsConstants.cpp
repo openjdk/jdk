@@ -31,15 +31,16 @@
 #include "utilities/globalDefinitions.hpp"
 
 CDSConst CDSConstants::offsets[] = {
-  { "CDSFileMapHeaderBase::_magic",           offset_of(CDSFileMapHeaderBase, _magic)           },
-  { "CDSFileMapHeaderBase::_crc",             offset_of(CDSFileMapHeaderBase, _crc)             },
-  { "CDSFileMapHeaderBase::_version",         offset_of(CDSFileMapHeaderBase, _version)         },
-  { "CDSFileMapHeaderBase::_space[0]",        offset_of(CDSFileMapHeaderBase, _space)           },
-  { "FileMapHeader::_jvm_ident",              offset_of(FileMapHeader, _jvm_ident)              },
-  { "FileMapHeader::_base_archive_name_size", offset_of(FileMapHeader, _base_archive_name_size) },
-  { "CDSFileMapRegion::_crc",                 offset_of(CDSFileMapRegion, _crc)                 },
-  { "CDSFileMapRegion::_used",                offset_of(CDSFileMapRegion, _used)                },
-  { "DynamicArchiveHeader::_base_region_crc", offset_of(DynamicArchiveHeader, _base_region_crc) }
+  { "CDSFileMapHeaderBase::_magic",                     offset_of(CDSFileMapHeaderBase, _magic)             },
+  { "CDSFileMapHeaderBase::_crc",                       offset_of(CDSFileMapHeaderBase, _crc)               },
+  { "CDSFileMapHeaderBase::_version",                   offset_of(CDSFileMapHeaderBase, _version)           },
+  { "CDSFileMapHeaderBase::_space[0]",                  offset_of(CDSFileMapHeaderBase, _space)             },
+  { "CDSFileMapHeaderBase::_base_archive_path_offset",  offset_of(FileMapHeader, _base_archive_path_offset) },
+  { "FileMapHeader::_jvm_ident",                        offset_of(FileMapHeader, _jvm_ident)                },
+  { "FileMapHeader::_base_archive_name_size",           offset_of(FileMapHeader, _base_archive_name_size)   },
+  { "CDSFileMapRegion::_crc",                           offset_of(CDSFileMapRegion, _crc)                   },
+  { "CDSFileMapRegion::_used",                          offset_of(CDSFileMapRegion, _used)                  },
+  { "DynamicArchiveHeader::_base_region_crc",           offset_of(DynamicArchiveHeader, _base_region_crc)   }
 };
 
 CDSConst CDSConstants::constants[] = {

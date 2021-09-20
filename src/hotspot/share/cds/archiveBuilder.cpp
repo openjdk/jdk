@@ -1129,6 +1129,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
 
   mapinfo->set_requested_base((char*)MetaspaceShared::requested_base_address());
   if (mapinfo->header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
+    mapinfo->set_header_base_archive_path_offset();
     mapinfo->set_header_base_archive_name_size(strlen(Arguments::GetSharedArchivePath()) + 1);
     mapinfo->set_header_base_archive_is_default(FLAG_IS_DEFAULT(SharedArchiveFile));
   }

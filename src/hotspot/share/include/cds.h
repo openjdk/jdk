@@ -64,6 +64,11 @@ struct CDSFileMapHeaderBase {
   unsigned int _magic;           // identify file type
   int          _crc;             // header crc checksum
   int          _version;         // must be CURRENT_CDS_ARCHIVE_VERSION
+  int _base_archive_path_offset; // This field is present with (_version >= 12). It's declaration
+                                 // must never be changed in any future versions of HotSpot.
+                                 // If this is a dynamic archive, (((char*)this) + _base_archive_path_offset)
+                                 // stores a 0-terminated string for the pathname of the base archive.
+                                 // If this is a static archive, this field is 0.
   struct CDSFileMapRegion _space[NUM_CDS_REGIONS];
 };
 

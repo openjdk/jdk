@@ -48,6 +48,7 @@ public class CDSArchiveUtils {
     // offsets
     public static int offsetMagic;                // CDSFileMapHeaderBase::_magic
     public static int offsetVersion;              // CDSFileMapHeaderBase::_version
+    public static int offsetBaseArchivePathOffset;// CDSFileMapHeaderBase::_base_archive_path_offset
     public static int offsetJvmIdent;             // FileMapHeader::_jvm_ident
     public static int offsetBaseArchiveNameSize;  // FileMapHeader::_base_archive_name_size
     public static int spOffsetCrc;                // CDSFileMapRegion::_crc
@@ -83,6 +84,7 @@ public class CDSArchiveUtils {
             offsetMagic = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_magic");
             offsetVersion = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_version");
             offsetJvmIdent = wb.getCDSOffsetForName("FileMapHeader::_jvm_ident");
+            offsetBaseArchivePathOffset = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_base_archive_path_offset");
             offsetBaseArchiveNameSize = wb.getCDSOffsetForName("FileMapHeader::_base_archive_name_size");
             spOffsetCrc = wb.getCDSOffsetForName("CDSFileMapRegion::_crc");
             spUsedOffset = wb.getCDSOffsetForName("CDSFileMapRegion::_used") - spOffsetCrc;
@@ -115,9 +117,14 @@ public class CDSArchiveUtils {
       if (magicValue == staticMagic) {
           return alignUpWithAlignment((long)staticArchiveHeaderSize);
       } else if (magicValue == dynamicMagic) {
-          // dynamic archive store base archive name after header, so we count it in header size.
-          int baseArchiveNameSize = (int)readInt(jsaFile, (long)offsetBaseArchiveNameSize, 4);
-          return alignUpWithAlignment((long)dynamicArchiveHeaderSize + baseArchiveNameSize);
+          // dynamic archive store base archive name at offsetBaseArchivePathOffset, the header size
+          // should be offsetBaseArchivePath + archive name length.
+          if (offsetBaseArchivePathOffset == 0) {
+              throw new RuntimeException("Dynamic archive without base archive");
+          }
+          int baseArchiveNameSize = (int)readInt(jsaFile, offsetBaseArchiveNameSize, 4);
+          long fileHeaderSize = alignUpWithAlignment((long)offsetBaseArchivePathOffset + baseArchiveNameSize);
+          return fileHeaderSize;
       } else {
           throw new RuntimeException("Wrong magic value from archive file: " + magicValue);
       }
