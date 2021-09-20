@@ -302,9 +302,7 @@ bool ClassLoaderData::try_claim(int claim) {
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
   if (has_class_mirror_holder()) {
-    if (!Arguments::is_dumping_archive()) {
-      assert(_keep_alive > 0, "Invalid keep alive increment count");
-    }
+    assert(_keep_alive > 0, "Invalid keep alive increment count");
     _keep_alive++;
   }
 }
