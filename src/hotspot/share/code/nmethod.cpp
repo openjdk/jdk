@@ -638,8 +638,9 @@ nmethod::nmethod(
     scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
-    _native_invokers_offset     = _dependencies_offset;
-    _handler_table_offset    = _native_invokers_offset;
+    _native_invokers_offset  = _dependencies_offset;
+    _implicit_excepts_offset = _native_invokers_offset;
+    _handler_table_offset    = _implicit_excepts_offset;
     _nul_chk_table_offset    = _handler_table_offset;
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;

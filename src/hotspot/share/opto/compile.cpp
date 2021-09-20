@@ -596,6 +596,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
                   _native_invokers(comp_arena(), 1, 0, NULL),
+                  _implicit_exceptions(comp_arena(), 1, 0, NULL),
                   _print_inlining_stream(NULL),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
@@ -4894,4 +4895,3 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
   }
   return result;
 }
-
