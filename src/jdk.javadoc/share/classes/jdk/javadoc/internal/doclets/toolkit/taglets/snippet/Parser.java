@@ -38,6 +38,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import jdk.javadoc.internal.doclets.toolkit.Resources;
+
 /*
  * Semantics of a EOL comment; plus
  * 1. This parser treats input as plain text. This may result in markup being
@@ -78,11 +80,18 @@ public final class Parser {
 
     private String eolMarker;
     private Matcher markedUpLine;
-    private final MarkupParser markupParser = new MarkupParser();
+
+    private final Resources resources;
+    private final MarkupParser markupParser;
 
     // Incomplete actions waiting for their complementary @end
     private final Regions regions = new Regions();
     private final Queue<Tag> tags = new LinkedList<>();
+
+    public Parser(Resources resources) {
+        this.resources = resources;
+        this.markupParser = new MarkupParser(resources);
+    }
 
     public Result parse(String source) throws ParseException {
         return parse("//", source);
@@ -143,7 +152,13 @@ public final class Parser {
                 line = rawLine + (addLineTerminator ? "\n" : "");
             } else {
                 String maybeMarkup = markedUpLine.group(3);
-                List<Tag> parsedTags = markupParser.parse(maybeMarkup);
+                List<Tag> parsedTags = null;
+                try {
+                    parsedTags = markupParser.parse(maybeMarkup);
+                } catch (ParseException e) {
+                    // adjust index
+                    throw new ParseException(e::getMessage, markedUpLine.start(3) + e.getPosition());
+                }
                 for (Tag t : parsedTags) {
                     t.lineSourceOffset = next.offset;
                     t.markupLineOffset = markedUpLine.start(3);
@@ -185,16 +200,9 @@ public final class Parser {
 
         if (!previousLineTags.isEmpty()) {
             Tag t = previousLineTags.iterator().next();
-            throw new ParseException("Tags refer to non-existent lines",
-                    t.markupLineOffset);
-        }
-
-        // also report on unpaired with corresponding `end` or unknown tags
-        if (!regions.isEmpty()) {
-            Optional<Tag> tag = regions.removeLast(); // any of these tags would do
-            Tag t = tag.get();
-            throw new ParseException("Unpaired region(s)",
-                    t.lineSourceOffset + t.markupLineOffset + t.nameLineOffset);
+            String message = resources.getText("doclet.snippet.markup.tag.non.existent.lines");
+            throw new ParseException(() -> message, t.lineSourceOffset
+                    + t.markupLineOffset + t.nameLineOffset);
         }
 
         for (var t : tags) {
@@ -206,23 +214,28 @@ public final class Parser {
             final var regex = attributes.get("regex", Attribute.Valued.class);
 
             if (!t.name().equals("start") && substring.isPresent() && regex.isPresent()) {
-                throw new ParseException("'substring' and 'regex' cannot be used simultaneously",
-                        t.lineSourceOffset + t.markupLineOffset + substring.get().nameStartPosition());
+                throw newParseException(t.lineSourceOffset + t.markupLineOffset
+                                + substring.get().nameStartPosition(),
+                        "doclet.snippet.markup.attribute.simultaneous.use",
+                        "substring", "regex");
             }
 
             switch (t.name()) {
                 case "link" -> {
                     var target = attributes.get("target", Attribute.Valued.class)
-                            .orElseThrow(() -> new ParseException("target is absent",
-                                    t.lineSourceOffset + t.markupLineOffset + t.nameLineOffset));
+                            .orElseThrow(() -> newParseException(t.lineSourceOffset
+                                    + t.markupLineOffset + t.nameLineOffset,
+                                    "doclet.snippet.markup.attribute.absent", "target"));
+                    // "type" is what HTML calls an enumerated attribute
                     var type = attributes.get("type", Attribute.Valued.class);
                     String typeValue = type.isPresent() ? type.get().value() : "link";
                     if (!typeValue.equals("link") && !typeValue.equals("linkplain")) {
-                        throw new ParseException("Unknown link type: '%s'".formatted(typeValue),
-                                t.lineSourceOffset + t.markupLineOffset + type.get().valueStartPosition());
+                        throw newParseException(t.lineSourceOffset + t.markupLineOffset
+                                + type.get().valueStartPosition(),
+                                "doclet.snippet.markup.attribute.value.invalid", typeValue);
                     }
                     AddStyle a = new AddStyle(new Style.Link(target.value()),
-                            // different regex not to include newline
+                            // the default regex is different so as not to include newline
                             createRegexPattern(substring, regex, ".+",
                                     t.lineSourceOffset + t.markupLineOffset),
                             text.subText(t.start(), t.end()));
@@ -230,8 +243,9 @@ public final class Parser {
                 }
                 case "replace" -> {
                     var replacement = attributes.get("replacement", Attribute.Valued.class)
-                            .orElseThrow(() -> new ParseException("replacement is absent",
-                                    t.lineSourceOffset + t.markupLineOffset + t.nameLineOffset));
+                            .orElseThrow(() -> newParseException(t.lineSourceOffset
+                                    + t.markupLineOffset + t.nameLineOffset,
+                                    "doclet.snippet.markup.attribute.absent", "replacement"));
                     Replace a = new Replace(replacement.value(),
                             createRegexPattern(substring, regex,
                                     t.lineSourceOffset + t.markupLineOffset),
@@ -251,23 +265,41 @@ public final class Parser {
                 }
                 case "start" -> {
                     var region = attributes.get("region", Attribute.Valued.class)
-                            .orElseThrow(() -> new ParseException("Unnamed start",
-                                    t.lineSourceOffset + t.markupLineOffset + t.nameLineOffset));
+                            .orElseThrow(() -> newParseException(t.lineSourceOffset
+                                    + t.markupLineOffset + t.nameLineOffset,
+                                    "doclet.snippet.markup.attribute.absent", "region"));
                     String regionValue = region.value();
                     if (regionValue.isBlank()) {
-                        throw new ParseException("Blank region name",
-                                t.lineSourceOffset + t.markupLineOffset + region.valueStartPosition());
+                        throw newParseException(t.lineSourceOffset + t.markupLineOffset
+                                + region.valueStartPosition(), "doclet.snippet.markup.attribute.value.invalid");
                     }
-                    if (t.attributes().size() != 1) {
-                        throw new ParseException("Unexpected attributes",
-                                t.lineSourceOffset + t.markupLineOffset + t.nameLineOffset);
+                    for (Attribute a : t.attributes) {
+                        if (!a.name().equals("region")) {
+                            throw newParseException(t.lineSourceOffset +
+                                            t.markupLineOffset + a.nameStartPosition(),
+                                    "doclet.snippet.markup.attribute.unexpected");
+                        }
                     }
                     actions.add(new Bookmark(region.value(), text.subText(t.start(), t.end() - 1)));
                 }
             }
         }
 
+        // also report on unpaired with corresponding `end` or unknown tags
+        if (!regions.isEmpty()) {
+            Optional<Tag> tag = regions.removeLast(); // any of these tags would do
+            Tag t = tag.get();
+            String message = resources.getText("doclet.snippet.markup.region.unpaired");
+            throw new ParseException(() -> message, t.lineSourceOffset
+                    + t.markupLineOffset + t.nameLineOffset);
+        }
+
         return new Result(text, actions);
+    }
+
+    private ParseException newParseException(int pos, String key, Object... args) {
+        String message = resources.getText(key, args);
+        return new ParseException(() -> message, pos);
     }
 
     private Pattern createRegexPattern(Optional<Attribute.Valued> substring,
@@ -305,7 +337,12 @@ public final class Parser {
                 if (e.getIndex() > -1 && value.equals(e.getPattern())) {
                     pos += e.getIndex();
                 }
-                throw new ParseException(e.getDescription(), pos);
+                // getLocalized cannot be used because it provides a localized
+                // version of getMessage(), which in the case of this particular
+                // exception is multi-line with the caret. If we used that,
+                // it would duplicate the information we're trying to provide.
+                String message = resources.getText("doclet.snippet.markup.regex.invalid");
+                throw new ParseException(() -> message, pos);
             }
         }
         return pattern;
@@ -322,8 +359,8 @@ public final class Parser {
                 if (region.get() instanceof Attribute.Valued v) {
                     String name = v.value();
                     if (!regions.addNamed(name, t)) {
-                        throw new ParseException("Duplicated region: " + name,
-                                t.lineSourceOffset + t.markupLineOffset + v.valueStartPosition());
+                        throw newParseException(t.lineSourceOffset + t.markupLineOffset
+                                + v.valueStartPosition(), "doclet.snippet.markup.region.duplicated", name);
                     }
                 } else {
                     // TODO: change to exhaustive switch after "Pattern Matching for switch" is implemented
@@ -335,8 +372,8 @@ public final class Parser {
             if (region.isEmpty() || region.get() instanceof Attribute.Valueless) {
                 Optional<Tag> tag = regions.removeLast();
                 if (tag.isEmpty()) {
-                    throw new ParseException("No started regions to end",
-                            t.lineSourceOffset + t.markupLineOffset + t.nameLineOffset);
+                    throw newParseException(t.lineSourceOffset + t.markupLineOffset
+                            + t.nameLineOffset, "doclet.snippet.markup.region.none");
                 }
                 completeTag(tag.get(), t);
             } else {
@@ -344,8 +381,8 @@ public final class Parser {
                 String name = ((Attribute.Valued) region.get()).value();
                 Optional<Tag> tag = regions.removeNamed(name);
                 if (tag.isEmpty()) {
-                    throw new ParseException("Ending a non-started region %s".formatted(name),
-                            t.lineSourceOffset + t.markupLineOffset + region.get().nameStartPosition());
+                    throw newParseException(t.lineSourceOffset + t.markupLineOffset
+                            + region.get().nameStartPosition(), "doclet.snippet.markup.region.unpaired", name);
                 }
                 completeTag(tag.get(), t);
             }

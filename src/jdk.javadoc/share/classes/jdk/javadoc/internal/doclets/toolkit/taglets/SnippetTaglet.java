@@ -47,6 +47,7 @@ import com.sun.source.doctree.TextTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Action;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Parser;
@@ -192,7 +193,7 @@ public class SnippetTaglet extends BaseTaglet {
 
         try {
             if (inlineContent != null) {
-                inlineSnippet = parse(inlineContent);
+                inlineSnippet = parse(writer.configuration().getDocResources(), inlineContent);
             }
         } catch (ParseException e) {
             var path = writer.configuration().utils.getCommentHelper(holder)
@@ -207,7 +208,7 @@ public class SnippetTaglet extends BaseTaglet {
 
         try {
             if (externalContent != null) {
-                externalSnippet = parse(externalContent);
+                externalSnippet = parse(writer.configuration().getDocResources(), externalContent);
             }
         } catch (ParseException e) {
             assert fileObject != null;
@@ -283,8 +284,8 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private StyledText parse(String content) throws ParseException {
-        Parser.Result result = new Parser().parse(content);
+    private StyledText parse(Resources resources, String content) throws ParseException {
+        Parser.Result result = new Parser(resources).parse(content);
         result.actions().forEach(Action::perform);
         return result.text();
     }

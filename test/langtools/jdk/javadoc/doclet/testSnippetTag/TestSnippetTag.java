@@ -2165,7 +2165,7 @@ public class TestSnippetTag extends JavadocTester {
 hello there //   @highlight   regex ="\t**"
 }""",
                              """
-error: snippet markup error: "Dangling meta character '*'"
+error: snippet markup: invalid regex
 hello there //   @highlight   regex ="\t**"
                                       \t ^
 """),
@@ -2174,7 +2174,7 @@ hello there //   @highlight   regex ="\t**"
 hello there //   @highlight   regex ="\\t**"
 }""",
                         """
-error: snippet markup error: "Dangling meta character '*'"
+error: snippet markup: invalid regex
 hello there //   @highlight   regex ="\\t**"
                                          ^
 """),
@@ -2183,7 +2183,7 @@ hello there //   @highlight   regex ="\\t**"
 hello there // @highlight regex="\\.\\*\\+\\E"
 }""",
                              """
-error: snippet markup error: "Illegal/unsupported escape sequence"
+error: snippet markup: invalid regex
 hello there // @highlight regex="\\.\\*\\+\\E"
                                  \s\s\s\s   ^
 """), // use \s to counteract shift introduced by \\ so as to visually align ^ right below E
@@ -2192,7 +2192,7 @@ hello there // @highlight regex="\\.\\*\\+\\E"
 hello there //   @highlight  type="italics" regex ="  ["
 }""",
                         """
-error: snippet markup error: "Unclosed character class"
+error: snippet markup: invalid regex
 hello there //   @highlight  type="italics" regex ="  ["
                                                       ^
 """)
@@ -2225,6 +2225,156 @@ hello there //   @highlight  type="italics" regex ="  ["
                 src.resolve("A.java").toString());
         checkExit(Exit.ERROR);
         checkOrder(Output.OUT, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
+        checkNoCrashes();
+    }
+
+    @Test
+    public void testErrorMessages(Path base) throws Exception {
+
+        record TestCase(String input, String expectedError) { }
+
+        final var testCases = List.of(
+                new TestCase("""
+{@snippet :
+    hello // @link
+}""",
+                             """
+error: snippet markup: missing attribute "target"
+    hello // @link
+              ^
+                             """),
+                new TestCase("""
+{@snippet :
+    hello // @start
+}""",
+                             """
+error: snippet markup: missing attribute "region"
+    hello // @start
+              ^
+                             """),
+                new TestCase("""
+{@snippet :
+    hello // @replace
+}""",
+                             """
+error: snippet markup: missing attribute "replacement"
+    hello // @replace
+              ^
+                             """),
+                /* ---------------------- */
+                new TestCase("""
+{@snippet :
+    hello // @highlight regex=\\w+ substring=hello
+}""",
+                        """
+error: snippet markup: attributes "substring" and "regex" used simultaneously
+    hello // @highlight regex=\\w+ substring=hello
+                                  ^
+                        """),
+                new TestCase("""
+{@snippet :
+    hello // @start region="x" name="here"
+}""",
+                        """
+error: snippet markup: unexpected attribute
+    hello // @start region="x" name="here"
+                               ^
+                        """),
+                new TestCase("""
+{@snippet :
+    hello // @start region=""
+}""",
+                        """
+error: snippet markup: invalid attribute value
+    hello // @start region=""
+                            ^
+                        """),
+                new TestCase("""
+{@snippet :
+    hello // @link target="Object#equals()" type=fluffy
+}""",
+                        """
+error: snippet markup: invalid attribute value
+    hello // @link target="Object#equals()" type=fluffy
+                                                 ^
+                        """),
+                /* ---------------------- */
+                new TestCase("""
+{@snippet :
+    hello // @highlight substring="
+}""",
+                             """
+error: snippet markup: unterminated attribute value
+    hello // @highlight substring="
+                                  ^
+                             """),
+                new TestCase("""
+{@snippet :
+    hello // @start region="this"
+    world // @start region="this"
+    !     // @end
+}""",
+                        """
+error: snippet markup: duplicated region
+    world // @start region="this"
+                            ^
+                        """),
+                new TestCase("""
+{@snippet :
+    hello // @end
+}""",
+                        """
+error: snippet markup: no region to end
+    hello // @end
+              ^
+                        """),
+                new TestCase("""
+{@snippet :
+    hello // @start region=this
+}""",
+                        """
+error: snippet markup: unpaired region
+    hello // @start region=this
+              ^
+                        """),
+                new TestCase("""
+{@snippet :
+    hello // @highlight substring="hello" :
+}""",
+                             """
+error: snippet markup: tag refers to non-existent lines
+    hello // @highlight substring="hello" :
+              ^
+              """)
+        );
+        List<String> inputs = testCases.stream().map(s -> s.input).toList();
+        StringBuilder methods = new StringBuilder();
+        forEachNumbered(inputs, (i, n) -> {
+            methods.append(
+                    """
+
+                    /**
+                    %s*/
+                    public void case%s() {}
+                    """.formatted(i, n));
+        });
+
+        String classString =
+                """
+                public class A {
+                %s
+                }
+                """.formatted(methods.toString());
+
+        Path src = Files.createDirectories(base.resolve("src"));
+        tb.writeJavaFiles(src, classString);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.ERROR);
+        // use the facility from JDK-8273154 when it becomes available
+        checkOutput(Output.OUT, true, testCases.stream().map(TestCase::expectedError).toArray(String[]::new));
         checkNoCrashes();
     }
 }

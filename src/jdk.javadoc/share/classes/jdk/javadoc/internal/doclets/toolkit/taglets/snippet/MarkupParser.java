@@ -28,6 +28,8 @@ package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.javadoc.internal.doclets.toolkit.Resources;
+
 //
 // markup-comment = { markup-tag } ;
 //     markup-tag = "@" , tag-name , {attribute} [":"] ;
@@ -51,6 +53,12 @@ public final class MarkupParser {
     private int bp;
     private int buflen;
     private char ch;
+
+    private final Resources resources;
+
+    public MarkupParser(Resources resources) {
+        this.resources = resources;
+    }
 
     public List<Parser.Tag> parse(String input) throws ParseException {
 
@@ -82,10 +90,6 @@ public final class MarkupParser {
 
     protected Parser.Tag readTag() throws ParseException {
         nextChar();
-        if (!Character.isUnicodeIdentifierStart(ch)) {
-            // TODO: internationalize!
-            throw new ParseException("Bad character: '%s' (0x%s)".formatted(ch, Integer.toString(ch, 16)), bp);
-        }
         final int nameBp = bp;
         String name = readIdentifier();
         skipWhitespace();
@@ -165,7 +169,8 @@ public final class MarkupParser {
                         nextChar();
                     }
                     if (bp >= buflen) {
-                        throw new ParseException("dc.unterminated.string", bp - 1);
+                        String message = resources.getText("doclet.snippet.markup.attribute.value.unterminated");
+                        throw new ParseException(() -> message, bp - 1);
                     }
                     addPendingText(value, valueStartPos, bp - 1);
                     nextChar();
