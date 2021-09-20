@@ -29,6 +29,7 @@
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -120,6 +121,13 @@ int ClassListParser::parse(TRAPS) {
         return 0; // THROW
       }
 
+      ResourceMark rm(THREAD);
+      char* ex_msg = (char*)"";
+      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+      if (message != NULL) {
+        ex_msg = java_lang_String::as_utf8_string(message);
+      }
+      log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
       // We might have an invalid class name or an bad class. Warn about it
       // and keep going to the next line.
       CLEAR_PENDING_EXCEPTION;
@@ -458,7 +466,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  InstanceKlass* k = ClassLoaderExt::load_class(class_name, _source, CHECK_NULL);
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, _source, CHECK_NULL);
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);
@@ -466,15 +474,13 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
-  bool added = SystemDictionaryShared::add_unregistered_class_for_static_archive(THREAD, k);
+  assert(k->is_shared_unregistered_class(), "must be");
+
+  bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
   }
-
-  // This tells JVM_FindLoadedClass to not find this class.
-  k->set_shared_classpath_index(UNREGISTERED_INDEX);
-  k->clear_shared_class_loader_type();
 
   return k;
 }

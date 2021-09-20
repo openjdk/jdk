@@ -25,6 +25,8 @@
 #ifndef SHARE_INCLUDE_CDS_H
 #define SHARE_INCLUDE_CDS_H
 
+#include <stddef.h>
+
 // This file declares the CDS data structures that are used by the HotSpot Serviceability Agent
 // (see C sources inside src/jdk.hotspot.agent).
 //
