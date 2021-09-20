@@ -319,7 +319,7 @@ void mutex_init() {
 
   def(CodeHeapStateAnalytics_lock  , PaddedMutex  , nonleaf+6,   false, _safepoint_check_always);
   def(NMethodSweeperStats_lock     , PaddedMutex  , nosafepoint,   true,  _safepoint_check_never);
-  def(ThreadsSMRDelete_lock        , PaddedMonitor, nosafepoint-3, true,  _safepoint_check_never);
+  def(ThreadsSMRDelete_lock        , PaddedMonitor, nosafepoint-3, true,  _safepoint_check_never); // Holds ConcurrentHashTableResize_lock
   def(ThreadIdTableCreate_lock     , PaddedMutex  , leaf,        false, _safepoint_check_always);
   def(SharedDecoder_lock           , PaddedMutex  , tty-1,       true,  _safepoint_check_never);
   def(DCmdFactory_lock             , PaddedMutex  , nosafepoint, true,  _safepoint_check_never);
