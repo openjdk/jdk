@@ -34,7 +34,7 @@ package sun.font;
 public final class FontManagerFactory {
 
     /** Our singleton instance. */
-    private static volatile FontManager instance = null;
+    private static volatile FontManager instance;
 
     /**
      * Get a valid FontManager implementation for the current platform.
