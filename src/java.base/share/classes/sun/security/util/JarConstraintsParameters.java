@@ -50,9 +50,9 @@ public class JarConstraintsParameters implements ConstraintsParameters {
     private boolean anchorIsJdkCASet;
     // The timestamp of the signed JAR file, if timestamped
     private Date timestamp;
-    // The keys of the signers
+    // The keys of the signers and TSA
     private final Set<Key> keys;
-    // The certs in the signers' chains that are issued by the trust anchor
+    // The certs in the signers and TSA chain that are issued by the trust anchor
     private final Set<X509Certificate> certsIssuedByAnchor;
     // The extended exception message
     private String message;
@@ -73,7 +73,7 @@ public class JarConstraintsParameters implements ConstraintsParameters {
         // used for checking if the signer's certificate chains back to a
         // JDK root CA
         for (CodeSigner signer : signers) {
-            init(signer.getSignerCertPath());
+            addToCertsAndKeys(signer.getSignerCertPath());
             Timestamp timestamp = signer.getTimestamp();
             if (timestamp == null) {
                 // this means one of the signers doesn't have a timestamp
@@ -82,7 +82,7 @@ public class JarConstraintsParameters implements ConstraintsParameters {
                 skipTimestamp = true;
             } else {
                 // add the key and last cert of TSA too
-                init(timestamp.getSignerCertPath());
+                addToCertsAndKeys(timestamp.getSignerCertPath());
                 if (!skipTimestamp) {
                     Date timestampDate = timestamp.getTimestamp();
                     if (latestTimestamp == null) {
@@ -101,24 +101,24 @@ public class JarConstraintsParameters implements ConstraintsParameters {
     public JarConstraintsParameters(List<X509Certificate> chain, Timestamp timestamp) {
         this.keys = new HashSet<>();
         this.certsIssuedByAnchor = new HashSet<>();
-        init(chain);
+        addToCertsAndKeys(chain);
         if (timestamp != null) {
-            init(timestamp.getSignerCertPath());
+            addToCertsAndKeys(timestamp.getSignerCertPath());
             this.timestamp = timestamp.getTimestamp();
         } else {
             this.timestamp = null;
         }
     }
 
-    // extract last certificate and key from chain
-    private void init(CertPath cp) {
+    // extract last certificate and signer's public key from chain
+    private void addToCertsAndKeys(CertPath cp) {
         @SuppressWarnings("unchecked")
         List<X509Certificate> chain =
             (List<X509Certificate>)cp.getCertificates();
-        init(chain);
+        addToCertsAndKeys(chain);
     }
 
-    private void init(List<X509Certificate> chain) {
+    private void addToCertsAndKeys(List<X509Certificate> chain) {
         if (!chain.isEmpty()) {
             this.certsIssuedByAnchor.add(chain.get(chain.size() - 1));
             this.keys.add(chain.get(0).getPublicKey());

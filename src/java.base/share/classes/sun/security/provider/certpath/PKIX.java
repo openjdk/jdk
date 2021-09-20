@@ -155,6 +155,11 @@ class PKIX {
                 stores = params.getCertStores();
             return stores;
         }
+        // The date() param is used when enforcing the validity period
+        // of certificates and when checking the time period of revocation data.
+        // The main difference between the date() and timestamp() method is
+        // that the date() method only uses the timestamp (if specified)
+        // for certificates in a code signer's chain.
         Date date() {
             if (!gotDate) {
                 // Use timestamp if checking signed code that is
@@ -215,7 +220,7 @@ class PKIX {
         String variant() {
             return variant;
         }
-        // The timestamp param is passed as the date param when creating an
+        // The timestamp() param is passed as the date param when creating an
         // AlgorithmChecker. An AlgorithmChecker always uses the timestamp
         // if specified in order to enforce the denyAfter constraint.
         Date timestamp() {
