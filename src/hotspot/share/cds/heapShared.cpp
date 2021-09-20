@@ -416,17 +416,15 @@ void HeapShared::copy_roots() {
   HeapWord* mem = G1CollectedHeap::heap()->archive_mem_allocate(size);
 
   memset(mem, 0, size * BytesPerWord);
-  {
-    // This is copied from MemAllocator::finish
-    oopDesc::set_mark(mem, markWord::prototype());
-    oopDesc::release_set_klass(mem, k);
-  }
-  {
-    // This is copied from ObjArrayAllocator::initialize
-    arrayOopDesc::set_length(mem, length);
-  }
+  arrayOop array = arrayOop(cast_to_oop(mem));
 
-  _roots = OopHandle(Universe::vm_global(), cast_to_oop(mem));
+  // This is copied from MemAllocator::finish
+  array->set_mark(markWord::prototype());
+  array->release_set_klass(k);
+  // This is copied from ObjArrayAllocator::initialize
+  array->set_length(length);
+
+  _roots = OopHandle(Universe::vm_global(), array);
   for (int i = 0; i < length; i++) {
     roots()->obj_at_put(i, _pending_roots->at(i));
   }

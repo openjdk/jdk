@@ -118,10 +118,6 @@ class arrayOopDesc : public oopDesc {
     return length_addr_impl(this);
   }
 
-  static void set_length(HeapWord* mem, int length) {
-    *length_addr_impl(mem) = length;
-  }
-
   // Should only be called with constants as argument
   // (will not constant fold otherwise)
   // Returns the header size in words aligned to the requirements of the

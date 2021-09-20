@@ -60,10 +60,6 @@ void oopDesc::set_mark(markWord m) {
   Atomic::store(&_mark, m);
 }
 
-void oopDesc::set_mark(HeapWord* mem, markWord m) {
-  *(markWord*)(((char*)mem) + mark_offset_in_bytes()) = m;
-}
-
 void oopDesc::release_set_mark(markWord m) {
   Atomic::release_store(&_mark, m);
 }
@@ -114,14 +110,13 @@ void oopDesc::set_klass(Klass* k) {
   }
 }
 
-void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
+void oopDesc::release_set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
-  char* raw_mem = ((char*)mem + klass_offset_in_bytes());
   if (UseCompressedClassPointers) {
-    Atomic::release_store((narrowKlass*)raw_mem,
+    Atomic::release_store(&_metadata._compressed_klass,
                           CompressedKlassPointers::encode_not_null(k));
   } else {
-    Atomic::release_store((Klass**)raw_mem, k);
+    Atomic::release_store(&_metadata._klass, k);
   }
 }
 
@@ -129,14 +124,10 @@ int oopDesc::klass_gap() const {
   return *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes());
 }
 
-void oopDesc::set_klass_gap(HeapWord* mem, int v) {
-  if (UseCompressedClassPointers) {
-    *(int*)(((char*)mem) + klass_gap_offset_in_bytes()) = v;
-  }
-}
-
 void oopDesc::set_klass_gap(int v) {
-  set_klass_gap((HeapWord*)this, v);
+  if (UseCompressedClassPointers) {
+    *(int*)(((char*)this) + klass_gap_offset_in_bytes()) = v;
+  }
 }
 
 bool oopDesc::is_a(Klass* k) const {

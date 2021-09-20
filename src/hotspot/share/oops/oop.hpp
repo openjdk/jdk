@@ -63,7 +63,6 @@ class oopDesc {
   inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
-  static inline void set_mark(HeapWord* mem, markWord m);
 
   inline void release_set_mark(markWord m);
   inline markWord cas_set_mark(markWord new_mark, markWord old_mark);
@@ -79,12 +78,11 @@ class oopDesc {
 
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline void set_klass(Klass* k);
-  static inline void release_set_klass(HeapWord* mem, Klass* k);
+  inline void release_set_klass(Klass* k);
 
   // For klass field compression
   inline int klass_gap() const;
   inline void set_klass_gap(int z);
-  static inline void set_klass_gap(HeapWord* mem, int z);
 
   // size of object header, aligned to platform wordSize
   static int header_size() { return sizeof(oopDesc)/HeapWordSize; }
