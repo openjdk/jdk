@@ -31,7 +31,7 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
-#include "gc/g1/g1EvacuationInfo.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
@@ -384,7 +384,7 @@ public:
     _regions_freed += other->_regions_freed;
   }
 
-  void report(G1CollectedHeap* g1h, G1EvacuationInfo* evacuation_info) {
+  void report(G1CollectedHeap* g1h, G1EvacInfo* evacuation_info) {
     evacuation_info->set_regions_freed(_regions_freed);
     evacuation_info->increment_collectionset_used_after(_after_used_bytes);
 
@@ -566,7 +566,7 @@ void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::report_stat
 }
 
 G1PostEvacuateCollectionSetCleanupTask2::
-      FreeCollectionSetTask::FreeCollectionSetTask(G1EvacuationInfo* evacuation_info,
+      FreeCollectionSetTask::FreeCollectionSetTask(G1EvacInfo* evacuation_info,
                                                    const size_t* surviving_young_words,
                                                    G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::FreeCollectionSet),
@@ -612,7 +612,7 @@ void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::do_work(uin
 }
 
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
-                                                                                 G1EvacuationInfo* evacuation_info,
+                                                                                 G1EvacInfo* evacuation_info,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedGangTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {

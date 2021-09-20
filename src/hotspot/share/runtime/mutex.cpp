@@ -289,14 +289,14 @@ Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check
          "higher than nonleaf should safepoint %s", name);
 
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
-         "Special locks or below should never safepoint");
+         "Special locks or below should never safepoint: %s", name);
 
   // The allow_vm_block also includes allowing other non-Java threads to block or
   // allowing Java threads to block in native.
   assert(_safepoint_check_required == _safepoint_check_always || _allow_vm_block,
-         "Safepoint check never locks should always allow the vm to block");
+         "Safepoint check never locks should always allow the vm to block: %s", name);
 
-  assert(_rank >= 0, "Bad lock rank");
+  assert(_rank >= 0, "Bad lock rank: %s", name);
 #endif
 }
 
@@ -372,31 +372,27 @@ Mutex* Mutex::get_least_ranked_lock_besides_this(Mutex* locks) {
 void Mutex::check_rank(Thread* thread) {
   Mutex* locks_owned = thread->owned_locks();
 
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    // We expect the locks already acquired to be in increasing rank order,
-    // modulo locks acquired in try_lock_without_rank_check()
-    for (Mutex* tmp = locks_owned; tmp != NULL; tmp = tmp->next()) {
-      if (tmp->next() != NULL) {
-        assert(tmp->rank() < tmp->next()->rank()
-               || tmp->skip_rank_check(), "mutex rank anomaly?");
-      }
+  // We expect the locks already acquired to be in increasing rank order,
+  // modulo locks acquired in try_lock_without_rank_check()
+  for (Mutex* tmp = locks_owned; tmp != NULL; tmp = tmp->next()) {
+    if (tmp->next() != NULL) {
+      assert(tmp->rank() < tmp->next()->rank()
+             || tmp->skip_rank_check(), "mutex rank anomaly?");
     }
   }
 
-  bool check_can_be_skipped = SafepointSynchronize::is_at_safepoint();
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);
     // We enforce not holding locks of rank special or lower while waiting.
     // Also "this" should be the monitor with lowest rank owned by this thread.
-    if (least != NULL && (least->rank() <= special ||
-        (least->rank() <= this->rank() && !check_can_be_skipped))) {
+    if (least != NULL && (least->rank() <= special || least->rank() <= this->rank())) {
       assert(false, "Attempting to wait on monitor %s/%d while holding lock %s/%d -- "
              "possible deadlock. %s", name(), rank(), least->name(), least->rank(),
              least->rank() <= this->rank() ? "Should wait on the least ranked monitor from "
              "all owned locks." : "Should not block(wait) while holding a lock of rank special.");
     }
-  } else if (!check_can_be_skipped) {
+  } else {
     // lock()/lock_without_safepoint_check()/try_lock() case
     Mutex* least = get_least_ranked_lock(locks_owned);
     // Deadlock prevention rules require us to acquire Mutexes only in

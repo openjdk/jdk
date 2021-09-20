@@ -45,12 +45,12 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // Special low level locks are given names and ranges avoid overlap.
   enum lock_types {
        event,
-       service        = event          +   3,
+       service        = event          +   6,
        stackwatermark = service        +   3,
        tty            = stackwatermark +   3,
        special        = tty            +   3,
        oopstorage     = special        +   3,
-       leaf           = oopstorage     +   2,
+       leaf           = oopstorage     +  10,
        safepoint      = leaf           +  10,
        barrier        = safepoint      +   1,
        nonleaf        = barrier        +   1,

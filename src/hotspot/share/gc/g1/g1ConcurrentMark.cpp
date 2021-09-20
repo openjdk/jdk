@@ -432,7 +432,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers = ConcGCThreads;
   _max_concurrent_workers = _num_concurrent_workers;
 
-  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers, false, true);
+  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers);
   _concurrent_workers->initialize_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
@@ -894,7 +894,6 @@ class G1CMConcurrentMarkingTask : public AbstractGangTask {
 
 public:
   void work(uint worker_id) {
-    assert(Thread::current()->is_ConcurrentGC_thread(), "Not a concurrent GC thread");
     ResourceMark rm;
 
     double start_vtime = os::elapsedVTime();
@@ -979,9 +978,6 @@ public:
     AbstractGangTask("G1 Root Region Scan"), _cm(cm) { }
 
   void work(uint worker_id) {
-    assert(Thread::current()->is_ConcurrentGC_thread(),
-           "this should only be done by a conc GC thread");
-
     G1CMRootMemRegions* root_regions = _cm->root_regions();
     const MemRegion* region = root_regions->claim_next();
     while (region != NULL) {
@@ -2040,9 +2036,8 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   for (uint i = 0; i < _max_num_tasks; ++i) {
     _tasks[i]->clear_region_fields();
   }
-  _first_overflow_barrier_sync.abort();
-  _second_overflow_barrier_sync.abort();
-  _has_aborted = true;
+
+  abort_marking_threads();
 
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
@@ -2051,6 +2046,12 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   satb_mq_set.set_active_all_threads(
                                  false, /* new active value */
                                  satb_mq_set.is_active() /* expected_active */);
+}
+
+void G1ConcurrentMark::abort_marking_threads() {
+  _has_aborted = true;
+  _first_overflow_barrier_sync.abort();
+  _second_overflow_barrier_sync.abort();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,
