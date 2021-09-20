@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.internal.module.Checks;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.SettingControl;
@@ -76,7 +77,7 @@ public class Type implements Comparable<Type> {
 
     private static Type createKnownType(String name, Class<?> clazz) {
         long id = JVM.getJVM().getTypeId(name);
-        Type t =  new Type(name, null, id);
+        Type t =  new Type(name, null, id, null);
         knownTypes.put(t, clazz);
         return t;
     }
@@ -99,14 +100,14 @@ public class Type implements Comparable<Type> {
      */
     public Type(String javaTypeName, String superType, long typeId) {
         this(javaTypeName, superType, typeId, null);
+        if (!Checks.isClassName(javaTypeName)) {
+            // Should not be able to come here with an invalid type name
+            throw new InternalError(javaTypeName + " is not a valid Java type");
+        }
     }
 
     Type(String javaTypeName, String superType, long typeId, Boolean simpleType) {
         Objects.requireNonNull(javaTypeName);
-
-        if (!isValidJavaIdentifier(javaTypeName)) {
-            throw new IllegalArgumentException(javaTypeName + " is not a valid Java identifier");
-        }
         this.superType = superType;
         this.name = javaTypeName;
         this.id = typeId;
@@ -124,24 +125,6 @@ public class Type implements Comparable<Type> {
 
     static Collection<Type> getKnownTypes() {
         return knownTypes.keySet();
-    }
-
-    public static boolean isValidJavaIdentifier(String identifier) {
-        if (identifier.isEmpty()) {
-            return false;
-        }
-        if (!Character.isJavaIdentifierStart(identifier.charAt(0))) {
-            return false;
-        }
-        for (int i = 1; i < identifier.length(); i++) {
-            char c = identifier.charAt(i);
-            if (c != '.') {
-                if (!Character.isJavaIdentifierPart(c)) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     public static boolean isValidJavaFieldType(String name) {

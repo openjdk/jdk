@@ -464,6 +464,13 @@ tier3 = \
   :hotspot_tier3_runtime \
   :tier3_gc_shenandoah
 
+# Everything that is not in other tiers, but not apps
+tier4 = \
+  :hotspot_all_no_apps \
+ -:tier1 \
+ -:tier2 \
+ -:tier3
+
 hotspot_tier2_runtime = \
   runtime/ \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
