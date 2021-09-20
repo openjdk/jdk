@@ -311,10 +311,6 @@ inline HeapWord* ShenandoahHeap::allocate_from_plab(Thread* thread, size_t size)
   if (obj == NULL) {
     obj = allocate_from_plab_slow(thread, size);
   }
-
-  if (mode()->is_generational() && obj != NULL) {
-    ShenandoahHeap::heap()->card_scan()->register_object_wo_lock(obj);
-  }
   return obj;
 }
 
@@ -393,7 +389,7 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
 
   if (copy == NULL) {
     if (target_gen == OLD_GENERATION && from_region->affiliation() == YOUNG_GENERATION) {
-      // Indicate that a promotion attempt failed.
+      // TODO: Inform old generation heuristic of promotion failure
       return NULL;
     }
 
@@ -408,35 +404,19 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   oop copy_val = cast_to_oop(copy);
-  if (target_gen == YOUNG_GENERATION) {
-    // Increment the age in young copies, absorbing region age.
-    // (Only retired regions will have more than zero age to pass along.)
-
-    ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
-
-    // Note that p may have been forwarded by another thread,
-    // anywhere between here and the check above for forwarding.
-    // In that case try_update_forwardee() below will not be successful
-    // and the increment we just performed will simply be forgotten,
-    // but it will have succeeded in said other thread.
-  }
 
   // Try to install the new forwarding pointer.
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
-    if (target_gen == OLD_GENERATION) {
-      if (alloc_from_lab) {
-        card_scan()->register_object_wo_lock(copy);
-      }
-      // else, allocate_memory_under_lock() has already registered the object
-
-      // Mark the entire range of the evacuated object as dirty.  At next remembered set scan,
-      // we will clear dirty bits that do not hold interesting pointers.  It's more efficient to
-      // do this in batch, in a background GC thread than to try to carefully dirty only cards
-      // that hold interesting pointers right now.
-      card_scan()->mark_range_as_dirty(copy, size);
-    }
     // Successfully evacuated. Our copy is now the public one!
+    if (target_gen == OLD_GENERATION) {
+      handle_old_evacuation(copy, size, from_region->is_young());
+    } else if (target_gen == YOUNG_GENERATION) {
+      ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
+    } else {
+      ShouldNotReachHere();
+    }
+
     shenandoah_assert_correct(NULL, copy_val);
     return copy_val;
   }  else {

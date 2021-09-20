@@ -117,7 +117,15 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
 }
 
 size_t ShenandoahGeneration::bytes_allocated_since_gc_start() {
-  return ShenandoahHeap::heap()->bytes_allocated_since_gc_start();
+  return Atomic::load(&_bytes_allocated_since_gc_start);;
+}
+
+void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
+  Atomic::store(&_bytes_allocated_since_gc_start, (size_t)0);
+}
+
+void ShenandoahGeneration::increase_allocated(size_t bytes) {
+  Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
 }
 
 void ShenandoahGeneration::log_status() const {
@@ -273,7 +281,7 @@ ShenandoahGeneration::ShenandoahGeneration(GenerationMode generation_mode,
   _generation_mode(generation_mode),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
-  _affiliated_region_count(0), _used(0),
+  _affiliated_region_count(0), _used(0), _bytes_allocated_since_gc_start(0),
   _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity) {
   _is_marking_complete.set();
   assert(max_workers > 0, "At least one queue");

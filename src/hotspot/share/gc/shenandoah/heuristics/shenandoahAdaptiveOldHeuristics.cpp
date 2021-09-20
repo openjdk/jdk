@@ -260,6 +260,9 @@ bool ShenandoahAdaptiveOldHeuristics::should_start_gc() {
 
   double avg_cycle_time = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+  log_debug(gc)("%s: average GC time: %.2f ms, allocation rate: %.0f %s/s",
+                _generation->name(), avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
+
   if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
     log_info(gc)("Trigger (%s): Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
                  _generation->name(), avg_cycle_time * 1000,

@@ -50,6 +50,7 @@ protected:
   // Usage
   size_t _affiliated_region_count;
   volatile size_t _used;
+  volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
   size_t _soft_max_capacity;
 
@@ -75,11 +76,13 @@ public:
   virtual size_t used() const { return _used; }
   virtual size_t available() const;
 
+  size_t bytes_allocated_since_gc_start();
+  void reset_bytes_allocated_since_gc_start();
+  void increase_allocated(size_t bytes);
+
   void set_soft_max_capacity(size_t soft_max_capacity) {
     _soft_max_capacity = soft_max_capacity;
   }
-
-  virtual size_t bytes_allocated_since_gc_start();
 
   void log_status() const;
 

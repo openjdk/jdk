@@ -503,7 +503,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _initial_size(0),
   _used(0),
   _committed(0),
-  _bytes_allocated_since_gc_start(0),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(NULL),
   _safepoint_workers(NULL),
@@ -691,16 +690,12 @@ void ShenandoahHeap::decrease_used(size_t bytes) {
   Atomic::sub(&_used, bytes, memory_order_relaxed);
 }
 
-void ShenandoahHeap::increase_allocated(size_t bytes) {
-  Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
-}
-
 void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
   size_t bytes = words * HeapWordSize;
   if (!waste) {
     increase_used(bytes);
   }
-  increase_allocated(bytes);
+
   if (ShenandoahPacing) {
     control_thread()->pacing_notify_alloc(words);
     if (waste) {
@@ -804,6 +799,22 @@ void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
   if (count > 0) {
     control_thread()->notify_heap_changed();
     regulator_thread()->notify_heap_changed();
+  }
+}
+
+void ShenandoahHeap::handle_old_evacuation(HeapWord* obj, size_t words, bool promotion) {
+  // Only register the copy of the object that won the evacuation race.
+  card_scan()->register_object_wo_lock(obj);
+
+  // Mark the entire range of the evacuated object as dirty.  At next remembered set scan,
+  // we will clear dirty bits that do not hold interesting pointers.  It's more efficient to
+  // do this in batch, in a background GC thread than to try to carefully dirty only cards
+  // that hold interesting pointers right now.
+  card_scan()->mark_range_as_dirty(obj, words);
+
+  if (promotion) {
+    // This evacuation was a promotion, track this as allocation against old gen
+    old_generation()->increase_allocated(words * HeapWordSize);
   }
 }
 
@@ -1019,8 +1030,10 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   }
 
   if (result != NULL) {
+    ShenandoahGeneration* alloc_generation = generation_for(req.affiliation());
     size_t requested = req.size();
     size_t actual = req.actual_size();
+    size_t actual_bytes = actual * HeapWordSize;
 
     assert (req.is_lab_alloc() || (requested == actual),
             "Only LAB allocations are elastic: %s, requested = " SIZE_FORMAT ", actual = " SIZE_FORMAT,
@@ -1028,6 +1041,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 
     if (req.is_mutator_alloc()) {
       notify_mutator_alloc_words(actual, false);
+      alloc_generation->increase_allocated(actual_bytes);
 
       // If we requested more than we were granted, give the rest back to pacer.
       // This only matters if we are in the same pacing epoch: do not try to unpace
@@ -1036,7 +1050,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
         pacer()->unpace_for_alloc(pacer_epoch, requested - actual);
       }
     } else {
-      increase_used(actual*HeapWordSize);
+      increase_used(actual_bytes);
     }
   }
 
@@ -1045,28 +1059,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 
 HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
   ShenandoahHeapLocker locker(lock());
-  HeapWord* result = _free_set->allocate(req, in_new_region);
-  if (result != NULL && req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
-    // Register the newly allocated object while we're holding the global lock since there's no synchronization
-    // built in to the implementation of register_object().  There are potential races when multiple independent
-    // threads are allocating objects, some of which might span the same card region.  For example, consider
-    // a card table's memory region within which three objects are being allocated by three different threads:
-    //
-    // objects being "concurrently" allocated:
-    //    [-----a------][-----b-----][--------------c------------------]
-    //            [---- card table memory range --------------]
-    //
-    // Before any objects are allocated, this card's memory range holds no objects.  Note that:
-    //   allocation of object a wants to set the has-object, first-start, and last-start attributes of the preceding card region.
-    //   allocation of object b wants to set the has-object, first-start, and last-start attributes of this card region.
-    //   allocation of object c also wants to set the has-object, first-start, and last-start attributes of this card region.
-    //
-    // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as last-start
-    // representing object b while first-start represents object c.  This is why we need to require all register_object()
-    // invocations to be "mutually exclusive" with respect to each card's memory range.
-    ShenandoahHeap::heap()->card_scan()->register_object(result);
-  }
-  return result;
+  return _free_set->allocate(req, in_new_region);
 }
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size,
@@ -2016,12 +2009,13 @@ address ShenandoahHeap::gc_state_addr() {
   return (address) ShenandoahHeap::heap()->_gc_state.addr_of();
 }
 
-size_t ShenandoahHeap::bytes_allocated_since_gc_start() {
-  return Atomic::load(&_bytes_allocated_since_gc_start);
-}
-
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  Atomic::store(&_bytes_allocated_since_gc_start, (size_t)0);
+  if (mode()->is_generational()) {
+    young_generation()->reset_bytes_allocated_since_gc_start();
+    old_generation()->reset_bytes_allocated_since_gc_start();
+  }
+
+  global_generation()->reset_bytes_allocated_since_gc_start();
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {
@@ -2739,4 +2733,17 @@ void ShenandoahHeap::verify_rem_set_at_update_ref() {
                                  "Remembered set violation at init-update-references");
     }
   }
+}
+
+ShenandoahGeneration* ShenandoahHeap::generation_for(ShenandoahRegionAffiliation affiliation) const {
+  if (!mode()->is_generational()) {
+    return global_generation();
+  } else if (affiliation == YOUNG_GENERATION) {
+    return young_generation();
+  } else if (affiliation == OLD_GENERATION) {
+    return old_generation();
+  }
+
+  ShouldNotReachHere();
+  return nullptr;
 }
