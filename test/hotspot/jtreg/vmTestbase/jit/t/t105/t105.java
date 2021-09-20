@@ -29,7 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -XX:-ProfileTraps jit.t.t105.t105
+ * @run main/othervm -XX:-OmitStackTraceInFastThrow jit.t.t105.t105
  *
  * This test must be run with ProfileTraps disabled to avoid preallocated
  * exceptions. They don't have the detailed message that this test relies on.
