@@ -158,13 +158,13 @@ final class SimpleFileServerImpl {
             var addr = isAnyLocal ? InetAddress.getLocalHost().getHostAddress() : inetAddr.getHostAddress();
             if (isAnyLocal) {
                 writer.printf("""
-                        Serving %s and subdirectories on 0.0.0.0:%d
-                        http://%s:%d/ ...
+                        Serving %s and subdirectories on 0.0.0.0 (all interfaces) port %d
+                        URL http://%s:%d/ ...
                         """, root, port, addr, port);
             } else {
                 writer.printf("""
                     Serving %s and subdirectories on
-                    http://%s:%d/ ...
+                    URL http://%s:%d/ ...
                     """, root, addr, port);
             }
         }
