@@ -83,7 +83,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 
 /*
- * @test id=SHenandoah
+ * @test id=Shenandoah
  * @requires vm.gc.Shenandoah
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Shenandoah GC)
  * @library /test/lib
