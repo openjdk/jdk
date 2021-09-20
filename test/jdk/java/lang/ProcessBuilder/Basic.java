@@ -2211,9 +2211,10 @@ public class Basic {
                 // our child) but not our grandchild (i.e. '/bin/sleep'). So
                 // pay attention that the grandchild doesn't run too long to
                 // avoid polluting the process space with useless processes.
-                // Running the grandchild for 60s should be more than enough.
-                final String[] cmd = { "/bin/bash", "-c", "(/bin/sleep 60)" };
-                final String[] cmdkill = { "/bin/bash", "-c", "(/usr/bin/pkill -f \"sleep 60\")" };
+                // Running the grandchild for 59s should be more than enough.
+                // A unique (59s) time is needed to avoid killing other sleep processes.
+                final String[] cmd = { "/bin/bash", "-c", "(/bin/sleep 59)" };
+                final String[] cmdkill = { "/bin/bash", "-c", "(/usr/bin/pkill -f \"sleep 59\")" };
                 final ProcessBuilder pb = new ProcessBuilder(cmd);
                 final Process p = pb.start();
                 final InputStream stdout = p.getInputStream();
@@ -2452,12 +2453,11 @@ public class Basic {
                 var msg = "External sleep process terminated early: exitValue: %d, (%dns)%n"
                         .formatted(p.exitValue(), (System.nanoTime() - start));
                 fail(msg);
+            } else {
+                long end = System.nanoTime();
+                if ((end - start) < TimeUnit.MILLISECONDS.toNanos(10))
+                    fail("Test failed: waitFor didn't take long enough (" + (end - start) + "ns)");
             }
-
-            long end = System.nanoTime();
-            if ((end - start) < TimeUnit.MILLISECONDS.toNanos(10))
-                fail("Test failed: waitFor didn't take long enough (" + (end - start) + "ns)");
-
             p.destroy();
         } catch (Throwable t) { unexpected(t); }
 
@@ -2614,17 +2614,14 @@ public class Basic {
             long start = System.nanoTime();
 
             if (p.waitFor(1000, TimeUnit.MILLISECONDS)) {
-                // Unexpected early exit
-                long early = System.nanoTime();
-                System.out.println("Process exited too soon (" + (early - start) + "ns)" +
-                        ", exitValue: " + p.exitValue());
-                fail("Process exited too soon, exitValue: " + p.exitValue());
+                var msg = "External sleep process terminated early: exitValue: %02x, (%dns)"
+                        .formatted(p.exitValue(), (System.nanoTime() - start));
+                fail(msg);
+            } else {
+                long end = System.nanoTime();
+                if ((end - start) < 500000000)
+                    fail("Test failed: waitFor didn't take long enough (" + (end - start) + "ns)");
             }
-
-            long end = System.nanoTime();
-            if ((end - start) < 500000000)
-                fail("Test failed: waitFor didn't take long enough (" + (end - start) + "ns)");
-
             p.destroy();
 
             p.waitFor(1000, TimeUnit.MILLISECONDS);
