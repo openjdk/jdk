@@ -34,16 +34,16 @@
  *          /test/lib
  *
  * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.stress.randomBytecodes.Test
+ * @build vm.mlvm.hiddenloader.stress.randomBytecodes.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm vm.mlvm.anonloader.stress.randomBytecodes.Test -stressIterationsFactor 100000
+ * @run main/othervm vm.mlvm.hiddenloader.stress.randomBytecodes.Test -stressIterationsFactor 100000
  */
 
-package vm.mlvm.anonloader.stress.randomBytecodes;
+package vm.mlvm.hiddenloader.stress.randomBytecodes;
 
 import java.util.Arrays;
-import vm.mlvm.anonloader.share.StressClassLoadingTest;
+import vm.mlvm.hiddenloader.share.StressClassLoadingTest;
 
 /**
  * The test does the following in a cycle:
@@ -72,9 +72,9 @@ public class Test extends StressClassLoadingTest {
     };
 
     /**
-     * Returns {@link vm.mlvm.anonloader.share.AnonkTestee01} class to the
+     * Returns {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class to the
      * parent.
-     * @return {@link vm.mlvm.anonloader.share.AnonkTestee01} class.
+     * @return {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class.
      */
     @Override
     protected Class<?> getHostClass() {

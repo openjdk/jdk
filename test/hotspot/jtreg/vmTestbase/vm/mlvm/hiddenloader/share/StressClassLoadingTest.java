@@ -21,7 +21,7 @@
  * questions.
  */
 
-package vm.mlvm.anonloader.share;
+package vm.mlvm.hiddenloader.share;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -65,14 +65,14 @@ import vm.share.UnsafeAccess;
  * <p>The test fails, if there were hangups.
  *
  * <p>By default, before loading class, the bytes are
- * saved to {@code _AnonkTestee01.class} file in the current directory.
+ * saved to {@code _HiddenkTestee01.class} file in the current directory.
  * If JVM crashes, the bytecodes can be analysed.
  * Class saving is controlled by -saveClassFile option.
  * A prefix can be added to the file name using {@link #setFileNamePrefix}
  * function.
  */
 public abstract class StressClassLoadingTest extends MlvmTest {
-    private static final String RESCUE_FILE_NAME = "_AnonkTestee01.class";
+    private static final String RESCUE_FILE_NAME = "_HiddenkTestee01.class";
     private static final String HUNG_CLASS_FILE_NAME = "hang.class";
 
     @Option(name = "iterations", default_value = "100000",
@@ -100,7 +100,7 @@ public abstract class StressClassLoadingTest extends MlvmTest {
 
     /**
      * Sets prefix for names of the files, created by test:
-     * _AnonkTestee01.class and hangXX.class.
+     * _HiddenkTestee01.class and hangXX.class.
      *
      * @param p a prefix to add before file name.
      * @throws java.lang.NullPointerException if p is null
