@@ -34,6 +34,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "vmreg_zero.inline.hpp"
 
 #ifdef ASSERT
@@ -82,10 +83,15 @@ frame frame::sender(RegisterMap* map) const {
   // sender_for_xxx methods update this accordingly.
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame())
-    return sender_for_entry_frame(map);
-  else
-    return sender_for_nonentry_frame(map);
+  frame result = zeroframe()->is_entry_frame() ?
+                 sender_for_entry_frame(map) :
+                 sender_for_nonentry_frame(map);
+
+  if (map->process_frames()) {
+    StackWatermarkSet::on_iteration(map->thread(), result);
+  }
+
+  return result;
 }
 
 BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
