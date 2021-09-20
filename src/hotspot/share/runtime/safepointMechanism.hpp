@@ -45,14 +45,11 @@ class SafepointMechanism : public AllStatic {
 
   static address _polling_page;
 
-
   static inline void disarm_local_poll(JavaThread* thread);
 
   static inline bool global_poll();
 
   static void process(JavaThread *thread, bool allow_suspend);
-
-  static inline bool should_process_no_suspend(JavaThread* thread);
 
   static void default_initialize();
 

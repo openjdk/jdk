@@ -30,6 +30,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.inline.hpp"
 
 // Caller is responsible for using a memory barrier if needed.
@@ -62,26 +63,26 @@ bool SafepointMechanism::global_poll() {
   return (SafepointSynchronize::_state != SafepointSynchronize::_not_synchronized);
 }
 
-bool SafepointMechanism::should_process_no_suspend(JavaThread* thread) {
-  if (global_poll() || thread->handshake_state()->has_a_non_suspend_operation()) {
-    return true;
-  } else {
-    // We ignore suspend requests if any and just check before returning if we need
-    // to fix the thread's oops and first few frames due to a possible safepoint.
-    StackWatermarkSet::on_safepoint(thread);
-    update_poll_values(thread);
-    OrderAccess::cross_modify_fence();
-    return false;
-  }
-}
-
 bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {
   if (!local_poll_armed(thread)) {
     return false;
   } else if (allow_suspend) {
     return true;
   }
-  return should_process_no_suspend(thread);
+  //  We are armed but we should ignore suspend operations.
+  if (global_poll() || // Safepoint
+      thread->handshake_state()->has_a_non_suspend_operation() || // Non-suspend handshake
+      !StackWatermarkSet::processing_started(thread)) { // StackWater processing is not started
+    return true;
+  }
+  // When the JavaThread is blocked:
+  // 1: A suspend handshake targets the JavaThread.
+  // 2: A safepoint takes place.
+  // 3: The JavaThread wakes-up from blocked and do not allow suspend.
+  // We are now about to avoid processing and thus no cross modify fence will be executed.
+  // Therefore we executed it here.
+  OrderAccess::cross_modify_fence();
+  return false;
 }
 
 void SafepointMechanism::process_if_requested(JavaThread* thread, bool allow_suspend) {
