@@ -42,8 +42,7 @@ import java.util.zip.ZipEntry;
  * @test
  * @bug 8273935
  * @summary Validate that Files.getFileAttributeView will not throw
- * UnsupportedOperationException when the attribute view
- * PosixFileAttributeView is not available
+ * Exception when the attribute view PosixFileAttributeView is not available
  */
 public class PosixAttributeViewTest extends ZipFsBaseTest {
     public static final String ZIP_ENTRY = "Entry-0";
@@ -56,9 +55,9 @@ public class PosixAttributeViewTest extends ZipFsBaseTest {
     @BeforeTest
     public void setup() throws IOException {
         Files.deleteIfExists(ZIP_FILE);
-        Entry e0 = Entry.of(ZIP_ENTRY, ZipEntry.DEFLATED,
+        Entry entry = Entry.of(ZIP_ENTRY, ZipEntry.DEFLATED,
                 "Tennis Anyone");
-        zip(ZIP_FILE, Map.of("create", "true"), e0);
+        zip(ZIP_FILE, Map.of("create", "true"), entry);
     }
 
     /**
@@ -79,25 +78,25 @@ public class PosixAttributeViewTest extends ZipFsBaseTest {
     protected Object[][] zipfsMap() {
         return new Object[][]{
                 {Map.of()},
-                { Map.of("enablePosixFileAttributes", "true")}
+                {Map.of("enablePosixFileAttributes", "true")}
         };
     }
 
     /**
      * Verify that Files.getFileAttributeView will not throw
-     * UnsupportedOperationException when the attribute view
+     * an Exception when the attribute view
      * PosixFileAttributeView is not available
      * @param env map of the Zip FS properties to configure
      * @throws Exception if an error occurs
      */
     @Test(dataProvider = "zipfsMap")
     public void testPosixAttributeView(Map<String, String> env) throws Exception {
-
         try (FileSystem fs = FileSystems.newFileSystem(ZIP_FILE, env)) {
             Path entry = fs.getPath(ZIP_ENTRY);
             PosixFileAttributeView view = Files.getFileAttributeView(entry,
                     PosixFileAttributeView.class);
-            System.out.printf("View returned: %s%n", view);
+            System.out.printf("View returned: %s, Map= %s%n", view,
+                    formatMap(env));
         }
     }
 }
