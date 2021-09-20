@@ -25,8 +25,6 @@
 
 package sun.jvmstat.perfdata.monitor.protocol.local;
 
-import sun.jvmstat.monitor.*;
-import sun.jvmstat.monitor.event.*;
 import java.util.*;
 import java.util.regex.*;
 import java.io.*;
@@ -143,17 +141,17 @@ public class LocalVmManager {
                  * iterate over the list to find any files within those directories.
                  */
                 File[] dirs = tmpdir.listFiles(userFilter);
-                for (int i = 0 ; i < dirs.length; i ++) {
-                    if (!dirs[i].isDirectory()) {
+                for (File subDir : dirs) {
+                    if (!subDir.isDirectory()) {
                         continue;
                     }
 
                     // get a list of files from the directory
-                    File[] files = dirs[i].listFiles(fileFilter);
+                    File[] files = subDir.listFiles(fileFilter);
                     if (files != null) {
-                        for (int j = 0; j < files.length; j++) {
-                            if (files[j].isFile() && files[j].canRead()) {
-                                int vmid = PerfDataFile.getLocalVmId(files[j]);
+                        for (File file : files) {
+                            if (file.isFile() && file.canRead()) {
+                                int vmid = PerfDataFile.getLocalVmId(file);
                                 if (vmid != -1) {
                                   jvmSet.add(vmid);
                                 }
@@ -172,9 +170,9 @@ public class LocalVmManager {
                 File[] files = tmpdir.listFiles(fileFilter);
 
                 if (files != null) {
-                    for (int j = 0; j < files.length; j++) {
-                        if (files[j].isFile() && files[j].canRead()) {
-                            int vmid = PerfDataFile.getLocalVmId(files[j]);
+                    for (File file : files) {
+                        if (file.isFile() && file.canRead()) {
+                            int vmid = PerfDataFile.getLocalVmId(file);
                             if (vmid != -1) {
                               jvmSet.add(vmid);
                             }
@@ -186,9 +184,9 @@ public class LocalVmManager {
             // look for any 1.4.1 files
             File[] files = tmpdir.listFiles(tmpFileFilter);
             if (files != null) {
-                for (int j = 0; j < files.length; j++) {
-                    if (files[j].isFile() && files[j].canRead()) {
-                        int vmid = PerfDataFile.getLocalVmId(files[j]);
+                for (File file : files) {
+                    if (file.isFile() && file.canRead()) {
+                        int vmid = PerfDataFile.getLocalVmId(file);
                         if (vmid != -1) {
                           jvmSet.add(vmid);
                         }

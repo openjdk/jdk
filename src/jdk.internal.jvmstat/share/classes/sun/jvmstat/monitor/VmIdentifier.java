@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,10 +385,10 @@ public class VmIdentifier {
         String query = getQuery();
         if (query != null) {
             String[] queryArgs = query.split("\\+");
-            for (int i = 0; i < queryArgs.length; i++) {
-                if (queryArgs[i].startsWith("mode=")) {
-                    int index = queryArgs[i].indexOf('=');
-                    return queryArgs[i].substring(index+1);
+            for (String queryArg : queryArgs) {
+                if (queryArg.startsWith("mode=")) {
+                    int index = queryArg.indexOf('=');
+                    return queryArg.substring(index + 1);
                 }
             }
         }

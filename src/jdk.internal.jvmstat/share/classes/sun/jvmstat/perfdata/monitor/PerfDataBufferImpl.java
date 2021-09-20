@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,9 +205,11 @@ public abstract class PerfDataBufferImpl {
         if (m == null) {
             ArrayList<String> al = aliasMap.get(name);
             if (al != null) {
-                for (Iterator<String> i = al.iterator(); i.hasNext() && m == null; ) {
-                    String alias = i.next();
+                for (String alias : al) {
                     m = monitors.get(alias);
+                    if (m != null) {
+                        break;
+                    }
                 }
             }
         }
@@ -293,8 +295,7 @@ public abstract class PerfDataBufferImpl {
 
         Set<Map.Entry<String,Monitor>> monitorSet = monitors.entrySet();
 
-        for (Iterator<Map.Entry<String, Monitor>> i = monitorSet.iterator(); i.hasNext(); /* empty */) {
-            Map.Entry<String, Monitor> me = i.next();
+        for (Map.Entry<String, Monitor> me : monitorSet) {
             String name = me.getKey();
             Monitor m = me.getValue();
 
@@ -303,7 +304,7 @@ public abstract class PerfDataBufferImpl {
 
             // if the pattern matches, then add monitor to list
             if (matcher.lookingAt()) {
-                 matches.add(me.getValue());
+                matches.add(me.getValue());
             }
         }
         return matches;
