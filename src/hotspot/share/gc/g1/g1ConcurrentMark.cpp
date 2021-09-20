@@ -2036,8 +2036,9 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   for (uint i = 0; i < _max_num_tasks; ++i) {
     _tasks[i]->clear_region_fields();
   }
-
-  abort_marking_threads();
+  _first_overflow_barrier_sync.abort();
+  _second_overflow_barrier_sync.abort();
+  _has_aborted = true;
 
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
@@ -2046,12 +2047,6 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   satb_mq_set.set_active_all_threads(
                                  false, /* new active value */
                                  satb_mq_set.is_active() /* expected_active */);
-}
-
-void G1ConcurrentMark::abort_marking_threads() {
-  _has_aborted = true;
-  _first_overflow_barrier_sync.abort();
-  _second_overflow_barrier_sync.abort();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,
