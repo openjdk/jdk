@@ -125,8 +125,6 @@ public:
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page, bool reclaimed);
   void free_pages(const ZArray<ZPage*>* pages, bool reclaimed);
-  void safe_destroy_page(ZPage* page);
-  void recycle_page(ZPage* page);
 
   // Object allocation
   bool has_alloc_stalled() const;

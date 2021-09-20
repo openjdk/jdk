@@ -74,6 +74,11 @@ ZPage::ZPage(const ZPage& other) :
     _physical(other._physical),
     _node() {}
 
+ZPage* ZPage::clone_limited() const {
+  // Only copy type and memory layouts. Let the rest be lazily reconstructed when needed.
+  return new ZPage(_type, _virtual, _physical);
+}
+
 ZPage::~ZPage() {}
 
 void ZPage::reset_seqnum(ZGenerationId generation_id) {

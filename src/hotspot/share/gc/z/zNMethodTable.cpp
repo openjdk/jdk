@@ -49,7 +49,7 @@ size_t ZNMethodTable::_nregistered = 0;
 size_t ZNMethodTable::_nunregistered = 0;
 ZNMethodTableIteration ZNMethodTable::_iteration;
 ZNMethodTableIteration ZNMethodTable::_iteration_secondary;
-ZSafeDeleteNoLock<ZNMethodTableEntry[]> ZNMethodTable::_safe_delete;
+ZSafeDelete<ZNMethodTableEntry[]> ZNMethodTable::_safe_delete(false /* locked */);
 
 size_t ZNMethodTable::first_index(const nmethod* nm, size_t size) {
   assert(is_power_of_2(size), "Invalid size");
@@ -129,7 +129,7 @@ void ZNMethodTable::rebuild(size_t new_size) {
   }
 
   // Free old table
-  _safe_delete(_table);
+  _safe_delete.schedule_delete(_table);
 
   // Install new table
   _table = new_table;

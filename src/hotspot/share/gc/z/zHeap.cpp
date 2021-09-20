@@ -240,16 +240,6 @@ void ZHeap::free_pages(const ZArray<ZPage*>* pages, bool reclaimed) {
   _page_allocator.free_pages(pages, reclaimed);
 }
 
-void ZHeap::recycle_page(ZPage* page) {
-  // Recycle page
-  _page_allocator.recycle_page(page);
-}
-
-void ZHeap::safe_destroy_page(ZPage* page) {
-  // Safely destroy page
-  _page_allocator.safe_destroy_page(page);
-}
-
 void ZHeap::mark_flush_and_free(Thread* thread) {
   minor_collector()->mark_flush_and_free(thread);
   major_collector()->mark_flush_and_free(thread);
@@ -310,7 +300,7 @@ void ZHeap::print_extended_on(outputStream* st) const {
   st->cr();
 
   // Do not allow pages to be deleted
-  _page_allocator.enable_deferred_destroy();
+  _page_allocator.enable_safe_destroy();
 
   // Print all pages
   st->print_cr("ZGC Page Table:");
@@ -320,7 +310,7 @@ void ZHeap::print_extended_on(outputStream* st) const {
   }
 
   // Allow pages to be deleted
-  _page_allocator.disable_deferred_destroy();
+  _page_allocator.disable_safe_destroy();
 }
 
 bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {

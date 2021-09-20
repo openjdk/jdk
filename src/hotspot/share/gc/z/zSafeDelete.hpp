@@ -25,53 +25,24 @@
 #define SHARE_GC_Z_ZSAFEDELETE_HPP
 
 #include "gc/z/zArray.hpp"
-#include "gc/z/zLock.hpp"
 #include "metaprogramming/removeExtent.hpp"
 
 template <typename T>
-class ZDeleteFunction {
+class ZSafeDelete {
 private:
   typedef typename RemoveExtent<T>::type ItemT;
 
-public:
+  ZActivatedArray<T> _deferred;
+
   static void immediate_delete(ItemT* item);
-  static void deferred_delete(ItemT* item);
-  static void deferring_deletion(ItemT* item);
-};
-
-template <typename T, typename DeleteT = ZDeleteFunction<T>>
-class ZSafeDeleteImpl {
-private:
-  typedef typename RemoveExtent<T>::type ItemT;
-
-  ZLock*         _lock;
-  uint64_t       _enabled;
-  ZArray<ItemT*> _deferred;
-
-  bool deferred_delete(ItemT* item);
 
 public:
-  ZSafeDeleteImpl(ZLock* lock);
+  explicit ZSafeDelete(bool locked = true);
 
   void enable_deferred_delete();
   void disable_deferred_delete();
 
-  void operator()(ItemT* item);
-};
-
-template <typename T>
-class ZSafeDelete : public ZSafeDeleteImpl<T> {
-private:
-  ZLock _lock;
-
-public:
-  ZSafeDelete();
-};
-
-template <typename T>
-class ZSafeDeleteNoLock : public ZSafeDeleteImpl<T> {
-public:
-  ZSafeDeleteNoLock();
+  void schedule_delete(ItemT* item);
 };
 
 #endif // SHARE_GC_Z_ZSAFEDELETE_HPP

@@ -27,6 +27,7 @@
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
+#include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
@@ -150,15 +151,15 @@ void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
   _collector->stat_relocation()->set_at_install_relocation_set(_allocator.size());
 }
 
-static void destroy_and_clear(ZArray<ZPage*>* array) {
+static void destroy_and_clear(ZPageAllocator* page_allocator, ZArray<ZPage*>* array) {
   for (int i = 0; i < array->length(); i++) {
     // Delete non-relocating promoted pages from last cycle
     ZPage* page = array->at(i);
-    ZHeap::heap()->safe_destroy_page(page);
+    page_allocator->safe_destroy_page(page);
   }
   array->clear();
 }
-void ZRelocationSet::reset() {
+void ZRelocationSet::reset(ZPageAllocator* page_allocator) {
   // Destroy forwardings
   ZRelocationSetIterator iter(this);
   for (ZForwarding* forwarding; iter.next(&forwarding);) {
@@ -167,8 +168,8 @@ void ZRelocationSet::reset() {
 
   _nforwardings = 0;
 
-  destroy_and_clear(&_promote_reloc_pages);
-  destroy_and_clear(&_promote_flip_pages);
+  destroy_and_clear(page_allocator, &_promote_reloc_pages);
+  destroy_and_clear(page_allocator, &_promote_flip_pages);
 }
 
 void ZRelocationSet::register_promote_reloc_page(ZPage* page) {

@@ -64,24 +64,24 @@ ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTa
     _iterator(page_table),
     _generation_id(generation),
     _page_allocator(page_allocator) {
-  _page_allocator->enable_deferred_destroy();
-  _page_allocator->enable_deferred_recycle();
+  _page_allocator->enable_safe_destroy();
+  _page_allocator->enable_safe_recycle();
 }
 
 ZGenerationPagesParallelIterator::~ZGenerationPagesParallelIterator() {
-  _page_allocator->disable_deferred_recycle();
-  _page_allocator->disable_deferred_destroy();
+  _page_allocator->disable_safe_recycle();
+  _page_allocator->disable_safe_destroy();
 }
 
 ZGenerationPagesIterator::ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator) :
     _iterator(page_table),
     _generation_id(generation),
     _page_allocator(page_allocator) {
-  _page_allocator->enable_deferred_destroy();
-  _page_allocator->enable_deferred_recycle();
+  _page_allocator->enable_safe_destroy();
+  _page_allocator->enable_safe_recycle();
 }
 
 ZGenerationPagesIterator::~ZGenerationPagesIterator() {
-  _page_allocator->disable_deferred_recycle();
-  _page_allocator->disable_deferred_destroy();
+  _page_allocator->disable_safe_recycle();
+  _page_allocator->disable_safe_destroy();
 }

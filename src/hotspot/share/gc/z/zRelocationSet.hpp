@@ -31,6 +31,7 @@
 class ZForwarding;
 class ZCollector;
 class ZPage;
+class ZPageAllocator;
 class ZRelocationSetSelector;
 class ZWorkers;
 
@@ -52,7 +53,7 @@ public:
   ZRelocationSet(ZCollector* collector);
 
   void install(const ZRelocationSetSelector* selector);
-  void reset();
+  void reset(ZPageAllocator* page_allocator);
   ZCollector* collector() const;
   ZArray<ZPage*>* promote_flip_pages();
   ZArray<ZPage*>* promote_reloc_pages();

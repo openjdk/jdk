@@ -26,6 +26,7 @@
 
 #include "gc/z/zArray.hpp"
 
+#include "gc/z/zLock.inline.hpp"
 #include "runtime/atomic.hpp"
 
 template <typename T, bool Parallel>
@@ -86,6 +87,61 @@ template <typename T, bool Parallel>
 inline T ZArrayIteratorImpl<T, Parallel>::index_to_elem(size_t index) {
   assert(index < _end, "Out of bounds");
   return _array[index];
+}
+
+template <typename T>
+ZActivatedArray<T>::ZActivatedArray(bool locked) :
+    _lock(locked ? new (AllocateHeap(sizeof(ZLock), mtGC)) ZLock() : NULL),
+    _count(0),
+    _array() {}
+
+template <typename T>
+ZActivatedArray<T>::~ZActivatedArray<T>() {
+  FreeHeap(_lock);
+}
+
+template <typename T>
+bool ZActivatedArray<T>::is_activated() const {
+  ZLocker<ZLock> locker(_lock);
+  return _count > 0;
+}
+
+template <typename T>
+bool ZActivatedArray<T>::add_if_activated(ItemT* item) {
+  ZLocker<ZLock> locker(_lock);
+  if (_count > 0) {
+    _array.append(item);
+    return true;
+  }
+
+  return false;
+}
+
+template <typename T>
+void ZActivatedArray<T>::activate() {
+  ZLocker<ZLock> locker(_lock);
+  _count++;
+}
+
+template <typename T>
+template <typename Function>
+void ZActivatedArray<T>::deactivate_and_apply(Function function) {
+  ZArray<ItemT*> array;
+
+  {
+    ZLocker<ZLock> locker(_lock);
+    assert(_count > 0, "Invalid state");
+    if (--_count == 0u) {
+      // Fully deactivated - remove all elements
+      array.swap(&_array);
+    }
+  }
+
+  // Apply function to all elements - if fully deactivated
+  ZArrayIterator<ItemT*> iter(&array);
+  for (ItemT* item; iter.next(&item);) {
+    function(item);
+  }
 }
 
 #endif // SHARE_GC_Z_ZARRAY_INLINE_HPP

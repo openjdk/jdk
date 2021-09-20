@@ -54,17 +54,56 @@ static const ZStatCounter       ZCounterMutatorAllocationRate("Memory", "Allocat
 static const ZStatCounter       ZCounterPageCacheFlush("Memory", "Page Cache Flush", ZStatUnitBytesPerSecond);
 static const ZStatCriticalPhase ZCriticalPhaseAllocationStall("Allocation Stall");
 
-void ZPageRecycle::immediate_delete(ZPage* page) {
-  ZHeap::heap()->recycle_page(page);
+ZSafePageRecycle::ZSafePageRecycle(ZPageAllocator* page_allocator) :
+    _page_allocator(page_allocator),
+    _unsafe_to_recycle() {}
+
+void ZSafePageRecycle::activate() {
+  _unsafe_to_recycle.activate();
 }
 
-void ZPageRecycle::deferred_delete(ZPage* page) {
-  ZHeap::heap()->safe_destroy_page(page);
+void ZSafePageRecycle::deactivate() {
+  auto delete_function = [&](ZPage* page) {
+    _page_allocator->safe_destroy_page(page);
+  };
+
+  _unsafe_to_recycle.deactivate_and_apply(delete_function);
 }
 
-void ZPageRecycle::deferring_deletion(ZPage* page) {
-  ZPage* cloned_page = new ZPage(*page);
-  ZHeap::heap()->recycle_page(cloned_page);
+ZPage* ZSafePageRecycle::clone_if_unsafe(ZPage* page) {
+  if (!_unsafe_to_recycle.is_activated()) {
+    // The page has no concurrent readers.
+    // Recycle original page.
+    return page;
+  }
+
+  // The page could have concurrent readers.
+  // It would be unsafe to recycle this page at this point.
+
+  // As soon as the page is added to _unsafe_to_recycle, it
+  // must not be used again. Hence, the extra double-checked
+  // locking to only clone the page if it is believed to be
+  // unsafe to recycle the page.
+  ZPage* const cloned_page = page->clone_limited();
+  if (!_unsafe_to_recycle.add_if_activated(page)) {
+    // It became safe to recycle the page after the is_activated check
+    delete cloned_page;
+    return page;
+  }
+
+  // The original page has been registered to be deleted by another thread.
+  // Recycle the cloned page.
+  return cloned_page;
+}
+
+void ZSafePageRecycle::recycle(ZPage* page) {
+  // The recycle_guard will hand out a cloned page if the current page is
+  // unsafe to recycle at this point. Note that the original page might be
+  // deleted as soon it has been passed into the recycle_guard.
+  ZPage* const to_recycle = clone_if_unsafe(page);
+
+  // Perform the actual recycle
+  _page_allocator->recycle_page(to_recycle);
 }
 
 enum ZPageAllocationStall {
@@ -174,7 +213,7 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     _unmapper(new ZUnmapper(this)),
     _uncommitter(new ZUncommitter(this)),
     _safe_destroy(),
-    _safe_recycle(),
+    _safe_recycle(this),
     _initialized(false) {
 
   if (!_virtual.is_initialized() || !_physical.is_initialized()) {
@@ -386,7 +425,7 @@ void ZPageAllocator::unmap_page(const ZPage* page) const {
 
 void ZPageAllocator::safe_destroy_page(ZPage* page) {
   // Destroy page safely
-  _safe_destroy(page);
+  _safe_destroy.schedule_delete(page);
 }
 
 void ZPageAllocator::destroy_page(ZPage* page) {
@@ -705,6 +744,9 @@ void ZPageAllocator::satisfy_stalled() {
 }
 
 void ZPageAllocator::recycle_page(ZPage* page) {
+  // Set time when last used
+  page->set_last_used();
+
   // Cache page
   _cache.free_page(page);
 }
@@ -713,11 +755,8 @@ void ZPageAllocator::free_page_inner(ZPage* page, bool reclaimed) {
   // Update used statistics
   decrease_used(page->size(), reclaimed, page->generation_id());
 
-  // Set time when last used
-  page->set_last_used();
-
   // Recycle page
-  _safe_recycle(page);
+  _safe_recycle.recycle(page);
 }
 
 void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
@@ -792,20 +831,20 @@ size_t ZPageAllocator::uncommit(uint64_t* timeout) {
   return flushed;
 }
 
-void ZPageAllocator::enable_deferred_destroy() const {
+void ZPageAllocator::enable_safe_destroy() const {
   _safe_destroy.enable_deferred_delete();
 }
 
-void ZPageAllocator::disable_deferred_destroy() const {
+void ZPageAllocator::disable_safe_destroy() const {
   _safe_destroy.disable_deferred_delete();
 }
 
-void ZPageAllocator::enable_deferred_recycle() const {
-  _safe_recycle.enable_deferred_delete();
+void ZPageAllocator::enable_safe_recycle() const {
+  _safe_recycle.activate();
 }
 
-void ZPageAllocator::disable_deferred_recycle() const {
-  _safe_recycle.disable_deferred_delete();
+void ZPageAllocator::disable_safe_recycle() const {
+  _safe_recycle.deactivate();
 }
 
 bool ZPageAllocator::has_alloc_stalled() const {

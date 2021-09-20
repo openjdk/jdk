@@ -37,25 +37,26 @@
 class ThreadClosure;
 class ZCollector;
 class ZPageAllocation;
+class ZPageAllocator;
 class ZPageAllocatorStats;
 class ZWorkers;
 class ZUncommitter;
 class ZUnmapper;
 
-class ZPageRecycle {
-public:
-  static void immediate_delete(ZPage* page);
-  static void deferred_delete(ZPage* page);
-  static void deferring_deletion(ZPage* page);
-};
-
-class ZSafePageRecycle : public ZSafeDeleteImpl<ZPage, ZPageRecycle> {
+class ZSafePageRecycle {
 private:
-  ZLock _lock;
+  ZPageAllocator*        _page_allocator;
+  ZActivatedArray<ZPage> _unsafe_to_recycle;
+
+  ZPage* clone_if_unsafe(ZPage* page);
 
 public:
-  ZSafePageRecycle() :
-    ZSafeDeleteImpl(&_lock) {}
+  ZSafePageRecycle(ZPageAllocator* page_allocator);
+
+  void activate();
+  void deactivate();
+
+  void recycle(ZPage* page);
 };
 
 class ZPageAllocator {
@@ -138,11 +139,11 @@ public:
   void free_page(ZPage* page, bool reclaimed);
   void free_pages(const ZArray<ZPage*>* pages, bool gc_relocation);
 
-  void enable_deferred_destroy() const;
-  void disable_deferred_destroy() const;
+  void enable_safe_destroy() const;
+  void disable_safe_destroy() const;
 
-  void enable_deferred_recycle() const;
-  void disable_deferred_recycle() const;
+  void enable_safe_recycle() const;
+  void disable_safe_recycle() const;
 
   bool has_alloc_stalled() const;
   void reset_alloc_stalled();

@@ -189,7 +189,7 @@ void ZCollector::reset_relocation_set() {
   }
 
   // Reset relocation set
-  _relocation_set.reset();
+  _relocation_set.reset(_page_allocator);
 }
 
 void ZCollector::synchronize_relocation() {

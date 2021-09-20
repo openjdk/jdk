@@ -25,10 +25,13 @@
 #define SHARE_GC_Z_ZARRAY_HPP
 
 #include "memory/allocation.hpp"
+#include "metaprogramming/removeExtent.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
+
+class ZLock;
 
 template <typename T> using ZArray = GrowableArrayCHeap<T, mtGC>;
 
@@ -54,5 +57,26 @@ public:
 
 template <typename T> using ZArrayIterator = ZArrayIteratorImpl<T, false /* Parallel */>;
 template <typename T> using ZArrayParallelIterator = ZArrayIteratorImpl<T, true /* Parallel */>;
+
+template <typename T>
+class ZActivatedArray {
+private:
+  typedef typename RemoveExtent<T>::type ItemT;
+
+  ZLock*         _lock;
+  uint64_t       _count;
+  ZArray<ItemT*> _array;
+
+public:
+  explicit ZActivatedArray(bool locked = true);
+  ~ZActivatedArray();
+
+  void activate();
+  template <typename Function>
+  void deactivate_and_apply(Function function);
+
+  bool is_activated() const;
+  bool add_if_activated(ItemT* item);
+};
 
 #endif // SHARE_GC_Z_ZARRAY_HPP

@@ -35,13 +35,13 @@ class ZWorkers;
 
 class ZNMethodTable : public AllStatic {
 private:
-  static ZNMethodTableEntry*                     _table;
-  static size_t                                  _size;
-  static size_t                                  _nregistered;
-  static size_t                                  _nunregistered;
-  static ZNMethodTableIteration                  _iteration;
-  static ZNMethodTableIteration                  _iteration_secondary;
-  static ZSafeDeleteNoLock<ZNMethodTableEntry[]> _safe_delete;
+  static ZNMethodTableEntry*               _table;
+  static size_t                            _size;
+  static size_t                            _nregistered;
+  static size_t                            _nunregistered;
+  static ZNMethodTableIteration            _iteration;
+  static ZNMethodTableIteration            _iteration_secondary;
+  static ZSafeDelete<ZNMethodTableEntry[]> _safe_delete;
 
   static ZNMethodTableEntry* create(size_t size);
   static void destroy(ZNMethodTableEntry* table);
