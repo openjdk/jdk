@@ -895,7 +895,7 @@ class G1STWRefProcProxyTask : public RefProcProxyTask {
   TaskTerminator _terminator;
   G1ScannerTasksQueueSet& _task_queues;
 
-  public:
+public:
   G1STWRefProcProxyTask(uint max_workers, G1CollectedHeap& g1h, G1ParScanThreadStateSet& pss, G1ScannerTasksQueueSet& task_queues)
     : RefProcProxyTask("G1STWRefProcProxyTask", max_workers),
       _g1h(g1h),
