@@ -977,6 +977,14 @@ jlong os::javaTimeNanos() {
   }
 }
 
+void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
+  info_ptr->max_value = ALL_64_BITS;
+  // mread_real_time() is monotonic (see 'os::javaTimeNanos()')
+  info_ptr->may_skip_backward = false;
+  info_ptr->may_skip_forward = false;
+  info_ptr->kind = JVMTI_TIMER_ELAPSED;    // elapsed not CPU time
+}
+
 intx os::current_thread_id() {
   return (intx)pthread_self();
 }

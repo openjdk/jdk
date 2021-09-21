@@ -91,11 +91,7 @@
 
 static jlong initial_time_count = 0;
 
-#if defined(_ALLBSD_SOURCE)
-static int clock_tics_per_sec = CLK_TCK;
-#else
 static int clock_tics_per_sec = 100;
-#endif
 
 // Check core dump limit and report possible place where core can be found
 void os::check_dump_limit(char* buffer, size_t bufferSize) {
@@ -1234,7 +1230,9 @@ static bool _use_clock_monotonic_condattr = false;
 // Determine what POSIX API's are present and do appropriate
 // configuration.
 void os::Posix::init(void) {
-#if defined(__linux__) || defined(_AIX)
+#if defined(_ALLBSD_SOURCE)
+  clock_tics_per_sec = CLK_TCK;
+#else
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
 #endif
   // NOTE: no logging available when this is called. Put logging
@@ -1427,8 +1425,6 @@ jlong os::javaTimeNanos() {
   return result;
 }
 
-#endif // ! APPLE && !AIX
-
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 
@@ -1439,6 +1435,7 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
 }
+#endif // ! APPLE && !AIX
 
 // Time since start-up in seconds to a fine granularity.
 double os::elapsedTime() {

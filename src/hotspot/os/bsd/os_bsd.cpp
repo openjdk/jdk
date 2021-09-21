@@ -784,6 +784,13 @@ jlong os::javaTimeNanos() {
   // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
   return (prev == obsv) ? now : obsv;
 }
+
+void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
+  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
+  info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
+  info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
+}
 #endif // __APPLE__
 
 // Information of current thread in variety of formats
