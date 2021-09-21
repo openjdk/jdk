@@ -29,7 +29,9 @@ import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
+import java.util.Arrays;
 import java.util.Objects;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * This class is defined here rather than in java.nio.channels.Channels
@@ -43,6 +45,7 @@ import java.util.Objects;
 public class ChannelInputStream
     extends InputStream
 {
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     public static int read(ReadableByteChannel ch, ByteBuffer bb,
                            boolean block)
@@ -105,6 +108,94 @@ public class ChannelInputStream
         throws IOException
     {
         return ChannelInputStream.read(ch, bb, true);
+    }
+
+    @Override
+    public byte[] readAllBytes() throws IOException {
+        if (!(ch instanceof SeekableByteChannel))
+            return super.readAllBytes();
+        SeekableByteChannel sbc = (SeekableByteChannel)ch;
+
+        long length = sbc.size();
+        long position = sbc.position();
+        long size = length - position;
+
+        if (length <= 0 || size <= 0)
+            return super.readAllBytes();
+
+        if (size > (long) Integer.MAX_VALUE) {
+            String msg =
+                String.format("Required array size too large: %d = %d - %d",
+                    size, length, position);
+            throw new OutOfMemoryError(msg);
+        }
+
+        int capacity = (int)size;
+        byte[] buf = new byte[capacity];
+
+        int nread = 0;
+        int n;
+        for (;;) {
+            // read to EOF which may read more or less than initial size, e.g.,
+            // file is truncated while we are reading
+            while ((n = read(buf, nread, capacity - nread)) > 0)
+                nread += n;
+
+            // if last call to read() returned -1, we are done; otherwise,
+            // try to read one more byte and if that fails we're done too
+            if (n < 0 || (n = read()) < 0)
+                break;
+
+            // one more byte was read; need to allocate a larger buffer
+            capacity = Math.max(ArraysSupport.newLength(capacity,
+                                                        1,         // min growth
+                                                        capacity), // pref growth
+                                DEFAULT_BUFFER_SIZE);
+            buf = Arrays.copyOf(buf, capacity);
+            buf[nread++] = (byte)n;
+        }
+        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
+    }
+
+    @Override
+    public byte[] readNBytes(int len) throws IOException {
+        if (len < 0)
+            throw new IllegalArgumentException("len < 0");
+        if (len == 0)
+            return new byte[0];
+
+        if (!(ch instanceof SeekableByteChannel))
+            return super.readAllBytes();
+        SeekableByteChannel sbc = (SeekableByteChannel)ch;
+
+        long length = sbc.size();
+        long position = sbc.position();
+        long size = length - position;
+
+        if (length <= 0 || size <= 0)
+            return super.readNBytes(len);
+
+        int capacity = (int)Math.min(len, size);
+        byte[] buf = new byte[capacity];
+
+        int remaining = capacity;
+        int nread = 0;
+        int n;
+        do {
+            n = read(buf, nread, remaining);
+            if (n > 0 ) {
+                nread += n;
+                remaining -= n;
+            } else if (n == 0) {
+                // Block until a byte is read or EOF is detected
+                byte b = (byte)read();
+                if (b == -1 )
+                    break;
+                buf[nread++] = b;
+                remaining--;
+            }
+        } while (n >= 0 && remaining > 0);
+        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
     public int available() throws IOException {
