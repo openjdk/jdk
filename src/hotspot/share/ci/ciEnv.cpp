@@ -404,7 +404,7 @@ ciInstance* ciEnv::create_implicit_exception(Symbol* name, GraphKit* gk) {
     oop obj = ik->allocate_instance(THREAD);
     if (!HAS_PENDING_EXCEPTION) {
       Handle handle = Handle(THREAD, obj);
-      java_lang_Throwable::fill_in_stack_trace_of_implicit_exception(handle, gk);
+      java_lang_Throwable::allocate_fill_stack_trace_of_implicit_exception(handle, gk);
       // nmethods are no strong roots so we have to create a global JNI handle
       // for the created exception in order to keep it alive accross GCs.
       objh = JNIHandles::make_global(handle);

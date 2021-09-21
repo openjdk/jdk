@@ -558,7 +558,7 @@ class java_lang_Throwable: AllStatic {
   static void allocate_backtrace(Handle throwable, TRAPS);
   #ifdef COMPILER2
   // Fill in the stack frame(s) for an implicit exception, can cause GC
-  static void fill_in_stack_trace_of_implicit_exception(Handle throwable, GraphKit* gk);
+  static void allocate_fill_stack_trace_of_implicit_exception(Handle throwable, GraphKit* gk);
   #endif
   // Fill in current stack trace for throwable with preallocated backtrace (no GC)
   static void fill_in_stack_trace_of_preallocated_backtrace(Handle throwable);

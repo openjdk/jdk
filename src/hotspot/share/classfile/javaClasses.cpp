@@ -2569,38 +2569,46 @@ void java_lang_Throwable::allocate_backtrace(Handle throwable, TRAPS) {
 }
 
 #ifdef COMPILER2
-void java_lang_Throwable::fill_in_stack_trace_of_implicit_exception(Handle throwable, GraphKit* gk) {
+void java_lang_Throwable::allocate_fill_stack_trace_of_implicit_exception(Handle throwable, GraphKit* gk) {
   // Fill in the stack frame(s) for an implicit exception, can cause GC
   assert(throwable->is_a(vmClasses::Throwable_klass()), "sanity check");
 
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
-  java_lang_Throwable::allocate_backtrace(throwable, CHECK);
-  objArrayHandle backtrace (THREAD, (objArrayOop)java_lang_Throwable::backtrace(throwable()));
+  InstanceKlass* ik = vmClasses::StackTraceElement_klass();
+  assert(ik != NULL, "must be loaded in 1.4+");
 
+  // Determin the number of available frames
   ResourceMark rm(THREAD);
-
-  BacktraceBuilder bt(THREAD, backtrace);
-
-  // fill in as much stack trace as available
-  int chunk_count = 1;
-  Method* m = gk->method()->get_Method();
-  assert(m != NULL, "Method* of the ciMethod we're compiling should be set.");
-  bt.push(m, gk->bci(), CHECK);
+  GrowableArray<JVMState*> call_chain;
+  int depth = 1;
+  call_chain.append(gk->jvms());
   JVMState* caller = gk->jvms()->caller();
   while (caller != NULL) {
-    bt.push(caller->method()->get_Method(), caller->bci(), CHECK);
-    chunk_count++;
+    call_chain.append(caller);
+    depth++;
     caller = caller->caller();
   }
-  set_depth(throwable(), chunk_count);
-  log_info(stacktrace)("Created implicit exception %s with %d stack frame(s) for %s::%s at bci %d",
-                       throwable->klass()->external_name(), chunk_count,
-                       m->klass_name()->as_klass_external_name(), m->name()->as_C_string(), gk->bci());
+  // Allocate an array of java/lang/StackTraceElement object
+  objArrayOop ste = oopFactory::new_objArray(ik, depth, CHECK);
+  objArrayHandle backtrace(THREAD, ste);
+  // Fill in as much stack trace as available
+  for (int j = 0; j < depth; j++) {
+    JVMState* call = call_chain.at(j);
+    methodHandle mh(THREAD, call->method()->get_Method());
+    oop element = java_lang_StackTraceElement::create(mh, j == 0 ? gk->bci() : call->bci(), CHECK);
+    backtrace->obj_at_put(j, element);
+  }
 
-  // We support the Throwable immutability protocol defined for Java 7.
-  java_lang_Throwable::set_stacktrace(throwable(), java_lang_Throwable::unassigned_stacktrace());
-  assert(java_lang_Throwable::unassigned_stacktrace() != NULL, "not initialized");
+  log_info(stacktrace)("Created implicit exception %s with %d stack frame(s) for %s::%s at bci %d",
+                       throwable->klass()->external_name(), depth,
+                       gk->method()->get_Method()->klass_name()->as_klass_external_name(),
+                       gk->method()->get_Method()->name()->as_C_string(), gk->bci());
+
+  set_depth(throwable(), depth);
+  set_stacktrace(throwable(), backtrace());
+  // Clear backtrace because the stacktrace should be used instead.
+  set_backtrace(throwable(), NULL);
 }
 #endif
 
