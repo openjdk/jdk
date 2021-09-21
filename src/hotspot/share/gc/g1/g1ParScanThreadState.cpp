@@ -213,7 +213,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   assert(obj != NULL, "Must be");
   if (HeapRegion::is_in_same_region(p, obj)) {
     return;
-  }
+}
   HeapRegion* from = _g1h->heap_region_containing(p);
   if (!from->is_young()) {
     enqueue_card_if_tracked(_g1h->region_attr(obj), p, obj);
