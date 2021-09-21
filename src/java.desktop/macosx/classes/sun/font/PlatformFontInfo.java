@@ -25,7 +25,7 @@
 
 package sun.font;
 
-class PlatformFontInfo {
+final class PlatformFontInfo {
 
     /**
      * The method is only to be called via the

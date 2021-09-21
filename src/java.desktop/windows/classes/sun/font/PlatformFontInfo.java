@@ -27,7 +27,7 @@ package sun.font;
 
 import sun.awt.Win32FontManager;
 
-class PlatformFontInfo {
+final class PlatformFontInfo {
 
     /**
      * The method is only to be called via the
