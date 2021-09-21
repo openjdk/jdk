@@ -25,12 +25,9 @@
 #ifndef SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 #define SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 
-#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
-#include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
@@ -40,9 +37,10 @@
 #include "oops/oop.hpp"
 #include "utilities/ticks.hpp"
 
+class G1CardTable;
+class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
-class G1EvacuationRootClosures;
 class HeapRegion;
 class PreservedMarks;
 class PreservedMarksSet;
@@ -60,7 +58,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   AgeTable _age_table;
   // Local tenuring threshold.
   uint _tenuring_threshold;
-  G1ScanEvacuatedObjClosure  _scanner;
+  G1ScanEvacuatedObjClosure _scanner;
 
   uint _worker_id;
 
@@ -129,8 +127,8 @@ public:
   void push_on_queue(ScannerTask task);
 
   // Apply the post barrier to the given reference field. Enqueues the card of p
-  // if the barrier (same region, not from survivor) does not filter out not find
-  // that it is not required.
+  // if the barrier does not filter out the reference for some reason (e.g.
+  // p and q are in the same region, p is in survivor)
   // To be called during GC if nothing particular about p and obj are known.
   template <class T> void write_ref_field_post(T* p, oop obj);
 

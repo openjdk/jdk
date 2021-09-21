@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1ParScanThreadState.hpp"
 
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1OopStarChunkedList.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
