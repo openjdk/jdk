@@ -37,7 +37,7 @@
  *          java.xml
  * @requires vm.debug
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=none -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=none -XX:VerifyMetaspaceInterval=3
  */
 
 /* @test id=reclaim-none-ndebug
@@ -62,7 +62,7 @@
  *          java.xml
  * @requires vm.debug
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=aggressive -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=aggressive -XX:VerifyMetaspaceInterval=3
  */
 
 /* @test id=reclaim-aggressive-ndebug
@@ -86,7 +86,7 @@
  *          java.xml
  * @requires vm.debug
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3 -XX:+MetaspaceGuardAllocations
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:VerifyMetaspaceInterval=3 -XX:+MetaspaceGuardAllocations
  */
 
 

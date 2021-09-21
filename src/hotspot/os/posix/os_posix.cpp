@@ -177,6 +177,12 @@ size_t os::lasterror(char *buf, size_t len) {
   return n;
 }
 
+// Return true if user is running as root.
+bool os::have_special_privileges() {
+  static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
+  return privileges;
+}
+
 void os::wait_for_keypress_at_exit(void) {
   // don't do anything on posix platforms
   return;
