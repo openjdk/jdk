@@ -160,10 +160,7 @@ public class TestStylesheet extends JavadocTester {
                     .col-first a:link, .col-first a:visited,
                     .col-second a:link, .col-second a:visited,
                     .col-constructor-name a:link, .col-constructor-name a:visited,
-                    .col-summary-item-name a:link, .col-summary-item-name a:visited,
-                    .constant-values-container a:link, .constant-values-container a:visited,
-                    .all-classes-container a:link, .all-classes-container a:visited,
-                    .all-packages-container a:link, .all-packages-container a:visited {
+                    .col-summary-item-name a:link, .col-summary-item-name a:visited {
                         font-weight:bold;
                     }""",
                 """
