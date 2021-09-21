@@ -56,31 +56,8 @@ import java.util.concurrent.TimeUnit;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
-import static java.awt.Color.black;
-import static java.awt.Color.blue;
-import static java.awt.Color.cyan;
-import static java.awt.Color.darkGray;
-import static java.awt.Color.gray;
-import static java.awt.Color.green;
-import static java.awt.Color.lightGray;
-import static java.awt.Color.magenta;
-import static java.awt.Color.orange;
-import static java.awt.Color.pink;
-import static java.awt.Color.red;
-import static java.awt.Color.white;
-import static java.awt.Color.yellow;
-import static java.awt.image.BufferedImage.TYPE_3BYTE_BGR;
-import static java.awt.image.BufferedImage.TYPE_4BYTE_ABGR;
-import static java.awt.image.BufferedImage.TYPE_4BYTE_ABGR_PRE;
-import static java.awt.image.BufferedImage.TYPE_BYTE_BINARY;
-import static java.awt.image.BufferedImage.TYPE_BYTE_GRAY;
-import static java.awt.image.BufferedImage.TYPE_BYTE_INDEXED;
-import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
-import static java.awt.image.BufferedImage.TYPE_INT_ARGB_PRE;
-import static java.awt.image.BufferedImage.TYPE_INT_BGR;
-import static java.awt.image.BufferedImage.TYPE_INT_RGB;
-import static java.awt.image.BufferedImage.TYPE_USHORT_555_RGB;
-import static java.awt.image.BufferedImage.TYPE_USHORT_GRAY;
+import static java.awt.Color.*;
+import static java.awt.image.BufferedImage.*;
 
 public class ImageTypes {
 
