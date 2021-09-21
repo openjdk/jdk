@@ -164,7 +164,7 @@ StackWatermark::StackWatermark(JavaThread* jt, StackWatermarkKind kind, uint32_t
     _next(NULL),
     _jt(jt),
     _iterator(NULL),
-    _lock(Mutex::stackwatermark, "StackWatermark_lock", Mutex::_safepoint_check_never),
+    _lock(Mutex::stackwatermark, "StackWatermark_lock"),
     _kind(kind),
     _linked_watermark(NULL) {
 }

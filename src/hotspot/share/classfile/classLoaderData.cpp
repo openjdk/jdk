@@ -133,8 +133,7 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder) :
   _metaspace(NULL),
-  _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock",
-                            Mutex::_safepoint_check_never)),
+  _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock")),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true),
   // A non-strong hidden class loader data doesn't have anything to keep
