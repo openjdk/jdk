@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,13 @@
  * questions.
  */
 
-package vm.mlvm.anonloader.share;
+package com.sun.exp.provider;
 
-public class AnonkTestee02 extends AnonkTestee01 {
-    public AnonkTestee02() {}
+import java.security.MessageDigestSpi;
+
+public class SHA extends MessageDigestSpi {
+    protected void engineReset() {}
+    protected void engineUpdate(byte input) {}
+    protected void engineUpdate(byte[] input, int offset, int len) {}
+    protected byte[] engineDigest() { return null; }
 }
