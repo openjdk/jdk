@@ -136,7 +136,7 @@ public:
 
   // Enqueue the card if the reference's target region's remembered set is tracked.
   // Assumes that a significant amount of pre-filtering (like done by
-  // enqueue_card_after_barrier_filters()) has already been performed.
+  // write_ref_field_post() above) has already been performed.
   template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o);
 
   G1EvacuationRootClosures* closures() { return _closures; }
