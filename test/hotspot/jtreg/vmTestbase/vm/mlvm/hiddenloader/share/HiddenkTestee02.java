@@ -21,8 +21,8 @@
  * questions.
  */
 
-package vm.mlvm.anonloader.share;
+package vm.mlvm.hiddenloader.share;
 
-public class AnonkTestee02 extends AnonkTestee01 {
-    public AnonkTestee02() {}
+public class HiddenkTestee02 extends HiddenkTestee01 {
+    public HiddenkTestee02() {}
 }
