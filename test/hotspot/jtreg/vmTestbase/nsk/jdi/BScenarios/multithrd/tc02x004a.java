@@ -74,6 +74,7 @@ public class tc02x004a {
     }
 }
 
+
 class tc02x004aClass1 {
     public tc02x004aClass1(String thrdName) { // checkClassBrkpLine
         tc02x004a.log.display("tc02x004aClass1::constructor is called from"

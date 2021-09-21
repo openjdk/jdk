@@ -28,6 +28,7 @@ import nsk.share.jdi.*;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
 
+
 /**
  * The debugged application of the test.
  */

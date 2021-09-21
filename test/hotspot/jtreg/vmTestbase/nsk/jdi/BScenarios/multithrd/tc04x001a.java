@@ -36,7 +36,7 @@ public class tc04x001a {
     public final static int threadCount = 3;
     static Log log;
 
-    public final static int checkMethodBrkpLine = 74;
+    public final static int checkMethodBrkpLine = 73;
     Thread[] thrds = new Thread[threadCount];
 
     public static void main (String argv[]) {
