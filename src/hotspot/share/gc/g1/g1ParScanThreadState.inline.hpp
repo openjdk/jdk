@@ -95,7 +95,7 @@ G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const Heap
   return &_oops_into_optional_regions[hr->index_in_opt_cset()];
 }
 
-template <class T> void G1ParScanThreadState::enqueue_card_after_barrier_filters(T* p, oop obj) {
+template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj) {
   assert(obj != NULL, "Must be");
   if (HeapRegion::is_in_same_region(p, obj)) {
     return;

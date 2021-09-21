@@ -128,10 +128,11 @@ public:
 
   void push_on_queue(ScannerTask task);
 
-  // Enqueue card of p if the barrier or other reasons (same region, not from survivor)
-  // do not find that it is not required.
-  // To be called if nothing particular about p and obj are known.
-  template <class T> void enqueue_card_after_barrier_filters(T* p, oop obj);
+  // Apply the post barrier to the given reference field. Enqueues the card of p
+  // if the barrier (same region, not from survivor) does not filter out not find
+  // that it is not required.
+  // To be called during GC if nothing particular about p and obj are known.
+  template <class T> void write_ref_field_post(T* p, oop obj);
 
   // Enqueue the card if the reference's target region's remembered set is tracked.
   // Assumes that a significant amount of pre-filtering (like done by
