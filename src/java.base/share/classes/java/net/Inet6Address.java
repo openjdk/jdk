@@ -223,13 +223,13 @@ class Inet6Address extends InetAddress {
          */
         boolean scope_ifname_set; // false;
 
-        void setAddr(byte addr[]) {
+        void setAddr(byte[] addr) {
             if (addr.length == INADDRSZ) { // normal IPv6 address
                 System.arraycopy(addr, 0, ipaddress, 0, INADDRSZ);
             }
         }
 
-        void init(byte addr[], int scope_id) {
+        void init(byte[] addr, int scope_id) {
             setAddr(addr);
 
             if (scope_id >= 0) {
@@ -238,7 +238,7 @@ class Inet6Address extends InetAddress {
             }
         }
 
-        void init(byte addr[], NetworkInterface nif)
+        void init(byte[] addr, NetworkInterface nif)
             throws UnknownHostException
         {
             setAddr(addr);
@@ -377,27 +377,27 @@ class Inet6Address extends InetAddress {
     /* checking of value for scope_id should be done by caller
      * scope_id must be >= 0, or -1 to indicate not being set
      */
-    Inet6Address(String hostName, byte addr[], int scope_id) {
+    Inet6Address(String hostName, byte[] addr, int scope_id) {
         holder.init(hostName, IPv6);
         holder6 = new Inet6AddressHolder();
         holder6.init(addr, scope_id);
     }
 
-    Inet6Address(String hostName, byte addr[]) {
+    Inet6Address(String hostName, byte[] addr) {
         holder6 = new Inet6AddressHolder();
         try {
             initif (hostName, addr, null);
         } catch (UnknownHostException e) {} /* cant happen if ifname is null */
     }
 
-    Inet6Address (String hostName, byte addr[], NetworkInterface nif)
+    Inet6Address (String hostName, byte[] addr, NetworkInterface nif)
         throws UnknownHostException
     {
         holder6 = new Inet6AddressHolder();
         initif (hostName, addr, nif);
     }
 
-    Inet6Address (String hostName, byte addr[], String ifname)
+    Inet6Address (String hostName, byte[] addr, String ifname)
         throws UnknownHostException
     {
         holder6 = new Inet6AddressHolder();
@@ -474,7 +474,7 @@ class Inet6Address extends InetAddress {
         throw new UnknownHostException("addr is of illegal length");
     }
 
-    private void initstr(String hostName, byte addr[], String ifname)
+    private void initstr(String hostName, byte[] addr, String ifname)
         throws UnknownHostException
     {
         try {
@@ -488,7 +488,7 @@ class Inet6Address extends InetAddress {
         }
     }
 
-    private void initif(String hostName, byte addr[], NetworkInterface nif)
+    private void initif(String hostName, byte[] addr, NetworkInterface nif)
         throws UnknownHostException
     {
         int family = -1;
@@ -710,7 +710,7 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * Utility routine to check if the InetAddress is an link local address.
+     * Utility routine to check if the InetAddress is a link local address.
      *
      * @return a {@code boolean} indicating if the InetAddress is a link local
      *         address; or false if address is not a link local unicast address.

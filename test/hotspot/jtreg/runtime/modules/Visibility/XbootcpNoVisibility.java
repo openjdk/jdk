@@ -25,6 +25,7 @@
  * @test
  * @summary Ensure that a class defined within a java.base package can not
  *          be located via -Xbootclasspath/a
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

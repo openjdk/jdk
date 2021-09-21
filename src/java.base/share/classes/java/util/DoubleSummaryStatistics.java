@@ -156,7 +156,9 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
         count += other.count;
         simpleSum += other.simpleSum;
         sumWithCompensation(other.sum);
-        sumWithCompensation(other.sumCompensation);
+
+        // Subtract compensation bits
+        sumWithCompensation(-other.sumCompensation);
         min = Math.min(min, other.min);
         max = Math.max(max, other.max);
     }
@@ -241,7 +243,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      */
     public final double getSum() {
         // Better error bounds to add both terms as the final sum
-        double tmp =  sum + sumCompensation;
+        double tmp =  sum - sumCompensation;
         if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
             // If the compensated sum is spuriously NaN from
             // accumulating one or more same-signed infinite values,

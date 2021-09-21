@@ -430,6 +430,7 @@ class UnregisteredClassesTable : public ResourceHashtable<
 
 static UnregisteredClassesTable* _unregistered_classes_table = NULL;
 
+// true == class was successfully added; false == a duplicated class (with the same name) already exists.
 bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* klass) {
   // We don't allow duplicated unregistered classes with the same name.
   // We only archive the first class with that name that succeeds putting
@@ -446,18 +447,6 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
     name->increment_refcount();
   }
   return (klass == *v);
-}
-
-// true == class was successfully added; false == a duplicated class (with the same name) already exists.
-bool SystemDictionaryShared::add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k) {
-  assert(DumpSharedSpaces, "only when dumping");
-  if (add_unregistered_class(current, k)) {
-    MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
-    SystemDictionary::add_to_hierarchy(k);
-    return true;
-  } else {
-    return false;
-  }
 }
 
 // This function is called to lookup the super/interfaces of shared classes for
@@ -1660,7 +1649,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaPr
 }
 
 void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::open_regions_mapped()) {
+  if (!HeapShared::are_archived_mirrors_available()) {
     return;
   }
   if (MetaspaceShared::relocation_delta() == 0) {

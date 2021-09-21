@@ -227,6 +227,7 @@ class XorINode : public AddNode {
 public:
   XorINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::ZERO; }
   virtual const Type *bottom_type() const { return TypeInt::INT; }
@@ -242,6 +243,7 @@ class XorLNode : public AddNode {
 public:
   XorLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeLong::ZERO; }
   virtual const Type *bottom_type() const { return TypeLong::LONG; }

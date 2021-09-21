@@ -818,7 +818,7 @@ configuration, as opposed to the "configure time" configuration.
 #### Test Make Control Variables
 
 These make control variables only make sense when running tests. Please see
-[Testing the JDK](testing.html) for details.
+**Testing the JDK** ([html](testing.html), [markdown](testing.md)) for details.
 
   * `TEST`
   * `TEST_JOBS`
@@ -865,8 +865,8 @@ To execute the most basic tests (tier 1), use:
 make run-test-tier1
 ```
 
-For more details on how to run tests, please see the [Testing
-the JDK](testing.html) document.
+For more details on how to run tests, please see **Testing the JDK**
+([html](testing.html), [markdown](testing.md)).
 
 ## Cross-compiling
 

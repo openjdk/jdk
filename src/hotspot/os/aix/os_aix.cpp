@@ -267,18 +267,6 @@ julong os::physical_memory() {
   return Aix::physical_memory();
 }
 
-// Return true if user is running as root.
-
-bool os::have_special_privileges() {
-  static bool init = false;
-  static bool privileges = false;
-  if (!init) {
-    privileges = (getuid() != geteuid()) || (getgid() != getegid());
-    init = true;
-  }
-  return privileges;
-}
-
 // Helper function, emulates disclaim64 using multiple 32bit disclaims
 // because we cannot use disclaim64() on AS/400 and old AIX releases.
 static bool my_disclaim64(char* addr, size_t size) {

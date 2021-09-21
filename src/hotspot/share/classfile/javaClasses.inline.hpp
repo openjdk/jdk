@@ -123,7 +123,7 @@ int java_lang_String::length(oop java_string) {
   return length(java_string, value);
 }
 
-bool java_lang_String::is_instance_inlined(oop obj) {
+bool java_lang_String::is_instance(oop obj) {
   return obj != NULL && obj->klass() == vmClasses::String_klass();
 }
 
