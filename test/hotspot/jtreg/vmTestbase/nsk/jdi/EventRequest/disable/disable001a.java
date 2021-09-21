@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class disable001a {
 
     //====================================================== test program
 
-    static disable001aThread1 thread1 = null;
+    static Thread thread1 = null;
 
     static disable001aTestClass11 obj = new disable001aTestClass11();
 
@@ -100,7 +100,7 @@ public class disable001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new disable001aThread1("thread1");
+                            thread1 = JDIThreadFactory.newThread(new disable001aThread1("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -202,7 +202,7 @@ class disable001aTestClass11 extends disable001aTestClass10{
     }
 }
 
-class disable001aThread1 extends Thread {
+class disable001aThread1 extends JDITask {
 
     public disable001aThread1(String threadName) {
         super(threadName);

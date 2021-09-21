@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class filter_rt002a {
 
     //====================================================== test program
 
-    static filter_rt002aThread1 thread1 = null;
+    static Thread thread1 = null;
 
     static filter_rt002aTestClass10 obj = new filter_rt002aTestClass10();
 
@@ -98,7 +98,7 @@ public class filter_rt002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new filter_rt002aThread1("thread1");
+                            thread1 = JDIThreadFactory.newThread(new filter_rt002aThread1("thread1"));
                             break;
 
     //-------------------------------------------------    standard end section
@@ -162,7 +162,7 @@ class filter_rt002aTestClass11 extends filter_rt002aTestClass10{
     }
 }
 
-class filter_rt002aThread1 extends Thread {
+class filter_rt002aThread1 extends JDITask {
 
     public filter_rt002aThread1(String threadName) {
         super(threadName);

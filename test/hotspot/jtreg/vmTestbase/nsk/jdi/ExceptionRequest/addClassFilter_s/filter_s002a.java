@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class filter_s002a {
 
     //====================================================== test program
 
-    static filter_s002aThread1 thread1 = null;
+    static Thread thread1 = null;
 
     //------------------------------------------------------ common section
 
@@ -96,7 +96,7 @@ public class filter_s002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new filter_s002aThread1("thread1");
+                            thread1 = JDIThreadFactory.newThread(new filter_s002aThread1("thread1"));
                             break;
 
     //-------------------------------------------------    standard end section
@@ -161,22 +161,19 @@ class filter_s002aTestClass11 extends filter_s002aTestClass10{
     }
 }
 
-class filter_s002aThread1 extends Thread {
-
-    String tName = null;
+class filter_s002aThread1 extends JDITask {
 
     public filter_s002aThread1(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s002a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s002a.log1("  'run': enter  :: threadName == " + getName());
         try {
             (new filter_s002aTestClass11()).m11();
         } catch ( NullPointerException e) {
         }
-        filter_s002a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
