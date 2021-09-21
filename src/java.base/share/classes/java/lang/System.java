@@ -2419,6 +2419,10 @@ public final class System {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
+            public int compressCharsToBytes(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+                return StringUTF16.compress(src, srcOff, dst, dstOff, len);
+            }
+
             public void setCause(Throwable t, Throwable cause) {
                 t.setCause(cause);
             }

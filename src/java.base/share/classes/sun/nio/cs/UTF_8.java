@@ -83,9 +83,9 @@ public final class UTF_8 extends Unicode {
         dst.position(dp - dst.arrayOffset());
     }
 
-    private static class Decoder extends CharsetDecoder {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
-        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static class Decoder extends CharsetDecoder {
 
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
@@ -443,8 +443,7 @@ public final class UTF_8 extends Unicode {
 
         private Surrogate.Parser sgp;
         private CoderResult encodeArrayLoop(CharBuffer src,
-                                            ByteBuffer dst)
-        {
+                                            ByteBuffer dst) {
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
@@ -452,11 +451,32 @@ public final class UTF_8 extends Unicode {
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            int dlASCII = dp + Math.min(sl - sp, dl - dp);
+            int slASCII = sp + Math.min(sl - sp, dl - dp);
 
             // ASCII only loop
-            while (dp < dlASCII && sa[sp] < '\u0080')
-                da[dp++] = (byte) sa[sp++];
+            // Since UTF8 is ASCII-compatible and encodes ASCII as single-byte,
+            // we can reuse StringUTF16.compress to speed up the actual copy of the ASCII data
+            int lastAscii = sp;
+            while (lastAscii < slASCII && sa[lastAscii] < '\u0080') {
+                lastAscii++;
+            }
+            if (lastAscii > sp) {
+                int len = lastAscii - sp;
+                JLA.compressCharsToBytes(sa, sp, da, dp, len);
+                sp = lastAscii;
+                dp += len;
+            }
+
+            if (sp < sl) {
+                return encodeArrayLoopSlow(src, sa, sp, sl, dst, da, dp, dl);
+            } else {
+                updatePositions(src, sp, dst, dp);
+                return CoderResult.UNDERFLOW;
+            }
+        }
+
+        private CoderResult encodeArrayLoopSlow(CharBuffer src, char[] sa, int sp, int sl,
+                                                ByteBuffer dst, byte[] da, int dp, int dl) {
             while (sp < sl) {
                 char c = sa[sp];
                 if (c < 0x80) {
