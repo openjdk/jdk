@@ -126,7 +126,7 @@ class MarkedFileReader : public FileReader {
 class ElfFile: public CHeapObj<mtInternal> {
   friend class ElfDecoder;
 
-private:
+ private:
   // link ElfFiles
   ElfFile*          _next;
 
@@ -149,11 +149,11 @@ private:
   NullDecoder::decoder_status  _status;
 
   DwarfFile* _dwarf_file;
-protected:
+ protected:
   // Elf header
   Elf_Ehdr          _elfHdr;
 
-public:
+ public:
   ElfFile(const char* filepath);
   virtual ~ElfFile();
 
@@ -182,7 +182,7 @@ public:
   bool open_valid_debuginfo_file(const char* path_name, uint crc);
   bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_size, int* line, bool is_first_frame);
 
-private:
+ private:
   // sanity check, if the file is a real elf file
   static bool is_elf_file(Elf_Ehdr&);
 
@@ -213,7 +213,7 @@ private:
   char* get_debug_filename() const;
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
-protected:
+ protected:
   FILE* const fd() const { return _file; }
 
   // Read the section header of section 'name'.
