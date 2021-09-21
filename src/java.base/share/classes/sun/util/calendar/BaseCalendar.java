@@ -278,7 +278,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
             year -= (int)((xm / 12) + 1);
             month = 13 - (xm % 12);
             if (month == 13) {
-                year ++;
+                year++;
                 month = 1;
             }
             bdate.setNormalizedYear(year);
