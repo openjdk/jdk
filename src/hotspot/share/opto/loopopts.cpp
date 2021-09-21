@@ -1558,6 +1558,11 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         _igvn.remove_dead_node(n);
       }
       _dom_lca_tags_round = 0;
+    } else if (n_loop == _ltree_root && n->in(0) != NULL && get_loop(n->in(0)) != _ltree_root) {
+      // n has a control input inside a loop but get_ctrl() is member of _ltree_root. This could happen, for example,
+      // for Div nodes inside a loop (control input inside loop) without a use except for an UCT (outside the loop).
+      // Rewire control of n to get_ctrl(n) to move it out of the loop, regardless if its input(s) are later sunk or not.
+      _igvn.replace_input_of(n, 0, n_ctrl);
     }
   }
 }
