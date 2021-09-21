@@ -55,11 +55,12 @@ TEST_VM(metaspace, misc_sizes)   {
 
 TEST_VM(metaspace, misc_max_alloc_size)   {
 
-  // Make sure we can allocate what we promise to allocate
+  // Make sure we can allocate what we promise to allocate...
   const size_t sz = Metaspace::max_allocation_word_size();
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
   MetaWord* p = cld->metaspace_non_null()->allocate(sz, Metaspace::NonClassType);
   ASSERT_NOT_NULL(p);
+  // And also, successfully deallocate it.
   cld->metaspace_non_null()->deallocate(p, sz, false);
 
 }
