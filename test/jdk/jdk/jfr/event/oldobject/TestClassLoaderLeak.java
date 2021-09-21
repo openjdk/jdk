@@ -62,7 +62,7 @@ public class TestClassLoaderLeak {
                 // Allocate array to trigger sampling code path for interpreter / c1
                 int count = 20 + random.nextInt(5);
                 for (int i = 0; i < 200; i++) {
-                    Object classArray = Array.newInstance(clazz, 20);
+                    Object classArray = Array.newInstance(clazz, 200);
                     Array.set(classArray, i, clazz.newInstance());
                     classObjects.add(classArray);
                 }
