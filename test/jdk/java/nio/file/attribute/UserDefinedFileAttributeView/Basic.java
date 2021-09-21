@@ -251,8 +251,14 @@ public class Basic {
             // Make sure the directory exists.
             Files.createDirectory(longPath);
 
-            // Try to set an extended attribute on it.
             try {
+                // Try to set absolute path as extended attribute; expect IAE
+                tryCatch(IllegalArgumentException.class, new Task() {
+                    public void run() throws IOException {
+                        setEA(longPath, "user:C:\\");
+                    }});
+
+                // Try to set an extended attribute on it.
                 setEA(longPath, "user:short");
                 setEA(longPath, "user:reallyquitelonglongattrname");
             } finally {

@@ -55,11 +55,13 @@ class WindowsUserDefinedFileAttributeView
     private String join(WindowsPath file, String name) throws WindowsException {
         if (name == null)
             throw new NullPointerException("'name' is null");
-        WindowsPath wp = WindowsPath.parse(file.getFileSystem(),
-                                           file + "." + name);
-        StringBuilder sb = new StringBuilder(wp.getPathForWin32Calls());
-        sb.setCharAt(sb.length() - name.length() - 1, ':');
-        return sb.toString();
+        WindowsFileSystem wfs = file.getFileSystem();
+        WindowsPath namePath = WindowsPath.parse(wfs, name);
+        if (namePath.isAbsolute())
+            throw new IllegalArgumentException("'name' is not relative");
+        String path = join(file.getPathForWin32Calls(), name);
+        WindowsPath wp = WindowsPath.createFromNormalizedPath(wfs, path);
+        return wp.getPathForWin32Calls();
     }
 
     private final WindowsPath file;
