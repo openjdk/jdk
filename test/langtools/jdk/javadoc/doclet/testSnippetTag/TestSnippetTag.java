@@ -469,8 +469,8 @@ public class TestSnippetTag extends JavadocTester {
 
         // The below errors are checked separately because they might appear
         // out of order with respect to the errors checked above.
-        // This is because the below errors are modelled as exceptions thrown
-        // at parse time, when there are no doc trees yet. And the above errors
+        // This is because the errors below are modelled as exceptions thrown
+        // at parse time, when there are no doc trees yet. And the errors above
         // are modelled as erroneous trees that are processed after the parsing
         // is finished.
 
