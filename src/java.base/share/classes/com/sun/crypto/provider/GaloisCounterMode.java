@@ -582,15 +582,15 @@ abstract class GaloisCounterMode extends CipherSpi {
         int len = 0;
         if (inLen > SPLIT_LEN) {
             while (inLen >= SPLIT_LEN) {
-                int partlen = implGCMCrypt0(in, inOfs+len, SPLIT_LEN, ct,
-                    ctOfs+len, out, outOfs+len, gctr, ghash);
-                len+= partlen;
-                inLen-= partlen;
+                int partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
+                    ctOfs + len, out, outOfs + len, gctr, ghash);
+                len += partlen;
+                inLen -= partlen;
             }
         }
         if (inLen > 0) {
-            len+= implGCMCrypt0(in, inOfs+len, inLen, ct,
-                  ctOfs+len, out, outOfs+len, gctr, ghash);
+            len += implGCMCrypt0(in, inOfs + len, inLen, ct,
+                   ctOfs + len, out, outOfs + len, gctr, ghash);
         }
         return len;
     }
