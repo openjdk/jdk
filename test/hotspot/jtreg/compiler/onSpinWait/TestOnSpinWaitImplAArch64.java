@@ -23,95 +23,138 @@
 
 /**
  * @test TestOnSpinWaitImplAArch64
- * @summary Checks that java.lang.Thread.onSpinWait is intrinsified with instructions specified in '-XX:UsePauseImpl'
+ * @summary Checks that java.lang.Thread.onSpinWait is intrinsified with instructions specified in '-XX:OnSpinWaitImpl'
  * @bug 8186670
  * @library /test/lib
  *
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
  *
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 4 nop
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 3 isb
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 2 yield
+ * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c2 7 nop
+ * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c2 3 isb
+ * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c2 1 yield
+ * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c1 7 nop
+ * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c1 3 isb
+ * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c1 1 yield
  */
 
 package compiler.onSpinWait;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.regex.Pattern;
+import java.util.ListIterator;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestOnSpinWaitImplAArch64 {
     public static void main(String[] args) throws Exception {
-        String pauseImplInst = args[1];
-        String pauseImplInstCount = args[0];
+        String compiler = args[0];
+        String pauseImplInstCount = args[1];
+        String pauseImplInst = args[2];
         ArrayList<String> command = new ArrayList<String>();
         command.add("-XX:+IgnoreUnrecognizedVMOptions");
         command.add("-showversion");
         command.add("-XX:-BackgroundCompilation");
         command.add("-XX:+UnlockDiagnosticVMOptions");
-        command.add("-XX:+PrintOptoAssembly");
-        command.add("-XX:-TieredCompilation");
+        command.add("-XX:+PrintAssembly");
+        if (compiler.equals("c2")) {
+            command.add("-XX:-TieredCompilation");
+        } else if (compiler.equals("c1")) {
+            command.add("-XX:+TieredCompilation");
+            command.add("-XX:TieredStopAtLevel=1");
+        } else {
+            throw new RuntimeException("Unknown compiler: " + compiler);
+        }
         command.add("-Xbatch");
-        command.add("-XX:UsePauseImpl=" + pauseImplInstCount + pauseImplInst);
+        command.add("-XX:OnSpinWaitImpl=" + pauseImplInstCount + pauseImplInst);
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
         command.add(Launcher.class.getName());
 
-        // Test C2 compiler
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
         analyzer.shouldHaveExitValue(0);
 
-        checkOutput(analyzer, pauseImplInst, Integer.parseInt(pauseImplInstCount));
+        System.out.println(analyzer.getOutput());
+
+        checkOutput(analyzer, getPauseImplInstHex(pauseImplInst), Integer.parseInt(pauseImplInstCount));
     }
 
-    private static void checkOutput(OutputAnalyzer output, String pauseImplInst, int pauseImplInstCount) {
+    private static String getPauseImplInstHex(String pauseImplInst) {
+      if ("nop".equals(pauseImplInst)) {
+          return "1f20 03d5";
+      } else if ("isb".equals(pauseImplInst)) {
+          return "df3f 03d5";
+      } else if ("yield".equals(pauseImplInst)) {
+          return "3f20 03d5";
+      } else {
+          throw new RuntimeException("Unknown pause implementation: " + pauseImplInst);
+      }
+    }
+
+    private static void addInstrs(String line, ArrayList<String> instrs) {
+        for (String instr : line.split("\\|")) {
+            instrs.add(instr.trim());
+        }
+    }
+
+    private static void checkOutput(OutputAnalyzer output, String pauseImplInstHex, int pauseImplInstCount) {
         Iterator<String> iter = output.asLines().listIterator();
 
-        String match = skipTo(iter, Pattern.quote("{method}"));
+        String match = skipTo(iter, "'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitImplAArch64$Launcher'");
         if (match == null) {
-            throw new RuntimeException("Missing compiler output for the method 'test'!\n\n" + output.getOutput());
+            throw new RuntimeException("Missing compiler output for the method compiler.onSpinWait.TestOnSpinWaitImplAArch64$Launcher::test");
         }
 
-        match = skipTo(iter, Pattern.quote("- name:"));
-        if (match == null) {
-            throw new RuntimeException("Missing compiled method name!\n\n" + output.getOutput());
-        }
-        if (!match.contains("test")) {
-            throw new RuntimeException("Wrong method " + match + "!\n  -- expecting 'test'\n\n" + output.getOutput());
-        }
-
-        match = skipTo(iter, Pattern.quote("! membar_onspinwait"));
-        if (match == null) {
-            throw new RuntimeException("Missing 'membar_onspinwait'!\n\n" + output.getOutput());
-        }
-        if (!match.contains(pauseImplInst)) {
-            throw new RuntimeException("Wrong intruction " + match + "!\n  -- expecting " + pauseImplInst + "\n\n" + output.getOutput());
-        }
-        int foundInstCount = 1;
-        while (foundInstCount < pauseImplInstCount) {
-            if (!iter.hasNext()) {
+        ArrayList<String> instrs = new ArrayList<String>();
+        while (iter.hasNext()) {
+            String line = iter.next();
+            if (line.contains("*invokestatic onSpinWait")) {
                 break;
             }
-            String nextLine = iter.next();
-            if (!nextLine.contains(pauseImplInst)) {
+            if (line.contains("0x") && !line.contains(";")) {
+                addInstrs(line, instrs);
+            }
+        }
+
+        if (!iter.hasNext() || !iter.next().contains("- compiler.onSpinWait.TestOnSpinWaitImplAArch64$Launcher::test@0") || !iter.hasNext()) {
+            throw new RuntimeException("Missing compiler output for Thread.onSpinWait intrinsic");
+        }
+
+        String line = iter.next();
+        if (!line.contains("0x") || line.contains(";")) {
+            throw new RuntimeException("Expected hex instructions");
+        }
+
+        addInstrs(line, instrs);
+
+        int foundInstCount = 0;
+
+        ListIterator<String> instrReverseIter = instrs.listIterator(instrs.size());
+        while (instrReverseIter.hasPrevious()) {
+            if (instrReverseIter.previous().endsWith(pauseImplInstHex)) {
+                foundInstCount = 1;
+                break;
+            }
+        }
+
+        while (instrReverseIter.hasPrevious()) {
+            if (!instrReverseIter.previous().endsWith(pauseImplInstHex)) {
                 break;
             }
             ++foundInstCount;
         }
+
         if (foundInstCount != pauseImplInstCount) {
-            throw new RuntimeException("Wrong intruction " + pauseImplInst + " count " + foundInstCount + "!\n  -- expecting " + pauseImplInstCount + "\n\n" + output.getOutput());
+            throw new RuntimeException("Wrong instruction " + pauseImplInstHex + " count " + foundInstCount + "!\n  -- expecting " + pauseImplInstCount);
         }
     }
 
     private static String skipTo(Iterator<String> iter, String substring) {
         while (iter.hasNext()) {
             String nextLine = iter.next();
-            if (nextLine.matches(".*" + substring + ".*")) {
+            if (nextLine.contains(substring)) {
                 return nextLine;
             }
         }

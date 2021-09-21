@@ -14352,43 +14352,10 @@ instruct onspinwait() %{
   match(OnSpinWait);
   ins_cost(INSN_COST);
 
-  format %{
-    $$template
-    int inst_count = VM_Version::pause_impl_desc().inst_count();
-    #define PRINT_N_INST(inst) \
-      st->print("%s\t! membar_onspinwait\n", #inst); \
-      for (int i = 1; i < inst_count; ++i) st->print("\t%s\n", #inst);
-    switch (VM_Version::pause_impl_desc().inst()) {
-      case NOP:
-        PRINT_N_INST(nop)
-        break;
-      case ISB:
-        PRINT_N_INST(isb)
-        break;
-      case YIELD:
-        PRINT_N_INST(yield)
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-    #undef EMIT_N_ASM_STRINGS
-  %}
+  format %{ "onspinwait" %}
 
   ins_encode %{
-    int inst_count = VM_Version::pause_impl_desc().inst_count();
-    switch (VM_Version::pause_impl_desc().inst()) {
-      case NOP:
-        EMIT_N_INST(inst_count, nop);
-        break;
-      case ISB:
-        EMIT_N_INST(inst_count, isb);
-        break;
-      case YIELD:
-        EMIT_N_INST(inst_count, yield);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+    __ spin_wait();
   %}
   ins_pipe(pipe_class_empty);
 %}

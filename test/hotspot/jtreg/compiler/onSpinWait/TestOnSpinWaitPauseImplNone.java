@@ -50,7 +50,7 @@ public class TestOnSpinWaitPauseImplNone {
         command.add("-XX:+PrintCompilation");
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-XX:+PrintInlining");
-        command.add("-XX:UsePauseImpl=none");
+        command.add("-XX:OnSpinWaitImpl=none");
         command.add(Launcher.class.getName());
 
         // Test C2 compiler

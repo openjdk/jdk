@@ -49,12 +49,12 @@ int VM_Version::_initial_sve_vector_length;
 PauseImplDesc VM_Version::_pause_impl_desc;
 
 static PauseImplDesc get_pause_impl_desc() {
-  const char *s = UsePauseImpl;
+  const char *s = OnSpinWaitImpl;
   unsigned int count = 1;
   if (isdigit(*s)) {
     count = *s - '0';
     if (count == 0) {
-      vm_exit_during_initialization("Invalid value for UsePauseImpl: zero instruction count", UsePauseImpl);
+      vm_exit_during_initialization("Invalid value for OnSpinWaitImpl: zero instruction count", OnSpinWaitImpl);
     }
     s += 1;
   }
@@ -65,7 +65,7 @@ static PauseImplDesc get_pause_impl_desc() {
   } else if (strcmp(s, "yield") == 0) {
     return PauseImplDesc(YIELD, count);
   } else if (strcmp(s, "none") != 0) {
-    vm_exit_during_initialization("Invalid value for UsePauseImpl", UsePauseImpl);
+    vm_exit_during_initialization("Invalid value for OnSpinWaitImpl", OnSpinWaitImpl);
   }
 
   return PauseImplDesc{};

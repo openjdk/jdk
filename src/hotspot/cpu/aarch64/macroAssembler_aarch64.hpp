@@ -1380,6 +1380,27 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
+  // Code for java.lang.Thread::onSpinWait() intrinsic.
+  void spin_wait() {
+#define EMIT_N_INST(n, inst) for (int i = 0; i < (n); ++i) inst()
+
+    int inst_count = VM_Version::pause_impl_desc().inst_count();
+    switch (VM_Version::pause_impl_desc().inst()) {
+      case NOP:
+        EMIT_N_INST(inst_count, nop);
+        break;
+      case ISB:
+        EMIT_N_INST(inst_count, isb);
+        break;
+      case YIELD:
+        EMIT_N_INST(inst_count, yield);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+#undef EMIT_N_INST
+  }
+
 private:
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
@@ -1414,8 +1435,5 @@ struct tableswitch {
   Label _after;
   Label _branches;
 };
-
-#define EMIT_N_INST(n, inst) \
-  for (int i = 0; i < (n); ++i) __ inst()
 
 #endif // CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
