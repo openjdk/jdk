@@ -262,18 +262,13 @@ void setOSNameAndVersion(java_props_t *sprops) {
             osVersionCStr = strdup([nsVerStr UTF8String]);
         } else {
             // Version 10.16, without explicit env setting of SYSTEM_VERSION_COMPAT
-            // AKA 11.x; compute the version number from the letter in the ProductBuildVersion
+            // AKA 11+ Read the *real* ProductVersion from the hidden link to avoid SYSTEM_VERSION_COMPAT
+            // If not found, fallback below to the SystemVersion.plist
             NSDictionary *version = [NSDictionary dictionaryWithContentsOfFile :
-                             @"/System/Library/CoreServices/SystemVersion.plist"];
+                             @"/System/Library/CoreServices/.SystemVersionPlatform.plist"];
             if (version != NULL) {
-                NSString *nsBuildVerStr = [version objectForKey : @"ProductBuildVersion"];
-                if (nsBuildVerStr != NULL && nsBuildVerStr.length >= 3) {
-                    int letter = [nsBuildVerStr characterAtIndex:2];
-                    if (letter >= 'B' && letter <= 'Z') {
-                        int vers = letter - 'A' - 1;
-                        asprintf(&osVersionCStr, "11.%d", vers);
-                    }
-                }
+                NSString *nsVerStr = [version objectForKey : @"ProductVersion"];
+                osVersionCStr = strdup([nsVerStr UTF8String]);
             }
         }
     }
