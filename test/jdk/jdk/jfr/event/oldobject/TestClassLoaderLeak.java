@@ -26,7 +26,6 @@ package jdk.jfr.event.oldobject;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedClass;
