@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g FieldWatchpoints.java
- * @run driver FieldWatchpoints
+ * @run main/othervm/timeout=240 FieldWatchpoints
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
