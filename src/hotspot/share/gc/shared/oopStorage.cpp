@@ -811,7 +811,7 @@ const size_t initial_active_array_size = 8;
 
 static Mutex* make_oopstorage_mutex(const char* storage_name,
                                     const char* kind,
-                                    int rank) {
+                                    Mutex::Rank rank) {
   char name[256];
   os::snprintf(name, sizeof(name), "%s %s lock", storage_name, kind);
   return new PaddedMutex(rank, name);

@@ -63,19 +63,15 @@ void Mutex::check_block_state(Thread* thread) {
 void Mutex::check_safepoint_state(Thread* thread) {
   check_block_state(thread);
 
-  // If the JavaThread checks for safepoint, verify that the lock was created with rank that
-  // has safepoint checks.
-  if (thread->is_active_Java_thread()) {
-    assert(_rank > nosafepoint,
-           "This lock should never have a safepoint check for Java threads: %s",
-           name());
+  // If the lock acquisition checks for safepoint, verify that the lock was created with rank that
+  // has safepoint checks. Technically this doesn't affect NonJavaThreads since they won't actually
+  // check for safepoint, but let's make the rule unconditional unless there's a good reason not to.
+  assert(_rank > nosafepoint,
+         "This lock should not be taken with a safepoint check: %s", name());
 
+  if (thread->is_active_Java_thread()) {
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
     JavaThread::cast(thread)->check_for_valid_safepoint_state();
-  } else {
-    // If initialized with rank lower than nosafepoint, a NonJavaThread should never ask to safepoint check either.
-    assert(_rank > nosafepoint,
-           "NonJavaThread should not check for safepoint");
   }
 }
 
@@ -276,13 +272,13 @@ Mutex::~Mutex() {
   os::free(const_cast<char*>(_name));
 }
 
-Mutex::Mutex(int Rank, const char * name, bool allow_vm_block) : _owner(NULL) {
+Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != NULL, "Mutex requires a name");
   _name = os::strdup(name, mtInternal);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
-  _rank            = Rank;
+  _rank            = rank;
   _skip_rank_check = false;
 
   // The allow_vm_block also includes allowing other non-Java threads to block or
@@ -290,8 +286,7 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block) : _owner(NULL) {
   assert(_rank > nosafepoint || _allow_vm_block,
          "Locks that don't check for safepoint should always allow the vm to block: %s", name);
 
-  assert(_rank >= 0, "Bad lock rank: %s", name);
-  assert(_rank <= safepoint, "Bad lock rank: %s", name);
+  assert(_rank >= event, "Bad lock rank: %s", name);
 #endif
 }
 
@@ -307,28 +302,46 @@ void Mutex::print_on_error(outputStream* st) const {
 
 // ----------------------------------------------------------------------------------
 // Non-product code
-
-static int _ranks[] = { Mutex::event, Mutex::service, Mutex::stackwatermark, Mutex::tty, Mutex::oopstorage,
-                        Mutex::nosafepoint, Mutex::safepoint };
+//
+#ifdef ASSERT
+static Mutex::Rank _ranks[] = { Mutex::event, Mutex::service, Mutex::stackwatermark, Mutex::tty, Mutex::oopstorage,
+                                Mutex::nosafepoint, Mutex::safepoint };
 
 static const char* _rank_names[] = { "event", "service", "stackwatermark", "tty", "oopstorage",
                                      "nosafepoint", "safepoint" };
 
-const char* Mutex::rank_name() const {
+static const char* rank_name_internal(Mutex::Rank r) {
   // Find closest rank and print out the name
   stringStream st;
-  int r = _rank;
   for (int i = 0; i < 7; i++) {
     if (r == _ranks[i]) {
       return _rank_names[i];
     } else if (r  > _ranks[i] && (i < 6 && r < _ranks[i+1])) {
-      int delta = r - _ranks[i+1];
-      st.print("%s-%d", _rank_names[i+1], -delta);
+      int delta = static_cast<int>(_ranks[i+1]) - static_cast<int>(r);
+      st.print("%s-%d", _rank_names[i+1], delta);
       return st.as_string();
     }
   }
   return "fail";
 }
+
+const char* Mutex::rank_name() const {
+  return rank_name_internal(_rank);
+}
+
+
+void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
+  int i = 0;
+  while (_ranks[i] < orig) i++;
+  // underflow is caught in constructor
+  if (i != 0 && adjusted > event && adjusted <= _ranks[i-1]) {
+    ResourceMark rm;
+    assert(adjusted > _ranks[i-1],
+           "Rank %s-%d overlaps with %s",
+           _rank_names[i], adjust, rank_name_internal(adjusted));
+  }
+}
+#endif // ASSERT
 
 #ifndef PRODUCT
 void Mutex::print_on(outputStream* st) const {
@@ -337,7 +350,7 @@ void Mutex::print_on(outputStream* st) const {
   if (_allow_vm_block) {
     st->print("%s", " allow_vm_block");
   }
-  st->print(" %s", rank_name());
+  DEBUG_ONLY(st->print(" %s", rank_name()));
   st->cr();
 }
 #endif // PRODUCT

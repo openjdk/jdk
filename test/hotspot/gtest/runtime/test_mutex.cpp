@@ -53,9 +53,9 @@ TEST_VM(MutexName, mutex_name) {
 
 #ifdef ASSERT
 
-const int rankA = Mutex::safepoint-5;
-const int rankAplusOne = Mutex::safepoint-4;
-const int rankAplusTwo = Mutex::safepoint-3;
+const Mutex::Rank rankA = Mutex::safepoint-5;
+const Mutex::Rank rankAplusOne = Mutex::safepoint-4;
+const Mutex::Rank rankAplusTwo = Mutex::safepoint-3;
 
 TEST_OTHER_VM(MutexRank, mutex_lock_rank_in_order) {
   JavaThread* THREAD = JavaThread::current();
@@ -270,8 +270,53 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_negative_rank,
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_broken = new Monitor(Mutex::event-1, "monitor_rank_broken");
+  Monitor* monitor_rank_broken = new Monitor(Mutex::safepoint-100, "monitor_rank_broken");
   monitor_rank_broken->lock_without_safepoint_check();
   monitor_rank_broken->unlock();
+}
+
+TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_oopstorage_rank,
+                   ".*Rank oopstorage-4 overlaps with tty-1") {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  Monitor* monitor_rank_broken = new Monitor(Mutex::oopstorage-4, "monitor_rank_broken");
+  monitor_rank_broken->lock_without_safepoint_check();
+  monitor_rank_broken->unlock();
+}
+
+TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_safepoint_rank,
+                   ".*Rank safepoint-40 overlaps with service-5") {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  Monitor* monitor_rank_broken = new Monitor(Mutex::safepoint-40, "monitor_rank_broken");
+  monitor_rank_broken->lock_without_safepoint_check();
+  monitor_rank_broken->unlock();
+}
+
+// Test mismatched safepoint check flag on lock declaration vs. lock acquisition.
+TEST_VM_ASSERT_MSG(MutexSafepoint, always_check,
+    ".*This lock should always have a safepoint check for Java threads: SFPT_Test_lock") {
+  MutexLocker ml(new Mutex(Mutex::safepoint, "SFPT_Test_lock"),
+                 Mutex::_no_safepoint_check_flag);
+}
+
+TEST_VM_ASSERT_MSG(MutexSafepoint, never_check,
+    ".*This lock should not be taken with a safepoint check: SFPT_Test_lock") {
+  MutexLocker ml(new Mutex(Mutex::nosafepoint, "SFPT_Test_lock"),
+                 Mutex::_safepoint_check_flag);
+}
+
+TEST_VM_ASSERT_MSG(MutexSafepoint, possible_safepoint_lock,
+    ".* Possible safepoint reached by thread that does not allow it") {
+  JavaThread* thread = JavaThread::current();
+  ThreadInVMfromNative in_native(thread);
+  MutexLocker ml(new Mutex(Mutex::nosafepoint, "SpecialTest_lock"),
+                   Mutex::_no_safepoint_check_flag);
+  thread->print_thread_state_on(tty);
+  // If the lock above succeeds, try to safepoint to test the NSV implied with this nosafepoint lock.
+  ThreadBlockInVM tbivm(thread);
+  thread->print_thread_state_on(tty);
 }
 #endif // ASSERT
