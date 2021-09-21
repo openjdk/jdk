@@ -1833,41 +1833,36 @@ static inline void check_touch_memory_args(void* start, void* end, size_t page_s
 // all zeros.  We need to store something to a page to ensure it is backed
 // by its own memory.
 
-template<bool allow_concurrent_access>
-static void touch_memory_at(volatile void* p);
-
-template<>
-inline void touch_memory_at<false>(volatile void* p) {
-  // When pretouching (concurrent access disallowed), writing a zero value
-  // is sufficient.
-  *reinterpret_cast<volatile char*>(p) = 0;
+static inline void touch_memory_at(volatile void* p, bool allow_concurrent_access) {
+  if (allow_concurrent_access) {
+    assert(is_aligned(p, sizeof(int)), "precondition");
+    // For a touch while other threads may be using the memory, an atomic add
+    // of zero is used to perform a write operation without affecting the
+    // value in memory.
+    Atomic::add(reinterpret_cast<volatile int*>(p), 0, memory_order_relaxed);
+  } else {
+    // When pretouching (concurrent access disallowed), writing a zero value
+    // is sufficient.
+    *reinterpret_cast<volatile char*>(p) = 0;
+  }
 }
 
-template<>
-inline void touch_memory_at<true>(volatile void* p) {
-  assert(is_aligned(p, sizeof(int)), "precondition");
-  // For a touch while other threads may be using the memory, an atomic add
-  // of zero is used to perform a write operation without affecting the
-  // value in memory.
-  Atomic::add(reinterpret_cast<volatile int*>(p), 0, memory_order_relaxed);
-}
-
-template<bool allow_concurrent_access>
-static inline void touch_memory_impl(void* start, void* end, size_t page_size) {
+static inline void touch_memory_impl(void* start, void* end, size_t page_size,
+                                     bool allow_concurrent_access) {
   if (start < end) {
     // Touch up to the last page, ensuring final increment won't overflow.
     void* last_page = align_down(reinterpret_cast<char*>(end) - 1, page_size);
     for (char* p = reinterpret_cast<char*>(start); p < last_page; p += page_size) {
-      touch_memory_at<allow_concurrent_access>(p);
+      touch_memory_at(p, allow_concurrent_access);
     }
     // Touch the last (possibly partial) page, which might also be the first.
-    touch_memory_at<allow_concurrent_access>(MAX2(start, last_page));
+    touch_memory_at(MAX2(start, last_page), allow_concurrent_access);
   }
 }
 
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
   check_touch_memory_args(start, end, page_size);
-  touch_memory_impl<false>(start, end, page_size);
+  touch_memory_impl(start, end, page_size, false /* allow_concurrent_access */);
 }
 
 void os::touch_memory(void* start, void* end, size_t page_size) {
@@ -1882,7 +1877,7 @@ void os::touch_memory(void* start, void* end, size_t page_size) {
   end = align_down(end, sizeof(int));
   if (start < end) {
     start = align_up(start, sizeof(int)); // Can't exceed end.
-    touch_memory_impl<true>(start, end, page_size);
+    touch_memory_impl(start, end, page_size, true /* allow_concurrent_access */);
   }
 }
 
