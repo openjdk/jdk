@@ -85,11 +85,6 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
-gc/stringdedup/TestStringDeduplicationAgeThreshold.java#Z 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationPrintOptions.java#Z 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationInterned.java#Z 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationTableResize.java#Z 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationYoungGC.java#Z 8273695 generic-all
 
 #############################################################################
 
