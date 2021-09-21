@@ -29,7 +29,6 @@
 #include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/memoryManager.hpp"
@@ -117,8 +116,7 @@ void SerialHeap::safepoint_synchronize_end() {
 
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
   MutexLocker ml(Heap_lock);
-  HeapWord* result = old_gen()->allocate(word_size, /* is_tlab = */ false);
-  return result;
+  return old_gen()->allocate(word_size, false /* is_tlab */);
 }
 
 void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
