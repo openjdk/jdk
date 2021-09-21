@@ -24,7 +24,6 @@
 package nsk.jdi.ThreadStartRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -134,7 +133,7 @@ public class addthreadfilter001a {
     }
 
 
-    static class Thread2addthreadfilter001a extends JDITask {
+    static class Thread2addthreadfilter001a extends NamedTask {
 
         public Thread2addthreadfilter001a(String threadName) {
             super(threadName);

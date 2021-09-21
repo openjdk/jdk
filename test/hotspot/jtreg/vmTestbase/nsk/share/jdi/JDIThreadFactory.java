@@ -33,10 +33,8 @@ public class JDIThreadFactory {
 
     private static ThreadFactory threadFactory = r -> new Thread(r);
 
-    public static Thread newThread(JDITask task) {
-        Thread t = threadFactory.newThread(task);
-        t.setName(task.getName());
-        return t;
+    public static Thread newThread(NamedTask task) {
+        return newThread(task, task.getName());
     }
 
 

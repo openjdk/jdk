@@ -23,7 +23,6 @@
 
 package nsk.jdi.EventRequestManager.stepRequests;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -110,7 +109,7 @@ public class stepreq001t {
             stepreq001.PASSED;
     }
 
-    class stepreq001a extends JDITask {
+    class stepreq001a extends NamedTask {
         private Object readyObj;
         private Object lockObj;
 

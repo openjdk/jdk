@@ -24,7 +24,6 @@
 package nsk.jdi.ThreadReference.popFrames;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -180,7 +179,7 @@ public class popframes003a {
 
     static Object lockingObject2 = new Object();
 
-    static class Thread2popframes003a extends JDITask {
+    static class Thread2popframes003a extends NamedTask {
 
         public Thread2popframes003a(String threadName) {
             super(threadName);
@@ -205,7 +204,7 @@ public class popframes003a {
 
     static Object lockingObject3 = new Object();
 
-    static class Thread3popframes003a extends JDITask {
+    static class Thread3popframes003a extends NamedTask {
 
         public Thread3popframes003a(String threadName) {
             super(threadName);

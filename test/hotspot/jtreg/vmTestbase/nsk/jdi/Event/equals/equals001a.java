@@ -108,7 +108,7 @@ public class equals001a {
 
 //--------------------------------------------------------- test specific classes
 
-class equals001aThread extends JDITask {
+class equals001aThread extends NamedTask {
 
     String name;
 

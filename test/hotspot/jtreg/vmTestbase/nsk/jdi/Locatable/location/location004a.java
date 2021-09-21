@@ -23,7 +23,6 @@
 
 package nsk.jdi.Locatable.location;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -145,7 +144,7 @@ public class location004a {
     }
 }
 
-class Threadlocation004a extends JDITask {
+class Threadlocation004a extends NamedTask {
 
     public Threadlocation004a(String threadName) {
         super(threadName);

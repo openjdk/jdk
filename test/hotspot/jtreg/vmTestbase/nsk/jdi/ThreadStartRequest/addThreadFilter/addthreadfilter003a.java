@@ -24,7 +24,6 @@
 package nsk.jdi.ThreadStartRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -137,7 +136,7 @@ public class addthreadfilter003a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class Threadaddthreadfilter003a extends JDITask {
+    static class Threadaddthreadfilter003a extends NamedTask {
 
         int tNumber;
 

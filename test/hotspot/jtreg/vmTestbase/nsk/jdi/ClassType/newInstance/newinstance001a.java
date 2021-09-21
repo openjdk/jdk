@@ -23,7 +23,6 @@
 
 package nsk.jdi.ClassType.newInstance;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -169,7 +168,7 @@ class TestClass {
 
 }
 
-class Threadnewinstance001a extends JDITask {
+class Threadnewinstance001a extends NamedTask {
 
     public Threadnewinstance001a(String threadName) {
         super(threadName);

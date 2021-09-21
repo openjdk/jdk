@@ -23,7 +23,6 @@
 
 package nsk.jdi.LocalVariable.isVisible;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -145,7 +144,7 @@ public class isvisible001a {
     }
 }
 
-class Threadisvisible001a extends JDITask {
+class Threadisvisible001a extends NamedTask {
 
     public Threadisvisible001a(String threadName) {
         super(threadName);

@@ -24,7 +24,6 @@
 package nsk.jdi.WatchpointRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -149,7 +148,7 @@ public class addthreadfilter005a {
         return PASSED;
     }
 
-    static class Threadaddthreadfilter005a extends JDITask {
+    static class Threadaddthreadfilter005a extends NamedTask {
 
         public Threadaddthreadfilter005a(String threadName) {
             super(threadName);

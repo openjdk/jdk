@@ -24,7 +24,6 @@
 package nsk.jdi.BScenarios.multithrd;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
@@ -63,7 +62,7 @@ public class tc02x004a {
         }
     }
 
-    static class Thready extends JDITask {
+    static class Thready extends NamedTask {
         Thready(String name) {
             super(name);
         }

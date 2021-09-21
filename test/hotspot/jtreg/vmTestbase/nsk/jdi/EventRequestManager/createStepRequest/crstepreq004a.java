@@ -167,7 +167,7 @@ public class crstepreq004a {
 /**
  * First thread which owns and locks the crstepreq004a.lockObj1 monitor .
  */
-class Thread1crstepreq004a extends JDITask {
+class Thread1crstepreq004a extends NamedTask {
     public Thread1crstepreq004a (String name) {
         super(name);
     }
@@ -182,7 +182,7 @@ class Thread1crstepreq004a extends JDITask {
 /**
  * Second thread which who owns the crstepreq004a.lockObj1 monitor .
  */
-class Thread2crstepreq004a extends JDITask {
+class Thread2crstepreq004a extends NamedTask {
     public Thread2crstepreq004a (String name) {
         super(name);
     }

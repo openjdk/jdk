@@ -24,7 +24,6 @@
 package nsk.jdi.StepRequest.depth;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -156,7 +155,7 @@ class depth003aTestClass11 extends depth003aTestClass10{
     }
 }
 
-class Thread1depth003a extends JDITask {
+class Thread1depth003a extends NamedTask {
 
     public Thread1depth003a(String threadName) {
         super(threadName);

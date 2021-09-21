@@ -24,7 +24,6 @@
 package nsk.jdi.WatchpointRequest.addClassExclusionFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -156,7 +155,7 @@ public class filter002a {
     }
 
 
-    static class Thread1filter002a extends JDITask {
+    static class Thread1filter002a extends NamedTask {
 
         public Thread1filter002a(String threadName) {
             super(threadName);
@@ -174,7 +173,7 @@ public class filter002a {
         }
     }
 
-    static class Thread2filter002a extends JDITask {
+    static class Thread2filter002a extends NamedTask {
 
         public Thread2filter002a(String threadName) {
             super(threadName);

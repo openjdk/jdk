@@ -24,7 +24,6 @@
 package nsk.jdi.EventSet.resume;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -148,7 +147,7 @@ public class resume008a {
             }
         }
     }
-    static class Threadresume008a extends JDITask {
+    static class Threadresume008a extends NamedTask {
 
         public Threadresume008a(String threadName) {
             super(threadName);

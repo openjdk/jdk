@@ -24,7 +24,6 @@
 package nsk.jdi.ExceptionRequest.addClassExclusionFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -148,7 +147,7 @@ public class filter001a {
     }
 }
 
-class Thread1filter001a extends JDITask {
+class Thread1filter001a extends NamedTask {
 
     class TestClass10{
         void m10() {
@@ -181,7 +180,7 @@ class Thread1filter001a extends JDITask {
     }
 }
 
-class Thread2filter001a extends JDITask {
+class Thread2filter001a extends NamedTask {
 
     class TestClass20{
         void m20() {

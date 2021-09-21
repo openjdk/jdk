@@ -23,7 +23,6 @@
 
 package nsk.jdi.ThreadReference.isAtBreakpoint;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -146,7 +145,7 @@ public class isatbreakpoint001a {
 }
 
 
-class Threadisatbreakpoint001a extends JDITask {
+class Threadisatbreakpoint001a extends NamedTask {
 
     public Threadisatbreakpoint001a(String threadName) {
         super(threadName);

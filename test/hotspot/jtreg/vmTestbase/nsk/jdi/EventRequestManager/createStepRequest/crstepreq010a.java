@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequestManager.createStepRequest;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
@@ -125,7 +124,7 @@ public class crstepreq010a {
 /**
  * This thread will be suspended on breakpoint. No locks are used.
  */
-class Thread0crstepreq010a extends JDITask {
+class Thread0crstepreq010a extends NamedTask {
     int testCase;
 
     public Thread0crstepreq010a (int testCase) {

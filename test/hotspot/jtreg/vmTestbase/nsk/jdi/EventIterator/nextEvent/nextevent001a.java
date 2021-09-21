@@ -182,7 +182,7 @@ public class nextevent001a {
 
     static volatile int n = 0;
 
-    static class Thread1nextevent001a extends JDITask {
+    static class Thread1nextevent001a extends NamedTask {
 
         int threadIndex;
 
@@ -213,7 +213,7 @@ public class nextevent001a {
 
     }
 
-    static class Thread2nextevent001a extends JDITask {
+    static class Thread2nextevent001a extends NamedTask {
 
         int threadIndex;
 
@@ -248,7 +248,7 @@ public class nextevent001a {
 
     }
 
-    static class Thread3nextevent001a extends JDITask {
+    static class Thread3nextevent001a extends NamedTask {
 
         public Thread3nextevent001a(String threadName) {
             super(threadName);

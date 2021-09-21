@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequest.disable;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -202,7 +201,7 @@ class disable001aTestClass11 extends disable001aTestClass10{
     }
 }
 
-class disable001aThread1 extends JDITask {
+class disable001aThread1 extends NamedTask {
 
     public disable001aThread1(String threadName) {
         super(threadName);

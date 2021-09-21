@@ -23,10 +23,10 @@
 
 package nsk.share.jdi;
 
-public abstract class JDITask implements Runnable {
+public abstract class NamedTask implements Runnable {
     private String name;
 
-    public JDITask(String name) {
+    public NamedTask(String name) {
         this.name = name;
     }
 

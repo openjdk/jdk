@@ -160,7 +160,7 @@ public class crstepreq003a {
 /**
  * This thread will be suspended on breakpoint. No locks are used.
  */
-class Thread0crstepreq003a extends JDITask {
+class Thread0crstepreq003a extends NamedTask {
     public Thread0crstepreq003a (String name) {
         super(name);
     }

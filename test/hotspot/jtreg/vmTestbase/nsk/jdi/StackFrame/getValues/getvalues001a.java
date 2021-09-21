@@ -23,7 +23,6 @@
 
 package nsk.jdi.StackFrame.getValues;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -147,7 +146,7 @@ public class getvalues001a {
 
 
 
-class Threadgetvalues001a extends JDITask {
+class Threadgetvalues001a extends NamedTask {
 
     public Threadgetvalues001a(String threadName) {
         super(threadName);

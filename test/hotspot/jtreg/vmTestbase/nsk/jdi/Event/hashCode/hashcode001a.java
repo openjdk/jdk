@@ -108,7 +108,7 @@ public class hashcode001a {
 
 //--------------------------------------------------------- test specific classes
 
-class hashcode001aThread extends JDITask {
+class hashcode001aThread extends NamedTask {
 
     String name;
 

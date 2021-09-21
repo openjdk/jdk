@@ -23,7 +23,6 @@
 
 package nsk.jdi.ThreadReference.stop;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -179,7 +178,7 @@ public class stop001a {
     }
 }
 
-class Threadstop001a extends JDITask {
+class Threadstop001a extends NamedTask {
 
     public Threadstop001a(String threadName) {
         super(threadName);

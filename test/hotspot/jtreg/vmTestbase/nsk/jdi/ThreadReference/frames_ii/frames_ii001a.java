@@ -23,7 +23,6 @@
 
 package nsk.jdi.ThreadReference.frames_ii;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -146,7 +145,7 @@ public class frames_ii001a {
 }
 
 
-class Threadframes_ii001a extends JDITask {
+class Threadframes_ii001a extends NamedTask {
 
     public Threadframes_ii001a(String threadName) {
         super(threadName);

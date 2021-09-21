@@ -24,7 +24,6 @@
 package nsk.jdi.BreakpointRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -151,7 +150,7 @@ public class threadfilter004a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class Threadthreadfilter004a extends JDITask {
+    static class Threadthreadfilter004a extends NamedTask {
 
         int tNumber;
 

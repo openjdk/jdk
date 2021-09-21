@@ -102,7 +102,7 @@ class thread001a {
     }
 }
 
-class thread001aThread extends JDITask {
+class thread001aThread extends NamedTask {
     thread001aThread (String name) {
         super(name);
     }

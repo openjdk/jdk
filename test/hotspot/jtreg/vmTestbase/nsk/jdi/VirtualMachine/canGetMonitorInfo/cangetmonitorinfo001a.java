@@ -28,7 +28,6 @@
 
 package nsk.jdi.VirtualMachine.canGetMonitorInfo;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -158,7 +157,7 @@ public class cangetmonitorinfo001a {
     }
 }
 
-class Threadcangetmonitorinfo001a extends JDITask {
+class Threadcangetmonitorinfo001a extends NamedTask {
 
     public Threadcangetmonitorinfo001a(String threadName) {
         super(threadName);

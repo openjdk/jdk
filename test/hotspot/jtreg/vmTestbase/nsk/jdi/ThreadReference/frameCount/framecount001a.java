@@ -23,7 +23,6 @@
 
 package nsk.jdi.ThreadReference.frameCount;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -145,7 +144,7 @@ public class framecount001a {
     }
 }
 
-class Threadframecount001a extends JDITask {
+class Threadframecount001a extends NamedTask {
 
     public Threadframecount001a(String threadName) {
         super(threadName);

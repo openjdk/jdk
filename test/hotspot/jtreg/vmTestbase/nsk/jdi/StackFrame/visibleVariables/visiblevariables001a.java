@@ -23,7 +23,6 @@
 
 package nsk.jdi.StackFrame.visibleVariables;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -146,7 +145,7 @@ public class visiblevariables001a {
 }
 
 
-class Threadvisiblevariables001a extends JDITask {
+class Threadvisiblevariables001a extends NamedTask {
 
     public Threadvisiblevariables001a(String threadName) {
         super(threadName);

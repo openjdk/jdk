@@ -24,7 +24,6 @@
 package nsk.jdi.MethodExitRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -148,7 +147,7 @@ public class threadfilter003a {
         return PASSED;
     }
 
-    static class threadfilter003aThread extends JDITask {
+    static class threadfilter003aThread extends NamedTask {
 
         public threadfilter003aThread(String threadName) {
             super(threadName);

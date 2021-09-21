@@ -23,7 +23,6 @@
 
 package nsk.jdi.ObjectReference.getValue;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -145,7 +144,7 @@ public class getvalue001a {
     }
 }
 
-class Threadgetvalue001a extends JDITask {
+class Threadgetvalue001a extends NamedTask {
 
     public Threadgetvalue001a(String threadName) {
         super(threadName);

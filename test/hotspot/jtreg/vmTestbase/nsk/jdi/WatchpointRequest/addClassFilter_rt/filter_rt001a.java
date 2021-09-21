@@ -24,7 +24,6 @@
 package nsk.jdi.WatchpointRequest.addClassFilter_rt;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -182,7 +181,7 @@ class TestClass11 extends TestClass10 {
     }
 }
 
-class Thread1filter_rt001a extends JDITask {
+class Thread1filter_rt001a extends NamedTask {
 
     public Thread1filter_rt001a(String threadName) {
         super(threadName);
@@ -200,7 +199,7 @@ class Thread1filter_rt001a extends JDITask {
     }
 }
 
-class Thread2filter_rt001a extends JDITask {
+class Thread2filter_rt001a extends NamedTask {
 
     public Thread2filter_rt001a(String threadName) {
         super(threadName);

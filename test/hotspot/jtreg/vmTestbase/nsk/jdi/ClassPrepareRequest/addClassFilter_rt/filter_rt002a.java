@@ -24,7 +24,6 @@
 package nsk.jdi.ClassPrepareRequest.addClassFilter_rt;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -149,7 +148,7 @@ class filter_rt002aTestClass10{
 class filter_rt002aTestClass11 extends filter_rt002aTestClass10{
     static int var11 = 0;
 }
-class filter_rt002aThread1 extends JDITask {
+class filter_rt002aThread1 extends NamedTask {
 
     public filter_rt002aThread1(String threadName) {
         super(threadName);

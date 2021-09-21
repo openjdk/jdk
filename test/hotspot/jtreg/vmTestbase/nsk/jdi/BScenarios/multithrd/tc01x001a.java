@@ -90,7 +90,7 @@ public class tc01x001a {
         log.display(caller + "::bar_step"); // checkStepLine
     }
 
-    static class Thready extends JDITask {
+    static class Thready extends NamedTask {
         Thready(String name) {
             super(name);
         }

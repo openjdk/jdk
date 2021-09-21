@@ -23,7 +23,6 @@
 
 package nsk.jdi.VirtualMachine.suspend;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -160,7 +159,7 @@ public class suspend001a {
 }
 
 
-class VMsuspend001a extends JDITask {
+class VMsuspend001a extends NamedTask {
 
     public VMsuspend001a(String threadName) {
         super(threadName);

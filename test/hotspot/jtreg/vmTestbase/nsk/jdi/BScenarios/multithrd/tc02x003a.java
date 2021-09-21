@@ -79,7 +79,7 @@ public class tc02x003a {
         }
     }
 
-    static class Thready extends JDITask {
+    static class Thready extends NamedTask {
         Thready(String name) {
             super(name);
         }

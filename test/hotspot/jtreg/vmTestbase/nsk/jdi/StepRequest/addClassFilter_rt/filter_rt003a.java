@@ -24,7 +24,6 @@
 package nsk.jdi.StepRequest.addClassFilter_rt;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 import nsk.share.jdi.ThreadState;
 
@@ -170,7 +169,7 @@ class filter_rt003aTestClass11 extends filter_rt003aTestClass10{
     }
 }
 
-class Thread1filter_rt003a extends JDITask {
+class Thread1filter_rt003a extends NamedTask {
 
     private ThreadState threadState = null;
 
@@ -204,7 +203,7 @@ class filter_rt003aTestClass21 extends filter_rt003aTestClass20{
     }
 }
 
-class Thread2filter_rt003a extends JDITask {
+class Thread2filter_rt003a extends NamedTask {
 
     private ThreadState threadState = null;
 

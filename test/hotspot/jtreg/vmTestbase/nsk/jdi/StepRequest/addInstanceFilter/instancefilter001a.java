@@ -24,7 +24,6 @@
 package nsk.jdi.StepRequest.addInstanceFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -152,7 +151,7 @@ public class instancefilter001a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class Threadinstancefilter001a extends JDITask {
+    static class Threadinstancefilter001a extends NamedTask {
 
         int tNumber;
 

@@ -23,7 +23,6 @@
 
 package nsk.jdi.ThreadReference.isSuspended;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -145,7 +144,7 @@ public class issuspended003a {
     }
 }
 
-class Threadissuspended003a extends JDITask {
+class Threadissuspended003a extends NamedTask {
 
     public Threadissuspended003a(String threadName) {
         super(threadName);

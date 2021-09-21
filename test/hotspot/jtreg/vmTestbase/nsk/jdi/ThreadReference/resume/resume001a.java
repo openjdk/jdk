@@ -23,7 +23,6 @@
 
 package nsk.jdi.ThreadReference.resume;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -146,7 +145,7 @@ public class resume001a {
 }
 
 
-class Threadresume001a extends JDITask {
+class Threadresume001a extends NamedTask {
 
     public Threadresume001a(String threadName) {
         super(threadName);

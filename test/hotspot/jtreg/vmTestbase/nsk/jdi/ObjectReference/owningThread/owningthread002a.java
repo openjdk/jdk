@@ -24,7 +24,6 @@
 package nsk.jdi.ObjectReference.owningThread;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
@@ -143,7 +142,7 @@ class owningthread002aLock {
     }
 }
 
-class owningthread002aThread extends JDITask {
+class owningthread002aThread extends NamedTask {
     public owningthread002aThread(String threadName) {
         super(threadName);
     }

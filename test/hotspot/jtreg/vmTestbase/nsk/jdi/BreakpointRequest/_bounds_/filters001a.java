@@ -64,7 +64,7 @@ public class filters001a {
     }
 }
 
-class filters001b extends JDITask {
+class filters001b extends NamedTask {
 
     static Log log;
     filters001b(String nameObj) {

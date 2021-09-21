@@ -23,7 +23,6 @@
 
 package nsk.jdi.VirtualMachine.canGetCurrentContendedMonitor;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -154,7 +153,7 @@ public class cangccm001a {
 }
 
 
-class Threadcangccm001a extends JDITask {
+class Threadcangccm001a extends NamedTask {
 
     public Threadcangccm001a(String threadName) {
         super(threadName);

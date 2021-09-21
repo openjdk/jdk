@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequestManager.stepRequests;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -137,7 +136,7 @@ public class stepreq002a {
 
 }
 
-class Thread1stepreq002a extends JDITask {
+class Thread1stepreq002a extends NamedTask {
 
     public Thread1stepreq002a(String threadName) {
         super(threadName);

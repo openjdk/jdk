@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequest.setEnabled;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -202,7 +201,7 @@ class setenabled001aTestClass11 extends setenabled001aTestClass10{
     }
 }
 
-class setenabled001aThread1 extends JDITask {
+class setenabled001aThread1 extends NamedTask {
 
     public setenabled001aThread1(String threadName) {
         super(threadName);

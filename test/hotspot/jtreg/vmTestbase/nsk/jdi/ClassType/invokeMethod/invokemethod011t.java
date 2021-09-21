@@ -143,7 +143,7 @@ public class invokemethod011t {
     * This is an auxiliary thread class used to check the flag
     * INVOKE_SINGLE_THREADED in the debugger.
     */
-    class invokemethod011Thr extends JDITask {
+    class invokemethod011Thr extends NamedTask {
         volatile boolean doExit = false;
         private Object readyObj;
 

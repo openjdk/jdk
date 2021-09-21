@@ -23,7 +23,6 @@
 
 package nsk.jdi.VirtualMachine.allThreads;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -148,7 +147,7 @@ public class allthreads001a {
 
 
 
-class Threadallthreads001a extends JDITask {
+class Threadallthreads001a extends NamedTask {
 
     public Threadallthreads001a(String threadName) {
         super(threadName);

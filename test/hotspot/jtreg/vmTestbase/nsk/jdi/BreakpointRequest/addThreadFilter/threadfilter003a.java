@@ -24,7 +24,6 @@
 package nsk.jdi.BreakpointRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -149,7 +148,7 @@ public class threadfilter003a {
         return PASSED;
     }
 
-    static class Threadthreadfilter003a extends JDITask {
+    static class Threadthreadfilter003a extends NamedTask {
 
         public Threadthreadfilter003a(String threadName) {
             super(threadName);

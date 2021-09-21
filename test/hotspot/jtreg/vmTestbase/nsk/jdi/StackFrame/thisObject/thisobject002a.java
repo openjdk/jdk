@@ -23,7 +23,6 @@
 
 package nsk.jdi.StackFrame.thisObject;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -148,7 +147,7 @@ public class thisobject002a {
 
 
 
-class Threadthisobject002a extends JDITask {
+class Threadthisobject002a extends NamedTask {
 
     public Threadthisobject002a(String threadName) {
         super(threadName);

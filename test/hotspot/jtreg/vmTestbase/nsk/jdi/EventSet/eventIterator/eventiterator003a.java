@@ -112,7 +112,7 @@ public class eventiterator003a {
         return PASSED;
     }
 
-    static class Thread2eventiterator003a extends JDITask {
+    static class Thread2eventiterator003a extends NamedTask {
 
         public Thread2eventiterator003a(String threadName) {
             super(threadName);

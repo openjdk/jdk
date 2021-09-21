@@ -23,7 +23,6 @@
 
 package nsk.jdi.VirtualMachine.dispose;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -170,7 +169,7 @@ public class dispose004a {
     }
 }
 
-class Threaddispose004a extends JDITask {
+class Threaddispose004a extends NamedTask {
 
     public Threaddispose004a(String threadName) {
         super(threadName);

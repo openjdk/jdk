@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequest.suspendPolicy;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -202,7 +201,7 @@ class TestClass11 extends TestClass10{
     }
 }
 
-class Thread1suspendpolicy001a extends JDITask {
+class Thread1suspendpolicy001a extends NamedTask {
 
     public Thread1suspendpolicy001a(String threadName) {
         super(threadName);

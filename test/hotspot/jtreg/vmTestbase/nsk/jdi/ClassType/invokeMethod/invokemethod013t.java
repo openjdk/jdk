@@ -145,7 +145,7 @@ public class invokemethod013t {
     * This is an auxiliary thread class used to check method
     * invocation in the debugger.
     */
-    class invokemethod013Thr extends JDITask {
+    class invokemethod013Thr extends NamedTask {
         volatile boolean doExit = false;
         private Object readyObj;
 

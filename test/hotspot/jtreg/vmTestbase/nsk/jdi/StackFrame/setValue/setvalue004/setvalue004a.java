@@ -23,7 +23,6 @@
 
 package nsk.jdi.StackFrame.setValue.setvalue004;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -146,7 +145,7 @@ public class setvalue004a {
 
 
 
-class Threadsetvalue004a extends JDITask {
+class Threadsetvalue004a extends NamedTask {
 
     public Threadsetvalue004a(String threadName) {
         super(threadName);

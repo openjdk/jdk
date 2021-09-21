@@ -23,7 +23,6 @@
 
 package nsk.jdi.ClassType.invokeMethod;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -150,7 +149,7 @@ public class invokemethod001a {
     }
 }
 
-class Threadinvokemethod001a extends JDITask {
+class Threadinvokemethod001a extends NamedTask {
 
     public Threadinvokemethod001a(String threadName) {
         super(threadName);

@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequest.getProperty;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -202,7 +201,7 @@ class TestClass11 extends TestClass10{
     }
 }
 
-class Thread1getproperty001a extends JDITask {
+class Thread1getproperty001a extends NamedTask {
 
     public Thread1getproperty001a(String threadName) {
         super(threadName);

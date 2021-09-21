@@ -23,7 +23,6 @@
 
 package nsk.jdi.ThreadReference.suspendCount;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -146,7 +145,7 @@ public class suspendcount001a {
 }
 
 
-class Threadsuspendcount001a extends JDITask {
+class Threadsuspendcount001a extends NamedTask {
 
     public Threadsuspendcount001a(String threadName) {
         super(threadName);

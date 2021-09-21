@@ -24,7 +24,6 @@
 package nsk.jdi.MethodExitRequest.addInstanceFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -137,7 +136,7 @@ public class instancefilter002a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class instancefilter002aThread extends JDITask {
+    static class instancefilter002aThread extends NamedTask {
 
 
         int tNumber;

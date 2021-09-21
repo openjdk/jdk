@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequestManager.deleteEventRequests;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -138,7 +137,7 @@ public class delevtreqs002a {
 
 }
 
-class Thread1delevtreqs002a extends JDITask {
+class Thread1delevtreqs002a extends NamedTask {
 
     public Thread1delevtreqs002a(String threadName) {
         super(threadName);

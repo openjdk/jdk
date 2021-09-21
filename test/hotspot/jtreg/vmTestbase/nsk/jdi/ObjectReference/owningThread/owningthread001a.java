@@ -23,7 +23,6 @@
 
 package nsk.jdi.ObjectReference.owningThread;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -155,7 +154,7 @@ public class owningthread001a {
     }
 }
 
-class Threadowningthread001a extends JDITask {
+class Threadowningthread001a extends NamedTask {
 
     public Threadowningthread001a(String threadName) {
         super(threadName);

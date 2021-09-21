@@ -24,7 +24,6 @@
 package nsk.jdi.LocatableEvent.thread;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -174,7 +173,7 @@ public class thread001a {
 
     static volatile int n = 0;
 
-    static class Thread1thread001a extends JDITask {
+    static class Thread1thread001a extends NamedTask {
 
         int threadIndex;
 
@@ -205,7 +204,7 @@ public class thread001a {
 
     }
 
-    static class Thread2thread001a extends JDITask {
+    static class Thread2thread001a extends NamedTask {
 
         int threadIndex;
 

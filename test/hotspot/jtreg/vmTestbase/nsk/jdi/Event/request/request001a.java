@@ -183,7 +183,7 @@ public class request001a {
 
     static volatile int n = 0;
 
-    static class Thread1request001a extends JDITask {
+    static class Thread1request001a extends NamedTask {
 
         int threadIndex;
 
@@ -214,7 +214,7 @@ public class request001a {
 
     }
 
-    static class Thread2request001a extends JDITask {
+    static class Thread2request001a extends NamedTask {
 
         int threadIndex;
 
@@ -249,7 +249,7 @@ public class request001a {
 
     }
 
-    static class Thread3request001a extends JDITask {
+    static class Thread3request001a extends NamedTask {
 
         public Thread3request001a(String threadName) {
             super(threadName);

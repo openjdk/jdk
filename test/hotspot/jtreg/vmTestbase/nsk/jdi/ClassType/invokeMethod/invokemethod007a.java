@@ -117,7 +117,7 @@ public class invokemethod007a {
     }
 }
 
-class im007aThread01 extends JDITask {
+class im007aThread01 extends NamedTask {
     public static Object waitInvoking = new Object();
     public static Object waitStarting = new Object();
     public static Object waitFinishing = new Object();
