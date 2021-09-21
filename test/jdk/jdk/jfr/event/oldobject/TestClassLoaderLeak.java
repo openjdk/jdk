@@ -59,8 +59,11 @@ public class TestClassLoaderLeak {
             for (Class<?> clazz : testClassLoader.loadClasses(OldObjects.MIN_SIZE / 200)) {
                 // Allocate array to trigger sampling code path for interpreter / c1
                 for (int i = 0; i < 200; i++) {
-                    Object classArray = Array.newInstance(clazz, 200);
-                    Array.set(classArray, i, clazz.newInstance());
+                    Object classArray = Array.newInstance(clazz, 20);
+                    // No need to fill whole array
+                    for (int j = 0; j < 5; j++) {
+                        Array.set(classArray, j, clazz.getConstructors()[0].newInstance());
+                    }
                     classObjects.add(classArray);
                 }
             }
