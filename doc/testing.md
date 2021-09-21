@@ -64,6 +64,37 @@ jtreg:$(TOPDIR)/test/nashorn:tier1 jtreg:$(TOPDIR)/test/jaxp:tier1`. You can
 always submit a list of fully qualified test descriptors in the `TEST` variable
 if you want to shortcut the parser.
 
+### Common Test Groups
+
+The source tree currently defines a few common test groups in the relevant `TEST.groups`
+files. The test groups are either covering a specific component, for example `hotspot_gc`,
+or represent one of the _tiered_ test groups, for example `tier1`. It is a good idea
+to look into `TEST.groups` files to get a sense what tests to run for the changes in
+the particular JDK component.
+
+A brief description of the common test groups:
+
+- `tier1`: This test group is the first line of defense against bugs. Multiple developers
+run these tests every day. Normally, at least this tier is passed before integration.
+Because of the widespread use, the tests in `tier1` are carefully selected and optimized
+to run fast, and to run in the most stable manner. The test failures in `tier1` are
+usually followed up on quickly, either with fixes, or adding relevant tests to problem
+list. [GitHub Actions workflows](../.github/workflows/), if enabled, run `tier1` tests.
+
+- `tier2`: This test group covers even more ground. These contain, among other things,
+tests that either run for too long to be at `tier1`, tests for unstable and/or experimental
+features, tests for less essential JDK components (for example, jaxp).
+
+- `tier3`: This test group includes more stressful tests, the tests for corner cases
+not covered by previous tiers, plus the tests that require GUIs. As such, this suite
+should either be run with low concurrency (`TEST_JOBS=1`), or without headful tests
+(`JTREG_KEYWORDS=\!headful`), or both.
+
+- `tier4`: This test group includes every other test not covered by previous tiers. It includes,
+for example, `vmTestbase` suites for Hotspot, which run for many hours even on large
+machines. It also runs GUI tests, so the same `TEST_JOBS` and `JTREG_KEYWORDS` caveats
+apply.
+
 ### JTReg
 
 JTReg tests can be selected either by picking a JTReg test group, or a selection
