@@ -590,6 +590,11 @@ public class TestCommon extends CDSTestUtils {
     }
 
 
+    public static String[] concat(ArrayList<String> prefix, String... extra) {
+        String[] array = new String[prefix.size()];
+        return concat(prefix.toArray(array), extra);
+    }
+
     public static String[] concat(String prefix[], String... extra) {
         ArrayList<String> list = new ArrayList<String>();
         for (String s : prefix) {
