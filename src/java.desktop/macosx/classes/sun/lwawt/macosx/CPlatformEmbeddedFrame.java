@@ -50,8 +50,8 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     private LWWindowPeer peer;
     private CEmbeddedFrame target;
 
-    private volatile int screenX = 0;
-    private volatile int screenY = 0;
+    private volatile int screenX;
+    private volatile int screenY;
 
     @Override // PlatformWindow
     public void initialize(Window target, final LWWindowPeer peer, PlatformWindow owner) {
