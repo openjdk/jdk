@@ -27,23 +27,23 @@
  * @key randomness
  * @modules java.base/jdk.internal.misc
  *
- * @summary converted from VM Testbase vm/mlvm/anonloader/stress/byteMutation.
+ * @summary converted from VM Testbase vm/mlvm/hiddenloader/stress/byteMutation.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
  *
  * @library /vmTestbase
  *          /test/lib
  *
  * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.stress.byteMutation.Test
+ * @build vm.mlvm.hiddenloader.stress.byteMutation.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm vm.mlvm.anonloader.stress.byteMutation.Test -stressIterationsFactor 100000
+ * @run main/othervm vm.mlvm.hiddenloader.stress.byteMutation.Test -stressIterationsFactor 100000
  */
 
-package vm.mlvm.anonloader.stress.byteMutation;
+package vm.mlvm.hiddenloader.stress.byteMutation;
 
-import vm.mlvm.anonloader.share.AnonkTestee01;
-import vm.mlvm.anonloader.share.StressClassLoadingTest;
+import vm.mlvm.hiddenloader.share.HiddenkTestee01;
+import vm.mlvm.hiddenloader.share.StressClassLoadingTest;
 import vm.share.FileUtils;
 import vm.share.options.Option;
 
@@ -67,7 +67,7 @@ import vm.share.options.Option;
  *
  */
 public class Test extends StressClassLoadingTest {
-    private final static Class<?> HOST_CLASS = AnonkTestee01.class;
+    private final static Class<?> HOST_CLASS = HiddenkTestee01.class;
     private final byte[] testeeBytes;
     @Option(name = "mutationCount", default_value = "3",
             description = "How many bytes to mutate in a class")
@@ -76,16 +76,16 @@ public class Test extends StressClassLoadingTest {
     /**
      * Constructs the test.
      * @throws Exception if there are any errors when
-     * reading {@link vm.mlvm.anonloader.share.AnonkTestee01} class bytecodes.
+     * reading {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class bytecodes.
      */
     public Test() throws Exception {
-        this.testeeBytes = FileUtils.readClass(AnonkTestee01.class.getName());
+        this.testeeBytes = FileUtils.readClass(HiddenkTestee01.class.getName());
     }
 
     /**
-     * Returns {@link vm.mlvm.anonloader.share.AnonkTestee01} class to the
+     * Returns {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class to the
      * parent.
-     * @return {@link vm.mlvm.anonloader.share.AnonkTestee01} class.
+     * @return {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class.
      */
     @Override
     protected Class<?> getHostClass() {
@@ -93,9 +93,9 @@ public class Test extends StressClassLoadingTest {
     }
 
     /**
-     * Takes {@link vm.mlvm.anonloader.share.AnonkTestee01} class bytecodes
+     * Takes {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class bytecodes
      * and modifies mutationCount bytes setting them to random values.
-     * @return {@link vm.mlvm.anonloader.share.AnonkTestee01} class bytecodes with modified bytes.
+     * @return {@link vm.mlvm.hiddenloader.share.HiddenkTestee01} class bytecodes with modified bytes.
      */
     @Override
     protected byte[] generateClassBytes() {

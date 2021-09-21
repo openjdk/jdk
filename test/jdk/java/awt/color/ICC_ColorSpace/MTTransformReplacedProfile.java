@@ -110,7 +110,7 @@ public final class MTTransformReplacedProfile {
         float[] colorvalue = new float[3];
         Thread transform = new Thread(() -> {
             boolean rgb = true;
-            while (!stop.get()) {
+            while (!stop.get() && !isComplete()) {
                 try {
                     if (rgb) {
                         cs.toRGB(colorvalue);

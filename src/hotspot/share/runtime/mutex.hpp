@@ -39,11 +39,14 @@
 // The underlying PlatformMutex may support recursive locking but this is not exposed
 // and we account for that possibility in try_lock.
 
+// A thread is not allowed to safepoint while holding a mutex whose rank
+// is nosafepoint or lower.
+
 class Mutex : public CHeapObj<mtSynchronizer> {
 
  public:
   // Special low level locks are given names and ranges avoid overlap.
-  enum lock_types {
+  enum Rank {
        event,
        service        = event          +   6,
        stackwatermark = service        +   3,
@@ -51,8 +54,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
        oopstorage     = tty            +   3,
        nosafepoint    = oopstorage     +   6,
        leaf           = nosafepoint    +   6,
-       safepoint      = leaf           +  10,
-       barrier        = safepoint      +   1,
+       barrier        = leaf           +  10,
        nonleaf        = barrier        +   1,
        max_nonleaf    = nonleaf        + 900
   };
