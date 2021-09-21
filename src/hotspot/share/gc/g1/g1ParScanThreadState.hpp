@@ -104,8 +104,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
 
-  void handle_evacuation_failure_notifications(oop obj, markWord m, size_t word_sz);
-
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
@@ -130,28 +128,15 @@ public:
 
   void push_on_queue(ScannerTask task);
 
-  template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
-    assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
-    assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
+  // Enqueue card of p if the barrier or other reasons (same region, not from survivor)
+  // do not find that it is not required.
+  // To be called if nothing particular about p and obj are known.
+  template <class T> void enqueue_card_after_barrier_filters(T* p, oop obj);
 
-#ifdef ASSERT
-    HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
-    assert(region_attr.needs_remset_update() == hr_obj->rem_set()->is_tracked(),
-           "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
-           BOOL_TO_STR(region_attr.needs_remset_update()),
-           BOOL_TO_STR(hr_obj->rem_set()->is_tracked()),
-           hr_obj->hrm_index());
-#endif
-    if (!region_attr.needs_remset_update()) {
-      return;
-    }
-    size_t card_index = ct()->index_for(p);
-    // If the card hasn't been added to the buffer, do it.
-    if (_last_enqueued_card != card_index) {
-      _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
-      _last_enqueued_card = card_index;
-    }
-  }
+  // Enqueue the card if the reference's target region's remembered set is tracked.
+  // Assumes that a significant amount of pre-filtering (like done by
+  // enqueue_card_after_barrier_filters()) has already been performed.
+  template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o);
 
   G1EvacuationRootClosures* closures() { return _closures; }
   uint worker_id() { return _worker_id; }
