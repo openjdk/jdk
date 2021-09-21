@@ -460,19 +460,35 @@ NsCharToJavaVirtualKeyCode(unichar ch, BOOL isDeadChar,
     }
 
     if ([[NSCharacterSet letterCharacterSet] characterIsMember:ch]) {
+        TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
+        NSString* lang;
+        NSArray* languages = (NSArray *) TISGetInputSourceProperty(source, kTISPropertyInputSourceLanguages);
+        if (languages && [languages count] > 0) {
+            lang = [languages objectAtIndex:0];
+        } else {
+            lang = languages;
+        }
+
         // key is an alphabetic character
         unichar lower;
         lower = tolower(ch);
         offset = lower - 'a';
         if (offset >= 0 && offset <= 25) {
-            // some chars in letter set are NOT actually A-Z characters?!
-            // skip them...
+            // checking for A-Z characters
             *postsTyped = YES;
             // do quick conversion
             *keyCode = java_awt_event_KeyEvent_VK_A + offset;
             *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_STANDARD;
             return;
-        }
+        } else if([lang isEqualToString:@"ru"]) {
+            // checking for Russian characters
+            offset += 0x01000000;
+            *postsTyped = YES;
+            // do quick conversion, add 32 for Russian
+            *keyCode = java_awt_event_KeyEvent_VK_A + offset + 32;
+            *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_STANDARD;
+return;
+         }
     }
 
     if ([[NSCharacterSet decimalDigitCharacterSet] characterIsMember:ch]) {
