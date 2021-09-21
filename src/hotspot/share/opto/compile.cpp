@@ -773,7 +773,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
   if (StressLCM || StressGCM || StressIGVN || StressCCP) {
-    if (FLAG_IS_DEFAULT(StressSeed)) {
+    if (FLAG_IS_DEFAULT(StressSeed) or RepeatCompilation) {
       _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
       FLAG_SET_ERGO(StressSeed, _stress_seed);
     } else {
