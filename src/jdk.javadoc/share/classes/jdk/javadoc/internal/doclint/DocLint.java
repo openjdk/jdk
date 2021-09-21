@@ -287,12 +287,7 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
                 void visitDecl(Tree tree, Name name) {
                     TreePath p = getCurrentPath();
                     DocCommentTree dc = env.trees.getDocCommentTree(p);
-try {
-    checker.scan(dc, p);
-} catch (Throwable t) {
-    t.printStackTrace();
-    throw t;
-}
+                    checker.scan(dc, p);
                 }
             };
 
