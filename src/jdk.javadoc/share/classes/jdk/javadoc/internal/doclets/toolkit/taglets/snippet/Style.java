@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,47 +23,36 @@
  * questions.
  */
 
-package com.sun.source.doctree;
-
-import java.util.List;
-import javax.lang.model.element.Name;
+package jdk.javadoc.internal.doclets.toolkit.taglets.snippet;
 
 /**
- * A tree node for an attribute in an HTML element or tag.
+ * A style of a snippet text character.
  *
- * @since 1.8
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
-public interface AttributeTree extends DocTree {
-    /**
-     * The kind of an attribute value.
-     */
-    enum ValueKind {
-        /** The attribute value is empty. */
-        EMPTY,
-        /** The attribute value is not enclosed in quotes. */
-        UNQUOTED,
-        /** The attribute value is enclosed in single quotation marks. */
-        SINGLE,
-        /** The attribute value is enclosed in double quotation marks. */
-        DOUBLE
-    }
+// TODO: uncomment /* sealed */ when minimum boot JDK version >= 17
+public /* sealed */ interface Style {
 
     /**
-     * Returns the name of the attribute.
-     * @return the name of the attribute
+     * A style that describes a link. Characters of this style are typically
+     * processed by wrapping into an HTML {@code A} element pointing to the
+     * provided target.
      */
-    Name getName();
+    record Link(String target) implements Style { }
 
     /**
-     * Returns the kind of the attribute value.
-     * @return the kind of the attribute value
+     * A named style. Characters of this style are typically processed by
+     * wrapping into an HTML {@code SPAN} element with the {@code class}
+     * attribute which is obtained from the provided name.
      */
-    ValueKind getValueKind();
+    record Name(String name) implements Style { }
 
     /**
-     * Returns the value of the attribute, or {@code null} if the
-     * {@linkplain #getValueKind() kind of this attribute} is {@code EMPTY}.
-     * @return the value of the attribute
+     * A marker of belonging to markup. Characters of this style are typically
+     * processed by omitting from the output.
      */
-    List<? extends DocTree> getValue();
+    record Markup() implements Style { }
 }

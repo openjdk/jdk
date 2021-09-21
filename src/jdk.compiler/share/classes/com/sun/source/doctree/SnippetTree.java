@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,44 +26,44 @@
 package com.sun.source.doctree;
 
 import java.util.List;
-import javax.lang.model.element.Name;
 
 /**
- * A tree node for an attribute in an HTML element or tag.
+ * A tree node for an {@code @snippet} inline tag.
  *
- * @since 1.8
+ * <pre>
+ *    {&#064;snippet :
+ *     body
+ *    }
+ *
+ *    {&#064;snippet attributes}
+ *
+ *    {&#064;snippet attributes :
+ *     body
+ *    }
+ * </pre>
+ *
+ * @since 18
  */
-public interface AttributeTree extends DocTree {
-    /**
-     * The kind of an attribute value.
-     */
-    enum ValueKind {
-        /** The attribute value is empty. */
-        EMPTY,
-        /** The attribute value is not enclosed in quotes. */
-        UNQUOTED,
-        /** The attribute value is enclosed in single quotation marks. */
-        SINGLE,
-        /** The attribute value is enclosed in double quotation marks. */
-        DOUBLE
-    }
+public interface SnippetTree extends InlineTagTree {
 
     /**
-     * Returns the name of the attribute.
-     * @return the name of the attribute
+     * Returns the list of the attributes of the {@code @snippet} tag.
+     *
+     * @return the list of the attributes
      */
-    Name getName();
+    List<? extends DocTree> getAttributes();
 
     /**
-     * Returns the kind of the attribute value.
-     * @return the kind of the attribute value
+     * Returns the body of the {@code @snippet} tag, or {@code null} if there is no body.
+     *
+     * @apiNote
+     * An instance of {@code SnippetTree} with an empty body differs from an
+     * instance of {@code SnippetTree} with no body.
+     * If a tag has no body, then calling this method returns {@code null}.
+     * If a tag has an empty body, then this method returns a {@code TextTree}
+     * whose {@link TextTree#getBody()} returns an empty string.
+     *
+     * @return the body of the tag, or {@code null} if there is no body
      */
-    ValueKind getValueKind();
-
-    /**
-     * Returns the value of the attribute, or {@code null} if the
-     * {@linkplain #getValueKind() kind of this attribute} is {@code EMPTY}.
-     * @return the value of the attribute
-     */
-    List<? extends DocTree> getValue();
+    TextTree getBody();
 }
