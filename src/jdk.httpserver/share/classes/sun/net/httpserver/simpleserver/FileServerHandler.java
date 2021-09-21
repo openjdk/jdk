@@ -222,10 +222,13 @@ public final class FileServerHandler implements HttpHandler {
             String uriPath = relativeRequestPath(exchange);
             String[] pathSegment = uriPath.split("/");
 
-            // resolve each individual path segment against the root
+            // resolve each path segment against the root
             Path path = root;
             for (var segment : pathSegment) {
                 path = path.resolve(segment);
+                if (!Files.isReadable(path) || isHiddenOrSymLink(path)) {
+                    return null;  // stop resolution, null results in 404 response
+                }
             }
             path = path.normalize();
             return checkPathWithinRoot(path, root);
@@ -327,32 +330,12 @@ public final class FileServerHandler implements HttpHandler {
         return fileTime.toInstant().atZone(ZoneId.of("GMT")).format(HTTP_DATE_FORMATTER);
     }
 
-    // Checks if this path's or any of its subpaths' files are hidden or symlinks.
     private static boolean isHiddenOrSymLink(Path path) {
         try {
-            int segmentCount = path.getNameCount();
-            for (int i = 1; i <= segmentCount; i++) {
-                Path p = path.getRoot().resolve(path.subpath(0, i));
-                if (Files.isHidden(p) || Files.isSymbolicLink(p)) {
-                    return true;
-                }
-            }
-            return false;
+            return Files.isHidden(path) || Files.isSymbolicLink(path);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    // Checks if this path's and any of its subpaths files are readable.
-    private static boolean isReadable(Path path) {
-        int segmentCount = path.getNameCount();
-        for (int i = 1; i <= segmentCount; i++) {
-            Path p = path.getRoot().resolve(path.subpath(0, i));
-            if (!Files.isReadable(p)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     // Default for unknown content types, as per RFC 2046
@@ -389,10 +372,8 @@ public final class FileServerHandler implements HttpHandler {
             Path path = mapToPath(exchange, root);
             if (path != null) {
                 exchange.setAttribute("request-path", path.toString());  // store for OutputFilter
-                if (!Files.exists(path) || isHiddenOrSymLink(path)) {
+                if (!Files.exists(path) || !Files.isReadable(path) || isHiddenOrSymLink(path)) {
                     handleNotFound(exchange);
-                } else if (!isReadable(path)) {
-                    handleForbidden(exchange);
                 } else if (exchange.getRequestMethod().equals("HEAD")) {
                     handleHEAD(exchange, path);
                 } else {

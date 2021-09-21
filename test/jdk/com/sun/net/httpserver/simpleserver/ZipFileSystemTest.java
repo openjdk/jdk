@@ -98,7 +98,6 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            System.out.println(response.body());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "some text");
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
@@ -128,7 +127,6 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            System.out.println(response.body());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
@@ -185,7 +183,6 @@ public class ZipFileSystemTest {
             var request = HttpRequest.newBuilder(uri(server, ""))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
-            System.out.println(response.body());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
@@ -220,12 +217,12 @@ public class ZipFileSystemTest {
                                           String filename,
                                           String contentType,
                                           String contentLength,
-                                          String expectedContent,
+                                          String expectedBody,
                                           boolean serveIndexFile) throws Exception {
         var root = createZipFs(TEST_DIR.resolve("testDirectoryWithIndexGET"+id+".zip"));
         var lastModified = getLastModified(root);
         if (serveIndexFile) {
-            var file = Files.writeString(root.resolve(filename), expectedContent, CREATE);
+            var file = Files.writeString(root.resolve(filename), expectedBody, CREATE);
             lastModified = getLastModified(file);
         }
 
@@ -235,12 +232,11 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            System.out.println(response.body());
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), contentType);
             assertEquals(response.headers().firstValue("content-length").get(), contentLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.body(), expectedContent);
+            assertEquals(response.body(), expectedBody);
         } finally {
             server.stop(0);
             if (serveIndexFile) {
@@ -251,7 +247,7 @@ public class ZipFileSystemTest {
         }
     }
 
-    // no testForbiddenGET() - Zip file system does not enforce access permissions
+    // no testNotReadableGET() - Zip file system does not enforce access permissions
     // no testSymlinkGET() - Zip file system does not support symlink creation
     // no testHiddenFileGET() - Zip file system does not support hidden files
 

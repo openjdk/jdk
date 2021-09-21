@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Tests the FileServerHandler with the SecurityManager
+ * @summary Tests for FileServerHandler with SecurityManager
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
  * @run main/othervm/java.security.policy=SecurityManagerTestRead.policy -ea SecurityManagerTest true
@@ -158,6 +158,7 @@ public class SecurityManagerTest {
         }
     }
 
+    @SuppressWarnings("removal")
     private static void testCreateHandler(){
         try {
             SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.NONE);

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Tests for the FileServerHandler
+ * @summary Tests for FileServerHandler
  * @run testng FileServerHandlerTest
  */
 
@@ -82,7 +82,7 @@ public class FileServerHandlerTest {
         assertEquals(exchange.rCode, 501);
     }
 
-    // 301, 403, 404 response codes tested in SimpleFileServerTest
+    // 301 and 404 response codes tested in SimpleFileServerTest
 
     @Test
     public void testThrowingExchange() {

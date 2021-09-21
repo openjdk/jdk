@@ -217,12 +217,12 @@ public class SimpleFileServerTest {
                                           String filename,
                                           String contentType,
                                           String contentLength,
-                                          String expectedContent,
+                                          String expectedBody,
                                           boolean serveIndexFile) throws Exception {
         var root = Files.createDirectories(TEST_DIR.resolve("testDirectoryWithIndexGET"+id));
         var lastModified = getLastModified(root);
         if (serveIndexFile) {
-            var file = Files.writeString(root.resolve(filename), expectedContent, CREATE);
+            var file = Files.writeString(root.resolve(filename), expectedBody, CREATE);
             lastModified = getLastModified(file);
         }
 
@@ -236,7 +236,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("content-type").get(), contentType);
             assertEquals(response.headers().firstValue("content-length").get(), contentLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.body(), expectedContent);
+            assertEquals(response.body(), expectedBody);
         } finally {
             server.stop(0);
             if (serveIndexFile) {
@@ -246,9 +246,14 @@ public class SimpleFileServerTest {
     }
 
     @Test
-    public void testForbiddenFileGET() throws Exception {
+    public void testNotReadableFileGET() throws Exception {
         if (!Platform.isWindows()) {  // not applicable on Windows
-            var root = Files.createDirectory(TEST_DIR.resolve("testForbiddenGET"));
+            var expectedBody = openHTML + """
+                <h1>File not found</h1>
+                <p>&#x2F;aFile.txt</p>
+                """ + closeHTML;
+            var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+            var root = Files.createDirectory(TEST_DIR.resolve("testNotReadableFileGET"));
             var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
 
             file.toFile().setReadable(false, false);
@@ -260,8 +265,9 @@ public class SimpleFileServerTest {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
                 var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
                 var response = client.send(request, BodyHandlers.ofString());
-                assertEquals(response.statusCode(), 403);
-                assertEquals(response.headers().firstValue("content-length").get(), "0");
+                assertEquals(response.statusCode(), 404);
+                assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+                assertEquals(response.body(), expectedBody);
             } finally {
                 server.stop(0);
                 file.toFile().setReadable(true, false);
@@ -270,9 +276,14 @@ public class SimpleFileServerTest {
     }
 
     @Test
-    public void testForbiddenSegmentGET() throws Exception {
+    public void testNotReadableSegmentGET() throws Exception {
         if (!Platform.isWindows()) {  // not applicable on Windows
-            var root = Files.createDirectory(TEST_DIR.resolve("testForbiddenSegmentGET"));
+            var expectedBody = openHTML + """
+                <h1>File not found</h1>
+                <p>&#x2F;dir&#x2F;aFile.txt</p>
+                """ + closeHTML;
+            var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+            var root = Files.createDirectory(TEST_DIR.resolve("testNotReadableSegmentGET"));
             var dir = Files.createDirectory(root.resolve("dir"));
             var file = Files.writeString(dir.resolve("aFile.txt"), "some text", CREATE);
 
@@ -286,8 +297,9 @@ public class SimpleFileServerTest {
                 var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
                 var request = HttpRequest.newBuilder(uri(server, "dir/aFile.txt")).build();
                 var response = client.send(request, BodyHandlers.ofString());
-                assertEquals(response.statusCode(), 403);
-                assertEquals(response.headers().firstValue("content-length").get(), "0");
+                assertEquals(response.statusCode(), 404);
+                assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+                assertEquals(response.body(), expectedBody);
             } finally {
                 server.stop(0);
                 dir.toFile().setReadable(true, false);
@@ -392,13 +404,13 @@ public class SimpleFileServerTest {
     }
 
     @Test
-    public void testSymlinkElementGET() throws Exception {
+    public void testSymlinkSegmentGET() throws Exception {
         var expectedBody = openHTML + """
                 <h1>File not found</h1>
                 <p>&#x2F;symlink&#x2F;aFile.txt</p>
                 """ + closeHTML;
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
-        var root = Files.createDirectory(TEST_DIR.resolve("testSymlinkElementGET"));
+        var root = Files.createDirectory(TEST_DIR.resolve("testSymlinkSegmentGET"));
         var symlink = root.resolve("symlink");
         var target = Files.createDirectory(root.resolve("target"));
         Files.writeString(target.resolve("aFile.txt"), "some text", CREATE);
@@ -461,8 +473,6 @@ public class SimpleFileServerTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, ".hiddenDirectory/aFile.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            System.out.println(response.body());
-
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);

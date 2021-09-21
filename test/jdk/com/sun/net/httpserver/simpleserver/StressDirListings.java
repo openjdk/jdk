@@ -77,7 +77,7 @@ public class StressDirListings {
         simpleFileServer.stop(0);
     }
 
-    // Enough to trigger FileSystemException: Too many open files (on my machine)
+    // Enough to trigger FileSystemException: Too many open files (machine dependent)
     static final int TIMES = 11_000;
 
     /**
