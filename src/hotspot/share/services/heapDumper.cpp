@@ -1771,7 +1771,7 @@ void VM_HeapDumper::doit() {
   if (gang == NULL) {
     work(0);
   } else {
-    gang->run_task(this, gang->active_workers(), true);
+    gang->run_task(this);
   }
 
   // Now we clear the global variables, so that a future dumper can run.
@@ -1780,7 +1780,7 @@ void VM_HeapDumper::doit() {
 }
 
 void VM_HeapDumper::work(uint worker_id) {
-  if (!Thread::current()->is_VM_thread()) {
+  if (worker_id != 0) {
     writer()->writer_loop();
     return;
   }
@@ -1862,7 +1862,10 @@ void VM_HeapDumper::dump_stack_traces() {
     oop threadObj = thread->threadObj();
     if (threadObj != NULL && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
       // dump thread stack trace
-      ResourceMark rm;
+      Thread* current_thread = Thread::current();
+      ResourceMark rm(current_thread);
+      HandleMark hm(current_thread);
+
       ThreadStackTrace* stack_trace = new ThreadStackTrace(thread, false);
       stack_trace->dump_stack_at_safepoint(-1);
       _stack_traces[_num_threads++] = stack_trace;

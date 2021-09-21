@@ -1142,6 +1142,133 @@ public class HtmlDocletWriter {
         }
     }
 
+    // TODO: this method and seeTagToContent share much of the code; consider factoring common pieces out
+    public Content linkToContent(Element referrer, Element target, String targetSignature, String text) {
+        CommentHelper ch = utils.getCommentHelper(referrer);
+
+        boolean isLinkPlain = false; // TODO: for now
+        Content labelContent = plainOrCode(isLinkPlain, Text.of(text));
+
+        TypeElement refClass = ch.getReferencedClass(target);
+        Element refMem =       ch.getReferencedMember(target);
+        String refMemName =    ch.getReferencedMemberName(targetSignature);
+
+        if (refMemName == null && refMem != null) {
+            refMemName = refMem.toString();
+        }
+        if (refClass == null) {
+            ModuleElement refModule = ch.getReferencedModule(target);
+            if (refModule != null && utils.isIncluded(refModule)) {
+                return getModuleLink(refModule, labelContent);
+            }
+            //@see is not referencing an included class
+            PackageElement refPackage = ch.getReferencedPackage(target);
+            if (refPackage != null && utils.isIncluded(refPackage)) {
+                //@see is referencing an included package
+                if (labelContent.isEmpty())
+                    labelContent = plainOrCode(isLinkPlain,
+                                               Text.of(refPackage.getQualifiedName()));
+                return getPackageLink(refPackage, labelContent);
+            } else {
+                // @see is not referencing an included class, module or package. Check for cross links.
+                String refModuleName =  ch.getReferencedModuleName(targetSignature);
+                DocLink elementCrossLink = (refPackage != null) ? getCrossPackageLink(refPackage) :
+                        (configuration.extern.isModule(refModuleName))
+                                ? getCrossModuleLink(utils.elementUtils.getModuleElement(refModuleName))
+                                : null;
+                if (elementCrossLink != null) {
+                    // Element cross link found
+                    return links.createExternalLink(elementCrossLink, labelContent);
+                } else {
+                    // No cross link found so print warning
+// TODO:
+//                    messages.warning(ch.getDocTreePath(see),
+//                                     "doclet.see.class_or_package_not_found",
+//                                     "@" + tagName,
+//                                     seeText);
+                    return labelContent;
+                }
+            }
+        } else if (refMemName == null) {
+            // Must be a class reference since refClass is not null and refMemName is null.
+            if (labelContent.isEmpty()) {
+                if (!refClass.getTypeParameters().isEmpty() && targetSignature.contains("<")) {
+                    // If this is a generic type link try to use the TypeMirror representation.
+
+// TODO:
+//                  TypeMirror refType = ch.getReferencedType(target);
+                    TypeMirror refType = target.asType();
+
+                    if (refType != null) {
+                        return plainOrCode(isLinkPlain, getLink(
+                                new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refType)));
+                    }
+                }
+                labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
+            }
+            return getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refClass)
+                                   .label(labelContent));
+        } else if (refMem == null) {
+            // Must be a member reference since refClass is not null and refMemName is not null.
+            // However, refMem is null, so this referenced member does not exist.
+            return labelContent;
+        } else {
+            // Must be a member reference since refClass is not null and refMemName is not null.
+            // refMem is not null, so this @see tag must be referencing a valid member.
+            TypeElement containing = utils.getEnclosingTypeElement(refMem);
+
+            // Find the enclosing type where the method is actually visible
+            // in the inheritance hierarchy.
+            ExecutableElement overriddenMethod = null;
+            if (refMem.getKind() == ElementKind.METHOD) {
+                VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
+                overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
+
+                if (overriddenMethod != null)
+                    containing = utils.getEnclosingTypeElement(overriddenMethod);
+            }
+            if (targetSignature.trim().startsWith("#") &&
+                    ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
+                // Since the link is relative and the holder is not even being
+                // documented, this must be an inherited link.  Redirect it.
+                // The current class either overrides the referenced member or
+                // inherits it automatically.
+                if (this instanceof ClassWriterImpl writer) {
+                    containing = writer.getTypeElement();
+                } else if (!utils.isPublic(containing)) {
+// TODO:
+//                    messages.warning(
+//                            ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
+//                            tagName, utils.getFullyQualifiedName(containing));
+                } else {
+// TODO:
+//                    messages.warning(
+//                            ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
+//                            tagName, seeText);
+                }
+            }
+            if (configuration.currentTypeElement != containing) {
+                refMemName = (utils.isConstructor(refMem))
+                        ? refMemName
+                        : utils.getSimpleName(containing) + "." + refMemName;
+            }
+            if (utils.isExecutableElement(refMem)) {
+                if (refMemName.indexOf('(') < 0) {
+                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
+                }
+                if (overriddenMethod != null) {
+                    // The method to actually link.
+                    refMem = overriddenMethod;
+                }
+            }
+
+            return getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
+                              refMem, (labelContent.isEmpty()
+                            ? plainOrCode(isLinkPlain, Text.of(text))
+                            : labelContent), null, false);
+        }
+    }
+
     private String removeTrailingSlash(String s) {
         return s.endsWith("/") ? s.substring(0, s.length() -1) : s;
     }
