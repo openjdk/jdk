@@ -49,7 +49,6 @@ import jdk.test.lib.jfr.Events;
 public class TestClassLoaderLeak {
 
     public static List<Object> classObjects = new ArrayList<>(OldObjects.MIN_SIZE);
-    public static Random random = new Random();
 
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
@@ -60,7 +59,6 @@ public class TestClassLoaderLeak {
             TestClassLoader testClassLoader = new TestClassLoader();
             for (Class<?> clazz : testClassLoader.loadClasses(OldObjects.MIN_SIZE / 200)) {
                 // Allocate array to trigger sampling code path for interpreter / c1
-                int count = 20 + random.nextInt(5);
                 for (int i = 0; i < 200; i++) {
                     Object classArray = Array.newInstance(clazz, 200);
                     Array.set(classArray, i, clazz.newInstance());
