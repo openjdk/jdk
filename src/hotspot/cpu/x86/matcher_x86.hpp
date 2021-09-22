@@ -148,7 +148,7 @@
   static const bool int_in_long = false;
 #endif
 
-  // number of htbl entries for aes-gcm intrinsic
+  // Number of htbl entries for aes-gcm intrinsic
   static const int htbl_entries = 96;
 
   // Does the CPU supports vector variable shift instructions?
