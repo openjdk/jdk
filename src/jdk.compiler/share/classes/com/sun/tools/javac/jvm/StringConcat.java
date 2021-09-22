@@ -305,6 +305,14 @@ public abstract class StringConcat {
 
             return splits.toList();
         }
+
+        /**
+         * Returns true if the argument should be converted to a string eagerly, to preserve
+         * possible side-effects.
+         */
+        protected boolean shouldConvertToStringEagerly(Type argType) {
+            return !types.unboxedTypeOrType(argType).isPrimitive() && argType.tsym != syms.stringType.tsym;
+        }
     }
 
     /**
@@ -333,14 +341,20 @@ public abstract class StringConcat {
                 for (JCTree arg : t) {
                     Object constVal = arg.type.constValue();
                     if ("".equals(constVal)) continue;
+                    Type argType;
                     if (arg.type == syms.botType) {
-                        dynamicArgs.add(types.boxedClass(syms.voidType).type);
+                        argType = types.boxedClass(syms.voidType).type;
                     } else {
-                        dynamicArgs.add(sharpestAccessible(arg.type));
+                        argType = sharpestAccessible(arg.type);
                     }
                     if (!first || generateFirstArg) {
                         gen.genExpr(arg, arg.type).load();
+                        if (shouldConvertToStringEagerly(argType)) {
+                            gen.callMethod(pos, syms.stringType, names.valueOf, List.of(syms.objectType), true);
+                            argType = syms.stringType;
+                        }
                     }
+                    dynamicArgs.add(argType);
                     first = false;
                 }
                 doCall(type, pos, dynamicArgs.toList());
@@ -439,10 +453,15 @@ public abstract class StringConcat {
                     } else {
                         // Ordinary arguments come through the dynamic arguments.
                         recipe.append(TAG_ARG);
-                        dynamicArgs.add(sharpestAccessible(arg.type));
+                        Type argType = sharpestAccessible(arg.type);
                         if (!first || generateFirstArg) {
                             gen.genExpr(arg, arg.type).load();
+                            if (shouldConvertToStringEagerly(argType)) {
+                                gen.callMethod(pos, syms.stringType, names.valueOf, List.of(syms.objectType), true);
+                                argType = syms.stringType;
+                            }
                         }
+                        dynamicArgs.add(argType);
                         first = false;
                     }
                 }
