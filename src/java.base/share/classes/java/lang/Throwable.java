@@ -65,7 +65,7 @@ import java.util.*;
  * it is generally unrelated to the abstraction provided by the upper layer.
  * Further, doing so would tie the API of the upper layer to the details of
  * its implementation, assuming the lower layer's exception was a checked
- * exception.  Throwing a "wrapping exception" (i.e., an exception containing a
+ * exception.  Throwing a "wrapped exception" (i.e., an exception containing a
  * cause) allows the upper layer to communicate the details of the failure to
  * its caller without incurring either of these shortcomings.  It preserves
  * the flexibility to change the implementation of the upper layer without
