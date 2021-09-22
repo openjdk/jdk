@@ -696,7 +696,7 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     /*
-     * Returns the position of the the first non-white space
+     * Returns the position of the first non-whitespace character.
      */
     private int skipWhiteSpace(String s, int start) {
         for (int i = start; i < s.length(); i++) {

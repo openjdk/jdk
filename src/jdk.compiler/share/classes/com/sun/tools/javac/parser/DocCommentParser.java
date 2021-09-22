@@ -968,7 +968,7 @@ public class DocCommentParser {
 
     /**
      * Creates an {@code ErroneousTree} node, for a range of text starting at a given position,
-     * ending at the last non-white character before the current position,
+     * ending at the last non-whitespace character before the current position,
      * and with the preferred position set to the last character within that range.
      *
      * @param code the resource key for the error message
@@ -982,8 +982,8 @@ public class DocCommentParser {
 
     /**
      * Creates an {@code ErroneousTree} node, for a range of text starting at a given position,
-     * ending at the last non-white character before the current position,
-     * and with a given preferred position
+     * ending at the last non-whitespace character before the current position,
+     * and with a given preferred position.
      *
      * @param code the resource key for the error message
      * @param pos  the starting position

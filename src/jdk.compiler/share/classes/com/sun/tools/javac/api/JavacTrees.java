@@ -265,9 +265,6 @@ public class JavacTrees extends DocTrees {
                 public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
                     DCDocComment dcComment = (DCDocComment) comment;
                     DCTree dcTree = (DCTree) tree;
-                    if (dcComment.getSourcePosition(dcTree.getEndPosition()) == 0) {
-                        System.err.println("WARNING: comment:" + dcComment.comment + ": " + dcTree.getKind() + " end:" + dcTree.getEndPosition() + " result: " + dcComment.getSourcePosition(dcTree.getEndPosition()));
-                    }
                     return dcComment.getSourcePosition(dcTree.getEndPosition());
                 }
             };

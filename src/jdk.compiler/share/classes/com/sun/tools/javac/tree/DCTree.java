@@ -71,7 +71,7 @@ import static com.sun.tools.javac.util.Position.NOPOS;
  * <li>the {@link #getEndPosition() end} of the range of characters for this node
  * </ul>
  *
- * All are values relative to the beginning of the
+ * All values are relative to the beginning of the
  * {@link Elements#getDocComment comment text} in which they appear.
  * To convert a value to the position in the enclosing source text,
  * use {@link DCDocComment#getSourcePosition(int)}.
@@ -262,7 +262,7 @@ public abstract class DCTree implements DocTree {
     /**
      * {@return a diagnostic position based on the positions in a comment}
      *
-     * The positions are lazily converted to file-based positions as needed.
+     * The positions are lazily converted to file-based positions, as needed.
      *
      * @param comment the enclosing comment
      * @param start the start position in the comment
