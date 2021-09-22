@@ -242,7 +242,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   }
 
   HeapRegion* hr = _g1h->heap_region_containing(to_array);
-  G1ScanInYoungSetter x(&_scanner, hr->is_young());
+  G1SkipCardEnqueueSetter x(&_scanner, hr->is_young());
   // Process claimed task.  The length of to_array is not correct, but
   // fortunately the iteration ignores the length field and just relies
   // on start/end.
@@ -274,7 +274,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
 
-  G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
+  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module. The length of to_array is not correct, but fortunately
@@ -519,7 +519,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       _string_dedup_requests.add(old);
     }
 
-    G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
+    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
     obj->oop_iterate_backwards(&_scanner, klass);
     return obj;
 
@@ -606,7 +606,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     _preserved_marks->push_if_necessary(old, m);
     _evacuation_failed_info.register_copy_failure(word_sz);
 
-    G1ScanInYoungSetter x(&_scanner, r->is_young());
+    G1SkipCardEnqueueSetter x(&_scanner, r->is_young());
     old->oop_iterate_backwards(&_scanner);
 
     return old;
