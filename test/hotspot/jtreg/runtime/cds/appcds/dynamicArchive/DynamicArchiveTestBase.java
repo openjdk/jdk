@@ -182,9 +182,7 @@ class DynamicArchiveTestBase {
         String archiveFiles = (baseArchiveName == null) ? topArchiveName :
             (topArchiveName == null) ? baseArchiveName :
             baseArchiveName + File.pathSeparator + topArchiveName;
-        CDSOptions opts = new CDSOptions();
         String[] cmdLine = TestCommon.concat(
-            opts.getRuntimePrefix(),
             "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
@@ -203,9 +201,7 @@ class DynamicArchiveTestBase {
         String archiveFiles = (baseArchiveName == null) ? topArchiveName :
             (topArchiveName == null) ? baseArchiveName :
             baseArchiveName + File.pathSeparator + topArchiveName;
-        CDSOptions opts = new CDSOptions();
         String[] cmdLine = TestCommon.concat(
-            opts.getRuntimePrefix(),
             "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
