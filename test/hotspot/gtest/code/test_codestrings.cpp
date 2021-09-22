@@ -43,7 +43,7 @@ static const char* replace_addr_expr(const char* str)
     // Padding: aarch64
     std::basic_string<char> tmp2 = std::regex_replace(tmp1, std::regex("\\s+<addr>:\\s+\\.inst\\t<addr> ; undefined"), "");
     // Padding: x64
-    std::basic_string<char> red  = std::regex_replace(tmp2, std::regex("[ \\t]+<addr>:\\s+hlt\\s+\\n(?!\\s+;;)"), "");
+    std::basic_string<char> red  = std::regex_replace(tmp2, std::regex("\\s+<addr>:\\s+hlt[ \\t]+(?!\\n\\s+;;)"), "");
 
     return os::strdup(red.c_str());
 }
