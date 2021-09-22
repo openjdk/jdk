@@ -611,9 +611,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
 
     // For iterating objects that failed evacuation currently we can reuse the
     // existing closure to scan evacuated objects because:
-    // - for objects into the collection set we do not need to gather cards at this
-    // time. The regions they are in will be unconditionally turned to old regions
-    // without remembered sets.
+    // - for objects referring into the collection set we do not need to gather
+    // cards at this time. The regions they are in will be unconditionally turned
+    // to old regions without remembered sets.
     // - since we are iterating from a collection set region (i.e. never a Survivor
     // region), we always need to gather cards for this case.
     G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
