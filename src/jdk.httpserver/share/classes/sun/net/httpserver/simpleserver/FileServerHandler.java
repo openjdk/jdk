@@ -311,7 +311,7 @@ public final class FileServerHandler implements HttpHandler {
                 + "</h1>\n"
                 + "<ul>\n");
         try (var paths = Files.list(path)) {
-            paths.filter(p -> !isHiddenOrSymLink(p))
+            paths.filter(p -> Files.isReadable(p) && !isHiddenOrSymLink(p))
                  .map(p -> path.toUri().relativize(p.toUri()))
                  .forEach(uri -> sb.append(hrefListItemFor(uri)));
         }
@@ -321,13 +321,10 @@ public final class FileServerHandler implements HttpHandler {
         return sb.toString();
     }
 
-    // HTTP-Date as per (rfc5322). Example: Sun, 06 Nov 1994 08:49:37 GMT
-    private static final DateTimeFormatter HTTP_DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss v");
-
     private static String getLastModified(Path path) throws IOException {
         var fileTime = Files.getLastModifiedTime(path);
-        return fileTime.toInstant().atZone(ZoneId.of("GMT")).format(HTTP_DATE_FORMATTER);
+        return fileTime.toInstant().atZone(ZoneId.of("GMT"))
+                .format(DateTimeFormatter.RFC_1123_DATE_TIME);
     }
 
     private static boolean isHiddenOrSymLink(Path path) {

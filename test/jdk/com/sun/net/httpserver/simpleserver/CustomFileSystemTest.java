@@ -626,12 +626,9 @@ public class CustomFileSystemTest {
                 .buildUnchecked();
     }
 
-    static final DateTimeFormatter HTTP_DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss v");
-
     static String getLastModified(Path path) throws IOException {
         return Files.getLastModifiedTime(path).toInstant().atZone(ZoneId.of("GMT"))
-                .format(HTTP_DATE_FORMATTER);
+                .format(DateTimeFormatter.RFC_1123_DATE_TIME);
     }
 
     // --- Custom File System ---

@@ -324,10 +324,10 @@ public class FilterTest {
         server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var request = HttpRequest.newBuilder(uri(server, "foo/bar")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
-            assertEquals(inspectedURI.get(), URI.create("/"));
+            assertEquals(inspectedURI.get(), URI.create("/foo/bar"));
         } finally {
             server.stop(0);
         }

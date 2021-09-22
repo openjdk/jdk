@@ -132,7 +132,6 @@ final class SimpleFileServerImpl {
         try {
             var socketAddr = new InetSocketAddress(addr, port);
             var server = SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
-            server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
             out.printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());
         } catch (Throwable t) {
