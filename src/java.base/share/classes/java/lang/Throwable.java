@@ -551,7 +551,7 @@ public class Throwable implements Serializable {
      * stack trace of the exception that was caused by this exception (the
      * "enclosing" exception).  This shorthand can greatly reduce the length
      * of the output in the common case where a wrapped exception is thrown
-     * from same method as the "causative exception" is caught.  The above
+     * from the same method as the "causative exception" is caught.  The above
      * example was produced by running the program:
      * <pre>
      * public class Junk {
