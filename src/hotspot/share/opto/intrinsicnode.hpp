@@ -182,6 +182,21 @@ class EncodeISOArrayNode: public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
+//------------------------------EncodeAsciiArray--------------------------------
+// encode char[] to byte[] in ASCII
+class EncodeAsciiArrayNode: public Node {
+ public:
+  EncodeAsciiArrayNode(Node* control, Node* arymem, Node* s1, Node* s2, Node* c): Node(control, arymem, s1, s2, c) {};
+  virtual int Opcode() const;
+  virtual bool depends_only_on_test() const { return false; }
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
+  virtual uint match_edge(uint idx) const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
 //-------------------------------DigitNode----------------------------------------
 class DigitNode : public Node {
 public:

@@ -357,11 +357,13 @@ public interface JavaLangAccess {
     int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
-     * Compressed copy char[] -> byte[]
+     * Encodes ASCII codepoints as possible from the source array into
+     * the destination byte array, assuming that the encoding is ASCII
+     * compatible
      *
      * @return the number of bytes successfully encoded, or 0 if none
      */
-    int compressCharsToBytes(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+    int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
 
     /**
      * Set the cause of Throwable

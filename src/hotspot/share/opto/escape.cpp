@@ -621,6 +621,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_StrIndexOfChar:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
+    case Op_EncodeAsciiArray:
     case Op_EncodeISOArray: {
       add_local_var(n, PointsToNode::ArgEscape);
       delayed_worklist->push(n); // Process it later.
@@ -759,6 +760,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_StrIndexOfChar:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
+    case Op_EncodeAsciiArray:
     case Op_EncodeISOArray: {
       // char[]/byte[] arrays passed to string intrinsic do not escape but
       // they are not scalar replaceable. Adjust escape state for them.
@@ -2924,7 +2926,8 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       if (mem->is_LoadStore()) {
         adr = mem->in(MemNode::Address);
       } else {
-        assert(mem->Opcode() == Op_EncodeISOArray ||
+        assert(mem->Opcode() == Op_EncodeAsciiArray ||
+               mem->Opcode() == Op_EncodeISOArray ||
                mem->Opcode() == Op_StrCompressedCopy, "sanity");
         adr = mem->in(3); // Memory edge corresponds to destination array
       }
@@ -3309,9 +3312,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         if (m->is_MergeMem()) {
           assert(mergemem_worklist.contains(m->as_MergeMem()), "EA: missing MergeMem node in the worklist");
         }
-      } else if (use->Opcode() == Op_EncodeISOArray) {
+      } else if (use->Opcode() == Op_EncodeAsciiArray || use->Opcode() == Op_EncodeISOArray) {
         if (use->in(MemNode::Memory) == n || use->in(3) == n) {
-          // EncodeISOArray overwrites destination array
+          // EncodeAsciiArray and EncodeISOArray overwrites destination array
           memnode_worklist.append_if_missing(use);
         }
       } else {
@@ -3391,6 +3394,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         continue;
       }
     } else if (n->Opcode() == Op_StrCompressedCopy ||
+               n->Opcode() == Op_EncodeAsciiArray ||
                n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
       n = n->find_out_with(Op_SCMemProj);
@@ -3441,9 +3445,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         assert(use->in(MemNode::Memory) != n, "EA: missing memory path");
       } else if (use->is_MergeMem()) {
         assert(mergemem_worklist.contains(use->as_MergeMem()), "EA: missing MergeMem node in the worklist");
-      } else if (use->Opcode() == Op_EncodeISOArray) {
+      } else if (use->Opcode() == Op_EncodeAsciiArray || use->Opcode() == Op_EncodeISOArray) {
         if (use->in(MemNode::Memory) == n || use->in(3) == n) {
-          // EncodeISOArray overwrites destination array
+          // EncodeAscii/-ISOArray overwrites destination array
           memnode_worklist.append_if_missing(use);
         }
       } else {

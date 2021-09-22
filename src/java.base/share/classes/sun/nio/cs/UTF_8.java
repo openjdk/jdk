@@ -451,21 +451,11 @@ public final class UTF_8 extends Unicode {
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            int slASCII = sp + Math.min(sl - sp, dl - dp);
 
-            // ASCII only loop
-            // Since UTF8 is ASCII-compatible and encodes ASCII as single-byte,
-            // we can reuse StringUTF16.compress to speed up the actual copy of the ASCII data
-            int lastAscii = sp;
-            while (lastAscii < slASCII && sa[lastAscii] < '\u0080') {
-                lastAscii++;
-            }
-            if (lastAscii > sp) {
-                int len = lastAscii - sp;
-                JLA.compressCharsToBytes(sa, sp, da, dp, len);
-                sp = lastAscii;
-                dp += len;
-            }
+            // Handle ASCII-only prefix
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            sp += n;
+            dp += n;
 
             if (sp < sl) {
                 return encodeArrayLoopSlow(src, sa, sp, sl, dst, da, dp, dl);
