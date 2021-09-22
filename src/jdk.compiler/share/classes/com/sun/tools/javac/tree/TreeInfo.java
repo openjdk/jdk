@@ -548,8 +548,13 @@ public class TreeInfo {
             }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
-                if (node.errs != null && node.errs.nonEmpty())
-                    return getStartPos(node.errs.head);
+                if (node.errs != null && node.errs.nonEmpty()) {
+                    int pos = getStartPos(node.errs.head);
+                    if (pos != Position.NOPOS) {
+                        return pos;
+                    }
+                }
+                break;
             }
         }
         return tree.pos;

@@ -31,6 +31,8 @@
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
+#include "gc/shared/gcId.hpp"
+#include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -53,6 +55,16 @@ public:
     assert(p != NULL, "must be");
     return true;
   }
+};
+
+// Full GC Mark that holds GC id and CPU time trace. Needs to be separate
+// from the G1FullCollector and G1FullGCScope to allow the Full GC logging
+// to have the same structure as the Young GC logging.
+class G1FullGCMark : StackObj {
+  GCIdMark       _gc_id;
+  GCTraceCPUTime _cpu_time;
+public:
+  G1FullGCMark() : _gc_id(), _cpu_time() { }
 };
 
 // The G1FullCollector holds data associated with the current Full GC.
@@ -109,7 +121,8 @@ public:
   inline bool is_skip_compacting(uint region_index) const;
   inline bool is_skip_marking(oop obj) const;
 
-  inline void set_invalid(uint region_idx);
+  inline void set_free(uint region_idx);
+  inline bool is_free(uint region_idx) const;
   inline void update_from_compacting_to_skip_compacting(uint region_idx);
 
 private:

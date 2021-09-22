@@ -208,7 +208,6 @@ public:
 
   static bool is_builtin_loader(ClassLoaderData* loader_data);
 
-  static bool add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k);
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
                                                             Symbol* super_name,  bool is_superclass);
 

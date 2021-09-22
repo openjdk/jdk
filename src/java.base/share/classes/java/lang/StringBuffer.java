@@ -773,7 +773,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
         count = fields.get("count", 0);
     }
 
-    synchronized void getBytes(byte dst[], int dstBegin, byte coder) {
+    synchronized void getBytes(byte[] dst, int dstBegin, byte coder) {
         super.getBytes(dst, dstBegin, coder);
     }
 }

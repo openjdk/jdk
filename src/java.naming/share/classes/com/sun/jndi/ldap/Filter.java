@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ import javax.naming.directory.InvalidSearchFilterException;
 
 import java.io.IOException;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * LDAP (RFC-1960) and LDAPv3 (RFC-2254) search filters.
  *
@@ -59,9 +62,9 @@ final class Filter {
         byte[] filter;
         int filterLen;
         if (isLdapv3) {
-            filter = filterStr.getBytes("UTF8");
+            filter = filterStr.getBytes(UTF_8);
         } else {
-            filter = filterStr.getBytes("8859_1");
+            filter = filterStr.getBytes(ISO_8859_1);
         }
         filterLen = filter.length;
         if (dbg) {

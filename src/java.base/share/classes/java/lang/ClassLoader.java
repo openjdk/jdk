@@ -2247,7 +2247,7 @@ public abstract class ClassLoader {
      *          for consistency with the existing {@link #getPackages} method.
      *
      * @return The array of {@code Package} objects that have been defined by
-     *         this class loader; or an zero length array if no package has been
+     *         this class loader; or a zero length array if no package has been
      *         defined by this class loader.
      *
      * @jvms 5.3 Creation and Loading

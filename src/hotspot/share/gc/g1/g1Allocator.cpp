@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
-#include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -91,7 +91,7 @@ bool G1Allocator::is_retained_old_region(HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
-void G1Allocator::reuse_retained_old_region(G1EvacuationInfo* evacuation_info,
+void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                             OldGCAllocRegion* old,
                                             HeapRegion** retained_old) {
   HeapRegion* retained_region = *retained_old;
@@ -124,7 +124,7 @@ void G1Allocator::reuse_retained_old_region(G1EvacuationInfo* evacuation_info,
   }
 }
 
-void G1Allocator::init_gc_alloc_regions(G1EvacuationInfo* evacuation_info) {
+void G1Allocator::init_gc_alloc_regions(G1EvacInfo* evacuation_info) {
   assert_at_safepoint_on_vm_thread();
 
   _survivor_is_full = false;
@@ -140,7 +140,7 @@ void G1Allocator::init_gc_alloc_regions(G1EvacuationInfo* evacuation_info) {
                             &_retained_old_gc_alloc_region);
 }
 
-void G1Allocator::release_gc_alloc_regions(G1EvacuationInfo* evacuation_info) {
+void G1Allocator::release_gc_alloc_regions(G1EvacInfo* evacuation_info) {
   uint survivor_region_count = 0;
   for (uint node_index = 0; node_index < _num_alloc_regions; node_index++) {
     survivor_region_count += survivor_gc_alloc_region(node_index)->count();
@@ -248,11 +248,16 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
                                                                               actual_word_size);
   if (result == NULL && !survivor_is_full()) {
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = survivor_gc_alloc_region(node_index)->attempt_allocation_locked(min_word_size,
-                                                                             desired_word_size,
-                                                                             actual_word_size);
-    if (result == NULL) {
-      set_survivor_full();
+    // Multiple threads may have queued at the FreeList_lock above after checking whether there
+    // actually is still memory available. Redo the check under the lock to avoid unnecessary work;
+    // the memory may have been used up as the threads waited to acquire the lock.
+    if (!survivor_is_full()) {
+      result = survivor_gc_alloc_region(node_index)->attempt_allocation_locked(min_word_size,
+                                                                              desired_word_size,
+                                                                              actual_word_size);
+      if (result == NULL) {
+        set_survivor_full();
+      }
     }
   }
   if (result != NULL) {
@@ -272,11 +277,16 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
                                                                actual_word_size);
   if (result == NULL && !old_is_full()) {
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
-                                                              desired_word_size,
-                                                              actual_word_size);
-    if (result == NULL) {
-      set_old_full();
+    // Multiple threads may have queued at the FreeList_lock above after checking whether there
+    // actually is still memory available. Redo the check under the lock to avoid unnecessary work;
+    // the memory may have been used up as the threads waited to acquire the lock.
+    if (!old_is_full()) {
+      result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
+                                                                desired_word_size,
+                                                                actual_word_size);
+      if (result == NULL) {
+        set_old_full();
+      }
     }
   }
   return result;

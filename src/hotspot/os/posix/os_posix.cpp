@@ -160,12 +160,6 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return num_of_frames;
 }
 
-
-bool os::unsetenv(const char* name) {
-  assert(name != NULL, "Null pointer");
-  return (::unsetenv(name) == 0);
-}
-
 int os::get_last_error() {
   return errno;
 }
@@ -181,6 +175,12 @@ size_t os::lasterror(char *buf, size_t len) {
   ::strncpy(buf, s, n);
   buf[n] = '\0';
   return n;
+}
+
+// Return true if user is running as root.
+bool os::have_special_privileges() {
+  static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
+  return privileges;
 }
 
 void os::wait_for_keypress_at_exit(void) {
@@ -979,8 +979,7 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
                       _compiler_thread_min_stack_allowed);
     break;
   case os::vm_thread:
-  case os::pgc_thread:
-  case os::cgc_thread:
+  case os::gc_thread:
   case os::watcher_thread:
   default:  // presume the unknown thr_type is a VM internal
     if (req_stack_size == 0 && VMThreadStackSize > 0) {

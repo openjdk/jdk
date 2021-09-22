@@ -399,15 +399,18 @@ public class CDSTestUtils {
                                .addPrefix(cliPrefix) );
     }
 
+    // Enable basic verification (VerifyArchivedFields=1, no side effects) for all CDS
+    // tests to make sure the archived heap objects are mapped/loaded properly.
+    public static void addVerifyArchivedFields(ArrayList<String> cmd) {
+        cmd.add("-XX:+UnlockDiagnosticVMOptions");
+        cmd.add("-XX:VerifyArchivedFields=1");
+    }
 
     // Execute JVM with CDS archive, specify CDSOptions
     public static OutputAnalyzer runWithArchive(CDSOptions opts)
         throws Exception {
 
-        ArrayList<String> cmd = new ArrayList<String>();
-
-        for (String p : opts.prefix) cmd.add(p);
-
+        ArrayList<String> cmd = opts.getRuntimePrefix();
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
 
@@ -416,6 +419,7 @@ public class CDSTestUtils {
                 opts.archiveName = getDefaultArchiveName();
             cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
         }
+        addVerifyArchivedFields(cmd);
 
         if (opts.useVersion)
             cmd.add("-version");
