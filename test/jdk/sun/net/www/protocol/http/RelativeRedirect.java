@@ -25,7 +25,7 @@
  * @test
  * @bug 4726087
  * @library /test/lib
- * @run main RelativeRedirect
+ * @run main/othervm RelativeRedirect
  * @run main/othervm -Djava.net.preferIPv6Addresses=true RelativeRedirect
  * @summary URLConnection cannot handle redirects
  */
@@ -70,15 +70,15 @@ public class RelativeRedirect implements HttpHandler {
 
     void secondReply (HttpExchange req) throws IOException {
         if (req.getRequestURI().toString().equals("/redirect/file.html") &&
-            req.getRequestHeaders().get("Host").equals(authority(server.getAddress().getPort()))) {
+            req.getRequestHeaders().get("Host").get(0).equals(authority(server.getAddress().getPort()))) {
             req.sendResponseHeaders(200, 0);
             try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
                 pw.print("Hello .");
             }
         } else {
-            req.sendResponseHeaders(200, 0);
-            try(PrintWriter pw = new PrintWriter(req.getRequestURI().toString())) {
-                pw.print("Hello .");
+            req.sendResponseHeaders(400, 0);
+            try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+                pw.print(req.getRequestURI().toString());
             }
         }
     }

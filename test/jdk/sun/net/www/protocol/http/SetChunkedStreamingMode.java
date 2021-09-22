@@ -25,7 +25,7 @@
  * @test
  * @bug 5049976
  * @library /test/lib
- * @run main SetChunkedStreamingMode
+ * @run main/othervm SetChunkedStreamingMode
  * @summary Unspecified NPE is thrown when streaming output mode is enabled
  */
 
