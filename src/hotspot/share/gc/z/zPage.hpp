@@ -33,6 +33,18 @@
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
 
+enum class ZPageResetType {
+  // Normal allocation path
+  Allocation,
+  // Relocation failed and started to relocate in-place
+  InPlaceRelocation,
+  // Page was not selected for relocation, all objects
+  // stayed, but the page aged.
+  InPlaceAging,
+  // The page was split and needs to be reset
+  Splitting,
+};
+
 class ZPage : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class ZList<ZPage>;
@@ -64,14 +76,16 @@ private:
   bool is_strong_bit_set(zaddress addr) const;
 
   void reset_seqnum(ZGenerationId generation_id);
+  void reset_remembered_set(ZPageAge prev_age, ZPageResetType type);
+
+  ZPage* split_with_pmem(uint8_t type, const ZPhysicalMemory& pmem);
 
 public:
-  ZPage(const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
   ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
-  ZPage(const ZPage& other);
   ~ZPage();
 
   ZPage* clone_limited() const;
+  ZPage* clone_limited_in_place_promoted() const;
 
   uint32_t object_max_count() const;
   size_t object_alignment_shift() const;
@@ -106,15 +120,11 @@ public:
   uint64_t last_used() const;
   void set_last_used();
 
-  enum ZPageResetType {
-    NormalReset,
-    InPlaceReset,
-    FlipReset
-  };
-
   void reset(ZGenerationId generation_id, ZPageAge age, ZPageResetType type);
 
   void finalize_reset_for_in_place_relocation();
+
+  void reset_type_and_size(uint8_t type);
 
   ZPage* retype(uint8_t type);
   ZPage* split(size_t split_of_size);

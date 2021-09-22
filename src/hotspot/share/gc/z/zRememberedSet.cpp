@@ -35,18 +35,34 @@ void ZRememberedSet::flip() {
   _current ^= 1;
 }
 
-ZRememberedSet::ZRememberedSet(size_t page_size) :
+ZRememberedSet::ZRememberedSet() :
     _bitmap() {
-  resize(page_size);
+  // Defer initialization of the bitmaps until the owning
+  // page becomes old and its remembered set is initialized.
+}
+
+bool ZRememberedSet::is_initialized() const {
+  return _bitmap[0].size() > 0;
+}
+
+void ZRememberedSet::initialize(size_t page_size) {
+  assert(!is_initialized(), "precondition");
+  const BitMap::idx_t size_in_bits = to_bit_size(page_size);
+  _bitmap[0].initialize(size_in_bits, true /* clear */);
+  _bitmap[1].initialize(size_in_bits, true /* clear */);
 }
 
 void ZRememberedSet::resize(size_t page_size) {
-  const BitMap::idx_t size_in_bits = to_bit_size(page_size);
-  _bitmap[0].reinitialize(size_in_bits, false /* clear */);
-  _bitmap[1].reinitialize(size_in_bits, false /* clear */);
+  // The bitmaps only need to be resized if remset has been initialized,
+  // and hence the bitmaps have been initialized.
+  if (is_initialized()) {
+    const BitMap::idx_t size_in_bits = to_bit_size(page_size);
+    _bitmap[0].resize(size_in_bits, false /* clear */);
+    _bitmap[1].resize(size_in_bits, false /* clear */);
+  }
 }
 
-void ZRememberedSet::reset() {
+void ZRememberedSet::clear() {
   clear_current();
   clear_previous();
 }

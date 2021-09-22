@@ -129,10 +129,12 @@ private:
 public:
   static void flip();
 
-  ZRememberedSet(size_t page_size);
+  ZRememberedSet();
+
+  bool is_initialized() const;
+  void initialize(size_t page_size);
 
   void resize(size_t page_size);
-  void reset();
 
   bool get(uintptr_t offset) const;
   bool set(uintptr_t offset);
@@ -146,6 +148,7 @@ public:
   template <typename Function /* void(uintptr_t offset) */>
   void iterate_current(Function function);
 
+  void clear();
   void clear_current();
   void clear_current(uintptr_t end_offset);
   void clear_previous();

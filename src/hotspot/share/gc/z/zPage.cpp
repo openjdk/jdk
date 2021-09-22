@@ -33,12 +33,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 
-ZPage::ZPage(const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
-    ZPage(type_from_size(vmem.size()), vmem, pmem) {}
-
 ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
     _type(type),
-    _generation_id(ZGenerationId::old),
+    _generation_id(ZGenerationId::young),
     _age(ZPageAge::eden),
     _numa_id((uint8_t)-1),
     _seqnum(0),
@@ -46,7 +43,7 @@ ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pm
     _virtual(vmem),
     _top(start()),
     _livemap(object_max_count()),
-    _remembered_set(size()),
+    _remembered_set(),
     _last_used(0),
     _physical(pmem),
     _node() {
@@ -59,55 +56,86 @@ ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pm
          "Page type/size mismatch");
 }
 
-ZPage::ZPage(const ZPage& other) :
-    _type(other._type),
-    _generation_id(other._generation_id),
-    _age(other._age),
-    _numa_id(other._numa_id),
-    _seqnum(other._seqnum),
-    _seqnum_other(other._seqnum_other),
-    _virtual(other._virtual),
-    _top(other._top),
-    _livemap(other._livemap),
-    _remembered_set(size()),
-    _last_used(other._last_used),
-    _physical(other._physical),
-    _node() {}
+ZPage::~ZPage() {}
 
 ZPage* ZPage::clone_limited() const {
   // Only copy type and memory layouts. Let the rest be lazily reconstructed when needed.
   return new ZPage(_type, _virtual, _physical);
 }
 
-ZPage::~ZPage() {}
+ZPage* ZPage::clone_limited_in_place_promoted() const {
+  ZPage* page = new ZPage(_type, _virtual, _physical);
+
+  // The page is still filled with the same objects, need to retain the top pointer.
+  page->_top = _top;
+
+  return page;
+}
 
 void ZPage::reset_seqnum(ZGenerationId generation_id) {
   Atomic::store(&_seqnum, ZHeap::heap()->collector(generation_id)->seqnum());
   Atomic::store(&_seqnum_other, ZHeap::heap()->collector(generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
-void ZPage::reset(ZGenerationId generation_id, ZPageAge age, ZPage::ZPageResetType type) {
+void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
+  if (is_young()) {
+    // Remset not needed
+    return;
+  }
+
+  // Young-to-old reset
+  if (prev_age != ZPageAge::old) {
+    if (!_remembered_set.is_initialized()) {
+      _remembered_set.initialize(size());
+      return;
+    }
+
+    // We don't clear the remset when pages are recycled and transition from
+    // old to young. Therefore we can end up in a situation where a young page
+    // already has an initialized remset.
+    _remembered_set.clear();
+    return;
+  }
+
+  // Old-to-old reset
+  switch (type) {
+  case ZPageResetType::Splitting:
+    // Page is on the way to be destroyed or reused, delay
+    // clearing until the page is reset for Allocation.
+    break;
+
+  case ZPageResetType::InPlaceRelocation:
+    // Relocation failed and page is being compacted in-place. Current bits
+    // are needed to copy the remset incrementally. It will get cleared later on.
+    _remembered_set.clear_previous();
+    break;
+
+  case ZPageResetType::InPlaceAging:
+    // Page stayed in the old gen. Needs new, fresh bits.
+    _remembered_set.clear();
+    break;
+
+  case ZPageResetType::Allocation:
+    _remembered_set.clear();
+    break;
+  };
+}
+
+void ZPage::reset(ZGenerationId generation_id, ZPageAge age, ZPageResetType type) {
   ZPageAge prev_age = _age;
   _age = age;
   _last_used = 0;
   _generation_id = generation_id;
   reset_seqnum(_generation_id);
 
-  if (type != FlipReset) {
+  // In-place aged pages are still filled with the same objects, need to retain the top pointer.
+  if (type != ZPageResetType::InPlaceAging) {
     _top = start();
   }
 
-  if (is_old()) {
-    if (type == InPlaceReset && prev_age == ZPageAge::old) {
-      // Current bits are needed to copy the remset incrementally. It will get
-      // cleared later on.
-      _remembered_set.clear_previous();
-    } else {
-      _remembered_set.reset();
-    }
-  }
+  reset_remembered_set(prev_age, type);
 
-  if (type != InPlaceReset || (prev_age != ZPageAge::old && age == ZPageAge::old)) {
+  if (type != ZPageResetType::InPlaceRelocation || (prev_age != ZPageAge::old && age == ZPageAge::old)) {
     // Promoted in-place relocations reset the live map,
     // because they clone the page.
     _livemap.reset();
@@ -119,10 +147,15 @@ void ZPage::finalize_reset_for_in_place_relocation() {
   _livemap.reset();
 }
 
-ZPage* ZPage::retype(uint8_t type) {
-  assert(_type != type, "Invalid retype");
+void ZPage::reset_type_and_size(uint8_t type) {
   _type = type;
   _livemap.resize(object_max_count());
+  _remembered_set.resize(size());
+}
+
+ZPage* ZPage::retype(uint8_t type) {
+  assert(_type != type, "Invalid retype");
+  reset_type_and_size(type);
   return this;
 }
 
@@ -130,29 +163,30 @@ ZPage* ZPage::split(size_t split_of_size) {
   return split(type_from_size(split_of_size), split_of_size);
 }
 
+ZPage* ZPage::split_with_pmem(uint8_t type, const ZPhysicalMemory& pmem) {
+  // Resize this page
+  const ZVirtualMemory vmem = _virtual.split(pmem.size());
+
+  reset_type_and_size(type_from_size(_virtual.size()));
+  reset(_generation_id, _age, ZPageResetType::Splitting);
+
+  assert(vmem.end() == _virtual.start(), "Should be consecutive");
+
+  log_debug(gc, page)("Split page [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
+      untype(vmem.start()),
+      untype(vmem.end()),
+      untype(_virtual.end()));
+
+  // Create new page
+  return new ZPage(type, vmem, pmem);
+}
+
 ZPage* ZPage::split(uint8_t type, size_t split_of_size) {
   assert(_virtual.size() > split_of_size, "Invalid split");
 
-  // Resize this page, keep _numa_id, _seqnum, and _last_used
-  const ZVirtualMemory vmem = _virtual.split(split_of_size);
   const ZPhysicalMemory pmem = _physical.split(split_of_size);
-  _type = type_from_size(_virtual.size());
-  _top = start();
-  _livemap.resize(object_max_count());
-  _remembered_set.resize(size());
 
-  // Create new page, inherit _seqnum and _last_used
-  ZPage* const page = new ZPage(type, vmem, pmem);
-  page->_seqnum = _seqnum;
-  page->_last_used = _last_used;
-
-  log_debug(gc, heap)("Split page [" PTR_FORMAT ", " PTR_FORMAT "] [" PTR_FORMAT ", " PTR_FORMAT "]",
-      untype(vmem.start()),
-      untype(vmem.end()),
-      untype(_virtual.start()),
-      untype(_virtual.end()));
-
-  return page;
+  return split_with_pmem(type, pmem);
 }
 
 ZPage* ZPage::split_committed() {
@@ -166,15 +200,7 @@ ZPage* ZPage::split_committed() {
 
   assert(!_physical.is_null(), "Should not be null");
 
-  // Resize this page
-  const ZVirtualMemory vmem = _virtual.split(pmem.size());
-  _type = type_from_size(_virtual.size());
-  _top = start();
-  _livemap.resize(object_max_count());
-  _remembered_set.resize(size());
-
-  // Create new page
-  return new ZPage(vmem, pmem);
+  return split_with_pmem(type_from_size(pmem.size()), pmem);
 }
 
 class ZFindBaseOopClosure : public ObjectClosure {

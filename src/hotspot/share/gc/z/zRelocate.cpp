@@ -665,8 +665,8 @@ private:
     bool promotion = _forwarding->age_from() != ZPageAge::old &&
                      _forwarding->age_to() == ZPageAge::old;
     // Promotions happen through a new cloned page
-    ZPage* new_page = promotion ? new ZPage(*prev_page) : prev_page;
-    new_page->reset(new_generation, new_age, ZPage::InPlaceReset);
+    ZPage* new_page = promotion ? prev_page->clone_limited() : prev_page;
+    new_page->reset(new_generation, new_age, ZPageResetType::InPlaceRelocation);
 
     if (promotion) {
       // Register the the promotion
@@ -967,8 +967,8 @@ public:
       prev_page->log_msg(promotion ? " (in-place promoted)" : " (in-place survived)");
 
       // Setup to-space page
-      ZPage* new_page = promotion ? new ZPage(*prev_page) : prev_page;
-      new_page->reset(generation_to, age_to, ZPage::FlipReset);
+      ZPage* new_page = promotion ? prev_page->clone_limited_in_place_promoted() : prev_page;
+      new_page->reset(generation_to, age_to, ZPageResetType::InPlaceAging);
 
       if (promotion) {
         ZHeap::heap()->minor_collector()->promote_flip(prev_page, new_page);

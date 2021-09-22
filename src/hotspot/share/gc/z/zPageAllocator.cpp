@@ -671,7 +671,7 @@ retry:
   // Reset page. This updates the page's sequence number and must
   // be done after we potentially blocked in a safepoint (stalled)
   // where the global sequence number was updated.
-  page->reset(generation_id, age, ZPage::NormalReset);
+  page->reset(generation_id, age, ZPageResetType::Allocation);
 
   // Update allocation statistics. Exclude gc relocations to avoid
   // artificial inflation of the allocation rate during relocation.
