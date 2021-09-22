@@ -111,9 +111,10 @@ template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj
   // References to the current collection set are references to objects that failed
   // evacuation. Currently these regions are always relabelled as old without
   // remembered sets, so skip them.
-  if (!dest_attr.is_in_cset()) {
-    enqueue_card_if_tracked(dest_attr, p, obj);
+  if (dest_attr.is_in_cset()) {
+    return;
   }
+  enqueue_card_if_tracked(dest_attr, p, obj);
 }
 
 template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
