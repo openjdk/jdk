@@ -146,6 +146,60 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
     return 0;
 }
 
+// Integer.MAX_VALUE - 1 is the maximum transfer size for TransmitFile()
+#define MAX_TRANSMIT_SIZE (java_lang_Integer_MAX_VALUE - 1)
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
+                                            jobject srcFD,
+                                            jlong position, jlong count,
+                                            jobject dstFD)
+{
+    const int PACKET_SIZE = 524288;
+
+    LARGE_INTEGER where;
+    HANDLE src = (HANDLE)(handleval(env, srcFD));
+    SOCKET dst = (SOCKET)(fdval(env, dstFD));
+    DWORD chunkSize = (count > MAX_TRANSMIT_SIZE) ?
+        MAX_TRANSMIT_SIZE : (DWORD)count;
+    BOOL result;
+
+    where.QuadPart = position;
+    result = SetFilePointerEx(src, where, &where, FILE_BEGIN);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "SetFilePointerEx failed");
+        return IOS_THROWN;
+    }
+
+    result = TransmitFile(
+        dst,
+        src,
+        chunkSize,
+        PACKET_SIZE,
+        NULL,
+        NULL,
+        TF_USE_KERNEL_APC
+    );
+    if (!result) {
+        int error = WSAGetLastError();
+        if (WSAEINVAL == error && count >= 0) {
+            return IOS_UNSUPPORTED_CASE;
+        }
+        if (WSAENOTSOCK == error) {
+            return IOS_UNSUPPORTED_CASE;
+        }
+        JNU_ThrowIOExceptionWithLastError(env, "transfer failed");
+        return IOS_THROWN;
+    }
+    return chunkSize;
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
+{
+    return java_lang_Long_MAX_VALUE;
+}
+
 #define READ_WRITE_TRANSFER_SIZE  32768
 #define READ_WRITE_TRANSFER_LIMIT 2097152
 
@@ -185,65 +239,20 @@ DWORD transfer_read_write(JNIEnv* env, HANDLE src, DWORD position, DWORD count,
     return tw;
 }
 
-// Integer.MAX_VALUE - 1 is the maximum transfer size for TransmitFile()
-#define MAX_TRANSMIT_SIZE (java_lang_Integer_MAX_VALUE - 1)
-
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
-                                            jobject srcFD,
-                                            jlong position, jlong count,
-                                            jobject dstFD)
+Java_sun_nio_ch_FileChannelImpl_transferToFileChannel0(JNIEnv *env,
+                                                       jobject this,
+                                                       jobject srcFDO,
+                                                       jlong position,
+                                                       jlong count,
+                                                       jobject dstFDO)
 {
-    const int PACKET_SIZE = 524288;
+      HANDLE src = (HANDLE)(handleval(env, srcFDO));
+      HANDLE dst = (HANDLE)(handleval(env, dstFDO));
 
-    LARGE_INTEGER where;
-    HANDLE src = (HANDLE)(handleval(env, srcFD));
-    SOCKET dst = (SOCKET)(fdval(env, dstFD));
-    HANDLE dstHandle = (HANDLE)(handleval(env, dstFD));
-    DWORD chunkSize = (count > MAX_TRANSMIT_SIZE) ?
-        MAX_TRANSMIT_SIZE : (DWORD)count;
-    BOOL result;
+      if (src != dst && count < READ_WRITE_TRANSFER_LIMIT)
+          return transfer_read_write(env, src, (DWORD)position, (DWORD)count,
+                                     dst);
 
-    if (GetFileType(dstHandle) == FILE_TYPE_DISK) {
-        if (src != dstHandle && count < READ_WRITE_TRANSFER_LIMIT)
-            return transfer_read_write(env, src, (DWORD)position, (DWORD)count,
-                                       dstHandle);
-        return IOS_UNSUPPORTED_SUBCASE;
-    }
-
-    where.QuadPart = position;
-    result = SetFilePointerEx(src, where, &where, FILE_BEGIN);
-    if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "SetFilePointerEx failed");
-        return IOS_THROWN;
-    }
-
-    result = TransmitFile(
-        dst,
-        src,
-        chunkSize,
-        PACKET_SIZE,
-        NULL,
-        NULL,
-        TF_USE_KERNEL_APC
-    );
-    if (!result) {
-        int error = WSAGetLastError();
-        if (WSAEINVAL == error && count >= 0) {
-            return IOS_UNSUPPORTED_CASE;
-        }
-        if (WSAENOTSOCK == error) {
-            return IOS_UNSUPPORTED_CASE;
-        }
-        JNU_ThrowIOExceptionWithLastError(env, "transfer failed");
-        return IOS_THROWN;
-    }
-    return chunkSize;
-}
-
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
-{
-    return java_lang_Long_MAX_VALUE;
+      return IOS_UNSUPPORTED_CASE;
 }

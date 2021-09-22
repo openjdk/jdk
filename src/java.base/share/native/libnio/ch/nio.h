@@ -31,4 +31,3 @@
 #define IOS_UNSUPPORTED      (sun_nio_ch_IOStatus_UNSUPPORTED)
 #define IOS_THROWN           (sun_nio_ch_IOStatus_THROWN)
 #define IOS_UNSUPPORTED_CASE (sun_nio_ch_IOStatus_UNSUPPORTED_CASE)
-#define IOS_UNSUPPORTED_SUBCASE (sun_nio_ch_IOStatus_UNSUPPORTED_SUBCASE)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,46 @@
  */
 
 /* @test
- * @bug 4652496
+ * @bug 4652496 8274112
  * @summary Test transferTo with different target channels
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main TransferToChannel
  * @run main/othervm -Djdk.nio.enableFastFileTransfer TransferToChannel
+ * @key randomness
  */
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.ByteBuffer;
-import java.io.*;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Random;
+import jdk.test.lib.RandomFactory;
 
 public class TransferToChannel {
 
-    static File file;
-    static File outFile;
-    static FileChannel in;
-    // Chunk size should be larger than FileChannelImpl.TRANSFER_SIZE for good test
-    static int CHUNK_SIZE = 1024 * 9;
+    private static final Random RAND = RandomFactory.getRandom();
+
+    private static final int FILE_SIZE = 1000*1024;
+
+    // Chunk size should be larger than FileChannelImpl.TRANSFER_SIZE (8192)
+    // for a good test
+    private static final int CHUNK_SIZE = 1024 * 9;
+
+    // This should be the same values as FCOPYFILE_THRESHOLD in
+    // the Unix version of FileChannelImpl.c.
+    private static final int MIN_DIRECT_TRANSFER_SIZE = 512000;
+
+    private static File file;
+    private static File outFile;
+    private static FileChannel in;
 
     public static void main(String[] args) throws Exception {
         file = File.createTempFile("readingin", null);
@@ -52,52 +73,61 @@ public class TransferToChannel {
         in = fis.getChannel();
         test1();
         test2();
+        test3();
         in.close();
         file.delete();
         outFile.delete();
     }
 
-    static void test1() throws Exception {
+    private static void test1() throws Exception {
         for (int i=0; i<10; i++) {
             transferFileToUserChannel();
             System.gc();
-            System.err.println("Transferred file...");
+            System.err.println("Transferred file to user channel...");
         }
     }
 
-    static void test2() throws Exception {
+    private static void test2() throws Exception {
         for (int i=0; i<10; i++) {
             transferFileToTrustedChannel();
             System.gc();
-            System.err.println("Transferred file...");
+            System.err.println("Transferred file to trusted channel...");
         }
     }
 
-    static void transferFileToUserChannel() throws Exception {
+    private static void test3() throws Exception {
+        for (int i=0; i<10; i++) {
+            transferFileDirectly();
+            System.gc();
+            System.err.println("Transferred file directly...");
+        }
+    }
+
+    private static void transferFileToUserChannel() throws Exception {
         long remainingBytes = in.size();
         long size = remainingBytes;
         WritableByteChannel wbc = new WritableByteChannel() {
-                Random rand = new Random(0);
-                public int write(ByteBuffer src) throws IOException {
-                    int read = src.remaining();
-                    byte[] incoming = new byte[read];
-                    src.get(incoming);
-                    checkData(incoming, read);
-                    return read == 0 ? -1 : read;
-                }
-                public boolean isOpen() {
-                    return true;
-                }
-                public void close() throws IOException {
-                }
-                void checkData(byte[] incoming, int size) {
-                    byte[] expected = new byte[size];
-                    rand.nextBytes(expected);
-                    for (int i=0; i<size; i++)
-                        if (incoming[i] != expected[i])
-                            throw new RuntimeException("Data corrupted");
-                }
-            };
+            Random rand = new Random(0);
+            public int write(ByteBuffer src) throws IOException {
+                int read = src.remaining();
+                byte[] incoming = new byte[read];
+                src.get(incoming);
+                checkData(incoming, read);
+                return read == 0 ? -1 : read;
+            }
+            public boolean isOpen() {
+                return true;
+            }
+            public void close() throws IOException {
+            }
+            void checkData(byte[] incoming, int size) {
+                byte[] expected = new byte[size];
+                rand.nextBytes(expected);
+                for (int i=0; i<size; i++)
+                    if (incoming[i] != expected[i])
+                        throw new RuntimeException("Data corrupted");
+            }
+        };
         while (remainingBytes > 0) {
             long bytesTransferred = in.transferTo(size - remainingBytes,
                               Math.min(CHUNK_SIZE, remainingBytes), wbc);
@@ -108,7 +138,7 @@ public class TransferToChannel {
         }
     }
 
-    static void transferFileToTrustedChannel() throws Exception {
+    private static void transferFileToTrustedChannel() throws Exception {
         long remainingBytes = in.size();
         long size = remainingBytes;
         FileOutputStream fos = new FileOutputStream(outFile);
@@ -124,14 +154,42 @@ public class TransferToChannel {
         out.close();
     }
 
-    static void generateBigFile(File file) throws Exception {
+    private static void transferFileDirectly() throws Exception {
+        outFile.delete();
+        FileOutputStream fos = new FileOutputStream(outFile);
+        FileChannel out = fos.getChannel();
+
+        final long size = in.size();
+        final long position = RAND.nextInt((int)size - MIN_DIRECT_TRANSFER_SIZE);
+        assert out.position() == 0;
+        long pos = position;
+        while (pos < size) {
+            long bytesTransferred = in.transferTo(pos, Long.MAX_VALUE, out);
+            if (bytesTransferred >= 0)
+                pos += bytesTransferred;
+            else
+                throw new Exception("transfer failed");
+        }
+        out.close();
+
+        byte[] expected = Files.readAllBytes(file.toPath());
+        byte[] actual = Files.readAllBytes(outFile.toPath());
+        if (!Arrays.equals(expected, (int)position, (int)size,
+                           actual, 0, (int)(size - position)))
+            throw new Exception("Actual bytes do not match expected bytes");
+    }
+
+    private static void generateBigFile(File file) throws Exception {
         OutputStream out = new BufferedOutputStream(
                            new FileOutputStream(file));
         byte[] randomBytes = new byte[1024];
         Random rand = new Random(0);
-        for (int i = 0; i < 1000; i++) {
+        int numWritten = 0;
+        while (numWritten < FILE_SIZE) {
+            int nwrite = Math.min(randomBytes.length, FILE_SIZE - numWritten);
             rand.nextBytes(randomBytes);
-            out.write(randomBytes);
+            out.write(randomBytes, 0, nwrite);
+            numWritten += nwrite;
         }
         out.flush();
         out.close();

@@ -556,8 +556,7 @@ public class FileChannelImpl
             return IOStatus.UNSUPPORTED;
         int thisFDVal = IOUtil.fdVal(fd);
         int targetFDVal = IOUtil.fdVal(targetFD);
-        if (thisFDVal != -1 && targetFDVal != -1 && thisFDVal == targetFDVal)
-            // source == target not supported on some configurations
+        if (thisFDVal == targetFDVal) // Not supported on some configurations
             return IOStatus.UNSUPPORTED;
 
         if (nd.transferToDirectlyNeedsPositionLock()) {
@@ -572,6 +571,68 @@ public class FileChannelImpl
             }
         } else {
             return transferToDirectlyInternal(position, count, target, targetFD);
+        }
+    }
+
+    // Assume that the underlying kernel supports a fast file copying
+    // function such as copy_file_range(2) (Linux) or fcopyfile(3) (macOS);
+    // set this to false if we find out later that it doesn't
+    //
+    private static volatile boolean transferToFileChannelSupported = true;
+
+    private long transferToFileChannelInternal(long position, long count,
+                                               FileChannelImpl target,
+                                               FileDescriptor targetFD)
+        throws IOException
+    {
+        assert !nd.transferToFileChannelNeedsPositionLock() ||
+               Thread.holdsLock(positionLock);
+
+        long n = -1;
+        int ti = -1;
+        try {
+            beginBlocking();
+            ti = threads.add();
+            if (!isOpen())
+                return -1;
+            do {
+                n = transferToFileChannel0(fd, position, count, targetFD);
+            } while ((n == IOStatus.INTERRUPTED) && isOpen());
+            if (n == IOStatus.UNSUPPORTED) {
+                // Don't bother trying again
+                transferToFileChannelSupported = false;
+            }
+            return IOStatus.normalize(n);
+        } finally {
+            threads.remove(ti);
+            end (n > -1);
+        }
+    }
+
+    private long transferToFileChannel(long position, long count,
+                                       FileChannelImpl target)
+        throws IOException
+    {
+        if (!transferToFileChannelSupported)
+            return IOStatus.UNSUPPORTED;
+
+        FileDescriptor targetFD = target.fd;
+        if (targetFD == null)
+            return IOStatus.UNSUPPORTED;
+
+        if (nd.transferToFileChannelNeedsPositionLock()) {
+            synchronized (positionLock) {
+                long pos = position();
+                try {
+                    return transferToFileChannelInternal(position, count,
+                                                           target, targetFD);
+                } finally {
+                    position(pos);
+                }
+            }
+        } else {
+            return transferToFileChannelInternal(position, count,
+                                                 target, targetFD);
         }
     }
 
@@ -695,6 +756,11 @@ public class FileChannelImpl
         long n;
         if ((n = transferToDirectly(position, dcount, target)) >= 0)
             return n;
+
+        // Attempt a transfer using native functions, if available
+        if (target instanceof FileChannelImpl targetFCI)
+            if ((n = transferToFileChannel(position, count, targetFCI)) >= 0)
+                return n;
 
         // Attempt a mapped transfer, but only to trusted channel types
         if ((n = transferToTrustedChannel(position, count, target)) >= 0)
@@ -1369,12 +1435,19 @@ public class FileChannelImpl
     // Removes an existing mapping
     private static native int unmap0(long address, long length);
 
-    // Transfers from src to dst, or returns -2 if kernel can't do that
+    // Transfers from src to dst, or returns IOStatus.UNSUPPORTED (-4)
+    // or IOStatus.UNSUPPORTED_CASE (-6) if kernel can't do that
     private native long transferTo0(FileDescriptor src, long position,
                                     long count, FileDescriptor dst);
 
     // Retrieves the maximum size of a transfer
     private static native long maxDirectTransferSize0();
+
+    // Transfers from src to dst, or returns IOStatus.UNSUPPORTED (-4)
+    // or IOStatus.UNSUPPORTED_CASE (-6) if kernel can't do that
+    private static native long transferToFileChannel0(FileDescriptor src,
+                                                      long position, long count,
+                                                      FileDescriptor dst);
 
     // Caches fieldIDs
     private static native long initIDs();
