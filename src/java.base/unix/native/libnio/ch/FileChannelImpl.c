@@ -284,20 +284,12 @@ long transfer_read_write(JNIEnv* env, jint src, jlong position, jlong count,
             remaining : READ_WRITE_TRANSFER_SIZE;
         RESTARTABLE(pread((int)src, &buf, nr, offset), nr);
         if (nr <= 0) {
-            if (nr < 0) {
-                JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
-                return IOS_THROWN;
-            }
-            return tw;
+            break;
         }
         offset += nr;
 
         ssize_t nw;
         RESTARTABLE(write((int)dst, &buf, nr), nw);
-        if (nw == -1) {
-            JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
-            return IOS_THROWN;
-        }
         tw += nw;
         if (nw != nr)
             return tw;

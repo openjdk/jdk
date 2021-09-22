@@ -220,20 +220,15 @@ DWORD transfer_read_write(JNIEnv* env, HANDLE src, DWORD position, DWORD count,
         DWORD remaining = count - tw;
         DWORD nr = remaining < READ_WRITE_TRANSFER_SIZE ?
             remaining : READ_WRITE_TRANSFER_SIZE;
-        if (ReadFile(src, (LPVOID)&buf, nr, &nr, NULL) == 0) {
-            JNU_ThrowIOExceptionWithLastError(env, "ReadFile failed");
-            return IOS_THROWN;
-        }
+        if (ReadFile(src, (LPVOID)&buf, nr, &nr, NULL) == 0 || nr <= 0)
+            break;
 
         DWORD nw = 0;
-        if (WriteFile(dst, &buf, nr, &nw, NULL) == 0) {
-            JNU_ThrowIOExceptionWithLastError(env, "WriteFile failed");
-            return IOS_THROWN;
-        }
+        if (WriteFile(dst, &buf, nr, &nw, NULL) == 0)
+            break;
         tw += nw;
-
         if (nw != nr)
-            return tw;
+            break;
     }
 
     return tw;
