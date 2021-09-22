@@ -137,15 +137,14 @@ public class VerifyStackTrace {
             "8: java.base/java.lang.invoke.LambdaForm$DMH/0x0000000801002000.invokeStatic(LambdaForm$DMH)\n" +
             "9: java.base/java.lang.invoke.LambdaForm$MH/0x0000000801003000.invoke(LambdaForm$MH)\n" +
             "10: java.base/java.lang.invoke.Invokers$Holder.invokeExact_MT(Invokers$Holder)\n" +
-            "11: java.base/jdk.internal.reflect.MHInvokerDelegate.invoke(MHInvokerDelegate.java:56)\n" +
-            "12: java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(DirectMethodHandleAccessor.java:211)\n" +
-            "13: java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:122)\n" +
-            "14: java.base/java.lang.reflect.Method.invoke(Method.java:573)\n" +
-            "15: VerifyStackTrace$1.run(VerifyStackTrace.java:292)\n" +
-            "16: java.base/java.security.AccessController.executePrivileged(AccessController.java:753)\n" +
-            "17: java.base/java.security.AccessController.doPrivileged(AccessController.java:312)\n" +
-            "18: VerifyStackTrace.test(VerifyStackTrace.java:301)\n" +
-            "19: VerifyStackTrace.main(VerifyStackTrace.java:254)\n";
+            "11: java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(DirectMethodHandleAccessor.java:211)\n" +
+            "12: java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:122)\n" +
+            "13: java.base/java.lang.reflect.Method.invoke(Method.java:573)\n" +
+            "14: VerifyStackTrace$1.run(VerifyStackTrace.java:292)\n" +
+            "15: java.base/java.security.AccessController.executePrivileged(AccessController.java:753)\n" +
+            "16: java.base/java.security.AccessController.doPrivileged(AccessController.java:312)\n" +
+            "17: VerifyStackTrace.test(VerifyStackTrace.java:301)\n" +
+            "18: VerifyStackTrace.main(VerifyStackTrace.java:254)\n";
 
         @Override public StackWalker walker() { return walker;}
         @Override public String description() { return description;}

@@ -64,8 +64,8 @@ public class AccessorUtils {
             }
             if ((accessorType == DirectMethodHandleAccessor.class
                     && cname.startsWith(DirectConstructorHandleAccessor.class.getName()))
-                || (accessorType == DirectConstructorHandleAccessor.class &&
-                        cname.startsWith(DirectMethodHandleAccessor.class.getName()))) {
+                || (accessorType == DirectConstructorHandleAccessor.class
+                        && cname.startsWith(DirectMethodHandleAccessor.class.getName()))) {
                 // thrown from another reflection accessor impl class
                 return false;
             }

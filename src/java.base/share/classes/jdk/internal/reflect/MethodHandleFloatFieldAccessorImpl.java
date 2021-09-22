@@ -25,56 +25,34 @@
 
 package jdk.internal.reflect;
 
-import java.lang.invoke.VarHandle;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-abstract class VarHandleDoubleFieldAccessorImpl extends VarHandleFieldAccessorImpl {
-    static FieldAccessorImpl fieldAccessor(Field field, VarHandle varHandle, boolean isReadOnly) {
-        return Modifier.isStatic(field.getModifiers())
-                ? new StaticFieldAccessor(field, varHandle, isReadOnly)
-                : new InstanceFieldAccessor(field, varHandle, isReadOnly);
+class MethodHandleFloatFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
+    static FieldAccessorImpl fieldAccessor(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly) {
+        boolean isStatic = Modifier.isStatic(field.getModifiers());
+        if (isStatic) {
+            getter = getter.asType(MethodType.methodType(float.class));
+            if (setter != null) {
+                setter = setter.asType(MethodType.methodType(void.class, float.class));
+            }
+        } else {
+            getter = getter.asType(MethodType.methodType(float.class, Object.class));
+            if (setter != null) {
+                setter = setter.asType(MethodType.methodType(void.class, Object.class, float.class));
+            }
+        }
+        return new MethodHandleFloatFieldAccessorImpl(field, getter, setter, isReadOnly, isStatic);
     }
 
-    VarHandleDoubleFieldAccessorImpl(Field field, VarHandle varHandle, boolean isReadOnly) {
-        super(field, varHandle, isReadOnly);
-    }
-
-    abstract double getValue(Object obj);
-    abstract void setValue(Object obj, double d) throws Throwable;
-
-    static class StaticFieldAccessor extends VarHandleDoubleFieldAccessorImpl {
-        StaticFieldAccessor(Field field, VarHandle varHandle, boolean isReadOnly) {
-            super(field, varHandle, isReadOnly);
-        }
-
-        double getValue(Object obj) {
-            return accessor().getDouble();
-        }
-
-        void setValue(Object obj, double d) throws Throwable {
-            accessor().setDouble(d);
-        }
-
-        protected void ensureObj(Object o) {}
-    }
-
-    static class InstanceFieldAccessor extends VarHandleDoubleFieldAccessorImpl {
-        InstanceFieldAccessor(Field field, VarHandle varHandle, boolean isReadOnly) {
-            super(field, varHandle, isReadOnly);
-        }
-
-        double getValue(Object obj) {
-            return accessor().getDouble(obj);
-        }
-
-        void setValue(Object obj, double d) throws Throwable {
-            accessor().setDouble(obj, d);
-        }
+    MethodHandleFloatFieldAccessorImpl(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly, boolean isStatic) {
+        super(field, getter, setter, isReadOnly, isStatic);
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return Double.valueOf(getDouble(obj));
+        return Float.valueOf(getFloat(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {
@@ -102,12 +80,12 @@ abstract class VarHandleDoubleFieldAccessorImpl extends VarHandleFieldAccessorIm
     }
 
     public float getFloat(Object obj) throws IllegalArgumentException {
-        throw newGetFloatIllegalArgumentException();
-    }
-
-    public double getDouble(Object obj) throws IllegalArgumentException {
         try {
-            return getValue(obj);
+            if (isStatic()) {
+                return (float) getter.invokeExact();
+            } else {
+                return (float) getter.invokeExact(obj);
+            }
         } catch (IllegalArgumentException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
@@ -117,45 +95,43 @@ abstract class VarHandleDoubleFieldAccessorImpl extends VarHandleFieldAccessorIm
         }
     }
 
+    public double getDouble(Object obj) throws IllegalArgumentException {
+        return getFloat(obj);
+    }
+
     public void set(Object obj, Object value)
             throws IllegalArgumentException, IllegalAccessException
     {
-        if (isReadOnly) {
+        if (isReadOnly()) {
             ensureObj(obj);     // throw NPE if obj is null on instance field
             throwFinalFieldIllegalAccessException(value);
         }
+
         if (value == null) {
             throwSetIllegalArgumentException(value);
         }
-        if (value instanceof Byte) {
-            setDouble(obj, ((Byte) value).byteValue());
-            return;
+
+        if (value instanceof Byte b) {
+            setFloat(obj, b.byteValue());
         }
-        if (value instanceof Short) {
-            setDouble(obj, ((Short) value).shortValue());
-            return;
+        else if (value instanceof Short s) {
+            setFloat(obj, s.shortValue());
         }
-        if (value instanceof Character) {
-            setDouble(obj, ((Character) value).charValue());
-            return;
+        else if (value instanceof Character c) {
+            setFloat(obj, c.charValue());
         }
-        if (value instanceof Integer) {
-            setDouble(obj, ((Integer) value).intValue());
-            return;
+        else if (value instanceof Integer i) {
+            setFloat(obj, i.intValue());
         }
-        if (value instanceof Long) {
-            setDouble(obj, ((Long) value).longValue());
-            return;
+        else if (value instanceof Long l) {
+            setFloat(obj, l.longValue());
         }
-        if (value instanceof Float) {
-            setDouble(obj, ((Float) value).floatValue());
-            return;
+        else if (value instanceof Float f) {
+            setFloat(obj, f.floatValue());
         }
-        if (value instanceof Double) {
-            setDouble(obj, ((Double) value).doubleValue());
-            return;
+        else {
+            throwSetIllegalArgumentException(value);
         }
-        throwSetIllegalArgumentException(value);
     }
 
     public void setBoolean(Object obj, boolean z)
@@ -167,48 +143,46 @@ abstract class VarHandleDoubleFieldAccessorImpl extends VarHandleFieldAccessorIm
     public void setByte(Object obj, byte b)
         throws IllegalArgumentException, IllegalAccessException
     {
-        setDouble(obj, b);
+        setFloat(obj, b);
     }
 
     public void setChar(Object obj, char c)
         throws IllegalArgumentException, IllegalAccessException
     {
-        setDouble(obj, c);
+        setFloat(obj, c);
     }
 
     public void setShort(Object obj, short s)
         throws IllegalArgumentException, IllegalAccessException
     {
-        setDouble(obj, s);
+        setFloat(obj, s);
     }
 
     public void setInt(Object obj, int i)
         throws IllegalArgumentException, IllegalAccessException
     {
-        setDouble(obj, i);
+        setFloat(obj, i);
     }
 
     public void setLong(Object obj, long l)
         throws IllegalArgumentException, IllegalAccessException
     {
-        setDouble(obj, l);
+        setFloat(obj, l);
     }
 
     public void setFloat(Object obj, float f)
         throws IllegalArgumentException, IllegalAccessException
     {
-        setDouble(obj, f);
-    }
-
-    public void setDouble(Object obj, double d)
-        throws IllegalArgumentException, IllegalAccessException
-    {
-        if (isReadOnly) {
+        if (isReadOnly()) {
             ensureObj(obj);     // throw NPE if obj is null on instance field
-            throwFinalFieldIllegalAccessException(d);
+            throwFinalFieldIllegalAccessException(f);
         }
         try {
-            setValue(obj, d);
+            if (isStatic()) {
+                setter.invokeExact(f);
+            } else {
+                setter.invokeExact(obj, f);
+            }
         } catch (IllegalArgumentException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
@@ -216,5 +190,11 @@ abstract class VarHandleDoubleFieldAccessorImpl extends VarHandleFieldAccessorIm
         } catch (Throwable e) {
             throw new InternalError(e);
         }
+    }
+
+    public void setDouble(Object obj, double d)
+        throws IllegalArgumentException, IllegalAccessException
+    {
+        throwSetIllegalArgumentException(d);
     }
 }

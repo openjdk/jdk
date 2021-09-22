@@ -188,9 +188,7 @@ public class ReflectionFactory {
                 return generateMethodAccessor(method);
             } else {
                 NativeMethodAccessorImpl acc = new NativeMethodAccessorImpl(method);
-                DelegatingMethodAccessorImpl res = new DelegatingMethodAccessorImpl(acc);
-                acc.setParent(res);
-                return res;
+                return acc.getParent();
             }
         }
     }
@@ -244,9 +242,7 @@ public class ReflectionFactory {
                                             c.getModifiers());
             } else {
                 NativeConstructorAccessorImpl acc = new NativeConstructorAccessorImpl(c);
-                DelegatingConstructorAccessorImpl res = new DelegatingConstructorAccessorImpl(acc);
-                acc.setParent(res);
-                return res;
+                return acc.getParent();
             }
         }
     }

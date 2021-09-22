@@ -25,51 +25,46 @@
 
 package jdk.internal.reflect;
 
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.invoke.VarHandle;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 
-abstract class VarHandleFieldAccessorImpl extends FieldAccessorImpl {
-    protected final boolean isReadOnly;
-    private final VarHandle varHandle;
-    private @Stable final VHInvoker accessor;
-    private @Stable VHInvoker fastAccessor;
-    private int numAccesses;
+abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
+    private static final int IS_READ_ONLY_BIT = 0x0001;
+    private static final int IS_STATIC_BIT = 0x0002;
+    private static final int NONZERO_BIT = 0x8000;
 
-    protected VarHandleFieldAccessorImpl(Field field, VarHandle varHandle, boolean isReadOnly) {
+    private @Stable final int fieldFlags;
+    // protected @Stable final MethodHandle varHandle;
+    protected @Stable final MethodHandle getter;
+    protected @Stable final MethodHandle setter;
+
+    protected MethodHandleFieldAccessorImpl(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly, boolean isStatic) {
         super(field);
-        this.isReadOnly = isReadOnly;
-        this.varHandle = varHandle;
-        this.accessor = new VHInvokerDelegate(varHandle);
+        this.fieldFlags = (isReadOnly ? IS_READ_ONLY_BIT : 0) |
+                          (isStatic ? IS_STATIC_BIT : 0) |
+                          NONZERO_BIT;
+        this.getter = getter;
+        this.setter = setter;
     }
 
-    protected void ensureObj(Object o) {
-        // for compatibility, check the receiver object first
-        // throw NullPointerException if o is null
+    protected final boolean isReadOnly() {
+        return (fieldFlags & IS_READ_ONLY_BIT) == IS_READ_ONLY_BIT;
+    }
+
+    protected final boolean isStatic() {
+        return (fieldFlags & IS_STATIC_BIT) == IS_STATIC_BIT;
+    }
+
+    protected final void ensureObj(Object o) {
+        if (!isStatic()) {
+            // for compatibility, check the receiver object first
+            // throw NullPointerException if o is null
             if (!field.getDeclaringClass().isAssignableFrom(o.getClass())) {
-            throwSetIllegalArgumentException(o);
+                throwSetIllegalArgumentException(o);
+            }
         }
-    }
-
-    @ForceInline
-    final VHInvoker accessor() {
-        var accessor = fastAccessor;
-        if (accessor != null) {
-            return accessor;
-        }
-        return slowAccessor();
-    }
-
-    @DontInline
-    final VHInvoker slowAccessor() {
-        var accessor = this.accessor;
-        if (++numAccesses > ReflectionFactory.inflationThreshold()) {
-            this.fastAccessor = accessor = MethodHandleAccessorFactory.newVarHandleAccessor(field, varHandle);
-        }
-        return accessor;
     }
 
     /**

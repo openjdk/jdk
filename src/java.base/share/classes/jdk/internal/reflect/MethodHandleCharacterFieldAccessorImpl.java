@@ -25,56 +25,34 @@
 
 package jdk.internal.reflect;
 
-import java.lang.invoke.VarHandle;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-abstract class VarHandleLongFieldAccessorImpl extends VarHandleFieldAccessorImpl {
-    static FieldAccessorImpl fieldAccessor(Field field, VarHandle varHandle, boolean isReadOnly) {
-        return Modifier.isStatic(field.getModifiers())
-                ? new StaticFieldAccessor(field, varHandle, isReadOnly)
-                : new InstanceFieldAccessor(field, varHandle, isReadOnly);
+class MethodHandleCharacterFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
+    static FieldAccessorImpl fieldAccessor(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly) {
+        boolean isStatic = Modifier.isStatic(field.getModifiers());
+        if (isStatic) {
+            getter = getter.asType(MethodType.methodType(char.class));
+            if (setter != null) {
+                setter = setter.asType(MethodType.methodType(void.class, char.class));
+            }
+        } else {
+            getter = getter.asType(MethodType.methodType(char.class, Object.class));
+            if (setter != null) {
+                setter = setter.asType(MethodType.methodType(void.class, Object.class, char.class));
+            }
+        }
+        return new MethodHandleCharacterFieldAccessorImpl(field, getter, setter, isReadOnly, isStatic);
     }
 
-    VarHandleLongFieldAccessorImpl(Field field, VarHandle varHandle, boolean isReadOnly) {
-        super(field, varHandle, isReadOnly);
-    }
-
-    abstract long getValue(Object obj);
-    abstract void setValue(Object obj, long l) throws Throwable;
-
-    static class StaticFieldAccessor extends VarHandleLongFieldAccessorImpl {
-        StaticFieldAccessor(Field field, VarHandle varHandle, boolean isReadOnly) {
-            super(field, varHandle, isReadOnly);
-        }
-
-        long getValue(Object obj) {
-            return accessor().getLong();
-        }
-
-        void setValue(Object obj, long l) throws Throwable {
-            accessor().setLong(l);
-        }
-
-        protected void ensureObj(Object o) {}
-    }
-
-    static class InstanceFieldAccessor extends VarHandleLongFieldAccessorImpl {
-        InstanceFieldAccessor(Field field, VarHandle varHandle, boolean isReadOnly) {
-            super(field, varHandle, isReadOnly);
-        }
-
-        long getValue(Object obj) {
-            return accessor().getLong(obj);
-        }
-
-        void setValue(Object obj, long l) throws Throwable {
-            accessor().setLong(obj, l);
-        }
+    MethodHandleCharacterFieldAccessorImpl(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly, boolean isStatic) {
+        super(field, getter, setter, isReadOnly, isStatic);
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return Long.valueOf(getLong(obj));
+        return Character.valueOf(getChar(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {
@@ -86,20 +64,12 @@ abstract class VarHandleLongFieldAccessorImpl extends VarHandleFieldAccessorImpl
     }
 
     public char getChar(Object obj) throws IllegalArgumentException {
-        throw newGetCharIllegalArgumentException();
-    }
-
-    public short getShort(Object obj) throws IllegalArgumentException {
-        throw newGetShortIllegalArgumentException();
-    }
-
-    public int getInt(Object obj) throws IllegalArgumentException {
-        throw newGetIntIllegalArgumentException();
-    }
-
-    public long getLong(Object obj) throws IllegalArgumentException {
         try {
-            return getValue(obj);
+            if (isStatic()) {
+                return (char) getter.invokeExact();
+            } else {
+                return (char) getter.invokeExact(obj);
+            }
         } catch (IllegalArgumentException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
@@ -109,45 +79,43 @@ abstract class VarHandleLongFieldAccessorImpl extends VarHandleFieldAccessorImpl
         }
     }
 
+    public short getShort(Object obj) throws IllegalArgumentException {
+        throw newGetShortIllegalArgumentException();
+    }
+
+    public int getInt(Object obj) throws IllegalArgumentException {
+        return getChar(obj);
+    }
+
+    public long getLong(Object obj) throws IllegalArgumentException {
+        return getChar(obj);
+    }
+
     public float getFloat(Object obj) throws IllegalArgumentException {
-        return getLong(obj);
+        return getChar(obj);
     }
 
     public double getDouble(Object obj) throws IllegalArgumentException {
-        return getLong(obj);
+        return getChar(obj);
     }
 
     public void set(Object obj, Object value)
             throws IllegalArgumentException, IllegalAccessException
     {
-        if (isReadOnly) {
+        if (isReadOnly()) {
             ensureObj(obj);     // throw NPE if obj is null on instance field
             throwFinalFieldIllegalAccessException(value);
         }
+
         if (value == null) {
             throwSetIllegalArgumentException(value);
         }
-        if (value instanceof Byte) {
-            setLong(obj, ((Byte) value).byteValue());
-            return;
+
+        if (value instanceof Character c) {
+            setChar(obj, c.charValue());
+        } else {
+            throwSetIllegalArgumentException(value);
         }
-        if (value instanceof Short) {
-            setLong(obj, ((Short) value).shortValue());
-            return;
-        }
-        if (value instanceof Character) {
-            setLong(obj, ((Character) value).charValue());
-            return;
-        }
-        if (value instanceof Integer) {
-            setLong(obj, ((Integer) value).intValue());
-            return;
-        }
-        if (value instanceof Long) {
-            setLong(obj, ((Long) value).longValue());
-            return;
-        }
-        throwSetIllegalArgumentException(value);
     }
 
     public void setBoolean(Object obj, boolean z)
@@ -159,36 +127,22 @@ abstract class VarHandleLongFieldAccessorImpl extends VarHandleFieldAccessorImpl
     public void setByte(Object obj, byte b)
         throws IllegalArgumentException, IllegalAccessException
     {
-        setLong(obj, b);
+        throwSetIllegalArgumentException(b);
     }
 
     public void setChar(Object obj, char c)
         throws IllegalArgumentException, IllegalAccessException
     {
-        setLong(obj, c);
-    }
-
-    public void setShort(Object obj, short s)
-        throws IllegalArgumentException, IllegalAccessException
-    {
-        setLong(obj, s);
-    }
-
-    public void setInt(Object obj, int i)
-        throws IllegalArgumentException, IllegalAccessException
-    {
-        setLong(obj, i);
-    }
-
-    public void setLong(Object obj, long l)
-        throws IllegalArgumentException, IllegalAccessException
-    {
-        if (isReadOnly) {
+        if (isReadOnly()) {
             ensureObj(obj);     // throw NPE if obj is null on instance field
-            throwFinalFieldIllegalAccessException(l);
+            throwFinalFieldIllegalAccessException(c);
         }
         try {
-            setValue(obj, l);
+            if (isStatic()) {
+                setter.invokeExact(c);
+            } else {
+                setter.invokeExact(obj, c);
+            }
         } catch (IllegalArgumentException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
@@ -196,6 +150,24 @@ abstract class VarHandleLongFieldAccessorImpl extends VarHandleFieldAccessorImpl
         } catch (Throwable e) {
             throw new InternalError(e);
         }
+    }
+
+    public void setShort(Object obj, short s)
+        throws IllegalArgumentException, IllegalAccessException
+    {
+        throwSetIllegalArgumentException(s);
+    }
+
+    public void setInt(Object obj, int i)
+        throws IllegalArgumentException, IllegalAccessException
+    {
+        throwSetIllegalArgumentException(i);
+    }
+
+    public void setLong(Object obj, long l)
+        throws IllegalArgumentException, IllegalAccessException
+    {
+        throwSetIllegalArgumentException(l);
     }
 
     public void setFloat(Object obj, float f)

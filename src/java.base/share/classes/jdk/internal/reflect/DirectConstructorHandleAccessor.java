@@ -25,7 +25,6 @@
 
 package jdk.internal.reflect;
 
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
@@ -36,45 +35,32 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import static jdk.internal.reflect.MethodHandleAccessorFactory.SPECIALIZED_PARAM_COUNT;
-import static jdk.internal.reflect.MethodHandleAccessorFactory.newMethodHandleInvoker;
 
 class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
     static ConstructorAccessorImpl constructorAccessor(Constructor<?> ctor, MethodHandle target) {
-        if (ReflectionFactory.noInflation()) {
-            // fast invoker
-            var mhInvoker = newMethodHandleInvoker(ctor, target);
-            return new DirectConstructorHandleAccessor(ctor, target, mhInvoker);
-        } else {
-            // Default is the adaptive accessor method.
-            return new AdaptiveConstructorHandleAccessor(ctor, target);
-        }
+        return new DirectConstructorHandleAccessor(ctor, target);
     }
 
     static ConstructorAccessorImpl nativeAccessor(Constructor<?> ctor) {
         return new NativeAccessor(ctor);
     }
 
-    protected final Constructor<?> ctor;
-    protected final int paramCount;
+    private static final int PARAM_COUNT_MASK = 0x00FF;
+    private static final int NONZERO_BIT = 0x8000_0000;
 
-    @Stable protected final MethodHandle target;
-    @Stable protected final MHInvoker invoker;
-    DirectConstructorHandleAccessor(Constructor<?> ctor, MethodHandle target, MHInvoker invoker) {
-        this.ctor = ctor;
-        this.paramCount = ctor.getParameterCount();
+    @Stable private final int paramFlags;
+    @Stable private final MethodHandle target;
+
+    DirectConstructorHandleAccessor(Constructor<?> ctor, MethodHandle target) {
+        this.paramFlags = (ctor.getParameterCount() & PARAM_COUNT_MASK) | NONZERO_BIT;
         this.target = target;
-        this.invoker = invoker;
-    }
-
-    @ForceInline
-    MHInvoker mhInvoker() {
-        return invoker;
     }
 
     @Override
     public Object newInstance(Object[] args) throws InstantiationException, InvocationTargetException {
         int argc = args != null ? args.length : 0;
         // only check argument count for specialized forms
+        int paramCount = paramFlags & PARAM_COUNT_MASK;
         if (paramCount <= SPECIALIZED_PARAM_COUNT && argc != paramCount) {
             throw new IllegalArgumentException("wrong number of arguments: " + argc + " expected: " + paramCount);
         }
@@ -102,40 +88,13 @@ class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
     @Hidden
     @ForceInline
     Object invokeImpl(Object[] args) throws Throwable {
-        var mhInvoker = mhInvoker();
-        return switch (paramCount) {
-            case 0 -> mhInvoker.invoke();
-            case 1 -> mhInvoker.invoke(args[0]);
-            case 2 -> mhInvoker.invoke(args[0], args[1]);
-            case 3 -> mhInvoker.invoke(args[0], args[1], args[2]);
-            default -> mhInvoker.invoke(args);
+        return switch (paramFlags & PARAM_COUNT_MASK) {
+            case 0 -> target.invokeExact();
+            case 1 -> target.invokeExact(args[0]);
+            case 2 -> target.invokeExact(args[0], args[1]);
+            case 3 -> target.invokeExact(args[0], args[1], args[2]);
+            default -> target.invokeExact(args);
         };
-    }
-
-    static class AdaptiveConstructorHandleAccessor extends DirectConstructorHandleAccessor {
-        private @Stable MHInvoker fastInvoker;
-        private int numInvocations;
-        AdaptiveConstructorHandleAccessor(Constructor<?> ctor, MethodHandle target) {
-            super(ctor, target, new MHInvokerDelegate(target));
-        }
-
-        @ForceInline
-        MHInvoker mhInvoker() {
-            var invoker = fastInvoker;
-            if (invoker != null) {
-                return invoker;
-            }
-            return slowInvoker();
-        }
-
-        @DontInline
-        private MHInvoker slowInvoker() {
-            var invoker = this.invoker;
-            if (++numInvocations > ReflectionFactory.inflationThreshold()) {
-                fastInvoker = invoker = newMethodHandleInvoker(ctor, target);
-            }
-            return invoker;
-        }
     }
 
     /**

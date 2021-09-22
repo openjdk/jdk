@@ -150,12 +150,10 @@ public interface JavaLangInvokeAccess {
     MethodHandle unreflectConstructor(Constructor<?> ctor) throws IllegalAccessException;
 
     /**
-     * Produces a var handle unreflecting from a {@code Field} with the trusted lookup.
-     * @param field
-     * @return
-     * @throws IllegalAccessException
+     * Produces a method handle unreflecting from a {@code Field} with
+     * the trusted lookup
      */
-    VarHandle unreflectVarHandle(Field field) throws IllegalAccessException;
+    MethodHandle unreflectField(Field field, boolean isSetter) throws IllegalAccessException;
 
     /**
      * Produces a method handle of a virtual method with the trusted lookup.

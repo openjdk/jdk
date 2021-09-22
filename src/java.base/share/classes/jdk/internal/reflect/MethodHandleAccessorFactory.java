@@ -25,28 +25,19 @@
 
 package jdk.internal.reflect;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import sun.security.action.GetPropertyAction;
 
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
@@ -149,26 +140,27 @@ final class MethodHandleAccessorFactory {
 
         try {
             // the declaring class of the field has been initialized
-            var varHandle = JLIA.unreflectVarHandle(field);
+            var getter = JLIA.unreflectField(field, false);
+            var setter = isReadOnly ? null : JLIA.unreflectField(field, true);
             Class<?> type = field.getType();
             if (type == Boolean.TYPE) {
-                return VarHandleBooleanFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleBooleanFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             } else if (type == Byte.TYPE) {
-                return VarHandleByteFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleByteFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             } else if (type == Short.TYPE) {
-                return VarHandleShortFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleShortFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             } else if (type == Character.TYPE) {
-                return VarHandleCharacterFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleCharacterFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             } else if (type == Integer.TYPE) {
-                return VarHandleIntegerFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleIntegerFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             } else if (type == Long.TYPE) {
-                return VarHandleLongFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleLongFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             } else if (type == Float.TYPE) {
-                return VarHandleFloatFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleFloatFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             } else if (type == Double.TYPE) {
-                return VarHandleDoubleFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleDoubleFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             } else {
-                return VarHandleObjectFieldAccessorImpl.fieldAccessor(field, varHandle, isReadOnly);
+                return MethodHandleObjectFieldAccessorImpl.fieldAccessor(field, getter, setter, isReadOnly);
             }
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
@@ -299,164 +291,6 @@ final class MethodHandleAccessorFactory {
     }
 
     /**
-     * Spins a hidden class that invokes a constant VarHandle of the target field,
-     * loaded from the class data via condy, for reliable performance.
-     *
-     * For a non-volatile field, one class file is generated for each primitive
-     * type and a reference type, its class name is FieldAccessorImpl_L_<T>
-     * for an instance field or FieldAccessorImpl_<T> for a static field
-     * where T is the base type, B C D F I J S Z, for primitive type or L
-     * for a reference type.
-     *
-     * For a volatile field, its class name is FieldAccessorImpl_<T>_V
-     * for an instance field or FieldAccessorImpl_<T>_V for a static field.
-     */
-    static VHInvoker newVarHandleAccessor(Field field, VarHandle varHandle) {
-        var name = classNamePrefix(field);
-        var cn = name + "$$" + counter.getAndIncrement();
-        byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name, n -> spinByteCode(name, field));
-        try {
-            var lookup = JLIA.defineHiddenClassWithClassData(LOOKUP, cn, bytes, varHandle, true);
-            var ctor = lookup.findConstructor(lookup.lookupClass(), methodType(void.class));
-            ctor = ctor.asType(methodType(VHInvoker.class));
-            return (VHInvoker) ctor.invokeExact();
-        } catch (Throwable e) {
-            throw new InternalError(e);
-        }
-    }
-
-    /**
-     * Spins a hidden class that invokes a constant MethodHandle of the target method handle,
-     * loaded from the class data via condy, for reliable performance.
-     *
-     * One class file is generated for each method type which is either
-     * (Object,Object[])Object or the specialized version
-     * (Object,Object, ...)Object or (Object,Object, ..., Class)Object
-     * where the number of parameter types = receiver if it's an instance method
-     * + the number of formal parameters + "Class" if it's a caller-sensitive method
-     * which has an adapter defined.
-     */
-    static MHInvoker newMethodHandleInvoker(Method method, MethodHandle target, boolean hasCallerParameter) {
-        var name = classNamePrefix(method, target.type(), hasCallerParameter);
-        var cn = name + "$$" + counter.getAndIncrement();
-        byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name,
-                n -> spinByteCode(name, method, target.type(), hasCallerParameter));
-        try {
-            var lookup = JLIA.defineHiddenClassWithClassData(LOOKUP, cn, bytes, target, true);
-            var ctor = lookup.findConstructor(lookup.lookupClass(), methodType(void.class));
-            ctor = ctor.asType(methodType(MHInvoker.class));
-            return (MHInvoker) ctor.invokeExact();
-        } catch (Throwable e) {
-            throw new InternalError(e);
-        }
-    }
-
-    /**
-     * Spins a hidden class that invokes a constant MethodHandle of the target method handle,
-     * loaded from the class data via condy, for reliable performance.
-     *
-     * Due to the overhead of class loading, this is not the default.
-     */
-    static MHInvoker newMethodHandleInvoker(Constructor<?> c, MethodHandle target) {
-        var name = classNamePrefix(c, target.type());
-        var cn = name + "$$" + counter.getAndIncrement();
-        byte[] bytes = ACCESSOR_CLASSFILES.computeIfAbsent(name,
-                n -> spinByteCode(name, c, target.type()));
-        try {
-            var lookup = JLIA.defineHiddenClassWithClassData(LOOKUP, cn, bytes, target, true);
-            var ctor = lookup.findConstructor(lookup.lookupClass(), methodType(void.class));
-            ctor = ctor.asType(methodType(MHInvoker.class));
-            return (MHInvoker) ctor.invokeExact();
-        } catch (Throwable e) {
-            throw new InternalError(e);
-        }
-    }
-
-    private static final ConcurrentHashMap<String, byte[]> ACCESSOR_CLASSFILES = new ConcurrentHashMap<>();
-    private static final String FIELD_CLASS_NAME_PREFIX = "jdk/internal/reflect/FieldAccessorImpl_";
-    private static final String METHOD_CLASS_NAME_PREFIX = "jdk/internal/reflect/MethodAccessorImpl_";
-    private static final String CONSTRUCTOR_CLASS_NAME_PREFIX = "jdk/internal/reflect/ConstructorAccessorImpl_";
-
-    // Used to ensure that each spun class name is unique
-    private static final AtomicInteger counter = new AtomicInteger();
-
-    private static String classNamePrefix(Field field) {
-        var isStatic = Modifier.isStatic(field.getModifiers());
-        var isVolatile = Modifier.isVolatile(field.getModifiers());
-        var type = field.getType();
-        var desc = type.isPrimitive() ? type.descriptorString() : "L";
-        return FIELD_CLASS_NAME_PREFIX + (isStatic ? desc : "L" + desc) + (isVolatile ? "_V" : "");
-    }
-    private static String classNamePrefix(Method method, MethodType mtype, boolean hasCallerParameter) {
-        var isStatic = Modifier.isStatic(method.getModifiers());
-        var methodTypeName = methodTypeName(isStatic, hasCallerParameter, mtype);
-        return METHOD_CLASS_NAME_PREFIX + methodTypeName;
-    }
-    private static String classNamePrefix(Constructor<?> c, MethodType mtype) {
-        var methodTypeName = methodTypeName(true, false, mtype);
-        return CONSTRUCTOR_CLASS_NAME_PREFIX + methodTypeName;
-    }
-
-    /**
-     * Returns a string to represent the specialized method type.
-     */
-    private static String methodTypeName(boolean isStatic, boolean hasCallerParameter, MethodType mtype) {
-        StringBuilder sb = new StringBuilder();
-        int pIndex = 0;
-        if (!isStatic) {
-            sb.append("L");
-            pIndex++;
-        }
-        int paramCount = mtype.parameterCount() - (hasCallerParameter ? 1 : 0);
-        for (;pIndex < paramCount; pIndex++) {
-            Class<?> ptype = mtype.parameterType(pIndex);
-            if (ptype == Object[].class) {
-                sb.append("A");
-            } else {
-                assert ptype == Object.class;
-                sb.append("L");
-            }
-        }
-        if (hasCallerParameter) {
-            sb.append("Class");
-            pIndex++;
-        }
-        return sb.toString();
-    }
-
-    private static byte[] spinByteCode(String cn, Field field) {
-        var builder = new ReflectionInvokerBuilder(cn, VarHandle.class);
-        var bytes = builder.buildVarHandleInvoker(field);
-        maybeDumpClassFile(cn, bytes);
-        return bytes;
-    }
-    private static byte[] spinByteCode(String cn, Method method, MethodType mtype, boolean hasCallerParameter) {
-        var builder = new ReflectionInvokerBuilder(cn, MethodHandle.class);
-        var bytes = builder.buildMethodHandleInvoker(method, mtype, hasCallerParameter);
-        maybeDumpClassFile(cn, bytes);
-        return bytes;
-    }
-    private static byte[] spinByteCode(String cn, Constructor<?> ctor, MethodType mtype) {
-        var builder = new ReflectionInvokerBuilder(cn, MethodHandle.class);
-        var bytes = builder.buildMethodHandleInvoker(ctor, mtype);
-        maybeDumpClassFile(cn, bytes);
-        return bytes;
-    }
-    private static void maybeDumpClassFile(String classname, byte[] bytes) {
-        if (DUMP_CLASS_FILES != null) {
-            try {
-                Path p = DUMP_CLASS_FILES.resolve(classname + ".class");
-                Files.createDirectories(p.getParent());
-                try (OutputStream os = Files.newOutputStream(p)) {
-                    os.write(bytes);
-                }
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
-
-    /**
      * Ensures the given class is initialized.  If this is called from <clinit>,
      * this method returns but defc's class initialization is not completed.
      */
@@ -498,18 +332,8 @@ final class MethodHandleAccessorFactory {
      * Delay initializing these static fields until java.lang.invoke is fully initialized.
      */
     static class LazyStaticHolder {
-        static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
         static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
     }
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final Path DUMP_CLASS_FILES;
-    static {
-        String dumpPath = GetPropertyAction.privilegedGetProperty("jdk.reflect.dumpClassPath");
-        if (dumpPath != null) {
-            DUMP_CLASS_FILES = Path.of(dumpPath);
-        } else {
-            DUMP_CLASS_FILES = null;
-        }
-    }
 }

@@ -37,12 +37,13 @@ class NativeConstructorAccessorImpl extends ConstructorAccessorImpl {
         = U.objectFieldOffset(NativeConstructorAccessorImpl.class, "generated");
 
     private final Constructor<?> c;
-    private DelegatingConstructorAccessorImpl parent;
+    private final DelegatingConstructorAccessorImpl parent;
     private int numInvocations;
     private volatile int generated;
 
     NativeConstructorAccessorImpl(Constructor<?> c) {
         this.c = c;
+        this.parent = new DelegatingConstructorAccessorImpl(this);
     }
 
     public Object newInstance(Object[] args)
@@ -75,8 +76,8 @@ class NativeConstructorAccessorImpl extends ConstructorAccessorImpl {
         return newInstance0(c, args);
     }
 
-    void setParent(DelegatingConstructorAccessorImpl parent) {
-        this.parent = parent;
+    DelegatingConstructorAccessorImpl getParent() {
+        return parent;
     }
 
     private static native Object newInstance0(Constructor<?> c, Object[] args)
