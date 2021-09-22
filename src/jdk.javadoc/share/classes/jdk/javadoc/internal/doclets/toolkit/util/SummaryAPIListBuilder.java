@@ -112,14 +112,13 @@ public class SummaryAPIListBuilder {
                 handleElement(pe);
             }
         }
-        for (Element e : configuration.getIncludedTypeElements()) {
-            TypeElement te = (TypeElement)e;
+        for (TypeElement te : configuration.getIncludedTypeElements()) {
             SortedSet<Element> eset;
-            if (belongsToSummary.test(e)) {
-                switch (e.getKind()) {
+            if (belongsToSummary.test(te)) {
+                switch (te.getKind()) {
                     case ANNOTATION_TYPE -> {
                         eset = summaryMap.get(SummaryElementKind.ANNOTATION_TYPE);
-                        eset.add(e);
+                        eset.add(te);
                     }
                     case CLASS -> {
                         if (utils.isError(te)) {
@@ -129,19 +128,19 @@ public class SummaryAPIListBuilder {
                         } else {
                             eset = summaryMap.get(SummaryElementKind.CLASS);
                         }
-                        eset.add(e);
+                        eset.add(te);
                     }
                     case INTERFACE -> {
                         eset = summaryMap.get(SummaryElementKind.INTERFACE);
-                        eset.add(e);
+                        eset.add(te);
                     }
                     case ENUM -> {
                         eset = summaryMap.get(SummaryElementKind.ENUM);
-                        eset.add(e);
+                        eset.add(te);
                     }
                     case RECORD -> {
                         eset = summaryMap.get(SummaryElementKind.RECORD_CLASS);
-                        eset.add(e);
+                        eset.add(te);
                     }
                 }
                 handleElement(te);
@@ -152,7 +151,7 @@ public class SummaryAPIListBuilder {
                     utils.getMethods(te));
             composeSummaryList(summaryMap.get(SummaryElementKind.CONSTRUCTOR),
                     utils.getConstructors(te));
-            if (utils.isEnum(e)) {
+            if (utils.isEnum(te)) {
                 composeSummaryList(summaryMap.get(SummaryElementKind.ENUM_CONSTANT),
                         utils.getEnumConstants(te));
             }
@@ -165,7 +164,7 @@ public class SummaryAPIListBuilder {
                     }
                 }
             }
-            if (utils.isAnnotationType(e)) {
+            if (utils.isAnnotationType(te)) {
                 composeSummaryList(summaryMap.get(SummaryElementKind.ANNOTATION_TYPE_MEMBER),
                         utils.getAnnotationMembers(te));
 
