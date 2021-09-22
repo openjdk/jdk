@@ -184,8 +184,6 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   friend class VMStructs;
 
 private:
-  size_t _header_size;
-
   // The following fields record the states of the VM during dump time.
   // They are compared with the runtime states to see if the archive
   // can be used.
@@ -253,7 +251,8 @@ public:
 
   // Accessors -- fields declared in FileMapHeader
 
-  size_t header_size()                     const { return _header_size; }
+  unsigned int header_size()               const { return _header_size; }
+  unsigned int base_archive_path_offset()  const { return _base_archive_path_offset; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
@@ -290,7 +289,7 @@ public:
   void set_base_archive_path_offset();
   void set_base_archive_name_size(size_t s)      { _base_archive_name_size = s; }
   void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
-  void set_header_size(size_t s)                 { _header_size = s; }
+  void set_header_size(unsigned int s)           { _header_size = s; }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }

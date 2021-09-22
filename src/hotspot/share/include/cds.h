@@ -38,7 +38,7 @@
 #define NUM_CDS_REGIONS 7 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
-#define CURRENT_CDS_ARCHIVE_VERSION 11
+#define CURRENT_CDS_ARCHIVE_VERSION 12
 #define INVALID_CDS_ARCHIVE_VERSION -1
 
 struct CDSFileMapRegion {
@@ -60,15 +60,19 @@ struct CDSFileMapRegion {
   char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
 };
 
+// The declaration of the following 5 fields must never be changed
+// in any future versions of HotSpot
 struct CDSFileMapHeaderBase {
   unsigned int _magic;           // identify file type
   int          _crc;             // header crc checksum
   int          _version;         // must be CURRENT_CDS_ARCHIVE_VERSION
-  int _base_archive_path_offset; // This field is present with (_version >= 12). It's declaration
-                                 // must never be changed in any future versions of HotSpot.
-                                 // If this is a dynamic archive, (((char*)this) + _base_archive_path_offset)
-                                 // stores a 0-terminated string for the pathname of the base archive.
-                                 // If this is a static archive, this field is 0.
+  unsigned int _header_size;     // total size of the header, in bytes
+  // This field is present with (_version >= 12). It's declaration
+  // must never be changed in any future versions of HotSpot.
+  // If this is a dynamic archive, (((char*)this) + _base_archive_path_offset)
+  // stores a 0-terminated string for the pathname of the base archive.
+  // If this is a static archive, this field is 0.
+  unsigned int _base_archive_path_offset;
   struct CDSFileMapRegion _space[NUM_CDS_REGIONS];
 };
 

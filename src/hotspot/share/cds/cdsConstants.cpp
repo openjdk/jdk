@@ -35,6 +35,7 @@ CDSConst CDSConstants::offsets[] = {
   { "CDSFileMapHeaderBase::_crc",                       offset_of(CDSFileMapHeaderBase, _crc)               },
   { "CDSFileMapHeaderBase::_version",                   offset_of(CDSFileMapHeaderBase, _version)           },
   { "CDSFileMapHeaderBase::_space[0]",                  offset_of(CDSFileMapHeaderBase, _space)             },
+  { "CDSFileMapHeaderBase::_header_size",               offset_of(CDSFileMapHeaderBase, _header_size)       },
   { "CDSFileMapHeaderBase::_base_archive_path_offset",  offset_of(FileMapHeader, _base_archive_path_offset) },
   { "FileMapHeader::_jvm_ident",                        offset_of(FileMapHeader, _jvm_ident)                },
   { "FileMapHeader::_base_archive_name_size",           offset_of(FileMapHeader, _base_archive_name_size)   },
