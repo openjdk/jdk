@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,11 @@ public class Arguments {
         int argc = 0;
 
         if (args.length == 1) {
-            if ((args[0].compareTo("-?") == 0)
-                || (args[0].compareTo("-h")== 0)
-                || (args[0].compareTo("--help")== 0)
+            if ((args[0].equals("-?"))
+                || (args[0].equals("-h"))
+                || (args[0].equals("--help"))
                 // -help: legacy.
-                || (args[0].compareTo("-help")== 0)) {
+                || (args[0].equals("-help"))) {
               help = true;
               return;
             }
@@ -78,7 +78,7 @@ public class Arguments {
                 argc++) {
             String arg = args[argc];
 
-            if (arg.compareTo("-q") == 0) {
+            if (arg.equals("-q")) {
               quiet = true;
             } else if (arg.startsWith("-")) {
                 for (int j = 1; j < arg.length(); j++) {
