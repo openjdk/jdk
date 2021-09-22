@@ -52,7 +52,6 @@ import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
 import com.sun.source.tree.ModuleTree.ModuleKind;
-import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.Directive;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
@@ -163,7 +162,6 @@ public class Modules extends JCTree.Visitor {
     private final String addModsOpt;
     private final Set<String> extraAddMods = new HashSet<>();
     private final String limitModsOpt;
-    private final Set<String> extraLimitMods = new HashSet<>();
     private final String moduleVersionOpt;
 
     private final boolean lintOptions;
@@ -1223,18 +1221,13 @@ public class Modules extends JCTree.Visitor {
 
         Set<ModuleSymbol> observable;
 
-        if (limitModsOpt == null && extraLimitMods.isEmpty()) {
+        if (limitModsOpt == null) {
             observable = null;
         } else {
             Set<ModuleSymbol> limitMods = new HashSet<>();
-            if (limitModsOpt != null) {
-                for (String limit : limitModsOpt.split(",")) {
-                    if (!isValidName(limit))
-                        continue;
-                    limitMods.add(syms.enterModule(names.fromString(limit)));
-                }
-            }
-            for (String limit : extraLimitMods) {
+            for (String limit : limitModsOpt.split(",")) {
+                if (!isValidName(limit))
+                    continue;
                 limitMods.add(syms.enterModule(names.fromString(limit)));
             }
             observable = computeTransitiveClosure(limitMods, rootModules, null);
