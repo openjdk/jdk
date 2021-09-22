@@ -70,7 +70,9 @@ public final class TestRecordedFrameType {
                 """;
             WB.addCompilerDirective(directive);
             Method mtd = TestRecordedFrameType.class.getMethod("compiled", new Class[0]);
-            WB.enqueueMethodForCompilation(mtd, 1);
+            if (!WB.enqueueMethodForCompilation(mtd, 1)) {
+                throw new Exception("Could not enqueue method for CompLevel_simple");
+            }
             Utils.waitForCondition(() -> WB.isMethodCompiled(mtd));
 
             interpreted();
