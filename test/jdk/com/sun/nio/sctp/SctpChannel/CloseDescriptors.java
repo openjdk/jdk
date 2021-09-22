@@ -26,7 +26,7 @@
  * @bug 8238274
  * @summary Potential leak file descriptor for SCTP
  * @requires (os.family == "linux")
- * @run main/othervm CloseDescriptors
+ * @run main/othervm/timeout=250 CloseDescriptors
  */
 
 import java.io.BufferedReader;
@@ -79,9 +79,12 @@ public class CloseDescriptors {
             selThread = new SelectorThread();
             selThread.start();
 
+            // give time for the server and selector to start
+            Thread.sleep(100);
             for (int i = 0 ; i < 100 ; ++i) {
                 System.out.println(i);
                 doIt(port);
+                Thread.sleep(100);
             }
             System.out.println("end");
             if (!check()) {
@@ -110,6 +113,7 @@ public class CloseDescriptors {
             catch (Exception ex) {
                 ex.printStackTrace();
             }
+            Thread.sleep(200);
         }
     }
 
