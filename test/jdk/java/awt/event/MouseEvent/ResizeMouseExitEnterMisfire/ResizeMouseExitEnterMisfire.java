@@ -33,6 +33,7 @@ import java.awt.event.MouseEvent;
 
 /**
  * @test
+ * @key headful
  * @bug 8254841
  * @summary Tests spurious firing of mouseEntered and mouseExit on resize
  * @run main ResizeMouseExitEnterMisfire
