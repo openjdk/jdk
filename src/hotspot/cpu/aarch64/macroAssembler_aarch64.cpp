@@ -5154,3 +5154,21 @@ void MacroAssembler::verify_cross_modify_fence_not_required() {
   }
 }
 #endif
+
+void MacroAssembler::spin_wait() {
+  for (int i = 0; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
+    switch (VM_Version::pause_impl_desc().inst()) {
+      case NOP:
+        nop();
+        break;
+      case ISB:
+        isb();
+        break;
+      case YIELD:
+        yield();
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  }
+}

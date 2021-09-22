@@ -99,6 +99,18 @@ public class TestOnSpinWaitImplAArch64 {
         }
     }
 
+    // The expected output of PrintAssembly for example for a pause spin with three NOPs:
+    //
+    // # {method} {0x0000ffff6ac00370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitImplAArch64$Launcher'
+    // #           [sp+0x40]  (sp of caller)
+    // 0x0000ffff9d557680: 1f20 03d5 | e953 40d1 | 3f01 00f9 | ff03 01d1 | fd7b 03a9 | 1f20 03d5 | 1f20 03d5
+    //
+    // 0x0000ffff9d5576ac: ;*invokestatic onSpinWait {reexecute=0 rethrow=0 return_oop=0}
+    //                     ; - compiler.onSpinWait.TestOnSpinWaitImplAArch64$Launcher::test@0 (line 161)
+    // 0x0000ffff9d5576ac: 1f20 03d5 | fd7b 43a9 | ff03 0191
+    //
+    // The checkOutput method adds hex instructions before 'invokestatic onSpinWait' and from the line after
+    // it to a list. The list is traversed from the end to count spin pause instructions.
     private static void checkOutput(OutputAnalyzer output, String pauseImplInstHex, int pauseImplInstCount) {
         Iterator<String> iter = output.asLines().listIterator();
 
