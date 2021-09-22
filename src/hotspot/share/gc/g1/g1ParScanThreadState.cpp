@@ -616,7 +616,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // without remembered sets.
     // - since we are iterating from a collection set region (i.e. never a Survivor
     // region), we always need to gather cards for this case.
-    G1SkipCardEnqueueSetter x(&_scanner, false /* skip_enqueue_cards */);
+    G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
     old->oop_iterate_backwards(&_scanner);
 
     return old;

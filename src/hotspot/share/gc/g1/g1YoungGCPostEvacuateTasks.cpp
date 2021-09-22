@@ -111,7 +111,12 @@ public:
            _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
   }
 
+  static bool should_execute() {
+    return G1CollectedHeap::heap()->evacuation_failed();
+  }
+
   double worker_cost() const override {
+    assert(should_execute(), "Should not call this if not executed");
     return _evac_failure_regions->num_regions_failed_evacuation();
   }
 
@@ -129,7 +134,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
-  if (evac_failure_regions->num_regions_failed_evacuation() > 0) {
+  if (RemoveSelfForwardPtrsTask::should_execute()) {
     add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());

@@ -1059,8 +1059,8 @@ G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
   _target_pause_time_ms(target_pause_time_ms),
-  _evac_failure_regions(evac_failure_regions),
-  _concurrent_operation_is_full_mark(false)
+  _concurrent_operation_is_full_mark(false),
+  _evac_failure_regions(evac_failure_regions)
 {
 }
 

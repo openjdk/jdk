@@ -58,7 +58,7 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
          (obj->is_forwarded() &&
          obj->forwardee() == RawAccess<>::oop_load(p)),
          "p should still be pointing to obj or to its forwardee");
-  assert(!_g1h->heap_region_containing(obj)->is_humongous(), "trying to push humongous object " PTR_FORMAT, p2i(obj));
+
   _par_scan_state->push_on_queue(ScannerTask(p));
 }
 
