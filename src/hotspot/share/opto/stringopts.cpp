@@ -277,6 +277,20 @@ void StringConcat::eliminate_unneeded_control() {
       C->gvn_replace_by(n, n->in(0)->in(0));
       // get rid of the other projection
       C->gvn_replace_by(n->in(0)->as_If()->proj_out(false), C->top());
+    } else if (n->is_Region()) {
+      Node* iff = n->in(1)->in(0);
+      assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
+      assert(iff->is_If(), "no if for the diamond");
+      Node* bol = iff->in(1);
+      assert(bol->is_Bool(), "unexpected if shape");
+      Node* cmp = bol->in(1);
+      assert(cmp->is_Cmp(), "unexpected if shape");
+      if (cmp->in(1)->is_top() || cmp->in(2)->is_top()) {
+        // This region should lose its Phis and be optimized out by igvn but there's a chance the if folds to top first
+        // which then causes a reachable part of the graph to become dead.
+        Compile* C = _stringopts->C;
+        C->gvn_replace_by(n, iff->in(0));
+      }
     }
   }
 }
@@ -1003,6 +1017,7 @@ bool StringConcat::validate_control_flow() {
         // The IGVN will make this simple diamond go away when it
         // transforms the Region. Make sure it sees it.
         Compile::current()->record_for_igvn(ptr);
+        _control.push(ptr);
         ptr = ptr->in(1)->in(0)->in(0);
         continue;
       }

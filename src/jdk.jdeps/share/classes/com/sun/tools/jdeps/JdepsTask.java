@@ -771,7 +771,7 @@ class JdepsTask {
             if (!options.nowarning) {
                 analyzer.archives()
                     .forEach(archive -> archive.reader()
-                        .skippedEntries().stream()
+                        .skippedEntries()
                         .forEach(name -> warning("warn.skipped.entry", name)));
             }
 
@@ -796,7 +796,7 @@ class JdepsTask {
                     log.format("%-40s %s%n",
                                internalApiTitle.replaceAll(".", "-"),
                                replacementApiTitle.replaceAll(".", "-"));
-                    jdkInternals.entrySet().stream()
+                    jdkInternals.entrySet()
                         .forEach(e -> {
                             String key = e.getKey();
                             String[] lines = e.getValue().split("\\n");
@@ -1111,7 +1111,7 @@ class JdepsTask {
 
         // --require
         if (!options.requires.isEmpty()) {
-            options.requires.stream()
+            options.requires
                 .forEach(mn -> {
                     Module m = config.findModule(mn).get();
                     builder.requires(mn, m.packages());

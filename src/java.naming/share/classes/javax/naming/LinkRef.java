@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,8 @@ public class LinkRef extends Reference {
     public String getLinkName() throws NamingException {
         if (className != null && className.equals(linkClassName)) {
             RefAddr addr = get(linkAddrType);
-            if (addr != null && addr instanceof StringRefAddr) {
-                return (String)((StringRefAddr)addr).getContent();
+            if (addr instanceof StringRefAddr stringRefAddr) {
+                return (String) stringRefAddr.getContent();
             }
         }
         throw new MalformedLinkException();

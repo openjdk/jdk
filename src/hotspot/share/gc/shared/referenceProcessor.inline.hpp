@@ -35,6 +35,11 @@ oop DiscoveredList::head() const {
     _oop_head;
 }
 
+void DiscoveredList::add_as_head(oop o) {
+  set_head(o);
+  inc_length(1);
+}
+
 void DiscoveredList::set_head(oop o) {
   if (UseCompressedOops) {
     // Must compress the head ptr.
@@ -55,7 +60,8 @@ void DiscoveredList::clear() {
 
 DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
                                                OopClosure*        keep_alive,
-                                               BoolObjectClosure* is_alive):
+                                               BoolObjectClosure* is_alive,
+                                               EnqueueDiscoveredFieldClosure* enqueue):
   _refs_list(refs_list),
   _prev_discovered_addr(refs_list.adr_head()),
   _prev_discovered(NULL),
@@ -65,6 +71,7 @@ DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
   _referent(NULL),
   _keep_alive(keep_alive),
   _is_alive(is_alive),
+  _enqueue(enqueue),
 #ifdef ASSERT
   _first_seen(refs_list.head()),
 #endif

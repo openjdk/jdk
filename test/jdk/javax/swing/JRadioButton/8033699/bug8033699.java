@@ -297,8 +297,8 @@ public class bug8033699 {
     private static void hitKey(Robot robot, int mode, int keycode) {
         robot.keyPress(mode);
         robot.keyPress(keycode);
-        robot.keyRelease(mode);
         robot.keyRelease(keycode);
+        robot.keyRelease(mode);
         robot.waitForIdle();
     }
 }

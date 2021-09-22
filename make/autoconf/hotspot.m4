@@ -83,19 +83,10 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
     AC_MSG_ERROR([Cannot continue])
   fi
 
-  # All "special" variants share the same output directory ("server")
-  VALID_MULTIPLE_JVM_VARIANTS="server client minimal"
-  UTIL_GET_NON_MATCHING_VALUES(INVALID_MULTIPLE_VARIANTS, $JVM_VARIANTS, \
-      $VALID_MULTIPLE_JVM_VARIANTS)
-  if  test "x$INVALID_MULTIPLE_VARIANTS" != x && \
-      test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
-    AC_MSG_ERROR([You can only build multiple variants using these variants: '$VALID_MULTIPLE_JVM_VARIANTS'])
-  fi
-
   # The "main" variant is the one used by other libs to link against during the
   # build.
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then
-    MAIN_VARIANT_PRIO_ORDER="server client minimal"
+    MAIN_VARIANT_PRIO_ORDER="server client minimal zero"
     for variant in $MAIN_VARIANT_PRIO_ORDER; do
       if HOTSPOT_CHECK_JVM_VARIANT($variant); then
         JVM_VARIANT_MAIN="$variant"
