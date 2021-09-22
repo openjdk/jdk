@@ -277,6 +277,32 @@ private:
   Allocator* const _allocator;
   ZForwarding*     _forwarding;
   ZPage*           _target;
+  ZArray<ZPage*>   _relocated_pages;
+
+  static inline bool should_bulk_free() {
+    return std::is_same<Allocator, ZRelocateSmallAllocator>::value;
+  }
+
+  inline void append_relocated_pages(ZPage* page) {
+    _relocated_pages.append(page);
+  }
+
+  inline void bulk_free_relocated_page(int bulk) {
+    if (_relocated_pages.length() >= bulk && _relocated_pages.is_nonempty()) {
+      ZHeap::heap()->free_pages(&_relocated_pages, true /* reclaimed */);
+      _relocated_pages.clear();
+    }
+  }
+
+  inline ZPage* alloc_bulk_free_page() {
+    if (_relocated_pages.length() > 0) {
+      ZPage* result = _relocated_pages.last();
+      _relocated_pages.pop();
+      result->reset();
+      return result;
+    }
+    return NULL;
+  }
 
   bool relocate_object(uintptr_t from_addr) const {
     ZForwardingCursor cursor;
@@ -317,6 +343,12 @@ private:
     assert(ZHeap::heap()->is_object_live(addr), "Should be live");
 
     while (!relocate_object(addr)) {
+      if (should_bulk_free()) {
+        _target = alloc_bulk_free_page();
+        if (_target != NULL) {
+          continue;
+        }
+      }
       // Allocate a new target page, or if that fails, use the page being
       // relocated as the new target, which will cause it to be relocated
       // in-place.
@@ -341,6 +373,9 @@ public:
       _target(NULL) {}
 
   ~ZRelocateClosure() {
+    if (should_bulk_free()) {
+      bulk_free_relocated_page(0);
+    }
     _allocator->free_target_page(_target);
   }
 
@@ -372,7 +407,12 @@ public:
     } else {
       // Detach and free relocated page
       ZPage* const page = _forwarding->detach_page();
-      _allocator->free_relocated_page(page);
+      if (should_bulk_free()) {
+        append_relocated_pages(page);
+        bulk_free_relocated_page(32);
+      } else {
+        _allocator->free_relocated_page(page);
+      }
     }
   }
 };
