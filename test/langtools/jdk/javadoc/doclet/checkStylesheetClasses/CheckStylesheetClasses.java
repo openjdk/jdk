@@ -140,6 +140,9 @@ public class CheckStylesheetClasses {
                 "ui-autocomplete", "ui-autocomplete-category",
                 "watermark");
 
+        // snippet-related
+        removeAll(styleSheetNames, "bold", "highlighted", "italic");
+
         // very JDK specific
         styleSheetNames.remove("module-graph");
 
