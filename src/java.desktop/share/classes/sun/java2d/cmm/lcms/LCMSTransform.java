@@ -134,7 +134,7 @@ final class LCMSTransform implements ColorTransform {
 
     private void doTransform(LCMSImageLayout in, LCMSImageLayout out) {
         NativeTransform tfm = transform;
-        // update native transfrom if needed
+        // update native transform if needed
         if (tfm == null || !tfm.match(in, out)) {
             synchronized (this) {
                 tfm = transform;
@@ -157,7 +157,7 @@ final class LCMSTransform implements ColorTransform {
             }
         }
         LCMS.colorConvert(tfm.ID, in, out);
-        Reference.reachabilityFence(tfm);
+        Reference.reachabilityFence(tfm); // prevent deallocation of "tfm.ID"
     }
 
     /**
