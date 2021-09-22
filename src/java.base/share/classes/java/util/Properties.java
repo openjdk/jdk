@@ -921,10 +921,12 @@ public class Properties extends Hashtable<Object,Object> {
         synchronized (this) {
             @SuppressWarnings("unchecked")
             Collection<Map.Entry<String, String>> entries = (Set<Map.Entry<String, String>>) (Set) entrySet();
-            // entrySet() can be overridden by subclasses. Here we check to see if the returned instance type is the one
-            // returned by the Properties.entrySet() implementation. If yes, then we sort those entries
-            // in the natural order of their key. Else, we consider that the subclassed implementation may potentially
-            // have returned a differently ordered entries and so we just use the iteration order of the returned instance.
+            // entrySet() can be overridden by subclasses. Here we check to see if
+            // the returned instance type is the one returned by the Properties.entrySet()
+            // implementation. If yes, then we sort those entries in the natural order
+            // of their key. Else, we consider that the subclassed implementation may
+            // potentially have returned a differently ordered entries and so we just
+            // use the iteration order of the returned instance.
             if (entries instanceof Collections.SynchronizedSet<?> ss
                     && ss.c instanceof EntrySet) {
                 entries = new ArrayList<>(entries);
