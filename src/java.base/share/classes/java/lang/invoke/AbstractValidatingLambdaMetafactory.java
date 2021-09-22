@@ -281,7 +281,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         for (int i=capturedStart; i<capturedArity; i++) {
             Class<?> implParamType = implMethodType.parameterType(i);
             Class<?> capturedParamType = factoryType.parameterType(i);
-            if (!canConvert(capturedParamType, implParamType)) {
+            if (!MethodType.canConvert(capturedParamType, implParamType)) {
                 throw new LambdaConversionException(
                         String.format("Type mismatch in captured lambda parameter %d: %s is not convertible to %s",
                                       i, capturedParamType, implParamType));
@@ -291,7 +291,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         for (int i=samStart; i<implArity; i++) {
             Class<?> implParamType = implMethodType.parameterType(i);
             Class<?> dynamicParamType = dynamicMethodType.parameterType(i - capturedArity);
-            if (!canConvert(dynamicParamType, implParamType)) {
+            if (!MethodType.canConvert(dynamicParamType, implParamType)) {
                 throw new LambdaConversionException(
                         String.format("Type mismatch for lambda argument %d: %s is not convertible to %s",
                                       i, dynamicParamType, implParamType));
@@ -301,7 +301,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         // Adaptation match: return type
         Class<?> expectedType = dynamicMethodType.returnType();
         Class<?> actualReturnType = implMethodType.returnType();
-        if (!canConvert(actualReturnType, expectedType)) {
+        if (!MethodType.canConvert(actualReturnType, expectedType)) {
             throw new LambdaConversionException(
                     String.format("Type mismatch for lambda return: %s is not convertible to %s",
                                   actualReturnType, expectedType));
@@ -319,7 +319,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         for (int i = 0; i < dynamicMethodType.parameterCount(); i++) {
             Class<?> dynamicParamType = dynamicMethodType.parameterType(i);
             Class<?> descriptorParamType = descriptor.parameterType(i);
-            if (!canConvert(dynamicParamType, descriptorParamType)) {
+            if (!MethodType.canConvert(dynamicParamType, descriptorParamType)) {
                 String msg = String.format("Type mismatch for dynamic parameter %d: %s is not a subtype of %s",
                                            i, dynamicParamType, descriptorParamType);
                 throw new LambdaConversionException(msg);
@@ -328,62 +328,10 @@ import static sun.invoke.util.Wrapper.isWrapperType;
 
         Class<?> dynamicReturnType = dynamicMethodType.returnType();
         Class<?> descriptorReturnType = descriptor.returnType();
-        if (!canConvert(dynamicReturnType, descriptorReturnType)) {
+        if (!MethodType.canConvert(dynamicReturnType, descriptorReturnType)) {
             String msg = String.format("Type mismatch for lambda expected return: %s is not convertible to %s",
                                        dynamicReturnType, descriptorReturnType);
             throw new LambdaConversionException(msg);
-        }
-    }
-
-    private static boolean canConvert(Class<?> src, Class<?> dst) {
-        // short-circuit a few cases:
-        if (src == dst || src == Object.class || dst == Object.class)  return true;
-        // the remainder of this logic is documented in MethodHandle.asType
-        if (src.isPrimitive()) {
-            // can force void to an explicit null, a la reflect.Method.invoke
-            // can also force void to a primitive zero, by analogy
-            if (src == void.class)  return true;  //or !dst.isPrimitive()?
-            Wrapper sw = Wrapper.forPrimitiveType(src);
-            if (dst.isPrimitive()) {
-                // P->P must widen
-                return Wrapper.forPrimitiveType(dst).isConvertibleFrom(sw);
-            } else {
-                // P->R must box and widen
-                return dst.isAssignableFrom(sw.wrapperType());
-            }
-        } else if (dst.isPrimitive()) {
-            // any value can be dropped
-            if (dst == void.class)  return true;
-            Wrapper dw = Wrapper.forPrimitiveType(dst);
-            // R->P must be able to unbox (from a dynamically chosen type) and widen
-            // For example:
-            //   Byte/Number/Comparable/Object -> dw:Byte -> byte.
-            //   Character/Comparable/Object -> dw:Character -> char
-            //   Boolean/Comparable/Object -> dw:Boolean -> boolean
-            // This means that dw must be cast-compatible with src.
-            if (src.isAssignableFrom(dw.wrapperType())) {
-                return true;
-            }
-            // The above does not work if the source reference is strongly typed
-            // to a wrapper whose primitive must be widened.  For example:
-            //   Byte -> unbox:byte -> short/int/long/float/double
-            //   Character -> unbox:char -> int/long/float/double
-            if (Wrapper.isWrapperType(src) &&
-                    dw.isConvertibleFrom(Wrapper.forWrapperType(src))) {
-                // can unbox from src and then widen to dst
-                return true;
-            }
-            // We have already covered cases which arise due to runtime unboxing
-            // of a reference type which covers several wrapper types:
-            //   Object -> cast:Integer -> unbox:int -> long/float/double
-            //   Serializable -> cast:Byte -> unbox:byte -> byte/short/int/long/float/double
-            // An marginal case is Number -> dw:Character -> char, which would be OK if there were a
-            // subclass of Number which wraps a value that can convert to char.
-            // Since there is none, we don't need an extra check here to cover char or boolean.
-            return false;
-        } else {
-            // R->R always works, since null is always valid dynamically
-            return true;
         }
     }
 
