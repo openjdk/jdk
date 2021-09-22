@@ -31,7 +31,7 @@ import sun.hotspot.WhiteBox;
  * @summary Test argument processing for -XX:+ShenandoahGCMode=generational.
  * @library /testlibrary /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

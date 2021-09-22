@@ -33,18 +33,13 @@ import java.util.Random;
  * @summary Confirm that card marking and remembered set scanning do not crash.
  * @library /testlibrary /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      gc.shenandoah.generational.TestSimpleGenerational
  */
-
-/* This used to be part of the run command, but caused problems.
- *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- */
-
 public class TestSimpleGenerational {
   private static WhiteBox wb = WhiteBox.getWhiteBox();
   static private final int SeedForRandom = 46;

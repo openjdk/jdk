@@ -36,6 +36,7 @@
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
@@ -47,7 +48,6 @@
 #include "memory/metaspaceStats.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
-#include "shenandoahOldGC.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
@@ -230,6 +230,8 @@ void ShenandoahControlThread::run_service() {
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
+      // GC is starting, bump the internal ID
+      update_gc_id();
 
       heap->reset_bytes_allocated_since_gc_start();
 
@@ -272,9 +274,6 @@ void ShenandoahControlThread::run_service() {
           }
         }
       }
-
-      // GC is finished, bump the internal ID before notifying waiters.
-      update_gc_id();
 
       // If this was the requested GC cycle, notify waiters about it
       if (explicit_gc_requested || implicit_gc_requested) {

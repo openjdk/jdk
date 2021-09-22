@@ -28,15 +28,7 @@ import sun.hotspot.WhiteBox;
 import java.util.Random;
 import java.util.HashMap;
 
-/* WARNING!
- *  As of the date on which this test was added into the jtreg suite, heuristic
- *  of old-gen GC passes is very simplistic.  A further shortcoming of the
- *  Generational Shenandoah as of introduction of this test is that it does
- *  not currently support full GC.  If garbage collection falls behind mutator
- *  allocations, a full GC will be triggered and Generational Shenandoah will
- *  abort itself with an assertion error.  Both of these limitations will be
- *  addressed in future releases of Generational Shenandoah.
- *
+/*
  *  To avoid the risk of false regressions identified by this test, the heap
  *  size is set artificially high.  Though this test is known to run reliably
  *  in 66 MB heap, the heap size for this test run is currently set to 256 MB.
@@ -48,7 +40,7 @@ import java.util.HashMap;
  * @summary Confirm that card marking and remembered set scanning do not crash.
  * @library /testlibrary /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *      -Xms256m -Xmx256m
  *      -XX:+IgnoreUnrecognizedVMOptions
