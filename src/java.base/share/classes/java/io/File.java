@@ -2022,7 +2022,7 @@ public class File
             } else {
                 // Name exceeds the maximum path component length: shorten it
 
-                // Attempt to shorten the prefix length to no less then 3
+                // Attempt to shorten the prefix length to no less than 3
                 prefixLength = shortenSubName(prefixLength, excess, 3);
                 excess = prefixLength + nusLength + suffixLength - nameMax;
 

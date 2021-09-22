@@ -57,11 +57,14 @@ NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component)
     DECLARE_STATIC_METHOD_RETURN(jm_getSize, sjc_CAccessibility, "getSize",
            "(Ljavax/accessibility/AccessibleComponent;Ljava/awt/Component;)Ljava/awt/Dimension;", NSZeroSize);
 
-    jobject dimension = (*env)->CallStaticObjectMethod(env, jc_Dimension, jm_getSize, axComponent, component);
+    jobject dimension = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getSize, axComponent, component);
     CHECK_EXCEPTION();
 
     if (dimension == NULL) return NSZeroSize;
-    return NSMakeSize((*env)->GetIntField(env, dimension, jf_width), (*env)->GetIntField(env, dimension, jf_height));
+
+    NSSize size = NSMakeSize((*env)->GetIntField(env, dimension, jf_width), (*env)->GetIntField(env, dimension, jf_height));
+    (*env)->DeleteLocalRef(env, dimension);
+    return size;
 }
 
 NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component)
@@ -226,7 +229,9 @@ NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject
                       axComponent, component);
     CHECK_EXCEPTION();
     if (jpoint == NULL) return NSZeroPoint;
-    return NSMakePoint((*env)->GetIntField(env, jpoint, sjf_X), (*env)->GetIntField(env, jpoint, sjf_Y));
+    NSPoint p = NSMakePoint((*env)->GetIntField(env, jpoint, sjf_X), (*env)->GetIntField(env, jpoint, sjf_Y));
+    (*env)->DeleteLocalRef(env, jpoint);
+    return p;
 }
 
 jint getAxTextCharCount(JNIEnv *env, jobject axText, jobject component)

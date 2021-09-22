@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,13 +183,21 @@ public final class LocalTime
      */
     static final int SECONDS_PER_DAY = SECONDS_PER_HOUR * HOURS_PER_DAY;
     /**
+     * Milliseconds per second.
+     */
+    static final long MILLIS_PER_SECOND = 1000L;
+    /**
      * Milliseconds per day.
      */
-    static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
+    static final long MILLIS_PER_DAY = MILLIS_PER_SECOND * SECONDS_PER_DAY;
+    /**
+     * Microseconds per second.
+     */
+    static final long MICROS_PER_SECOND = 1000_000L;
     /**
      * Microseconds per day.
      */
-    static final long MICROS_PER_DAY = SECONDS_PER_DAY * 1000_000L;
+    static final long MICROS_PER_DAY = MICROS_PER_SECOND * SECONDS_PER_DAY;
     /**
      * Nanos per millisecond.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1407,10 +1407,9 @@ public class DirectColorModel extends PackedColorModel {
      * {@code DirectColorModel}.
      */
     public String toString() {
-        return new String("DirectColorModel: rmask="
-                          +Integer.toHexString(red_mask)+" gmask="
-                          +Integer.toHexString(green_mask)+" bmask="
-                          +Integer.toHexString(blue_mask)+" amask="
-                          +Integer.toHexString(alpha_mask));
+        return "DirectColorModel: rmask=" + Integer.toHexString(red_mask)
+                + " gmask=" + Integer.toHexString(green_mask)
+                + " bmask=" + Integer.toHexString(blue_mask)
+                + " amask=" + Integer.toHexString(alpha_mask);
     }
 }

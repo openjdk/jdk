@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -47,8 +48,10 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.SnippetTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.ThrowsTree;
+import com.sun.source.util.DocTreePath;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -63,6 +66,8 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.ParamTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Style;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.StyledText;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -372,6 +377,81 @@ public class TagletWriterImpl extends TagletWriter {
         return new ContentBuilder(
                 HtmlTree.DT(new RawHtml(header)),
                 HtmlTree.DD(body));
+    }
+
+    @Override
+    protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content) {
+        HtmlTree result = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
+        result.add(Text.of(utils.normalizeNewlines("\n")));
+        content.consumeBy((styles, sequence) -> {
+            CharSequence text = utils.normalizeNewlines(sequence);
+            if (styles.isEmpty()) {
+                result.add(text);
+            } else {
+                Element e = null;
+                String t = null;
+                boolean linkEncountered = false;
+                Set<String> classes = new HashSet<>();
+                for (Style s : styles) {
+                    if (s instanceof Style.Name n) {
+                        classes.add(n.name());
+                    } else if (s instanceof Style.Link l) {
+                        assert !linkEncountered; // TODO: do not assert; pick the first link report on subsequent
+                        linkEncountered = true;
+                        t = l.target();
+                        e = getLinkedElement(element, t);
+                        if (e == null) {
+                            // TODO: diagnostic output
+                        }
+                    } else if (s instanceof Style.Markup) {
+                    } else {
+                        // TODO: transform this if...else into an exhaustive
+                        // switch over the sealed Style hierarchy when "Pattern
+                        // Matching for switch" has been implemented (JEP 406
+                        // and friends)
+                        throw new AssertionError(styles);
+                    }
+                }
+                Content c;
+                if (linkEncountered) {
+                    assert e != null;
+                    String line = sequence.toString();
+                    String strippedLine = line.strip();
+                    int idx = line.indexOf(strippedLine);
+                    assert idx >= 0; // because the stripped line is a substring of the line being stripped
+                    Text whitespace = Text.of(line.substring(0, idx));
+                    // If the leading whitespace is not excluded from the link,
+                    // browsers might exhibit unwanted behavior. For example, a
+                    // browser might display hand-click cursor while user hovers
+                    // over that whitespace portion of the line; or use
+                    // underline decoration.
+                    c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    // We don't care about trailing whitespace.
+                } else {
+                    c = HtmlTree.SPAN(Text.of(sequence));
+                    classes.forEach(((HtmlTree) c)::addStyle);
+                }
+                result.add(c);
+            }
+        });
+        return result;
+    }
+
+    /*
+     * Returns the element that is linked from the context of the referrer using
+     * the provided signature; returns null if such element could not be found.
+     *
+     * This method is to be used when it is the target of the link that is
+     * important, not the container of the link (e.g. was it an @see,
+     * @link/@linkplain or @snippet tags, etc.)
+     */
+    public Element getLinkedElement(Element referer, String signature) {
+        var factory = utils.docTrees.getDocTreeFactory();
+        var docCommentTree = utils.getDocCommentTree(referer);
+        var rootPath = new DocTreePath(utils.getTreePath(referer), docCommentTree);
+        var reference = factory.newReferenceTree(signature);
+        var fabricatedPath = new DocTreePath(rootPath, reference);
+        return utils.docTrees.getElement(fabricatedPath);
     }
 
     @Override

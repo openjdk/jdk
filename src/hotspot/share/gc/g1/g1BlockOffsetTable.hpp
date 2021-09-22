@@ -134,9 +134,6 @@ private:
   // Zero out the entry for _bottom (offset will be zero). Does not check for availability of the
   // memory first.
   void zero_bottom_entry_raw();
-  // Variant of initialize_threshold that does not check for availability of the
-  // memory first.
-  HeapWord* initialize_threshold_raw();
 
   inline size_t block_size(const HeapWord* p) const;
 
@@ -196,11 +193,11 @@ public:
 
   // Initialize the threshold to reflect the first boundary after the
   // bottom of the covered region.
-  HeapWord* initialize_threshold();
+  void initialize_threshold();
 
   void reset_bot() {
     zero_bottom_entry_raw();
-    initialize_threshold_raw();
+    initialize_threshold();
   }
 
   // Return the next threshold, the point at which the table should be
