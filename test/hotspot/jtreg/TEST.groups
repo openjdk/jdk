@@ -399,6 +399,8 @@ hotspot_cds_verify_shared_spaces = \
   runtime/cds/appcds/jvmti/dumpingWithAgent/DumpingWithJavaAgent.java \
   runtime/cds/appcds/sharedStrings/SharedStringsBasic.java
 
+# No need to run ever test with EpsilonGC. A small subset will provide enough
+# coverage. Also avoid some tests that may OOM.
 hotspot_cds_epsilongc = \
   runtime/cds/appcds/HelloTest.java \
   runtime/cds/appcds/MultiProcessSharing.java \
