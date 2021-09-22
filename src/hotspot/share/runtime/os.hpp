@@ -186,8 +186,6 @@ class os: AllStatic {
   static jint init_2(void);                    // Called after command line parsing
                                                // and VM ergonomics processing
 
-  // unset environment variable
-  static bool unsetenv(const char* name);
   // Get environ pointer, platform independently
   static char** get_environ();
 
@@ -441,8 +439,7 @@ class os: AllStatic {
 
   enum ThreadType {
     vm_thread,
-    cgc_thread,        // Concurrent GC thread
-    pgc_thread,        // Parallel GC thread
+    gc_thread,         // GC thread
     java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,

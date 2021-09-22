@@ -2146,7 +2146,7 @@ void PCAdjustPointerClosure::verify_cm(ParCompactionManager* cm) {
   if (Thread::current()->is_VM_thread()) {
     assert(cm == vmthread_cm, "VM threads should use ParCompactionManager from get_vmthread_cm()");
   } else {
-    assert(Thread::current()->is_GC_task_thread(), "Must be a GC thread");
+    assert(Thread::current()->is_Worker_thread(), "Must be a GC thread");
     assert(cm != vmthread_cm, "GC threads should use ParCompactionManager from gc_thread_compaction_manager()");
   }
 }

@@ -210,7 +210,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   }
   RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
-  enqueue_card_after_barrier_filters(p, obj);
+  write_ref_field_post(p, obj);
 }
 
 MAYBE_INLINE_EVACUATION

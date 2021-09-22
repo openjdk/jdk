@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1ParScanThreadState.hpp"
 
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1OopStarChunkedList.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -95,8 +96,7 @@ G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const Heap
   return &_oops_into_optional_regions[hr->index_in_opt_cset()];
 }
 
-template <class T>
-void G1ParScanThreadState::enqueue_card_after_barrier_filters(T* p, oop obj) {
+template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj) {
   assert(obj != nullptr, "Must be");
   if (HeapRegion::is_in_same_region(p, obj)) {
     return;
@@ -113,6 +113,32 @@ void G1ParScanThreadState::enqueue_card_after_barrier_filters(T* p, oop obj) {
   // remembered sets, so skip them.
   if (!dest_attr.is_in_cset()) {
     enqueue_card_if_tracked(dest_attr, p, obj);
+  }
+}
+
+template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
+  assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
+  assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
+  // We relabel all regions that failed evacuation as old gen without remembered,
+  // and so pre-filter them out in the caller.
+  assert(!_g1h->heap_region_containing(o)->in_collection_set(), "Should not try to enqueue reference into collection set region");
+
+#ifdef ASSERT
+  HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
+  assert(region_attr.needs_remset_update() == hr_obj->rem_set()->is_tracked(),
+         "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
+         BOOL_TO_STR(region_attr.needs_remset_update()),
+         BOOL_TO_STR(hr_obj->rem_set()->is_tracked()),
+         hr_obj->hrm_index());
+#endif
+  if (!region_attr.needs_remset_update()) {
+    return;
+  }
+  size_t card_index = ct()->index_for(p);
+  // If the card hasn't been added to the buffer, do it.
+  if (_last_enqueued_card != card_index) {
+    _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
+    _last_enqueued_card = card_index;
   }
 }
 

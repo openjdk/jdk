@@ -88,7 +88,7 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
                                        uint      mt_processing_degree,
                                        bool      mt_discovery,
                                        uint      mt_discovery_degree,
-                                       bool      atomic_discovery,
+                                       bool      concurrent_discovery,
                                        BoolObjectClosure* is_alive_non_header)  :
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
@@ -97,11 +97,11 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
 {
   assert(is_subject_to_discovery != NULL, "must be set");
 
-  _discovery_is_atomic = atomic_discovery;
-  _discovery_is_mt     = mt_discovery;
-  _num_queues          = MAX2(1U, mt_processing_degree);
-  _max_num_queues      = MAX2(_num_queues, mt_discovery_degree);
-  _discovered_refs     = NEW_C_HEAP_ARRAY(DiscoveredList,
+  _discovery_is_concurrent = concurrent_discovery;
+  _discovery_is_mt         = mt_discovery;
+  _num_queues              = MAX2(1U, mt_processing_degree);
+  _max_num_queues          = MAX2(_num_queues, mt_discovery_degree);
+  _discovered_refs         = NEW_C_HEAP_ARRAY(DiscoveredList,
             _max_num_queues * number_of_subclasses_of_ref(), mtGC);
 
   _discoveredSoftRefs    = &_discovered_refs[0];
@@ -315,10 +315,10 @@ size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_
                                                         bool               do_enqueue_and_clear) {
   DiscoveredListIterator iter(refs_list, keep_alive, is_alive, enqueue);
   while (iter.has_next()) {
-    iter.load_ptrs(DEBUG_ONLY(!discovery_is_atomic() /* allow_null_referent */));
+    iter.load_ptrs(DEBUG_ONLY(discovery_is_concurrent() /* allow_null_referent */));
     if (iter.referent() == NULL) {
       // Reference has been cleared since discovery; only possible if
-      // discovery is not atomic (checked by load_ptrs).  Remove
+      // discovery is concurrent (checked by load_ptrs).  Remove
       // reference from list.
       log_dropped_ref(iter, "cleared");
       iter.remove();
@@ -478,7 +478,6 @@ public:
                OopClosure* keep_alive,
                EnqueueDiscoveredFieldClosure* enqueue,
                VoidClosure* complete_gc) override {
-    ResourceMark rm;
     RefProcWorkerTimeTracker t(_phase_times->soft_weak_final_refs_phase_worker_time_sec(), tracker_id(worker_id));
 
     process_discovered_list(worker_id, REF_SOFT, is_alive, keep_alive, enqueue);
@@ -505,7 +504,6 @@ public:
                OopClosure* keep_alive,
                EnqueueDiscoveredFieldClosure* enqueue,
                VoidClosure* complete_gc) override {
-    ResourceMark rm;
     RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::KeepAliveFinalRefsSubPhase, _phase_times, tracker_id(worker_id));
     _ref_processor.process_final_keep_alive_work(_ref_processor._discoveredFinalRefs[worker_id], keep_alive, enqueue);
     // Close the reachable set
@@ -525,7 +523,6 @@ public:
                OopClosure* keep_alive,
                EnqueueDiscoveredFieldClosure* enqueue,
                VoidClosure* complete_gc) override {
-    ResourceMark rm;
     process_discovered_list(worker_id, REF_PHANTOM, is_alive, keep_alive, enqueue);
 
     // Close the reachable set; needed for collectors which keep_alive_closure do
@@ -877,7 +874,7 @@ inline bool ReferenceProcessor::set_discovered_link_st(HeapWord* discovered_addr
                                                        oop next_discovered) {
   assert(!discovery_is_mt(), "must be");
 
-  if (discovery_is_atomic()) {
+  if (discovery_is_stw()) {
     // Do a raw store here: the field will be visited later when processing
     // the discovered references.
     RawAccess<>::oop_store(discovered_addr, next_discovered);
@@ -894,7 +891,7 @@ inline bool ReferenceProcessor::set_discovered_link_mt(HeapWord* discovered_addr
 
   // We must make sure this object is only enqueued once. Try to CAS into the discovered_addr.
   oop retest;
-  if (discovery_is_atomic()) {
+  if (discovery_is_stw()) {
     // Try a raw store here, still making sure that we enqueue only once: the field
     // will be visited later when processing the discovered references.
     retest = RawAccess<>::oop_atomic_cmpxchg(discovered_addr, oop(NULL), next_discovered);
@@ -905,16 +902,15 @@ inline bool ReferenceProcessor::set_discovered_link_mt(HeapWord* discovered_addr
 }
 
 #ifndef PRODUCT
-// Non-atomic (i.e. concurrent) discovery might allow us
-// to observe j.l.References with NULL referents, being those
-// cleared concurrently by mutators during (or after) discovery.
+// Concurrent discovery might allow us to observe j.l.References with NULL
+// referents, being those cleared concurrently by mutators during (or after) discovery.
 void ReferenceProcessor::verify_referent(oop obj) {
-  bool da = discovery_is_atomic();
+  bool concurrent = discovery_is_concurrent();
   oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
-  assert(da ? oopDesc::is_oop(referent) : oopDesc::is_oop_or_null(referent),
+  assert(concurrent ? oopDesc::is_oop_or_null(referent) : oopDesc::is_oop(referent),
          "Bad referent " INTPTR_FORMAT " found in Reference "
-         INTPTR_FORMAT " during %satomic discovery ",
-         p2i(referent), p2i(obj), da ? "" : "non-");
+         INTPTR_FORMAT " during %sconcurrent discovery ",
+         p2i(referent), p2i(obj), concurrent ? "" : "non-");
 }
 #endif
 
@@ -924,7 +920,7 @@ bool ReferenceProcessor::is_subject_to_discovery(oop const obj) const {
 
 // We mention two of several possible choices here:
 // #0: if the reference object is not in the "originating generation"
-//     (or part of the heap being collected, indicated by our "span"
+//     (or part of the heap being collected, indicated by our "span")
 //     we don't treat it specially (i.e. we scan it as we would
 //     a normal oop, treating its references as strong references).
 //     This means that references can't be discovered unless their
@@ -936,18 +932,18 @@ bool ReferenceProcessor::is_subject_to_discovery(oop const obj) const {
 //     the referent is in the generation (span) being currently collected
 //     then we can discover the reference object, provided
 //     the object has not already been discovered by
-//     a different concurrently running collector (as may be the
-//     case, for instance, if the reference object is in CMS and
-//     the referent in DefNewGeneration), and provided the processing
+//     a different concurrently running discoverer (as may be the
+//     case, for instance, if the reference object is in G1 old gen and
+//     the referent in G1 young gen), and provided the processing
 //     of this reference object by the current collector will
-//     appear atomic to every other collector in the system.
-//     (Thus, for instance, a concurrent collector may not
+//     appear atomically to every other discoverer in the system.
+//     (Thus, for instance, a concurrent discoverer may not
 //     discover references in other generations even if the
 //     referent is in its own generation). This policy may,
 //     in certain cases, enqueue references somewhat sooner than
 //     might Policy #0 above, but at marginally increased cost
 //     and complexity in processing these references.
-//     We call this choice the "RefeferentBasedDiscovery" policy.
+//     We call this choice the "ReferentBasedDiscovery" policy.
 bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // Make sure we are discovering refs (rather than processing discovered refs).
   if (!_discovering_refs || !RegisterReferences) {
@@ -1018,9 +1014,9 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     verify_referent(obj);
     // Discover if and only if EITHER:
     // .. reference is in our span, OR
-    // .. we are an atomic collector and referent is in our span
+    // .. we are a stw discoverer and referent is in our span
     if (is_subject_to_discovery(obj) ||
-        (discovery_is_atomic() &&
+        (discovery_is_stw() &&
          is_subject_to_discovery(java_lang_ref_Reference::unknown_referent_no_keepalive(obj)))) {
     } else {
       return false;

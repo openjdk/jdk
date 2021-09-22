@@ -38,7 +38,7 @@ class G1CollectionSet;
 class G1CollectorState;
 class G1ConcurrentMark;
 class G1EvacFailureRegions;
-class G1EvacuationInfo;
+class G1EvacInfo;
 class G1GCPhaseTimes;
 class G1HotCardCache;
 class G1HRPrinter;
@@ -89,11 +89,11 @@ class G1YoungCollector {
 
   void wait_for_root_region_scanning();
 
-  void calculate_collection_set(G1EvacuationInfo* evacuation_info, double target_pause_time_ms);
+  void calculate_collection_set(G1EvacInfo* evacuation_info, double target_pause_time_ms);
 
   void set_young_collection_default_active_worker_threads();
 
-  void pre_evacuate_collection_set(G1EvacuationInfo* evacuation_info, G1ParScanThreadStateSet* pss);
+  void pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* pss);
   // Actually do the work of evacuating the parts of the collection set.
   // The has_optional_evacuation_work flag for the initial collection set
   // evacuation indicates whether one or more optional evacuation steps may
@@ -120,9 +120,9 @@ class G1YoungCollector {
   void process_discovered_references(G1ParScanThreadStateSet* per_thread_states);
   void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states);
   void post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
-                               G1EvacuationInfo* evacuation_info);
+                               G1EvacInfo* evacuation_info);
 
-  void post_evacuate_collection_set(G1EvacuationInfo* evacuation_info,
+  void post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 
 #if TASKQUEUE_STATS

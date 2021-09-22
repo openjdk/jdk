@@ -38,12 +38,12 @@ TEST_VM_ASSERT_MSG(SafepointLockAssertTest, always_check,
 
 TEST_VM_ASSERT_MSG(SafepointLockAssertTest, never_check,
     ".*This lock should never have a safepoint check for Java threads: SFPT_Test_lock") {
-  MutexLocker ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", Mutex::_safepoint_check_never),
+  MutexLocker ml(new Mutex(Mutex::nosafepoint, "SFPT_Test_lock", Mutex::_safepoint_check_never),
                  Mutex::_safepoint_check_flag);
 }
 
 TEST_VM_ASSERT_MSG(SafepointLockAssertTest, special_locks,
-    ".*Special locks or below should never safepoint") {
+    ".*Locks below nosafepoint rank should never safepoint: SpecialTest_lock") {
   MutexLocker ml(new Mutex(Mutex::special, "SpecialTest_lock", Mutex::_safepoint_check_always),
                  Mutex::_safepoint_check_flag);
 }

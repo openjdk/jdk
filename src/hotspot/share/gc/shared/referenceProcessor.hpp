@@ -216,8 +216,7 @@ private:
                                                // (and further processing).
 
   bool        _discovering_refs;        // true when discovery enabled
-  bool        _discovery_is_atomic;     // if discovery is atomic wrt
-                                        // other collectors in configuration
+  bool        _discovery_is_concurrent; // if discovery is concurrent to the mutator
   bool        _discovery_is_mt;         // true if reference discovery is MT.
 
   uint        _next_id;                 // round-robin mod _num_queues counter in
@@ -272,7 +271,7 @@ private:
   // removed elements.
 
   // Traverse the list and remove any Refs whose referents are alive,
-  // or NULL if discovery is not atomic. Enqueue and clear the reference for
+  // or NULL if discovery is concurrent. Enqueue and clear the reference for
   // others if do_enqueue_and_clear is set.
   size_t process_discovered_list_work(DiscoveredList&    refs_list,
                                       BoolObjectClosure* is_alive,
@@ -377,7 +376,7 @@ public:
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
-                     bool atomic_discovery = true,
+                     bool concurrent_discovery = false,
                      BoolObjectClosure* is_alive_non_header = NULL);
 
   // RefDiscoveryPolicy values
@@ -406,8 +405,9 @@ public:
   void disable_discovery()  { _discovering_refs = false; }
   bool discovery_enabled()  { return _discovering_refs;  }
 
-  // whether discovery is atomic wrt other collectors
-  bool discovery_is_atomic() const { return _discovery_is_atomic; }
+  // whether discovery is concurrent to the mutator, or done in an stw pause.
+  bool discovery_is_concurrent() const { return _discovery_is_concurrent; }
+  bool discovery_is_stw() const { return !discovery_is_concurrent(); }
 
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }

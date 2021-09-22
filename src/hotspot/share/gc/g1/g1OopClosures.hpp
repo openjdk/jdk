@@ -111,6 +111,7 @@ public:
   }
 };
 
+// RAII object to properly set the _skip_card_enqueue field in G1ScanEvacuatedObjClosure.
 class G1SkipCardEnqueueSetter : public StackObj {
   G1ScanEvacuatedObjClosure* _closure;
 

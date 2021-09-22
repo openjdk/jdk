@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1EvacuationInfo.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
@@ -83,7 +83,7 @@ void G1NewTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* tim
   send_g1_young_gc_event();
 }
 
-void G1NewTracer::report_evacuation_info(G1EvacuationInfo* info) {
+void G1NewTracer::report_evacuation_info(G1EvacInfo* info) {
   send_evacuation_info_event(info);
 }
 
@@ -141,7 +141,7 @@ void G1NewTracer::send_g1_young_gc_event() {
   }
 }
 
-void G1NewTracer::send_evacuation_info_event(G1EvacuationInfo* info) {
+void G1NewTracer::send_evacuation_info_event(G1EvacInfo* info) {
   EventEvacuationInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
