@@ -30,7 +30,7 @@ import java.lang.reflect.Method;
 
 /*
  * @test
- * @requires vm.flagless
+ * @requires vm.flagless & vm.compiler1.enabled
  * @summary Test if compilation levels are used correctly in the framework.
  *          This test partly runs directly the test VM which normally does and should not happen in user tests.
  * @library /test/lib /

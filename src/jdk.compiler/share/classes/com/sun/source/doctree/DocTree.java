@@ -37,7 +37,7 @@ public interface DocTree {
     enum Kind {
         /**
          * Used for instances of {@link AttributeTree}
-         * representing an HTML attribute.
+         * representing an attribute in an HTML element or tag.
          */
         ATTRIBUTE,
 
@@ -203,6 +203,12 @@ public interface DocTree {
          * representing an {@code @since} tag.
          */
         SINCE("since"),
+
+        /**
+         * Used for instances of {@link SnippetTree}
+         * representing an {@code @snippet} tag.
+         */
+        SNIPPET("snippet"),
 
         /**
          * Used for instances of {@link EndElementTree}
