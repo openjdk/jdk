@@ -52,7 +52,8 @@
  *    Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
  *                                  [-o none|info|verbose] [-h to show options]
  *    Options:
- *    -b, --bind-address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
+ *    -b, --bind-address    - Address to bind to. Default: 127.0.0.1 (loopback).
+ *                            For 0.0.0.0 (all interfaces) use -b 0.0.0.0 or -b ::0.
  *    -d, --directory       - Directory to serve. Default: current directory.
  *    -o, --output          - Output format. none|info|verbose. Default: info.
  *    -p, --port            - Port to listen on. Default: 8000.

@@ -31,7 +31,6 @@
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -53,15 +52,7 @@ public class CommandLinePositiveTest {
     static final Path TEST_DIR = CWD.resolve("CommandLinePositiveTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
     static final String TEST_DIR_STR = TEST_DIR.toString();
-    static final String LOCALHOST_ADDR;
-
-    static {
-        try {
-            LOCALHOST_ADDR = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Cannot determine local host address");
-        }
-    }
+    static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
     @BeforeTest
     public void setup() throws IOException {
@@ -92,8 +83,8 @@ public class CommandLinePositiveTest {
         out.println("\n--- testDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
-                .shouldContain("URL http://" + LOCALHOST_ADDR);
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
+                        "URL http://" + LOOPBACK_ADDR);
     }
 
     @DataProvider
@@ -104,8 +95,8 @@ public class CommandLinePositiveTest {
         out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
-                .shouldContain("URL http://" + LOCALHOST_ADDR);
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
+                        "URL http://" + LOOPBACK_ADDR);
     }
 
     @DataProvider
@@ -117,7 +108,8 @@ public class CommandLinePositiveTest {
 
     static final String OPTIONS_TEXT = """
             Options:
-            -b, --bind-address    - Address to bind to. Default: 0.0.0.0 (all interfaces).
+            -b, --bind-address    - Address to bind to. Default: 127.0.0.1 (loopback).
+                                    For 0.0.0.0 (all interfaces) use -b 0.0.0.0 or -b ::0.
             -d, --directory       - Directory to serve. Default: current directory.
             -o, --output          - Output format. none|info|verbose. Default: info.
             -p, --port            - Port to listen on. Default: 8000.
@@ -139,12 +131,25 @@ public class CommandLinePositiveTest {
     public Object[][] bindOptions() { return new Object[][] {{"-b"}, {"--bind-address"}}; }
 
     @Test(dataProvider = "bindOptions")
+    public void testBindAllInterfaces(String opt) throws Throwable {
+        out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0.0.0.0")
+                .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
+                .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
+        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "::0")
+                .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
+                .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
+    }
+
+    @Test(dataProvider = "bindOptions")
     public void testLastOneWinsBindAddress(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsBindAddress, opt=\"%s\" ".formatted(opt));
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "123.4.5.6", opt, LOCALHOST_ADDR)
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "123.4.5.6", opt, LOOPBACK_ADDR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                        "URL http://" + LOCALHOST_ADDR);
+                        "URL http://" + LOOPBACK_ADDR);
 
     }
 
@@ -153,8 +158,8 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR, opt, TEST_DIR_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
-                .shouldContain("URL http://" + LOCALHOST_ADDR);
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
+                        "URL http://" + LOOPBACK_ADDR);
     }
 
     @DataProvider
@@ -165,8 +170,8 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsOutput, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "none", opt, "verbose")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
-                .shouldContain("URL http://" + LOCALHOST_ADDR);
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
+                        "URL http://" + LOOPBACK_ADDR);
     }
 
     @Test(dataProvider = "portOptions")
@@ -174,8 +179,8 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "-999", opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
-                .shouldContain("URL http://" + LOCALHOST_ADDR);
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
+                        "URL http://" + LOOPBACK_ADDR);
     }
 
     @AfterTest

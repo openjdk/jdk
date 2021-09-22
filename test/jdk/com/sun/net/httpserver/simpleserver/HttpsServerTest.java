@@ -62,7 +62,7 @@ import static org.testng.Assert.assertThrows;
 public class HttpsServerTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
-    static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
+    static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
@@ -95,21 +95,20 @@ public class HttpsServerTest {
 
         final var s1 = HttpsServer.create(null, 0);
         assertNull(s1.getAddress());
-        s1.bind(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
-        assertEquals(s1.getAddress().getAddress(), LOOPBACK_ADDR);
+        s1.bind((LOOPBACK_ADDR), 0);
+        assertEquals(s1.getAddress().getAddress(), LOOPBACK_ADDR.getAddress());
 
         final var s2 = HttpsServer.create(null, 0, "/foo/", new Handler());
         assertNull(s2.getAddress());
-        s2.bind(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
-        assertEquals(s2.getAddress().getAddress(), LOOPBACK_ADDR);
+        s2.bind(LOOPBACK_ADDR, 0);
+        assertEquals(s2.getAddress().getAddress(), LOOPBACK_ADDR.getAddress());
         s2.removeContext("/foo/");  // throws if context doesn't exist
     }
 
     @Test
     public void testExchange() throws Exception {
         var filter = new Filter();
-        var server = HttpsServer.create(
-                new InetSocketAddress(LOOPBACK_ADDR, 0), 0, "/test", new Handler(), filter);
+        var server = HttpsServer.create(LOOPBACK_ADDR, 0, "/test", new Handler(), filter);
         server.setHttpsConfigurator(new HttpsConfigurator(sslContext));
         server.start();
         try {

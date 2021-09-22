@@ -69,7 +69,7 @@ public class OutputFilterTest {
     static final Class<IOException> IOE = IOException.class;
 
     static final OutputStream OUT = new ByteArrayOutputStream();
-    static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
+    static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
     static final boolean ENABLE_LOGGING = true;
     static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
@@ -114,7 +114,7 @@ public class OutputFilterTest {
         var baos = new ByteArrayOutputStream();
         var handler = new RequestPathHandler();
         var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
-        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10, "/", handler, filter);
+        var server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler, filter);
         server.start();
         try (baos) {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -166,7 +166,7 @@ public class OutputFilterTest {
         var baos = new ByteArrayOutputStream();
         var handler = new NoRequestPathHandler();
         var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
-        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10, "/", handler, filter);
+        var server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler, filter);
         server.start();
         try (baos) {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -230,10 +230,10 @@ public class OutputFilterTest {
         var handler = new ThrowingHandler();
         HttpServer server;
         if (level.equals(NONE)) {
-            server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10, "/", handler);
+            server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler);
         } else {
             var filter = SimpleFileServer.createOutputFilter(baos, level);
-            server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10, "/", handler, filter);
+            server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler, filter);
         }
         server.start();
         try (baos) {
@@ -258,7 +258,7 @@ public class OutputFilterTest {
         var baos = new ByteArrayOutputStream();
         var handler = SimpleFileServer.createFileHandler(Path.of(".").toAbsolutePath());
         var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
-        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 0, "/", handler, filter);
+        var server = HttpServer.create(LOOPBACK_ADDR, 0, "/", handler, filter);
         server.start();
         try (baos) {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

@@ -23,6 +23,7 @@
 
 package sun.net.httpserver.simpleserver;
 
+import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 
@@ -31,15 +32,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
 
 /**
  * A class that provides a simple HTTP file server to serve the content of
@@ -52,7 +49,7 @@ import java.util.concurrent.Executors;
  * a given output stream.
  *
  * <p> Unless specified as arguments, the default values are:<ul>
- * <li>bind address: wildcard address (all interfaces)</li>
+ * <li>bind address: 127.0.0.1 (loopback)</li>
  * <li>directory: current working directory</li>
  * <li>outputLevel: info</li></ul>
  * <li>port: 8000</li>
@@ -61,7 +58,7 @@ import java.util.concurrent.Executors;
  * module.
  */
 final class SimpleFileServerImpl {
-    private static final InetAddress DEFAULT_ADDR = null;
+    private static final InetAddress DEFAULT_ADDR = InetAddress.getLoopbackAddress();
     private static final int DEFAULT_PORT = 8000;
     private static final Path DEFAULT_ROOT = Path.of("").toAbsolutePath();
     private static final OutputLevel DEFAULT_OUTPUT_LEVEL = OutputLevel.INFO;
@@ -133,7 +130,7 @@ final class SimpleFileServerImpl {
             var socketAddr = new InetSocketAddress(addr, port);
             var server = SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
             server.start();
-            out.printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());
+            out.printStartMessage(root, server);
         } catch (Throwable t) {
             out.reportError(ResourceBundleHelper.getMessage("err.server.config.failed", t.getMessage()));
             return Startup.SYSERR.statusCode;
@@ -151,8 +148,11 @@ final class SimpleFileServerImpl {
             this.writer = Objects.requireNonNull(writer);
         }
 
-        void printStartMessage(Path root, InetAddress inetAddr, int port)
-                throws UnknownHostException {
+        void printStartMessage(Path root, HttpServer server)
+                throws UnknownHostException
+        {
+            var port = server.getAddress().getPort();
+            var inetAddr = server.getAddress().getAddress();
             var isAnyLocal = inetAddr.isAnyLocalAddress();
             var addr = isAnyLocal ? InetAddress.getLocalHost().getHostAddress() : inetAddr.getHostAddress();
             if (isAnyLocal) {
