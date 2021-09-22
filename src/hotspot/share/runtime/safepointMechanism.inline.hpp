@@ -72,15 +72,22 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
   //  We are armed but we should ignore suspend operations.
   if (global_poll() || // Safepoint
       thread->handshake_state()->has_a_non_suspend_operation() || // Non-suspend handshake
-      !StackWatermarkSet::processing_started(thread)) { // StackWater processing is not started
+      !StackWatermarkSet::processing_started(thread)) { // StackWatermark processing is not started
     return true;
   }
+
+  // It have boiled down to two possibilities.
+  // 1: We have nothing to process, this just a disarm poll.
+  // 2: We have a suspend handshake, which cannot be processed.
+  // We update the poll value in case of a disarm, to reduce false positive.
+  update_poll_values(thread);
+
   // When the JavaThread is blocked:
   // 1: A suspend handshake targets the JavaThread.
   // 2: A safepoint takes place.
-  // 3: The JavaThread wakes-up from blocked and do not allow suspend.
+  // 3: The JavaThread wakes-up from blocked and does not allow suspend.
   // We are now about to avoid processing and thus no cross modify fence will be executed.
-  // Therefore we executed it here.
+  // Therefore we execute it here.
   OrderAccess::cross_modify_fence();
   return false;
 }

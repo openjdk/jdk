@@ -79,7 +79,7 @@ public:
   // Called to ensure that processing of the thread is started
   static void start_processing(JavaThread* jt, StackWatermarkKind kind);
 
-  // Returns true if all StackWaters have been started.
+  // Returns true if all StackWatermarks have been started.
   static bool processing_started(JavaThread* jt);
 
   // Called to finish the processing of a thread
