@@ -857,6 +857,36 @@ public abstract class DCTree implements DocTree {
         }
     }
 
+    public static class DCSnippet extends DCInlineTag implements SnippetTree {
+        public final List<? extends DocTree> attributes;
+        public final DCText body;
+
+        public DCSnippet(List<DCTree> attributes, DCText body) {
+            this.body = body;
+            this.attributes = attributes;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.SNIPPET;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitSnippet(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getAttributes() {
+            return attributes;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public TextTree getBody() {
+            return body;
+        }
+    }
+
     public static class DCStartElement extends DCEndPosTree<DCStartElement> implements StartElementTree {
         public final Name name;
         public final List<DCTree> attrs;

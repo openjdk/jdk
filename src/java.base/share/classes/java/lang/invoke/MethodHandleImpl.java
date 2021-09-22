@@ -497,12 +497,12 @@ abstract class MethodHandleImpl {
             if (newArity == collectArg+1 &&
                 type.parameterType(collectArg).isAssignableFrom(newType.parameterType(collectArg))) {
                 // if arity and trailing parameter are compatible, do normal thing
-                return asTypeCache = asFixedArity().asType(newType);
+                return asFixedArity().asType(newType);
             }
             // check cache
             MethodHandle acc = asCollectorCache;
             if (acc != null && acc.type().parameterCount() == newArity)
-                return asTypeCache = acc.asType(newType);
+                return acc.asType(newType);
             // build and cache a collector
             int arrayLength = newArity - collectArg;
             MethodHandle collector;
@@ -513,7 +513,7 @@ abstract class MethodHandleImpl {
                 throw new WrongMethodTypeException("cannot build collector", ex);
             }
             asCollectorCache = collector;
-            return asTypeCache = collector.asType(newType);
+            return collector.asType(newType);
         }
 
         @Override
@@ -741,7 +741,7 @@ abstract class MethodHandleImpl {
             } else {
                 wrapper = newTarget; // no need for a counting wrapper anymore
             }
-            return (asTypeCache = wrapper);
+            return wrapper;
         }
 
         boolean countDown() {
@@ -1335,7 +1335,7 @@ abstract class MethodHandleImpl {
         public MethodHandle asTypeUncached(MethodType newType) {
             // This MH is an alias for target, except for the MemberName
             // Drop the MemberName if there is any conversion.
-            return asTypeCache = target.asType(newType);
+            return target.asType(newType);
         }
     }
 
@@ -1398,7 +1398,7 @@ abstract class MethodHandleImpl {
         public MethodHandle asTypeUncached(MethodType newType) {
             // This MH is an alias for target, except for the intrinsic name
             // Drop the name if there is any conversion.
-            return asTypeCache = target.asType(newType);
+            return target.asType(newType);
         }
 
         @Override

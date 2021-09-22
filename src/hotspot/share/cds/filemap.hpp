@@ -137,6 +137,7 @@ public:
 
 
 class FileMapRegion: private CDSFileMapRegion {
+public:
   void assert_is_heap_region() const {
     assert(_is_heap_region, "must be heap region");
   }
@@ -144,7 +145,6 @@ class FileMapRegion: private CDSFileMapRegion {
     assert(!_is_heap_region, "must not be heap region");
   }
 
-public:
   static FileMapRegion* cast(CDSFileMapRegion* p) {
     return (FileMapRegion*)p;
   }
@@ -180,9 +180,10 @@ public:
 };
 
 class FileMapHeader: private CDSFileMapHeaderBase {
-  friend class CDSOffsets;
+  friend class CDSConstants;
   friend class VMStructs;
 
+private:
   size_t _header_size;
 
   // The following fields record the states of the VM during dump time.
@@ -209,7 +210,6 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
   char  _jvm_ident[JVM_IDENT_MAX];  // identifier string of the jvm that created this dump
-
   // size of the base archive name including NULL terminator
   size_t _base_archive_name_size;
 
@@ -421,6 +421,8 @@ public:
   void set_requested_base(char* b)                  { header()->set_requested_base(b); }
   char* requested_base_address()           const    { return header()->requested_base_address(); }
 
+  narrowOop heap_obj_roots()               const    { return header()->heap_obj_roots(); }
+
   class DynamicArchiveHeader* dynamic_header() const {
     assert(!is_static(), "must be");
     return (DynamicArchiveHeader*)header();
@@ -468,13 +470,15 @@ public:
   size_t  read_bytes(void* buffer, size_t count);
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
   void  unmap_regions(int regions[], int num_regions);
-  void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  void  map_or_load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
   void  patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
                                      int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
   MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
+  bool  read_region(int i, char* base, size_t size);
+  char* map_bitmap_region();
   void  unmap_region(int i);
   bool  verify_region_checksum(int i);
   void  close();
@@ -574,25 +578,28 @@ public:
                          MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
   void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
+  bool  can_use_heap_regions();
+  bool  load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
-  char* map_bitmap_region();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
-  bool  read_region(int i, char* base, size_t size);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
   static size_t set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_size);
   static size_t write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_offset, char* buffer);
+
+  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
 
   // The starting address of spc, as calculated with CompressedOop::decode_non_null()
   address start_address_as_decoded_with_current_oop_encoding_mode(FileMapRegion* spc) {
     return decode_start_address(spc, true);
   }
-
+public:
   // The starting address of spc, as calculated with HeapShared::decode_from_archive()
   address start_address_as_decoded_from_archive(FileMapRegion* spc) {
     return decode_start_address(spc, false);
   }
 
-  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
+private:
 
 #if INCLUDE_JVMTI
   static ClassPathEntry** _classpath_entries_for_jvmti;

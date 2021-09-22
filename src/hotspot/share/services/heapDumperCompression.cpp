@@ -200,8 +200,8 @@ CompressionBackend::CompressionBackend(AbstractWriter* writer,
   _written(0),
   _writer(writer),
   _compressor(compressor),
-  _lock(new (std::nothrow) PaddedMonitor(Mutex::leaf, "HProf Compression Backend",
-    true, Mutex::_safepoint_check_never)) {
+  _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "HProfCompressionBackend_lock",
+    Mutex::_safepoint_check_never)) {
   if (_writer == NULL) {
     set_error("Could not allocate writer");
   } else if (_lock == NULL) {

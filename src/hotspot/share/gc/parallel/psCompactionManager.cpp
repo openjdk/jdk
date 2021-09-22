@@ -58,10 +58,6 @@ ParCompactionManager::ParCompactionManager() {
   _old_gen = heap->old_gen();
   _start_array = old_gen()->start_array();
 
-  marking_stack()->initialize();
-  _objarray_stack.initialize();
-  _region_stack.initialize();
-
   reset_bitmap_query_cache();
 }
 
@@ -96,8 +92,8 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
 
   _shadow_region_array = new (ResourceObj::C_HEAP, mtGC) GrowableArray<size_t >(10, mtGC);
 
-  _shadow_region_monitor = new Monitor(Mutex::barrier, "CompactionManager monitor",
-                                       Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never);
+  _shadow_region_monitor = new Monitor(Mutex::nosafepoint, "CompactionManager_lock",
+                                       Monitor::_safepoint_check_never);
 }
 
 void ParCompactionManager::reset_all_bitmap_query_caches() {
@@ -107,6 +103,12 @@ void ParCompactionManager::reset_all_bitmap_query_caches() {
   }
 }
 
+void ParCompactionManager::flush_all_string_dedup_requests() {
+  uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().total_workers();
+  for (uint i=0; i<=parallel_gc_threads; i++) {
+    _manager_array[i]->flush_string_dedup_requests();
+  }
+}
 
 ParCompactionManager*
 ParCompactionManager::gc_thread_compaction_manager(uint index) {

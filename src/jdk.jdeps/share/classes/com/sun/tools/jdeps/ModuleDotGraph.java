@@ -147,7 +147,7 @@ public class ModuleDotGraph {
      */
     private Graph<String> gengraph(Configuration cf) {
         Graph.Builder<String> builder = new Graph.Builder<>();
-        cf.modules().stream()
+        cf.modules()
             .forEach(rm -> {
                 String mn = rm.name();
                 builder.addNode(mn);
@@ -406,7 +406,7 @@ public class ModuleDotGraph {
                 .collect(toSet());
 
             String mn = md.name();
-            edges.stream().forEach(dn -> {
+            edges.forEach(dn -> {
                 String attr;
                 if (dn.equals("java.base")) {
                     attr = "color=\"" + attributes.requiresMandatedColor() + "\"";

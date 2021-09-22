@@ -408,7 +408,7 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
 HandshakeState::HandshakeState(JavaThread* target) :
   _handshakee(target),
   _queue(),
-  _lock(Monitor::leaf, "HandshakeState", Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never),
+  _lock(Monitor::nosafepoint, "HandshakeState_lock", Monitor::_safepoint_check_never),
   _active_handshaker(),
   _suspended(false),
   _async_suspend_handshake(false)
