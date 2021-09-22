@@ -48,15 +48,13 @@ private:
   ZPageAllocator*        _page_allocator;
   ZActivatedArray<ZPage> _unsafe_to_recycle;
 
-  ZPage* clone_if_unsafe(ZPage* page);
-
 public:
   ZSafePageRecycle(ZPageAllocator* page_allocator);
 
   void activate();
   void deactivate();
 
-  void recycle(ZPage* page);
+  ZPage* register_and_clone_if_activated(ZPage* page);
 };
 
 class ZPageAllocator {
@@ -107,11 +105,9 @@ private:
   bool alloc_page_or_stall(ZPageAllocation* allocation);
   ZPage* alloc_page_create(ZPageAllocation* allocation);
   ZPage* alloc_page_finalize(ZPageAllocation* allocation);
-  void alloc_page_failed(ZPageAllocation* allocation);
+  void free_pages_alloc_failed(ZPageAllocation* allocation);
 
   void satisfy_stalled();
-
-  void free_page_inner(ZPage* page, bool reclaimed);
 
   size_t uncommit(uint64_t* timeout);
 

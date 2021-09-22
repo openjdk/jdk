@@ -70,7 +70,7 @@ void ZSafePageRecycle::deactivate() {
   _unsafe_to_recycle.deactivate_and_apply(delete_function);
 }
 
-ZPage* ZSafePageRecycle::clone_if_unsafe(ZPage* page) {
+ZPage* ZSafePageRecycle::register_and_clone_if_activated(ZPage* page) {
   if (!_unsafe_to_recycle.is_activated()) {
     // The page has no concurrent readers.
     // Recycle original page.
@@ -94,16 +94,6 @@ ZPage* ZSafePageRecycle::clone_if_unsafe(ZPage* page) {
   // The original page has been registered to be deleted by another thread.
   // Recycle the cloned page.
   return cloned_page;
-}
-
-void ZSafePageRecycle::recycle(ZPage* page) {
-  // The recycle_guard will hand out a cloned page if the current page is
-  // unsafe to recycle at this point. Note that the original page might be
-  // deleted as soon it has been passed into the recycle_guard.
-  ZPage* const to_recycle = clone_if_unsafe(page);
-
-  // Perform the actual recycle
-  _page_allocator->recycle_page(to_recycle);
 }
 
 enum ZPageAllocationStall {
@@ -654,27 +644,6 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
   return NULL;
 }
 
-void ZPageAllocator::alloc_page_failed(ZPageAllocation* allocation) {
-  ZLocker<ZLock> locker(&_lock);
-
-  size_t freed = 0;
-
-  // Free any allocated/flushed pages
-  ZListRemoveIterator<ZPage> iter(allocation->pages());
-  for (ZPage* page; iter.next(&page);) {
-    freed += page->size();
-    free_page_inner(page, false /* reclaimed */);
-  }
-
-  // Adjust capacity and used to reflect the failed capacity increase
-  const size_t remaining = allocation->size() - freed;
-  decrease_used(remaining, false /* reclaimed */, allocation->generation_id());
-  decrease_capacity(remaining, true /* set_max_capacity */);
-
-  // Try satisfy stalled allocations
-  satisfy_stalled();
-}
-
 ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age) {
   EventZPageAllocation event;
 
@@ -695,7 +664,7 @@ retry:
   if (page == NULL) {
     // Failed to commit or map. Clean up and retry, in the hope that
     // we can still allocate by flushing the page cache (more aggressively).
-    alloc_page_failed(&allocation);
+    free_pages_alloc_failed(&allocation);
     goto retry;
   }
 
@@ -751,32 +720,72 @@ void ZPageAllocator::recycle_page(ZPage* page) {
   _cache.free_page(page);
 }
 
-void ZPageAllocator::free_page_inner(ZPage* page, bool reclaimed) {
-  // Update used statistics
-  decrease_used(page->size(), reclaimed, page->generation_id());
-
-  // Recycle page
-  _safe_recycle.recycle(page);
-}
-
 void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
+  const ZGenerationId generation_id = page->generation_id();
+  ZPage* const to_recycle = _safe_recycle.register_and_clone_if_activated(page);
+
   ZLocker<ZLock> locker(&_lock);
 
+  // Update used statistics
+  decrease_used(to_recycle->size(), reclaimed, generation_id);
+
   // Free page
-  free_page_inner(page, reclaimed);
+  recycle_page(to_recycle);
 
   // Try satisfy stalled allocations
   satisfy_stalled();
 }
 
 void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages, bool gc_relocation) {
+  ZArray<ZPage*> to_recycle;
+
+  size_t generation_used[2] = {0, 0};
+
+  ZArrayIterator<ZPage*> pages_iter(pages);
+  for (ZPage* page; pages_iter.next(&page);) {
+    generation_used[(int)page->generation_id()] += page->size();
+    to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
+  }
+
   ZLocker<ZLock> locker(&_lock);
 
+  decrease_used(generation_used[(int)ZGenerationId::young], gc_relocation, ZGenerationId::young);
+  decrease_used(generation_used[(int)ZGenerationId::old], gc_relocation, ZGenerationId::old);
+
   // Free pages
-  ZArrayIterator<ZPage*> iter(pages);
+  ZArrayIterator<ZPage*> iter(&to_recycle);
   for (ZPage* page; iter.next(&page);) {
-    free_page_inner(page, gc_relocation);
+    recycle_page(page);
   }
+
+  // Try satisfy stalled allocations
+  satisfy_stalled();
+}
+
+void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
+  ZArray<ZPage*> to_recycle;
+
+  ZListRemoveIterator<ZPage> allocation_pages_iter(allocation->pages());
+  for (ZPage* page; allocation_pages_iter.next(&page);) {
+    assert(page->generation_id() == allocation->generation_id(), "Must be the same generation");
+    to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
+  }
+
+  ZLocker<ZLock> locker(&_lock);
+
+  size_t freed = 0;
+
+  // Free any allocated/flushed pages
+  ZArrayIterator<ZPage*> iter(&to_recycle);
+  for (ZPage* page; iter.next(&page);) {
+    freed += page->size();
+    recycle_page(page);
+  }
+
+  // Adjust capacity and used to reflect the failed capacity increase
+  const size_t remaining = allocation->size() - freed;
+  decrease_used(remaining, false /* reclaimed */, allocation->generation_id());
+  decrease_capacity(remaining, true /* set_max_capacity */);
 
   // Try satisfy stalled allocations
   satisfy_stalled();
