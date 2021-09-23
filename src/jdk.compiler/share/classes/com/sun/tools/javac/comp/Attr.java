@@ -5627,40 +5627,44 @@ public class Attr extends JCTree.Visitor {
     private class SerialTypeVisitor extends ElementKindVisitor14<Void, JCClassDecl> {
         SerialTypeVisitor(){super();}
 
-        final Set<String> serialMethodNames = Set.of("writeObject", "writeReplace",
-                                                     "readObject",  "readObjectNoData", "readResolve");
+        private static final Set<String> serialMethodNames =
+	    Set.of("writeObject", "writeReplace",
+		   "readObject",  "readObjectNoData",
+		   "readResolve");
 
-        final Set<String> serialFieldNames = Set.of("serialVersionUID", "serialPersistentFields");
+        private static final Set<String> serialFieldNames =
+	    Set.of("serialVersionUID", "serialPersistentFields");
             
-        final Set<Modifier> PRIVATE_STATIC_FINAL_MODS =
+	// TODO these check should likely be expressed in terms of flags
+        private static final Set<Modifier> PRIVATE_STATIC_FINAL_MODS =
             Set.of(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
 
-        final Set<Modifier> STATIC_FINAL_MODS = Set.of(Modifier.STATIC, Modifier.FINAL);
+        private static final Set<Modifier> STATIC_FINAL_MODS = Set.of(Modifier.STATIC, Modifier.FINAL);
 
-        final Set<Modifier> ABSTRACT_STATIC_MODS = Set.of(Modifier.ABSTRACT, Modifier.STATIC);
+        private static final Set<Modifier> ABSTRACT_STATIC_MODS = Set.of(Modifier.ABSTRACT, Modifier.STATIC);
 
-        final Set<Modifier> PRIVATE_MODS = Set.of(Modifier.PRIVATE);
-        final Set<Modifier> STATIC_MODS =  Set.of(Modifier.STATIC);
+        private static final Set<Modifier> PRIVATE_MODS = Set.of(Modifier.PRIVATE);
+        private static final Set<Modifier> STATIC_MODS =  Set.of(Modifier.STATIC);
 
         // Type of serialVersionUID
-        final Type LONG_TYPE = syms.longType;
+        private final Type LONG_TYPE = syms.longType;
 
         // Type of serialPersistentFields
-        final TypeMirror OSF_TYPE = syms.objectStreamFieldType;
+        private final TypeMirror OSF_TYPE = syms.objectStreamFieldType;
 
-        final Type OIS_TYPE = syms.objectInputStreamType;
-        final Type OOS_TYPE = syms.objectOutputStreamType;
-        final Type VOID_TYPE = syms.voidType;
-        final Type OBJECT_TYPE = syms.objectType;
+        private final Type OIS_TYPE = syms.objectInputStreamType;
+        private final Type OOS_TYPE = syms.objectOutputStreamType;
+        private final Type VOID_TYPE = syms.voidType;
+        private final Type OBJECT_TYPE = syms.objectType;
 
         // Exception types used in serialization-related methods' throws clauses
-        final Type IOE_TYPE = syms.ioExceptionType;
-        final Type OSE_TYPE = syms.objectStreamExceptionType;
-        final Type CNFE_TYPE = syms.classNotFoundExceptionType;
-        final Type J_L_ERROR_TYPE = syms.errorType;
-        final Type RUNTIME_EXCEPTION_TYPE = syms.runtimeExceptionType;
+        private final Type IOE_TYPE = syms.ioExceptionType;
+        private final Type OSE_TYPE = syms.objectStreamExceptionType;
+        private final Type CNFE_TYPE = syms.classNotFoundExceptionType;
+        private final Type J_L_ERROR_TYPE = syms.errorType;
+        private final Type RUNTIME_EXCEPTION_TYPE = syms.runtimeExceptionType;
 
-        final Type externalizableType = syms.externalizableType;
+        private final Type externalizableType = syms.externalizableType;
 
         //             final TypeMirror SERIAL_ANNOTATION =
         //                 Objects.requireNonNull(elementUtils.getTypeElement("java.io.Serial").asType());
