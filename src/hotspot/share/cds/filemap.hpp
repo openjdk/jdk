@@ -208,8 +208,6 @@ private:
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
   char  _jvm_ident[JVM_IDENT_MAX];  // identifier string of the jvm that created this dump
-  // size of the base archive name including NULL terminator
-  size_t _base_archive_name_size;
 
   // The following is a table of all the boot/app/module path entries that were used
   // during dumping. At run time, we validate these entries according to their
@@ -253,6 +251,7 @@ public:
 
   unsigned int header_size()               const { return _header_size; }
   unsigned int base_archive_path_offset()  const { return _base_archive_path_offset; }
+  unsigned int base_archive_name_size()    const { return _base_archive_name_size; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
@@ -268,7 +267,6 @@ public:
   address heap_end()                       const { return _heap_end; }
   bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
-  size_t base_archive_name_size()          const { return _base_archive_name_size; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
@@ -286,10 +284,10 @@ public:
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
-  void set_base_archive_path_offset();
-  void set_base_archive_name_size(size_t s)      { _base_archive_name_size = s; }
-  void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
   void set_header_size(unsigned int s)           { _header_size = s; }
+  void set_base_archive_path_offset();
+  void set_base_archive_name_size(unsigned int s) { _base_archive_name_size = s; }
+  void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
@@ -398,9 +396,9 @@ public:
   int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
-  void   set_header_base_archive_path_offset()               { header()->set_base_archive_path_offset(); }
-  void   set_header_base_archive_name_size(size_t size)      { header()->set_base_archive_name_size(size); }
-  void   set_header_base_archive_is_default(bool is_default) { header()->set_base_archive_is_default(is_default); }
+  void   set_header_base_archive_path_offset()                { header()->set_base_archive_path_offset(); }
+  void   set_header_base_archive_name_size(unsigned int size) { header()->set_base_archive_name_size(size); }
+  void   set_header_base_archive_is_default(bool is_default)  { header()->set_base_archive_is_default(is_default); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }

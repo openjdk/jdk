@@ -106,7 +106,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
 
         runTwo(baseArchiveName, largerHeaderSize,
                appJar, mainClass, 1,
-               new String[] {"The shared archive file has an incorrect header size.",
+               new String[] {"_base_archive_path_offset should be equal to _header_size",
                              "Unable to use shared archive"});
 
         // Make base archive path offset beyond of header size
@@ -117,7 +117,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset,  fileHeaderSize + 1024);
         runTwo(baseArchiveName, largerHeaderSize,
                appJar, mainClass, 1,
-               new String[] {"The shared archive file has an incorrect header size.",
+               new String[] {"_base_archive_path_offset should be equal to _header_size",
                              "Unable to use shared archive"});
 
         // Make base archive path offset points to middle of name size
@@ -143,7 +143,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         runTwo(baseArchiveName, wrongBaseName,
                appJar, mainClass, 1,
                new String[] {"Error occurred during initialization of VM",
-                             "Header checksum verification failed.",
+                             "Read base archive name from " + wrongBaseName + " failed",
                              "Unable to use shared archive"});
     }
 }

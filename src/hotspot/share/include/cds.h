@@ -73,6 +73,8 @@ struct CDSFileMapHeaderBase {
   // stores a 0-terminated string for the pathname of the base archive.
   // If this is a static archive, this field is 0.
   unsigned int _base_archive_path_offset;
+  // size of the base archive name including NULL terminator
+  unsigned int _base_archive_name_size;
   struct CDSFileMapRegion _space[NUM_CDS_REGIONS];
 };
 

@@ -58,7 +58,7 @@ public class SharedArchiveConsistency {
 
     public static int num_regions = shared_region_name.length;
     public static String[] matchMessages = {
-        "_base_archive_path_offset should be 0",
+        "UseSharedSpaces: Header checksum verification failed.",
         "The shared archive file has an incorrect header size.",
         "Unable to use shared archive",
         "An error has occurred while processing the shared archive file.",
