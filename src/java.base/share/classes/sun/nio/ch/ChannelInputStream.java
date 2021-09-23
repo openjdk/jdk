@@ -25,10 +25,15 @@
 
 package sun.nio.ch;
 
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.SelectableChannel;
 import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
@@ -51,8 +56,7 @@ public class ChannelInputStream
                            boolean block)
         throws IOException
     {
-        if (ch instanceof SelectableChannel) {
-            SelectableChannel sc = (SelectableChannel)ch;
+        if (ch instanceof SelectableChannel sc) {
             synchronized (sc.blockingLock()) {
                 boolean bm = sc.isBlocking();
                 if (!bm)
@@ -112,9 +116,8 @@ public class ChannelInputStream
 
     @Override
     public byte[] readAllBytes() throws IOException {
-        if (!(ch instanceof SeekableByteChannel))
+        if (!(ch instanceof SeekableByteChannel sbc))
             return super.readAllBytes();
-        SeekableByteChannel sbc = (SeekableByteChannel)ch;
 
         long length = sbc.size();
         long position = sbc.position();
@@ -164,9 +167,8 @@ public class ChannelInputStream
         if (len == 0)
             return new byte[0];
 
-        if (!(ch instanceof SeekableByteChannel))
+        if (!(ch instanceof SeekableByteChannel sbc))
             return super.readAllBytes();
-        SeekableByteChannel sbc = (SeekableByteChannel)ch;
 
         long length = sbc.size();
         long position = sbc.position();
@@ -183,7 +185,7 @@ public class ChannelInputStream
         int n;
         do {
             n = read(buf, nread, remaining);
-            if (n > 0 ) {
+            if (n > 0) {
                 nread += n;
                 remaining -= n;
             } else if (n == 0) {
@@ -200,8 +202,7 @@ public class ChannelInputStream
 
     public int available() throws IOException {
         // special case where the channel is to a file
-        if (ch instanceof SeekableByteChannel) {
-            SeekableByteChannel sbc = (SeekableByteChannel)ch;
+        if (ch instanceof SeekableByteChannel sbc) {
             long rem = Math.max(0, sbc.size() - sbc.position());
             return (rem > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)rem;
         }
@@ -210,8 +211,7 @@ public class ChannelInputStream
 
     public synchronized long skip(long n) throws IOException {
         // special case where the channel is to a file
-        if (ch instanceof SeekableByteChannel) {
-            SeekableByteChannel sbc = (SeekableByteChannel)ch;
+        if (ch instanceof SeekableByteChannel sbc) {
             long pos = sbc.position();
             long newPos;
             if (n > 0) {
