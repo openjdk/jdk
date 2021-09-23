@@ -45,6 +45,7 @@ import java.lang.Thread;
 import java.util.ArrayList;
 import java.util.Random;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 /**
  * The test enters fullscreen mode (if it's supported) and then tries
@@ -58,7 +59,7 @@ import javax.swing.JFrame;
  * If the test doesn't crash or throw exceptions, it passes, otherwise
  * it fails.
  */
-public class DisplayChangeVITest extends JFrame implements Runnable {
+public class DisplayChangeVITest implements Runnable {
 
     private final Random rnd = new Random();
     private VolatileImage bb;
@@ -73,7 +74,7 @@ public class DisplayChangeVITest extends JFrame implements Runnable {
 
     DisplayChangeVITest() {
         selectDisplayModes();
-        addKeyListener(new KeyAdapter() {
+        frame.addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     synchronized (lock) {
@@ -95,7 +96,7 @@ public class DisplayChangeVITest extends JFrame implements Runnable {
             initBackbuffer();
 
             g.setColor(Color.black);
-            g.fillRect(0, 0, getWidth(), getHeight());
+            g.fillRect(0, 0, frame.getWidth(), frame.getHeight());
 
             Graphics gg = bb.getGraphics();
             gg.setColor(new Color(rnd.nextInt(0x00ffffff)));
@@ -115,7 +116,7 @@ public class DisplayChangeVITest extends JFrame implements Runnable {
 
     private int reps = 0;
     public void run() {
-        GraphicsDevice gd = getGraphicsConfiguration().getDevice();
+        GraphicsDevice gd = frame.getGraphicsConfiguration().getDevice();
         if (gd.isDisplayChangeSupported() && dms.size() > 0) {
             while (!done && reps++ < TEST_REPS) {
                 for (DisplayMode dm : dms) {
@@ -126,9 +127,9 @@ public class DisplayChangeVITest extends JFrame implements Runnable {
                     initBackbuffer();
                     for (int i = 0; i < 10; i++) {
                         // render to the screen
-                        render(getGraphics());
+                        render(frame.getGraphics());
                         // ask Swing to repaint
-                        repaint();
+                        frame.repaint();
                         sleep(100);
                     }
                     sleep(1500);
@@ -138,7 +139,6 @@ public class DisplayChangeVITest extends JFrame implements Runnable {
             System.err.println("Display mode change " +
                                "not supported. Test passed.");
         }
-        dispose();
         synchronized (lock) {
             done = true;
             lock.notify();
@@ -147,20 +147,20 @@ public class DisplayChangeVITest extends JFrame implements Runnable {
 
     private void createBackbuffer() {
         if (bb == null ||
-            bb.getWidth() != getWidth() || bb.getHeight() != getHeight())
+            bb.getWidth() != frame.getWidth() || bb.getHeight() != frame.getHeight())
         {
-            bb = createVolatileImage(getWidth(), getHeight());
+            bb = frame.createVolatileImage(frame.getWidth(), frame.getHeight());
         }
     }
 
     private void initBackbuffer() {
         createBackbuffer();
 
-        int res = bb.validate(getGraphicsConfiguration());
+        int res = bb.validate(frame.getGraphicsConfiguration());
         if (res == VolatileImage.IMAGE_INCOMPATIBLE) {
             bb = null;
             createBackbuffer();
-            bb.validate(getGraphicsConfiguration());
+            bb.validate(frame.getGraphicsConfiguration());
             res = VolatileImage.IMAGE_RESTORED;
         }
         if (res == VolatileImage.IMAGE_RESTORED) {
@@ -168,9 +168,9 @@ public class DisplayChangeVITest extends JFrame implements Runnable {
             g.setColor(new Color(rnd.nextInt(0x00ffffff)));
             g.fillRect(0, 0, bb.getWidth(), bb.getHeight());
 
-            volSprite = createVolatileImage(100, 100);
+            volSprite = frame.createVolatileImage(100, 100);
         }
-        volSprite.validate(getGraphicsConfiguration());
+        volSprite.validate(frame.getGraphicsConfiguration());
     }
 
     private void selectDisplayModes() {
@@ -219,27 +219,43 @@ public class DisplayChangeVITest extends JFrame implements Runnable {
         }
     }
 
+    private static JFrame frame;
+
     public static void main(String[] args) throws Exception {
-        DisplayChangeVITest test = new DisplayChangeVITest();
-        GraphicsDevice gd =
-            GraphicsEnvironment.getLocalGraphicsEnvironment().
-                getDefaultScreenDevice();
-        if (gd.isFullScreenSupported()) {
-            gd.setFullScreenWindow(test);
-            Thread t = new Thread(test);
-            t.run();
-            synchronized (lock) {
-                while (!done) {
-                    try {
-                        lock.wait(50);
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
+        GraphicsDevice gd = null;
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                frame = new JFrame();
+            });
+            DisplayChangeVITest test = new DisplayChangeVITest();
+            gd =
+                GraphicsEnvironment.getLocalGraphicsEnvironment().
+                    getDefaultScreenDevice();
+            if (gd.isFullScreenSupported()) {
+                gd.setFullScreenWindow(frame);
+                Thread t = new Thread(test);
+                t.run();
+		sleep(1000);
+                synchronized (lock) {
+                    while (!done) {
+                        try {
+                            lock.wait(100);
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
                     }
                 }
+                System.err.println("Test Passed.");
+            } else {
+                System.err.println("Full screen not supported. Test passed.");
             }
-            System.err.println("Test Passed.");
-        } else {
-            System.err.println("Full screen not supported. Test passed.");
+        } finally {
+            gd.setFullScreenWindow(null);
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 }
