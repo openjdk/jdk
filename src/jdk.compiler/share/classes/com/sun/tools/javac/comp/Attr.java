@@ -5651,7 +5651,7 @@ public class Attr extends JCTree.Visitor {
         private final Type LONG_TYPE = syms.longType;
 
         // Type of serialPersistentFields
-        private final TypeMirror OSF_TYPE = syms.objectStreamFieldType;
+        private final TypeMirror OSF_TYPE = new Type.ArrayType(syms.objectStreamFieldType, syms.arrayClass);
 
         private final Type OIS_TYPE = syms.objectInputStreamType;
         private final Type OOS_TYPE = syms.objectOutputStreamType;
@@ -5682,7 +5682,7 @@ public class Attr extends JCTree.Visitor {
 	    // TODO: check for anonymous class
 
 	    if ( ((ClassSymbol)e).isAnonymous())
-		return;
+		return null;
 
 	    // TODO: this could be a loop; defer warnings for full correctness?
             if (checkSuppressSerialWarning(e) ||
