@@ -77,10 +77,10 @@ public class bug6318524 {
 
         // Show frame for visual inspection
         final boolean showFrame = argList.contains("-show");
-        // Save the start and last image only
-        final boolean saveImage = argList.contains("-save");
         // Save images for all the intermediate steps
         final boolean saveAllImages = argList.contains("-saveAll");
+        // Save the start and last image only
+        final boolean saveImage = saveAllImages || argList.contains("-save");
 
         SwingUtilities.invokeAndWait(() -> {
             createUI(showFrame);
