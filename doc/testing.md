@@ -71,7 +71,7 @@ real world, one could only be expected to run as many tests as practical, while 
 of the scope for the change, the testing resources available, etc.
 
 The source tree currently defines a few common test groups in the relevant `TEST.groups`
-files. The test groups are either covering a specific component, for example `hotspot_gc`.
+files. There are test groups that cover a specific component, for example `hotspot_gc`.
 It is a good idea to look into `TEST.groups` files to get a sense what tests are relevant
 to a particular JDK component.
 
@@ -81,9 +81,10 @@ _tiered_ test groups exist. Tiered test groups are not component-specific, but r
 the significant parts of the entire JDK.
 
 Multiple tiers allow balancing test coverage and test costs. Lower test tiers are supposed to
-contain the simpler, quicker and more stable tests. Higher tiers are supposed to contain progressively
-more thorough, slower, and sometimes less stable/reliable tests. When choosing which tiers to run,
-contributors are advised to run the first N tiers they can afford to run.
+contain the simpler, quicker and more stable tests. Higher tiers are supposed to contain
+progressively more thorough, slower, and sometimes less stable tests, or the tests that require
+special configuration. When choosing which tiers to run, contributors are advised to run the
+first N tiers they can afford to run.
 
 A brief description of the tiered test groups:
 
