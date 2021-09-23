@@ -241,7 +241,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         adr = mem->in(MemNode::Address);
       } else {
         assert(mem->Opcode() == Op_EncodeISOArray ||
-	       mem->Opcode() == Op_StrCompressedCopy, "sanity");
+               mem->Opcode() == Op_StrCompressedCopy, "sanity");
         adr = mem->in(3); // Destination array
       }
       const TypePtr* atype = adr->bottom_type()->is_ptr();
