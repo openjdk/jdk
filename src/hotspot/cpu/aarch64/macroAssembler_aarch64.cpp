@@ -5156,15 +5156,15 @@ void MacroAssembler::verify_cross_modify_fence_not_required() {
 #endif
 
 void MacroAssembler::spin_wait() {
-  for (int i = 0; i < VM_Version::pause_impl_desc().inst_count(); ++i) {
-    switch (VM_Version::pause_impl_desc().inst()) {
-      case NOP:
+  for (int i = 0; i < VM_Version::spin_wait_desc().inst_count(); ++i) {
+    switch (VM_Version::spin_wait_desc().inst()) {
+      case SpinWait::NOP:
         nop();
         break;
-      case ISB:
+      case SpinWait::ISB:
         isb();
         break;
-      case YIELD:
+      case SpinWait::YIELD:
         yield();
         break;
       default:

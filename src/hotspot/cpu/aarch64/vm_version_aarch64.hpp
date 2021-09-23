@@ -46,7 +46,7 @@ protected:
   static int _icache_line_size;
   static int _initial_sve_vector_length;
 
-  static PauseImplDesc _pause_impl_desc;
+  static SpinWait _spin_wait;
 
   // Read additional info using OS-specific interfaces
   static void get_os_cpu_info();
@@ -145,9 +145,9 @@ public:
 
   static void get_compatible_board(char *buf, int buflen);
 
-  static const PauseImplDesc& pause_impl_desc() { return _pause_impl_desc; }
+  static const SpinWait& spin_wait_desc() { return _spin_wait; }
 
-  static bool supports_on_spin_wait() { return _pause_impl_desc.inst() != NONE; }
+  static bool supports_on_spin_wait() { return _spin_wait.inst() != SpinWait::NONE; }
 
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)

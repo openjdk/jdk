@@ -46,9 +46,9 @@ int VM_Version::_dcache_line_size;
 int VM_Version::_icache_line_size;
 int VM_Version::_initial_sve_vector_length;
 
-PauseImplDesc VM_Version::_pause_impl_desc;
+SpinWait VM_Version::_spin_wait;
 
-static PauseImplDesc get_pause_impl_desc() {
+static SpinWait get_spin_wait_desc() {
   const char *s = OnSpinWaitImpl;
   unsigned int count = 1;
   if (isdigit(*s)) {
@@ -59,16 +59,16 @@ static PauseImplDesc get_pause_impl_desc() {
     s += 1;
   }
   if (strcmp(s, "nop") == 0) {
-    return PauseImplDesc(NOP, count);
+    return SpinWait(SpinWait::NOP, count);
   } else if (strcmp(s, "isb") == 0) {
-    return PauseImplDesc(ISB, count);
+    return SpinWait(SpinWait::ISB, count);
   } else if (strcmp(s, "yield") == 0) {
-    return PauseImplDesc(YIELD, count);
+    return SpinWait(SpinWait::YIELD, count);
   } else if (strcmp(s, "none") != 0) {
     vm_exit_during_initialization("Invalid value for OnSpinWaitImpl", OnSpinWaitImpl);
   }
 
-  return PauseImplDesc{};
+  return SpinWait{};
 }
 
 void VM_Version::initialize() {
@@ -473,7 +473,7 @@ void VM_Version::initialize() {
   }
 #endif
 
-  _pause_impl_desc = get_pause_impl_desc();
+  _spin_wait = get_spin_wait_desc();
 
   UNSUPPORTED_OPTION(CriticalJNINatives);
 }

@@ -49,8 +49,8 @@ import jdk.test.lib.process.ProcessTools;
 public class TestOnSpinWaitImplAArch64 {
     public static void main(String[] args) throws Exception {
         String compiler = args[0];
-        String pauseImplInstCount = args[1];
-        String pauseImplInst = args[2];
+        String spinWaitInstCount = args[1];
+        String spinWaitInst = args[2];
         ArrayList<String> command = new ArrayList<String>();
         command.add("-XX:+IgnoreUnrecognizedVMOptions");
         command.add("-showversion");
@@ -66,7 +66,7 @@ public class TestOnSpinWaitImplAArch64 {
             throw new RuntimeException("Unknown compiler: " + compiler);
         }
         command.add("-Xbatch");
-        command.add("-XX:OnSpinWaitImpl=" + pauseImplInstCount + pauseImplInst);
+        command.add("-XX:OnSpinWaitImpl=" + spinWaitInstCount + spinWaitInst);
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
         command.add(Launcher.class.getName());
 
@@ -78,18 +78,18 @@ public class TestOnSpinWaitImplAArch64 {
 
         System.out.println(analyzer.getOutput());
 
-        checkOutput(analyzer, getPauseImplInstHex(pauseImplInst), Integer.parseInt(pauseImplInstCount));
+        checkOutput(analyzer, getSpinWaitInstHex(spinWaitInst), Integer.parseInt(spinWaitInstCount));
     }
 
-    private static String getPauseImplInstHex(String pauseImplInst) {
-      if ("nop".equals(pauseImplInst)) {
+    private static String getSpinWaitInstHex(String spinWaitInst) {
+      if ("nop".equals(spinWaitInst)) {
           return "1f20 03d5";
-      } else if ("isb".equals(pauseImplInst)) {
+      } else if ("isb".equals(spinWaitInst)) {
           return "df3f 03d5";
-      } else if ("yield".equals(pauseImplInst)) {
+      } else if ("yield".equals(spinWaitInst)) {
           return "3f20 03d5";
       } else {
-          throw new RuntimeException("Unknown pause implementation: " + pauseImplInst);
+          throw new RuntimeException("Unknown spin wait instruction: " + spinWaitInst);
       }
     }
 
@@ -99,7 +99,7 @@ public class TestOnSpinWaitImplAArch64 {
         }
     }
 
-    // The expected output of PrintAssembly for example for a pause spin with three NOPs:
+    // The expected output of PrintAssembly for example for a spin wait with three NOPs:
     //
     // # {method} {0x0000ffff6ac00370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitImplAArch64$Launcher'
     // #           [sp+0x40]  (sp of caller)
@@ -110,8 +110,8 @@ public class TestOnSpinWaitImplAArch64 {
     // 0x0000ffff9d5576ac: 1f20 03d5 | fd7b 43a9 | ff03 0191
     //
     // The checkOutput method adds hex instructions before 'invokestatic onSpinWait' and from the line after
-    // it to a list. The list is traversed from the end to count spin pause instructions.
-    private static void checkOutput(OutputAnalyzer output, String pauseImplInstHex, int pauseImplInstCount) {
+    // it to a list. The list is traversed from the end to count spin wait instructions.
+    private static void checkOutput(OutputAnalyzer output, String spinWaitInstHex, int spinWaitInstCount) {
         Iterator<String> iter = output.asLines().listIterator();
 
         String match = skipTo(iter, "'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitImplAArch64$Launcher'");
@@ -145,21 +145,21 @@ public class TestOnSpinWaitImplAArch64 {
 
         ListIterator<String> instrReverseIter = instrs.listIterator(instrs.size());
         while (instrReverseIter.hasPrevious()) {
-            if (instrReverseIter.previous().endsWith(pauseImplInstHex)) {
+            if (instrReverseIter.previous().endsWith(spinWaitInstHex)) {
                 foundInstCount = 1;
                 break;
             }
         }
 
         while (instrReverseIter.hasPrevious()) {
-            if (!instrReverseIter.previous().endsWith(pauseImplInstHex)) {
+            if (!instrReverseIter.previous().endsWith(spinWaitInstHex)) {
                 break;
             }
             ++foundInstCount;
         }
 
-        if (foundInstCount != pauseImplInstCount) {
-            throw new RuntimeException("Wrong instruction " + pauseImplInstHex + " count " + foundInstCount + "!\n  -- expecting " + pauseImplInstCount);
+        if (foundInstCount != spinWaitInstCount) {
+            throw new RuntimeException("Wrong instruction " + spinWaitInstHex + " count " + foundInstCount + "!\n  -- expecting " + spinWaitInstCount);
         }
     }
 

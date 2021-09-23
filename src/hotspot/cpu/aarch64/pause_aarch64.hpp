@@ -22,26 +22,27 @@
  *
  */
 
-#ifndef CPU_AARCH64_PAUSE_AARCH64_HPP
-#define CPU_AARCH64_PAUSE_AARCH64_HPP
+#ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#define CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
 
-enum PauseInst {
-  NONE = -1,
-  NOP,
-  ISB,
-  YIELD
-};
+class SpinWait {
+public:
+  enum Inst {
+    NONE = -1,
+    NOP,
+    ISB,
+    YIELD
+  };
 
-class PauseImplDesc {
 private:
-  PauseInst _inst;
+  Inst _inst;
   int _count;
 
 public:
-  PauseImplDesc(PauseInst inst = NONE, unsigned int count = 0) : _inst(inst), _count(count) {}
+  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(count) {}
 
-  PauseInst inst() const { return _inst; }
+  Inst inst() const { return _inst; }
   int inst_count() const { return _count; }
 };
 
-#endif // CPU_AARCH64_PAUSE_AARCH64_HPP
+#endif // CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
