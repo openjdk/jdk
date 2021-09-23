@@ -73,5 +73,5 @@ public class JnaSupportImpl implements JnaSupport {
         }
         throw new UnsupportedOperationException();
     }
-    
+
 }
