@@ -26,7 +26,7 @@
 #ifndef CPU_AARCH64_VM_VERSION_AARCH64_HPP
 #define CPU_AARCH64_VM_VERSION_AARCH64_HPP
 
-#include "pause_aarch64.hpp"
+#include "spin_wait_aarch64.hpp"
 #include "runtime/abstract_vm_version.hpp"
 #include "utilities/sizes.hpp"
 
