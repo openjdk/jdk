@@ -85,11 +85,11 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
-gc/stringdedup/TestStringDeduplicationAgeThreshold.java#id4 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationPrintOptions.java#id4 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationInterned.java#id4 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationTableResize.java#id4 8273695 generic-all
-gc/stringdedup/TestStringDeduplicationYoungGC.java#id4 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationAgeThreshold.java#Z 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationPrintOptions.java#Z 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationInterned.java#Z 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationTableResize.java#Z 8273695 generic-all
+gc/stringdedup/TestStringDeduplicationYoungGC.java#Z 8273695 generic-all
 
 #############################################################################
 
@@ -104,9 +104,9 @@ runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
-runtime/os/TestTracePageSizes.java#with-G1 8267460 linux-aarch64
-runtime/os/TestTracePageSizes.java#with-Parallel 8267460 linux-aarch64
-runtime/os/TestTracePageSizes.java#with-Serial 8267460 linux-aarch64
+runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
+runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
+runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 
 applications/jcstress/copy.java 8229852 linux-x64
 
@@ -121,9 +121,9 @@ serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 w
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
 serviceability/sa/ClhsdbCDSCore.java 8269982 macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#id1 8269982 macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#id3 8269982 macosx-aarch64
-serviceability/sa/ClhsdbPstack.java#id1 8269982 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core 8269982 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8269982 macosx-aarch64
+serviceability/sa/ClhsdbPstack.java#core 8269982 macosx-aarch64
 
 #############################################################################
 

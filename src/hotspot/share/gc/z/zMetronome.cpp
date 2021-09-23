@@ -28,7 +28,7 @@
 #include "utilities/ticks.hpp"
 
 ZMetronome::ZMetronome(uint64_t hz) :
-    _monitor(Monitor::leaf, "ZMetronome", Monitor::_safepoint_check_never),
+    _monitor(Monitor::nosafepoint, "ZMetronome_lock", Monitor::_safepoint_check_never),
     _interval_ms(MILLIUNITS / hz),
     _start_ms(0),
     _nticks(0),
