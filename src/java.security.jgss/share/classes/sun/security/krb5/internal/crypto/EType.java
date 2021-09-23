@@ -48,17 +48,46 @@ import java.util.ArrayList;
 public abstract class EType {
 
     private static final boolean DEBUG = Krb5.DEBUG;
-    private static boolean allowWeakCrypto;
+
+    // etypes supported by JDK, including weak ones
+    private static int[] supportedETypes;
+    // common default etypes if not defined in krb5.conf
+    private static int[] defaultETypes;
 
     static {
         initStatic();
     }
 
     public static void initStatic() {
-        boolean allowed = false;
+
+        // There are at most 8 etypes.
+        // Note: add etypes in preference order, because the default enctypes
+        // list is also a part of it.
+        int[] result = new int[8];
+        int num = 0;
+
+        int maxKeyLength = 0;
+        try {
+            maxKeyLength = Cipher.getMaxAllowedKeyLength("AES");
+        } catch (Exception e) {
+            // should not happen
+        }
+        if (maxKeyLength >= 256) {
+            result[num++] = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96;
+        }
+        result[num++] = EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96;
+        if (maxKeyLength >= 256) {
+            result[num++] = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192;
+        }
+        result[num++] = EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128;
+
+        // By default, only AES etypes are enabled
+        defaultETypes = Arrays.copyOf(result, num);
+
+        boolean allowWeakCrypto = false;
         try {
             Config cfg = Config.getInstance();
-            allowed = cfg.getBooleanObject("libdefaults", "allow_weak_crypto")
+            allowWeakCrypto = cfg.getBooleanObject("libdefaults", "allow_weak_crypto")
                     == Boolean.TRUE;
         } catch (Exception exc) {
             if (DEBUG) {
@@ -67,7 +96,19 @@ public abstract class EType {
                                     exc.getMessage());
             }
         }
-        allowWeakCrypto = allowed;
+        if (allowWeakCrypto) {
+            result[num++] = EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD;
+            result[num++] = EncryptedData.ETYPE_ARCFOUR_HMAC;
+            result[num++] = EncryptedData.ETYPE_DES_CBC_CRC;
+            result[num++] = EncryptedData.ETYPE_DES_CBC_MD5;
+        }
+
+        // Weak crypto are also supported and can be enabled manually
+        if (num == result.length) {
+            supportedETypes = result;
+        } else {
+            supportedETypes = Arrays.copyOf(result, num);
+        }
     }
 
     public static EType getInstance  (int eTypeConst)
@@ -196,50 +237,9 @@ public abstract class EType {
         return result;
     }
 
-    // Note: the first 2 entries of BUILTIN_ETYPES and BUILTIN_ETYPES_NOAES256
-    // should be kept DES-related. They will be removed when allow_weak_crypto
-    // is set to false.
-
-    private static final int[] BUILTIN_ETYPES = new int[] {
-            EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96,
-            EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
-            EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192,
-            EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128,
-            EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
-            EncryptedData.ETYPE_ARCFOUR_HMAC,
-            EncryptedData.ETYPE_DES_CBC_CRC,
-            EncryptedData.ETYPE_DES_CBC_MD5,
-    };
-
-    private static final int[] BUILTIN_ETYPES_NOAES256 = new int[] {
-            EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
-            EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128,
-            EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
-            EncryptedData.ETYPE_ARCFOUR_HMAC,
-            EncryptedData.ETYPE_DES_CBC_CRC,
-            EncryptedData.ETYPE_DES_CBC_MD5,
-    };
-
-
     // used in Config
     public static int[] getBuiltInDefaults() {
-        int allowed = 0;
-        try {
-            allowed = Cipher.getMaxAllowedKeyLength("AES");
-        } catch (Exception e) {
-            // should not happen
-        }
-        int[] result;
-        if (allowed < 256) {
-            result = BUILTIN_ETYPES_NOAES256;
-        } else {
-            result = BUILTIN_ETYPES;
-        }
-        if (!allowWeakCrypto) {
-            // The last 4 etypes are now weak ones
-            return Arrays.copyOfRange(result, 0, result.length - 4);
-        }
-        return result;
+        return defaultETypes;
     }
 
     /**
@@ -312,8 +312,7 @@ public abstract class EType {
     }
 
     public static boolean isSupported(int eTypeConst) {
-        int[] enabledETypes = getBuiltInDefaults();
-        return isSupported(eTypeConst, enabledETypes);
+        return isSupported(eTypeConst, supportedETypes);
     }
 
     /**

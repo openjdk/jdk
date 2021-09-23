@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public class DupEtypes {
 
         KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
                 "default_keytab_name = " + OneKDC.KTAB,
-                "allow_weak_crypto = true");
+                "allow_weak_crypto = true",
+                "permitted_enctypes = aes256-cts arcfour-hmac des-cbc-crc des-cbc-md5");
         Config.refresh();
 
         // Rewrite to include DES keys
