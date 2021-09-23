@@ -591,9 +591,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
-    return inline_encodeISOArray();
+    return inline_encodeISOArray(false);
   case vmIntrinsics::_encodeAsciiArray:
-    return inline_encodeAsciiArray();
+    return inline_encodeISOArray(true);
 
   case vmIntrinsics::_updateCRC32:
     return inline_updateCRC32();
@@ -4884,8 +4884,8 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
 }
 
 //-------------inline_encodeISOArray-----------------------------------
-// encode char[] to byte[] in ISO_8859_1
-bool LibraryCallKit::inline_encodeISOArray() {
+// encode char[] to byte[] in ISO_8859_1 or ASCII
+bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   assert(callee()->signature()->size() == 5, "encodeISOArray has 5 parameters");
   // no receiver since it is static method
   Node *src         = argument(0);
@@ -4920,56 +4920,7 @@ bool LibraryCallKit::inline_encodeISOArray() {
   // 'dst_start' points to dst array + scaled offset
 
   const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length);
-  enc = _gvn.transform(enc);
-  Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
-  set_memory(res_mem, mtype);
-  set_result(enc);
-  clear_upper_avx();
-
-  return true;
-}
-
-//-------------inline_encodeAsciiArray-----------------------------------
-// encode char[] to byte[] in ASCII
-bool LibraryCallKit::inline_encodeAsciiArray() {
-  assert(callee()->signature()->size() == 5, "encodeAsciiArray has 5 parameters");
-  // no receiver since it is static method
-  Node *src         = argument(0);
-  Node *src_offset  = argument(1);
-  Node *dst         = argument(2);
-  Node *dst_offset  = argument(3);
-  Node *length      = argument(4);
-
-  src = must_be_not_null(src, true);
-  dst = must_be_not_null(dst, true);
-
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dst_type = dst->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dst_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL ||
-      top_dest == NULL || top_dest->klass() == NULL) {
-    // failed array check
-    assert(false, "failed NULL checks");
-    return false;
-  }
-
-  // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  if (src_elem != T_CHAR || dst_elem != T_BYTE) {
-    assert(false, "failed type checks");
-    return false;
-  }
-
-  Node* src_start = array_element_address(src, src_offset, T_CHAR);
-  Node* dst_start = array_element_address(dst, dst_offset, T_BYTE);
-  // 'src_start' points to src array + scaled offset
-  // 'dst_start' points to dst array + scaled offset
-
-  const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeAsciiArrayNode(control(), memory(mtype), src_start, dst_start, length);
+  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
   set_memory(res_mem, mtype);

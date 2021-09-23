@@ -241,7 +241,6 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         adr = mem->in(MemNode::Address);
       } else {
         assert(mem->Opcode() == Op_EncodeISOArray ||
-               mem->Opcode() == Op_EncodeAsciiArray ||
 	       mem->Opcode() == Op_StrCompressedCopy, "sanity");
         adr = mem->in(3); // Destination array
       }
@@ -417,7 +416,6 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
       } else if (val->Opcode() == Op_SCMemProj) {
         assert(val->in(0)->is_LoadStore() ||
                val->in(0)->Opcode() == Op_EncodeISOArray ||
-               val->in(0)->Opcode() == Op_EncodeAsciiArray ||
                val->in(0)->Opcode() == Op_StrCompressedCopy, "sanity");
         assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
         return NULL;

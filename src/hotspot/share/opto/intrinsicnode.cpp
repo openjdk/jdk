@@ -98,26 +98,6 @@ const Type* EncodeISOArrayNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//=============================================================================
-//------------------------------match_edge-------------------------------------
-// Do not match memory edge
-uint EncodeAsciiArrayNode::match_edge(uint idx) const {
-  return idx == 2 || idx == 3; // EncodeAsciiArray src (Binary dst len)
-}
-
-//------------------------------Ideal------------------------------------------
-// Return a node which is more "ideal" than the current node.  Strip out
-// control copies
-Node* EncodeAsciiArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
-}
-
-//------------------------------Value------------------------------------------
-const Type* EncodeAsciiArrayNode::Value(PhaseGVN* phase) const {
-  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
-  return bottom_type();
-}
-
 //------------------------------CopySign-----------------------------------------
 CopySignDNode* CopySignDNode::make(PhaseGVN& gvn, Node* in1, Node* in2) {
   return new CopySignDNode(in1, in2, gvn.makecon(TypeD::ZERO));

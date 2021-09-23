@@ -11770,6 +11770,7 @@ instruct string_inflate_evex(Universe dummy, rsi_RegP src, rdi_RegP dst, rdx_Reg
 instruct encode_iso_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
                           legRegD tmp1, legRegD tmp2, legRegD tmp3, legRegD tmp4,
                           rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
 
@@ -11786,7 +11787,8 @@ instruct encode_iso_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
 instruct encode_ascii_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
                             legRegD tmp1, legRegD tmp2, legRegD tmp3, legRegD tmp4,
                             rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
-  match(Set result (EncodeAsciiArray src (Binary dst len)));
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
 
   format %{ "Encode array $src,$dst,$len -> $result    // KILL RCX, RDX, $tmp1, $tmp2, $tmp3, $tmp4, RSI, RDI " %}
