@@ -235,7 +235,7 @@ public class DisplayChangeVITest implements Runnable {
                 gd.setFullScreenWindow(frame);
                 Thread t = new Thread(test);
                 t.run();
-		sleep(1000);
+                sleep(1000);
                 synchronized (lock) {
                     while (!done) {
                         try {
