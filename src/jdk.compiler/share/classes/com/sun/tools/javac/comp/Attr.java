@@ -5592,7 +5592,7 @@ public class Attr extends JCTree.Visitor {
          * Check structural serialization declarations.
          **/
         private void checkSerialStructure(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
-	    
+	    (new SerialTypeVisitor()).visit(c, tree);
         }
 
     // TO-DO: pass in tree info as the parameter? define in outer class?
