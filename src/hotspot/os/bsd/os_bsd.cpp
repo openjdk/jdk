@@ -123,10 +123,6 @@ volatile uint64_t         os::Bsd::_max_abstime   = 0;
 pthread_t os::Bsd::_main_thread;
 int os::Bsd::_page_size = -1;
 
-static jlong initial_time_count=0;
-
-static int clock_tics_per_sec = 100;
-
 #if defined(__APPLE__) && defined(__x86_64__)
 static const int processor_id_unassigned = -1;
 static const int processor_id_assigning = -2;
@@ -746,22 +742,6 @@ void os::free_thread(OSThread* osthread) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-
-// Time since start-up in seconds to a fine granularity.
-double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency();
-}
-
-jlong os::elapsed_counter() {
-  return javaTimeNanos() - initial_time_count;
-}
-
-jlong os::elapsed_frequency() {
-  return NANOSECS_PER_SEC; // nanosecond resolution
-}
-
-bool os::supports_vtime() { return true; }
-
 double os::elapsedVTime() {
   // better than nothing, but not much
   return elapsedTime();
@@ -811,44 +791,7 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
 }
-
 #endif // __APPLE__
-
-// Return the real, user, and system times in seconds from an
-// arbitrary fixed point in the past.
-bool os::getTimesSecs(double* process_real_time,
-                      double* process_user_time,
-                      double* process_system_time) {
-  struct tms ticks;
-  clock_t real_ticks = times(&ticks);
-
-  if (real_ticks == (clock_t) (-1)) {
-    return false;
-  } else {
-    double ticks_per_second = (double) clock_tics_per_sec;
-    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
-    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
-    *process_real_time = ((double) real_ticks) / ticks_per_second;
-
-    return true;
-  }
-}
-
-
-char * os::local_time_string(char *buf, size_t buflen) {
-  struct tm t;
-  time_t long_time;
-  time(&long_time);
-  localtime_r(&long_time, &t);
-  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
-               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-               t.tm_hour, t.tm_min, t.tm_sec);
-  return buf;
-}
-
-struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
-  return localtime_r(clock, res);
-}
 
 // Information of current thread in variety of formats
 pid_t os::Bsd::gettid() {
@@ -1990,8 +1933,6 @@ extern void report_error(char* file_name, int line_no, char* title,
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  clock_tics_per_sec = CLK_TCK;
-
   Bsd::set_page_size(getpagesize());
   if (Bsd::page_size() == -1) {
     fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
@@ -2004,7 +1945,6 @@ void os::init(void) {
   Bsd::_main_thread = pthread_self();
 
   Bsd::clock_init();
-  initial_time_count = javaTimeNanos();
 
   os::Posix::init();
 }
