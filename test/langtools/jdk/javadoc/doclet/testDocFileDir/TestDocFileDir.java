@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class TestDocFileDir extends JavadocTester {
     // Output dir = "", Input dir = ""
     @Test
     public void test1() {
-        copyDir(testSrc("pkg"), ".");
+        copyDir(testSrc("pkg"), "pkg");
         setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
         javadoc("pkg/C.java");
         checkExit(Exit.OK);
@@ -58,7 +58,7 @@ public class TestDocFileDir extends JavadocTester {
     @Test
     public void test2() {
         String outdir = "out2";
-        copyDir(testSrc("pkg"), outdir);
+        copyDir(testSrc("pkg"), outdir + "/pkg");
         setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
         javadoc("-d", outdir,
             "-sourcepath", "blah" + PS + outdir + PS + "blah",
