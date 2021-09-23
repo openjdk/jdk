@@ -27,7 +27,7 @@
  * @summary Verify that transferTo() copies more than Integer.MAX_VALUE bytes
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
- * @run main Transfer2GPlus
+ * @run main/othervm Transfer2GPlus
  */
 
 import java.io.File;

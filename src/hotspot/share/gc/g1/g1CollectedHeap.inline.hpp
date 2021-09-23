@@ -32,6 +32,7 @@
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -207,11 +208,22 @@ inline bool G1CollectedHeap::is_in_young(const oop obj) {
   return heap_region_containing(obj)->is_young();
 }
 
+inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
+  return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
+}
+
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
   if (obj == NULL) {
     return false;
   }
   return is_obj_dead(obj, heap_region_containing(obj));
+}
+
+inline bool G1CollectedHeap::is_obj_ill(const oop obj, const HeapRegion* hr) const {
+  return
+    !hr->obj_allocated_since_next_marking(obj) &&
+    !is_marked_next(obj) &&
+    !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {

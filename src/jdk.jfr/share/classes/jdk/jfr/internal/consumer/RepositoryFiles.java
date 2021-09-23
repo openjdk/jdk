@@ -26,6 +26,7 @@
 package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
+import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -100,12 +101,11 @@ public final class RepositoryFiles {
                 if (updatePaths()) {
                     break;
                 }
-            } catch (IOException e) {
-                Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, "IOException during repository file scan " + e.getMessage());
+            } catch (IOException | DirectoryIteratorException e) {
+                Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, "Exception during repository file scan " + e.getMessage());
                 // This can happen if a chunk is being removed
                 // between the file was discovered and an instance
-                // was accessed, or if new file has been written yet
-                // Just ignore, and retry later.
+                // was accessed. Just ignore, and retry later.
             }
             if (wait) {
                 nap();
@@ -131,7 +131,7 @@ public final class RepositoryFiles {
         // Update paths
         try {
             updatePaths();
-        } catch (IOException e) {
+        } catch (IOException | DirectoryIteratorException e) {
             // ignore
         }
         // try to get the next file
@@ -167,7 +167,7 @@ public final class RepositoryFiles {
         }
     }
 
-    private boolean updatePaths() throws IOException {
+    private boolean updatePaths() throws IOException, DirectoryIteratorException {
         boolean foundNew = false;
         Path repoPath = repository;
 
@@ -254,7 +254,7 @@ public final class RepositoryFiles {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | DirectoryIteratorException e) {
             // Ignore
         }
         return latestPath;
