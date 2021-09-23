@@ -82,7 +82,6 @@ import java.net.URL;
 import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
