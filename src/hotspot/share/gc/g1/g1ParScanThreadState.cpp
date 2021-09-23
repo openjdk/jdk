@@ -517,7 +517,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       _string_dedup_requests.add(old);
     }
 
-    // Skip the card enqueue iff the objective (obj) is in survivor region.
+    // Skip the card enqueue iff the object (obj) is in survivor region.
     // However, HeapRegion::is_survivor() is too expensive here.
     // Instead, we use dest_attr.is_young() because the two values are always
     // equal: successfully allocated young regions must be survivor regions.
