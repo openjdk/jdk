@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Skip Balk.  All Rights Reserved.
+ * Copyright 2012, 2021, Skip Balk.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key stress randomness
  * @bug 7179138 8271341
  * @summary Incorrect result with String concatenation optimization
  *
