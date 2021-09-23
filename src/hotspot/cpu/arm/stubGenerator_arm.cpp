@@ -638,16 +638,14 @@ class StubGenerator: public StubCodeGenerator {
     if (VM_Version::supports_ldrexd()) {
       __ ldrexd(result_lo, Address(src));
       __ clrex(); // FIXME: safe to remove?
-      __ bx(LR);
     } else if (!os::is_MP()) {
       // Last-ditch attempt: we are allegedly running on uni-processor.
       // Load the thing non-atomically and hope for the best.
       __ ldmia(src, RegisterSet(result_lo, result_hi));
-      __ bx(LR);
     } else {
       __ stop("Atomic load(jlong) unsupported on this platform");
-      __ bx(LR);
     }
+    __ bx(LR);
 
     return start;
   }
@@ -672,16 +670,14 @@ class StubGenerator: public StubCodeGenerator {
       __ strexd(result, R0, Address(Rtemp));
       __ rsbs(result, result, 1);
       __ b(retry, eq);
-      __ bx(LR);
     } else if (!os::is_MP()) {
       // Last-ditch attempt: we are allegedly running on uni-processor.
       // Store the thing non-atomically and hope for the best.
       __ stmia(dest, RegisterSet(newval_lo, newval_hi));
-      __ bx(LR);
     } else {
       __ stop("Atomic store(jlong) unsupported on this platform");
-      __ bx(LR);
     }
+    __ bx(LR);
 
     return start;
   }
