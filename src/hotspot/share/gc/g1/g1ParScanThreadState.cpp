@@ -89,7 +89,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _evac_failure_inject_counter(0),
 #endif
     _preserved_marks(preserved_marks),
-    _evacuation_failed_info()
+    _evacuation_failed_info(),
+    _evac_failure_regions(evac_failure_regions)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
