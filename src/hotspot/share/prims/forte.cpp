@@ -314,6 +314,39 @@ static bool find_initial_Java_frame(JavaThread* thread,
 
   frame candidate = *fr;
 
+#ifdef ZERO
+  // Zero has no frames with code blobs, so the generic code fails.
+  // Instead, try to do Zero-specific search for Java frame.
+
+  {
+    RegisterMap map(thread, false, false);
+
+    while (true) {
+      if (!candidate.safe_for_sender(thread)) {
+        return false;
+      }
+
+      if (candidate.is_entry_frame()) {
+        JavaCallWrapper* jcw = candidate.entry_frame_call_wrapper_if_safe(thread);
+        if (jcw == NULL || jcw->is_first_frame()) {
+          return false;
+        }
+      }
+
+      if (candidate.is_interpreted_frame()) {
+        if (is_decipherable_interpreted_frame(thread, &candidate, method_p, bci_p)) {
+          *initial_frame_p = candidate;
+          return true;
+        }
+      }
+
+      candidate = candidate.sender(&map);
+    }
+
+    return false;
+  }
+#endif
+
   // If the starting frame we were given has no codeBlob associated with
   // it see if we can find such a frame because only frames with codeBlobs
   // are possible Java frames.
