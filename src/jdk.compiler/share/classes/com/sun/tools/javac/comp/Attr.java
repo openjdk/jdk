@@ -5679,7 +5679,12 @@ public class Attr extends JCTree.Visitor {
         public Void visitTypeAsClass(TypeElement e,
 				     JCClassDecl tree) {
             // System.out.println("Class\t" + e.getQualifiedName() +" is Serializeable.");
+	    // TODO: check for anonymous class
 
+	    if ( ((ClassSymbol)e).isAnonymous())
+		return;
+
+	    // TODO: this could be a loop; defer warnings for full correctness?
             if (checkSuppressSerialWarning(e) ||
                 (e.getNestingKind() == NestingKind.MEMBER ?
                  checkSuppressSerialWarning(e.getEnclosingElement()) :
@@ -5787,6 +5792,18 @@ public class Attr extends JCTree.Visitor {
 //                 log.warning(LintCategory.SERIAL,
 //                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.LongSVUID(c));
             checkTypeOfField(tree, e, field, LONG_TYPE, Warnings.LongSVUID((Symbol) e));
+
+
+//             // check constant
+//             else if (svuid.getConstValue() == null)
+//                 log.warning(LintCategory.SERIAL,
+//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ConstantSVUID(c));
+
+	    VarSymbol svuidField = (VarSymbol)field;
+	    if (svuidField.getConstValue() == null)
+		log.warning(LintCategory.SERIAL,
+			    TreeInfo.diagnosticPositionFor(svuidField, tree),
+			    Warnings.ConstantSVUID((Symbol)e));
 
         }
 
