@@ -88,7 +88,7 @@ public class UninitializedDisplayModeChangeTest {
             err.start();
             out.start();
 
-            childProc.waitFor(2, TimeUnit.SECONDS);
+            childProc.waitFor(30, TimeUnit.SECONDS);
         } catch (Exception e) {
             failed = true;
             e.printStackTrace();
