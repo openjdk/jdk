@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -219,7 +220,7 @@ public abstract class JavadocTester {
         void check(Path dir) {
             if (Files.isDirectory(dir)) {
                 List<Path> contents = new ArrayList<>();
-                try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir, filter)) {
+                try (var ds = Files.newDirectoryStream(dir, filter)) {
                     for (Path p : ds) {
                         contents.add(p);
                     }
@@ -776,50 +777,6 @@ public abstract class JavadocTester {
     }
 
     /**
-     * Copies the contents of a directory to another directory.
-     *
-     * @param fromDir the directory containing the files to be copied
-     * @param toDir   the destination to which to copy the files
-     */
-    public void copyDir(String fromDir, String toDir) {
-        copyDir(Path.of(fromDir), Path.of(toDir));
-    }
-
-    /**
-     * Copies the contents of a directory to another directory.
-     *
-     * @param fromDir the directory containing the files to be copied
-     * @param toDir   the destination to which to copy the files
-     */
-    public void copyDir(Path fromDir, Path toDir) {
-        out.println("Copying " + fromDir + " to " + toDir);
-        try {
-            Files.createDirectories(toDir);
-            Files.walkFileTree(fromDir, new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult preVisitDirectory(Path fromSubdir, BasicFileAttributes attrs) throws IOException {
-                    Path toSubdir = toDir.resolve(fromDir.relativize(fromSubdir));
-                    if (Files.exists(toSubdir)) {
-                        Files.createDirectories(toSubdir);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFile(Path fromFile, BasicFileAttributes attrs)
-                        throws IOException {
-                    Path toFile = toDir.resolve(fromDir.relativize(fromFile));
-                    out.println("Copying " + fromFile + " to " + toFile);
-                    Files.copy(fromFile, toFile);
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            throw new Error("Could not copy " + fromDir + " to " + toDir + ": " + e, e);
-        }
-    }
-
-    /**
      * Read a file from the output directory.
      *
      * @param fileName  the name of the file to read
@@ -870,7 +827,7 @@ public abstract class JavadocTester {
                 return content;
 
             // charset defaults to a value inferred from latest javadoc run
-            content = new String(Files.readAllBytes(file), charset);
+            content = Files.readString(file, charset);
             fileContentCache.put(file, new SoftReference<>(content));
             return content;
         } catch (FileNotFoundException e) {
@@ -1111,8 +1068,8 @@ public abstract class JavadocTester {
 
         void write() {
             // sort the log entries because the subtests may not be executed in the same order
-            tests.sort((a, b) -> a.compareTo(b));
-            try (BufferedWriter bw = Files.newBufferedWriter(Path.of("tester.log"))) {
+            tests.sort(Comparator.naturalOrder());
+            try (var bw = Files.newBufferedWriter(Path.of("tester.log"))) {
                 for (String t: tests) {
                     bw.write(t);
                     bw.newLine();

@@ -28,13 +28,14 @@
  *          get overwritten when the sourcepath is equal to the destination
  *          directory.
  *          Also test that -docfilessubdirs and -excludedocfilessubdir both work.
- * @library ../../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build javadoc.tester.*
+ * @build toolbox.ToolBox javadoc.tester.*
  * @run main TestDocFileDir
  */
 
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class TestDocFileDir extends JavadocTester {
 
@@ -43,10 +44,12 @@ public class TestDocFileDir extends JavadocTester {
         tester.runTests();
     }
 
+    ToolBox tb = new ToolBox();
+
     // Output dir = "", Input dir = ""
     @Test
     public void test1() {
-        copyDir(testSrc("pkg"), "pkg");
+        tb.copyDir(testSrc("pkg"), "pkg");
         setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
         javadoc("pkg/C.java");
         checkExit(Exit.OK);
@@ -58,7 +61,7 @@ public class TestDocFileDir extends JavadocTester {
     @Test
     public void test2() {
         String outdir = "out2";
-        copyDir(testSrc("pkg"), outdir + "/pkg");
+        tb.copyDir(testSrc("pkg"), outdir + "/pkg");
         setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
         javadoc("-d", outdir,
             "-sourcepath", "blah" + PS + outdir + PS + "blah",
