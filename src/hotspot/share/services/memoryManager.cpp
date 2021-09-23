@@ -174,7 +174,7 @@ GCMemoryManager::GCMemoryManager(const char* name, const char* gc_end_message) :
   MemoryManager(name), _gc_end_message(gc_end_message) {
   _num_collections = 0;
   _last_gc_stat = NULL;
-  _last_gc_lock = new Mutex(Mutex::leaf, "_last_gc_lock",
+  _last_gc_lock = new Mutex(Mutex::nosafepoint, "GCMemoryManager_lock",
                             Mutex::_safepoint_check_never);
   _current_gc_stat = NULL;
   _num_gc_threads = 1;

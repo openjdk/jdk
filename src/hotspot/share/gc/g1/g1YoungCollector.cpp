@@ -912,8 +912,9 @@ public:
 
     G1STWIsAliveClosure is_alive(&_g1h);
     G1CopyingKeepAliveClosure keep_alive(&_g1h, pss);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     G1ParEvacuateFollowersClosure complete_gc(&_g1h, pss, &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
 
     // We have completed copying any necessary live referent objects.
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");

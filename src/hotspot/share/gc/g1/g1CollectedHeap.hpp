@@ -1240,19 +1240,12 @@ public:
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
-  bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
-    return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
-  }
+  inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;
 
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
   // been marked during this marking, and is not in a closed archive region.
-  bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
-    return
-      !hr->obj_allocated_since_next_marking(obj) &&
-      !is_marked_next(obj) &&
-      !hr->is_closed_archive();
-  }
+  inline bool is_obj_ill(const oop obj, const HeapRegion* hr) const;
 
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
