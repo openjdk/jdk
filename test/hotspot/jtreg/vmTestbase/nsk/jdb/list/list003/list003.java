@@ -162,5 +162,11 @@ public class list003 extends JdbTest {
         if (!listing.stream().anyMatch(l -> l.number() == 1)) {
             throw new AssertionError("Manual listing displayed the wrong lines");
         }
+
+        List<ListLine> targetedList = parseListOutput(jdb.receiveReplyFor(JdbCommand.list + "1"));
+        autoList = parseListOutput(jdb.receiveReplyFor(JdbCommand.list));
+        if (autoList.get(0).number() != targetedList.get(targetedList.size() - 1).number() + 1) {
+            throw new AssertionError("Auto-advance didn't work after targeted list");
+        }
     }
 }

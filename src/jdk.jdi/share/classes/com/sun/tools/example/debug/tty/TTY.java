@@ -861,7 +861,9 @@ public class TTY implements EventNotifier {
                     lastLine = ln;
                     lastCommandName = executeCommand(t);
                 } else if (repeat && lastLine != null && REPEATABLE.contains(lastCommandName)) {
-                    executeCommand(new StringTokenizer(lastLine));
+                    // We want list auto-advance even if the user started with a listing target.
+                    String newCommand = lastCommandName.equals("list") && nextListTarget != null ? "list" : lastLine;
+                    executeCommand(new StringTokenizer(newCommand));
                 } else {
                     MessageOutput.printPrompt();
                 }
