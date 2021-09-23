@@ -66,9 +66,8 @@ if you want to shortcut the parser.
 
 ### Common Test Groups
 
-In the ideal world, contributors would be advised to run all the tests for every change. But in
-real world, one could only be expected to run as many tests as practical, while being mindful
-of the scope for the change, the testing resources available, etc.
+Ideally, all tests are run for every change but this may not be practical due to the limited
+testing resources, the scope of the change, etc.
 
 The source tree currently defines a few common test groups in the relevant `TEST.groups`
 files. There are test groups that cover a specific component, for example `hotspot_gc`.
@@ -80,24 +79,26 @@ tests should also be run. Again, it might be impractical to run all tests, and t
 _tiered_ test groups exist. Tiered test groups are not component-specific, but rather cover
 the significant parts of the entire JDK.
 
-Multiple tiers allow balancing test coverage and test costs. Lower test tiers are supposed to
+Multiple tiers allow balancing test coverage and testing costs. Lower test tiers are supposed to
 contain the simpler, quicker and more stable tests. Higher tiers are supposed to contain
 progressively more thorough, slower, and sometimes less stable tests, or the tests that require
-special configuration. When choosing which tiers to run, contributors are advised to run the
-first N tiers they can afford to run.
+special configuration.
+
+Contributors are expected to run the tests for the areas that are changed, and the first N tiers
+they can afford to run, but at least tier1.
 
 A brief description of the tiered test groups:
 
 - `tier1`: This is the lowest test tier. Multiple developers run these tests every day.
-Normally, at least this tier should be clean before integration. Because of the widespread use,
-the tests in `tier1` are carefully selected and optimized to run fast, and to run in the
-most stable manner. The test failures in `tier1` are usually followed up on quickly, either
-with fixes, or adding relevant tests to problem list. GitHub Actions workflows, if enabled,
-run `tier1` tests.
+Because of the widespread use, the tests in `tier1` are carefully selected and optimized to run
+fast, and to run in the most stable manner. The test failures in `tier1` are usually followed up
+on quickly, either with fixes, or adding relevant tests to problem list. GitHub Actions workflows,
+if enabled, run `tier1` tests.
 
 - `tier2`: This test group covers even more ground. These contain, among other things,
-tests that either run for too long to be at `tier1`, tests for less stable and/or experimental
-features, tests for less essential JDK components (for example, jaxp).
+tests that either run for too long to be at `tier1`, or may require special configuration,
+or tests that are less stable, or cover the broader range of less critical JVM and JDK
+features/components (for example, jaxp).
 
 - `tier3`: This test group includes more stressful tests, the tests for corner cases
 not covered by previous tiers, plus the tests that require GUIs. As such, this suite
