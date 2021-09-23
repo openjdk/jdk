@@ -364,8 +364,7 @@ public class X509CRLSelector implements CRLSelector {
     private static HashSet<X500Principal> parseIssuerNames(Collection<Object> names)
     throws IOException {
         HashSet<X500Principal> x500Principals = new HashSet<>();
-        for (Iterator<Object> t = names.iterator(); t.hasNext(); ) {
-            Object nameObject = t.next();
+        for (Object nameObject : names) {
             if (nameObject instanceof String) {
                 x500Principals.add(new X500Name((String)nameObject).asX500Principal());
             } else {
