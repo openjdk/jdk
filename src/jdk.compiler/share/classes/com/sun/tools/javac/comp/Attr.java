@@ -5681,7 +5681,9 @@ public class Attr extends JCTree.Visitor {
             // System.out.println("Class\t" + e.getQualifiedName() +" is Serializeable.");
 	    // TODO: check for anonymous class
 
-	    if ( ((ClassSymbol)e).isAnonymous())
+	    ClassSymbol c = (ClassSymbol)e;
+
+	    if ( c.isAnonymous())
 		return null;
 
 	    // TODO: this could be a loop; defer warnings for full correctness?
@@ -5702,6 +5704,19 @@ public class Attr extends JCTree.Visitor {
             //                                               "Serializable class " + e.getQualifiedName() + 
             //                                               " is missing a serialVersionUID field.");
             //                 }
+
+
+            VarSymbol svuidSym = null;
+            for (Symbol sym : c.members().getSymbolsByName(names.serialVersionUID)) {
+                if (sym.kind == VAR) {
+                    svuidSym = (VarSymbol)sym;
+                    break;
+                }
+            }
+
+	    if (svuidSym == null) {
+		log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
+	    }
 
             for(Element enclosed : e.getEnclosedElements()) {
                 if (checkSuppressSerialWarning(enclosed))
@@ -5727,6 +5742,7 @@ public class Attr extends JCTree.Visitor {
 
                     }
                 }
+
 
                 // Correctly checking the serialization-related
                 // methods is subtle. For the methods declared to
@@ -5768,8 +5784,10 @@ public class Attr extends JCTree.Visitor {
                 }
 
             }
+
             return null;
         }
+
 
         private void checkSerialVersionUID(JCClassDecl tree, Element e, Element field) {
             // To be effective, serialVersionUID must be marked

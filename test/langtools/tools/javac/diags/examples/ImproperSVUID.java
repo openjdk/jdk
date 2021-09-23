@@ -22,6 +22,9 @@
  */
 
 // key: compiler.warn.improper.SVUID
+// key: compiler.warn.constant.SVUID
+// key: compiler.warn.long.SVUID
+
 // options: -Xlint:serial
 
 import java.io.Serializable;
