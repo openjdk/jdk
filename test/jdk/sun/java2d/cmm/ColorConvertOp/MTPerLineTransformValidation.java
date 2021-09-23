@@ -24,7 +24,6 @@
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @test
@@ -32,7 +31,9 @@ import java.util.concurrent.CountDownLatch;
  * @summary Verifies that ColorConvertOp works fine if shared between threads
  * @run main/othervm/timeout=600 MTTransformValidation
  */
-public final class MTTransformValidation {
+public final class MTPerLineTransformValidation {
+
+    private volatile static BufferedImage[] lines;
 
     public static final int SIZE = 255;
     private static volatile boolean failed = false;
@@ -55,8 +56,9 @@ public final class MTTransformValidation {
 
     /**
      * For all possible combinations of color spaces and image types, convert
-     * the source image using one shared ColorConvertOp. The result is validated
-     * against images converted on one thread only.
+     * the source image using one shared ColorConvertOp per line on the
+     * different threads. The result is validated against images converted on
+     * one thread only.
      */
     public static void main(String[] args) throws Exception {
         for (int srcCS : spaces) {
@@ -73,43 +75,46 @@ public final class MTTransformValidation {
 
     private static void checkTypes(ColorSpace srcCS, ColorSpace dstCS, int type)
             throws Exception {
+        lines = new BufferedImage[SIZE];
         ColorConvertOp goldOp = new ColorConvertOp(srcCS, dstCS, null);
-        BufferedImage gold = goldOp.filter(createSrc(type), null);
-        // we do not share the goldOp since it is already initialized, but
-        // instead we will trigger initialization/usage of the new sharedOp on
-        // different threads at once
-        ColorConvertOp sharedOp = new ColorConvertOp(srcCS, dstCS, null);
-        test(gold, sharedOp, type);
+        BufferedImage src = createSrc(type);
+        BufferedImage gold = goldOp.filter(src, null);
 
+        // we do not share the goldOp since it is already initialized and used
+        // for the whole image, instead we will create a separate sharedOp and
+        // use it for each line of a different threads
+        ColorConvertOp sharedOp = new ColorConvertOp(srcCS, dstCS, null);
+        Thread[] threads = new Thread[SIZE];
+        for (int y = 0; y < SIZE; ++y) {
+            BufferedImage line = src.getSubimage(0, y, SIZE, 1);
+            threads[y] = test(sharedOp, line, y);
+        }
+
+        for (Thread t: threads) {
+            t.start();
+        }
+        for (Thread t: threads) {
+            t.join();
+        }
+        for (int y = 0; y < SIZE; ++y) {
+            validate(gold, lines[y], y);
+        }
         if (failed) {
             throw new RuntimeException("Unexpected exception");
         }
     }
 
-    private static void test(BufferedImage gold, ColorConvertOp sharedOp,
-                             int type) throws Exception {
-        Thread[] ts = new Thread[7];
-        CountDownLatch latch = new CountDownLatch(ts.length);
-        for (int i = 0; i < ts.length; i++) {
-            ts[i] = new Thread(() -> {
-                BufferedImage local = createSrc(type);
-                latch.countDown();
-                try {
-                    latch.await();
-                    BufferedImage image = sharedOp.filter(local, null);
-                    validate(image, gold);
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                    failed = true;
-                }
-            });
-        }
-        for (Thread t : ts) {
-            t.start();
-        }
-        for (Thread t : ts) {
-            t.join();
-        }
+    private static Thread test(ColorConvertOp sharedOp,
+                               BufferedImage line, int y){
+        return new Thread(() -> {
+            try {
+                BufferedImage image = sharedOp.filter(line, null);
+                lines[y] = image;
+            } catch (Throwable t) {
+                t.printStackTrace();
+                failed = true;
+            }
+        });
     }
 
     private static BufferedImage createSrc(int type) {
@@ -127,16 +132,14 @@ public final class MTTransformValidation {
         }
     }
 
-    private static void validate(BufferedImage img1, BufferedImage img2) {
+    private static void validate(BufferedImage full, BufferedImage line, int y) {
         for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                int rgb1 = img1.getRGB(i, j);
-                int rgb2 = img2.getRGB(i, j);
-                if (rgb1 != rgb2) {
-                    System.err.println("rgb1 = " + Integer.toHexString(rgb1));
-                    System.err.println("rgb2 = " + Integer.toHexString(rgb2));
-                    throw new RuntimeException();
-                }
+            int rgb1 = full.getRGB(i, y);
+            int rgb2 = line.getRGB(i, 0);
+            if (rgb1 != rgb2) {
+                System.err.println("rgb1 = " + Integer.toHexString(rgb1));
+                System.err.println("rgb2 = " + Integer.toHexString(rgb2));
+                throw new RuntimeException();
             }
         }
     }
