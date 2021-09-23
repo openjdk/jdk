@@ -5592,8 +5592,10 @@ public class Attr extends JCTree.Visitor {
          * Check structural serialization declarations.
          **/
         private void checkSerialStructure(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
+	    
         }
 
+    // TO-DO: pass in tree info as the parameter? define in outer class?
     /**
      * This visitor will warn if a serialization-related field or
      * method is declared in a suspicious or incorrect way. In
@@ -5622,7 +5624,7 @@ public class Attr extends JCTree.Visitor {
      * public void readExternal(ObjectInput) throws IOException
      *
      */
-    private class SerialTypeVisitor extends ElementKindVisitor14<Void, Void> {
+    private class SerialTypeVisitor extends ElementKindVisitor14<Void, JCClassDecl> {
         SerialTypeVisitor(){super();}
 
         final Set<String> serialMethodNames = Set.of("writeObject", "writeReplace",
@@ -5664,13 +5666,13 @@ public class Attr extends JCTree.Visitor {
         //                 Objects.requireNonNull(elementUtils.getTypeElement("java.io.Serial").asType());
             
         @Override
-        public Void defaultAction(Element e, Void p) {
+        public Void defaultAction(Element e, JCClassDecl p) {
             throw new IllegalArgumentException(Objects.requireNonNullElse(e.toString(), ""));
         }
 
         @Override
         public Void visitTypeAsClass(TypeElement e,
-                                         Void p) {
+				     JCClassDecl tree) {
             System.out.println("Class\t" + e.getQualifiedName() +" is Serializeable.");
 
             if (checkSuppressSerialWarning(e) ||
@@ -5708,8 +5710,8 @@ public class Attr extends JCTree.Visitor {
                     name = enclosed.getSimpleName().toString();
                     if (serialFieldNames.contains(name)) {
                         switch (name) {
-                        case "serialVersionUID"       ->  checkSerialVersionUID(e, enclosed);
-                        case "serialPersistentFields" ->  checkSerialPersistentFields(e, enclosed);
+                        case "serialVersionUID"       ->  checkSerialVersionUID(tree, e, enclosed);
+                        case "serialPersistentFields" ->  checkSerialPersistentFields(tree, e, enclosed);
                         default -> throw new AssertionError();
                         }
 
@@ -5744,11 +5746,11 @@ public class Attr extends JCTree.Visitor {
                     name = enclosed.getSimpleName().toString();
                     if (serialMethodNames.contains(name)) {
                         switch (name) {
-                        case "writeObject"      -> checkWriteObject(e, method);
-                        case "writeReplace"     -> checkWriteReplace(e, method);
-                        case "readObject"       -> checkReadObject(e, method);
-                        case "readObjectNoData" -> checkReadObjectNoData(e, method);
-                        case "readResolve"      -> checkReadResolve(e, method);
+                        case "writeObject"      -> checkWriteObject(tree, e, method);
+                        case "writeReplace"     -> checkWriteReplace(tree,e, method);
+                        case "readObject"       -> checkReadObject(tree,e, method);
+                        case "readObjectNoData" -> checkReadObjectNoData(tree, e, method);
+                        case "readResolve"      -> checkReadResolve(tree, e, method);
                         default ->  throw new AssertionError();
                         }
                     }
@@ -5759,20 +5761,34 @@ public class Attr extends JCTree.Visitor {
             return null;
         }
 
-        private void checkSerialVersionUID(Element e, Element field) {
+        private void checkSerialVersionUID(JCClassDecl tree, Element e, Element field) {
             // To be effective, serialVersionUID must be marked
             // static and final, but private is recommended.
 
             // But alas, in practice there are many non-private
             // serialVersionUID fields
-            checkMandatoryModifiers(e, field, STATIC_FINAL_MODS);
-            checkTypeOfField(e , field, LONG_TYPE);
+
+	    // TODO: need to pass in warningKey of type Warning...
+//             if ((svuid.flags() & (STATIC | FINAL)) !=
+//                 (STATIC | FINAL))
+//                 log.warning(LintCategory.SERIAL,
+//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ImproperSVUID(c));
+
+            checkMandatoryModifiers(tree, e, field, STATIC_FINAL_MODS, Warnings.ImproperSVUID( (Symbol)  e));
+
+	    // TODO: need to pass in warningKey of type Warning...
+//             // check that it is long
+//             else if (!svuid.type.hasTag(LONG))
+//                 log.warning(LintCategory.SERIAL,
+//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.LongSVUID(c));
+            checkTypeOfField(tree, e, field, LONG_TYPE);
+
         }
 
-        private void checkSerialPersistentFields(Element e, Element field) {
+        private void checkSerialPersistentFields(JCClassDecl tree, Element e, Element field) {
             // To be effective, serialPersisentFields must be private, static, and final.
-            checkMandatoryModifiers(e, field, PRIVATE_STATIC_FINAL_MODS);
-            checkTypeOfField(e, field, OSF_TYPE);
+            checkMandatoryModifiers(tree, e, field, PRIVATE_STATIC_FINAL_MODS, null /*FIXME*/);
+            checkTypeOfField(tree, e, field, OSF_TYPE);
             // If additional compile-time information is
             // available, should check for a "constant null"
             // assignment to this field. A null value makes having
@@ -5784,68 +5800,68 @@ public class Attr extends JCTree.Visitor {
          * abstract, static, final, synchronized, native, strictfp
          */
 
-        private void checkWriteObject(Element e, ExecutableElement method) {
+        private void checkWriteObject(JCClassDecl tree, Element e, ExecutableElement method) {
             // The "synchronized" modifier is seen on the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
             // private void writeObject(ObjectOutputStream stream) throws IOException
-            checkMandatoryModifiers(e, method, PRIVATE_MODS);
-            checkExcludedModifiers(e,  method, STATIC_MODS);
-            checkReturnTypeOfMethod(e, method, VOID_TYPE);
-            checkOneArg(e, method, OOS_TYPE);
-            checkExternalizable(e, method);
-            checkExceptions(e, method, IOE_TYPE);
+            checkMandatoryModifiers(tree, e, method, PRIVATE_MODS, null /*FIXME*/);
+            checkExcludedModifiers(tree, e,  method, STATIC_MODS);
+            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
+            checkOneArg(tree, e, method, OOS_TYPE);
+            checkExternalizable(tree, e, method);
+            checkExceptions(tree, e, method, IOE_TYPE);
         }
 
-        private void checkWriteReplace(Element e, ExecutableElement method) {
+        private void checkWriteReplace(JCClassDecl tree, Element e, ExecutableElement method) {
             // ANY-ACCESS-MODIFIER Object writeReplace() throws
             // ObjectStreamException
 
             // Excluding abstract, could have a more complicated
             // rule based on abstract-ness of the class?
-            checkExcludedModifiers(e, method, ABSTRACT_STATIC_MODS);
-            checkReturnTypeOfMethod(e, method, OBJECT_TYPE);
-            checkNoArgs(e, method);
-            checkExceptions(e, method, OSE_TYPE);
+            checkExcludedModifiers(tree, e, method, ABSTRACT_STATIC_MODS);
+            checkReturnTypeOfMethod(tree, e, method, OBJECT_TYPE);
+            checkNoArgs(tree, e, method);
+            checkExceptions(tree, e, method, OSE_TYPE);
         }
 
-        private void checkReadObject(Element e, ExecutableElement method) {
+        private void checkReadObject(JCClassDecl tree, Element e, ExecutableElement method) {
             // The "synchronized" modifier is seen on the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
             // private void readObject(ObjectInputStream stream)
             // throws IOException, ClassNotFoundException
-            checkMandatoryModifiers(e, method, PRIVATE_MODS);
-            checkExcludedModifiers(e,  method, STATIC_MODS);
-            checkReturnTypeOfMethod(e, method, VOID_TYPE);
-            checkOneArg(e, method, OIS_TYPE);
-            checkExternalizable(e, method);
-            checkExceptions(e, method, IOE_TYPE, CNFE_TYPE);
+            checkMandatoryModifiers(tree, e, method, PRIVATE_MODS, null /*FIXME*/);
+            checkExcludedModifiers(tree, e,  method, STATIC_MODS);
+            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
+            checkOneArg(tree, e, method, OIS_TYPE);
+            checkExternalizable(tree, e, method);
+            checkExceptions(tree, e, method, IOE_TYPE, CNFE_TYPE);
         }
 
-        private void checkReadObjectNoData(Element e, ExecutableElement method) {
+        private void checkReadObjectNoData(JCClassDecl tree, Element e, ExecutableElement method) {
             // private void readObjectNoData()
             // throws ObjectStreamException
-            checkMandatoryModifiers(e, method, PRIVATE_MODS);
-            checkExcludedModifiers(e,  method, STATIC_MODS);
-            checkReturnTypeOfMethod(e, method, VOID_TYPE);
-            checkNoArgs(e, method);
-            checkExternalizable(e, method);
-            checkExceptions(e, method, OSE_TYPE);
+            checkMandatoryModifiers(tree, e, method, PRIVATE_MODS, null /*FIXME*/);
+            checkExcludedModifiers(tree, e,  method, STATIC_MODS);
+            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
+            checkNoArgs(tree, e, method);
+            checkExternalizable(tree, e, method);
+            checkExceptions(tree, e, method, OSE_TYPE);
         }
 
-        private void checkReadResolve(Element e, ExecutableElement method) {
+        private void checkReadResolve(JCClassDecl tree, Element e, ExecutableElement method) {
             // ANY-ACCESS-MODIFIER Object readResolve()
             // throws ObjectStreamException
 
             // Excluding abstract, could have a more complicated
             // rule based on abstract-ness of the class?
-            checkExcludedModifiers(e, method, ABSTRACT_STATIC_MODS);
-            checkReturnTypeOfMethod(e, method, OBJECT_TYPE);
-            checkNoArgs(e, method);
-            checkExceptions(e, method, OSE_TYPE);
+            checkExcludedModifiers(tree, e, method, ABSTRACT_STATIC_MODS);
+            checkReturnTypeOfMethod(tree,e, method, OBJECT_TYPE);
+            checkNoArgs(tree, e, method);
+            checkExceptions(tree, e, method, OSE_TYPE);
         }
 
 
@@ -5859,7 +5875,7 @@ public class Attr extends JCTree.Visitor {
          */
         @Override
         public Void visitTypeAsEnum(TypeElement e,
-                                    Void p) {
+                                    JCClassDecl p) {
             System.out.println("Enum\t" + e.getQualifiedName() +" is Serializeable.");
 
             if (checkSuppressSerialWarning(e)) {
@@ -5896,7 +5912,7 @@ public class Attr extends JCTree.Visitor {
          */
         @Override
         public Void visitTypeAsInterface(TypeElement e,
-                                         Void p) {
+                                         JCClassDecl p) {
             System.err.println("Interface\t" + e.getQualifiedName() +" is Serializeable.");
 
             if (checkSuppressSerialWarning(e)) {
@@ -5931,7 +5947,7 @@ public class Attr extends JCTree.Visitor {
 
         @Override
         public Void visitTypeAsAnnotationType(TypeElement e,
-                                              Void p) {
+                                              JCClassDecl p) {
             // Per the JLS, annotation types are not serializeable
             return null;
         }
@@ -5960,7 +5976,7 @@ public class Attr extends JCTree.Visitor {
 
         @Override
         public Void visitTypeAsRecord(TypeElement e,
-                                      Void p) {
+                                      JCClassDecl tree) {
             System.out.println("Record\t" + e.getQualifiedName() +" is Serializeable.");
 
             if (checkSuppressSerialWarning(e)) {
@@ -5984,7 +6000,7 @@ public class Attr extends JCTree.Visitor {
                     case "serialVersionUID" -> {
                         System.out.println("Serial field name " + name + 
                                            " in " + e.getKind() + " " + e.toString());
-                        checkSerialVersionUID(e, enclosed);
+                        checkSerialVersionUID(tree, e, enclosed);
                     }
 
                     }
@@ -5993,8 +6009,8 @@ public class Attr extends JCTree.Visitor {
                 case METHOD -> {
                     var method = toMethod(enclosed);
                     switch(name) {
-                    case "writeReplace" -> checkWriteReplace(e, method);
-                    case "readResolve"  -> checkReadResolve(e, method);
+                    case "writeReplace" -> checkWriteReplace(tree, e, method);
+                    case "readResolve"  -> checkReadResolve(tree, e, method);
                     default -> {
                         if (serialMethodNames.contains(name))
                             System.out.println("Serial method name " + name + 
@@ -6024,19 +6040,32 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        void checkMandatoryModifiers(Element enclosing, Element element, Set<Modifier> mandatoryMods) {
+        void checkMandatoryModifiers(JCClassDecl tree,
+				     Element enclosing,
+				     Element element,
+				     Set<Modifier> mandatoryMods,
+				     Warning warningKey) {
             String name = element.getSimpleName().toString();
             Set<Modifier> mods = element.getModifiers();
             for (Modifier mandatoryMod : mandatoryMods) {
                 if (!mods.contains(mandatoryMod) ) {
-                    System.out.println("Serialization-related declaration " + name + 
-                                       " in " + enclosing.getKind() + " " + enclosing.toString() +
-                                       " is missing expected modifier " + mandatoryMod);
+		    if (warningKey == null) {
+			System.out.println("Serialization-related declaration " + name + 
+					   " in " + enclosing.getKind() + " " + enclosing.toString() +
+					   " is missing expected modifier " + mandatoryMod);
+		    } else {
+			log.warning(LintCategory.SERIAL,
+				    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
+				    warningKey);
+		    }
                 }
             }
         }
 
-        void checkExcludedModifiers(Element enclosing, Element element, Set<Modifier> excludedMods) {
+        void checkExcludedModifiers(JCClassDecl tree,
+				    Element enclosing,
+				    Element element,
+				    Set<Modifier> excludedMods) {
             String name = element.getSimpleName().toString();
             Set<Modifier> mods = element.getModifiers();
             for (Modifier excludedMod : excludedMods) {
@@ -6048,7 +6077,10 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        void checkTypeOfField(Element enclosing, Element element, TypeMirror expected) {
+        void checkTypeOfField(JCClassDecl tree,
+			      Element enclosing,
+			      Element element,
+			      TypeMirror expected) {
             String name = element.getSimpleName().toString();
             TypeMirror tm = element.asType();
             if (!types.isSameType((Type)expected, /* fixme*/ (Type)tm)) {
@@ -6059,7 +6091,10 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private void checkReturnTypeOfMethod(Element enclosing, ExecutableElement method, TypeMirror expectedReturnType) {
+        private void checkReturnTypeOfMethod(JCClassDecl tree,
+					     Element enclosing,
+					     ExecutableElement method,
+					     TypeMirror expectedReturnType) {
             String name = method.getSimpleName().toString();
             TypeMirror tm = method.getReturnType();
             if (!types.isSameType((Type)expectedReturnType, /* fixme*/ (Type)tm)) {
@@ -6068,7 +6103,10 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private void checkOneArg(Element enclosing, ExecutableElement method, TypeMirror expected) {
+        private void checkOneArg(JCClassDecl tree,
+				 Element enclosing,
+				 ExecutableElement method,
+				 TypeMirror expected) {
             String name = method.getSimpleName().toString();
 
             var parameters= method.getParameters();
@@ -6087,7 +6125,7 @@ public class Attr extends JCTree.Visitor {
             return;
         }
 
-        private void checkNoArgs(Element enclosing, ExecutableElement method) {
+        private void checkNoArgs(JCClassDecl tree, Element enclosing, ExecutableElement method) {
             String name = method.getSimpleName().toString();
             var parameters= method.getParameters();
             if (!parameters.isEmpty()) {
@@ -6096,7 +6134,7 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private void checkExternalizable(Element enclosing, ExecutableElement method) {
+        private void checkExternalizable(JCClassDecl tree, Element enclosing, ExecutableElement method) {
             //if the enclosing class is externalizable, warn for the method
             if (types.isSubtype(/*fixme*/(Type)enclosing.asType(), externalizableType)) {
                 System.out.println("Serialization-related method " + method +
@@ -6105,7 +6143,10 @@ public class Attr extends JCTree.Visitor {
             return;
         }
 
-        private void checkExceptions(Element enclosing, ExecutableElement method, TypeMirror... declaredExceptions) {
+        private void checkExceptions(JCClassDecl tree,
+				     Element enclosing,
+				     ExecutableElement method,
+				     TypeMirror... declaredExceptions) {
             for (TypeMirror thrownType: method.getThrownTypes()) {
                 // If not an Error and not a RuntimeException, check if a subtype of a blessed exception
                 if (types.isSubtype(/*fixme*/(Type)thrownType, RUNTIME_EXCEPTION_TYPE) ||
