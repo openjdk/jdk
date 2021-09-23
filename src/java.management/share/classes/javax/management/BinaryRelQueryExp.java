@@ -167,17 +167,18 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
             String sval1 = ((StringValueExp)val1).getValue();
             String sval2 = ((StringValueExp)val2).getValue();
 
+            int cmp = sval1.compareTo(sval2);
             switch (relOp) {
             case Query.GT:
-                return sval1.compareTo(sval2) > 0;
+                return cmp > 0;
             case Query.LT:
-                return sval1.compareTo(sval2) < 0;
+                return cmp < 0;
             case Query.GE:
-                return sval1.compareTo(sval2) >= 0;
+                return cmp >= 0;
             case Query.LE:
-                return sval1.compareTo(sval2) <= 0;
+                return cmp <= 0;
             case Query.EQ:
-                return sval1.equals(sval2);
+                return cmp == 0;
             }
         }
 
