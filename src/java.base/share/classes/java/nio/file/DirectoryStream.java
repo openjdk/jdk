@@ -65,7 +65,7 @@ import java.io.IOException;
  * using the {@code Iterator}, behaves as if the end of stream has been reached.
  * Due to read-ahead, the {@code Iterator} may return one or more elements
  * after the directory stream has been closed. Once these buffered elements
- * have been read, then subsequent calls to the {@code hasNext} method returns
+ * have been read, then subsequent calls to the {@code hasNext} method return
  * {@code false}, and subsequent calls to the {@code next} method will throw
  * {@code NoSuchElementException}.
  *
