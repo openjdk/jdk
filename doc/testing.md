@@ -92,8 +92,8 @@ A brief description of the tiered test groups:
 Normally, at least this tier should be clean before integration. Because of the widespread use,
 the tests in `tier1` are carefully selected and optimized to run fast, and to run in the
 most stable manner. The test failures in `tier1` are usually followed up on quickly, either
-with fixes, or adding relevant tests to problem list. [GitHub Actions workflows](../.github/workflows/),
-if enabled, run `tier1` tests.
+with fixes, or adding relevant tests to problem list. GitHub Actions workflows, if enabled,
+run `tier1` tests.
 
 - `tier2`: This test group covers even more ground. These contain, among other things,
 tests that either run for too long to be at `tier1`, tests for less stable and/or experimental
