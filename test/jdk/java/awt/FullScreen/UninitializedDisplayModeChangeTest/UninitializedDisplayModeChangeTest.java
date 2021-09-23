@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.TimeUnit;
 
 public class UninitializedDisplayModeChangeTest {
     public static volatile boolean failed = false;
@@ -87,7 +88,7 @@ public class UninitializedDisplayModeChangeTest {
             err.start();
             out.start();
 
-            childProc.waitFor();
+            childProc.waitFor(2, TimeUnit.SECONDS);
         } catch (Exception e) {
             failed = true;
             e.printStackTrace();
