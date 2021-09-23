@@ -22,7 +22,7 @@
  */
 
 /**
- * @test TestOnSpinWaitImplAArch64
+ * @test TestOnSpinWaitAArch64
  * @summary Checks that java.lang.Thread.onSpinWait is intrinsified with instructions specified in '-XX:OnSpinWaitImpl'
  * @bug 8186670
  * @library /test/lib
@@ -30,12 +30,12 @@
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
  *
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c2 7 nop
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c2 3 isb
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c2 1 yield
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c1 7 nop
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c1 3 isb
- * @run driver compiler.onSpinWait.TestOnSpinWaitImplAArch64 c1 1 yield
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 7 nop
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 3 isb
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 1 yield
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 7 nop
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 3 isb
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 1 yield
  */
 
 package compiler.onSpinWait;
@@ -46,7 +46,7 @@ import java.util.ListIterator;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class TestOnSpinWaitImplAArch64 {
+public class TestOnSpinWaitAArch64 {
     public static void main(String[] args) throws Exception {
         String compiler = args[0];
         String spinWaitInstCount = args[1];
@@ -101,12 +101,12 @@ public class TestOnSpinWaitImplAArch64 {
 
     // The expected output of PrintAssembly for example for a spin wait with three NOPs:
     //
-    // # {method} {0x0000ffff6ac00370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitImplAArch64$Launcher'
+    // # {method} {0x0000ffff6ac00370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'
     // #           [sp+0x40]  (sp of caller)
     // 0x0000ffff9d557680: 1f20 03d5 | e953 40d1 | 3f01 00f9 | ff03 01d1 | fd7b 03a9 | 1f20 03d5 | 1f20 03d5
     //
     // 0x0000ffff9d5576ac: ;*invokestatic onSpinWait {reexecute=0 rethrow=0 return_oop=0}
-    //                     ; - compiler.onSpinWait.TestOnSpinWaitImplAArch64$Launcher::test@0 (line 161)
+    //                     ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0 (line 161)
     // 0x0000ffff9d5576ac: 1f20 03d5 | fd7b 43a9 | ff03 0191
     //
     // The checkOutput method adds hex instructions before 'invokestatic onSpinWait' and from the line after
@@ -114,9 +114,9 @@ public class TestOnSpinWaitImplAArch64 {
     private static void checkOutput(OutputAnalyzer output, String spinWaitInstHex, int spinWaitInstCount) {
         Iterator<String> iter = output.asLines().listIterator();
 
-        String match = skipTo(iter, "'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitImplAArch64$Launcher'");
+        String match = skipTo(iter, "'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'");
         if (match == null) {
-            throw new RuntimeException("Missing compiler output for the method compiler.onSpinWait.TestOnSpinWaitImplAArch64$Launcher::test");
+            throw new RuntimeException("Missing compiler output for the method compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test");
         }
 
         ArrayList<String> instrs = new ArrayList<String>();
@@ -130,7 +130,7 @@ public class TestOnSpinWaitImplAArch64 {
             }
         }
 
-        if (!iter.hasNext() || !iter.next().contains("- compiler.onSpinWait.TestOnSpinWaitImplAArch64$Launcher::test@0") || !iter.hasNext()) {
+        if (!iter.hasNext() || !iter.next().contains("- compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0") || !iter.hasNext()) {
             throw new RuntimeException("Missing compiler output for Thread.onSpinWait intrinsic");
         }
 
@@ -174,7 +174,6 @@ public class TestOnSpinWaitImplAArch64 {
     }
 
     static class Launcher {
-
         public static void main(final String[] args) throws Exception {
             int end = 20_000;
 

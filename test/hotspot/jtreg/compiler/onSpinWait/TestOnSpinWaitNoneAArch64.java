@@ -22,15 +22,15 @@
  */
 
 /**
- * @test TestOnSpinWaitPauseImplNone
- * @summary Checks that java.lang.Thread.onSpinWait is not intrinsified when '-XX:UsePauseImpl=none' is used
+ * @test TestOnSpinWaitNoneAArch64
+ * @summary Checks that java.lang.Thread.onSpinWait is not intrinsified when '-XX:OnSpinWaitImpl=none' is used
  * @bug 8186670
  * @library /test/lib
  *
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
  *
- * @run driver compiler.onSpinWait.TestOnSpinWaitPauseImplNone
+ * @run driver compiler.onSpinWait.TestOnSpinWaitNoneAArch64
  */
 
 package compiler.onSpinWait;
@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class TestOnSpinWaitPauseImplNone {
+public class TestOnSpinWaitNoneAArch64 {
 
     public static void main(String[] args) throws Exception {
         ArrayList<String> command = new ArrayList<String>();
