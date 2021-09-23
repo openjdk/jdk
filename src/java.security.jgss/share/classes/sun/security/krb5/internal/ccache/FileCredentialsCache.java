@@ -571,8 +571,7 @@ public class FileCredentialsCache extends CredentialsCache
         while (st.hasMoreTokens()) {
             v.add(st.nextToken());
         }
-        final String[] command = new String[v.size()];
-        v.toArray(command);
+        final String[] command = v.toArray(new String[0]);
         try {
 
             @SuppressWarnings("removal")

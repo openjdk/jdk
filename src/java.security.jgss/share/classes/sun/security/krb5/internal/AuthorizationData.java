@@ -107,8 +107,7 @@ public class AuthorizationData implements Cloneable {
             v.add(new AuthorizationDataEntry(der.getData().getDerValue()));
         }
         if (v.size() > 0) {
-            entry = new AuthorizationDataEntry[v.size()];
-            v.toArray(entry);
+            entry = v.toArray(new AuthorizationDataEntry[0]);
         }
     }
 

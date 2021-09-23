@@ -198,8 +198,7 @@ public class Authenticator {
         if (authorizationData != null) {
             v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x08), authorizationData.asn1Encode()));
         }
-        DerValue[] der = new DerValue[v.size()];
-        v.toArray(der);
+        DerValue[] der = v.toArray(new DerValue[0]);
         temp = new DerOutputStream();
         temp.putSequence(der);
         DerOutputStream out = new DerOutputStream();

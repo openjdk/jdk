@@ -185,8 +185,7 @@ public class HostAddresses implements Cloneable {
             tempAddresses.add(new HostAddress(der));
         }
         if (tempAddresses.size() > 0) {
-            addresses = new HostAddress[tempAddresses.size()];
-            tempAddresses.toArray(addresses);
+            addresses = tempAddresses.toArray(new HostAddress[0]);
         }
     }
 

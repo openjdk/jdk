@@ -151,8 +151,7 @@ public class EncAPRepPart {
             v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
                     true, (byte) 0x03), temp.toByteArray()));
         }
-        DerValue[] der = new DerValue[v.size()];
-        v.toArray(der);
+        DerValue[] der = v.toArray(new DerValue[0]);
         temp = new DerOutputStream();
         temp.putSequence(der);
         DerOutputStream out = new DerOutputStream();

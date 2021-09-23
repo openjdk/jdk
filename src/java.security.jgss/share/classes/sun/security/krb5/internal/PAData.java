@@ -171,8 +171,7 @@ public class PAData {
             v.add(new PAData(subsubDer.getData().getDerValue()));
         }
         if (v.size() > 0) {
-            PAData[] pas = new PAData[v.size()];
-            v.toArray(pas);
+            PAData[] pas = v.toArray(new PAData[0]);
             return pas;
         }
         return null;

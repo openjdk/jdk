@@ -202,8 +202,7 @@ public class KDCReqBody {
                     throw new Asn1Exception(Krb5.ASN1_BAD_ID);
                 }
                 if (tempTickets.size() > 0) {
-                    additionalTickets = new Ticket[tempTickets.size()];
-                    tempTickets.toArray(additionalTickets);
+                    additionalTickets = tempTickets.toArray(new Ticket[0]);
                 }
             } else {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
@@ -269,8 +268,7 @@ public class KDCReqBody {
             ticketsTemp.write(DerValue.tag_SequenceOf, temp);
             v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0B), ticketsTemp.toByteArray()));
         }
-        DerValue[] der = new DerValue[v.size()];
-        v.toArray(der);
+        DerValue[] der = v.toArray(new DerValue[0]);
         temp = new DerOutputStream();
         temp.putSequence(der);
         return temp.toByteArray();

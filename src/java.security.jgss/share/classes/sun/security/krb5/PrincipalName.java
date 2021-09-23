@@ -277,8 +277,7 @@ public class PrincipalName implements Cloneable {
                 String namePart = new KerberosString(subSubDer).toString();
                 v.add(namePart);
             }
-            nameStrings = new String[v.size()];
-            v.toArray(nameStrings);
+            nameStrings = v.toArray(new String[0]);
             validateNameStrings(nameStrings);
         } else  {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
@@ -378,8 +377,7 @@ public class PrincipalName implements Cloneable {
             tempStrings.add(component);
         }
 
-        String[] result = new String[tempStrings.size()];
-        tempStrings.toArray(result);
+        String[] result = tempStrings.toArray(new String[0]);
         return result;
     }
 

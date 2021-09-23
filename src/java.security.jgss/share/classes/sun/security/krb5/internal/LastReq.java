@@ -85,8 +85,7 @@ public class LastReq {
             v.add(new LastReqEntry(encoding.getData().getDerValue()));
         }
         if (v.size() > 0) {
-            entry = new LastReqEntry[v.size()];
-            v.toArray(entry);
+            entry = v.toArray(new LastReqEntry[0]);
         }
     }
 

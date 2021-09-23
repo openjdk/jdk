@@ -139,8 +139,7 @@ public class KRBCred {
                 v.add(new Ticket(subsubDer.getData().getDerValue()));
             }
             if (v.size() > 0) {
-                tickets = new Ticket[v.size()];
-                v.toArray(tickets);
+                tickets = v.toArray(new Ticket[0]);
             }
         } else {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
