@@ -35,7 +35,7 @@ static Mutex* m[iterations];
 static int i = 0;
 
 static void create_mutex(Thread* thr) {
-  m[i] = new Mutex(Mutex::leaf, FormatBuffer<128>("MyLock lock #%u", i), Mutex::_safepoint_check_never);
+  m[i] = new Mutex(Mutex::nosafepoint, FormatBuffer<128>("MyLock#%u_lock", i), Mutex::_safepoint_check_never);
   i++;
 }
 
@@ -46,7 +46,7 @@ TEST_VM(MutexName, mutex_name) {
     nomt_test_doer(create_mutex);
   }
   for (int i = 0; i < iterations; i++) {
-    FormatBuffer<128> f("MyLock lock #%u", i);
+    FormatBuffer<128> f("MyLock#%u_lock", i);
     ASSERT_STREQ(m[i]->name(), f.buffer()) << "Wrong name!";
   }
 }
@@ -128,18 +128,18 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_trylock_rank_out_of_orderB,
   mutex_rankA->unlock();
 }
 
-TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_event_leaf,
-                   ".* Attempting to acquire lock mutex_rank_leaf/.* out of order with lock mutex_rank_event/0 "
+TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_event_nosafepoint,
+                   ".* Attempting to acquire lock mutex_rank_nosafepoint/.* out of order with lock mutex_rank_event/0 "
                    "-- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
   Mutex* mutex_rank_event = new Mutex(Mutex::event, "mutex_rank_event", Mutex::_safepoint_check_never);
-  Mutex* mutex_rank_leaf = new Mutex(Mutex::leaf, "mutex_rank_leaf", Mutex::_safepoint_check_never);
+  Mutex* mutex_rank_nonleaf = new Mutex(Mutex::nosafepoint, "mutex_rank_nosafepoint", Mutex::_safepoint_check_never);
 
   mutex_rank_event->lock_without_safepoint_check();
-  mutex_rank_leaf->lock_without_safepoint_check();
-  mutex_rank_leaf->unlock();
+  mutex_rank_nonleaf->lock_without_safepoint_check();
+  mutex_rank_nonleaf->unlock();
   mutex_rank_event->unlock();
 }
 
@@ -206,7 +206,7 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order_trylock,
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_special,
                    ".* Attempting to wait on monitor monitor_rank_special_minus_one/.* while holding lock monitor_rank_special/.*"
-                   "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank special.") {
+                   "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank nosafepoint or below.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -222,7 +222,7 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_special,
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_event_tty,
                    ".* Attempting to wait on monitor monitor_rank_event/0 while holding lock monitor_rank_tty/.*"
-                   "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank special.") {
+                   "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank nosafepoint or below.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -238,7 +238,7 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_event_tty,
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_tty_special,
                    ".* Attempting to wait on monitor monitor_rank_tty/.* while holding lock monitor_rank_special/.*"
-                   "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank special.") {
+                   "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank nosafepoint or below.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -270,5 +270,15 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_negative_rank,
   Monitor* monitor_rank_broken = new Monitor(Mutex::event-1, "monitor_rank_broken", Mutex::_safepoint_check_never);
   monitor_rank_broken->lock_without_safepoint_check();
   monitor_rank_broken->unlock();
+}
+
+TEST_VM_ASSERT_MSG(MutexRank, monitor_nosafepoint_rank,
+                   ".*failed: Locks above nosafepoint rank should safepoint: monitor_rank_leaf") {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  Monitor* monitor_rank_leaf = new Monitor(Mutex::leaf, "monitor_rank_leaf", Mutex::_safepoint_check_never);
+  monitor_rank_leaf->lock_without_safepoint_check();
+  monitor_rank_leaf->unlock();
 }
 #endif // ASSERT

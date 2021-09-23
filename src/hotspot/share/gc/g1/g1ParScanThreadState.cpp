@@ -26,6 +26,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -58,7 +59,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            uint worker_id,
                                            uint n_workers,
                                            size_t young_cset_length,
-                                           size_t optional_cset_length)
+                                           size_t optional_cset_length,
+                                           G1EvacFailureRegions* evac_failure_regions)
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
     _rdc_local_qset(rdcqs),
@@ -84,7 +86,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL),
     _preserved_marks(preserved_marks),
-    _evacuation_failed_info()
+    _evacuation_failed_info(),
+    _evac_failure_regions(evac_failure_regions)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -207,14 +210,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   }
   RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
-  assert(obj != NULL, "Must be");
-  if (HeapRegion::is_in_same_region(p, obj)) {
-    return;
-  }
-  HeapRegion* from = _g1h->heap_region_containing(p);
-  if (!from->is_young()) {
-    enqueue_card_if_tracked(_g1h->region_attr(obj), p, obj);
-  }
+  write_ref_field_post(p, obj);
 }
 
 MAYBE_INLINE_EVACUATION
@@ -239,7 +235,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   }
 
   HeapRegion* hr = _g1h->heap_region_containing(to_array);
-  G1ScanInYoungSetter x(&_scanner, hr->is_young());
+  G1SkipCardEnqueueSetter x(&_scanner, hr->is_young());
   // Process claimed task.  The length of to_array is not correct, but
   // fortunately the iteration ignores the length field and just relies
   // on start/end.
@@ -271,7 +267,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
 
-  G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
+  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module. The length of to_array is not correct, but fortunately
@@ -516,7 +512,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       _string_dedup_requests.add(old);
     }
 
-    G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
+    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
     obj->oop_iterate_backwards(&_scanner, klass);
     return obj;
 
@@ -541,7 +537,8 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
       new G1ParScanThreadState(_g1h, rdcqs(),
                                _preserved_marks_set->get(worker_id),
                                worker_id, _n_workers,
-                               _young_cset_length, _optional_cset_length);
+                               _young_cset_length, _optional_cset_length,
+                               _evac_failure_regions);
   }
   return _states[worker_id];
 }
@@ -595,14 +592,14 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    if (_g1h->notify_region_failed_evacuation(r->hrm_index())) {
+    if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);
     }
 
     _preserved_marks->push_if_necessary(old, m);
     _evacuation_failed_info.register_copy_failure(word_sz);
 
-    G1ScanInYoungSetter x(&_scanner, r->is_young());
+    G1SkipCardEnqueueSetter x(&_scanner, r->is_young());
     old->oop_iterate_backwards(&_scanner);
 
     return old;
@@ -649,7 +646,8 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                                                  PreservedMarksSet* preserved_marks_set,
                                                  uint n_workers,
                                                  size_t young_cset_length,
-                                                 size_t optional_cset_length) :
+                                                 size_t optional_cset_length,
+                                                 G1EvacFailureRegions* evac_failure_regions) :
     _g1h(g1h),
     _rdcqs(rdcqs),
     _preserved_marks_set(preserved_marks_set),
@@ -658,7 +656,8 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _young_cset_length(young_cset_length),
     _optional_cset_length(optional_cset_length),
     _n_workers(n_workers),
-    _flushed(false) {
+    _flushed(false),
+    _evac_failure_regions(evac_failure_regions) {
   for (uint i = 0; i < n_workers; ++i) {
     _states[i] = NULL;
   }

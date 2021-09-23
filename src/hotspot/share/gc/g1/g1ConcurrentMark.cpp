@@ -432,7 +432,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers = ConcGCThreads;
   _max_concurrent_workers = _num_concurrent_workers;
 
-  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers, false, true);
+  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers);
   _concurrent_workers->initialize_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
@@ -894,7 +894,6 @@ class G1CMConcurrentMarkingTask : public AbstractGangTask {
 
 public:
   void work(uint worker_id) {
-    assert(Thread::current()->is_ConcurrentGC_thread(), "Not a concurrent GC thread");
     ResourceMark rm;
 
     double start_vtime = os::elapsedVTime();
@@ -979,9 +978,6 @@ public:
     AbstractGangTask("G1 Root Region Scan"), _cm(cm) { }
 
   void work(uint worker_id) {
-    assert(Thread::current()->is_ConcurrentGC_thread(),
-           "this should only be done by a conc GC thread");
-
     G1CMRootMemRegions* root_regions = _cm->root_regions();
     const MemRegion* region = root_regions->claim_next();
     while (region != NULL) {
@@ -1585,8 +1581,9 @@ public:
     G1CMIsAliveClosure is_alive(&_g1h);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     G1CMDrainMarkingStackClosure complete_gc(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
@@ -1699,6 +1696,7 @@ void G1ConcurrentMark::preclean() {
   SuspendibleThreadSetJoiner joiner;
 
   G1CMKeepAliveAndDrainClosure keep_alive(this, task(0), true /* is_serial */);
+  BarrierEnqueueDiscoveredFieldClosure enqueue;
   G1CMDrainMarkingStackClosure drain_mark_stack(this, task(0), true /* is_serial */);
 
   set_concurrency_and_phase(1, true);
@@ -1710,6 +1708,7 @@ void G1ConcurrentMark::preclean() {
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(rp, false);
   rp->preclean_discovered_references(rp->is_alive_non_header(),
                                      &keep_alive,
+                                     &enqueue,
                                      &drain_mark_stack,
                                      &yield_cl,
                                      _gc_timer_cm);

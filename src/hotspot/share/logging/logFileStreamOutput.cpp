@@ -53,6 +53,22 @@ LogFileStreamInitializer::LogFileStreamInitializer() {
   }
 }
 
+bool LogFileStreamOutput::set_option(const char* key, const char* value, outputStream* errstream) {
+  bool success = false;
+  if (strcmp(FoldMultilinesOptionKey, key) == 0) {
+    if (strcmp(value, "true") == 0) {
+      _fold_multilines = true;
+      success = true;
+    } else if (strcmp(value, "false") == 0) {
+      _fold_multilines = false;
+      success = true;
+    } else {
+      errstream->print_cr("Invalid option: %s must be 'true' or 'false'.", key);
+    }
+  }
+  return success;
+}
+
 int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   int total_written = 0;
   char buf[LogDecorations::max_decoration_size + 1];
@@ -171,4 +187,11 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   }
 
   return flush() ? written : -1;
+}
+
+void LogFileStreamOutput::describe(outputStream *out) {
+  LogOutput::describe(out);
+  out->print(" ");
+
+  out->print("foldmultilines=%s", _fold_multilines ? "true" : "false");
 }

@@ -84,11 +84,6 @@ void Settings::ergo_initialize() {
   // Deallocations can be manually switched off to aid error analysis, since this removes one layer of complexity
   //  from allocation.
   _handle_deallocations = MetaspaceHandleDeallocations;
-
-  // We also switch it off automatically if we use allocation guards. This is to keep prefix handling in MetaspaceArena simple.
-  if (_use_allocation_guard) {
-    _handle_deallocations = false;
-  }
 #endif
   LogStream ls(Log(metaspace)::info());
   Settings::print_on(&ls);

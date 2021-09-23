@@ -29,8 +29,10 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -142,6 +144,10 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   card_table()->g1_mark_as_young(mr);
 }
 
+inline G1ScannerTasksQueueSet* G1CollectedHeap::task_queues() const {
+  return _task_queues;
+}
+
 inline G1ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
@@ -192,23 +198,7 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
 }
 
 bool G1CollectedHeap::evacuation_failed() const {
-  return num_regions_failed_evacuation() > 0;
-}
-
-bool G1CollectedHeap::evacuation_failed(uint region_idx) const {
-  return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
-}
-
-uint G1CollectedHeap::num_regions_failed_evacuation() const {
-  return Atomic::load(&_num_regions_failed_evacuation);
-}
-
-bool G1CollectedHeap::notify_region_failed_evacuation(uint const region_idx) {
-  bool result = _regions_failed_evacuation.par_set_bit(region_idx, memory_order_relaxed);
-  if (result) {
-    Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
-  }
-  return result;
+  return _evac_failure_regions.num_regions_failed_evacuation() > 0;
 }
 
 inline bool G1CollectedHeap::is_in_young(const oop obj) {
@@ -218,11 +208,22 @@ inline bool G1CollectedHeap::is_in_young(const oop obj) {
   return heap_region_containing(obj)->is_young();
 }
 
+inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
+  return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
+}
+
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
   if (obj == NULL) {
     return false;
   }
   return is_obj_dead(obj, heap_region_containing(obj));
+}
+
+inline bool G1CollectedHeap::is_obj_ill(const oop obj, const HeapRegion* hr) const {
+  return
+    !hr->obj_allocated_since_next_marking(obj) &&
+    !is_marked_next(obj) &&
+    !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {

@@ -118,10 +118,7 @@ class ParallelScavengeHeap : public CollectedHeap {
     _eden_pool(NULL),
     _survivor_pool(NULL),
     _old_pool(NULL),
-    _workers("GC Thread",
-             ParallelGCThreads,
-             true /* are_GC_task_threads */,
-             false /* are_ConcurrentGC_threads */) { }
+    _workers("GC Thread", ParallelGCThreads) { }
 
   // For use by VM operations
   enum CollectionType {
