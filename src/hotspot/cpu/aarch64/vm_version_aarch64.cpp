@@ -49,23 +49,18 @@ int VM_Version::_initial_sve_vector_length;
 SpinWait VM_Version::_spin_wait;
 
 static SpinWait get_spin_wait_desc() {
-  const char *s = OnSpinWaitImpl;
-  unsigned int count = 1;
-  if (isdigit(*s)) {
-    count = *s - '0';
-    if (count == 0) {
-      vm_exit_during_initialization("Invalid value for OnSpinWaitImpl: zero instruction count", OnSpinWaitImpl);
-    }
-    s += 1;
+  if (strcmp(OnSpinWaitInst, "nop") == 0) {
+    return SpinWait(SpinWait::NOP, OnSpinWaitInstCount);
+  } else if (strcmp(OnSpinWaitInst, "isb") == 0) {
+    return SpinWait(SpinWait::ISB, OnSpinWaitInstCount);
+  } else if (strcmp(OnSpinWaitInst, "yield") == 0) {
+    return SpinWait(SpinWait::YIELD, OnSpinWaitInstCount);
+  } else if (strcmp(OnSpinWaitInst, "none") != 0) {
+    vm_exit_during_initialization("The options for OnSpinWaitInst are nop, isb, yield, and none", OnSpinWaitInst);
   }
-  if (strcmp(s, "nop") == 0) {
-    return SpinWait(SpinWait::NOP, count);
-  } else if (strcmp(s, "isb") == 0) {
-    return SpinWait(SpinWait::ISB, count);
-  } else if (strcmp(s, "yield") == 0) {
-    return SpinWait(SpinWait::YIELD, count);
-  } else if (strcmp(s, "none") != 0) {
-    vm_exit_during_initialization("Invalid value for OnSpinWaitImpl", OnSpinWaitImpl);
+
+  if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount > 0) {
+    vm_exit_during_initialization("OnSpinWaitInstCount cannot be used for OnSpinWaitInst 'none'");
   }
 
   return SpinWait{};

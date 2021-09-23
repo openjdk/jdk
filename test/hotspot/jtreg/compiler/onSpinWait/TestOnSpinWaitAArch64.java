@@ -23,19 +23,19 @@
 
 /**
  * @test TestOnSpinWaitAArch64
- * @summary Checks that java.lang.Thread.onSpinWait is intrinsified with instructions specified in '-XX:OnSpinWaitImpl'
+ * @summary Checks that java.lang.Thread.onSpinWait is intrinsified with instructions specified with '-XX:OnSpinWaitInst' and '-XX:OnSpinWaitInstCount'
  * @bug 8186670
  * @library /test/lib
  *
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
  *
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 7 nop
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 3 isb
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 1 yield
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 7 nop
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 3 isb
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 1 yield
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 nop 7
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 yield 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 nop 7
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 isb 3
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 yield
  */
 
 package compiler.onSpinWait;
@@ -49,8 +49,8 @@ import jdk.test.lib.process.ProcessTools;
 public class TestOnSpinWaitAArch64 {
     public static void main(String[] args) throws Exception {
         String compiler = args[0];
-        String spinWaitInstCount = args[1];
-        String spinWaitInst = args[2];
+        String spinWaitInst = args[1];
+        String spinWaitInstCount = (args.length == 3) ? args[2] : "1";
         ArrayList<String> command = new ArrayList<String>();
         command.add("-XX:+IgnoreUnrecognizedVMOptions");
         command.add("-showversion");
@@ -66,7 +66,8 @@ public class TestOnSpinWaitAArch64 {
             throw new RuntimeException("Unknown compiler: " + compiler);
         }
         command.add("-Xbatch");
-        command.add("-XX:OnSpinWaitImpl=" + spinWaitInstCount + spinWaitInst);
+        command.add("-XX:OnSpinWaitInst=" + spinWaitInst);
+        command.add("-XX:OnSpinWaitInstCount=" + spinWaitInstCount);
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
         command.add(Launcher.class.getName());
 

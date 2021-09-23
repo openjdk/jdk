@@ -111,9 +111,12 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
           range(-1, 4096)                                               \
-  product(ccstr, OnSpinWaitImpl, "none",                                \
+  product(ccstr, OnSpinWaitInst, "none",                                \
           "Use instructions to implement java.lang.Thread.onSpinWait()."\
-          "Options: none, Nnop, Nisb, Nyield, where optional N is 2..9.")
+          "Options: none, nop, isb, yield.")                            \
+  product(uint, OnSpinWaitInstCount, 1,                                 \
+          "Use a number of OnSpinWaitInst.")                            \
+          range(1, 99)
 
 // end of ARCH_FLAGS
 

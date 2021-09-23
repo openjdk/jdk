@@ -23,7 +23,7 @@
 
 /**
  * @test TestOnSpinWaitNoneAArch64
- * @summary Checks that java.lang.Thread.onSpinWait is not intrinsified when '-XX:OnSpinWaitImpl=none' is used
+ * @summary Checks that java.lang.Thread.onSpinWait is not intrinsified when '-XX:OnSpinWaitInst=none' is used
  * @bug 8186670
  * @library /test/lib
  *
@@ -50,7 +50,7 @@ public class TestOnSpinWaitNoneAArch64 {
         command.add("-XX:+PrintCompilation");
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-XX:+PrintInlining");
-        command.add("-XX:OnSpinWaitImpl=none");
+        command.add("-XX:OnSpinWaitInst=none");
         command.add(Launcher.class.getName());
 
         // Test C2 compiler
