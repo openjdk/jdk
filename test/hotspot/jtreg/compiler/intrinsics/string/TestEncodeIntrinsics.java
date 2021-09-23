@@ -24,7 +24,7 @@
 /*
  * @test
  * @key randomness
- * @bug 6896617
+ * @bug 6896617 8274242
  * @summary Verify potentially intrinsified encoders behave well before and after compilation
  * @library /test/lib
  *
