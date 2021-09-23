@@ -5414,7 +5414,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
   BIND(L_exit);
 }
 
-// encode char[] to byte[] in ISO_8859_1
+// encode char[] to byte[] in ISO_8859_1 or ASCII
    //@IntrinsicCandidate
    //private static int implEncodeISOArray(byte[] sa, int sp,
    //byte[] da, int dp, int len) {
@@ -5427,138 +5427,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
    //  }
    //  return i;
    //}
-void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
-  XMMRegister tmp1Reg, XMMRegister tmp2Reg,
-  XMMRegister tmp3Reg, XMMRegister tmp4Reg,
-  Register tmp5, Register result) {
-
-  // rsi: src
-  // rdi: dst
-  // rdx: len
-  // rcx: tmp5
-  // rax: result
-  ShortBranchVerifier sbv(this);
-  assert_different_registers(src, dst, len, tmp5, result);
-  Label L_done, L_copy_1_char, L_copy_1_char_exit;
-
-  // set result
-  xorl(result, result);
-  // check for zero length
-  testl(len, len);
-  jcc(Assembler::zero, L_done);
-
-  movl(result, len);
-
-  // Setup pointers
-  lea(src, Address(src, len, Address::times_2)); // char[]
-  lea(dst, Address(dst, len, Address::times_1)); // byte[]
-  negptr(len);
-
-  if (UseSSE42Intrinsics || UseAVX >= 2) {
-    Label L_copy_8_chars, L_copy_8_chars_exit;
-    Label L_chars_16_check, L_copy_16_chars, L_copy_16_chars_exit;
-
-    if (UseAVX >= 2) {
-      Label L_chars_32_check, L_copy_32_chars, L_copy_32_chars_exit;
-      movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vector
-      movdl(tmp1Reg, tmp5);
-      vpbroadcastd(tmp1Reg, tmp1Reg, Assembler::AVX_256bit);
-      jmp(L_chars_32_check);
-
-      bind(L_copy_32_chars);
-      vmovdqu(tmp3Reg, Address(src, len, Address::times_2, -64));
-      vmovdqu(tmp4Reg, Address(src, len, Address::times_2, -32));
-      vpor(tmp2Reg, tmp3Reg, tmp4Reg, /* vector_len */ 1);
-      vptest(tmp2Reg, tmp1Reg);       // check for Unicode chars in  vector
-      jccb(Assembler::notZero, L_copy_32_chars_exit);
-      vpackuswb(tmp3Reg, tmp3Reg, tmp4Reg, /* vector_len */ 1);
-      vpermq(tmp4Reg, tmp3Reg, 0xD8, /* vector_len */ 1);
-      vmovdqu(Address(dst, len, Address::times_1, -32), tmp4Reg);
-
-      bind(L_chars_32_check);
-      addptr(len, 32);
-      jcc(Assembler::lessEqual, L_copy_32_chars);
-
-      bind(L_copy_32_chars_exit);
-      subptr(len, 16);
-      jccb(Assembler::greater, L_copy_16_chars_exit);
-
-    } else if (UseSSE42Intrinsics) {
-      movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vector
-      movdl(tmp1Reg, tmp5);
-      pshufd(tmp1Reg, tmp1Reg, 0);
-      jmpb(L_chars_16_check);
-    }
-
-    bind(L_copy_16_chars);
-    if (UseAVX >= 2) {
-      vmovdqu(tmp2Reg, Address(src, len, Address::times_2, -32));
-      vptest(tmp2Reg, tmp1Reg);
-      jcc(Assembler::notZero, L_copy_16_chars_exit);
-      vpackuswb(tmp2Reg, tmp2Reg, tmp1Reg, /* vector_len */ 1);
-      vpermq(tmp3Reg, tmp2Reg, 0xD8, /* vector_len */ 1);
-    } else {
-      if (UseAVX > 0) {
-        movdqu(tmp3Reg, Address(src, len, Address::times_2, -32));
-        movdqu(tmp4Reg, Address(src, len, Address::times_2, -16));
-        vpor(tmp2Reg, tmp3Reg, tmp4Reg, /* vector_len */ 0);
-      } else {
-        movdqu(tmp3Reg, Address(src, len, Address::times_2, -32));
-        por(tmp2Reg, tmp3Reg);
-        movdqu(tmp4Reg, Address(src, len, Address::times_2, -16));
-        por(tmp2Reg, tmp4Reg);
-      }
-      ptest(tmp2Reg, tmp1Reg);       // check for Unicode chars in  vector
-      jccb(Assembler::notZero, L_copy_16_chars_exit);
-      packuswb(tmp3Reg, tmp4Reg);
-    }
-    movdqu(Address(dst, len, Address::times_1, -16), tmp3Reg);
-
-    bind(L_chars_16_check);
-    addptr(len, 16);
-    jcc(Assembler::lessEqual, L_copy_16_chars);
-
-    bind(L_copy_16_chars_exit);
-    if (UseAVX >= 2) {
-      // clean upper bits of YMM registers
-      vpxor(tmp2Reg, tmp2Reg);
-      vpxor(tmp3Reg, tmp3Reg);
-      vpxor(tmp4Reg, tmp4Reg);
-      movdl(tmp1Reg, tmp5);
-      pshufd(tmp1Reg, tmp1Reg, 0);
-    }
-    subptr(len, 8);
-    jccb(Assembler::greater, L_copy_8_chars_exit);
-
-    bind(L_copy_8_chars);
-    movdqu(tmp3Reg, Address(src, len, Address::times_2, -16));
-    ptest(tmp3Reg, tmp1Reg);
-    jccb(Assembler::notZero, L_copy_8_chars_exit);
-    packuswb(tmp3Reg, tmp1Reg);
-    movq(Address(dst, len, Address::times_1, -8), tmp3Reg);
-    addptr(len, 8);
-    jccb(Assembler::lessEqual, L_copy_8_chars);
-
-    bind(L_copy_8_chars_exit);
-    subptr(len, 8);
-    jccb(Assembler::zero, L_done);
-  }
-
-  bind(L_copy_1_char);
-  load_unsigned_short(tmp5, Address(src, len, Address::times_2, 0));
-  testl(tmp5, 0xff00);      // check if Unicode char
-  jccb(Assembler::notZero, L_copy_1_char_exit);
-  movb(Address(dst, len, Address::times_1, 0), tmp5);
-  addptr(len, 1);
-  jccb(Assembler::less, L_copy_1_char);
-
-  bind(L_copy_1_char_exit);
-  addptr(result, len); // len is negative count of not processed elements
-
-  bind(L_done);
-}
-
-   // encode char[] to byte[] in ASCII
+   //
    //@IntrinsicCandidate
    //private static int implEncodeAsciiArray(char[] sa, int sp,
    //    byte[] da, int dp, int len) {
@@ -5571,10 +5440,10 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
    //  }
    //  return i;
    //}
-void MacroAssembler::encode_ascii_array(Register src, Register dst, Register len,
+void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   XMMRegister tmp1Reg, XMMRegister tmp2Reg,
   XMMRegister tmp3Reg, XMMRegister tmp4Reg,
-  Register tmp5, Register result) {
+  Register tmp5, Register result, bool ascii) {
 
   // rsi: src
   // rdi: dst
@@ -5584,6 +5453,9 @@ void MacroAssembler::encode_ascii_array(Register src, Register dst, Register len
   ShortBranchVerifier sbv(this);
   assert_different_registers(src, dst, len, tmp5, result);
   Label L_done, L_copy_1_char, L_copy_1_char_exit;
+
+  int mask = ascii ? 0xff80ff80 : 0xff00ff00;
+  int short_mask = ascii ? 0xff80 : 0xff00;
 
   // set result
   xorl(result, result);
@@ -5604,7 +5476,7 @@ void MacroAssembler::encode_ascii_array(Register src, Register dst, Register len
 
     if (UseAVX >= 2) {
       Label L_chars_32_check, L_copy_32_chars, L_copy_32_chars_exit;
-      movl(tmp5, 0xff80ff80);   // create mask to test for non-ASCII chars in vector
+      movl(tmp5, mask);   // create mask to test for Unicode or non-ASCII chars in vector
       movdl(tmp1Reg, tmp5);
       vpbroadcastd(tmp1Reg, tmp1Reg, Assembler::AVX_256bit);
       jmp(L_chars_32_check);
@@ -5613,7 +5485,7 @@ void MacroAssembler::encode_ascii_array(Register src, Register dst, Register len
       vmovdqu(tmp3Reg, Address(src, len, Address::times_2, -64));
       vmovdqu(tmp4Reg, Address(src, len, Address::times_2, -32));
       vpor(tmp2Reg, tmp3Reg, tmp4Reg, /* vector_len */ 1);
-      vptest(tmp2Reg, tmp1Reg);       // check for non-ASCII chars in  vector
+      vptest(tmp2Reg, tmp1Reg);       // check for Unicode or non-ASCII chars in vector
       jccb(Assembler::notZero, L_copy_32_chars_exit);
       vpackuswb(tmp3Reg, tmp3Reg, tmp4Reg, /* vector_len */ 1);
       vpermq(tmp4Reg, tmp3Reg, 0xD8, /* vector_len */ 1);
@@ -5628,7 +5500,7 @@ void MacroAssembler::encode_ascii_array(Register src, Register dst, Register len
       jccb(Assembler::greater, L_copy_16_chars_exit);
 
     } else if (UseSSE42Intrinsics) {
-      movl(tmp5, 0xff80ff80);   // create mask to test for non-ASCII chars in vector
+      movl(tmp5, mask);   // create mask to test for Unicode or non-ASCII chars in vector
       movdl(tmp1Reg, tmp5);
       pshufd(tmp1Reg, tmp1Reg, 0);
       jmpb(L_chars_16_check);
@@ -5652,7 +5524,7 @@ void MacroAssembler::encode_ascii_array(Register src, Register dst, Register len
         movdqu(tmp4Reg, Address(src, len, Address::times_2, -16));
         por(tmp2Reg, tmp4Reg);
       }
-      ptest(tmp2Reg, tmp1Reg);       // check for non-ascii chars in vector
+      ptest(tmp2Reg, tmp1Reg);       // check for Unicode or non-ASCII chars in vector
       jccb(Assembler::notZero, L_copy_16_chars_exit);
       packuswb(tmp3Reg, tmp4Reg);
     }
@@ -5690,7 +5562,7 @@ void MacroAssembler::encode_ascii_array(Register src, Register dst, Register len
 
   bind(L_copy_1_char);
   load_unsigned_short(tmp5, Address(src, len, Address::times_2, 0));
-  testl(tmp5, 0xff80);      // check if non-ASCII char
+  testl(tmp5, short_mask);      // check if Unicode or non-ASCII char
   jccb(Assembler::notZero, L_copy_1_char_exit);
   movb(Address(dst, len, Address::times_1, 0), tmp5);
   addptr(len, 1);

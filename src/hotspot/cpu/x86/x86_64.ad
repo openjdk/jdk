@@ -11777,7 +11777,7 @@ instruct encode_iso_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
                         $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
-                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register, false);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -11791,9 +11791,9 @@ instruct encode_ascii_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
 
   format %{ "Encode array $src,$dst,$len -> $result    // KILL RCX, RDX, $tmp1, $tmp2, $tmp3, $tmp4, RSI, RDI " %}
   ins_encode %{
-    __ encode_ascii_array($src$$Register, $dst$$Register, $len$$Register,
-                          $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
-                          $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register, true);
   %}
   ins_pipe( pipe_slow );
 %}
