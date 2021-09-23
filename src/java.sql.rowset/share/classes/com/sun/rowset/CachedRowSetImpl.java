@@ -1805,7 +1805,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             return (byte)0;
         }
         try {
-            return Byte.parseByte(value.toString());
+            return ((Byte.valueOf(value.toString())).byteValue());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.bytefail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -1849,7 +1849,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         }
 
         try {
-            return Short.parseShort(value.toString().trim());
+            return ((Short.valueOf(value.toString().trim())).shortValue());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.shortfail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -1892,7 +1892,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         }
 
         try {
-            return Integer.parseInt(value.toString().trim());
+            return ((Integer.valueOf(value.toString().trim())).intValue());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.intfail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -1935,7 +1935,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             return (long)0;
         }
         try {
-            return Long.parseLong(value.toString().trim());
+            return ((Long.valueOf(value.toString().trim())).longValue());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.longfail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
