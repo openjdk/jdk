@@ -2754,6 +2754,7 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
     return;
   }
   Ticks start = Ticks::now();
+  _verifier->prepare_for_verify();  
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
   if (VerifyRememberedSets) {
