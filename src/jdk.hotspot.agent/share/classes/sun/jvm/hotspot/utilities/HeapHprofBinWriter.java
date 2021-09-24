@@ -485,21 +485,20 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     protected int calculateOopDumpRecordSize(Oop oop) throws IOException {
-        if (oop instanceof TypeArray) {
-            return calculatePrimitiveArrayDumpRecordSize((TypeArray)oop);
-        } else if (oop instanceof ObjArray) {
+        if (oop instanceof TypeArray taOop) {
+            return calculatePrimitiveArrayDumpRecordSize(taOop);
+        } else if (oop instanceof ObjArray oaOop) {
             Klass klass = oop.getKlass();
             ObjArrayKlass oak = (ObjArrayKlass) klass;
             Klass bottomType = oak.getBottomKlass();
             if (bottomType instanceof InstanceKlass ||
                 bottomType instanceof TypeArrayKlass) {
-                return calculateObjectArrayDumpRecordSize((ObjArray)oop);
+                return calculateObjectArrayDumpRecordSize(oaOop);
             } else {
                 // Internal object, nothing to write.
                 return 0;
             }
-        } else if (oop instanceof Instance) {
-            Instance instance = (Instance)oop;
+        } else if (oop instanceof Instance instance) {
             Klass klass = instance.getKlass();
             Symbol name = klass.getName();
             if (name.equals(javaLangClass)) {
@@ -528,11 +527,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return (int) BYTE_SIZE + (int)OBJ_ID_SIZE * 2 + (int)INT_SIZE * 2 + getSizeForFields(fields);
     }
 
-    private int calculateClassDumpRecordSize(Klass k) throws IOException {
+    private int calculateClassDumpRecordSize(Klass k) {
         // tag + javaMirror + DUMMY_STACK_TRACE_ID + super
         int size = (int)BYTE_SIZE + (int)INT_SIZE + (int)OBJ_ID_SIZE * 2;
-        if (k instanceof InstanceKlass) {
-            InstanceKlass ik = (InstanceKlass) k;
+        if (k instanceof InstanceKlass ik) {
             List<Field> fields = getInstanceFields(ik);
             List<Field> declaredFields = ik.getImmediateFields();
             List<Field> staticFields = new ArrayList<>();
@@ -558,49 +556,16 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return size;
     }
 
-    private int calculateFieldDescriptorsDumpRecordSize(List<Field> fields, InstanceKlass ik)
-            throws IOException {
+    private int calculateFieldDescriptorsDumpRecordSize(List<Field> fields, InstanceKlass ik) {
         int size = 0;
         size += SHORT_SIZE;
-        for (Iterator<Field> itr = fields.iterator(); itr.hasNext();) {
-            Field field = itr.next();
-            char typeCode = (char) field.getSignature().getByteAt(0);
+        for (Field field : fields) {
             size += OBJ_ID_SIZE + BYTE_SIZE;
             // ik == null for instance fields
             if (ik != null) {
                 // static field
-                size += calculateFieldDumpRecordSize(field, ik.getJavaMirror());
+                size += getSizeForField(field);
             }
-        }
-        return size;
-    }
-
-    private int calculateFieldDumpRecordSize(Field field, Oop oop) throws IOException {
-        char typeCode = (char) field.getSignature().getByteAt(0);
-        int size = 0;
-        switch (typeCode) {
-            case JVM_SIGNATURE_BOOLEAN:
-            case JVM_SIGNATURE_BYTE:
-                size++;
-                break;
-            case JVM_SIGNATURE_CHAR:
-            case JVM_SIGNATURE_SHORT:
-                size += 2;
-                break;
-            case JVM_SIGNATURE_INT:
-            case JVM_SIGNATURE_FLOAT:
-                size += 4;
-                break;
-            case JVM_SIGNATURE_CLASS:
-            case JVM_SIGNATURE_ARRAY:
-                size += OBJ_ID_SIZE;
-                break;
-            case JVM_SIGNATURE_LONG:
-            case JVM_SIGNATURE_DOUBLE:
-                size += 8;
-                break;
-            default:
-                throw new RuntimeException("should not reach here");
         }
         return size;
     }
@@ -615,7 +580,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return 0;
     }
 
-    private int calculateObjectArrayDumpRecordSize(ObjArray array) throws IOException {
+    private int calculateObjectArrayDumpRecordSize(ObjArray array) {
         int headerSize = getArrayHeaderSize(true);
         final int length = calculateArrayMaxLength(array.getLength(),
                 headerSize,
@@ -722,7 +687,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private int calculateArrayMaxLength(long originalArrayLength,
                                         int headerSize,
                                         long typeSize,
-                                        String typeName) throws IOException {
+                                        String typeName) {
 
         long length = originalArrayLength;
 
@@ -1346,38 +1311,37 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return res;
     }
 
+    // get size in bytes (in stream) required for given field.
+    private int getSizeForField(Field field) {
+        char typeCode = (char) field.getSignature().getByteAt(0);
+        switch (typeCode) {
+        case JVM_SIGNATURE_BOOLEAN:
+        case JVM_SIGNATURE_BYTE:
+            return 1;
+        case JVM_SIGNATURE_CHAR:
+        case JVM_SIGNATURE_SHORT:
+            return 2;
+        case JVM_SIGNATURE_INT:
+        case JVM_SIGNATURE_FLOAT:
+            return 4;
+        case JVM_SIGNATURE_CLASS:
+        case JVM_SIGNATURE_ARRAY:
+            return OBJ_ID_SIZE;
+        case JVM_SIGNATURE_LONG:
+        case JVM_SIGNATURE_DOUBLE:
+            return 8;
+        default:
+            throw new RuntimeException("should not reach here");
+        }
+    }
+
     // get size in bytes (in stream) required for given fields.  Note
     // that this is not the same as object size in heap. The size in
     // heap will include size of padding/alignment bytes as well.
     private int getSizeForFields(List<Field> fields) {
         int size = 0;
-        for (Iterator<Field> itr = fields.iterator(); itr.hasNext();) {
-            Field field = itr.next();
-            char typeCode = (char) field.getSignature().getByteAt(0);
-            switch (typeCode) {
-            case JVM_SIGNATURE_BOOLEAN:
-            case JVM_SIGNATURE_BYTE:
-                size++;
-                break;
-            case JVM_SIGNATURE_CHAR:
-            case JVM_SIGNATURE_SHORT:
-                size += 2;
-                break;
-            case JVM_SIGNATURE_INT:
-            case JVM_SIGNATURE_FLOAT:
-                size += 4;
-                break;
-            case JVM_SIGNATURE_CLASS:
-            case JVM_SIGNATURE_ARRAY:
-                size += OBJ_ID_SIZE;
-                break;
-            case JVM_SIGNATURE_LONG:
-            case JVM_SIGNATURE_DOUBLE:
-                size += 8;
-                break;
-            default:
-                throw new RuntimeException("should not reach here");
-            }
+        for (Field field : fields) {
+            size += getSizeForField(field);
         }
         return size;
     }
