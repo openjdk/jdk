@@ -57,7 +57,7 @@ import java.util.Locale;
  * @author Arnaud  Le Hors, IBM
  * @author K.Venugopal Sun Microsystems
  *
- * @LastModified: Aug 2021
+ * @LastModified: Sep 2021
  */
 public class XMLEntityScanner implements XMLLocator  {
 
@@ -2145,7 +2145,7 @@ public class XMLEntityScanner implements XMLLocator  {
         // how this information is used is determined by the caller of this method
         counted = false;
         if ((c == '\n' || c == '\r') ||
-                (version == XML_VERSION_1_1 && (c == 0x85 || c == 0x2028))) {
+                (version == XML_VERSION_1_1 && (c == 0x85 || c == 0x2028) && isExternal)) {
             do {
                 c = fCurrentEntity.ch[fCurrentEntity.position++];
                 if ((c == '\n' || c == '\r') ||
