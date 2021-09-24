@@ -25,8 +25,6 @@
 
 package jdk.internal.reflect;
 
-import sun.reflect.misc.ReflectUtil;
-
 import java.lang.reflect.*;
 import jdk.internal.misc.Unsafe;
 
@@ -39,12 +37,13 @@ class NativeMethodAccessorImpl extends MethodAccessorImpl {
         = U.objectFieldOffset(NativeMethodAccessorImpl.class, "generated");
 
     private final Method method;
-    private DelegatingMethodAccessorImpl parent;
+    private final DelegatingMethodAccessorImpl parent;
     private int numInvocations;
     private volatile int generated;
 
     NativeMethodAccessorImpl(Method method) {
         this.method = method;
+        this.parent = new DelegatingMethodAccessorImpl(this);
     }
 
     public Object invoke(Object obj, Object[] args)
@@ -77,8 +76,8 @@ class NativeMethodAccessorImpl extends MethodAccessorImpl {
         return invoke0(method, obj, args);
     }
 
-    void setParent(DelegatingMethodAccessorImpl parent) {
-        this.parent = parent;
+    DelegatingMethodAccessorImpl getParent() {
+        return parent;
     }
 
     private static native Object invoke0(Method m, Object obj, Object[] args);
