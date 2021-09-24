@@ -812,6 +812,8 @@ sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aa
 sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
+sun/tools/jmap/BasicJMapTest.java                               8274245 generic-all
+
 ############################################################################
 
 # jdk_other
