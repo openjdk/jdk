@@ -32,7 +32,7 @@ class InstanceKlass;
 class JavaThread;
 class Thread;
 
-class FinalizerEntry : public CHeapObj<mtStatistics> {
+class FinalizerEntry : public CHeapObj<mtServiceability> {
  private:
   const InstanceKlass* const _ik;
   uint64_t _objects_on_heap;

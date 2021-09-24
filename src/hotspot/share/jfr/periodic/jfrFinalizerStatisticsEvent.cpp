@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "utilities/macros.hpp"
 #if INCLUDE_MANAGEMENT
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"

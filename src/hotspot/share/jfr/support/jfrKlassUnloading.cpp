@@ -30,6 +30,7 @@
 #include "jfr/utilities/jfrPredicate.hpp"
 #include "jfr/utilities/jfrRelation.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/macros.hpp"
 
 static const int initial_array_size = 64;
 

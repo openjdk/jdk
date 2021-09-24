@@ -23,8 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "utilities/macros.hpp"
 #if INCLUDE_MANAGEMENT
 #include "classfile/classLoaderDataGraph.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -111,17 +113,15 @@ class FinalizerTableConfig : public AllStatic {
   static uintx get_hash(Value const& value, bool* is_dead) {
     return hash_function(value);
   }
-  // We use default allocation/deallocation but counted
   static void* allocate_node(void* context, size_t size, Value const& value) {
-    return AllocateHeap(size, mtStatistics);
+    return AllocateHeap(size, mtServiceability);
   }
   static void free_node(void* context, void* memory, Value const& value) {
-    // We get here because some threads lost a race to insert a newly created FinalizerEntry
     FreeHeap(memory);
   }
 };
 
-typedef ConcurrentHashTable<FinalizerTableConfig, mtStatistics> FinalizerHashtable;
+typedef ConcurrentHashTable<FinalizerTableConfig, mtServiceability> FinalizerHashtable;
 static FinalizerHashtable* _table = nullptr;
 static constexpr const size_t DEFAULT_TABLE_SIZE = 2048;
 // 2^24 is max size, like StringTable.
