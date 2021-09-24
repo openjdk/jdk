@@ -59,7 +59,7 @@ void G1IHOPControl::print() {
                       cur_conc_mark_start_threshold,
                       percent_of(cur_conc_mark_start_threshold, _target_occupancy),
                       _target_occupancy,
-                      G1CollectedHeap::heap()->used(),
+                      G1CollectedHeap::heap()->non_young_capacity_bytes(),
                       _old_gen_alloc_tracker->last_period_old_gen_bytes(),
                       _last_allocation_time_s * 1000.0,
                       _last_allocation_time_s > 0.0 ? _old_gen_alloc_tracker->last_period_old_gen_bytes() / _last_allocation_time_s : 0.0,
@@ -70,7 +70,7 @@ void G1IHOPControl::send_trace_event(G1NewTracer* tracer) {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   tracer->report_basic_ihop_statistics(get_conc_mark_start_threshold(),
                                        _target_occupancy,
-                                       G1CollectedHeap::heap()->used(),
+                                       G1CollectedHeap::heap()->non_young_capacity_bytes(),
                                        _old_gen_alloc_tracker->last_period_old_gen_bytes(),
                                        _last_allocation_time_s,
                                        last_marking_length_s());
@@ -175,7 +175,7 @@ void G1AdaptiveIHOPControl::print() {
                       get_conc_mark_start_threshold(),
                       percent_of(get_conc_mark_start_threshold(), actual_target),
                       actual_target,
-                      G1CollectedHeap::heap()->used(),
+                      G1CollectedHeap::heap()->non_young_capacity_bytes(),
                       _last_unrestrained_young_size,
                       predict(&_allocation_rate_s),
                       predict(&_marking_times_s) * 1000.0,
@@ -186,7 +186,7 @@ void G1AdaptiveIHOPControl::send_trace_event(G1NewTracer* tracer) {
   G1IHOPControl::send_trace_event(tracer);
   tracer->report_adaptive_ihop_statistics(get_conc_mark_start_threshold(),
                                           actual_target_threshold(),
-                                          G1CollectedHeap::heap()->used(),
+                                          G1CollectedHeap::heap()->non_young_capacity_bytes(),
                                           _last_unrestrained_young_size,
                                           predict(&_allocation_rate_s),
                                           predict(&_marking_times_s),
