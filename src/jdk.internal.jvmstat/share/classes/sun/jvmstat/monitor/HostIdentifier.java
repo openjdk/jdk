@@ -106,7 +106,7 @@ public class HostIdentifier {
      * by the string.
      */
     private URI canonicalize(String uriString) throws URISyntaxException {
-        if ((uriString == null) || (uriString.equals("localhost"))) {
+        if (uriString == null || uriString.equals("localhost")) {
             uriString = "//localhost";
             return new URI(uriString);
         }

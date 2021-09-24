@@ -126,7 +126,7 @@ public class AliasFileParser {
         while (currentToken.ttype != StreamTokenizer.TT_EOF) {
             // look for the start symbol
             if ((currentToken.ttype != StreamTokenizer.TT_WORD)
-                    || (!currentToken.sval.equals(ALIAS))) {
+                    || !currentToken.sval.equals(ALIAS)) {
                 nextToken();
                 continue;
             }
@@ -142,7 +142,7 @@ public class AliasFileParser {
                 match(StreamTokenizer.TT_WORD);
 
             } while ((currentToken.ttype != StreamTokenizer.TT_EOF)
-                     && (!currentToken.sval.equals(ALIAS)));
+                     && !currentToken.sval.equals(ALIAS));
 
             map.put(name, aliases);
         }
