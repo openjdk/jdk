@@ -36,6 +36,7 @@ import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementKindVisitor14;
 import javax.tools.JavaFileObject;
@@ -5790,6 +5791,38 @@ public class Attr extends JCTree.Visitor {
 			    Warnings.ExternalizableMissingPublicNoArgCtor);
 
 	    } else {
+		// Approximate access to the no-arg constructor up in
+		// the superclass chain by checking that the
+		// constructor is not private. This may not handle
+		// some cross-package situations correctly.
+		Type superClass = c.getSuperclass();
+		// java.lang.Object is *not* Serializable so this loop
+		// should terminate.
+		// TOOD: checking needed for error types?
+		while (isSerializable(superClass) ) {
+		    try {
+			superClass = (Type)((TypeElement)(((DeclaredType)superClass)).asElement()).getSuperclass();
+		    } catch(ClassCastException cce) {
+			return ; // Don't try to recover
+		    }
+		}
+		// Non-Serializable super class
+		try {
+		    TypeElement supertype = ((TypeElement)(((DeclaredType)superClass).asElement()));
+		    for (var ctor:
+			     ElementFilter.constructorsIn(supertype.getEnclosedElements()) ) {
+			if (ctor.getParameters().isEmpty()) {
+			    if (ctor.getModifiers().contains(Modifier.PRIVATE) ||
+				// Handle nested classes and implicit this$0
+				(supertype.getNestingKind() == NestingKind.MEMBER &&
+				 !supertype.getModifiers().contains(Modifier.STATIC)))
+				log.warning(LintCategory.SERIAL, tree.pos(),
+					    Warnings.SerializableMissingAccessNoArgCtor((Symbol)supertype));
+			}
+		    }
+		} catch (ClassCastException cce) {
+		    return ; // Don't try to recover
+		}
 		return;
 	    }
 	}
