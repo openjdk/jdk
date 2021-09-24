@@ -23,21 +23,21 @@
  *
  */
 
-#ifndef LINUX_X86_64_SERVER_SLOWDEBUG_G1SEGMENTEDARRAY_HPP
-#define LINUX_X86_64_SERVER_SLOWDEBUG_G1SEGMENTEDARRAY_HPP
+#ifndef SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
+#define SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/lockFreeStack.hpp"
 
 
 // A single buffer/arena containing _num_elems blocks of memory of _elem_size.
-// SegmentedArrayBuffers can be linked together using a singly linked list.
+// G1SegmentedArrayBuffers can be linked together using a singly linked list.
 template<MEMFLAGS flag>
-class SegmentedArrayBuffer : public CHeapObj<flag> {
+class G1SegmentedArrayBuffer : public CHeapObj<flag> {
   const uint _elem_size;
   const uint _num_elems;
 
-  SegmentedArrayBuffer* volatile _next;
+  G1SegmentedArrayBuffer* volatile _next;
 
   char* _buffer;  // Actual data.
 
@@ -47,23 +47,23 @@ class SegmentedArrayBuffer : public CHeapObj<flag> {
   uint volatile _next_allocate;
 
 public:
-  SegmentedArrayBuffer(uint elem_size, uint num_elems, SegmentedArrayBuffer* next);
-  ~SegmentedArrayBuffer();
+  G1SegmentedArrayBuffer(uint elem_size, uint num_elems, G1SegmentedArrayBuffer* next);
+  ~G1SegmentedArrayBuffer();
 
-  SegmentedArrayBuffer* volatile* next_addr() { return &_next; }
+  G1SegmentedArrayBuffer* volatile* next_addr() { return &_next; }
 
   void* get_new_buffer_elem();
 
   uint num_elems() const { return _num_elems; }
 
-  SegmentedArrayBuffer* next() const { return _next; }
+  G1SegmentedArrayBuffer* next() const { return _next; }
 
-  void set_next(SegmentedArrayBuffer* next) {
+  void set_next(G1SegmentedArrayBuffer* next) {
     assert(next != this, " loop condition");
     _next = next;
   }
 
-  void reset(SegmentedArrayBuffer* next) {
+  void reset(G1SegmentedArrayBuffer* next) {
     _next_allocate = 0;
     assert(next != this, " loop condition");
     set_next(next);
@@ -81,23 +81,23 @@ public:
     return _next_allocate;
   }
 
-  char* start() const { return _buffer; }
+  const char* start() const { return _buffer; }
 
   bool is_full() const { return _next_allocate >= _num_elems; }
 };
 
 
 
-// Set of (free) SegmentedArrayBuffers. The assumed usage is that allocation
+// Set of (free) G1SegmentedArrayBuffers. The assumed usage is that allocation
 // to it and removal of elements is strictly separate, but every action may be
 // performed by multiple threads at the same time.
 // Counts and memory usage are current on a best-effort basis if accessed concurrently.
 template<MEMFLAGS flag>
-class SegmentedArrayBufferList {
-  static SegmentedArrayBuffer<flag>* volatile* next_ptr(SegmentedArrayBuffer<flag>& node) {
+class G1SegmentedArrayBufferList {
+  static G1SegmentedArrayBuffer<flag>* volatile* next_ptr(G1SegmentedArrayBuffer<flag>& node) {
     return node.next_addr();
   }
-  typedef LockFreeStack<SegmentedArrayBuffer<flag>, &SegmentedArrayBufferList::next_ptr> NodeStack;
+  typedef LockFreeStack<G1SegmentedArrayBuffer<flag>, &G1SegmentedArrayBufferList::next_ptr> NodeStack;
 
   NodeStack _list;
 
@@ -105,14 +105,14 @@ class SegmentedArrayBufferList {
   volatile size_t _mem_size;
 
 public:
-  SegmentedArrayBufferList() : _list(), _num_buffers(0), _mem_size(0) { }
-  ~SegmentedArrayBufferList() { free_all(); }
+  G1SegmentedArrayBufferList() : _list(), _num_buffers(0), _mem_size(0) { }
+  ~G1SegmentedArrayBufferList() { free_all(); }
 
-  void bulk_add(SegmentedArrayBuffer<flag>& first, SegmentedArrayBuffer<flag>& last, size_t num, size_t mem_size);
-  void add(SegmentedArrayBuffer<flag>& elem) { _list.prepend(elem); }
+  void bulk_add(G1SegmentedArrayBuffer<flag>& first, G1SegmentedArrayBuffer<flag>& last, size_t num, size_t mem_size);
+  void add(G1SegmentedArrayBuffer<flag>& elem) { _list.prepend(elem); }
 
-  SegmentedArrayBuffer<flag>* get();
-  SegmentedArrayBuffer<flag>* get_all(size_t& num_buffers, size_t& mem_size);
+  G1SegmentedArrayBuffer<flag>* get();
+  G1SegmentedArrayBuffer<flag>* get_all(size_t& num_buffers, size_t& mem_size);
 
   // Give back all memory to the OS.
   void free_all();
@@ -124,7 +124,7 @@ public:
 };
 
 
-// Configuration for G1SegmentedArray, e.g element size, element number of next SegmentedArrayBuffer.
+// Configuration for G1SegmentedArray, e.g element size, element number of next G1SegmentedArrayBuffer.
 class G1SegmentedArrayAllocOptions {
 protected:
   uint _elem_size;
@@ -160,8 +160,8 @@ public:
 };
 
 
-// A segmented array where SegmentedArrayBuffer is the segment, and
-// SegmentedArrayBufferList is the free list to cache SegmentedArrayBuffer,
+// A segmented array where G1SegmentedArrayBuffer is the segment, and
+// G1SegmentedArrayBufferList is the free list to cache G1SegmentedArrayBuffer,
 // and G1SegmentedArrayAllocOptions is the configuration for G1SegmentedArray
 // attributes.
 template <class Elem, MEMFLAGS flag>
@@ -173,27 +173,27 @@ class G1SegmentedArray {
   volatile uint _num_available_nodes; // Number of nodes available in all buffers (allocated + free + pending + not yet used).
   volatile uint _num_allocated_nodes; // Number of total nodes allocated and in use.
 
-  SegmentedArrayBuffer<flag>* volatile _first;       // The (start of the) list of all buffers.
-  SegmentedArrayBuffer<flag>* _last;                 // The last element of the list of all buffers.
+  G1SegmentedArrayBuffer<flag>* volatile _first;       // The (start of the) list of all buffers.
+  G1SegmentedArrayBuffer<flag>* _last;                 // The last element of the list of all buffers.
   volatile uint _num_buffers;             // Number of assigned buffers to this allocator.
   volatile size_t _mem_size;              // Memory used by all buffers.
 
-  SegmentedArrayBufferList<flag>* _free_buffer_list; // The global free buffer list to
+  G1SegmentedArrayBufferList<flag>* _free_buffer_list; // The global free buffer list to
   // preferentially get new buffers from.
 
 private:
-  inline SegmentedArrayBuffer<flag>* create_new_buffer(SegmentedArrayBuffer<flag>* const prev);
+  inline G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
 
 protected:
   uint num_available_nodes() const { return _num_available_nodes; }
   uint num_allocated_nodes() const { return _num_allocated_nodes; }
-  const SegmentedArrayBuffer<flag>* first_array_buffer() const { return _first; }
+  const G1SegmentedArrayBuffer<flag>* first_array_buffer() const { return _first; }
   inline uint elem_size() const;
 
 public:
   G1SegmentedArray(const char* name,
                    const G1SegmentedArrayAllocOptions& buffer_options,
-                   SegmentedArrayBufferList<flag>* free_buffer_list);
+                   G1SegmentedArrayBufferList<flag>* free_buffer_list);
   ~G1SegmentedArray() {
     drop_all();
   }
@@ -213,4 +213,4 @@ public:
 };
 
 
-#endif //LINUX_X86_64_SERVER_SLOWDEBUG_G1SEGMENTEDARRAY_HPP
+#endif //SHARE_GC_G1_G1SEGMENTEDARRAY_HPP

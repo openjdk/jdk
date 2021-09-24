@@ -123,7 +123,7 @@ template <class Elem>
 void G1CardSetAllocator<Elem>::print(outputStream* os) {
   uint num_allocated_nodes = G1SegmentedArray<Elem, mtGCCardSet>::num_allocated_nodes();
   uint num_available_nodes = G1SegmentedArray<Elem, mtGCCardSet>::num_available_nodes();
-  const SegmentedArrayBuffer<mtGCCardSet>* first_array_buffer = G1SegmentedArray<Elem, mtGCCardSet>::first_array_buffer();
+  const G1SegmentedArrayBuffer<mtGCCardSet>* first_array_buffer = G1SegmentedArray<Elem, mtGCCardSet>::first_array_buffer();
   uint num_buffers = G1SegmentedArray<Elem, mtGCCardSet>::num_buffers();
   os->print("MA " PTR_FORMAT ": %u elems pending (allocated %u available %u) used %.3f highest %u buffers %u size %zu ",
             p2i(this),

@@ -23,28 +23,31 @@
  *
  */
 
+#ifndef SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP
+#define SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP
+
 #include "gc/g1/g1SegmentedArray.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
 
-// ==== SegmentedArrayBuffer ====
+// ==== G1SegmentedArrayBuffer ====
 
 template<MEMFLAGS flag>
-SegmentedArrayBuffer<flag>::SegmentedArrayBuffer(uint elem_size, uint num_instances, SegmentedArrayBuffer* next) :
+G1SegmentedArrayBuffer<flag>::G1SegmentedArrayBuffer(uint elem_size, uint num_instances, G1SegmentedArrayBuffer* next) :
   _elem_size(elem_size), _num_elems(num_instances), _next(next), _next_allocate(0) {
 
   _buffer = NEW_C_HEAP_ARRAY(char, (size_t)_num_elems * elem_size, mtGCCardSet);
 }
 
 template<MEMFLAGS flag>
-SegmentedArrayBuffer<flag>::~SegmentedArrayBuffer() {
+G1SegmentedArrayBuffer<flag>::~G1SegmentedArrayBuffer() {
   FREE_C_HEAP_ARRAY(mtGCCardSet, _buffer);
 }
 
 template<MEMFLAGS flag>
-void* SegmentedArrayBuffer<flag>::get_new_buffer_elem() {
+void* G1SegmentedArrayBuffer<flag>::get_new_buffer_elem() {
   if (_next_allocate >= _num_elems) {
     return nullptr;
   }
@@ -57,29 +60,29 @@ void* SegmentedArrayBuffer<flag>::get_new_buffer_elem() {
 }
 
 
-// ==== SegmentedArrayBufferList ====
+// ==== G1SegmentedArrayBufferList ====
 
 template<MEMFLAGS flag>
-void SegmentedArrayBufferList<flag>::bulk_add(SegmentedArrayBuffer<flag>& first,
-                                              SegmentedArrayBuffer<flag>& last,
-                                              size_t num,
-                                              size_t mem_size) {
+void G1SegmentedArrayBufferList<flag>::bulk_add(G1SegmentedArrayBuffer<flag>& first,
+                                                G1SegmentedArrayBuffer<flag>& last,
+                                                size_t num,
+                                                size_t mem_size) {
   _list.prepend(first, last);
   Atomic::add(&_num_buffers, num, memory_order_relaxed);
   Atomic::add(&_mem_size, mem_size, memory_order_relaxed);
 }
 
 template<MEMFLAGS flag>
-void SegmentedArrayBufferList<flag>::print_on(outputStream* out, const char* prefix) {
+void G1SegmentedArrayBufferList<flag>::print_on(outputStream* out, const char* prefix) {
   out->print_cr("%s: buffers %zu size %zu",
                 prefix, Atomic::load(&_num_buffers), Atomic::load(&_mem_size));
 }
 
 template<MEMFLAGS flag>
-SegmentedArrayBuffer<flag>* SegmentedArrayBufferList<flag>::get() {
+G1SegmentedArrayBuffer<flag>* G1SegmentedArrayBufferList<flag>::get() {
   GlobalCounter::CriticalSection cs(Thread::current());
 
-  SegmentedArrayBuffer<flag>* result = _list.pop();
+  G1SegmentedArrayBuffer<flag>* result = _list.pop();
   if (result != nullptr) {
     Atomic::dec(&_num_buffers, memory_order_relaxed);
     Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
@@ -88,11 +91,11 @@ SegmentedArrayBuffer<flag>* SegmentedArrayBufferList<flag>::get() {
 }
 
 template<MEMFLAGS flag>
-SegmentedArrayBuffer<flag>* SegmentedArrayBufferList<flag>::get_all(size_t& num_buffers,
-                                                                    size_t& mem_size) {
+G1SegmentedArrayBuffer<flag>* G1SegmentedArrayBufferList<flag>::get_all(size_t& num_buffers,
+                                                                        size_t& mem_size) {
   GlobalCounter::CriticalSection cs(Thread::current());
 
-  SegmentedArrayBuffer<flag>* result = _list.pop_all();
+  G1SegmentedArrayBuffer<flag>* result = _list.pop_all();
   num_buffers = Atomic::load(&_num_buffers);
   mem_size = Atomic::load(&_mem_size);
 
@@ -104,10 +107,10 @@ SegmentedArrayBuffer<flag>* SegmentedArrayBufferList<flag>::get_all(size_t& num_
 }
 
 template<MEMFLAGS flag>
-void SegmentedArrayBufferList<flag>::free_all() {
+void G1SegmentedArrayBufferList<flag>::free_all() {
   size_t num_freed = 0;
   size_t mem_size_freed = 0;
-  SegmentedArrayBuffer<flag>* cur;
+  G1SegmentedArrayBuffer<flag>* cur;
 
   while ((cur = _list.pop()) != nullptr) {
     mem_size_freed += cur->mem_size();
@@ -123,15 +126,15 @@ void SegmentedArrayBufferList<flag>::free_all() {
 // ==== G1SegmentedArray ====
 
 template <class Elem, MEMFLAGS flag>
-SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(
-  SegmentedArrayBuffer<flag>* const prev) {
+G1SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(
+  G1SegmentedArrayBuffer<flag>* const prev) {
 
   // Take an existing buffer if available.
-  SegmentedArrayBuffer<flag>* next = _free_buffer_list->get();
+  G1SegmentedArrayBuffer<flag>* next = _free_buffer_list->get();
   if (next == nullptr) {
     uint prev_num_elems = (prev != nullptr) ? prev->num_elems() : 0;
     uint num_elems = _alloc_options.next_num_elems(prev_num_elems);
-    next = new SegmentedArrayBuffer<flag>(elem_size(), num_elems, prev);
+    next = new G1SegmentedArrayBuffer<flag>(elem_size(), num_elems, prev);
   } else {
     assert(elem_size() == next->elem_size() ,
            "Mismatch %d != %d Elem %zu", elem_size(), next->elem_size(), sizeof(Elem));
@@ -139,7 +142,7 @@ SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(
   }
 
   // Install it as current allocation buffer.
-  SegmentedArrayBuffer<flag>* old = Atomic::cmpxchg(&_first, prev, next);
+  G1SegmentedArrayBuffer<flag>* old = Atomic::cmpxchg(&_first, prev, next);
   if (old != prev) {
     // Somebody else installed the buffer, use that one.
     delete next;
@@ -164,8 +167,8 @@ uint G1SegmentedArray<Elem, flag>::elem_size() const {
 
 template <class Elem, MEMFLAGS flag>
 G1SegmentedArray<Elem, flag>::G1SegmentedArray(const char* name,
-                 const G1SegmentedArrayAllocOptions& buffer_options,
-                 SegmentedArrayBufferList<flag>* free_buffer_list) :
+                                               const G1SegmentedArrayAllocOptions& buffer_options,
+                                               G1SegmentedArrayBufferList<flag>* free_buffer_list) :
      _alloc_options(buffer_options),
      _num_available_nodes(0),
      _num_allocated_nodes(0),
@@ -179,22 +182,22 @@ G1SegmentedArray<Elem, flag>::G1SegmentedArray(const char* name,
 
 template <class Elem, MEMFLAGS flag>
 void G1SegmentedArray<Elem, flag>::drop_all() {
-  SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
 
   if (cur != nullptr) {
     assert(_last != nullptr, "If there is at least one element, there must be a last one.");
 
-    SegmentedArrayBuffer<flag>* first = cur;
+    G1SegmentedArrayBuffer<flag>* first = cur;
 #ifdef ASSERT
     // Check list consistency.
-    SegmentedArrayBuffer<flag>* last = cur;
+    G1SegmentedArrayBuffer<flag>* last = cur;
     uint num_buffers = 0;
     size_t mem_size = 0;
     while (cur != nullptr) {
       mem_size += cur->mem_size();
       num_buffers++;
 
-      SegmentedArrayBuffer<flag>* next = cur->next();
+      G1SegmentedArrayBuffer<flag>* next = cur->next();
       last = cur;
       cur = next;
     }
@@ -216,7 +219,7 @@ void G1SegmentedArray<Elem, flag>::drop_all() {
 
 template <class Elem, MEMFLAGS flag>
 Elem* G1SegmentedArray<Elem, flag>::allocate() {
-  SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
   if (cur == nullptr) {
     cur = create_new_buffer(cur);
   }
@@ -244,7 +247,7 @@ class LengthVisitor {
   uint _total;
 public:
   LengthVisitor() : _total(0) {}
-  void visit(SegmentedArrayBuffer<mtGC>* node, uint32_t limit) {
+  void visit(G1SegmentedArrayBuffer<mtGC>* node, uint32_t limit) {
     _total += limit;
   }
   uint length() {
@@ -262,7 +265,7 @@ uint G1SegmentedArray<Elem, flag>::length() {
 template <class Elem, MEMFLAGS flag>
 template <typename Visitor>
 void G1SegmentedArray<Elem, flag>::iterate_nodes(Visitor& v)  {
-  SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
 
   if (cur != nullptr) {
     assert(_last != nullptr, "If there is at least one element, there must be a last one.");
@@ -275,3 +278,5 @@ void G1SegmentedArray<Elem, flag>::iterate_nodes(Visitor& v)  {
     }
   }
 }
+
+#endif //SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP

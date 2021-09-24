@@ -55,9 +55,9 @@ public:
   uint elem_size () const {return _elem_size;}
 };
 
-typedef SegmentedArrayBuffer<mtGCCardSet> G1CardSetBuffer;
+typedef G1SegmentedArrayBuffer<mtGCCardSet> G1CardSetBuffer;
 
-typedef SegmentedArrayBufferList<mtGCCardSet> G1CardSetBufferList;
+typedef G1SegmentedArrayBufferList<mtGCCardSet> G1CardSetBufferList;
 
 // Arena-like allocator for (card set) heap memory objects (Elem elements).
 //
