@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ public class RawOutputFormatter implements OutputFormatter {
         if (header == null) {
             // build the header string and prune out any unwanted monitors
             StringBuilder headerBuilder = new StringBuilder();
-            for (Iterator<Monitor> i = logged.iterator(); i.hasNext(); /* empty */ ) {
-                Monitor m = i.next();
+            for (Monitor m : logged) {
                 headerBuilder.append(m.getName()).append(' ');
             }
             header = headerBuilder.toString();
@@ -60,8 +59,7 @@ public class RawOutputFormatter implements OutputFormatter {
     public String getRow() throws MonitorException {
         StringBuilder row = new StringBuilder();
         int count = 0;
-        for (Iterator<Monitor> i = logged.iterator(); i.hasNext(); /* empty */ ) {
-            Monitor m = i.next();
+        for (Monitor m : logged) {
             if (count++ > 0) {
                 row.append(" ");
             }
