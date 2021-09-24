@@ -180,9 +180,6 @@ debugLoop_run(void)
             shouldListen = !lastCommand(cmd);
         }
     }
-    /* Sleep to trigger deadlock in test/hotspot/jtreg/vmTestbase/nsk/jdi/VirtualMachine/dispose/dispose003 */
-    fprintf(stderr, "debugLoop: sleep\n");
-    sleep(1);
     threadControl_onDisconnect();
     standardHandlers_onDisconnect();
 
