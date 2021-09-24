@@ -593,7 +593,7 @@ public class URLClassPath {
         /*
          * Returns the base URL for this Loader.
          */
-        URL getBaseURL() {
+        final URL getBaseURL() {
             return base;
         }
 
