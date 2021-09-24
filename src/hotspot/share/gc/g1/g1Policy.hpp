@@ -274,7 +274,7 @@ private:
   void record_pause(G1GCPauseType gc_type,
                     double start,
                     double end,
-                    bool should_update_gc_pause_time_ratios = true);
+                    bool evacuation_failure = false);
 
   void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 

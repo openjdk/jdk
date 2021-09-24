@@ -670,7 +670,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
   }
 
-  record_pause(this_pause, start_time_sec, end_time_sec, update_stats);
+  record_pause(this_pause, start_time_sec, end_time_sec, evacuation_failure);
 
   if (G1GCPauseTypeHelper::is_last_young_pause(this_pause)) {
     assert(!G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause),
@@ -1196,13 +1196,13 @@ void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_t
 void G1Policy::record_pause(G1GCPauseType gc_type,
                             double start,
                             double end,
-                            bool should_update_gc_pause_time_ratios) {
+                            bool evacuation_failure) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (gc_type != G1GCPauseType::FullGC) {
     _mmu_tracker->add_pause(start, end);
   }
 
-  if (should_update_gc_pause_time_ratios) {
+  if (!evacuation_failure) {
     update_gc_pause_time_ratios(gc_type, start, end);
   }
 
