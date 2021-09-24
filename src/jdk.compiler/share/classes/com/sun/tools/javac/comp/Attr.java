@@ -5774,25 +5774,17 @@ public class Attr extends JCTree.Visitor {
 
             checkMandatoryModifiers(tree, e, field, STATIC_FINAL_MODS, Warnings.ImproperSVUID( (Symbol) e));
 
-	    // TODO: need to pass in warningKey of type Warning...
 //             // check that it is long
 //             else if (!svuid.type.hasTag(LONG))
 //                 log.warning(LintCategory.SERIAL,
 //                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.LongSVUID(c));
             checkTypeOfField(tree, e, field, LONG_TYPE, Warnings.LongSVUID((Symbol) e));
 
-
-//             // check constant
-//             else if (svuid.getConstValue() == null)
-//                 log.warning(LintCategory.SERIAL,
-//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ConstantSVUID(c));
-
 	    VarSymbol svuidField = (VarSymbol)field;
 	    if (svuidField.getConstValue() == null)
 		log.warning(LintCategory.SERIAL,
 			    TreeInfo.diagnosticPositionFor(svuidField, tree),
 			    Warnings.ConstantSVUID((Symbol)e));
-
         }
 
         private void checkSerialPersistentFields(JCClassDecl tree, Element e, Element field) {
@@ -5998,14 +5990,12 @@ public class Attr extends JCTree.Visitor {
                 case FIELD -> {
                     switch(name) {
                     case "serialPersistentFields" -> {
-                        // System.out.println("Serial field name " + name + 
-                        //                   " in " + e.getKind() + " " + e.toString());
-			;
+			log.warning(LintCategory.SERIAL, tree.pos(),
+				    Warnings.IneffectualSerialFieldRecord);
                     }
 
                     case "serialVersionUID" -> {
-                        // System.out.println("Serial field name " + name + 
-                        //                   " in " + e.getKind() + " " + e.toString());
+			// TODO Extra warning that svuid value not mactched for records?
                         checkSerialVersionUID(tree, e, enclosed);
                     }
 
@@ -6019,9 +6009,8 @@ public class Attr extends JCTree.Visitor {
                     case "readResolve"  -> checkReadResolve(tree, e, method);
                     default -> {
                         if (serialMethodNames.contains(name)) {
-                            // System.out.println("Serial method name " + name + 
-                            //                   " in " + e.getKind() + " " + e.toString());
-			    int i = 2 + 2;
+			    log.warning(LintCategory.SERIAL, tree.pos(),
+					Warnings.IneffectualSerialMethodRecord((Symbol)enclosed));
 			}
                     }
                     }
