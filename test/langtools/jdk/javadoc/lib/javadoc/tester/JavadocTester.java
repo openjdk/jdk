@@ -827,7 +827,7 @@ public abstract class JavadocTester {
                 return content;
 
             // charset defaults to a value inferred from latest javadoc run
-            content = Files.readString(file, charset);
+            content = new String(Files.readAllBytes(file), charset);
             fileContentCache.put(file, new SoftReference<>(content));
             return content;
         } catch (FileNotFoundException e) {

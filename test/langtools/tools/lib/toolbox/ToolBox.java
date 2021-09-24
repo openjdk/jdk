@@ -264,6 +264,7 @@ public class ToolBox {
 
     /**
      * Copies the contents of a directory to another directory.
+     * The destination direction should not already exist.
      * <p>Similar to the shell command: {@code rsync fromDir/ toDir/}.
      *
      * @param fromDir the directory containing the files to be copied
@@ -271,30 +272,24 @@ public class ToolBox {
      */
     public void copyDir(Path fromDir, Path toDir) {
         try {
-            Files.createDirectories(toDir);
-            // See second example in java.nio.file.FileVisitor, Usage Examples
-            Files.walkFileTree(fromDir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
-                    new SimpleFileVisitor<Path>() {
-                        @Override
-                        public FileVisitResult preVisitDirectory(Path fromSubdir, BasicFileAttributes attrs)
-                                throws IOException {
-                            Path toSubdir = toDir.resolve(fromDir.relativize(fromSubdir));
-                            try {
-                                Files.copy(fromSubdir, toSubdir);
-                            } catch (FileAlreadyExistsException e) {
-                                if (!Files.isDirectory(toSubdir))
-                                    throw e;
-                            }
-                            return FileVisitResult.CONTINUE;
-                        }
+            if (toDir.getParent() != null) {
+                Files.createDirectories(toDir.getParent());
+            }
+            Files.walkFileTree(fromDir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path fromSubdir, BasicFileAttributes attrs)
+                        throws IOException {
+                    Files.copy(fromSubdir, toDir.resolve(fromDir.relativize(fromSubdir)));
+                    return FileVisitResult.CONTINUE;
+                }
 
-                        @Override
-                        public FileVisitResult visitFile(Path fromFile, BasicFileAttributes attrs)
-                                throws IOException {
-                            Files.copy(fromFile, toDir.resolve(fromDir.relativize(fromFile)));
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
+                @Override
+                public FileVisitResult visitFile(Path fromFile, BasicFileAttributes attrs)
+                        throws IOException {
+                    Files.copy(fromFile, toDir.resolve(fromDir.relativize(fromFile)));
+                    return FileVisitResult.CONTINUE;
+                }
+            });
         } catch (IOException e) {
             throw new Error("Could not copy " + fromDir + " to " + toDir + ": " + e, e);
         }
