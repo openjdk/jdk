@@ -143,18 +143,18 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_event_nosafepoint,
   mutex_rank_event->unlock();
 }
 
-TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_tty_special,
-                   ".* Attempting to acquire lock mutex_rank_special/.* out of order with lock mutex_rank_tty/.*"
+TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_tty_nosafepoint,
+                   ".* Attempting to acquire lock mutex_rank_nosafepoint/.* out of order with lock mutex_rank_tty/.*"
                    "-- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
   Mutex* mutex_rank_tty = new Mutex(Mutex::tty, "mutex_rank_tty", Mutex::_safepoint_check_never);
-  Mutex* mutex_rank_special = new Mutex(Mutex::special, "mutex_rank_special", Mutex::_safepoint_check_never);
+  Mutex* mutex_rank_nosafepoint = new Mutex(Mutex::nosafepoint, "mutex_rank_nosafepoint", Mutex::_safepoint_check_never);
 
   mutex_rank_tty->lock_without_safepoint_check();
-  mutex_rank_special->lock_without_safepoint_check();
-  mutex_rank_special->unlock();
+  mutex_rank_nosafepoint->lock_without_safepoint_check();
+  mutex_rank_nosafepoint->unlock();
   mutex_rank_tty->unlock();
 }
 
@@ -204,20 +204,20 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order_trylock,
   monitor_rankA->unlock();
 }
 
-TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_special,
-                   ".* Attempting to wait on monitor monitor_rank_special_minus_one/.* while holding lock monitor_rank_special/.*"
+TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_nosafepoint,
+                   ".* Attempting to wait on monitor monitor_rank_nosafepoint_minus_one/.* while holding lock monitor_rank_nosafepoint/.*"
                    "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank nosafepoint or below.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_special = new Monitor(Mutex::special, "monitor_rank_special", Mutex::_safepoint_check_never);
-  Monitor* monitor_rank_special_minus_one = new Monitor(Mutex::special - 1, "monitor_rank_special_minus_one", Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_nosafepoint = new Monitor(Mutex::nosafepoint, "monitor_rank_nosafepoint", Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_nosafepoint_minus_one = new Monitor(Mutex::nosafepoint - 1, "monitor_rank_nosafepoint_minus_one", Mutex::_safepoint_check_never);
 
-  monitor_rank_special->lock_without_safepoint_check();
-  monitor_rank_special_minus_one->lock_without_safepoint_check();
-  monitor_rank_special_minus_one->wait_without_safepoint_check(1);
-  monitor_rank_special_minus_one->unlock();
-  monitor_rank_special->unlock();
+  monitor_rank_nosafepoint->lock_without_safepoint_check();
+  monitor_rank_nosafepoint_minus_one->lock_without_safepoint_check();
+  monitor_rank_nosafepoint_minus_one->wait_without_safepoint_check(1);
+  monitor_rank_nosafepoint_minus_one->unlock();
+  monitor_rank_nosafepoint->unlock();
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_event_tty,
@@ -236,30 +236,30 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_event_tty,
   monitor_rank_tty->unlock();
 }
 
-TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_tty_special,
-                   ".* Attempting to wait on monitor monitor_rank_tty/.* while holding lock monitor_rank_special/.*"
+TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_tty_nosafepoint,
+                   ".* Attempting to wait on monitor monitor_rank_tty/.* while holding lock monitor_rank_nosafepoint/.*"
                    "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank nosafepoint or below.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_special = new Monitor(Mutex::special, "monitor_rank_special", Mutex::_safepoint_check_never);
+  Monitor* monitor_rank_nosafepoint = new Monitor(Mutex::nosafepoint, "monitor_rank_nosafepoint", Mutex::_safepoint_check_never);
   Monitor* monitor_rank_tty = new Monitor(Mutex::tty, "monitor_rank_tty", Mutex::_safepoint_check_never);
 
-  monitor_rank_special->lock_without_safepoint_check();
+  monitor_rank_nosafepoint->lock_without_safepoint_check();
   monitor_rank_tty->lock_without_safepoint_check();
   monitor_rank_tty->wait_without_safepoint_check(1);
   monitor_rank_tty->unlock();
-  monitor_rank_special->unlock();
+  monitor_rank_nosafepoint->unlock();
 }
 
-TEST_VM_ASSERT_MSG(MutexRank, monitor_special_vm_block,
+TEST_VM_ASSERT_MSG(MutexRank, monitor_nosafepoint_vm_block,
                    ".*Safepoint check never locks should always allow the vm to block") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_special = new Monitor(Mutex::special, "monitor_rank_special", Mutex::_safepoint_check_never, false);
-  monitor_rank_special->lock_without_safepoint_check();
-  monitor_rank_special->unlock();
+  Monitor* monitor_rank_nosafepoint = new Monitor(Mutex::nosafepoint, "monitor_rank_nosafepoint", Mutex::_safepoint_check_never, false);
+  monitor_rank_nosafepoint->lock_without_safepoint_check();
+  monitor_rank_nosafepoint->unlock();
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_negative_rank,

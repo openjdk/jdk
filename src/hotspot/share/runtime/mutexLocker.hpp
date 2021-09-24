@@ -54,7 +54,7 @@ extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
 extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
 extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
-extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special
+extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
 extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
@@ -196,8 +196,6 @@ class MutexLocker: public StackObj {
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
-             "Mutexes with rank special or lower should not do safepoint checks");
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
       } else {
@@ -210,8 +208,6 @@ class MutexLocker: public StackObj {
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
-             "Mutexes with rank special or lower should not do safepoint checks");
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check(thread);
       } else {

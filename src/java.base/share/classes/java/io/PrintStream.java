@@ -899,7 +899,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints a boolean and then terminate the line.  This method behaves as
+     * Prints a boolean and then terminates the line.  This method behaves as
      * though it invokes {@link #print(boolean)} and then
      * {@link #println()}.
      *
@@ -917,7 +917,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints a character and then terminate the line.  This method behaves as
+     * Prints a character and then terminates the line.  This method behaves as
      * though it invokes {@link #print(char)} and then
      * {@link #println()}.
      *
@@ -935,7 +935,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints an integer and then terminate the line.  This method behaves as
+     * Prints an integer and then terminates the line.  This method behaves as
      * though it invokes {@link #print(int)} and then
      * {@link #println()}.
      *
@@ -953,7 +953,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints a long and then terminate the line.  This method behaves as
+     * Prints a long and then terminates the line.  This method behaves as
      * though it invokes {@link #print(long)} and then
      * {@link #println()}.
      *
@@ -971,7 +971,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints a float and then terminate the line.  This method behaves as
+     * Prints a float and then terminates the line.  This method behaves as
      * though it invokes {@link #print(float)} and then
      * {@link #println()}.
      *
@@ -989,7 +989,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints a double and then terminate the line.  This method behaves as
+     * Prints a double and then terminates the line.  This method behaves as
      * though it invokes {@link #print(double)} and then
      * {@link #println()}.
      *
@@ -1007,7 +1007,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints an array of characters and then terminate the line.  This method
+     * Prints an array of characters and then terminates the line.  This method
      * behaves as though it invokes {@link #print(char[])} and
      * then {@link #println()}.
      *
@@ -1025,7 +1025,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints a String and then terminate the line.  This method behaves as
+     * Prints a String and then terminates the line.  This method behaves as
      * though it invokes {@link #print(String)} and then
      * {@link #println()}.
      *
@@ -1043,7 +1043,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Prints an Object and then terminate the line.  This method calls
+     * Prints an Object and then terminates the line.  This method calls
      * at first String.valueOf(x) to get the printed object's string value,
      * then behaves as
      * though it invokes {@link #print(String)} and then

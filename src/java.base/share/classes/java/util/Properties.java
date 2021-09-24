@@ -281,7 +281,7 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * <p>
      * The key contains all of the characters in the line starting
-     * with the first non-white space character and up to, but not
+     * with the first non-whitespace character and up to, but not
      * including, the first unescaped {@code '='},
      * {@code ':'}, or white space character other than a line
      * terminator. All of these key termination characters may be
@@ -293,7 +293,7 @@ public class Properties extends Hashtable<Object,Object> {
      * would be the two-character key {@code ":="}.  Line
      * terminator characters can be included using {@code \r} and
      * {@code \n} escape sequences.  Any white space after the
-     * key is skipped; if the first non-white space character after
+     * key is skipped; if the first non-whitespace character after
      * the key is {@code '='} or {@code ':'}, then it is
      * ignored and any white space characters after it are also
      * skipped.  All remaining characters on the line become part of
