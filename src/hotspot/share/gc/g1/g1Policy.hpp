@@ -268,9 +268,7 @@ private:
   void maybe_start_marking();
   // Manage time-to-mixed tracking.
   void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
-  // Record the given STW pause with the given start and end times (in s). Optionally
-  // update pause time ratios - in some situations (evacuation failure) we do not want
-  // to do this since timings of these garbage collections are very skewed.
+  // Record the given STW pause with the given start and end times (in s).
   void record_pause(G1GCPauseType gc_type,
                     double start,
                     double end,
