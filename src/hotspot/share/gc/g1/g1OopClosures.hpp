@@ -116,9 +116,9 @@ class G1SkipCardEnqueueSetter : public StackObj {
   G1ScanEvacuatedObjClosure* _closure;
 
 public:
-  G1SkipCardEnqueueSetter(G1ScanEvacuatedObjClosure* closure, bool new_value) : _closure(closure) {
+  G1SkipCardEnqueueSetter(G1ScanEvacuatedObjClosure* closure, bool skip_card_enqueue) : _closure(closure) {
     assert(_closure->_skip_card_enqueue == G1ScanEvacuatedObjClosure::Uninitialized, "Must not be set");
-    _closure->_skip_card_enqueue = new_value ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
+    _closure->_skip_card_enqueue = skip_card_enqueue ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
   }
 
   ~G1SkipCardEnqueueSetter() {

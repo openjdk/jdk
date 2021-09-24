@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -911,6 +912,33 @@ class G1STWRefProcProxyTask : public RefProcProxyTask {
   TaskTerminator _terminator;
   G1ScannerTasksQueueSet& _task_queues;
 
+  // Special closure for enqueuing discovered fields: during enqueue the card table
+  // may not be in shape to properly handle normal barrier calls (e.g. card marks
+  // in regions that failed evacuation, scribbling of various values by card table
+  // scan code). Additionally the regular barrier enqueues into the "global"
+  // DCQS, but during GC we need these to-be-refined entries in the GC local queue
+  // so that after clearing the card table, the redirty cards phase will properly
+  // mark all dirty cards to be picked up by refinement.
+  class G1EnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
+    G1CollectedHeap* _g1h;
+    G1ParScanThreadState* _pss;
+
+  public:
+    G1EnqueueDiscoveredFieldClosure(G1CollectedHeap* g1h, G1ParScanThreadState* pss) : _g1h(g1h), _pss(pss) { }
+
+    void enqueue(oop reference, oop value) override {
+      HeapWord* discovered_addr = java_lang_ref_Reference::discovered_addr_raw(reference);
+
+      // Store the value first, whatever it is.
+      RawAccess<>::oop_store(discovered_addr, value);
+
+      if (value == nullptr) {
+        return;
+      }
+      _pss->write_ref_field_post(discovered_addr, value);
+    }
+  };
+
 public:
   G1STWRefProcProxyTask(uint max_workers, G1CollectedHeap& g1h, G1ParScanThreadStateSet& pss, G1ScannerTasksQueueSet& task_queues)
     : RefProcProxyTask("G1STWRefProcProxyTask", max_workers),
@@ -928,7 +956,7 @@ public:
 
     G1STWIsAliveClosure is_alive(&_g1h);
     G1CopyingKeepAliveClosure keep_alive(&_g1h, pss);
-    BarrierEnqueueDiscoveredFieldClosure enqueue;
+    G1EnqueueDiscoveredFieldClosure enqueue(&_g1h, pss);
     G1ParEvacuateFollowersClosure complete_gc(&_g1h, pss, &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
 
