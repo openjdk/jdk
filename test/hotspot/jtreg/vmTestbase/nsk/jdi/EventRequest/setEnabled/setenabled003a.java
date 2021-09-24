@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequest.setEnabled;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class setenabled003a {
 
     //====================================================== test program
 
-    static Thread1setenabled003a thread1 = null;
+    static Thread thread1 = null;
 
     //------------------------------------------------------ common section
 
@@ -96,7 +95,7 @@ public class setenabled003a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1setenabled003a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1setenabled003a("thread1"));
                             Thread1setenabled003a.method();
                             break;
 
@@ -152,23 +151,20 @@ public class setenabled003a {
     }
 }
 
-class Thread1setenabled003a extends Thread {
-
-    String tName = null;
+class Thread1setenabled003a extends NamedTask {
 
     public Thread1setenabled003a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        setenabled003a.log1("  'run': enter  :: threadName == " + tName);
+        setenabled003a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(setenabled003a.waitnotifyObj) {
             setenabled003a.waitnotifyObj.notify();
         }
 
         synchronized(setenabled003a.lockObj) {
-            setenabled003a.log1("  'run': exit   :: threadName == " + tName);
+            setenabled003a.log1("  'run': exit   :: threadName == " + getName());
         }
         return;
     }

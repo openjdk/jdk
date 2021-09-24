@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,22 +30,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JColorChooser;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.border.*;
-import javax.swing.colorchooser.*;
-import javax.swing.filechooser.*;
-import javax.accessibility.*;
-
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.*;
-import java.io.*;
-import java.applet.*;
-import java.net.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * JColorChooserDemo

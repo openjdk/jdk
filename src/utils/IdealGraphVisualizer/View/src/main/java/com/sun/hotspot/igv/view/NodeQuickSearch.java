@@ -30,7 +30,6 @@ import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -135,11 +134,10 @@ public class NodeQuickSearch implements SearchProvider {
                 }
 
                 // Rank the matches.
-                Collections.sort(matches,
-                                 (InputNode a, InputNode b) ->
-                                 compareByRankThenNumVal(rawValue,
-                                                         a.getProperties().get(name),
-                                                         b.getProperties().get(name)));
+                matches.sort((InputNode a, InputNode b) ->
+                        compareByRankThenNumVal(rawValue,
+                                a.getProperties().get(name),
+                                b.getProperties().get(name)));
 
                 // Single matches
                 for (final InputNode n : matches) {

@@ -186,8 +186,6 @@ class os: AllStatic {
   static jint init_2(void);                    // Called after command line parsing
                                                // and VM ergonomics processing
 
-  // unset environment variable
-  static bool unsetenv(const char* name);
   // Get environ pointer, platform independently
   static char** get_environ();
 

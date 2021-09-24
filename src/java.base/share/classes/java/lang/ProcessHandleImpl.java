@@ -642,27 +642,27 @@ final class ProcessHandleImpl implements ProcessHandle {
                 sb.append(user());
             }
             if (command != null) {
-                if (sb.length() != 0) sb.append(", ");
+                if (sb.length() > 1) sb.append(", ");
                 sb.append("cmd: ");
                 sb.append(command);
             }
             if (arguments != null && arguments.length > 0) {
-                if (sb.length() != 0) sb.append(", ");
+                if (sb.length() > 1) sb.append(", ");
                 sb.append("args: ");
                 sb.append(Arrays.toString(arguments));
             }
             if (commandLine != null) {
-                if (sb.length() != 0) sb.append(", ");
+                if (sb.length() > 1) sb.append(", ");
                 sb.append("cmdLine: ");
                 sb.append(commandLine);
             }
             if (startTime > 0) {
-                if (sb.length() != 0) sb.append(", ");
+                if (sb.length() > 1) sb.append(", ");
                 sb.append("startTime: ");
                 sb.append(startInstant());
             }
             if (totalTime != -1) {
-                if (sb.length() != 0) sb.append(", ");
+                if (sb.length() > 1) sb.append(", ");
                 sb.append("totalTime: ");
                 sb.append(totalCpuDuration().toString());
             }

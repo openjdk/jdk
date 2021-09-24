@@ -809,7 +809,7 @@ public final class Security {
      * setProperty() was either "package.access" or
      * "package.definition", we need to signal to the SecurityManager
      * class that the value has just changed, and that it should
-     * invalidate it's local cache values.
+     * invalidate its local cache values.
      */
     private static void invalidateSMCache(String key) {
 

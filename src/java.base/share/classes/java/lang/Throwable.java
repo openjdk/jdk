@@ -350,9 +350,8 @@ public class Throwable implements Serializable {
      * @param  message the detail message.
      * @param cause the cause.  (A {@code null} value is permitted,
      * and indicates that the cause is nonexistent or unknown.)
-     * @param enableSuppression whether or not suppression is enabled or disabled
-     * @param writableStackTrace whether or not the stack trace should be
-     *                           writable
+     * @param enableSuppression whether or not suppression is enabled
+     * @param writableStackTrace whether or not the stack trace is writable
      *
      * @see OutOfMemoryError
      * @see NullPointerException
@@ -552,7 +551,7 @@ public class Throwable implements Serializable {
      * stack trace of the exception that was caused by this exception (the
      * "enclosing" exception).  This shorthand can greatly reduce the length
      * of the output in the common case where a wrapped exception is thrown
-     * from same method as the "causative exception" is caught.  The above
+     * from the same method as the "causative exception" is caught.  The above
      * example was produced by running the program:
      * <pre>
      * public class Junk {

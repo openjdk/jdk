@@ -2067,8 +2067,9 @@ public:
     assert(worker_id < _max_workers, "sanity");
     ParCompactionManager* cm = (_tm == RefProcThreadModel::Single) ? ParCompactionManager::get_vmthread_cm() : ParCompactionManager::gc_thread_compaction_manager(worker_id);
     PCMarkAndPushClosure keep_alive(cm);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
-    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
