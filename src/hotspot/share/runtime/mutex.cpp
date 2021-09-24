@@ -384,14 +384,20 @@ void Mutex::check_rank(Thread* thread) {
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);
-    // We enforce not holding locks of rank nosafepoint or lower while waiting.
+    // We enforce not holding locks of rank nosafepoint or lower while waiting for JavaThreads,
+    // because the held lock has a NoSafepointVerifier so waiting on a lock will block out safepoints.
+    // For NonJavaThreads, we enforce not waiting on the tty lock since that could block progress also.
     // Also "this" should be the monitor with lowest rank owned by this thread.
-    if (least != NULL && (least->rank() <= nosafepoint || least->rank() <= this->rank())) {
+    if (least != NULL && ((least->rank() <= Mutex::nosafepoint && thread->is_Java_thread()) ||
+                           least->rank() <= Mutex::tty ||
+                           least->rank() <= this->rank())) {
       assert(false, "Attempting to wait on monitor %s/%d while holding lock %s/%d -- "
              "possible deadlock. %s", name(), rank(), least->name(), least->rank(),
              least->rank() <= this->rank() ?
               "Should wait on the least ranked monitor from all owned locks." :
-              "Should not block(wait) while holding a lock of rank nosafepoint or below.");
+             thread->is_Java_thread() ?
+              "Should not block(wait) while holding a lock of rank nosafepoint or below." :
+              "Should not block(wait) while holding a lock of rank tty or below.");
     }
   } else {
     // lock()/lock_without_safepoint_check()/try_lock() case
