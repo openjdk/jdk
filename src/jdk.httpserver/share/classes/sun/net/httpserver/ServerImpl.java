@@ -38,6 +38,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.net.httpserver.HttpConnection.State;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 /**
  * Provides implementation for both HTTP and HTTPS
  */
@@ -759,7 +761,7 @@ class ServerImpl implements TimeSource {
                 }
                 builder.append ("\r\n").append (text);
                 String s = builder.toString();
-                byte[] b = s.getBytes("ISO8859_1");
+                byte[] b = s.getBytes(ISO_8859_1);
                 rawout.write (b);
                 rawout.flush();
                 if (closeNow) {

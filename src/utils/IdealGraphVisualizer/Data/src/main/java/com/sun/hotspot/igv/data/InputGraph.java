@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
         for(InputNode n : this.getNodes()) {
             List<InputEdge> list = result.get(n);
-            Collections.sort(list, InputEdge.OUTGOING_COMPARATOR);
+            list.sort(InputEdge.OUTGOING_COMPARATOR);
         }
 
         return result;
@@ -118,7 +118,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
         for(InputNode n : this.getNodes()) {
             List<InputEdge> list = result.get(n);
-            Collections.sort(list, InputEdge.INGOING_COMPARATOR);
+            list.sort(InputEdge.INGOING_COMPARATOR);
         }
 
         return result;
@@ -133,7 +133,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
             }
         }
 
-        Collections.sort(result, InputEdge.OUTGOING_COMPARATOR);
+        result.sort(InputEdge.OUTGOING_COMPARATOR);
 
         return result;
     }

@@ -2108,8 +2108,12 @@ void PhaseOutput::ScheduleAndBundle() {
     return;
 
   // Scheduling code works only with pairs (8 bytes) maximum.
-  if (C->max_vector_size() > 8)
+  // And when the scalable vector register is used, we may spill/unspill
+  // the whole reg regardless of the max vector size.
+  if (C->max_vector_size() > 8 ||
+      (C->max_vector_size() > 0 && Matcher::supports_scalable_vector())) {
     return;
+  }
 
   Compile::TracePhase tp("isched", &timers[_t_instrSched]);
 

@@ -298,10 +298,9 @@ class CompactPoint : public StackObj {
 public:
   Generation* gen;
   CompactibleSpace* space;
-  HeapWord* threshold;
 
   CompactPoint(Generation* g = NULL) :
-    gen(g), space(NULL), threshold(0) {}
+    gen(g), space(NULL) {}
 };
 
 // A space that supports compaction operations.  This is usually, but not
@@ -377,10 +376,8 @@ public:
 
   // Some contiguous spaces may maintain some data structures that should
   // be updated whenever an allocation crosses a boundary.  This function
-  // returns the first such boundary.
-  // (The default implementation returns the end of the space, so the
-  // boundary is never crossed.)
-  virtual HeapWord* initialize_threshold() { return end(); }
+  // initializes these data structures for further updates.
+  virtual void initialize_threshold() { }
 
   // "q" is an object of the given "size" that should be forwarded;
   // "cp" names the generation ("gen") and containing "this" (which must
@@ -391,9 +388,8 @@ public:
   // be one, since compaction must succeed -- we go to the first space of
   // the previous generation if necessary, updating "cp"), reset compact_top
   // and then forward.  In either case, returns the new value of "compact_top".
-  // If the forwarding crosses "cp->threshold", invokes the "cross_threshold"
-  // function of the then-current compaction space, and updates "cp->threshold
-  // accordingly".
+  // Invokes the "alloc_block" function of the then-current compaction
+  // space.
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
                     HeapWord* compact_top);
 
@@ -408,12 +404,9 @@ protected:
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
 
-  // This the function is invoked when an allocation of an object covering
-  // "start" to "end occurs crosses the threshold; returns the next
-  // threshold.  (The default implementation does nothing.)
-  virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* the_end) {
-    return end();
-  }
+  // This the function to invoke when an allocation of an object covering
+  // "start" to "end" occurs to update other internal data structures.
+  virtual void alloc_block(HeapWord* start, HeapWord* the_end) { }
 };
 
 class GenSpaceMangler;
@@ -633,8 +626,8 @@ class OffsetTableContigSpace: public ContiguousSpace {
   inline HeapWord* par_allocate(size_t word_size);
 
   // MarkSweep support phase3
-  virtual HeapWord* initialize_threshold();
-  virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
+  virtual void initialize_threshold();
+  virtual void alloc_block(HeapWord* start, HeapWord* end);
 
   virtual void print_on(outputStream* st) const;
 

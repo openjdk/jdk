@@ -2537,7 +2537,9 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
           as_FloatRegister(i+3), restore_vectors ? T2D : T1D, Address(post(sp, step)));
   }
 
-  if (restore_vectors) {
+  // We may use predicate registers and rely on ptrue with SVE,
+  // regardless of wide vector (> 8 bytes) used or not.
+  if (use_sve) {
     reinitialize_ptrue();
   }
 
@@ -4773,23 +4775,37 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 {
 //  Algorithm:
 //
-//    scratch1 = cnt & 7;
+//    if (cnt == 0) {
+//      return;
+//    }
+//    if ((p & 8) != 0) {
+//      *p++ = v;
+//    }
+//
+//    scratch1 = cnt & 14;
 //    cnt -= scratch1;
 //    p += scratch1;
-//    switch (scratch1) {
+//    switch (scratch1 / 2) {
 //      do {
-//        cnt -= 8;
-//          p[-8] = v;
+//        cnt -= 16;
+//          p[-16] = v;
+//          p[-15] = v;
 //        case 7:
-//          p[-7] = v;
+//          p[-14] = v;
+//          p[-13] = v;
 //        case 6:
-//          p[-6] = v;
+//          p[-12] = v;
+//          p[-11] = v;
 //          // ...
 //        case 1:
+//          p[-2] = v;
 //          p[-1] = v;
 //        case 0:
-//          p += 8;
+//          p += 16;
 //      } while (cnt);
+//    }
+//    if ((cnt & 1) == 1) {
+//      *p++ = v;
 //    }
 
   assert_different_registers(base, cnt, value, rscratch1, rscratch2);
