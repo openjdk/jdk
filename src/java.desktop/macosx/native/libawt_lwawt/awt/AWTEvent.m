@@ -460,15 +460,6 @@ NsCharToJavaVirtualKeyCode(unichar ch, BOOL isDeadChar,
     }
 
     if ([[NSCharacterSet letterCharacterSet] characterIsMember:ch]) {
-        TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
-        NSString* lang;
-        NSArray* languages = (NSArray *) TISGetInputSourceProperty(source, kTISPropertyInputSourceLanguages);
-        if (languages && [languages count] > 0) {
-            lang = [languages objectAtIndex:0];
-        } else {
-            lang = languages;
-        }
-
         // key is an alphabetic character
         unichar lower;
         lower = tolower(ch);
@@ -480,8 +471,8 @@ NsCharToJavaVirtualKeyCode(unichar ch, BOOL isDeadChar,
             *keyCode = java_awt_event_KeyEvent_VK_A + offset;
             *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_STANDARD;
             return;
-        } else if([lang isEqualToString:@"ru"]) {
-            // checking for Russian characters
+        } else {
+            // checking for non-english characters
             offset += 0x01000000;
             *postsTyped = YES;
             // do quick conversion, add 32 for Russian
