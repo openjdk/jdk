@@ -85,9 +85,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL),
-#ifndef PRODUCT
-    _evac_failure_inject_counter(0),
-#endif
+    NOT_PRODUCT(_evac_failure_inject_counter(0) COMMA)
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions)

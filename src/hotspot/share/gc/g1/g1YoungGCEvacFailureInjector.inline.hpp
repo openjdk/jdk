@@ -36,9 +36,6 @@ inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter
   if (!_inject_evacuation_failure_for_current_gc) {
     return false;
   }
-  // Injecting evacuation failures is in effect for current GC
-  // Access to _evacuation_failure_alot_count is not atomic;
-  // the value does not have to be exact.
   if (++counter < G1EvacuationFailureALotCount) {
     return false;
   }
