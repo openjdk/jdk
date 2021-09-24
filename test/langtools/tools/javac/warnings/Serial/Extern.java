@@ -10,6 +10,9 @@ import java.io.*;
 class Extern implements Externalizable {
     private static final long serialVersionUID = 42;
 
+    // No-arg constructor on an Externalizable class must be public
+    protected Extern() {}
+
     // ineffectual
     private static final ObjectStreamField[] serialPersistentFields = {};
 

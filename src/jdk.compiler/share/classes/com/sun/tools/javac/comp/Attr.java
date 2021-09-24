@@ -5633,7 +5633,6 @@ public class Attr extends JCTree.Visitor {
      * Externalizable: methods defined on the interface
      * public void writeExternal(ObjectOutput) throws IOException
      * public void readExternal(ObjectInput) throws IOException
-     *
      */
     private class SerialTypeVisitor extends ElementKindVisitor14<Void, JCClassDecl> {
         SerialTypeVisitor(){super();}
@@ -5693,6 +5692,8 @@ public class Attr extends JCTree.Visitor {
 
 	    if (checkSuppressSerialWarningNested(e))
 		return null;
+
+	    checkCtorAccess(tree, c);
 
 	    // Check for missing serialVersionUID; check *not* done
 	    // for enums or records.
@@ -5768,6 +5769,30 @@ public class Attr extends JCTree.Visitor {
             return null;
         }
 
+
+	/**
+	 * Check that Externalizable class needs a public no-arg
+	 * constructor.
+	 *
+	 * Check that a Serializable class has access to the no-arg
+	 * constructor of its first nonserializable superclass.
+	 */
+	private void checkCtorAccess(JCClassDecl tree, Element e) {
+	    ClassSymbol c = (ClassSymbol) e;
+
+	    if (isExternalizable(c.type)) {
+		for(var ctor : ElementFilter.constructorsIn(c.getEnclosedElements())) {
+		    if (ctor.getParameters().isEmpty() &&
+			ctor.getModifiers().contains(Modifier.PUBLIC))
+			return;
+		}
+		log.warning(LintCategory.SERIAL, tree.pos(),
+			    Warnings.ExternalizableMissingPublicNoArgCtor);
+
+	    } else {
+		return;
+	    }
+	}
 
         private void checkSerialVersionUID(JCClassDecl tree, Element e, Element field) {
             // To be effective, serialVersionUID must be marked

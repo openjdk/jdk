@@ -23,6 +23,7 @@
 
 // key: compiler.warn.ineffectual.serial.method.externalizable
 // key: compiler.warn.ineffectual.serial.field.externalizable
+// key: compiler.warn.externalizable.missing.public.no.arg.ctor
 
 // options: -Xlint:serial
 
@@ -30,6 +31,9 @@ import java.io.*;
 
 class IneffectualSerialExtern implements Externalizable {
     private static final long serialVersionUID = 42;
+
+    // Must have a public no-arg constructor
+    public IneffectualSerialExtern(int foo) {}
 
     public void writeExternal(ObjectOutput out) throws IOException {
 	return;
