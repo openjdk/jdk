@@ -97,8 +97,8 @@ if enabled, run `tier1` tests.
 
 - `tier2`: This test group covers even more ground. These contain, among other things,
 tests that either run for too long to be at `tier1`, or may require special configuration,
-or tests that are less stable, or cover the broader range of less critical JVM and JDK
-features/components (for example, jaxp).
+or tests that are less stable, or cover the broader range of non-core JVM and JDK features/components
+(for example, XML).
 
 - `tier3`: This test group includes more stressful tests, the tests for corner cases
 not covered by previous tiers, plus the tests that require GUIs. As such, this suite
