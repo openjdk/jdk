@@ -746,7 +746,16 @@ blockOnDebuggerSuspend(jthread thread)
     node = findThread(NULL, thread);
     if (node != NULL) {
         while (node && node->suspendCount > 0) {
+            /* Resume requires the event handlerLock so we have to release it */
+            eventHandler_unlock();
+
             debugMonitorWait(threadLock);
+
+            /* The handlerLock needs to be aquired before the threadLock to prevent
+             * deadlocks */
+            debugMonitorExit(threadLock);
+            eventHandler_lock();
+            debugMonitorEnter(threadLock);
             node = findThread(NULL, thread);
         }
     }
@@ -2479,6 +2488,8 @@ threadControl_reset(void)
     /* Everything should have been resumed */
     JDI_ASSERT(otherThreads.first == NULL);
 
+    /* Threads could be waiting in blockOnDebuggerSuspend */
+    debugMonitorNotifyAll(threadLock);
     debugMonitorExit(threadLock);
     eventHandler_unlock();
 }
