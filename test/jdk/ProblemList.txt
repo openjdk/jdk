@@ -749,6 +749,12 @@ javax/swing/JPopupMenu/4634626/bug4634626.java 8017175 macosx-all
 javax/swing/JButton/8151303/PressedIconTest.java 8266246 macosx-aarch64
 javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8273573 macosx-all
 
+# Several tests which fail on some hidpi systems
+java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 8274106 macosx-aarch64
+java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
+java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
+javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
+
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
