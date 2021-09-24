@@ -154,7 +154,19 @@ void ZCollector::select_relocation_set() {
         selector.register_empty_page(page);
 
         // Reclaim empty pages in bulk
-        free_empty_pages(&selector, 64 /* bulk */);
+
+        // An active iterator blocks immediate recycle and delete of pages.
+        // The intent it to allow the code that iterates over the pages to
+        // safely read the properties of the pages without them being changed
+        // by another thread. However, this function both iterates over the
+        // pages AND frees/recycles them. We "yield" the iterator, so that we
+        // can perform immediate recycling (as long as no other thread is
+        // iterating over the pages). The contract is that the pages that are
+        // about to be freed are "owned" by this thread, and no other thread
+        // will change their states.
+        pt_iter.yield([&]() {
+          free_empty_pages(&selector, 64 /* bulk */);
+        });
       }
     }
 

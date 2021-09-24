@@ -86,6 +86,9 @@ public:
   ~ZGenerationPagesIterator();
 
   bool next(ZPage** page);
+
+  template <typename Function>
+  void yield(Function function);
 };
 
 class ZGenerationPagesParallelIterator : public StackObj {
