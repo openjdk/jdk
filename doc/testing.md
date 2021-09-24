@@ -506,7 +506,7 @@ $ make test TEST="jtreg:test/hotspot/jtreg/containers/docker" \
 
 If your locale is non-US, some tests are likely to fail. To work around this
 you can set the locale to US. On Unix platforms simply setting `LANG="en_US"`
-in the environment before running tests should work. On Windows, setting
+in the environment before running tests should work. On Windows or MacOS, setting
 `JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"` helps for most, but
 not all test cases.
 
