@@ -45,9 +45,6 @@ class G1YoungGCEvacFailureInjector {
   // Used to determine whether evacuation failure injection should be in effect
   // for the current GC.
   size_t _last_collection_with_evacuation_failure;
-
-  // The number of evacuations between induced failures.
-  volatile size_t _evacuation_failure_object_count;
 #endif
 
   bool arm_if_needed_for_gc_type(bool for_young_gc,
@@ -59,8 +56,9 @@ public:
   // GC (based upon the type of GC and which command line flags are set);
   void arm_if_needed() PRODUCT_RETURN;
 
-  // Return true if it's time to cause an evacuation failure.
-  bool evacuation_should_fail() PRODUCT_RETURN_( return false; );
+  // Return true if it's time to cause an evacuation failure; the caller
+  // provides the (preferably thread-local) counter to minimize performance impact.
+  bool evacuation_should_fail(size_t& counter) PRODUCT_RETURN_( return false; );
 
   // Reset the evacuation failure injection counters. Should be called at
   // the end of an evacuation pause in which an evacuation failure occurred.
