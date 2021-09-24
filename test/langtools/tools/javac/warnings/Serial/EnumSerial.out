@@ -1,0 +1,8 @@
+EnumSerial.java:9:1: compiler.warn.ineffectual.serial.field.enum: serialVersionUID
+EnumSerial.java:9:1: compiler.warn.ineffectual.serial.field.enum: serialPersistentFields
+EnumSerial.java:9:1: compiler.warn.ineffectual.serial.method.enum: writeObject(java.io.ObjectOutputStream)
+EnumSerial.java:9:1: compiler.warn.ineffectual.serial.method.enum: writeReplace()
+EnumSerial.java:9:1: compiler.warn.ineffectual.serial.method.enum: readObject(java.io.ObjectInputStream)
+EnumSerial.java:9:1: compiler.warn.ineffectual.serial.method.enum: readObjectNoData()
+EnumSerial.java:9:1: compiler.warn.ineffectual.serial.method.enum: readResolve()
+7 warnings

@@ -5512,7 +5512,7 @@ public class Attr extends JCTree.Visitor {
         // Check for proper use of serialVersionUID
         if (env.info.lint.isEnabled(LintCategory.SERIAL)
                 && isSerializable(c.type)
-                && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0
+	    /* && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0 */
                 && !c.isAnonymous()) {
             // checkSerialVersionUID(tree, c, env);
 	    checkSerialStructure(tree, c, env);
@@ -5590,13 +5590,12 @@ public class Attr extends JCTree.Visitor {
         }
 
         /**
-         * Check structural serialization declarations.
-         **/
+         * Check structure of serialization declarations.
+         */
         private void checkSerialStructure(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
 	    (new SerialTypeVisitor()).visit(c, tree);
         }
 
-    // TO-DO: pass in tree info as the parameter? define in outer class?
     /**
      * This visitor will warn if a serialization-related field or
      * method is declared in a suspicious or incorrect way. In
@@ -5636,7 +5635,7 @@ public class Attr extends JCTree.Visitor {
         private static final Set<String> serialFieldNames =
 	    Set.of("serialVersionUID", "serialPersistentFields");
             
-	// TODO these check should likely be expressed in terms of flags
+	// TODO these check should likely be expressed in terms of javac flags
         private static final Set<Modifier> PRIVATE_STATIC_FINAL_MODS =
             Set.of(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
 
@@ -5678,34 +5677,15 @@ public class Attr extends JCTree.Visitor {
         @Override
         public Void visitTypeAsClass(TypeElement e,
 				     JCClassDecl tree) {
-            // System.out.println("Class\t" + e.getQualifiedName() +" is Serializeable.");
-	    // TODO: check for anonymous class
-
 	    ClassSymbol c = (ClassSymbol)e;
 
-	    if ( c.isAnonymous())
+	    if (c.isAnonymous())
 		return null;
 
-	    // TODO: this could be a loop; defer warnings for full correctness?
-            if (checkSuppressSerialWarning(e) ||
-                (e.getNestingKind() == NestingKind.MEMBER ?
-                 checkSuppressSerialWarning(e.getEnclosingElement()) :
-                 false) ) {
-                // System.out.println("\tserial warning suppressed on type");
-                return null;
-            }
+	    if (checkSuppressSerialWarningNested(e))
+		return null;
 
-            // QUICK HACK -- check for missing serialVersionUID
-            // Covered by existing checks
-            //                 if (!ElementFilter.fieldsIn(e.getEnclosedElements())
-            //                     .stream()
-            //                     .anyMatch(f -> f.getSimpleName().toString().equals("serialVersionUID")) ) {
-            //                         messager.printMessage(Diagnostic.Kind.WARNING, 
-            //                                               "Serializable class " + e.getQualifiedName() + 
-            //                                               " is missing a serialVersionUID field.");
-            //                 }
-
-
+	    // Check for missing serialVersionUID
             VarSymbol svuidSym = null;
             for (Symbol sym : c.members().getSymbolsByName(names.serialVersionUID)) {
                 if (sym.kind == VAR) {
@@ -5718,20 +5698,15 @@ public class Attr extends JCTree.Visitor {
 		log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
 	    }
 
+	    // Check declarations of serialization-related methods and
+	    // fields
             for(Element enclosed : e.getEnclosedElements()) {
                 if (checkSuppressSerialWarning(enclosed))
                     continue;
 
                 String name = null;
-                boolean svuidFound = false;
                 switch(enclosed.getKind()) {
                 case FIELD -> {
-                    /*
-                     * Fields can have modifiers: public,
-                     * protected, private (access modifiers)
-                     * static, final, transient, volatile
-                     */
-                        
                     name = enclosed.getSimpleName().toString();
                     if (serialFieldNames.contains(name)) {
                         switch (name) {
@@ -5739,34 +5714,30 @@ public class Attr extends JCTree.Visitor {
                         case "serialPersistentFields" ->  checkSerialPersistentFields(tree, e, enclosed);
                         default -> throw new AssertionError();
                         }
-
                     }
                 }
 
-
                 // Correctly checking the serialization-related
-                // methods is subtle. For the methods declared to
-                // be private or directly declared in the class,
-                // the enclosed elements of the class can be
-                // checked in turn. However, writeReplace and
-                // readResolve can be declared in a superclass and
-                // inherited. Note that the runtime lookup walks
-                // the superclass chain looking for
-                // writeReplace/readResolve via
-                // Class.getDeclaredMethod. This differs from
-                // calling Elements.getAllMembers(TypeElement) as
-                // the latter will also pull in default methods
-                // from superinterfaces. In other words, the
-                // runtime checks (which long predate default
-                // methods on interfaces) do not admit the
-                // possibility of inheriting methods this way, a
-                // difference from general inheritance.
+                // methods is subtle. For the methods declared to be
+                // private or directly declared in the class, the
+                // enclosed elements of the class can be checked in
+                // turn. However, writeReplace and readResolve can be
+                // declared in a superclass and inherited. Note that
+                // the runtime lookup walks the superclass chain
+                // looking for writeReplace/readResolve via
+                // Class.getDeclaredMethod. This differs from calling
+                // Elements.getAllMembers(TypeElement) as the latter
+                // will also pull in default methods from
+                // superinterfaces. In other words, the runtime checks
+                // (which long predate default methods on interfaces)
+                // do not admit the possibility of inheriting methods
+                // this way, a difference from general inheritance.
                     
-                // The current implementation just checks the
-                // enclosed elements and does not directly check
-                // the inherited methods. If all the types are
-                // being checked this is less of a concern;
-                // however, there are cases that could be missed.
+                // The current implementation just checks the enclosed
+                // elements and does not directly check the inherited
+                // methods. If all the types are being checked this is
+                // less of a concern; however, there are cases that
+                // could be missed.
                 case METHOD -> {
                     var method = toMethod(enclosed);
                     name = enclosed.getSimpleName().toString();
@@ -5782,7 +5753,6 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
                 }
-
             }
 
             return null;
@@ -5915,35 +5885,28 @@ public class Attr extends JCTree.Visitor {
          */
         @Override
         public Void visitTypeAsEnum(TypeElement e,
-                                    JCClassDecl p) {
-            // System.out.println("Enum\t" + e.getQualifiedName() +" is Serializeable.");
-
-            if (checkSuppressSerialWarning(e)) {
-                // System.out.println("\tserial warning suppressed on type");
-                return null;
+                                    JCClassDecl tree) {
+	    if (checkSuppressSerialWarningNested(e)) {
+		return null;
             }
 
             for(Element enclosed : e.getEnclosedElements()) {
                 if (checkSuppressSerialWarning(enclosed))
                     continue;
 
-                String name = null;
+                String name = enclosed.getSimpleName().toString();
                 switch(enclosed.getKind()) {
                 case FIELD -> {
-                    name = enclosed.getSimpleName().toString();
                     if (serialFieldNames.contains(name)) {
-                        // System.out.println("Serial field name " + name + 
-                        //                   " in " + e.getKind() + " " + e.toString());
-			int i = 2 + 2; // TODO appease warning
+			log.warning(LintCategory.SERIAL, tree.pos(),
+				    Warnings.IneffectualSerialFieldEnum((Symbol)enclosed));
 		    }
                 }
 
                 case METHOD -> {
-                    name = enclosed.getSimpleName().toString();
                     if (serialMethodNames.contains(name)) {
-                        // System.out.println("Serial method name " + name + 
-                        //                   " in " + e.getKind() + " " + e.toString());
-			int i = 2 + 2; // TODO appease warning
+			log.warning(LintCategory.SERIAL, tree.pos(),
+				    Warnings.IneffectualSerialMethodEnum((Symbol)enclosed));
 		    }
                 }
                 }
@@ -5957,11 +5920,8 @@ public class Attr extends JCTree.Visitor {
         @Override
         public Void visitTypeAsInterface(TypeElement e,
                                          JCClassDecl p) {
-            // System.err.println("Interface\t" + e.getQualifiedName() +" is Serializeable.");
-
-            if (checkSuppressSerialWarning(e)) {
-                // System.out.println("\tserial warning suppressed on type");
-                return null;
+	    if (checkSuppressSerialWarningNested(e)) {
+		return null;
             }
 
             for(Element enclosed : e.getEnclosedElements()) {
@@ -6025,11 +5985,8 @@ public class Attr extends JCTree.Visitor {
         @Override
         public Void visitTypeAsRecord(TypeElement e,
                                       JCClassDecl tree) {
-            // System.out.println("Record\t" + e.getQualifiedName() +" is Serializeable.");
-
-            if (checkSuppressSerialWarning(e)) {
-                // System.out.println("\tserial warning suppressed on type");
-                return null;
+	    if (checkSuppressSerialWarningNested(e)) {
+		return null;
             }
 
             for(Element enclosed : e.getEnclosedElements()) {
@@ -6090,6 +6047,30 @@ public class Attr extends JCTree.Visitor {
                 return false;
             }
         }
+
+        boolean checkSuppressSerialWarningNested(TypeElement e) {
+	    if (checkSuppressSerialWarning(e))
+		return true;
+	    else {
+		NestingKind nestingKind = e.getNestingKind();
+		while (nestingKind == NestingKind.MEMBER) {
+		    Element enclosing = e.getEnclosingElement();
+		    boolean enclosingSuppression = checkSuppressSerialWarning(enclosing);
+		    if (enclosingSuppression)
+			return true;
+		    else {
+			ElementKind enclosingKind = enclosing.getKind();
+			if (enclosingKind.isClass() ||  enclosingKind.isInterface()) {
+			    e = (TypeElement) enclosing;
+			    nestingKind = e.getNestingKind();
+			} else {
+			    return false;
+			}
+		    }
+		}
+		return false;
+	    }
+	}
 
         void checkMandatoryModifiers(JCClassDecl tree,
 				     Element enclosing,
