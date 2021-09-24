@@ -334,8 +334,8 @@ public class CDS {
             throw new RuntimeException("Cannot rename temp file " + tempArchiveFileName + " to archive file" + archiveFileName);
         }
         // Everyting goes well, print out the file name.
-        String archiveFilePath = cwd + File.separator + archiveFileName;
-        System.out.println("The process was attached by jcmd and do a " + (isStatic ? "static" : "dynamic") + " dump to file " + archiveFilePath);
+        String archiveFilePath = new File(archiveFileName).getAbsolutePath();
+        System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
         return archiveFilePath;
     }
 }
