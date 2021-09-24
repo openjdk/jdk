@@ -629,7 +629,7 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool update_stats) {
+void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure) {
   G1GCPhaseTimes* p = phase_times();
 
   double start_time_sec = phase_times()->cur_collection_start_sec();
@@ -651,6 +651,10 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     // We'll just set it to something (arbitrarily) small.
     app_time_ms = 1.0;
   }
+
+  // Evacuation failures skew the timing too much to be considered for some statistics updates.
+  // We make the assumption that these are rare.
+  bool update_stats = !evacuation_failure;
 
   if (update_stats) {
     // We maintain the invariant that all objects allocated by mutator

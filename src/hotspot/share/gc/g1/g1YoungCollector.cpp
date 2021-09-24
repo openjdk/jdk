@@ -1127,9 +1127,7 @@ void G1YoungCollector::collect() {
     // modifies it to the next state.
     jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
 
-    // Evacuation failures skew the timing too much to be considered for some statistics updates.
-    // We make the assumption that these are rare.
-    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, !evacuation_failed());
+    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_failed());
   }
   TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());

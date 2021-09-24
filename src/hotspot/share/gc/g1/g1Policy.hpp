@@ -316,7 +316,7 @@ public:
 
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool update_stats);
+  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
