@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,14 @@
  */
 
 /* @test
- * @bug 4417152 4481572 6248930 6725399 6884800 8220477 8268435
+ * @bug 4417152 4481572 6248930 6725399 6884800 8220477
  * @summary Test Channels basic functionality
- * @library ..
- * @library /test/lib
- * @build jdk.test.lib.RandomFactory
- * @run main Basic
- * @key randomness
  */
 
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.nio.channels.*;
-import java.util.Arrays;
-import java.util.Random;
-
-import jdk.test.lib.RandomFactory;
 
 public class Basic {
 
@@ -49,8 +40,6 @@ public class Basic {
     static File blah;
 
     static int ITERATIONS = 500;
-
-    static final Random RAND = RandomFactory.getRandom();
 
     public static void main(String[] args) throws Exception {
         message = "ascii data for a test";
@@ -260,53 +249,33 @@ public class Basic {
     }
 
     private static void testNewInputStream(File blah) throws Exception {
-        try (FileInputStream fis = new FileInputStream(blah);
-             FileChannel fc = fis.getChannel();
-             InputStream is = Channels.newInputStream(fc)) {
-            int messageSize = message.length() * ITERATIONS * 3 + 1;
-            byte bb[] = new byte[messageSize];
+        FileInputStream fis = new FileInputStream(blah);
+        FileChannel fc = fis.getChannel();
+        InputStream is = Channels.newInputStream(fc);
+        int messageSize = message.length() * ITERATIONS * 3 + 1;
+        byte bb[] = new byte[messageSize];
 
-            int bytesRead = 0;
-            int totalRead = 0;
-            while (bytesRead != -1) {
-                totalRead += bytesRead;
-                long rem = Math.min(fc.size() - totalRead, (long)Integer.MAX_VALUE);
-                if (is.available() != (int)rem)
-                    throw new RuntimeException
-                        ("available() not useful or not maximally useful");
-                bytesRead = is.read(bb, totalRead, messageSize - totalRead);
-            }
-            if (is.available() != 0)
-                throw new RuntimeException("available() should return 0 at EOF");
-
-            String result = new String(bb, 0, totalRead, encoding);
-            int len = message.length();
-            for (int i=0; i<ITERATIONS; i++) {
-                String segment = result.substring(i++ * len, i * len);
-                if (!segment.equals(message))
-                    throw new RuntimeException("Test failed");
-            }
-
-            // Test readAllBytes(): result should equal prefix of bb
-            fc.position(0);
-            byte[] allBytes = is.readAllBytes();
-            final int toIndex = Math.min(allBytes.length, bb.length);
-            assert toIndex == allBytes.length;
-            int idx = Arrays.mismatch(bb, 0, toIndex, allBytes, 0, toIndex);
-            if (idx != -1)
-                throw new RuntimeException("Mismatch at relative index " + idx);
-
-            // Test readNBytes(): result should equal sub-range of allBytes
-            final int half = allBytes.length / 2;
-            int p0 = RAND.nextInt(half);
-            int p1 = half + RAND.nextInt(allBytes.length - half);
-            fc.position(p0);
-            len = p1 - p0;
-            byte[] nBytes = is.readNBytes(len);
-            idx = Arrays.mismatch(allBytes, p0, p1, nBytes, 0, len);
-            if (idx != -1)
-                throw new RuntimeException("Mismatch at relative index " + idx);
+        int bytesRead = 0;
+        int totalRead = 0;
+        while (bytesRead != -1) {
+            totalRead += bytesRead;
+            long rem = Math.min(fc.size() - totalRead, (long)Integer.MAX_VALUE);
+            if (is.available() != (int)rem)
+                throw new RuntimeException("available not useful or not maximally useful");
+            bytesRead = is.read(bb, totalRead, messageSize - totalRead);
         }
+        if (is.available() != 0)
+           throw new RuntimeException("available() should return 0 at EOF");
+
+        String result = new String(bb, 0, totalRead, encoding);
+        int len = message.length();
+        for (int i=0; i<ITERATIONS; i++) {
+            String segment = result.substring(i++ * len, i * len);
+            if (!segment.equals(message))
+                throw new RuntimeException("Test failed");
+        }
+        is.close();
+        fis.close();
     }
 
     private static void testNewChannelOut(File blah) throws Exception {
