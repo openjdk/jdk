@@ -53,15 +53,17 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
+  bool _evacuation_failed;
+
 public:
-  RecalculateUsedTask() : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed) { }
+  RecalculateUsedTask(bool evacuation_failed) : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed), _evacuation_failed(evacuation_failed) { }
 
   double worker_cost() const override {
     // If there is no evacuation failure, the work to perform is minimal.
-    return G1CollectedHeap::heap()->evacuation_failed() ? 1.0 : AlmostNoWork;
+    return _evacuation_failed ? 1.0 : AlmostNoWork;
   }
 
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(); }
+  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed); }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
@@ -111,12 +113,8 @@ public:
            _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
   }
 
-  static bool should_execute() {
-    return G1CollectedHeap::heap()->evacuation_failed();
-  }
-
   double worker_cost() const override {
-    assert(should_execute(), "Should not call this if not executed");
+    assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
     return _evac_failure_regions->num_regions_failed_evacuation();
   }
 
@@ -129,12 +127,14 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
+  bool evacuation_failed = evac_failure_regions->evacuation_failed();
+
   add_serial_task(new MergePssTask(per_thread_states));
-  add_serial_task(new RecalculateUsedTask());
+  add_serial_task(new RecalculateUsedTask(evacuation_failed));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
-  if (RemoveSelfForwardPtrsTask::should_execute()) {
+  if (evacuation_failed) {
     add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
@@ -318,10 +318,7 @@ public:
     delete _task;
   }
 
-  static bool should_execute() { return G1CollectedHeap::heap()->evacuation_failed(); }
-
   double worker_cost() const override {
-    assert(should_execute(), "Should not call this if not executed");
     return _preserved_marks->num();
   }
 
@@ -686,7 +683,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
-  if (RestorePreservedMarksTask::should_execute()) {
+  if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));

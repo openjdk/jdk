@@ -38,6 +38,7 @@
 #include "utilities/ticks.hpp"
 
 class G1CardTable;
+class G1EvacFailureRegions;
 class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
