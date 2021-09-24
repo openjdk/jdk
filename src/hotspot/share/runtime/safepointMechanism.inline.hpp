@@ -76,10 +76,10 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
     return true;
   }
 
-  // It have boiled down to two possibilities.
+  // It has boiled down to two possibilities:
   // 1: We have nothing to process, this just a disarm poll.
   // 2: We have a suspend handshake, which cannot be processed.
-  // We update the poll value in case of a disarm, to reduce false positive.
+  // We update the poll value in case of a disarm, to reduce false positives.
   update_poll_values(thread);
 
   // When the JavaThread is blocked:
