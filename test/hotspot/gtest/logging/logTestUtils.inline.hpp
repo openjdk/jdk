@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #define LOG_TEST_STRING_LITERAL "a (hopefully) unique log message for testing"
 
 static const char* invalid_selection_substr[] = {
-  "=", "+", " ", "+=", "+=*", "*+", " +", "**", "++", ".", ",", ",," ",+",
+  "=", "+", " ", "+=", "+=*", "*+", " +", "**", "++", ".", ",", ",,", ",+",
   " *", "all+", "all*", "+all", "+all=Warning", "==Info", "=InfoWarning",
   "BadTag+", "logging++", "logging*+", ",=", "gc+gc+"
 };
