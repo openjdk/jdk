@@ -1,0 +1,5 @@
+Extern.java:10:1: compiler.warn.ineffectual.serial.field.externalizable
+Extern.java:10:1: compiler.warn.ineffectual.serial.method.externalizable: readObject(java.io.ObjectInputStream)
+Extern.java:10:1: compiler.warn.ineffectual.serial.method.externalizable: writeObject(java.io.ObjectOutputStream)
+Extern.java:10:1: compiler.warn.ineffectual.serial.method.externalizable: readObjectNoData()
+4 warnings

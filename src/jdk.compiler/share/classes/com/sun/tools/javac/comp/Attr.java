@@ -5547,6 +5547,17 @@ public class Attr extends JCTree.Visitor {
             return types.isSubtype(t, syms.serializableType);
         }
 
+        /** check if a type is a subtype of Externalizable, if that is available. */
+        boolean isExternalizable(Type t) {
+            try {
+                syms.externalizableType.complete();
+            }
+            catch (CompletionFailure e) {
+                return false;
+            }
+            return types.isSubtype(t, syms.externalizableType);
+        }
+
         /** Check that an appropriate serialVersionUID member is defined. */
         private void checkSerialVersionUID(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
 
@@ -5664,8 +5675,6 @@ public class Attr extends JCTree.Visitor {
         private final Type J_L_ERROR_TYPE = syms.errorType;
         private final Type RUNTIME_EXCEPTION_TYPE = syms.runtimeExceptionType;
 
-        private final Type externalizableType = syms.externalizableType;
-
         //             final TypeMirror SERIAL_ANNOTATION =
         //                 Objects.requireNonNull(elementUtils.getTypeElement("java.io.Serial").asType());
             
@@ -5685,7 +5694,8 @@ public class Attr extends JCTree.Visitor {
 	    if (checkSuppressSerialWarningNested(e))
 		return null;
 
-	    // Check for missing serialVersionUID
+	    // Check for missing serialVersionUID; check *not* done
+	    // for enums or records.
             VarSymbol svuidSym = null;
             for (Symbol sym : c.members().getSymbolsByName(names.serialVersionUID)) {
                 if (sym.kind == VAR) {
@@ -5791,6 +5801,12 @@ public class Attr extends JCTree.Visitor {
             // To be effective, serialPersisentFields must be private, static, and final.
             checkMandatoryModifiers(tree, e, field, PRIVATE_STATIC_FINAL_MODS, null /*FIXME*/);
             checkTypeOfField(tree, e, field, OSF_TYPE);
+            if (isExternalizable((Type)(e.asType()))) {
+		log.warning(LintCategory.SERIAL, tree.pos(),
+			    Warnings.IneffectualSerialFieldExternalizable);
+            }
+
+
             // If additional compile-time information is
             // available, should check for a "constant null"
             // assignment to this field. A null value makes having
@@ -5995,7 +6011,8 @@ public class Attr extends JCTree.Visitor {
                     }
 
                     case "serialVersionUID" -> {
-			// TODO Extra warning that svuid value not mactched for records?
+			// TODO Extra warning that svuid value not
+			// checked to match for records?
                         checkSerialVersionUID(tree, e, enclosed);
                     }
 
@@ -6186,9 +6203,9 @@ public class Attr extends JCTree.Visitor {
 
         private void checkExternalizable(JCClassDecl tree, Element enclosing, ExecutableElement method) {
             //if the enclosing class is externalizable, warn for the method
-            if (types.isSubtype(/*fixme*/(Type)enclosing.asType(), externalizableType)) {
-                System.out.println("Serialization-related method " + method +
-                                   "is ineffectual on Externalizable type " + enclosing);
+            if (isExternalizable((Type)enclosing.asType())) {
+		log.warning(LintCategory.SERIAL, tree.pos(),
+			    Warnings.IneffectualSerialMethodExternalizable((Symbol)method));
             }
             return;
         }

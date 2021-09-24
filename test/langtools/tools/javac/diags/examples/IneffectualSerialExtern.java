@@ -21,19 +21,28 @@
  * questions.
  */
 
-// key: compiler.warn.ineffectual.serial.field.record
-// key: compiler.warn.ineffectual.serial.method.record
+// key: compiler.warn.ineffectual.serial.method.externalizable
+// key: compiler.warn.ineffectual.serial.field.externalizable
 
 // options: -Xlint:serial
 
 import java.io.*;
 
-record IneffectualSerialRecord(int foo) implements Serializable {
+class IneffectualSerialExtern implements Externalizable {
+    private static final long serialVersionUID = 42;
 
-    // A serialPersistentFields is ineffectual for enum classes.
+    public void writeExternal(ObjectOutput out) throws IOException {
+	return;
+    }
+
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+	return;
+    }
+
+    // ineffectual
     private static final ObjectStreamField[] serialPersistentFields = {};
 
-    // The readObject method is ineffectual for record classes.
+    // The readObject method is ineffectual for Externalizable classes.
     private void readObject(ObjectInputStream stream)
 	throws IOException, ClassNotFoundException {
 	return;
