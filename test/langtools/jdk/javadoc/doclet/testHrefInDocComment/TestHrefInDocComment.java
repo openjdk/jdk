@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4638015
+ * @bug 4638015 8248001
  * @summary Determine if Hrefs are processed properly when they
  * appear in doc comments.
  * @library ../../lib
