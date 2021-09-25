@@ -31,6 +31,7 @@ import java.util.Set;
 
 import javax.lang.model.element.Modifier;
 
+@SuppressWarnings("serial") // Various instance fields not statically serializable
 public class PubVar implements Serializable {
 
     private static final long serialVersionUID = 5806536061153374575L;

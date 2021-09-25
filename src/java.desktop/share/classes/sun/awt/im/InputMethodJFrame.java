@@ -40,6 +40,7 @@ public class InputMethodJFrame
         extends JFrame
         implements InputMethodWindow {
 
+    @SuppressWarnings("serial")
     InputContext inputContext = null;
 
     /**

@@ -58,16 +58,21 @@ class Token implements Serializable {
 
     final SunPKCS11 provider;
 
+    @SuppressWarnings("serial")
     final PKCS11 p11;
 
+    @SuppressWarnings("serial")
     final Config config;
 
+    @SuppressWarnings("serial")
     final CK_TOKEN_INFO tokenInfo;
 
     // session manager to pool sessions
+    @SuppressWarnings("serial")
     final SessionManager sessionManager;
 
     // template manager to customize the attributes used when creating objects
+    @SuppressWarnings("serial")
     private final TemplateManager templateManager;
 
     // flag indicating whether we need to explicitly cancel operations
@@ -76,16 +81,20 @@ class Token implements Serializable {
     final boolean explicitCancel;
 
     // translation cache for secret keys
+    @SuppressWarnings("serial")
     final KeyCache secretCache;
 
     // translation cache for asymmetric keys (public and private)
+    @SuppressWarnings("serial")
     final KeyCache privateCache;
 
     // cached instances of the various key factories, initialized on demand
+    @SuppressWarnings("serial")
     private volatile P11KeyFactory rsaFactory, dsaFactory, dhFactory, ecFactory;
 
     // table which maps mechanisms to the corresponding cached
     // MechanismInfo objects
+    @SuppressWarnings("serial")
     private final Map<Long, CK_MECHANISM_INFO> mechInfoMap;
 
     // single SecureRandomSpi instance we use per token
@@ -94,6 +103,7 @@ class Token implements Serializable {
 
     // single KeyStoreSpi instance we use per provider
     // initialized on demand
+    @SuppressWarnings("serial")
     private volatile P11KeyStore keyStore;
 
     // whether this token is a removable token

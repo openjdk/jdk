@@ -79,6 +79,7 @@ public class KeepAliveCache
 
     // This class is never serialized (see writeObject/readObject).
     private final ReentrantLock cacheLock = new ReentrantLock();
+    @SuppressWarnings("serial")
     private Thread keepAliveTimer = null;
 
     /**

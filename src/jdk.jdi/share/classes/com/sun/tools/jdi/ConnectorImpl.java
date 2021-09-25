@@ -398,6 +398,7 @@ abstract class ConnectorImpl implements Connector {
     class SelectedArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.SelectedArgument {
         private static final long serialVersionUID = -5689584530908382517L;
+	@SuppressWarnings("serial")
         private final List<String> choices;
 
         SelectedArgumentImpl(String name, String label, String description,

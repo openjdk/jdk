@@ -5510,7 +5510,8 @@ public class Attr extends JCTree.Visitor {
         // Check for cycles among annotation elements.
         chk.checkNonCyclicElements(tree);
 
-        // Check for proper use of serialVersionUID
+        // Check for proper use of serialVersionUID and other
+        // serialization-related fields and methods
         if (env.info.lint.isEnabled(LintCategory.SERIAL)
                 && isSerializable(c.type)
 	    /* && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0 */
@@ -5646,7 +5647,7 @@ public class Attr extends JCTree.Visitor {
         private static final Set<String> serialFieldNames =
 	    Set.of("serialVersionUID", "serialPersistentFields");
             
-	// TODO these check should likely be expressed in terms of javac flags
+	// TODO these checks should likely be expressed in terms of javac flags
         private static final Set<Modifier> PRIVATE_STATIC_FINAL_MODS =
             Set.of(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
 
@@ -5688,8 +5689,8 @@ public class Attr extends JCTree.Visitor {
 				     JCClassDecl tree) {
 	    ClassSymbol c = (ClassSymbol)e;
 
-	    if (c.isAnonymous())
-		return null;
+// 	    if (c.isAnonymous())
+// 		return null;
 
 	    if (checkSuppressSerialWarningNested(e))
 		return null;
@@ -5710,6 +5711,16 @@ public class Attr extends JCTree.Visitor {
 		log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
 	    }
 
+	    // Check for serialPersistentFields to gate checks for
+	    // non-serializable non-transient instance fields
+            boolean serialPersistentFieldsPresent = false;
+            for (Symbol sym : c.members().getSymbolsByName(names.serialPersistentFields)) {
+                if (sym.kind == VAR) {
+		    serialPersistentFieldsPresent = true;
+                    break;
+                }
+            }
+
 	    // Check declarations of serialization-related methods and
 	    // fields
             for(Element enclosed : e.getEnclosedElements()) {
@@ -5719,6 +5730,19 @@ public class Attr extends JCTree.Visitor {
                 String name = null;
                 switch(enclosed.getKind()) {
                 case FIELD -> {
+		    if (!serialPersistentFieldsPresent) {
+			var modifiers = enclosed.getModifiers();
+			if (!modifiers.contains(Modifier.TRANSIENT) &&
+			    !modifiers.contains(Modifier.STATIC)) {
+			    TypeMirror varType = enclosed.asType();
+			    if (!isSerializable((Type)varType) && !varType.getKind().isPrimitive()) {
+				log.warning(LintCategory.SERIAL,
+					    TreeInfo.diagnosticPositionFor((Symbol)enclosed, tree),
+					    Warnings.NonSerializableInstanceField);
+			    }
+			}
+		    }
+
                     name = enclosed.getSimpleName().toString();
                     if (serialFieldNames.contains(name)) {
                         switch (name) {

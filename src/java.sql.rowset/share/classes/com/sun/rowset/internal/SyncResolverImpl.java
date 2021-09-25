@@ -96,6 +96,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * SyncResolver values. Synchronization takes place on a row by
      * row basis encapsulated as a CahedRowSet.
      */
+    @SuppressWarnings("serial")
     private CachedRowSet row;
 
     private JdbcRowSetResourceBundle resBundle;

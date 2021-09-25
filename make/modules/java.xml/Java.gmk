@@ -24,6 +24,7 @@
 #
 
 DOCLINT += -Xdoclint:all/protected,-accessibility \
+    -Xlint:-serial \
     '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
     javax.xml.transform javax.xml.validation javax.xml.xpath)'
 CLEAN += .properties

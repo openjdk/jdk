@@ -51,7 +51,9 @@ import sun.management.Util;
  * construction of a CompositeData use in the local case.
  */
 public class GcInfoCompositeData extends LazyCompositeData {
+    @SuppressWarnings("serial")
     private final GcInfo info;
+    @SuppressWarnings("serial")
     private final GcInfoBuilder builder;
     private final Object[] gcExtItemValues;
 

@@ -103,6 +103,7 @@ public class SingleEntryRegistry extends RegistryImpl {
     }
 
     private final String name;
+    @SuppressWarnings("serial")
     private final Remote object;
 
     private static final long serialVersionUID = -4897238949499730950L;

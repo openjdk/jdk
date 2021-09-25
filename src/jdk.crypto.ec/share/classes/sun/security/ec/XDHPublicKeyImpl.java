@@ -43,6 +43,7 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
     private static final long serialVersionUID = 1L;
 
     private final BigInteger u;
+    @SuppressWarnings("serial")
     private final NamedParameterSpec paramSpec;
 
     XDHPublicKeyImpl(XECParameters params, BigInteger u)

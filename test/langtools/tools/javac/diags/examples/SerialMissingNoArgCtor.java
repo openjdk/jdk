@@ -22,6 +22,7 @@
  */
 
 // key: compiler.warn.serializable.missing.access.no.arg.ctor
+// key: compiler.warn.non.serializable.instance.field
 
 // options: -Xlint:serial
 
@@ -41,7 +42,9 @@ class SerialMissingNoArgCtor {
 
 	private static final long serialVersionUID = 42;
 
-	// Must have a public no-arg constructor
+	// non-serializable non-transient instance field
+	private Object data = null;
+
 	public SerialSubclass() {
 	    super(1);
 	}

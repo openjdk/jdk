@@ -119,8 +119,10 @@ public class NTLMAuthentication extends AuthenticationInfo {
         });
     };
 
+    @SuppressWarnings("serial")
     PasswordAuthentication pw;
 
+    @SuppressWarnings("serial")
     Client client;
     /**
      * Create a NTLMAuthentication:

@@ -39,6 +39,7 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
 
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial")
     private final AlgorithmParameterSpec paramSpec;
     private byte[] k;
 

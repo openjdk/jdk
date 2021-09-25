@@ -43,6 +43,7 @@ class VMAction extends EventObject {
     static final int VM_NOT_SUSPENDED = 2;
 
     int id;
+    @SuppressWarnings("serial")
     ThreadReference resumingThread;
 
     VMAction(VirtualMachine vm, int id) {

@@ -43,6 +43,7 @@ class OptionException extends Exception {
 
     public final Result result;
     public final String message;
+    @SuppressWarnings("serial")
     public final Runnable m;
 
     /**

@@ -76,6 +76,7 @@ import static jdk.internal.joptsimple.internal.Messages.*;
 public abstract class OptionException extends RuntimeException {
     private static final long serialVersionUID = -1L;
 
+    @SuppressWarnings("serial")
     private final List<String> options = new ArrayList<>();
 
     protected OptionException( List<String> options ) {

@@ -100,6 +100,7 @@ public class ConstantPool {
             return "value not found: " + value;
         }
 
+	@SuppressWarnings("serial") // not statically serializable
         public final Object value;
     }
 

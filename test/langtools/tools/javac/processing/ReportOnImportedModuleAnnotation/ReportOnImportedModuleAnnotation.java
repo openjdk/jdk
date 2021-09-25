@@ -63,7 +63,7 @@ public class ReportOnImportedModuleAnnotation {
         fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, List.of(testOutputPath));
 
         final StringWriter outputWriter = new StringWriter();
-        compiler.getTask(outputWriter, fileManager, null, List.of("-XDrawDiagnostics", "--module", "mod"), null, null).call();
+        compiler.getTask(outputWriter, fileManager, null, List.of("-XDrawDiagnostics", "-Xprefer:source", "--module", "mod"), null, null).call();
 
         String actualOutput = outputWriter.toString();
         String expectedOutput = Files.readString(testBasePath.resolve("ReportOnImportedModuleAnnotation.out"));
