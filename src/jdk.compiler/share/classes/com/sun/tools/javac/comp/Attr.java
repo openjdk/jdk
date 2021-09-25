@@ -5877,7 +5877,7 @@ public class Attr extends JCTree.Visitor {
          */
 
         private void checkWriteObject(JCClassDecl tree, Element e, ExecutableElement method) {
-            // The "synchronized" modifier is seen on the wild on
+            // The "synchronized" modifier is seen in the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
@@ -5886,8 +5886,8 @@ public class Attr extends JCTree.Visitor {
             checkExcludedModifiers(tree, e,  method, STATIC_MODS);
             checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
             checkOneArg(tree, e, method, OOS_TYPE);
-            checkExternalizable(tree, e, method);
             checkExceptions(tree, e, method, IOE_TYPE);
+            checkExternalizable(tree, e, method);
         }
 
         private void checkWriteReplace(JCClassDecl tree, Element e, ExecutableElement method) {
@@ -5903,7 +5903,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         private void checkReadObject(JCClassDecl tree, Element e, ExecutableElement method) {
-            // The "synchronized" modifier is seen on the wild on
+            // The "synchronized" modifier is seen in the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
@@ -5913,8 +5913,8 @@ public class Attr extends JCTree.Visitor {
             checkExcludedModifiers(tree, e,  method, STATIC_MODS);
             checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
             checkOneArg(tree, e, method, OIS_TYPE);
-            checkExternalizable(tree, e, method);
             checkExceptions(tree, e, method, IOE_TYPE, CNFE_TYPE);
+            checkExternalizable(tree, e, method);
         }
 
         private void checkReadObjectNoData(JCClassDecl tree, Element e, ExecutableElement method) {
@@ -5924,8 +5924,8 @@ public class Attr extends JCTree.Visitor {
             checkExcludedModifiers(tree, e,  method, STATIC_MODS);
             checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
             checkNoArgs(tree, e, method);
-            checkExternalizable(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
+            checkExternalizable(tree, e, method);
         }
 
         private void checkReadResolve(JCClassDecl tree, Element e, ExecutableElement method) {
