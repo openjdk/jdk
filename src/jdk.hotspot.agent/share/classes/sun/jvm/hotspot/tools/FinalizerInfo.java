@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
@@ -125,7 +126,11 @@ public class FinalizerInfo extends Tool {
              */
             ArrayList<ObjectHistogramElement> list = new ArrayList<>();
             list.addAll(map.values());
-            list.sort(ObjectHistogramElement::compare);
+            Collections.sort(list, new Comparator<>() {
+              public int compare(ObjectHistogramElement o1, ObjectHistogramElement o2) {
+                  return o1.compare(o2);
+              }
+            });
 
             /*
              * Print summary of objects in queue
