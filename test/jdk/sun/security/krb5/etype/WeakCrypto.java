@@ -51,26 +51,22 @@ public class WeakCrypto {
         test(true, null,
                 18, 17, 20, 19);    // the defaults
 
-        test(null, "aes256-cts aes128-cts aes256-sha2 aes128-sha2 des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5",
-                18, 17, 20, 19);    // all weaks are filtered out
-        test(false, "aes256-cts aes128-cts aes256-sha2 aes128-sha2 des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5",
-                18, 17, 20, 19);    // all weaks are filtered out
-        test(true, "aes256-cts aes128-cts aes256-sha2 aes128-sha2 des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5",
-                18, 17, 20, 19, 16, 23, 1, 3);  // all etypes
+        String strongAndWeak = "aes256-cts aes128-cts aes256-sha2 aes128-sha2" +
+                " des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5";
+        test(null, strongAndWeak, 18, 17, 20, 19);
+        test(false, strongAndWeak, 18, 17, 20, 19);
+        test(true, strongAndWeak, 18, 17, 20, 19, 16, 23, 1, 3);
 
-        test(null, "aes256-cts aes256-sha2 aes128-cts aes128-sha2 des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5",
-                18, 20, 17, 19);    // in a different order
-        test(false, "aes256-cts aes256-sha2 aes128-cts aes128-sha2 des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5",
-                18, 20, 17, 19);    // in a different order
-        test(true, "aes256-cts aes256-sha2 aes128-cts aes128-sha2 des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5",
-                18, 20, 17, 19, 16, 23, 1, 3);  // in a different order
+        String anotherOrder = "aes256-cts aes256-sha2 aes128-cts aes128-sha2" +
+                " des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5";
+        test(null, anotherOrder, 18, 20, 17, 19);
+        test(false, anotherOrder, 18, 20, 17, 19);
+        test(true, anotherOrder, 18, 20, 17, 19, 16, 23, 1, 3);
 
-        test(null, "aes256-cts arcfour-hmac",
-                18);    // filtered out because weak not allowed
-        test(false, "aes256-cts arcfour-hmac",
-                18);    // filtered out because weak not allowed
-        test(true, "aes256-cts arcfour-hmac",
-                18, 23);    // correct way to add 23
+        String two = "aes256-cts arcfour-hmac";
+        test(null, two, 18);
+        test(false, two, 18);
+        test(true, two, 18, 23);
     }
 
     /**

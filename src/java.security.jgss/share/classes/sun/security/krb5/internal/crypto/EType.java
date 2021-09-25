@@ -60,29 +60,22 @@ public abstract class EType {
 
     public static void initStatic() {
 
-        // There are at most 8 etypes.
-        // Note: add etypes in preference order, because the default enctypes
-        // list is also a part of it.
-        int[] result = new int[8];
-        int num = 0;
-
         int maxKeyLength = 0;
         try {
             maxKeyLength = Cipher.getMaxAllowedKeyLength("AES");
         } catch (Exception e) {
             // should not happen
         }
-        if (maxKeyLength >= 256) {
-            result[num++] = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96;
-        }
-        result[num++] = EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96;
-        if (maxKeyLength >= 256) {
-            result[num++] = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192;
-        }
-        result[num++] = EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128;
 
-        // By default, only AES etypes are enabled
-        defaultETypes = Arrays.copyOf(result, num);
+        defaultETypes = maxKeyLength >= 256
+                ? new int[] {
+                        EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96,
+                        EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
+                        EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192,
+                        EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128, }
+                : new int[] {
+                        EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
+                        EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128, };
 
         boolean allowWeakCrypto = false;
         try {
@@ -96,18 +89,16 @@ public abstract class EType {
                                     exc.getMessage());
             }
         }
-        if (allowWeakCrypto) {
-            result[num++] = EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD;
-            result[num++] = EncryptedData.ETYPE_ARCFOUR_HMAC;
-            result[num++] = EncryptedData.ETYPE_DES_CBC_CRC;
-            result[num++] = EncryptedData.ETYPE_DES_CBC_MD5;
-        }
 
-        // Weak crypto are also supported and can be enabled manually
-        if (num == result.length) {
+        if (allowWeakCrypto) {
+            int[] result = Arrays.copyOf(defaultETypes, defaultETypes.length + 4);
+            result[defaultETypes.length] = EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD;
+            result[defaultETypes.length + 1] = EncryptedData.ETYPE_ARCFOUR_HMAC;
+            result[defaultETypes.length + 2] = EncryptedData.ETYPE_DES_CBC_CRC;
+            result[defaultETypes.length + 3] = EncryptedData.ETYPE_DES_CBC_MD5;
             supportedETypes = result;
         } else {
-            supportedETypes = Arrays.copyOf(result, num);
+            supportedETypes = defaultETypes;
         }
     }
 
@@ -239,7 +230,7 @@ public abstract class EType {
 
     // used in Config
     public static int[] getBuiltInDefaults() {
-        return defaultETypes;
+        return defaultETypes.clone();
     }
 
     /**
