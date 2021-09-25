@@ -1673,13 +1673,12 @@ public abstract class ColorModel implements Transparency{
      * {@code ColorModel} object.
      */
     public String toString() {
-       return new String("ColorModel: #pixelBits = "+pixel_bits
-                         + " numComponents = "+numComponents
-                         + " color space = "+colorSpace
-                         + " transparency = "+transparency
-                         + " has alpha = "+supportsAlpha
-                         + " isAlphaPre = "+isAlphaPremultiplied
-                         );
+       return "ColorModel: #pixelBits = " + pixel_bits
+               + " numComponents = " + numComponents
+               + " color space = " + colorSpace
+               + " transparency = " + transparency
+               + " has alpha = " + supportsAlpha
+               + " isAlphaPre = " + isAlphaPremultiplied;
     }
 
     static int getDefaultTransferType(int pixel_bits) {

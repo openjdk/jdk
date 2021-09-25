@@ -72,8 +72,7 @@ bool JvmtiTagMap::_has_object_free_events = false;
 // create a JvmtiTagMap
 JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _env(env),
-  _lock(Mutex::nonleaf+1, "JvmtiTagMap_lock", Mutex::_allow_vm_block_flag,
-        Mutex::_safepoint_check_never),
+  _lock(Mutex::nosafepoint, "JvmtiTagMap_lock", Mutex::_safepoint_check_never),
   _needs_rehashing(false),
   _needs_cleaning(false) {
 

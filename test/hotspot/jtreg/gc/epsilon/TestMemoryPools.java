@@ -26,11 +26,14 @@ package gc.epsilon;
 
 /**
  * @test TestMemoryPools
- * @requires vm.gc.Epsilon & os.maxMemory >= 2G
+ * @requires vm.gc.Epsilon
  * @summary Test JMX memory pools
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xmx1g -Xms1g gc.epsilon.TestMemoryPools
+ *
+ * @run main/othervm -Xms64m -Xmx64m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestMemoryPools
  */
 
 import java.lang.management.*;

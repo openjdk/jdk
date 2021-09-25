@@ -121,6 +121,7 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
       promotion_failure_occurred = true;
     }
     manager->flush_labs();
+    manager->flush_string_dedup_requests();
   }
   if (!promotion_failure_occurred) {
     // If there was no promotion failure, the preserved mark stacks
@@ -367,8 +368,6 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
     // No unallocation to worry about.
     obj = obj->forwardee();
   }
-
-  log_develop_trace(gc, scavenge)("{promotion-failure %s " PTR_FORMAT " (%d)}", obj->klass()->internal_name(), p2i(obj), obj->size());
 
   return obj;
 }

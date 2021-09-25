@@ -58,4 +58,30 @@
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
                     FloatRegister src2, int cond, bool isQ);
 
+  void sve_compare(PRegister pd, BasicType bt, PRegister pg,
+                   FloatRegister zn, FloatRegister zm, int cond);
+
+  void sve_vmask_reduction(int opc, Register dst, SIMD_RegVariant size, FloatRegister src,
+                           PRegister pg, PRegister pn, int length = MaxVectorSize);
+
+  // Generate predicate through whilelo, by comparing ZR with an unsigned
+  // immediate. rscratch1 will be clobbered.
+  inline void sve_whilelo_zr_imm(PRegister pd, SIMD_RegVariant size, uint imm) {
+    assert(UseSVE > 0, "not supported");
+    mov(rscratch1, imm);
+    sve_whilelo(pd, size, zr, rscratch1);
+  }
+
+  // Extract a scalar element from an sve vector at position 'idx'.
+  // rscratch1 will be clobbered.
+  // T could be FloatRegister or Register.
+  template<class T>
+  inline void sve_extract(T dst, SIMD_RegVariant size, PRegister pg, FloatRegister src, int idx) {
+    assert(UseSVE > 0, "not supported");
+    assert(pg->is_governing(), "This register has to be a governing predicate register");
+    mov(rscratch1, idx);
+    sve_whilele(pg, size, zr, rscratch1);
+    sve_lastb(dst, size, pg, src);
+  }
+
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

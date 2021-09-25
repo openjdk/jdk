@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Amazon.com, Inc. or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,7 +22,6 @@
  * questions.
  */
 
-import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -86,7 +86,7 @@ public class TestP11KeyFactoryGetRSAKeySpec extends PKCS11Test {
 
     private static void testKeySpec(KeyFactory factory, PrivateKey key, Class<? extends KeySpec> specClass) throws Exception {
         try {
-            KeySpec spec = factory.getKeySpec(key, RSAPrivateKeySpec.class);
+            KeySpec spec = factory.getKeySpec(key, specClass);
             if (testingSensitiveKeys) {
                 throw new Exception("Able to retrieve spec from sensitive key");
             }

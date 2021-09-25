@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -614,8 +614,8 @@ public class HierarchicalLayoutManager implements LayoutManager {
                     upProcessingOrder[i].add(n);
                 }
 
-                Collections.sort(downProcessingOrder[i], nodeProcessingDownComparator);
-                Collections.sort(upProcessingOrder[i], nodeProcessingUpComparator);
+                downProcessingOrder[i].sort(nodeProcessingDownComparator);
+                upProcessingOrder[i].sort(nodeProcessingUpComparator);
             }
 
             initialPositions();
@@ -924,7 +924,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                 }
 
                 updateCrossingNumbers(i, true);
-                Collections.sort(layers[i], crossingNodeComparator);
+                layers[i].sort(crossingNodeComparator);
                 updateXOfLayer(i);
 
                 int z = 0;
@@ -995,7 +995,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                 }
 
                 updateCrossingNumbers(i, false);
-                Collections.sort(layers[i], crossingNodeComparator);
+                layers[i].sort(crossingNodeComparator);
                 updateXOfLayer(i);
 
                 int z = 0;
@@ -1185,7 +1185,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                         if (portHash.containsKey(i)) {
 
                             List<LayoutEdge> list = portHash.get(i);
-                            Collections.sort(list, comparator);
+                            list.sort(comparator);
 
                             if (list.size() == 1) {
                                 processSingleEdge(list.get(0));
@@ -1749,7 +1749,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
 
             // Set up edges
             List<Link> links = new ArrayList<>(graph.getLinks());
-            Collections.sort(links, linkComparator);
+            links.sort(linkComparator);
             for (Link l : links) {
                 LayoutEdge edge = new LayoutEdge();
                 assert vertexToLayoutNode.containsKey(l.getFrom().getVertex());

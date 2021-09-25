@@ -647,7 +647,8 @@ void ciMethodData::dump_replay_data_type_helper(outputStream* out, int round, in
     if (round == 0) {
       count++;
     } else {
-      out->print(" %d %s", (int)(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)), k->name()->as_quoted_ascii());
+      out->print(" %d %s", (int)(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)),
+                           CURRENT_ENV->replay_name(k));
     }
   }
 }
@@ -703,13 +704,9 @@ void ciMethodData::dump_replay_data(outputStream* out) {
   ResourceMark rm;
   MethodData* mdo = get_MethodData();
   Method* method = mdo->method();
-  Klass* holder = method->method_holder();
-  out->print("ciMethodData %s %s %s %d %d",
-             holder->name()->as_quoted_ascii(),
-             method->name()->as_quoted_ascii(),
-             method->signature()->as_quoted_ascii(),
-             _state,
-             current_mileage());
+  out->print("ciMethodData ");
+  ciMethod::dump_name_as_ascii(out, method);
+  out->print(" %d %d", _state, current_mileage());
 
   // dump the contents of the MDO header as raw data
   unsigned char* orig = (unsigned char*)&_orig;
