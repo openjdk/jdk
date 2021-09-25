@@ -72,6 +72,12 @@ public class CalendarSystemDeadLockTest {
         // add a couple of tasks which directly invoke sun.util.calendar.CalendarSystem#getGregorianCalendar()
         tasks.add(new GetGregorianCalTask(taskTriggerLatch));
         tasks.add(new GetGregorianCalTask(taskTriggerLatch));
+        // before triggering the tests make sure we have created the correct number of tasks
+        // the countdown latch uses/expects
+        if (numTasks != tasks.size()) {
+            throw new RuntimeException("Test setup failure - unexpected number of tasks " + tasks.size()
+                    + ", expected " + numTasks);
+        }
         final ExecutorService executor = Executors.newFixedThreadPool(tasks.size());
         try {
             final Future<?>[] results = new Future[tasks.size()];
