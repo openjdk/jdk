@@ -36,6 +36,7 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -436,7 +437,7 @@ public final class PlatformRecorder {
             }
             // n*log(n), should be able to do n*log(k) with a priority queue,
             // where k = number of recordings, n = number of chunks
-            chunks.sort(RepositoryChunk.END_TIME_COMPARATOR);
+            Collections.sort(chunks, RepositoryChunk.END_TIME_COMPARATOR);
             return chunks;
         }
 
