@@ -35,7 +35,6 @@ import java.io.ObjectStreamField;
 import java.io.Serializable;
 
 import java.security.AccessController;
-import java.util.Iterator;
 
 /**
  * Represents the result of a multiple access to several roles of a relation
@@ -173,10 +172,9 @@ public class RoleResult implements Serializable {
 
             roleList = new RoleList();
 
-            for (Iterator<?> roleIter = list.iterator();
-                 roleIter.hasNext();) {
-                Role currRole = (Role)(roleIter.next());
-                roleList.add((Role)(currRole.clone()));
+            for (Object o : list) {
+                Role currRole = (Role) o;
+                roleList.add((Role) currRole.clone());
             }
         } else {
             roleList = null;
@@ -196,11 +194,9 @@ public class RoleResult implements Serializable {
 
             unresolvedRoleList = new RoleUnresolvedList();
 
-            for (Iterator<?> roleUnresIter = unresolvedList.iterator();
-                 roleUnresIter.hasNext();) {
-                RoleUnresolved currRoleUnres =
-                    (RoleUnresolved)(roleUnresIter.next());
-                unresolvedRoleList.add((RoleUnresolved)(currRoleUnres.clone()));
+            for (Object o : unresolvedList) {
+                RoleUnresolved currRoleUnres = (RoleUnresolved) o;
+                unresolvedRoleList.add((RoleUnresolved) currRoleUnres.clone());
             }
         } else {
             unresolvedRoleList = null;
