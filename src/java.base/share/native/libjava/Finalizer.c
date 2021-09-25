@@ -23,23 +23,13 @@
  * questions.
  */
 
-#include "jmm.h"
 #include "jvm.h"
 
 #include "java_lang_ref_Finalizer.h"
 
-static const JmmInterface* jmm_interface = NULL;
-
-JNIEXPORT void JNICALL
-Java_java_lang_ref_Finalizer_initIDs(JNIEnv* env, jclass cls) {
-  jmm_interface = (JmmInterface*)JVM_GetManagement(JMM_VERSION);
-}
-
 JNIEXPORT void JNICALL
 Java_java_lang_ref_Finalizer_reportComplete(JNIEnv* env, jclass cls, jobject finalizee) {
-  if (jmm_interface != NULL) {
-    jmm_interface->ReportFinalizationComplete(env, finalizee);
-  }
+    JVM_ReportFinalizationComplete(env, finalizee);
 }
 
 

@@ -2082,11 +2082,6 @@ jlong Management::ticks_to_ms(jlong ticks) {
   return (jlong)(((double)ticks / (double)os::elapsed_frequency())
                  * (double)1000.0);
 }
-
-JVM_ENTRY(void, jmm_ReportFinalizationComplete(JNIEnv* env, jobject finalizee))
-  FinalizerService::on_complete(JNIHandles::resolve_non_null(finalizee), THREAD);
-JVM_END
-
 #endif // INCLUDE_MANAGEMENT
 
 // Gets the amount of memory allocated on the Java heap for a single thread.
@@ -2221,6 +2216,8 @@ JVM_ENTRY(void, jmm_GetThreadCpuTimesWithKind(JNIEnv *env, jlongArray ids,
   }
 JVM_END
 
+
+
 #if INCLUDE_MANAGEMENT
 const struct jmmInterface_1_ jmm_interface = {
   NULL,
@@ -2262,8 +2259,7 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetDiagnosticCommandInfo,
   jmm_GetDiagnosticCommandArgumentsInfo,
   jmm_ExecuteDiagnosticCommand,
-  jmm_SetDiagnosticFrameworkNotificationEnabled,
-  jmm_ReportFinalizationComplete
+  jmm_SetDiagnosticFrameworkNotificationEnabled
 };
 #endif // INCLUDE_MANAGEMENT
 
