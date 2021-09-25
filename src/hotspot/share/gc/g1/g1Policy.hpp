@@ -269,9 +269,10 @@ private:
   // Manage time-to-mixed tracking.
   void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(G1GCPauseType gc_type, double start, double end);
-
-  bool should_update_gc_stats();
+  void record_pause(G1GCPauseType gc_type,
+                    double start,
+                    double end,
+                    bool evacuation_failure = false);
 
   void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
@@ -303,7 +304,7 @@ public:
 
   // Record the start and end of the young gc pause.
   void record_young_gc_pause_start();
-  void record_young_gc_pause_end();
+  void record_young_gc_pause_end(bool evacuation_failed);
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
@@ -313,7 +314,7 @@ public:
 
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark);
+  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
