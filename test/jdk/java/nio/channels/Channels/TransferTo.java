@@ -69,29 +69,46 @@ public class TransferTo {
     @DataProvider
     public static Object[][] streamCombinations() throws Exception {
         return new Object[][] {
+            // tests FileChannel.transferTo(FileChannel) optimized case
             { fileChannelInput(), fileChannelOutput() },
+
+            // tests InputStream.transferTo(OutputStream) default case
             { readableByteChannelInput(), defaultOutput() }
         };
     }
 
+    /**
+     * Testing API compliance: Input stream must throw NullPointerException when parameter "out" is null.
+     */
     @Test(dataProvider = "streamCombinations")
     public void testNullPointerException(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider) throws Exception {
+        // tests empty input stream
         assertThrows(NullPointerException.class, () -> inputStreamProvider.input().transferTo(null));
+
+        // tests single-byte input stream
         assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1).transferTo(null));
+
+        // tests dual-byte input stream
         assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null));
     }
 
+    /**
+     * Testing API compliance: Complete content of input stream must be transferred to output stream.
+     */
     @Test(dataProvider = "streamCombinations")
     public void testStreamContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider) throws Exception {
+        // tests empty input stream
         checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
+
+        // tests input stream with a lenght between 1k and 4k
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
 
-        // to span through several batches
+        // tests input stream with several data chunks, as 16k is more than a single chunk can hold
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(16384, 16384));
 
-        // randomly chosen starting positions within source and target
+        // tests randomly chosen starting positions within source and target stream
         for (int i = 0; i < ITERATIONS; i++) {
             byte[] inBytes = createRandomBytes(MIN_SIZE, MAX_SIZE_INCR);
             int posIn = RND.nextInt(inBytes.length);
@@ -99,10 +116,10 @@ public class TransferTo {
             checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut);
         }
 
-        // beyond source EOF
+        // tests reading beyond source EOF (must not transfer any bytes)
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0);
 
-        // beyond target EOF
+        // tests writing beyond target EOF (must extend output stream)
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
     }
 
