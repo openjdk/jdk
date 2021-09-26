@@ -73,7 +73,7 @@ class markWord {
  public:
   explicit markWord(uintptr_t value) : _value(value) {}
 
-  markWord() { /* uninitialized */}
+  markWord() = default;         // Doesn't initialize _value.
 
   // It is critical for performance that this class be trivially
   // destructable, copyable, and assignable.

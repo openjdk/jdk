@@ -32,6 +32,8 @@
 #include "oops/metadata.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include <type_traits>
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe
 // the format of Java objects so the fields can be accessed from C++.
@@ -57,7 +59,14 @@ class oopDesc {
     narrowKlass _compressed_klass;
   } _metadata;
 
+  // There may be ordering constraints on the initialization of fields that
+  // make use of the C++ copy/assign incorrect.
+  NONCOPYABLE(oopDesc);
+
  public:
+  // Must be trivial; see verifying static assert after the class.
+  oopDesc() = default;
+
   inline markWord  mark()          const;
   inline markWord  mark_acquire()  const;
   inline markWord* mark_addr() const;
@@ -310,5 +319,12 @@ class oopDesc {
   DEBUG_ONLY(bool get_UseParallelGC();)
   DEBUG_ONLY(bool get_UseG1GC();)
 };
+
+// An oopDesc is not initialized via a constructor.  Space is allocated in
+// the Java heap, and static functions provided here on HeapWord* are used
+// to fill in certain parts of that memory.  For that to be valid, the
+// object must not have non-trivial initialization (C++14 3.8).  For that to
+// be possible, oopDesc must be trivially default constructible.
+static_assert(std::is_trivially_default_constructible<oopDesc>::value, "required");
 
 #endif // SHARE_OOPS_OOP_HPP
