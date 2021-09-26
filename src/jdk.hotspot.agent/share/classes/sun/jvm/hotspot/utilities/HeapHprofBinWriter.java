@@ -1313,7 +1313,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     // get size in bytes (in stream) required for given field.
     private int getSizeForField(Field field) {
-        char typeCode = (char) field.getSignature().getByteAt(0);
+        char typeCode = (char)field.getSignature().getByteAt(0);
         switch (typeCode) {
         case JVM_SIGNATURE_BOOLEAN:
         case JVM_SIGNATURE_BYTE:
