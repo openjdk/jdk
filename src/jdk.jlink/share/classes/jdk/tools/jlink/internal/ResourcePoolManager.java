@@ -54,7 +54,7 @@ public class ResourcePoolManager {
     static Attributes readModuleAttributes(ResourcePoolModule mod) {
         String p = "/" + mod.name() + "/module-info.class";
         Optional<ResourcePoolEntry> content = mod.findEntry(p);
-        if (!content.isPresent()) {
+        if (content.isEmpty()) {
               throw new PluginException("module-info.class not found for " +
                   mod.name() + " module");
         }
