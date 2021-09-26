@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class AlgorithmDecomposer {
         String[] transTokens = algorithm.split("/");
 
         for (String transToken : transTokens) {
-            if (transToken == null || transToken.isEmpty()) {
+            if (transToken.isEmpty()) {
                 continue;
             }
 
@@ -60,7 +60,7 @@ public class AlgorithmDecomposer {
             String[] tokens = PATTERN.split(transToken);
 
             for (String token : tokens) {
-                if (token == null || token.isEmpty()) {
+                if (token.isEmpty()) {
                     continue;
                 }
 

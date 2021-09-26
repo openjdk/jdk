@@ -34,11 +34,6 @@ package sun.launcher;
  *
  */
 
-/**
- * A utility package for the java(1), javaw(1) launchers.
- * The following are helper methods that the native launcher uses
- * to perform checks etc. using JNI, see src/share/bin/java.c
- */
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -88,7 +83,11 @@ import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
 
-
+/**
+ * A utility package for the java(1), javaw(1) launchers.
+ * The following are helper methods that the native launcher uses
+ * to perform checks etc. using JNI, see src/share/bin/java.c
+ */
 public final class LauncherHelper {
 
     // No instantiation
@@ -154,8 +153,8 @@ public final class LauncherHelper {
             long initialHeapSize, long maxHeapSize, long stackSize) {
 
         initOutput(printToStderr);
-        String opts[] = optionFlag.split(":");
-        String optStr = (opts.length > 1 && opts[1] != null)
+        String[] opts = optionFlag.split(":");
+        String optStr = opts.length > 1
                 ? opts[1].trim()
                 : "all";
         switch (optStr) {
