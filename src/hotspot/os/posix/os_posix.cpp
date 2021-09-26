@@ -1946,7 +1946,11 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
   // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
   // Otherwise leave it up to the caller.
   AIX_ONLY(prefer_vfork = true;)
+  #ifdef __APPLE__
+  pid = ::fork();
+  #else
   pid = prefer_vfork ? ::vfork() : ::fork();
+  #endif
 
   if (pid < 0) {
     // fork failed
