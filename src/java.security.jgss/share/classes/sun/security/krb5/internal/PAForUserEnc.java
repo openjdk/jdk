@@ -27,7 +27,10 @@ package sun.security.krb5.internal;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+
 import sun.security.krb5.*;
+import sun.security.krb5.internal.crypto.ArcFourHmac;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.internal.util.KerberosString;
 import sun.security.util.DerOutputStream;
@@ -135,13 +138,23 @@ public class PAForUserEnc {
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), name.getRealm().asn1Encode());
 
         try {
-            // MS-SFU 2.2.1: use hmac-md5 checksum regardless of key type
-            Checksum cks = new Checksum(
-                    Checksum.CKSUMTYPE_HMAC_MD5_ARCFOUR,
-                    getS4UByteArray(),
-                    key,
-                    KeyUsage.KU_PA_FOR_USER_ENC_CKSUM);
-            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), cks.asn1Encode());
+            // MS-SFU 2.2.1: use hmac-md5 checksum regardless of key type.
+            // Use internal methods to calculate and encode the checksum
+            // instead of calling new Checksum() or CksumType.getInstance().
+            // CKSUMTYPE_HMAC_MD5_ARCFOUR might be disabled as a weak cksum.
+            byte[] s4u = getS4UByteArray();
+            try {
+                byte[] checksum = ArcFourHmac.calculateChecksum(
+                        key.getBytes(),
+                        KeyUsage.KU_PA_FOR_USER_ENC_CKSUM,
+                        s4u, 0, s4u.length);
+                bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x02),
+                        Checksum.asn1Encode(Checksum.CKSUMTYPE_HMAC_MD5_ARCFOUR, checksum));
+            } catch (GeneralSecurityException e) {
+                KrbCryptoException ke = new KrbCryptoException(e.getMessage());
+                ke.initCause(e);
+                throw ke;
+            }
         } catch (KrbException ke) {
             throw new IOException(ke);
         }

@@ -53,6 +53,8 @@ public abstract class EType {
     private static int[] supportedETypes;
     // common default etypes if not defined in krb5.conf
     private static int[] defaultETypes;
+    // allow_weak_crypto in krb5.conf
+    public static boolean allowWeakCrypto;
 
     static {
         initStatic();
@@ -77,7 +79,7 @@ public abstract class EType {
                         EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
                         EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128, };
 
-        boolean allowWeakCrypto = false;
+        allowWeakCrypto = false;
         try {
             Config cfg = Config.getInstance();
             allowWeakCrypto = cfg.getBooleanObject("libdefaults", "allow_weak_crypto")

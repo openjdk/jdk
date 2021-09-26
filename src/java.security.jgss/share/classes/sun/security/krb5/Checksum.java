@@ -259,20 +259,24 @@ public class Checksum {
      *
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
+        return asn1Encode(cksumType, checksum);
+    }
+
+    public static byte[] asn1Encode(int cksumType, byte[] checksum)
+            throws Asn1Exception, IOException {
         DerOutputStream bytes = new DerOutputStream();
         DerOutputStream temp = new DerOutputStream();
         temp.putInteger(BigInteger.valueOf(cksumType));
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                       true, (byte)0x00), temp);
+                true, (byte)0x00), temp);
         temp = new DerOutputStream();
         temp.putOctetString(checksum);
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                       true, (byte)0x01), temp);
+                true, (byte)0x01), temp);
         temp = new DerOutputStream();
         temp.write(DerValue.tag_Sequence, bytes);
         return temp.toByteArray();
     }
-
 
     /**
      * Parse (unmarshal) a checksum object from a DER input stream.  This form
