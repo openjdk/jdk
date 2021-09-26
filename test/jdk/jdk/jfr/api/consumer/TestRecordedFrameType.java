@@ -105,7 +105,7 @@ public final class TestRecordedFrameType {
                 }
             }
         }
-        throw new Exception("Could not find frame with method named " + methodName);
+        throw new Exception("Could not find frame with method named: " + methodName);
     }
 
     public static void interpreted() {
