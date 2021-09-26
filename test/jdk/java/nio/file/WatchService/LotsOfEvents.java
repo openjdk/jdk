@@ -108,7 +108,7 @@ public class LotsOfEvents {
         boolean gotOverflow = false;
         while (key != null) {
             List<WatchEvent<?>> events = key.pollEvents();
-            System.out.println("Polling retrieved " + events.size() + " events");
+            System.out.println("Polling retrieved " + events.size() + " event(s)");
             for (WatchEvent<?> event: events) {
                 WatchEvent.Kind<?> kind = event.kind();
                 if (kind == expectedKind) {
@@ -148,7 +148,6 @@ public class LotsOfEvents {
                 // count for each kind of event
                 Map<WatchEvent.Kind, Long> countPerEventType = events.stream()
                         .collect(Collectors.groupingBy(WatchEvent::kind, Collectors.counting()));
-                System.err.println("After extra polling, found:");
                 countPerEventType.forEach((kind, num)
                         -> System.err.println(num + " events of type " + kind));
             }
