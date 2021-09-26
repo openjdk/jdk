@@ -5735,7 +5735,11 @@ public class Attr extends JCTree.Visitor {
 			if (!modifiers.contains(Modifier.TRANSIENT) &&
 			    !modifiers.contains(Modifier.STATIC)) {
 			    TypeMirror varType = enclosed.asType();
-			    if (!isSerializable((Type)varType) && !varType.getKind().isPrimitive()) {
+			    if (!isSerializable((Type)varType) &&
+				!varType.getKind().isPrimitive()) {
+				// Note per JLS arrays are
+				// serializable even if the component
+				// type is not.
 				log.warning(LintCategory.SERIAL,
 					    TreeInfo.diagnosticPositionFor((Symbol)enclosed, tree),
 					    Warnings.NonSerializableInstanceField);
