@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871
+ * @bug 8262891 8268871 8274363
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -773,6 +773,30 @@ public class Exhaustiveness extends TestRunner {
                "- compiler.note.preview.filename: Test.java, DEFAULT",
                "- compiler.note.preview.recompile",
                "1 error");
+    }
+
+    @Test
+    public void testTransitiveSealed(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   sealed interface B1 extends A {}
+                   sealed interface B2 extends A {}
+                   sealed interface C extends A {}
+                   final class D1 implements B1, C {}
+                   final class D2 implements B2, C {}
+
+                   void test(A arg) {
+                       int i = switch (arg) {
+                           case B1 b1 -> 1;
+                           case B2 b2 -> 2;
+                       };
+                   }
+               }
+               """);
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {

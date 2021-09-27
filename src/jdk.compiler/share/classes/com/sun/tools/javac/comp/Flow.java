@@ -770,12 +770,9 @@ public class Flow {
 
                     case TYP -> {
                         for (Type sup : types.directSupertypes(sym.type)) {
-                            if (sup.tsym.kind == TYP && sup.tsym.isAbstract() && sup.tsym.isSealed()) {
-                                boolean hasAll = ((ClassSymbol) sup.tsym).permitted
-                                                                         .stream()
-                                                                         .allMatch(covered::contains);
-
-                                if (hasAll && covered.add(sup.tsym)) {
+                            if (sup.tsym.kind == TYP) {
+                                if (isTransitivellyCovered(sup.tsym, covered) &&
+                                    covered.add(sup.tsym)) {
                                     todo = todo.prepend(sup.tsym);
                                 }
                             }
@@ -783,6 +780,17 @@ public class Flow {
                     }
                 }
             }
+        }
+
+        private boolean isTransitivellyCovered(Symbol sealed, Set<Symbol> covered) {
+            if (covered.stream().anyMatch(c -> sealed.isSubClass(c, types)))
+                return true;
+            if (sealed.kind == TYP && sealed.isAbstract() && sealed.isSealed()) {
+                return ((ClassSymbol) sealed).permitted
+                                             .stream()
+                                             .allMatch(s -> isTransitivellyCovered(s, covered));
+            }
+            return false;
         }
 
         private boolean isExhaustive(Type seltype, Set<Symbol> covered) {
