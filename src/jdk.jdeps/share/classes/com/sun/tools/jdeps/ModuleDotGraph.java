@@ -65,7 +65,6 @@ public class ModuleDotGraph {
         this(config,
              config.rootModules().stream()
                    .map(Module::name)
-                   .sorted()
                    .collect(toMap(Function.identity(), mn -> config.resolve(Set.of(mn)))),
              apiOnly);
     }

@@ -527,7 +527,6 @@ public class ModulePath implements ModuleFinder {
         Set<String> packages = classFiles.stream()
                 .map(this::toPackageName)
                 .flatMap(Optional::stream)
-                .distinct()
                 .collect(Collectors.toSet());
 
         // all packages are exported and open
