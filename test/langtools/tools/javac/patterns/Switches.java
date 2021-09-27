@@ -28,7 +28,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333 8268896 8269802 8269808 8270151
+ * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -71,6 +71,7 @@ public class Switches {
         runFallThrough(this::testFallThrough2Expression);
         npeTest(this::npeTestStatement);
         npeTest(this::npeTestExpression);
+        npeTest(this::switchOverNullNPE);
         exhaustiveStatementSane("");
         exhaustiveStatementSane(null);
         exhaustiveStatementSane2(null);
@@ -81,6 +82,9 @@ public class Switches {
         switchNestingTest(this::switchNestingExpressionStatement);
         switchNestingTest(this::switchNestingExpressionExpression);
         switchNestingTest(this::switchNestingIfSwitch);
+        assertEquals(2, switchOverNull1());
+        assertEquals(2, switchOverNull2());
+        assertEquals(2, switchOverNull3());
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -571,6 +575,32 @@ public class Switches {
             }
         };
         return f.apply(o1, o2);
+    }
+
+    private void switchOverNullNPE(I i) {
+        int r = switch (null) {
+            default -> 1;
+        };
+    }
+
+    private int  switchOverNull1() {
+        return switch (null) {
+            case Object o -> 2;
+        };
+    }
+
+    private int  switchOverNull2() {
+        return switch (null) {
+            case null -> 2;
+            default -> 1;
+        };
+    }
+
+    private int  switchOverNull3() {
+        return switch (null) {
+            case null -> 2;
+            case Object o -> 1;
+        };
     }
 
     //verify that for cases like:
