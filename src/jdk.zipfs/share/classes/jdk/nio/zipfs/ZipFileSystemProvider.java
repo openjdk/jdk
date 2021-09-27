@@ -308,8 +308,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             } catch (PrivilegedActionException e) {
                 throw (IOException) e.getException();
             }
-            if (filesystems.get(zfpath) == zfs)
-                filesystems.remove(zfpath);
+            filesystems.remove(zfpath, zfs);
         }
     }
 }
