@@ -40,6 +40,7 @@ import sun.management.MappedMXBeanType;
  * construction of a CompositeData use in the local case.
  */
 public class VMOptionCompositeData extends LazyCompositeData {
+    @SuppressWarnings("serial")
     private final VMOption option;
 
     private VMOptionCompositeData(VMOption option) {

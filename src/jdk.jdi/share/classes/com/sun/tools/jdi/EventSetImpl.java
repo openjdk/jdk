@@ -85,7 +85,9 @@ enum EventDestination {UNKNOWN_EVENT, INTERNAL_EVENT, CLIENT_EVENT};
  */
 public class EventSetImpl extends ArrayList<Event> implements EventSet {
     private static final long serialVersionUID = -4857338819787924570L;
+    @SuppressWarnings("serial")
     private VirtualMachineImpl vm; // we implement Mirror
+    @SuppressWarnings("serial")
     private Packet pkt;
     private byte suspendPolicy;
     private EventSetImpl internalEventSet;
