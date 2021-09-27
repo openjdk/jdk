@@ -64,12 +64,12 @@ public class TestSinkingDivisorLostPin {
                 // Zero check Z2 with UCT
                 // DivI node D is only used on IfFalse path of zero check Z2 into UCT (on IfTrue path, the result is not used anywhere
                 // because we directly overwrite it again with "y = (5 / iFld)). The IfFalse path of the zero check, however, is never
-                // taken because iFld = 1. But before applying the sinking algorithm, the DivI node D could be be executed during the
+                // taken because iFld = 1. But before applying the sinking algorithm, the DivI node D could be executed during the
                 // loop, as the zero check Z1 succeeds. Only after sinking the SubI node for "iFld - q" into the IfFalse path of Z2
                 // and optimizing it accordingly (iFld is found to be zero because the zero check Z2 failed, i.e. iFld is zero which is
                 // propagated into the CastII node whose type is improved to [0,0] and the node is replaced by constant zero), the
                 // DivI node must NOT be executed inside the loop anymore. But the DivI node is executed in the loop because of losing
-                // the CastII pin. The fix is to updated the control input of the DivI node to the get_ctrl() input outside the loop
+                // the CastII pin. The fix is to update the control input of the DivI node to the get_ctrl() input outside the loop
                 // (IfFalse of zero check Z2).
             } catch (ArithmeticException a_e) {
             }
