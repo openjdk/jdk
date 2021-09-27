@@ -473,9 +473,11 @@ NsCharToJavaVirtualKeyCode(unichar ch, BOOL isDeadChar,
             return;
         } else {
             // checking for non-english characters
+            // this value comes from ExtendedKeyCodes.java
             offset += 0x01000000;
             *postsTyped = YES;
-            // do quick conversion, add 32 for Russian
+            // do quick conversion
+            // the keyCode is off by 32, so adding it here
             *keyCode = java_awt_event_KeyEvent_VK_A + offset + 32;
             *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_STANDARD;
 return;
