@@ -660,7 +660,7 @@ class GraphKit : public Phase {
                               Node* ctrl = NULL);
 
   // Return a load of array element at idx.
-  Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
+  Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
 
   //---------------- Dtrace support --------------------
   void make_dtrace_method_entry_exit(ciMethod* method, bool is_entry);

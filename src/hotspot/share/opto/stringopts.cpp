@@ -1244,7 +1244,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     kit.set_control(loop);
     Node* sizeTable = fetch_static_field(kit, size_table_field);
 
-    Node* value = kit.load_array_element(NULL, sizeTable, index, TypeAryPtr::INTS);
+    Node* value = kit.load_array_element(sizeTable, index, TypeAryPtr::INTS, /* set_ctrl */ false);
     C->record_for_igvn(value);
     Node* limit = __ CmpI(phi, value);
     Node* limitb = __ Bool(limit, BoolTest::le);
