@@ -17,37 +17,37 @@ class Extern implements Externalizable {
     private static final ObjectStreamField[] serialPersistentFields = {};
 
     public void writeExternal(ObjectOutput out) throws IOException {
-	return;
+        return;
     }
 
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-	return;
+        return;
     }
 
     // ineffectual
     private void readObject(ObjectInputStream stream)
-	throws IOException, ClassNotFoundException {
-	return;
+        throws IOException, ClassNotFoundException {
+        return;
     }
 
     // ineffectual
     private void writeObject(ObjectOutputStream stream) throws IOException {
-	return;
+        return;
     }
 
     // ineffectual
     private void readObjectNoData() throws ObjectStreamException {
-	return;
+        return;
     }
 
     // (possibly) effective
     private Object writeReplace() throws ObjectStreamException {
-	return null;
+        return null;
     }
 
     // (possibly) effective
     private Object readResolve() throws ObjectStreamException {
-	return null;
+        return null;
     }
 
 }

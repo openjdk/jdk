@@ -5514,10 +5514,10 @@ public class Attr extends JCTree.Visitor {
         // serialization-related fields and methods
         if (env.info.lint.isEnabled(LintCategory.SERIAL)
                 && isSerializable(c.type)
-	    /* && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0 */
+            /* && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0 */
                 && !c.isAnonymous()) {
             // checkSerialVersionUID(tree, c, env);
-	    checkSerialStructure(tree, c, env);
+            checkSerialStructure(tree, c, env);
         }
         if (allowTypeAnnos) {
             // Correctly organize the positions of the type annotations
@@ -5606,7 +5606,7 @@ public class Attr extends JCTree.Visitor {
          * Check structure of serialization declarations.
          */
         private void checkSerialStructure(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
-	    (new SerialTypeVisitor()).visit(c, tree);
+            (new SerialTypeVisitor()).visit(c, tree);
         }
 
     /**
@@ -5631,7 +5631,7 @@ public class Attr extends JCTree.Visitor {
      *
      * private static final long serialVersionUID
      * private static final ObjectStreamField[] serialPersistentFields
-     * 
+     *
      * Externalizable: methods defined on the interface
      * public void writeExternal(ObjectOutput) throws IOException
      * public void readExternal(ObjectInput) throws IOException
@@ -5640,14 +5640,14 @@ public class Attr extends JCTree.Visitor {
         SerialTypeVisitor(){super();}
 
         private static final Set<String> serialMethodNames =
-	    Set.of("writeObject", "writeReplace",
-		   "readObject",  "readObjectNoData",
-		   "readResolve");
+            Set.of("writeObject", "writeReplace",
+                   "readObject",  "readObjectNoData",
+                   "readResolve");
 
         private static final Set<String> serialFieldNames =
-	    Set.of("serialVersionUID", "serialPersistentFields");
-            
-	// TODO these checks should likely be expressed in terms of javac flags
+            Set.of("serialVersionUID", "serialPersistentFields");
+
+        // TODO these checks should likely be expressed in terms of javac flags
         private static final Set<Modifier> PRIVATE_STATIC_FINAL_MODS =
             Set.of(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
 
@@ -5678,7 +5678,7 @@ public class Attr extends JCTree.Visitor {
 
         //             final TypeMirror SERIAL_ANNOTATION =
         //                 Objects.requireNonNull(elementUtils.getTypeElement("java.io.Serial").asType());
-            
+
         @Override
         public Void defaultAction(Element e, JCClassDecl p) {
             throw new IllegalArgumentException(Objects.requireNonNullElse(e.toString(), ""));
@@ -5686,19 +5686,19 @@ public class Attr extends JCTree.Visitor {
 
         @Override
         public Void visitTypeAsClass(TypeElement e,
-				     JCClassDecl tree) {
-	    ClassSymbol c = (ClassSymbol)e;
+                                     JCClassDecl tree) {
+            ClassSymbol c = (ClassSymbol)e;
 
-// 	    if (c.isAnonymous())
-// 		return null;
+//          if (c.isAnonymous())
+//              return null;
 
-	    if (checkSuppressSerialWarningNested(e))
-		return null;
+            if (checkSuppressSerialWarningNested(e))
+                return null;
 
-	    checkCtorAccess(tree, c);
+            checkCtorAccess(tree, c);
 
-	    // Check for missing serialVersionUID; check *not* done
-	    // for enums or records.
+            // Check for missing serialVersionUID; check *not* done
+            // for enums or records.
             VarSymbol svuidSym = null;
             for (Symbol sym : c.members().getSymbolsByName(names.serialVersionUID)) {
                 if (sym.kind == VAR) {
@@ -5707,22 +5707,22 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
-	    if (svuidSym == null) {
-		log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
-	    }
+            if (svuidSym == null) {
+                log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
+            }
 
-	    // Check for serialPersistentFields to gate checks for
-	    // non-serializable non-transient instance fields
+            // Check for serialPersistentFields to gate checks for
+            // non-serializable non-transient instance fields
             boolean serialPersistentFieldsPresent = false;
             for (Symbol sym : c.members().getSymbolsByName(names.serialPersistentFields)) {
                 if (sym.kind == VAR) {
-		    serialPersistentFieldsPresent = true;
+                    serialPersistentFieldsPresent = true;
                     break;
                 }
             }
 
-	    // Check declarations of serialization-related methods and
-	    // fields
+            // Check declarations of serialization-related methods and
+            // fields
             for(Element enclosed : e.getEnclosedElements()) {
                 if (checkSuppressSerialWarning(enclosed))
                     continue;
@@ -5730,22 +5730,22 @@ public class Attr extends JCTree.Visitor {
                 String name = null;
                 switch(enclosed.getKind()) {
                 case FIELD -> {
-		    if (!serialPersistentFieldsPresent) {
-			var modifiers = enclosed.getModifiers();
-			if (!modifiers.contains(Modifier.TRANSIENT) &&
-			    !modifiers.contains(Modifier.STATIC)) {
-			    TypeMirror varType = enclosed.asType();
-			    if (!isSerializable((Type)varType) &&
-				!varType.getKind().isPrimitive()) {
-				// Note per JLS arrays are
-				// serializable even if the component
-				// type is not.
-				log.warning(LintCategory.SERIAL,
-					    TreeInfo.diagnosticPositionFor((Symbol)enclosed, tree),
-					    Warnings.NonSerializableInstanceField);
-			    }
-			}
-		    }
+                    if (!serialPersistentFieldsPresent) {
+                        var modifiers = enclosed.getModifiers();
+                        if (!modifiers.contains(Modifier.TRANSIENT) &&
+                            !modifiers.contains(Modifier.STATIC)) {
+                            TypeMirror varType = enclosed.asType();
+                            if (!isSerializable((Type)varType) &&
+                                !varType.getKind().isPrimitive()) {
+                                // Note per JLS arrays are
+                                // serializable even if the component
+                                // type is not.
+                                log.warning(LintCategory.SERIAL,
+                                            TreeInfo.diagnosticPositionFor((Symbol)enclosed, tree),
+                                            Warnings.NonSerializableInstanceField);
+                            }
+                        }
+                    }
 
                     name = enclosed.getSimpleName().toString();
                     if (serialFieldNames.contains(name)) {
@@ -5772,7 +5772,7 @@ public class Attr extends JCTree.Visitor {
                 // (which long predate default methods on interfaces)
                 // do not admit the possibility of inheriting methods
                 // this way, a difference from general inheritance.
-                    
+
                 // The current implementation just checks the enclosed
                 // elements and does not directly check the inherited
                 // methods. If all the types are being checked this is
@@ -5799,61 +5799,61 @@ public class Attr extends JCTree.Visitor {
         }
 
 
-	/**
-	 * Check that Externalizable class needs a public no-arg
-	 * constructor.
-	 *
-	 * Check that a Serializable class has access to the no-arg
-	 * constructor of its first nonserializable superclass.
-	 */
-	private void checkCtorAccess(JCClassDecl tree, Element e) {
-	    ClassSymbol c = (ClassSymbol) e;
+        /**
+         * Check that Externalizable class needs a public no-arg
+         * constructor.
+         *
+         * Check that a Serializable class has access to the no-arg
+         * constructor of its first nonserializable superclass.
+         */
+        private void checkCtorAccess(JCClassDecl tree, Element e) {
+            ClassSymbol c = (ClassSymbol) e;
 
-	    if (isExternalizable(c.type)) {
-		for(var ctor : ElementFilter.constructorsIn(c.getEnclosedElements())) {
-		    if (ctor.getParameters().isEmpty() &&
-			ctor.getModifiers().contains(Modifier.PUBLIC))
-			return;
-		}
-		log.warning(LintCategory.SERIAL, tree.pos(),
-			    Warnings.ExternalizableMissingPublicNoArgCtor);
+            if (isExternalizable(c.type)) {
+                for(var ctor : ElementFilter.constructorsIn(c.getEnclosedElements())) {
+                    if (ctor.getParameters().isEmpty() &&
+                        ctor.getModifiers().contains(Modifier.PUBLIC))
+                        return;
+                }
+                log.warning(LintCategory.SERIAL, tree.pos(),
+                            Warnings.ExternalizableMissingPublicNoArgCtor);
 
-	    } else {
-		// Approximate access to the no-arg constructor up in
-		// the superclass chain by checking that the
-		// constructor is not private. This may not handle
-		// some cross-package situations correctly.
-		Type superClass = c.getSuperclass();
-		// java.lang.Object is *not* Serializable so this loop
-		// should terminate.
-		// TOOD: checking needed for error types?
-		while (isSerializable(superClass) ) {
-		    try {
-			superClass = (Type)((TypeElement)(((DeclaredType)superClass)).asElement()).getSuperclass();
-		    } catch(ClassCastException cce) {
-			return ; // Don't try to recover
-		    }
-		}
-		// Non-Serializable super class
-		try {
-		    TypeElement supertype = ((TypeElement)(((DeclaredType)superClass).asElement()));
-		    for (var ctor:
-			     ElementFilter.constructorsIn(supertype.getEnclosedElements()) ) {
-			if (ctor.getParameters().isEmpty()) {
-			    if (ctor.getModifiers().contains(Modifier.PRIVATE) ||
-				// Handle nested classes and implicit this$0
-				(supertype.getNestingKind() == NestingKind.MEMBER &&
-				 !supertype.getModifiers().contains(Modifier.STATIC)))
-				log.warning(LintCategory.SERIAL, tree.pos(),
-					    Warnings.SerializableMissingAccessNoArgCtor((Symbol)supertype));
-			}
-		    }
-		} catch (ClassCastException cce) {
-		    return ; // Don't try to recover
-		}
-		return;
-	    }
-	}
+            } else {
+                // Approximate access to the no-arg constructor up in
+                // the superclass chain by checking that the
+                // constructor is not private. This may not handle
+                // some cross-package situations correctly.
+                Type superClass = c.getSuperclass();
+                // java.lang.Object is *not* Serializable so this loop
+                // should terminate.
+                // TOOD: checking needed for error types?
+                while (isSerializable(superClass) ) {
+                    try {
+                        superClass = (Type)((TypeElement)(((DeclaredType)superClass)).asElement()).getSuperclass();
+                    } catch(ClassCastException cce) {
+                        return ; // Don't try to recover
+                    }
+                }
+                // Non-Serializable super class
+                try {
+                    TypeElement supertype = ((TypeElement)(((DeclaredType)superClass).asElement()));
+                    for (var ctor:
+                             ElementFilter.constructorsIn(supertype.getEnclosedElements()) ) {
+                        if (ctor.getParameters().isEmpty()) {
+                            if (ctor.getModifiers().contains(Modifier.PRIVATE) ||
+                                // Handle nested classes and implicit this$0
+                                (supertype.getNestingKind() == NestingKind.MEMBER &&
+                                 !supertype.getModifiers().contains(Modifier.STATIC)))
+                                log.warning(LintCategory.SERIAL, tree.pos(),
+                                            Warnings.SerializableMissingAccessNoArgCtor((Symbol)supertype));
+                        }
+                    }
+                } catch (ClassCastException cce) {
+                    return ; // Don't try to recover
+                }
+                return;
+            }
+        }
 
         private void checkSerialVersionUID(JCClassDecl tree, Element e, Element field) {
             // To be effective, serialVersionUID must be marked
@@ -5862,7 +5862,7 @@ public class Attr extends JCTree.Visitor {
             // But alas, in practice there are many non-private
             // serialVersionUID fields
 
-	    // TODO: need to pass in warningKey of type Warning...
+            // TODO: need to pass in warningKey of type Warning...
 //             if ((svuid.flags() & (STATIC | FINAL)) !=
 //                 (STATIC | FINAL))
 //                 log.warning(LintCategory.SERIAL,
@@ -5876,11 +5876,11 @@ public class Attr extends JCTree.Visitor {
 //                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.LongSVUID(c));
             checkTypeOfField(tree, e, field, LONG_TYPE, Warnings.LongSVUID((Symbol) e));
 
-	    VarSymbol svuidField = (VarSymbol)field;
-	    if (svuidField.getConstValue() == null)
-		log.warning(LintCategory.SERIAL,
-			    TreeInfo.diagnosticPositionFor(svuidField, tree),
-			    Warnings.ConstantSVUID((Symbol)e));
+            VarSymbol svuidField = (VarSymbol)field;
+            if (svuidField.getConstValue() == null)
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(svuidField, tree),
+                            Warnings.ConstantSVUID((Symbol)e));
         }
 
         private void checkSerialPersistentFields(JCClassDecl tree, Element e, Element field) {
@@ -5888,8 +5888,8 @@ public class Attr extends JCTree.Visitor {
             checkMandatoryModifiers(tree, e, field, PRIVATE_STATIC_FINAL_MODS, null /*FIXME*/);
             checkTypeOfField(tree, e, field, OSF_TYPE);
             if (isExternalizable((Type)(e.asType()))) {
-		log.warning(LintCategory.SERIAL, tree.pos(),
-			    Warnings.IneffectualSerialFieldExternalizable);
+                log.warning(LintCategory.SERIAL, tree.pos(),
+                            Warnings.IneffectualSerialFieldExternalizable);
             }
 
 
@@ -5980,8 +5980,8 @@ public class Attr extends JCTree.Visitor {
         @Override
         public Void visitTypeAsEnum(TypeElement e,
                                     JCClassDecl tree) {
-	    if (checkSuppressSerialWarningNested(e)) {
-		return null;
+            if (checkSuppressSerialWarningNested(e)) {
+                return null;
             }
 
             for(Element enclosed : e.getEnclosedElements()) {
@@ -5992,16 +5992,16 @@ public class Attr extends JCTree.Visitor {
                 switch(enclosed.getKind()) {
                 case FIELD -> {
                     if (serialFieldNames.contains(name)) {
-			log.warning(LintCategory.SERIAL, tree.pos(),
-				    Warnings.IneffectualSerialFieldEnum((Symbol)enclosed));
-		    }
+                        log.warning(LintCategory.SERIAL, tree.pos(),
+                                    Warnings.IneffectualSerialFieldEnum((Symbol)enclosed));
+                    }
                 }
 
                 case METHOD -> {
                     if (serialMethodNames.contains(name)) {
-			log.warning(LintCategory.SERIAL, tree.pos(),
-				    Warnings.IneffectualSerialMethodEnum((Symbol)enclosed));
-		    }
+                        log.warning(LintCategory.SERIAL, tree.pos(),
+                                    Warnings.IneffectualSerialMethodEnum((Symbol)enclosed));
+                    }
                 }
                 }
             }
@@ -6014,8 +6014,8 @@ public class Attr extends JCTree.Visitor {
         @Override
         public Void visitTypeAsInterface(TypeElement e,
                                          JCClassDecl tree) {
-	    if (checkSuppressSerialWarningNested(e)) {
-		return null;
+            if (checkSuppressSerialWarningNested(e)) {
+                return null;
             }
 
             for(Element enclosed : e.getEnclosedElements()) {
@@ -6027,30 +6027,30 @@ public class Attr extends JCTree.Visitor {
                 case FIELD -> {
                     name = enclosed.getSimpleName().toString();
                     if (serialFieldNames.contains(name)) {
-                        // System.out.println("Serial field name " + name + 
+                        // System.out.println("Serial field name " + name +
                         //                   " in " + e.getKind() + " " + e.toString());
-			int i = 2 + 2;
-		    }
+                        int i = 2 + 2;
+                    }
                 }
 
                 case METHOD -> {
                     var method = toMethod(enclosed);
                     name = enclosed.getSimpleName().toString();
                     if (serialMethodNames.contains(name)) {
-			switch (name) {
-			case
-			    "readObject",
-			    "readObjectNoData",
-			    "writeObject"      -> checkPrivateMethod(tree, e, method);
+                        switch (name) {
+                        case
+                            "readObject",
+                            "readObjectNoData",
+                            "writeObject"      -> checkPrivateMethod(tree, e, method);
 
-			case
-			    "writeReplace",
-			    "readResolve"      -> checkDefaultIneffective(tree, e, method);
+                        case
+                            "writeReplace",
+                            "readResolve"      -> checkDefaultIneffective(tree, e, method);
 
                         default ->  throw new AssertionError();
-			}
+                        }
 
-		    }
+                    }
                 }
                 }
             }
@@ -6059,26 +6059,26 @@ public class Attr extends JCTree.Visitor {
         }
 
         private void checkPrivateMethod(JCClassDecl tree,
-					Element e,
-					ExecutableElement method) {
-	    if (!method.getModifiers().contains(Modifier.PRIVATE)) {
-		log.warning(LintCategory.SERIAL,
-			    TreeInfo.diagnosticPositionFor((Symbol)method, tree),
-			    Warnings.NonPrivateMethodWeakerAccess);
+                                        Element e,
+                                        ExecutableElement method) {
+            if (!method.getModifiers().contains(Modifier.PRIVATE)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor((Symbol)method, tree),
+                            Warnings.NonPrivateMethodWeakerAccess);
 
-	    }
-	}
+            }
+        }
 
         private void checkDefaultIneffective(JCClassDecl tree,
-					     Element e,
-					     ExecutableElement method) {
-	    if (method.getModifiers().contains(Modifier.DEFAULT)) {
-		log.warning(LintCategory.SERIAL,
-			    TreeInfo.diagnosticPositionFor((Symbol)method, tree),
-			    Warnings.DefaultIneffective);
+                                             Element e,
+                                             ExecutableElement method) {
+            if (method.getModifiers().contains(Modifier.DEFAULT)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor((Symbol)method, tree),
+                            Warnings.DefaultIneffective);
 
-	    }
-	}
+            }
+        }
 
         @Override
         public Void visitTypeAsAnnotationType(TypeElement e,
@@ -6112,8 +6112,8 @@ public class Attr extends JCTree.Visitor {
         @Override
         public Void visitTypeAsRecord(TypeElement e,
                                       JCClassDecl tree) {
-	    if (checkSuppressSerialWarningNested(e)) {
-		return null;
+            if (checkSuppressSerialWarningNested(e)) {
+                return null;
             }
 
             for(Element enclosed : e.getEnclosedElements()) {
@@ -6125,13 +6125,13 @@ public class Attr extends JCTree.Visitor {
                 case FIELD -> {
                     switch(name) {
                     case "serialPersistentFields" -> {
-			log.warning(LintCategory.SERIAL, tree.pos(),
-				    Warnings.IneffectualSerialFieldRecord);
+                        log.warning(LintCategory.SERIAL, tree.pos(),
+                                    Warnings.IneffectualSerialFieldRecord);
                     }
 
                     case "serialVersionUID" -> {
-			// TODO Extra warning that svuid value not
-			// checked to match for records?
+                        // TODO Extra warning that svuid value not
+                        // checked to match for records?
                         checkSerialVersionUID(tree, e, enclosed);
                     }
 
@@ -6145,9 +6145,9 @@ public class Attr extends JCTree.Visitor {
                     case "readResolve"  -> checkReadResolve(tree, e, method);
                     default -> {
                         if (serialMethodNames.contains(name)) {
-			    log.warning(LintCategory.SERIAL, tree.pos(),
-					Warnings.IneffectualSerialMethodRecord((Symbol)enclosed));
-			}
+                            log.warning(LintCategory.SERIAL, tree.pos(),
+                                        Warnings.IneffectualSerialMethodRecord((Symbol)enclosed));
+                        }
                     }
                     }
 
@@ -6174,138 +6174,138 @@ public class Attr extends JCTree.Visitor {
         }
 
         boolean checkSuppressSerialWarningNested(TypeElement e) {
-	    if (checkSuppressSerialWarning(e))
-		return true;
-	    else {
-		NestingKind nestingKind = e.getNestingKind();
-		while (nestingKind == NestingKind.MEMBER) {
-		    Element enclosing = e.getEnclosingElement();
-		    boolean enclosingSuppression = checkSuppressSerialWarning(enclosing);
-		    if (enclosingSuppression)
-			return true;
-		    else {
-			ElementKind enclosingKind = enclosing.getKind();
-			if (enclosingKind.isClass() ||  enclosingKind.isInterface()) {
-			    e = (TypeElement) enclosing;
-			    nestingKind = e.getNestingKind();
-			} else {
-			    return false;
-			}
-		    }
-		}
-		return false;
-	    }
-	}
+            if (checkSuppressSerialWarning(e))
+                return true;
+            else {
+                NestingKind nestingKind = e.getNestingKind();
+                while (nestingKind == NestingKind.MEMBER) {
+                    Element enclosing = e.getEnclosingElement();
+                    boolean enclosingSuppression = checkSuppressSerialWarning(enclosing);
+                    if (enclosingSuppression)
+                        return true;
+                    else {
+                        ElementKind enclosingKind = enclosing.getKind();
+                        if (enclosingKind.isClass() ||  enclosingKind.isInterface()) {
+                            e = (TypeElement) enclosing;
+                            nestingKind = e.getNestingKind();
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                return false;
+            }
+        }
 
         void checkMandatoryModifiers(JCClassDecl tree,
-				     Element enclosing,
-				     Element element,
-				     Set<Modifier> mandatoryMods,
-				     Warning warningKey) {
+                                     Element enclosing,
+                                     Element element,
+                                     Set<Modifier> mandatoryMods,
+                                     Warning warningKey) {
             String name = element.getSimpleName().toString();
             Set<Modifier> mods = element.getModifiers();
             for (Modifier mandatoryMod : mandatoryMods) {
                 if (!mods.contains(mandatoryMod) ) {
-		    if (warningKey == null) {
-			System.out.println("Serialization-related declaration " + name + 
-					   " in " + enclosing.getKind() + " " + enclosing.toString() +
-					   " is missing expected modifier " + mandatoryMod);
-		    } else {
-			log.warning(LintCategory.SERIAL,
-				    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
-				    warningKey);
-		    }
+                    if (warningKey == null) {
+                        System.out.println("Serialization-related declaration " + name +
+                                           " in " + enclosing.getKind() + " " + enclosing.toString() +
+                                           " is missing expected modifier " + mandatoryMod);
+                    } else {
+                        log.warning(LintCategory.SERIAL,
+                                    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
+                                    warningKey);
+                    }
                 }
             }
         }
 
         void checkExcludedModifiers(JCClassDecl tree,
-				    Element enclosing,
-				    Element element,
-				    Set<Modifier> excludedMods) {
-	    checkExcludedModifiers(tree, enclosing, element, excludedMods, null);
-	}
+                                    Element enclosing,
+                                    Element element,
+                                    Set<Modifier> excludedMods) {
+            checkExcludedModifiers(tree, enclosing, element, excludedMods, null);
+        }
 
 
         void checkExcludedModifiers(JCClassDecl tree,
-				    Element enclosing,
-				    Element element,
-				    Set<Modifier> excludedMods,
-				    Warning warningKey) {
+                                    Element enclosing,
+                                    Element element,
+                                    Set<Modifier> excludedMods,
+                                    Warning warningKey) {
             String name = element.getSimpleName().toString();
             Set<Modifier> mods = element.getModifiers();
             for (Modifier excludedMod : excludedMods) {
                 if (mods.contains(excludedMod) ) {
-		    if (warningKey == null) {
-			System.out.println("Serialization-related declaration " + name + 
-					   " in " + enclosing.getKind() + " " + enclosing.toString() +
-					   " has unexpected modifier " + excludedMod);
-		    } else {
-			log.warning(LintCategory.SERIAL,
-				    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
-				    warningKey);
-		    }
+                    if (warningKey == null) {
+                        System.out.println("Serialization-related declaration " + name +
+                                           " in " + enclosing.getKind() + " " + enclosing.toString() +
+                                           " has unexpected modifier " + excludedMod);
+                    } else {
+                        log.warning(LintCategory.SERIAL,
+                                    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
+                                    warningKey);
+                    }
                 }
             }
         }
 
         void checkTypeOfField(JCClassDecl tree,
-			      Element enclosing,
-			      Element element,
-			      TypeMirror expected) {
-	    checkTypeOfField(tree, enclosing, element, expected, null);
-	}
+                              Element enclosing,
+                              Element element,
+                              TypeMirror expected) {
+            checkTypeOfField(tree, enclosing, element, expected, null);
+        }
 
         void checkTypeOfField(JCClassDecl tree,
-			      Element enclosing,
-			      Element element,
-			      TypeMirror expected,
-			      Warning warningKey) {
+                              Element enclosing,
+                              Element element,
+                              TypeMirror expected,
+                              Warning warningKey) {
             String name = element.getSimpleName().toString();
             TypeMirror tm = element.asType();
             if (!types.isSameType((Type)expected, /* fixme*/ (Type)tm)) {
-		    if (warningKey == null) {
-			System.out.println("Serialization-related field " + name + " in "
-					   + enclosing.getKind() + " " + enclosing.toString() +
-					   " has unexpected type " + tm + " rather than " +
-					   expected.toString());
-		    } else {
-			log.warning(LintCategory.SERIAL,
-				    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
-				    warningKey);
-		    }
+                    if (warningKey == null) {
+                        System.out.println("Serialization-related field " + name + " in "
+                                           + enclosing.getKind() + " " + enclosing.toString() +
+                                           " has unexpected type " + tm + " rather than " +
+                                           expected.toString());
+                    } else {
+                        log.warning(LintCategory.SERIAL,
+                                    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
+                                    warningKey);
+                    }
             }
         }
 
         private void checkReturnTypeOfMethod(JCClassDecl tree,
-					     Element enclosing,
-					     ExecutableElement method,
-					     TypeMirror expectedReturnType) {
+                                             Element enclosing,
+                                             ExecutableElement method,
+                                             TypeMirror expectedReturnType) {
             String name = method.getSimpleName().toString();
             TypeMirror tm = method.getReturnType();
             if (!types.isSameType((Type)expectedReturnType, /* fixme*/ (Type)tm)) {
-                System.out.println("Unexpected return type " + tm + " on " + name + 
+                System.out.println("Unexpected return type " + tm + " on " + name +
                                    " in " + enclosing.getKind() + " " + enclosing.toString());
             }
         }
 
         private void checkOneArg(JCClassDecl tree,
-				 Element enclosing,
-				 ExecutableElement method,
-				 TypeMirror expected) {
+                                 Element enclosing,
+                                 ExecutableElement method,
+                                 TypeMirror expected) {
             String name = method.getSimpleName().toString();
 
             var parameters= method.getParameters();
 
             if (parameters.size() != 1) {
-                System.out.println("Unexpected parameters " + parameters + " on " + name + 
+                System.out.println("Unexpected parameters " + parameters + " on " + name +
                                    " in " + enclosing.getKind() + " " + enclosing.toString());
                 return;
             }
 
             TypeMirror parameterType = parameters.get(0).asType();
             if (!types.isSameType(/* fixme*/ (Type)parameterType, (Type)expected)) {
-                System.out.println("Unexpected parameter type " + parameterType + " on " + name + 
+                System.out.println("Unexpected parameter type " + parameterType + " on " + name +
                                    " in " + enclosing.getKind() + " " + enclosing.toString());
             }
             return;
@@ -6315,7 +6315,7 @@ public class Attr extends JCTree.Visitor {
             String name = method.getSimpleName().toString();
             var parameters= method.getParameters();
             if (!parameters.isEmpty()) {
-                System.out.println("Unexpected parameters " + parameters + " on " + name + 
+                System.out.println("Unexpected parameters " + parameters + " on " + name +
                                    " in " + enclosing.getKind() + " " + enclosing.toString());
             }
         }
@@ -6323,16 +6323,16 @@ public class Attr extends JCTree.Visitor {
         private void checkExternalizable(JCClassDecl tree, Element enclosing, ExecutableElement method) {
             //if the enclosing class is externalizable, warn for the method
             if (isExternalizable((Type)enclosing.asType())) {
-		log.warning(LintCategory.SERIAL, tree.pos(),
-			    Warnings.IneffectualSerialMethodExternalizable((Symbol)method));
+                log.warning(LintCategory.SERIAL, tree.pos(),
+                            Warnings.IneffectualSerialMethodExternalizable((Symbol)method));
             }
             return;
         }
 
         private void checkExceptions(JCClassDecl tree,
-				     Element enclosing,
-				     ExecutableElement method,
-				     TypeMirror... declaredExceptions) {
+                                     Element enclosing,
+                                     ExecutableElement method,
+                                     TypeMirror... declaredExceptions) {
             for (TypeMirror thrownType: method.getThrownTypes()) {
                 // If not an Error and not a RuntimeException, check if a subtype of a blessed exception
                 if (types.isSubtype(/*fixme*/(Type)thrownType, RUNTIME_EXCEPTION_TYPE) ||

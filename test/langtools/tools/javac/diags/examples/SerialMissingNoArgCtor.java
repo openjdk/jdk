@@ -38,15 +38,15 @@ class SerialMissingNoArgCtor {
     // SerialSubclass does not have access to a non-arg ctor in the
     // first non-serializable superclass in its superclass chain.
     static class SerialSubclass extends SerialMissingNoArgCtor
-	implements Serializable {
+        implements Serializable {
 
-	private static final long serialVersionUID = 42;
+        private static final long serialVersionUID = 42;
 
-	// non-serializable non-transient instance field
-	private Object data = null;
+        // non-serializable non-transient instance field
+        private Object data = null;
 
-	public SerialSubclass() {
-	    super(1);
-	}
+        public SerialSubclass() {
+            super(1);
+        }
     }
 }

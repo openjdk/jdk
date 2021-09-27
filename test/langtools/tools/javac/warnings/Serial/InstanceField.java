@@ -29,11 +29,11 @@ class IntanceField implements Serializable {
     private double[] quux;
 
     static class NestedInstance implements Serializable {
-	private static final long serialVersionUID = 24;
+        private static final long serialVersionUID = 24;
 
-	// Should disable instance field warnings
-	private static final ObjectStreamField[] serialPersistentFields = {};
+        // Should disable instance field warnings
+        private static final ObjectStreamField[] serialPersistentFields = {};
 
-	private Object foo;
+        private Object foo;
     }
 }

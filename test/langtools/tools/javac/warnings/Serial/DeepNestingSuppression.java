@@ -15,20 +15,20 @@ class DeepNestingSuppression {
 
     @SuppressWarnings("serial")
     static class SuppressedOuter {
-	static class Intermediate {
-	    static class Inner implements Serializable {
-		// warning for int rather than long svuid
-		private static final int serialVersionUID = 42;
-	    }
-	}
+        static class Intermediate {
+            static class Inner implements Serializable {
+                // warning for int rather than long svuid
+                private static final int serialVersionUID = 42;
+            }
+        }
     }
 
     static class Outer {
-	static class Intermediate {
-	    static class Inner implements Serializable {
-		// warning for int rather than long svuid
-		private static final int serialVersionUID = 42;
-	    }
-	}
+        static class Intermediate {
+            static class Inner implements Serializable {
+                // warning for int rather than long svuid
+                private static final int serialVersionUID = 42;
+            }
+        }
     }
 }

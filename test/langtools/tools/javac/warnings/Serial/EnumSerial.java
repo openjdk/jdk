@@ -16,23 +16,23 @@ enum EnumSerial implements Serializable {
     private static final ObjectStreamField[] serialPersistentFields = {};
 
     private void writeObject(ObjectOutputStream stream) throws IOException {
-	return;
+        return;
     }
 
     private Object writeReplace() throws ObjectStreamException {
-	return null;
+        return null;
     }
 
     private void readObject(ObjectInputStream stream)
-	throws IOException, ClassNotFoundException {
-	return;
+        throws IOException, ClassNotFoundException {
+        return;
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-	return;
+        return;
     }
 
     private Object readResolve() throws ObjectStreamException {
-	return null;
+        return null;
     }
 }

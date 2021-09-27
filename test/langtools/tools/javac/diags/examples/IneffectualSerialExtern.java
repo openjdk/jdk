@@ -36,11 +36,11 @@ class IneffectualSerialExtern implements Externalizable {
     public IneffectualSerialExtern(int foo) {}
 
     public void writeExternal(ObjectOutput out) throws IOException {
-	return;
+        return;
     }
 
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-	return;
+        return;
     }
 
     // ineffectual
@@ -48,7 +48,7 @@ class IneffectualSerialExtern implements Externalizable {
 
     // The readObject method is ineffectual for Externalizable classes.
     private void readObject(ObjectInputStream stream)
-	throws IOException, ClassNotFoundException {
-	return;
+        throws IOException, ClassNotFoundException {
+        return;
     }
 }

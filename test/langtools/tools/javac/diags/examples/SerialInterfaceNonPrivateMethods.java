@@ -21,21 +21,20 @@
  * questions.
  */
 
-// key: compiler.warn.ineffectual.serial.field.record
-// key: compiler.warn.ineffectual.serial.method.record
+// key: compiler.warn.non.private.method.weaker.access
+// key: compiler.warn.default.ineffective
 
 // options: -Xlint:serial
 
 import java.io.*;
 
-record IneffectualSerialRecord(int foo) implements Serializable {
+interface SerialInterfaceNonPrivateMethods extends Serializable {
+    public void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException;
+    public void readObjectNoData() throws ObjectStreamException;
+    public void writeObject(ObjectOutputStream stream) throws IOException;
 
-    // A serialPersistentFields is ineffectual for enum classes.
-    private static final ObjectStreamField[] serialPersistentFields = {};
-
-    // The readObject method is ineffectual for record classes.
-    private void readObject(ObjectInputStream stream)
-        throws IOException, ClassNotFoundException {
-        return;
+    default public Object readResolve() throws ObjectStreamException {
+        return null;
     }
 }

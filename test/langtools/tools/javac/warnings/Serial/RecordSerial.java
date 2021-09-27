@@ -18,27 +18,27 @@ record RecordSerial(int foo) implements Serializable {
 
     // ineffectual
     private void writeObject(ObjectOutputStream stream) throws IOException {
-	return;
+        return;
     }
 
     // (possibly) effective
     private Object writeReplace() throws ObjectStreamException {
-	return null;
+        return null;
     }
 
     // ineffectual
     private void readObject(ObjectInputStream stream)
-	throws IOException, ClassNotFoundException {
-	return;
+        throws IOException, ClassNotFoundException {
+        return;
     }
 
     // ineffectual
     private void readObjectNoData() throws ObjectStreamException {
-	return;
+        return;
     }
 
     // (possibly) effective
     private Object readResolve() throws ObjectStreamException {
-	return null;
+        return null;
     }
 }

@@ -14,25 +14,25 @@ class CtorAccess {
     private CtorAccess(){}
 
     static class SerialSubclass
-	extends CtorAccess
+        extends CtorAccess
         implements Serializable {
-	private static final long serialVersionUID = 42;
-	SerialSubclass() {
-	    super(42);
-	}
+        private static final long serialVersionUID = 42;
+        SerialSubclass() {
+            super(42);
+        }
     }
 
     // *not* static
     class MemberSuper {
-	// Implicit this$0 argument
-	public MemberSuper() {}
+        // Implicit this$0 argument
+        public MemberSuper() {}
     }
 
     class SerialMemberSub
-	extends MemberSuper
-	implements Serializable {
+        extends MemberSuper
+        implements Serializable {
 
-	SerialMemberSub(){super();}
-	private static final long serialVersionUID = 42;
+        SerialMemberSub(){super();}
+        private static final long serialVersionUID = 42;
     }
 }

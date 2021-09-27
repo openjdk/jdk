@@ -3997,9 +3997,9 @@ final class DualPivotQuicksort {
      */
     private static final class Sorter extends CountedCompleter<Void> {
         private static final long serialVersionUID = 20180818L;
-	@SuppressWarnings("serial")
+        @SuppressWarnings("serial")
         private final Object a;
-	@SuppressWarnings("serial")
+        @SuppressWarnings("serial")
         private final Object b;
         private final int low, size, offset, depth;
 
@@ -4069,12 +4069,12 @@ final class DualPivotQuicksort {
      */
     private static final class Merger extends CountedCompleter<Void> {
         private static final long serialVersionUID = 20180818L;
-	@SuppressWarnings("serial")
+        @SuppressWarnings("serial")
         private final Object dst;
-	@SuppressWarnings("serial")
-	private final Object a1;
-	@SuppressWarnings("serial")
-	private final Object  a2;
+        @SuppressWarnings("serial")
+        private final Object a1;
+        @SuppressWarnings("serial")
+        private final Object  a2;
         private final int k, lo1, hi1, lo2, hi2;
 
         private Merger(CountedCompleter<?> parent, Object dst, int k,
@@ -4123,7 +4123,7 @@ final class DualPivotQuicksort {
      */
     private static final class RunMerger extends RecursiveTask<Object> {
         private static final long serialVersionUID = 20180818L;
-      	@SuppressWarnings("serial")
+        @SuppressWarnings("serial")
         private final Object a;
         @SuppressWarnings("serial")
         private final Object b;
