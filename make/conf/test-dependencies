@@ -25,19 +25,19 @@
 
 # Versions and download locations for dependencies used by pre-submit testing.
 
-BOOT_JDK_VERSION=16
+BOOT_JDK_VERSION=17
 JTREG_VERSION=6
 JTREG_BUILD=1
 GTEST_VERSION=1.8.1
 
-LINUX_X64_BOOT_JDK_FILENAME=openjdk-16_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk16/7863447f0ab643c585b9bdebf67c69db/36/GPL/openjdk-16_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_SHA256=e952958f16797ad7dc7cd8b724edd69ec7e0e0434537d80d6b5165193e33b931
+LINUX_X64_BOOT_JDK_FILENAME=openjdk-17_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_SHA256=aef49cc7aa606de2044302e757fa94c8e144818e93487081c4fd319ca858134b
 
-WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-16_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk16/7863447f0ab643c585b9bdebf67c69db/36/GPL/openjdk-16_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_SHA256=a78bdeaad186297601edac6772d931224d7af6f682a43372e693c37020bd37d6
+WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-17_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_SHA256=e88b0df00021c9d266bb435c9a95fdc67d1948cce4518daf85c234907bd393c5
 
-MACOS_X64_BOOT_JDK_FILENAME=openjdk-16_osx-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk16/7863447f0ab643c585b9bdebf67c69db/36/GPL/openjdk-16_osx-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_SHA256=16f3e39a31e86f3f51b0b4035a37494a47ed3c4ead760eafc6afd7afdf2ad9f2
+MACOS_X64_BOOT_JDK_FILENAME=openjdk-17_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_SHA256=18e11cf9bbc6f584031e801b11ae05a233c32086f8e1b84eb8a1e9bb8e1f5d90
