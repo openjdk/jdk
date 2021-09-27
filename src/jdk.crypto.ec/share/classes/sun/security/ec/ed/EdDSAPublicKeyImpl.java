@@ -41,7 +41,9 @@ public final class EdDSAPublicKeyImpl extends X509Key implements EdECPublicKey {
 
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial")
     private final EdECPoint point;
+    @SuppressWarnings("serial")
     private final NamedParameterSpec paramSpec;
 
     public EdDSAPublicKeyImpl(EdDSAParameters params, EdECPoint point)

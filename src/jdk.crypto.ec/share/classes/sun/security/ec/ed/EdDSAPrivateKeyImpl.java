@@ -41,6 +41,7 @@ public final class EdDSAPrivateKeyImpl
 
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial")
     private final NamedParameterSpec paramSpec;
     private byte[] h;
 
