@@ -125,7 +125,7 @@ instruct reinterpret$1`'2$2`'(vec$3 dst, vec$4 src)
   format %{ " # reinterpret $dst,$src\t# $1 to $2" %}
   ins_encode %{
     // The higher bits of the "dst" register must be cleared to zero.
-    __ dups(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
+    __ dup(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -277,7 +277,7 @@ instruct vcvt$1$2to$1$3`'(vec$4 dst, vec$5 src)
   predicate(n->as_Vector()->length() == $1 && n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
   match(Set dst (VectorCast$2`'2X src));
   format %{ "fcvtzs  $dst, T$6, $src\n\t"
-            "xtn     $dst, T$7, $dst, T$6\n\t# convert $1$2 to $1$3 vector"
+            "xtn     $dst, T$7, $dst, T$6\t# convert $1$2 to $1$3 vector"
   %}
   ins_encode %{
     __ fcvtzs(as_FloatRegister($dst$$reg), __ T$6, as_FloatRegister($src$$reg));
@@ -295,7 +295,7 @@ instruct vcvt4Fto4B(vecD dst, vecX src)
   match(Set dst (VectorCastF2X src));
   format %{ "fcvtzs  $dst, T4S, $src\n\t"
             "xtn     $dst, T4H, $dst, T4S\n\t"
-            "xtn     $dst, T8B, $dst, T8H\n\t# convert 4F to 4B vector"
+            "xtn     $dst, T8B, $dst, T8H\t# convert 4F to 4B vector"
   %}
   ins_encode %{
     __ fcvtzs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
@@ -976,7 +976,7 @@ instruct vmul2L(vecX dst, vecX src1, vecX src2, iRegLNoSp tmp1, iRegLNoSp tmp2)
             "umov   $tmp1, $src1, D, 1\n\t"
             "umov   $tmp2, $src2, D, 1\n\t"
             "mul    $tmp2, $tmp2, $tmp1\n\t"
-            "mov    $dst,  T2D,   1, $tmp2\t# insert into vector(2L)\n\t"
+            "mov    $dst,  T2D,   1, $tmp2\t# insert into vector(2L)"
   %}
   ins_encode %{
     __ umov($tmp1$$Register, as_FloatRegister($src1$$reg), __ D, 0);
@@ -1847,7 +1847,7 @@ instruct vmuladdS2I(vecX dst, vecX src1, vecX src2, vecX tmp) %{
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "smullv  $tmp, $src1, $src2\t# vector (4H)\n\t"
             "smullv  $dst, $src1, $src2\t# vector (8H)\n\t"
-            "addpv   $dst, $tmp, $dst\t# vector (4S)\n\t" %}
+            "addpv   $dst, $tmp, $dst\t# vector (4S)" %}
   ins_encode %{
     __ smullv(as_FloatRegister($tmp$$reg), __ T4H,
               as_FloatRegister($src1$$reg),

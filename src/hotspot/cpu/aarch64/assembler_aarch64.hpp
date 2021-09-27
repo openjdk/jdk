@@ -2821,11 +2821,12 @@ public:
   }
 
   // Advanced SIMD scalar copy
-  void dups(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int index = 0)
+  void dup(FloatRegister Vd, SIMD_RegVariant T, FloatRegister Vn, int index = 0)
   {
     starti;
+    assert(T != Q, "invalid size");
     f(0b01011110000, 31, 21);
-    f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
+    f((1 << T) | (index << (T + 1)), 20, 16);
     f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
 

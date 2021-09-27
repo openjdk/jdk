@@ -2438,10 +2438,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       return false;
     case Op_VectorLoadShuffle:
     case Op_VectorRearrange:
-    // We're not going to have VectorCast with bit_size less than 64 bits
-    // support except for byte vector with vlen more than or equal to 4.
-    case Op_VectorCastB2X:
-    case Op_VectorCastS2X:
       if (vlen < 4) {
         return false;
       }
