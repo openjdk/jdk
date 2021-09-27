@@ -30,6 +30,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
+ * @bug 8273410
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test different custom run tests.
  * @library /test/lib /testlibrary_tests /
@@ -197,7 +198,6 @@ class BadIRCheckedTests {
             throw new RuntimeException("must be 3");
         }
     }
-
 
     @Test
     @Arguments(Argument.NUMBER_42)
