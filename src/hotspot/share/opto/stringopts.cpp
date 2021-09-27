@@ -1836,7 +1836,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           PreserveJVMState pjvms(&kit);
           kit.set_control(__ IfFalse(iff));
           kit.uncommon_trap(Deoptimization::Reason_intrinsic,
-                            Deoptimization::Action_none);
+                            Deoptimization::Action_maybe_recompile);
         }
         kit.set_control(__ IfTrue(iff));
         break;
