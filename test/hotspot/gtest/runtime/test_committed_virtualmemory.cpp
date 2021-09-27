@@ -208,12 +208,20 @@ public:
 };
 
 TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
-  VirtualMemoryTracker::initialize(NMT_detail);
-  VirtualMemoryTracker::late_initialize(NMT_detail);
 
-  CommittedVirtualMemoryTest::test();
-  CommittedVirtualMemoryTest::test_committed_region();
-  CommittedVirtualMemoryTest::test_partial_region();
+  //  This tests the VM-global NMT facility. The test must *not* modify global state,
+  //  since that interferes with other tests!
+  // The gtestLauncher are called with and without -XX:NativeMemoryTracking during jtreg-controlled
+  //  gtests.
+
+  if (MemTracker::tracking_level() >= NMT_detail) {
+    CommittedVirtualMemoryTest::test();
+    CommittedVirtualMemoryTest::test_committed_region();
+    CommittedVirtualMemoryTest::test_partial_region();
+  } else {
+    tty->print_cr("skipped.");
+  }
+
 }
 
 #endif // INCLUDE_NMT

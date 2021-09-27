@@ -247,7 +247,7 @@ final class StringUTF16 {
     }
 
     @IntrinsicCandidate
-    public static void getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin) {
+    public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         // We need a range check here because 'getChar' has no checks
         if (srcBegin < srcEnd) {
             checkBoundsOffCount(srcBegin, srcEnd - srcBegin, value);
@@ -258,7 +258,7 @@ final class StringUTF16 {
     }
 
     /* @see java.lang.String.getBytes(int, int, byte[], int) */
-    public static void getBytes(byte[] value, int srcBegin, int srcEnd, byte dst[], int dstBegin) {
+    public static void getBytes(byte[] value, int srcBegin, int srcEnd, byte[] dst, int dstBegin) {
         srcBegin <<= 1;
         srcEnd <<= 1;
         for (int i = srcBegin + (1 >> LO_BYTE_SHIFT); i < srcEnd; i += 2) {

@@ -622,8 +622,7 @@ public final class Security {
 
         // For each selection criterion, remove providers
         // which don't satisfy the criterion from the candidate set.
-        for (Iterator<String> ite = keySet.iterator(); ite.hasNext(); ) {
-            String key = ite.next();
+        for (String key : keySet) {
             String value = filter.get(key);
 
             LinkedHashSet<Provider> newCandidates = getAllQualifyingCandidates(key, value,
@@ -653,14 +652,7 @@ public final class Security {
         if (candidates == null || candidates.isEmpty())
             return null;
 
-        Object[] candidatesArray = candidates.toArray();
-        Provider[] result = new Provider[candidatesArray.length];
-
-        for (int i = 0; i < result.length; i++) {
-            result[i] = (Provider)candidatesArray[i];
-        }
-
-        return result;
+        return candidates.toArray(new Provider[0]);
     }
 
     // Map containing cached Spi Class objects of the specified type
@@ -816,7 +808,7 @@ public final class Security {
      * setProperty() was either "package.access" or
      * "package.definition", we need to signal to the SecurityManager
      * class that the value has just changed, and that it should
-     * invalidate it's local cache values.
+     * invalidate its local cache values.
      */
     private static void invalidateSMCache(String key) {
 

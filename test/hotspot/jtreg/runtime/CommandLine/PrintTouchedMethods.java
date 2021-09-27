@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 8025692
+ * @bug 8025692 8273333
+ * @requires vm.flavor != "zero"
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @library /test/lib
@@ -48,6 +49,7 @@ public class PrintTouchedMethods {
 
       // UnlockDiagnostic turned off, should fail
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
+      output.shouldNotHaveExitValue(0);
       output.shouldContain("Error: VM option 'LogTouchedMethods' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.");
       output.shouldContain("Error: Could not create the Java Virtual Machine.");
 

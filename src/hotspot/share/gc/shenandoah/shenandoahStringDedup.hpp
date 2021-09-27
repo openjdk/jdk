@@ -31,6 +31,7 @@ class ShenandoahStringDedup : public StringDedup {
 public:
   static inline bool is_string_candidate(oop obj);
   static inline bool is_candidate(oop obj);
+  static inline bool dedup_requested(oop obj);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP

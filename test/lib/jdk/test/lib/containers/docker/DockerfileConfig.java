@@ -37,7 +37,7 @@ import jdk.test.lib.Platform;
 // Note: base image version should not be an empty string. Use "latest" to get the latest version.
 
 public class DockerfileConfig {
-    static String getBaseImageName() {
+    public static String getBaseImageName() {
         String name = System.getProperty("jdk.test.docker.image.name");
         if (name != null) {
             System.out.println("DockerfileConfig: using custom image name: " + name);
@@ -56,7 +56,7 @@ public class DockerfileConfig {
         }
     }
 
-    static String getBaseImageVersion() {
+    public static String getBaseImageVersion() {
         String version = System.getProperty("jdk.test.docker.image.version");
         if (version != null) {
             System.out.println("DockerfileConfig: using custom image version: " + version);

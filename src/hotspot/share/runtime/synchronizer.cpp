@@ -681,14 +681,14 @@ struct SharedGlobals {
 static SharedGlobals GVars;
 
 static markWord read_stable_mark(oop obj) {
-  markWord mark = obj->mark();
+  markWord mark = obj->mark_acquire();
   if (!mark.is_being_inflated()) {
     return mark;       // normal fast-path return
   }
 
   int its = 0;
   for (;;) {
-    markWord mark = obj->mark();
+    markWord mark = obj->mark_acquire();
     if (!mark.is_being_inflated()) {
       return mark;    // normal fast-path return
     }
@@ -722,7 +722,7 @@ static markWord read_stable_mark(oop obj) {
         int YieldThenBlock = 0;
         assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
         gInflationLocks[ix]->lock();
-        while (obj->mark() == markWord::INFLATING()) {
+        while (obj->mark_acquire() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call current->_ParkEvent->park(1).
           // We use a mixed spin/yield/block mechanism.
@@ -972,10 +972,13 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 
 // Visitors ...
 
-void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
+void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
   MonitorList::Iterator iter = _in_use_list.iterator();
   while (iter.has_next()) {
     ObjectMonitor* mid = iter.next();
+    if (mid->owner() != thread) {
+      continue;
+    }
     if (!mid->is_being_async_deflated() && mid->object_peek() != NULL) {
       // Only process with closure if the object is set.
 
@@ -1102,7 +1105,7 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
 
 // Fast path code shared by multiple functions
 void ObjectSynchronizer::inflate_helper(oop obj) {
-  markWord mark = obj->mark();
+  markWord mark = obj->mark_acquire();
   if (mark.has_monitor()) {
     ObjectMonitor* monitor = mark.monitor();
     markWord dmw = monitor->header();
@@ -1117,7 +1120,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
   EventJavaMonitorInflate event;
 
   for (;;) {
-    const markWord mark = object->mark();
+    const markWord mark = object->mark_acquire();
 
     // The mark can be in one of the following states:
     // *  Inflated     - just return
@@ -1461,9 +1464,7 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
  public:
   ReleaseJavaMonitorsClosure(JavaThread* thread) : _thread(thread) {}
   void do_monitor(ObjectMonitor* mid) {
-    if (mid->owner() == _thread) {
-      (void)mid->complete_exit(_thread);
-    }
+    (void)mid->complete_exit(_thread);
   }
 };
 
@@ -1486,7 +1487,7 @@ void ObjectSynchronizer::release_monitors_owned_by_thread(JavaThread* current) {
   assert(current == JavaThread::current(), "must be current Java thread");
   NoSafepointVerifier nsv;
   ReleaseJavaMonitorsClosure rjmc(current);
-  ObjectSynchronizer::monitors_iterate(&rjmc);
+  ObjectSynchronizer::monitors_iterate(&rjmc, current);
   assert(!current->has_pending_exception(), "Should not be possible");
   current->clear_pending_exception();
 }

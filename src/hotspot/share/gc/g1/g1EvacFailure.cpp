@@ -27,9 +27,9 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
-#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
@@ -37,65 +37,23 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-class UpdateLogBuffersDeferred : public BasicOopIterateClosure {
-private:
-  G1CollectedHeap* _g1h;
-  G1RedirtyCardsLocalQueueSet* _rdc_local_qset;
-  G1CardTable*    _ct;
-
-  // Remember the last enqueued card to avoid enqueuing the same card over and over;
-  // since we only ever handle a card once, this is sufficient.
-  size_t _last_enqueued_card;
-
-public:
-  UpdateLogBuffersDeferred(G1RedirtyCardsLocalQueueSet* rdc_local_qset) :
-    _g1h(G1CollectedHeap::heap()),
-    _rdc_local_qset(rdc_local_qset),
-    _ct(_g1h->card_table()),
-    _last_enqueued_card(SIZE_MAX) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  template <class T> void do_oop_work(T* p) {
-    assert(_g1h->heap_region_containing(p)->is_in_reserved(p), "paranoia");
-    assert(!_g1h->heap_region_containing(p)->is_survivor(), "Unexpected evac failure in survivor region");
-
-    T const o = RawAccess<>::oop_load(p);
-    if (CompressedOops::is_null(o)) {
-      return;
-    }
-
-    if (HeapRegion::is_in_same_region(p, CompressedOops::decode(o))) {
-      return;
-    }
-    size_t card_index = _ct->index_for(p);
-    if (card_index != _last_enqueued_card) {
-      _rdc_local_qset->enqueue(_ct->byte_for_index(card_index));
-      _last_enqueued_card = card_index;
-    }
-  }
-};
-
 class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
   size_t _marked_bytes;
-  UpdateLogBuffersDeferred* _log_buffer_cl;
   bool _during_concurrent_start;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
 
 public:
   RemoveSelfForwardPtrObjClosure(HeapRegion* hr,
-                                 UpdateLogBuffersDeferred* log_buffer_cl,
                                  bool during_concurrent_start,
                                  uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
     _marked_bytes(0),
-    _log_buffer_cl(log_buffer_cl),
     _during_concurrent_start(during_concurrent_start),
     _worker_id(worker_id),
     _last_forwarded_object_end(hr->bottom()) { }
@@ -140,23 +98,9 @@ public:
       _marked_bytes += (obj_size * HeapWordSize);
       PreservedMarks::init_forwarded_mark(obj);
 
-      // While we were processing RSet buffers during the collection,
-      // we actually didn't scan any cards on the collection set,
-      // since we didn't want to update remembered sets with entries
-      // that point into the collection set, given that live objects
-      // from the collection set are about to move and such entries
-      // will be stale very soon.
-      // This change also dealt with a reliability issue which
-      // involved scanning a card in the collection set and coming
-      // across an array that was being chunked and looking malformed.
-      // The problem is that, if evacuation fails, we might have
-      // remembered set entries missing given that we skipped cards on
-      // the collection set. So, we'll recreate such entries now.
-      obj->oop_iterate(_log_buffer_cl);
-
       HeapWord* obj_end = obj_addr + obj_size;
       _last_forwarded_object_end = obj_end;
-      _hr->cross_threshold(obj_addr, obj_end);
+      _hr->alloc_block_in_bot(obj_addr, obj_end);
     }
   }
 
@@ -173,13 +117,13 @@ public:
       CollectedHeap::fill_with_objects(start, gap_size);
 
       HeapWord* end_first_obj = start + cast_to_oop(start)->size();
-      _hr->cross_threshold(start, end_first_obj);
+      _hr->alloc_block_in_bot(start, end_first_obj);
       // Fill_with_objects() may have created multiple (i.e. two)
       // objects, as the max_fill_size() is half a region.
       // After updating the BOT for the first object, also update the
       // BOT for the second object to make the BOT complete.
       if (end_first_obj != end) {
-        _hr->cross_threshold(end_first_obj, end);
+        _hr->alloc_block_in_bot(end_first_obj, end);
 #ifdef ASSERT
         size_t size_second_obj = cast_to_oop(end_first_obj)->size();
         HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
@@ -202,28 +146,22 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  G1RedirtyCardsLocalQueueSet _rdc_local_qset;
-  UpdateLogBuffersDeferred _log_buffer_cl;
-
   uint volatile* _num_failed_regions;
+  G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs, uint worker_id, uint volatile* num_failed_regions) :
+  RemoveSelfForwardPtrHRClosure(uint worker_id,
+                                uint volatile* num_failed_regions,
+                                G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _rdc_local_qset(rdcqs),
-    _log_buffer_cl(&_rdc_local_qset),
-    _num_failed_regions(num_failed_regions) {
-  }
-
-  ~RemoveSelfForwardPtrHRClosure() {
-    _rdc_local_qset.flush();
+    _num_failed_regions(num_failed_regions),
+    _evac_failure_regions(evac_failure_regions) {
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
                                                bool during_concurrent_start) {
     RemoveSelfForwardPtrObjClosure rspc(hr,
-                                        &_log_buffer_cl,
                                         during_concurrent_start,
                                         _worker_id);
     hr->object_iterate(&rspc);
@@ -237,7 +175,7 @@ public:
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
 
-    if (_g1h->evacuation_failed(hr->hrm_index())) {
+    if (_evac_failure_regions->contains(hr->hrm_index())) {
       hr->clear_index_in_opt_cset();
 
       bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
@@ -262,22 +200,18 @@ public:
   }
 };
 
-G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs) :
+G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
   AbstractGangTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
-  _rdcqs(rdcqs),
   _hrclaimer(_g1h->workers()->active_workers()),
+  _evac_failure_regions(evac_failure_regions),
   _num_failed_regions(0) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id, &_num_failed_regions);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, &_num_failed_regions, _evac_failure_regions);
 
-  // We need to check all collection set regions whether they need self forward
-  // removals, not only the last collection set increment. The reason is that
-  // reference processing (e.g. finalizers) can make it necessary to resurrect an
-  // otherwise unreachable object at the very end of the collection. That object
-  // might cause an evacuation failure in any region in the collection set.
-  _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
+  // Iterate through all regions that failed evacuation during the entire collection.
+  _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {

@@ -40,6 +40,7 @@
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
 #include "gc/parallel/psScavenge.hpp"
+#include "gc/parallel/psStringDedup.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -1021,6 +1022,8 @@ void PSParallelCompact::post_compact()
     _space_info[id].publish_new_top();
   }
 
+  ParCompactionManager::flush_all_string_dedup_requests();
+
   MutableSpace* const eden_space = _space_info[eden_space_id].space();
   MutableSpace* const from_space = _space_info[from_space_id].space();
   MutableSpace* const to_space   = _space_info[to_space_id].space();
@@ -1789,7 +1792,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ref_processor()->start_discovery(maximum_heap_compaction);
 
     marking_start.update();
-    marking_phase(vmthread_cm, maximum_heap_compaction, &_gc_tracer);
+    marking_phase(vmthread_cm, &_gc_tracer);
 
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
       && GCCause::is_user_requested_gc(gc_cause);
@@ -2064,8 +2067,9 @@ public:
     assert(worker_id < _max_workers, "sanity");
     ParCompactionManager* cm = (_tm == RefProcThreadModel::Single) ? ParCompactionManager::get_vmthread_cm() : ParCompactionManager::gc_thread_compaction_manager(worker_id);
     PCMarkAndPushClosure keep_alive(cm);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
-    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
@@ -2074,7 +2078,6 @@ public:
 };
 
 void PSParallelCompact::marking_phase(ParCompactionManager* cm,
-                                      bool maximum_heap_compaction,
                                       ParallelOldTracer *gc_tracer) {
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
@@ -2143,7 +2146,7 @@ void PCAdjustPointerClosure::verify_cm(ParCompactionManager* cm) {
   if (Thread::current()->is_VM_thread()) {
     assert(cm == vmthread_cm, "VM threads should use ParCompactionManager from get_vmthread_cm()");
   } else {
-    assert(Thread::current()->is_GC_task_thread(), "Must be a GC thread");
+    assert(Thread::current()->is_Worker_thread(), "Must be a GC thread");
     assert(cm != vmthread_cm, "GC threads should use ParCompactionManager from gc_thread_compaction_manager()");
   }
 }
@@ -2279,7 +2282,6 @@ void PSParallelCompact::prepare_region_draining_tasks(uint parallel_gc_threads)
   FillableRegionLogger region_logger;
   for (unsigned int id = to_space_id; id + 1 > old_space_id; --id) {
     SpaceInfo* const space_info = _space_info + id;
-    MutableSpace* const space = space_info->space();
     HeapWord* const new_top = space_info->new_top();
 
     const size_t beg_region = sd.addr_to_region_idx(space_info->dense_prefix());
@@ -3089,12 +3091,6 @@ bool PSParallelCompact::steal_unavailable_region(ParCompactionManager* cm, size_
 // the shadow region by copying live objects from source regions of the unavailable one. Once
 // the unavailable region becomes available, the data in the shadow region will be copied back.
 // Shadow regions are empty regions in the to-space and regions between top and end of other spaces.
-//
-// For more details, please refer to §4.2 of the VEE'19 paper:
-// Haoyu Li, Mingyu Wu, Binyu Zang, and Haibo Chen. 2019. ScissorGC: scalable and efficient
-// compaction for Java full garbage collection. In Proceedings of the 15th ACM SIGPLAN/SIGOPS
-// International Conference on Virtual Execution Environments (VEE 2019). ACM, New York, NY, USA,
-// 108-121. DOI: https://doi.org/10.1145/3313808.3313820
 void PSParallelCompact::initialize_shadow_regions(uint parallel_gc_threads)
 {
   const ParallelCompactData& sd = PSParallelCompact::summary_data();

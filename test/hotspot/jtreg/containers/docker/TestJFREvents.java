@@ -58,7 +58,7 @@ public class TestJFREvents {
             return;
         }
 
-        DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
 
@@ -82,13 +82,14 @@ public class TestJFREvents {
     }
 
     private static void containerInfoTestCase() throws Exception {
-            // leave one CPU for system and tools, otherwise this test may be unstable
-            int maxNrOfAvailableCpus =  availableCPUs - 1;
-            for (int i=1; i < maxNrOfAvailableCpus; i = i * 2) {
-                for (int j=64; j <= 256; j *= 2) {
-                    testContainerInfo(i, j);
-                }
+        // Leave one CPU for system and tools, otherwise this test may be unstable.
+        // Try the memory sizes that were verified by testMemory tests before.
+        int maxNrOfAvailableCpus = availableCPUs - 1;
+        for (int cpus = 1; cpus < maxNrOfAvailableCpus; cpus *= 2) {
+            for (int mem : new int[]{ 200, 500, 1024 }) {
+                testContainerInfo(cpus, mem);
             }
+        }
     }
 
     private static void testContainerInfo(int expectedCPUs, int expectedMemoryMB) throws Exception {

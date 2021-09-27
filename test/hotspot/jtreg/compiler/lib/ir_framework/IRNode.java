@@ -24,12 +24,12 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.IRMatcher;
-import compiler.lib.ir_framework.shared.TestFormat;
-import compiler.lib.ir_framework.shared.TestFormatException;
+import compiler.lib.ir_framework.shared.*;
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * This class provides default regex strings that can be used in {@link IR @IR} annotations to specify IR constraints.
@@ -48,15 +48,20 @@ public class IRNode {
     private static final String START = "(\\d+(\\s){2}(";
     private static final String MID = ".*)+(\\s){2}===.*";
     private static final String END = ")";
+    private static final String COMPOSITE_PREFIX = "#PRE#"; // Prefix for regexes that require an additional user-defined string.
+    private static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
+    private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
+    private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
 
-    public static final String ALLOC = "(.*precise klass .*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_instance_Java" + END;
-    public static final String ALLOC_OF = "(.*precise klass .*";
-    public static final String ALLOC_ARRAY = "(.*precise klass \\[L.*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_array_Java" + END;
-    public static final String ALLOC_ARRAY_OF = "(.*precise klass \\[L.*";
+    public static final String ALLOC = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+    public static final String ALLOC_OF = COMPOSITE_PREFIX + "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+    public static final String ALLOC_ARRAY = "(.*precise \\[.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+    public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
 
-    public static final String CHECKCAST_ARRAY = "(cmp.*precise klass \\[.*;:" + END;
-    public static final String CHECKCAST_ARRAY_OF = "(cmp.*precise klass \\[.*";
-    public static final String CHECKCAST_ARRAYCOPY = "(.*call_leaf_nofp,runtime  checkcast_arraycopy.*" + END;
+    public static final String CHECKCAST_ARRAY = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
+    public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
+    // Does not work on s390 (a rule containing this regex will be skipped on s390).
+    public static final String CHECKCAST_ARRAYCOPY = "(.*((?i:call_leaf_nofp,runtime)|CALL,\\s?runtime leaf nofp|BCTRL.*.leaf call).*checkcast_arraycopy.*" + END;
 
     public static final String FIELD_ACCESS = "(.*Field: *" + END;
 
@@ -69,16 +74,16 @@ public class IRNode {
     public static final String STORE_D = START + "StoreD" + MID + END;
     public static final String STORE_P = START + "StoreP" + MID + END;
     public static final String STORE_N = START + "StoreN" + MID + END;
-    public static final String STORE_OF_CLASS = START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@\\S*";
-    public static final String STORE_B_OF_CLASS = START + "StoreB" + MID + "@\\S*";
-    public static final String STORE_C_OF_CLASS = START + "StoreC" + MID + "@\\S*";
-    public static final String STORE_I_OF_CLASS = START + "StoreI" + MID + "@\\S*";
-    public static final String STORE_L_OF_CLASS = START + "StoreL" + MID + "@\\S*";
-    public static final String STORE_F_OF_CLASS = START + "StoreF" + MID + "@\\S*";
-    public static final String STORE_D_OF_CLASS = START + "StoreD" + MID + "@\\S*";
-    public static final String STORE_P_OF_CLASS = START + "StoreP" + MID + "@\\S*";
-    public static final String STORE_N_OF_CLASS = START + "StoreN" + MID + "@\\S*";
-    public static final String STORE_OF_FIELD = START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=";
+    public static final String STORE_OF_CLASS = COMPOSITE_PREFIX + START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_B_OF_CLASS = COMPOSITE_PREFIX + START + "StoreB" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_C_OF_CLASS = COMPOSITE_PREFIX + START + "StoreC" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_I_OF_CLASS = COMPOSITE_PREFIX + START + "StoreI" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_L_OF_CLASS = COMPOSITE_PREFIX + START + "StoreL" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_F_OF_CLASS = COMPOSITE_PREFIX + START + "StoreF" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_D_OF_CLASS = COMPOSITE_PREFIX + START + "StoreD" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_P_OF_CLASS = COMPOSITE_PREFIX + START + "StoreP" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_N_OF_CLASS = COMPOSITE_PREFIX + START + "StoreN" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_OF_FIELD = COMPOSITE_PREFIX + START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=" + IS_REPLACED + ",.*" + END;
 
     public static final String LOAD = START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + END;
     public static final String LOAD_B = START + "LoadB" + MID + END;
@@ -91,25 +96,27 @@ public class IRNode {
     public static final String LOAD_D = START + "LoadD" + MID + END;
     public static final String LOAD_P = START + "LoadP" + MID + END;
     public static final String LOAD_N = START + "LoadN" + MID + END;
-    public static final String LOAD_OF_CLASS = START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + "@\\S*";
-    public static final String LOAD_B_OF_CLASS = START + "LoadB" + MID + "@\\S*";
-    public static final String LOAD_UB_OF_CLASS = START + "LoadUB" + MID + "@\\S*";
-    public static final String LOAD_S_OF_CLASS = START + "LoadS" + MID + "@\\S*";
-    public static final String LOAD_US_OF_CLASS = START + "LoadUS" + MID + "@\\S*";
-    public static final String LOAD_I_OF_CLASS = START + "LoadI" + MID + "@\\S*";
-    public static final String LOAD_L_OF_CLASS = START + "LoadL" + MID + "@\\S*";
-    public static final String LOAD_F_OF_CLASS = START + "LoadF" + MID + "@\\S*";
-    public static final String LOAD_D_OF_CLASS = START + "LoadD" + MID + "@\\S*";
-    public static final String LOAD_P_OF_CLASS = START + "LoadP" + MID + "@\\S*";
-    public static final String LOAD_N_OF_CLASS = START + "LoadN" + MID + "@\\S*";
-    public static final String LOAD_OF_FIELD = START + "Load(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=";
+    public static final String LOAD_OF_CLASS = COMPOSITE_PREFIX + START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + "@\\S*"+  IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_B_OF_CLASS = COMPOSITE_PREFIX + START + "LoadB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_UB_OF_CLASS = COMPOSITE_PREFIX + START + "LoadUB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_S_OF_CLASS = COMPOSITE_PREFIX + START + "LoadS" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_US_OF_CLASS = COMPOSITE_PREFIX + START + "LoadUS" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_I_OF_CLASS = COMPOSITE_PREFIX + START + "LoadI" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_L_OF_CLASS = COMPOSITE_PREFIX + START + "LoadL" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_F_OF_CLASS = COMPOSITE_PREFIX + START + "LoadF" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_D_OF_CLASS = COMPOSITE_PREFIX + START + "LoadD" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_P_OF_CLASS = COMPOSITE_PREFIX + START + "LoadP" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_N_OF_CLASS = COMPOSITE_PREFIX + START + "LoadN" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_OF_FIELD = COMPOSITE_PREFIX + START + "Load(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=" + IS_REPLACED + ",.*" + END;
     public static final String LOAD_KLASS  = START + "LoadK" + MID + END;
 
-    public static final String LOOP   = START + "Loop" + MID + "" + END;
-    public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + "" + END;
+    public static final String LOOP   = START + "Loop" + MID + END;
+    public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;
     public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
 
     public static final String CALL = START + "CallStaticJava" + MID + END;
+    public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallDynamicJava" + MID + IS_REPLACED + END;
+    public static final String STATIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallStaticJava" + MID + IS_REPLACED + END;
     public static final String TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*reason" + END;
     public static final String PREDICATE_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*predicate" + END;
     public static final String UNSTABLE_IF_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*unstable_if" + END;
@@ -118,19 +125,11 @@ public class IRNode {
     public static final String NULL_ASSERT_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*null_assert" + END;
     public static final String RANGE_CHECK_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*range_check" + END;
     public static final String UNHANDLED_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*unhandled" + END;
+    // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
     public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*intrinsic_or_type_checked_inlining" + END;
 
     public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
-
-
-    private static final String ALLOC_OF_POSTFIX =  ":.*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_instance_Java" + END;
-    private static final String ALLOC_ARRAY_OF_POSTFIX = ";:.*\\R(.*(movl|xorl|nop|spill).*\\R)*.*call,static  wrapper for: _new_array_Java" + END;
-    private static final String CHECKCAST_ARRAY_OF_POSTFIX = ";:" + END;
-    private static final String STORE_OF_FIELD_POSTFIX = ",.*" + END;
-    private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
-    private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
-    private static final String LOAD_OF_FIELD_POSTFIX = ",.*" + END;
 
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
@@ -139,29 +138,72 @@ public class IRNode {
         List<String> mergedNodes = new ArrayList<>();
         for (int i = 0; i < nodes.length; i += 2) {
             String node = nodes[i];
-            switch (node) {
-                case ALLOC_OF -> mergeCompositeNodes(nodes, mergedNodes, i, node, ALLOC_OF_POSTFIX, "ALLOC_OF");
-                case ALLOC_ARRAY_OF -> mergeCompositeNodes(nodes, mergedNodes, i, node, ALLOC_ARRAY_OF_POSTFIX, "ALLOC_ARRAY_OF");
-                case CHECKCAST_ARRAY_OF -> mergeCompositeNodes(nodes, mergedNodes, i, node, CHECKCAST_ARRAY_OF_POSTFIX, "CHECKCAST_ARRAY_OF");
-                case STORE_OF_CLASS, STORE_B_OF_CLASS, STORE_C_OF_CLASS, STORE_D_OF_CLASS, STORE_F_OF_CLASS, STORE_I_OF_CLASS,
-                        STORE_L_OF_CLASS, STORE_N_OF_CLASS, STORE_P_OF_CLASS
-                        -> mergeCompositeNodes(nodes, mergedNodes, i, node, STORE_OF_CLASS_POSTFIX, "STORE_OF_CLASS");
-                case STORE_OF_FIELD -> mergeCompositeNodes(nodes, mergedNodes, i, node, STORE_OF_FIELD_POSTFIX, "STORE_OF_FIELD");
-                case LOAD_OF_CLASS, LOAD_B_OF_CLASS, LOAD_UB_OF_CLASS, LOAD_D_OF_CLASS, LOAD_F_OF_CLASS, LOAD_I_OF_CLASS, LOAD_L_OF_CLASS,
-                        LOAD_N_OF_CLASS, LOAD_P_OF_CLASS, LOAD_S_OF_CLASS, LOAD_US_OF_CLASS
-                        -> mergeCompositeNodes(nodes, mergedNodes, i, node, LOAD_OF_CLASS_POSTFIX, "LOAD_OF_CLASS");
-                case LOAD_OF_FIELD -> mergeCompositeNodes(nodes, mergedNodes, i, node, LOAD_OF_FIELD_POSTFIX, "LOAD_OF_FIELD");
-                default -> {
-                    i--; // No composite node, do not increment by 2.
-                    mergedNodes.add(node);
+            if (node.startsWith(COMPOSITE_PREFIX)) {
+                if (i + 1 == nodes.length) {
+                    reportMissingCompositeValue(node, i);
                 }
+                // Replace placeholder with user defined string.
+                node = node.substring(COMPOSITE_PREFIX.length()).replaceAll(IS_REPLACED, nodes[i + 1]);
+            } else {
+                i--; // No composite node, do not increment by 2.
             }
+            mergedNodes.add(node);
         }
         return mergedNodes;
     }
 
-    private static void mergeCompositeNodes(String[] nodes, List<String> mergedNodes, int i, String node, String postFix, String varName) {
-        TestFormat.check(i + 1 < nodes.length, "Must provide class name at index " + (i + 1) + " right after " + varName);
-        mergedNodes.add(node + Pattern.quote(nodes[i + 1]) + postFix);
+    /**
+     * Is default regex supported on current platform, used VM build, etc.?
+     * Throws a {@link CheckedTestFrameworkException} if the default regex is unsupported.
+     */
+    public static void checkDefaultRegexSupported(String node) throws CheckedTestFrameworkException {
+        switch (node) {
+            case INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP -> {
+                if (!WhiteBox.getWhiteBox().isJVMCISupportedByGC()) {
+                    throw new CheckedTestFrameworkException("INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP is unsupported in builds without JVMCI.");
+                }
+            }
+            case CHECKCAST_ARRAYCOPY -> {
+                if (Platform.isS390x()) {
+                    throw new CheckedTestFrameworkException("CHECKCAST_ARRAYCOPY is unsupported on s390.");
+                }
+            }
+            // default: do nothing -> default regex is supported
+        }
+    }
+
+    /**
+     * Mapping from string variable value to string variable name for better error reporting.
+     */
+    private static void reportMissingCompositeValue(String node, int i) {
+        String varName = switch (node) {
+            case ALLOC_OF -> "ALLOC_OF";
+            case ALLOC_ARRAY_OF -> "ALLOC_ARRAY_OF";
+            case CHECKCAST_ARRAY_OF -> "CHECKCAST_ARRAY_OF";
+            case STORE_OF_CLASS -> "STORE_OF_CLASS";
+            case STORE_B_OF_CLASS -> "STORE_B_OF_CLASS";
+            case STORE_C_OF_CLASS -> "STORE_C_OF_CLASS";
+            case STORE_D_OF_CLASS -> "STORE_D_OF_CLASS";
+            case STORE_F_OF_CLASS -> "STORE_F_OF_CLASS";
+            case STORE_I_OF_CLASS -> "STORE_I_OF_CLASS";
+            case STORE_L_OF_CLASS -> "STORE_L_OF_CLASS";
+            case STORE_N_OF_CLASS -> "STORE_N_OF_CLASS";
+            case STORE_P_OF_CLASS -> "STORE_P_OF_CLASS";
+            case STORE_OF_FIELD -> "STORE_OF_FIELD";
+            case LOAD_OF_CLASS -> "LOAD_OF_CLASS";
+            case LOAD_B_OF_CLASS -> "LOAD_B_OF_CLASS";
+            case LOAD_UB_OF_CLASS -> "LOAD_UB_OF_CLASS";
+            case LOAD_D_OF_CLASS -> "LOAD_D_OF_CLASS";
+            case LOAD_F_OF_CLASS -> "LOAD_F_OF_CLASS";
+            case LOAD_I_OF_CLASS -> "LOAD_I_OF_CLASS";
+            case LOAD_L_OF_CLASS -> "LOAD_L_OF_CLASS";
+            case LOAD_N_OF_CLASS -> "LOAD_N_OF_CLASS";
+            case LOAD_P_OF_CLASS -> "LOAD_P_OF_CLASS";
+            case LOAD_S_OF_CLASS -> "LOAD_S_OF_CLASS";
+            case LOAD_US_OF_CLASS -> "LOAD_US_OF_CLASS";
+            case LOAD_OF_FIELD -> "LOAD_OF_FIELD";
+            default -> throw new TestFrameworkException("Missing variable mapping for " + node);
+        };
+        TestFormat.fail("Must provide additional value at index " + (i + 1) + " right after " + varName);
     }
 }

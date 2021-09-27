@@ -32,6 +32,8 @@
 class VM_Version : public Abstract_VM_Version {
  public:
   static void initialize();
+
+  constexpr static bool supports_stack_watermark_barrier() { return true; }
 };
 
 #endif // CPU_ZERO_VM_VERSION_ZERO_HPP

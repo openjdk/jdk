@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2021, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,7 @@ public class CgroupSubsystemFactory {
             "devices 0 1 1\n" +
             "freezer 0 1 1\n" +
             "net_cls 0 1 1\n" +
+            "pids 0 1 1\n" +
             "blkio 0 1 1\n" +
             "perf_event 0 1 1 ";
     private String cgroupsNonZeroJoinControllers =
@@ -168,7 +169,7 @@ public class CgroupSubsystemFactory {
             "perf_event  4   1   1\n" +
             "net_prio    5   1   1\n" +
             "hugetlb 6   1   1\n" +
-            "pids    3   80  1";
+            "pids    9   80  1";  // hierarchy has to match procSelfCgroupHybridContent
     private String mntInfoCgroupsV2Only =
             "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 none rw,seclabel,nsdelegate";
     private String mntInfoCgroupsV1SystemdOnly =

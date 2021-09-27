@@ -495,9 +495,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
   _max_workers = MAX2(_max_workers, 1U);
-  _workers = new ShenandoahWorkGang("Shenandoah GC Threads", _max_workers,
-                            /* are_GC_task_threads */ true,
-                            /* are_ConcurrentGC_threads */ true);
+  _workers = new ShenandoahWorkGang("Shenandoah GC Threads", _max_workers);
   if (_workers == NULL) {
     vm_exit_during_initialization("Failed necessary allocation.");
   } else {
@@ -506,9 +504,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 
   if (ParallelGCThreads > 1) {
     _safepoint_workers = new ShenandoahWorkGang("Safepoint Cleanup Thread",
-                                                ParallelGCThreads,
-                      /* are_GC_task_threads */ false,
-                 /* are_ConcurrentGC_threads */ false);
+                                                ParallelGCThreads);
     _safepoint_workers->initialize_workers();
   }
 }
@@ -1321,7 +1317,8 @@ void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_sta
   // This populates the work stack with initial objects
   // It is important to relinquish the associated locks before diving
   // into heap dumper
-  ShenandoahHeapIterationRootScanner rp;
+  uint n_workers = safepoint_workers() != NULL ? safepoint_workers()->active_workers() : 1;
+  ShenandoahHeapIterationRootScanner rp(n_workers);
   rp.roots_do(oops);
 }
 
@@ -1425,7 +1422,6 @@ private:
     // Initialize queues for every workers
     for (uint i = 0; i < _num_workers; ++i) {
       ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
-      task_queue->initialize();
       _task_queues->register_queue(i, task_queue);
     }
     // Divide roots among the workers. Assume that object referencing distribution

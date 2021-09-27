@@ -56,6 +56,9 @@
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
 
+  // No support for 48 extra htbl entries in aes-gcm intrinsic
+  static const int htbl_entries = -1;
+
   static constexpr bool isSimpleConstant64(jlong value) {
     // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
     return false;
@@ -129,6 +132,11 @@
   // Does the CPU supports vector variable rotate instructions?
   static constexpr bool supports_vector_variable_rotates(void) {
     return false; // not supported
+  }
+
+  // Does the CPU supports vector constant rotate instructions?
+  static constexpr bool supports_vector_constant_rotates(int shift) {
+    return false;
   }
 
   // Does the CPU supports vector unsigned comparison instructions?

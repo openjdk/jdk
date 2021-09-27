@@ -527,7 +527,7 @@ public class Proxy implements java.io.Serializable {
             if (proxyPkg == null) {
                 // all proxy interfaces are public and exported
                 if (!m.isNamed())
-                    throw new InternalError("ununamed module: " + m);
+                    throw new InternalError("unnamed module: " + m);
                 proxyPkg = nonExported ? PROXY_PACKAGE_PREFIX + "." + m.getName()
                                        : m.getName();
             } else if (proxyPkg.isEmpty() && m.isNamed()) {

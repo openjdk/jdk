@@ -29,77 +29,78 @@ import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Toolkit;
-
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorMap;
 import java.awt.datatransfer.FlavorTable;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ImageObserver;
+import java.awt.image.RenderedImage;
+import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FilePermission;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Reader;
 import java.io.SequenceInputStream;
 import java.io.StringReader;
-
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
-
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.Stack;
+import java.util.TreeMap;
+import java.util.stream.Stream;
 
-import java.util.*;
-
-import sun.datatransfer.DataFlavorUtil;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.ImageWriter;
+import javax.imageio.spi.ImageWriterSpi;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 
 import sun.awt.AppContext;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
-
-import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
-import java.awt.image.RenderedImage;
-import java.awt.image.WritableRaster;
-import java.awt.image.ColorModel;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.ImageReadParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.ImageTypeSpecifier;
-
-import javax.imageio.spi.ImageWriterSpi;
-
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
-
 import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
+import sun.datatransfer.DataFlavorUtil;
 
-import java.io.FilePermission;
-import java.util.stream.Stream;
-
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Provides a set of functions to be shared among the DataFlavor class and
@@ -245,7 +246,7 @@ public abstract class DataTransferer {
             nativeEOLNs.put(format, eoln);
         }
         if (terminators != null && terminators.length() != 0) {
-            Integer iTerminators = Integer.valueOf(terminators);
+            int iTerminators = Integer.parseInt(terminators);
             if (iTerminators > 0) {
                 nativeTerminators.put(format, iTerminators);
             }
@@ -550,7 +551,7 @@ public abstract class DataTransferer {
             try {
                 byte[] charsetNameBytes = (byte[])localeTransferable
                         .getTransferData(javaTextEncodingFlavor);
-                charset = new String(charsetNameBytes, StandardCharsets.UTF_8);
+                charset = new String(charsetNameBytes, UTF_8);
             } catch (UnsupportedFlavorException cannotHappen) {
             }
         } else {
@@ -944,10 +945,9 @@ search:
                 }
 
                 if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
-                    byte[] bytes = bos.toByteArray();
                     String sourceEncoding = DataFlavorUtil.getTextCharset(flavor);
                     return translateTransferableString(
-                               new String(bytes, sourceEncoding),
+                               bos.toString(sourceEncoding),
                                format);
                 }
                 theByteArray = bos.toByteArray();

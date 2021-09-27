@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test archived primitive type mirrors
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile PrimitiveTypesApp.java

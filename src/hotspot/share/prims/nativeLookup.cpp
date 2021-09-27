@@ -244,6 +244,7 @@ static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_jdk_internal_invoke_NativeEntryPoint_registerNatives",      NULL, FN_PTR(JVM_RegisterNativeEntryPointMethods) },
   { CC"Java_jdk_internal_perf_Perf_registerNatives",               NULL, FN_PTR(JVM_RegisterPerfMethods)         },
   { CC"Java_sun_hotspot_WhiteBox_registerNatives",                 NULL, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
+  { CC"Java_jdk_test_whitebox_WhiteBox_registerNatives",           NULL, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
   { CC"Java_jdk_internal_vm_vector_VectorSupport_registerNatives", NULL, FN_PTR(JVM_RegisterVectorSupportMethods)},
 #if INCLUDE_JVMCI
   { CC"Java_jdk_vm_ci_runtime_JVMCI_initializeRuntime",            NULL, FN_PTR(JVM_GetJVMCIRuntime)             },

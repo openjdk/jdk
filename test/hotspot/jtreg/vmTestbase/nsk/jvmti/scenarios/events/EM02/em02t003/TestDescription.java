@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,20 +36,20 @@
  *       1)
  *         - adds the <can_generate_compiled_method_load_events> capability in
  *           the OnLoad phase
- *         - sets callbacks for VM_INIT and choosen events during the OnLoad phase
+ *         - sets callbacks for VM_INIT and chosen events during the OnLoad phase
  *         - enables events via SetEventNotificationMode during the OnLoad phase
  *           for all optional events.
- *         - provides the state to provoke generation of choosen events
- *         - checks that VM_INIT and choosen events were sent
+ *         - provides the state to provoke generation of chosen events
+ *         - checks that VM_INIT and chosen events were sent
  *       2)
- *         - changes callbacks for choosen events
- *         - provides the state to provoke generation of choosen events
- *         - checks that choosen events were sent
+ *         - changes callbacks for chosen events
+ *         - provides the state to provoke generation of chosen events
+ *         - checks that chosen events were sent
  *         - checks that altered callback works.
  *       3)
- *         - sets off callbacks for choosen events
+ *         - sets off callbacks for chosen events
  *         - sets callback for VM_DEATH event
- *         - checks that no choosen events are sent until VMDeath event.
+ *         - checks that no chosen events are sent until VMDeath event.
  * COMMENTS
  *     #4033759 JIT compiler must support unloading of classes containing compiled methods
  *     Adjusted according to J2SE CCC updates:

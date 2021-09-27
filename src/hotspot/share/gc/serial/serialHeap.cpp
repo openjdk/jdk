@@ -28,6 +28,7 @@
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/universe.hpp"
 #include "services/memoryManager.hpp"
 
@@ -98,4 +99,16 @@ void SerialHeap::young_process_roots(OopIterateClosure* root_closure,
                 cld_closure, cld_closure, &mark_code_closure);
 
   old_gen()->younger_refs_iterate(old_gen_closure);
+}
+
+void SerialHeap::safepoint_synchronize_begin() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::synchronize();
+  }
+}
+
+void SerialHeap::safepoint_synchronize_end() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::desynchronize();
+  }
 }

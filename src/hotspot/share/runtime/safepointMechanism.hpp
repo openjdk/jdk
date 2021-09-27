@@ -50,8 +50,9 @@ class SafepointMechanism : public AllStatic {
 
   static inline bool global_poll();
 
-  static void process(JavaThread *thread);
-  static void process_if_requested_slow(JavaThread *thread);
+  static void process(JavaThread *thread, bool allow_suspend);
+
+  static inline bool should_process_no_suspend(JavaThread* thread);
 
   static void default_initialize();
 
@@ -60,7 +61,7 @@ class SafepointMechanism : public AllStatic {
   static uintptr_t compute_poll_word(bool armed, uintptr_t stack_watermark);
 
   const static intptr_t _poll_bit = 1;
-public:
+ public:
   static inline bool local_poll_armed(JavaThread* thread);
   static intptr_t poll_bit() { return _poll_bit; }
 
@@ -79,10 +80,10 @@ public:
   };
 
   // Call this method to see if this thread should block for a safepoint or process handshake.
-  static inline bool should_process(JavaThread* thread);
+  static inline bool should_process(JavaThread* thread, bool allow_suspend = true);
 
   // Processes a pending requested operation.
-  static inline void process_if_requested(JavaThread* thread);
+  static inline void process_if_requested(JavaThread* thread, bool allow_suspend = true);
   static inline void process_if_requested_with_exit_check(JavaThread* thread, bool check_asyncs);
   // Compute what the poll values should be and install them.
   static void update_poll_values(JavaThread* thread);
