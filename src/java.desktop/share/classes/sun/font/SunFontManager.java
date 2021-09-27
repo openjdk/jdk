@@ -228,7 +228,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     public static boolean noType1Font;
 
     /* Used to indicate required return type from toArray(..); */
-    private static String[] STR_ARRAY = new String[0];
+    private static final String[] STR_ARRAY = new String[0];
 
     /**
      * Deprecated, unsupported hack - actually invokes a bug!
@@ -1131,7 +1131,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     File dir = new File(pathDirs[0]);
                     String[] files = dir.list(filter);
                     if (files == null) {
-                        return new String[0];
+                        return STR_ARRAY;
                     }
                     for (int f=0; f<files.length; f++) {
                         files[f] = files[f].toLowerCase();
@@ -2852,7 +2852,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             }
         } catch (NoSuchElementException e) {
         }
-        pathDirs = pathList.toArray(new String[0]);
+        pathDirs = pathList.toArray(STR_ARRAY);
         return pathDirs;
     }
 
@@ -3352,7 +3352,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 }
             }
 
-            String[] fontNames = fontMapNames.keySet().toArray(new String[0]);
+            String[] fontNames = fontMapNames.keySet().toArray(STR_ARRAY);
             Font[] fonts = new Font[fontNames.length];
             for (int i=0; i < fontNames.length; i++) {
                 fonts[i] = new Font(fontNames[i], Font.PLAIN, 1);
@@ -3421,7 +3421,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         // Add any native font family names here
         addNativeFontFamilyNames(familyNames, requestedLocale);
 
-        String[] retval = familyNames.values().toArray(new String[0]);
+        String[] retval = familyNames.values().toArray(STR_ARRAY);
         if (requestedLocale.equals(Locale.getDefault())) {
             lastDefaultLocale = requestedLocale;
             allFamilies = new String[retval.length];
