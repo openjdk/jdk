@@ -3937,6 +3937,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 int ch = Character.codePointAt(seq, i);
                 i += Character.charCount(ch);
                 if (i <= matcher.to) {
+                    if (i == matcher.to) {
+                        matcher.hitEnd = true;
+                    }
                     return predicate.is(ch) &&
                            next.match(matcher, i, seq);
                 }

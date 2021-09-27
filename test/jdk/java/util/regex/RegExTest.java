@@ -4538,4 +4538,27 @@ public class RegExTest {
         var sep = System.lineSeparator();
         assertTrue(e.getMessage().contains(sep + "\t ^"));
     }
+
+
+    //Test for JDK-8217501
+    @Test
+    public static void testHitEndOnUmatchedSurrogatePairs(){
+        final String hexString = "1F30C";
+        final char[] chars = Character.toChars(Integer.parseInt(hexString, 16));
+        final Pattern pattern = Pattern.compile("\\x{" + hexString + "}");
+
+        final Matcher matcher1 = pattern.matcher(String.valueOf(chars[0]));
+        final Matcher matcher2 = pattern.matcher(String.valueOf(chars[0]));
+        final Matcher matcher3 = pattern.matcher(String.valueOf(chars[0]));
+
+
+        matcher1.matches();
+        assertTrue(matcher1.hitEnd());
+
+        matcher2.lookingAt();
+        assertTrue(matcher2.hitEnd());
+
+        matcher3.find();
+        assertTrue(matcher3.hitEnd());
+    }
 }
