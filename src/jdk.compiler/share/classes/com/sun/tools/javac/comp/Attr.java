@@ -6013,7 +6013,7 @@ public class Attr extends JCTree.Visitor {
          */
         @Override
         public Void visitTypeAsInterface(TypeElement e,
-                                         JCClassDecl p) {
+                                         JCClassDecl tree) {
 	    if (checkSuppressSerialWarningNested(e)) {
 		return null;
             }
@@ -6034,11 +6034,22 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 case METHOD -> {
+                    var method = toMethod(enclosed);
                     name = enclosed.getSimpleName().toString();
                     if (serialMethodNames.contains(name)) {
-                        // System.out.println("Serial method name " + name + 
-                        //                   " in " + e.getKind() + " " + e.toString());
-			int i = 2 + 2;
+			switch (name) {
+			case
+			    "readObject",
+			    "readObjectNoData",
+			    "writeObject"      -> checkPrivateMethod(tree, e, method);
+
+			case
+			    "writeReplace",
+			    "readResolve"      -> checkDefaultIneffective(tree, e, method);
+
+                        default ->  throw new AssertionError();
+			}
+
 		    }
                 }
                 }
@@ -6046,6 +6057,28 @@ public class Attr extends JCTree.Visitor {
 
             return null;
         }
+
+        private void checkPrivateMethod(JCClassDecl tree,
+					Element e,
+					ExecutableElement method) {
+	    if (!method.getModifiers().contains(Modifier.PRIVATE)) {
+		log.warning(LintCategory.SERIAL,
+			    TreeInfo.diagnosticPositionFor((Symbol)method, tree),
+			    Warnings.NonPrivateMethodWeakerAccess);
+
+	    }
+	}
+
+        private void checkDefaultIneffective(JCClassDecl tree,
+					     Element e,
+					     ExecutableElement method) {
+	    if (method.getModifiers().contains(Modifier.DEFAULT)) {
+		log.warning(LintCategory.SERIAL,
+			    TreeInfo.diagnosticPositionFor((Symbol)method, tree),
+			    Warnings.DefaultIneffective);
+
+	    }
+	}
 
         @Override
         public Void visitTypeAsAnnotationType(TypeElement e,
