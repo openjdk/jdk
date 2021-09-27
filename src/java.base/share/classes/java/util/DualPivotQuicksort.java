@@ -261,16 +261,6 @@ final class DualPivotQuicksort {
             if (a[e4] < a[e2]) { int t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
 
             /*
-             * Tries radix sort on large random data.
-             */
-            if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
-                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
-                    && tryRadixSort(sorter, a, low, high)) {
-                return;
-            }
-
-            /*
              * Insert the last element.
              */
             if (a3 < a[e2]) {
@@ -285,6 +275,16 @@ final class DualPivotQuicksort {
                 } else {
                     a[e3] = a[e4]; a[e4] = a3;
                 }
+            }
+
+            /*
+             * Try radix sort on large random data.
+             */
+            if (size > MIN_RADIX_SORT_SIZE
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
             }
 
             // Pointers
@@ -477,7 +477,7 @@ final class DualPivotQuicksort {
             /*
              * Invoke simple insertion sort on tiny array.
              */
-            for (int i; ++low < end; ) {
+            for (int i; ++low < high; ) {
                 int ai = a[i = low];
 
                 while (ai < a[--i]) {
@@ -485,35 +485,24 @@ final class DualPivotQuicksort {
                 }
                 a[i + 1] = ai;
             }
+
         } else {
 
             /*
              * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
              */
             int pin = a[end];
 
             for (int i, p = high; ++low < end; ) {
                 int ai = a[i = low];
 
-                if (ai < a[i - 1]) { // Element smaller than pin
-
-                    /*
-                     * Insert this element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Element larger than pin
+                /*
+                 * Put elements larger than an element called pin
+                 * to the end of array (the proper area for them).
+                 * It avoids expensive movements of these elements
+                 * through the whole array.
+                 */
+                if (p > i && ai > pin) { // Element larger than pin
 
                     /*
                      * Find element smaller than pin.
@@ -521,21 +510,21 @@ final class DualPivotQuicksort {
                     while (a[--p] > pin);
 
                     /*
-                     * Swap it with large element.
+                     * Swap it with larger element.
                      */
                     if (p > i) {
                         ai = a[p];
                         a[p] = a[i];
                     }
-
-                    /*
-                     * Insert smaller element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
                 }
+
+                /*
+                 * Insert element into sorted part.
+                 */
+                while (ai < a[--i]) {
+                    a[i + 1] = a[i];
+                }
+                a[i + 1] = ai;
             }
 
             /*
@@ -1155,16 +1144,6 @@ final class DualPivotQuicksort {
             if (a[e4] < a[e2]) { long t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
 
             /*
-             * Tries radix sort on large random data.
-             */
-            if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
-                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
-                    && tryRadixSort(sorter, a, low, high)) {
-                return;
-            }
-
-            /*
              * Insert the last element.
              */
             if (a3 < a[e2]) {
@@ -1179,6 +1158,16 @@ final class DualPivotQuicksort {
                 } else {
                     a[e3] = a[e4]; a[e4] = a3;
                 }
+            }
+
+            /*
+             * Try radix sort on large random data.
+             */
+            if (size > MIN_RADIX_SORT_SIZE
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
             }
 
             // Pointers
@@ -1371,7 +1360,7 @@ final class DualPivotQuicksort {
             /*
              * Invoke simple insertion sort on tiny array.
              */
-            for (int i; ++low < end; ) {
+            for (int i; ++low < high; ) {
                 long ai = a[i = low];
 
                 while (ai < a[--i]) {
@@ -1379,35 +1368,24 @@ final class DualPivotQuicksort {
                 }
                 a[i + 1] = ai;
             }
+
         } else {
 
             /*
              * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
              */
             long pin = a[end];
 
             for (int i, p = high; ++low < end; ) {
                 long ai = a[i = low];
 
-                if (ai < a[i - 1]) { // Element smaller than pin
-
-                    /*
-                     * Insert this element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Element larger than pin
+                /*
+                 * Put elements larger than an element called pin
+                 * to the end of array (the proper area for them).
+                 * It avoids expensive movements of these elements
+                 * through the whole array.
+                 */
+                if (p > i && ai > pin) { // Element larger than pin
 
                     /*
                      * Find element smaller than pin.
@@ -1415,21 +1393,21 @@ final class DualPivotQuicksort {
                     while (a[--p] > pin);
 
                     /*
-                     * Swap it with large element.
+                     * Swap it with larger element.
                      */
                     if (p > i) {
                         ai = a[p];
                         a[p] = a[i];
                     }
-
-                    /*
-                     * Insert smaller element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
                 }
+
+                /*
+                 * Insert element into sorted part.
+                 */
+                while (ai < a[--i]) {
+                    a[i + 1] = a[i];
+                }
+                a[i + 1] = ai;
             }
 
             /*
@@ -2835,16 +2813,6 @@ final class DualPivotQuicksort {
             if (a[e4] < a[e2]) { float t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
 
             /*
-             * Tries radix sort on large random data.
-             */
-            if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
-                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
-                    && tryRadixSort(sorter, a, low, high)) {
-                return;
-            }
-
-            /*
              * Insert the last element.
              */
             if (a3 < a[e2]) {
@@ -2859,6 +2827,16 @@ final class DualPivotQuicksort {
                 } else {
                     a[e3] = a[e4]; a[e4] = a3;
                 }
+            }
+
+            /*
+             * Try radix sort on large random data.
+             */
+            if (size > MIN_RADIX_SORT_SIZE
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
             }
 
             // Pointers
@@ -3051,7 +3029,7 @@ final class DualPivotQuicksort {
             /*
              * Invoke simple insertion sort on tiny array.
              */
-            for (int i; ++low < end; ) {
+            for (int i; ++low < high; ) {
                 float ai = a[i = low];
 
                 while (ai < a[--i]) {
@@ -3059,35 +3037,24 @@ final class DualPivotQuicksort {
                 }
                 a[i + 1] = ai;
             }
+
         } else {
 
             /*
              * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
              */
             float pin = a[end];
 
             for (int i, p = high; ++low < end; ) {
                 float ai = a[i = low];
 
-                if (ai < a[i - 1]) { // Element smaller than pin
-
-                    /*
-                     * Insert this element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Element larger than pin
+                /*
+                 * Put elements larger than an element called pin
+                 * to the end of array (the proper area for them).
+                 * It avoids expensive movements of these elements
+                 * through the whole array.
+                 */
+                if (p > i && ai > pin) { // Element larger than pin
 
                     /*
                      * Find element smaller than pin.
@@ -3095,21 +3062,21 @@ final class DualPivotQuicksort {
                     while (a[--p] > pin);
 
                     /*
-                     * Swap it with large element.
+                     * Swap it with larger element.
                      */
                     if (p > i) {
                         ai = a[p];
                         a[p] = a[i];
                     }
-
-                    /*
-                     * Insert smaller element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
                 }
+
+                /*
+                 * Insert element into sorted part.
+                 */
+                while (ai < a[--i]) {
+                    a[i + 1] = a[i];
+                }
+                a[i + 1] = ai;
             }
 
             /*
@@ -3761,16 +3728,6 @@ final class DualPivotQuicksort {
             if (a[e4] < a[e2]) { double t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
 
             /*
-             * Tries radix sort on large random data.
-             */
-            if (size > MIN_RADIX_SORT_SIZE
-                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
-                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
-                    && tryRadixSort(sorter, a, low, high)) {
-                return;
-            }
-
-            /*
              * Insert the last element.
              */
             if (a3 < a[e2]) {
@@ -3785,6 +3742,16 @@ final class DualPivotQuicksort {
                 } else {
                     a[e3] = a[e4]; a[e4] = a3;
                 }
+            }
+
+            /*
+             * Try radix sort on large random data.
+             */
+            if (size > MIN_RADIX_SORT_SIZE
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
             }
 
             // Pointers
@@ -3977,7 +3944,7 @@ final class DualPivotQuicksort {
             /*
              * Invoke simple insertion sort on tiny array.
              */
-            for (int i; ++low < end; ) {
+            for (int i; ++low < high; ) {
                 double ai = a[i = low];
 
                 while (ai < a[--i]) {
@@ -3985,35 +3952,24 @@ final class DualPivotQuicksort {
                 }
                 a[i + 1] = ai;
             }
+
         } else {
 
             /*
              * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
              */
             double pin = a[end];
 
             for (int i, p = high; ++low < end; ) {
                 double ai = a[i = low];
 
-                if (ai < a[i - 1]) { // Element smaller than pin
-
-                    /*
-                     * Insert this element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Element larger than pin
+                /*
+                 * Put elements larger than an element called pin
+                 * to the end of array (the proper area for them).
+                 * It avoids expensive movements of these elements
+                 * through the whole array.
+                 */
+                if (p > i && ai > pin) { // Element larger than pin
 
                     /*
                      * Find element smaller than pin.
@@ -4021,21 +3977,21 @@ final class DualPivotQuicksort {
                     while (a[--p] > pin);
 
                     /*
-                     * Swap it with large element.
+                     * Swap it with larger element.
                      */
                     if (p > i) {
                         ai = a[p];
                         a[p] = a[i];
                     }
-
-                    /*
-                     * Insert smaller element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
                 }
+
+                /*
+                 * Insert element into sorted part.
+                 */
+                while (ai < a[--i]) {
+                    a[i + 1] = a[i];
+                }
+                a[i + 1] = ai;
             }
 
             /*
