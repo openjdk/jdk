@@ -1315,9 +1315,9 @@ int VMError::prepare_log_file(const char* pattern, const char* default_pattern, 
 
 // Attempt to set the current thread to Native state in VMError.
 // By setting it to Native, it allows os::fork_and_exec to execute cmd such as jcmd %p.
-// Otherwise, it may end up with a deadlock when cmd tries to synchronize all Java threads
+// Otherwise, it may end up with a deadlock when dcmds try to synchronize all Java threads
 // at safepoints.
-bool transition_to_native() {
+bool transition_into_native() {
   Thread* t = Thread::current_or_null();
 
   if (t != nullptr && t->is_Java_thread()) {
@@ -1638,7 +1638,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     char* cmd;
     const char* ptr = OnError;
 
-    transition_to_native();
+    transition_into_native();
     while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
       out.print_raw   ("#   Executing ");
 #if defined(LINUX) || defined(_ALLBSD_SOURCE)
