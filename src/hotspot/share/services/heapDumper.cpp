@@ -1598,7 +1598,7 @@ class JNILocalsDumper : public OopClosure {
 
 void JNILocalsDumper::do_oop(oop* obj_p) {
   // ignore null handles
-  oop o = *obj_p;
+  oop o = NativeAccess<AS_NO_KEEPALIVE>::oop_load(obj_p);
   if (o != NULL) {
     u4 size = 1 + sizeof(address) + 4 + 4;
     writer()->start_sub_record(HPROF_GC_ROOT_JNI_LOCAL, size);
@@ -1626,7 +1626,7 @@ class JNIGlobalsDumper : public OopClosure {
 };
 
 void JNIGlobalsDumper::do_oop(oop* obj_p) {
-  oop o = *obj_p;
+  oop o = NativeAccess<AS_NO_KEEPALIVE>::oop_load(obj_p);
 
   // ignore these
   if (o == NULL) return;
@@ -2308,6 +2308,22 @@ void VM_HeapDumper::work(uint worker_id) {
       ClassLoaderDataGraph::classes_do(&locked_dump_class);
     }
     Universe::basic_type_classes_do(&do_basic_type_array_class_dump);
+
+    // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
+    do_threads();
+
+    // HPROF_GC_ROOT_JNI_GLOBAL
+    JNIGlobalsDumper jni_dumper(writer());
+    JNIHandles::oops_do(&jni_dumper);
+    // technically not jni roots, but global roots
+    // for things like preallocated throwable backtraces
+    Universe::vm_global()->oops_do(&jni_dumper);
+  
+    // HPROF_GC_ROOT_STICKY_CLASS
+    // These should be classes in the NULL class loader data, and not all classes
+    // if !ClassUnloading
+    StickyClassDumper class_dumper(writer());
+    ClassLoaderData::the_null_class_loader_data()->classes_do(&class_dumper);
   }
 
   // writes HPROF_GC_INSTANCE_DUMP records.
@@ -2352,22 +2368,6 @@ void VM_HeapDumper::work(uint worker_id) {
   }
 
   assert(get_worker_type(worker_id) == VMDumperType, "Heap dumper must be VMDumper");
-  // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
-  do_threads();
-
-  // HPROF_GC_ROOT_JNI_GLOBAL
-  JNIGlobalsDumper jni_dumper(writer());
-  JNIHandles::oops_do(&jni_dumper);
-  // technically not jni roots, but global roots
-  // for things like preallocated throwable backtraces
-  Universe::vm_global()->oops_do(&jni_dumper);
-
-  // HPROF_GC_ROOT_STICKY_CLASS
-  // These should be classes in the NULL class loader data, and not all classes
-  // if !ClassUnloading
-  StickyClassDumper class_dumper(writer());
-  ClassLoaderData::the_null_class_loader_data()->classes_do(&class_dumper);
-
   // Use writer() rather than ParDumpWriter to avoid memory consumption.
   HeapObjectDumper obj_dumper(writer());
   dump_large_objects(&obj_dumper);
