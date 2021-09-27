@@ -172,7 +172,7 @@ extern Mutex* tty_lock;                          // lock to synchronize output.
 // Print all mutexes/monitors that are currently owned by a thread; called
 // by fatal error handler.
 void print_owned_locks_on_error(outputStream* st);
-
+void unlock_locks_owned_by(Thread* t);
 char *lock_name(Mutex *mutex);
 
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)

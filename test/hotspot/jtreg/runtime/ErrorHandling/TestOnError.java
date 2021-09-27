@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,21 +29,37 @@
  * @library /test/lib
  * @requires vm.debug
  * @run driver TestOnError
+ * @run driver TestOnError DeadLockPrevention
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 
 public class TestOnError {
 
     public static void main(String[] args) throws Exception {
         String msg = "Test Succeeded";
+        // deadlock prevention test. Both Thread.print and GC.thread_dump require
+        // safepoint synchronization.
+        String jcmd = JDKToolFinder.getJDKTool("jcmd");
+        StringBuilder before = new StringBuilder(jcmd);
+        before.append(" %p");
+        before.append(" Thread.print;");
+        StringBuilder after = new StringBuilder(jcmd);
+        after.append(" %p");
+        after.append(" GC.heap_dump a.hprof");
+
+        String cmds = "echo " + msg;
+        if (args.length > 0 && "DeadLockPrevention".equals(args[0])) {
+            cmds = before.toString() + cmds + ";" + after.toString();
+        }
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
            "-XX:-CreateCoredumpOnCrash",
            "-XX:ErrorHandlerTest=14", // trigger potential SEGV
-           "-XX:OnError=echo " + msg,
+           "-XX:OnError=" + cmds,
            TestOnError.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

@@ -372,3 +372,26 @@ void print_owned_locks_on_error(outputStream* st) {
   }
   if (none) st->print_cr("None");
 }
+
+void unlock_locks_owned_by(Thread* thread) {
+  assert(thread != NULL, "can't be owned by NULL");
+  if (thread->is_Watcher_thread()) {
+    // need WatcherThread as a safeguard against potential deadlocks
+    return;
+  }
+
+#ifdef ASSERT
+  Mutex* owned_lock = thread->owned_locks();
+  while (owned_lock != NULL) {
+    Mutex* next = owned_lock->next();
+    owned_lock->unlock();
+    owned_lock = next;
+  }
+#endif // ASSERT
+
+  for (int i = 0; i < _num_mutex; i++) {
+     if (_mutex_array[i]->owner() == thread) {
+       _mutex_array[i]->unlock();
+     }
+  }
+}
