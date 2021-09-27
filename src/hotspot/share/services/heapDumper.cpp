@@ -2318,14 +2318,12 @@ void VM_HeapDumper::work(uint worker_id) {
     // technically not jni roots, but global roots
     // for things like preallocated throwable backtraces
     Universe::vm_global()->oops_do(&jni_dumper);
-  
     // HPROF_GC_ROOT_STICKY_CLASS
     // These should be classes in the NULL class loader data, and not all classes
     // if !ClassUnloading
     StickyClassDumper class_dumper(writer());
     ClassLoaderData::the_null_class_loader_data()->classes_do(&class_dumper);
   }
-
   // writes HPROF_GC_INSTANCE_DUMP records.
   // After each sub-record is written check_segment_length will be invoked
   // to check if the current segment exceeds a threshold. If so, a new
