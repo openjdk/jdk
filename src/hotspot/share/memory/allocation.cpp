@@ -147,6 +147,9 @@ void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_cons
 }
 
 void ResourceObj::operator delete(void* p) {
+  if (p == nullptr) {
+    return;
+  }
   assert(((ResourceObj *)p)->allocated_on_C_heap(),
          "delete only allowed for C_HEAP objects");
   DEBUG_ONLY(((ResourceObj *)p)->_allocation_t[0] = (uintptr_t)badHeapOopVal;)

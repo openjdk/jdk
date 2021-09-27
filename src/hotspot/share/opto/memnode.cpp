@@ -1626,7 +1626,14 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       the_clone = x;            // Remember for possible deletion.
       // Alter data node to use pre-phi inputs
       if (this->in(0) == region) {
-        x->set_req(0, in);
+        if (mem->is_Phi() && (mem->in(0) == region) && mem->in(i)->in(0) != NULL &&
+            MemNode::all_controls_dominate(address, region)) {
+          // Enable other optimizations such as loop predication which does not work
+          // if we directly pin the node to node `in`
+          x->set_req(0, mem->in(i)->in(0)); // Use same control as memory
+        } else {
+          x->set_req(0, in);
+        }
       } else {
         x->set_req(0, NULL);
       }
@@ -1972,7 +1979,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         return con_type;
       }
     }
-  } else if (tp->base() == Type::KlassPtr) {
+  } else if (tp->base() == Type::KlassPtr || tp->base() == Type::InstKlassPtr || tp->base() == Type::AryKlassPtr) {
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects
             tp->is_klassptr()->klass()->is_java_lang_Object() ||

@@ -431,10 +431,6 @@ public final class SecuritySupport {
         doPrivileged(() -> method.setAccessible(true), new ReflectPermission("suppressAccessChecks"));
     }
 
-    static void setAccessible(Field field) {
-        doPrivileged(() -> field.setAccessible(true), new ReflectPermission("suppressAccessChecks"));
-    }
-
     static void setAccessible(Constructor<?> constructor) {
         doPrivileged(() -> constructor.setAccessible(true), new ReflectPermission("suppressAccessChecks"));
     }

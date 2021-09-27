@@ -737,7 +737,7 @@ public:
   bool policy_range_check( PhaseIdealLoop *phase ) const;
 
   // Return TRUE if "iff" is a range check.
-  bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const;
+  bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const;
 
   // Estimate the number of nodes required when cloning a loop (body).
   uint est_loop_clone_sz(uint factor) const;
@@ -1275,9 +1275,20 @@ public:
   // Return true if exp is a scaled induction var plus (or minus) constant
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset, int depth = 0);
 
+  // Enum to determine the action to be performed in create_new_if_for_predicate() when processing phis of UCT regions.
+  enum class UnswitchingAction {
+    None,            // No special action.
+    FastLoopCloning, // Need to clone nodes for the fast loop.
+    SlowLoopRewiring // Need to rewire nodes for the slow loop.
+  };
+
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                        int opcode, bool if_cont_is_true_proj = true);
+                                        int opcode, bool if_cont_is_true_proj = true, Node_List* old_new = NULL,
+                                        UnswitchingAction unswitching_action = UnswitchingAction::None);
+
+  // Clone data nodes for the fast loop while creating a new If with create_new_if_for_predicate.
+  Node* clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* uncommon_proj, Node* if_uct, Node_List* old_new);
 
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
@@ -1563,13 +1574,14 @@ private:
   }
 
   // Clone loop predicates to slow and fast loop when unswitching a loop
-  void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred);
-  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason);
+  void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred);
+  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason,
+                                               Node_List* old_new = NULL);
   void clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, Deoptimization::DeoptReason reason,
                                                     ProjNode* old_predicate_proj, ProjNode* iffast_pred, ProjNode* ifslow_pred);
   ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate, Node* uncommon_proj, Deoptimization::DeoptReason reason,
                                                           ProjNode* output_proj, IdealLoopTree* loop);
-  void check_created_predicate_for_unswitching(const Node* new_entry) const PRODUCT_RETURN;
+  static void check_created_predicate_for_unswitching(const Node* new_entry) PRODUCT_RETURN;
 
   bool _created_loop_node;
 #ifdef ASSERT

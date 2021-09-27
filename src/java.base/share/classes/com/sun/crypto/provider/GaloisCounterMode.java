@@ -86,7 +86,9 @@ abstract class GaloisCounterMode extends CipherSpi {
     // data size when buffer is divided up to aid in intrinsics
     private static final int TRIGGERLEN = 65536;  // 64k
     // x86-64 parallel intrinsic data size
-    private static final int PARALLEL_LEN = 768;
+    private static final int PARALLEL_LEN = 8192;
+    // max data size for x86-64 intrinsic
+    private static final int SPLIT_LEN = 1048576;  // 1MB
 
     static final byte[] EMPTY_BUF = new byte[0];
 
@@ -570,6 +572,28 @@ abstract class GaloisCounterMode extends CipherSpi {
         return j0;
     }
 
+    // Wrapper function around AES-GCM interleaved intrinsic that splits
+    // large chunks of data into 1MB sized chunks. This is to place
+    // an upper limit on the number of blocks encrypted in the intrinsic.
+    private static int implGCMCrypt(byte[] in, int inOfs, int inLen, byte[] ct,
+                                    int ctOfs, byte[] out, int outOfs,
+                                    GCTR gctr, GHASH ghash) {
+
+        int len = 0;
+        if (inLen > SPLIT_LEN) {
+            while (inLen >= SPLIT_LEN) {
+                int partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
+                    ctOfs + len, out, outOfs + len, gctr, ghash);
+                len += partlen;
+                inLen -= partlen;
+            }
+        }
+        if (inLen > 0) {
+            len += implGCMCrypt0(in, inOfs + len, inLen, ct,
+                   ctOfs + len, out, outOfs + len, gctr, ghash);
+        }
+        return len;
+    }
     /**
      * Intrinsic for Vector AES Galois Counter Mode implementation.
      * AES and GHASH operations are interleaved in the intrinsic implementation.
@@ -590,7 +614,7 @@ abstract class GaloisCounterMode extends CipherSpi {
      * @return number of processed bytes
      */
     @IntrinsicCandidate
-    private static int implGCMCrypt(byte[] in, int inOfs, int inLen,
+    private static int implGCMCrypt0(byte[] in, int inOfs, int inLen,
         byte[] ct, int ctOfs, byte[] out, int outOfs,
         GCTR gctr, GHASH ghash) {
 

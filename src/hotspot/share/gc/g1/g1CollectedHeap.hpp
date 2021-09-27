@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -52,9 +51,10 @@
 #include "gc/shared/plab.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/bitMap.hpp"
-#include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
 // It uses the "Garbage First" heap organization and algorithm, which
@@ -62,45 +62,28 @@
 // heap subsets that will yield large amounts of garbage.
 
 // Forward declarations
-class HeapRegion;
-class GenerationSpec;
-class G1CardSetFreeMemoryTask;
-class G1ParScanThreadState;
-class G1ParScanThreadStateSet;
-class G1ParScanThreadState;
-class MemoryPool;
-class MemoryManager;
-class ObjectClosure;
-class SpaceClosure;
-class CompactibleSpaceClosure;
-class Space;
+class G1Allocator;
+class G1ArchiveAllocator;
 class G1BatchedGangTask;
 class G1CardTableEntryClosure;
-class G1CollectionSet;
-class G1GCCounters;
-class G1Policy;
-class G1HotCardCache;
-class G1RemSet;
-class G1ServiceTask;
-class G1ServiceThread;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1ConcurrentRefine;
-class GenerationCounters;
-class STWGCTimer;
-class G1NewTracer;
-class nmethod;
-class WorkGang;
-class G1Allocator;
-class G1ArchiveAllocator;
-class G1FullGCScope;
-class G1HeapVerifier;
-class G1HeapSizingPolicy;
-class G1HeapSummary;
-class G1EvacSummary;
+class G1GCCounters;
 class G1GCPhaseTimes;
+class G1HeapSizingPolicy;
+class G1HotCardCache;
+class G1NewTracer;
+class G1RemSet;
+class G1ServiceTask;
+class G1ServiceThread;
+class GCMemoryManager;
+class HeapRegion;
+class MemoryPool;
+class nmethod;
 class ReferenceProcessor;
-class G1BatchedGangTask;
+class STWGCTimer;
+class WorkGang;
 
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
@@ -622,6 +605,7 @@ public:
   void register_young_region_with_region_attr(HeapRegion* r) {
     _region_attr.set_in_young(r->hrm_index());
   }
+  inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
   inline void register_old_region_with_region_attr(HeapRegion* r);
   inline void register_optional_region_with_region_attr(HeapRegion* r);
@@ -830,8 +814,6 @@ public:
 
   // The parallel task queues
   G1ScannerTasksQueueSet *_task_queues;
-
-  G1EvacFailureRegions _evac_failure_regions;
 
   // ("Weak") Reference processing support.
   //
@@ -1050,9 +1032,6 @@ public:
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
-  // True iff an evacuation has failed in the most-recent collection.
-  inline bool evacuation_failed() const;
-
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,
                                 const uint humongous_regions_removed);
@@ -1155,15 +1134,14 @@ public:
     collection_set_iterate_increment_from(blk, NULL, worker_id);
   }
   void collection_set_iterate_increment_from(HeapRegionClosure *blk, HeapRegionClaimer* hr_claimer, uint worker_id);
-  // Iterate part of an array of region indexes given by offset and length, applying
+  // Iterate over the array of region indexes, uint regions[length], applying
   // the given HeapRegionClosure on each region. The worker_id will determine where
-  // in the part to start the iteration to allow for more efficient parallel iteration.
-  void par_iterate_regions_array_part_from(HeapRegionClosure* cl,
-                                           HeapRegionClaimer* hr_claimer,
-                                           const uint* regions,
-                                           size_t offset,
-                                           size_t length,
-                                           uint worker_id) const;
+  // to start the iteration to allow for more efficient parallel iteration.
+  void par_iterate_regions_array(HeapRegionClosure* cl,
+                                 HeapRegionClaimer* hr_claimer,
+                                 const uint regions[],
+                                 size_t length,
+                                 uint worker_id) const;
 
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
@@ -1257,19 +1235,12 @@ public:
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
-  bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
-    return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
-  }
+  inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;
 
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
   // been marked during this marking, and is not in a closed archive region.
-  bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
-    return
-      !hr->obj_allocated_since_next_marking(obj) &&
-      !is_marked_next(obj) &&
-      !hr->is_closed_archive();
-  }
+  inline bool is_obj_ill(const oop obj, const HeapRegion* hr) const;
 
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
@@ -1306,7 +1277,7 @@ public:
 
   // Recalculate amount of used memory after GC. Must be called after all allocation
   // has finished.
-  void update_used_after_gc();
+  void update_used_after_gc(bool evacuation_failed);
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.

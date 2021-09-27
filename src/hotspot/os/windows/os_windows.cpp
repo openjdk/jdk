@@ -258,11 +258,6 @@ static BOOL unmapViewOfFile(LPCVOID lpBaseAddress) {
   return result;
 }
 
-bool os::unsetenv(const char* name) {
-  assert(name != NULL, "Null pointer");
-  return (SetEnvironmentVariable(name, NULL) == TRUE);
-}
-
 char** os::get_environ() { return _environ; }
 
 // No setuid programs under Windows.
@@ -712,8 +707,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       } // else fall through:
         // use VMThreadStackSize if CompilerThreadStackSize is not defined
     case os::vm_thread:
-    case os::pgc_thread:
-    case os::cgc_thread:
+    case os::gc_thread:
     case os::asynclog_thread:
     case os::watcher_thread:
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);

@@ -1683,9 +1683,7 @@ jint G1CollectedHeap::initialize() {
     _humongous_reclaim_candidates.initialize(reserved(), granularity);
   }
 
-  _workers = new WorkGang("GC Thread", ParallelGCThreads,
-                          true /* are_GC_task_threads */,
-                          false /* are_ConcurrentGC_threads */);
+  _workers = new WorkGang("GC Thread", ParallelGCThreads);
   if (_workers == NULL) {
     return JNI_ENOMEM;
   }
@@ -1753,8 +1751,6 @@ jint G1CollectedHeap::initialize() {
   _monitoring_support = new G1MonitoringSupport(this);
 
   _collection_set.initialize(max_reserved_regions());
-
-  _evac_failure_regions.initialize(max_reserved_regions());
 
   evac_failure_injector()->reset();
 
@@ -2326,12 +2322,11 @@ void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *c
   _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id);
 }
 
-void G1CollectedHeap::par_iterate_regions_array_part_from(HeapRegionClosure* cl,
-                                                          HeapRegionClaimer* hr_claimer,
-                                                          const uint* regions,
-                                                          size_t offset,
-                                                          size_t length,
-                                                          uint worker_id) const {
+void G1CollectedHeap::par_iterate_regions_array(HeapRegionClosure* cl,
+                                                HeapRegionClaimer* hr_claimer,
+                                                const uint regions[],
+                                                size_t length,
+                                                uint worker_id) const {
   assert_at_safepoint();
   if (length == 0) {
     return;
@@ -2342,7 +2337,7 @@ void G1CollectedHeap::par_iterate_regions_array_part_from(HeapRegionClosure* cl,
   size_t cur_pos = start_pos;
 
   do {
-    uint region_idx = regions[cur_pos + offset];
+    uint region_idx = regions[cur_pos];
     if (hr_claimer == NULL || hr_claimer->claim_region(region_idx)) {
       HeapRegion* r = region_at(region_idx);
       bool result = cl->do_heap_region(r);
@@ -2775,10 +2770,6 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
     return;
   }
   Ticks start = Ticks::now();
-  // Inject evacuation failure tag into type if needed.
-  if (evacuation_failed()) {
-    type = (G1HeapVerifier::G1VerifyType)(type | G1HeapVerifier::G1VerifyYoungEvacFail);
-  }
   if (VerifyRememberedSets) {
     log_info(gc, verify)("[Verifying RemSets after GC]");
     VerifyRegionRemSetClosure v_cl;
@@ -2887,7 +2878,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
 
   // Perform the collection.
-  G1YoungCollector collector(gc_cause(), target_pause_time_ms, &_evac_failure_regions);
+  G1YoungCollector collector(gc_cause(), target_pause_time_ms);
   collector.collect();
 
   // It should now be safe to tell the concurrent mark thread to start
@@ -3285,6 +3276,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionA
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
       _verifier->check_bitmaps("Survivor Region Allocation", new_alloc_region);
+      register_new_survivor_region_with_region_attr(new_alloc_region);
     } else {
       new_alloc_region->set_old();
       _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);
@@ -3394,8 +3386,8 @@ void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
   nm->oops_do(&reg_cl, true);
 }
 
-void G1CollectedHeap::update_used_after_gc() {
-  if (evacuation_failed()) {
+void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
+  if (evacuation_failed) {
     // Reset the G1EvacuationFailureALot counters and flags
     evac_failure_injector()->reset();
 

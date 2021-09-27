@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,7 +53,7 @@ import java.util.List;
 /**
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
- * @LastModified: Nov 2017
+ * @LastModified: Sep 2021
  */
 final class Number extends Instruction implements Closure {
     private static final int LEVEL_SINGLE   = 0;
@@ -383,7 +383,7 @@ final class Number extends Instruction implements Closure {
         _className = getXSLTC().getHelperClassName();
         nodeCounterGen = new NodeCounterGenerator(_className,
                                                   ClassNames[_level],
-                                                  toString(),
+                                                  getClass().getName(), // Name of this node should be consistent across runs.
                                                   ACC_PUBLIC | ACC_SUPER,
                                                   null,
                                                   classGen.getStylesheet());

@@ -26,7 +26,7 @@
  * @bug 8190230 8196360
  * @summary [macosx] Order of overlapping of modal dialogs is wrong
  * @key headful
- * @run main SiblingChildOrderTest
+ * @run main/othervm -Dsun.java2d.uiScale=1 SiblingChildOrderTest
  */
 
 import java.awt.Color;

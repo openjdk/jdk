@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ public class Properties extends Hashtable<Object,Object> {
      * If a logical line is spread across several natural lines, the
      * backslash escaping the line terminator sequence, the line
      * terminator sequence, and any white space at the start of the
-     * following line have no affect on the key or element values.
+     * following line have no effect on the key or element values.
      * The remainder of the discussion of key and element parsing
      * (when loading) will assume all the characters constituting
      * the key and element appear on a single natural line after
@@ -281,7 +281,7 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * <p>
      * The key contains all of the characters in the line starting
-     * with the first non-white space character and up to, but not
+     * with the first non-whitespace character and up to, but not
      * including, the first unescaped {@code '='},
      * {@code ':'}, or white space character other than a line
      * terminator. All of these key termination characters may be
@@ -293,7 +293,7 @@ public class Properties extends Hashtable<Object,Object> {
      * would be the two-character key {@code ":="}.  Line
      * terminator characters can be included using {@code \r} and
      * {@code \n} escape sequences.  Any white space after the
-     * key is skipped; if the first non-white space character after
+     * key is skipped; if the first non-whitespace character after
      * the key is {@code '='} or {@code ':'}, then it is
      * ignored and any white space characters after it are also
      * skipped.  All remaining characters on the line become part of
