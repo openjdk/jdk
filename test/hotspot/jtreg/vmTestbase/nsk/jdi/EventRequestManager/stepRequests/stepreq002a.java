@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequestManager.stepRequests;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class stepreq002a {
 
     //====================================================== test program
 
-    static Thread1stepreq002a testField[] = new Thread1stepreq002a[10];
+    static Thread testField[] = new Thread[10];
 
     //------------------------------------------------------ common section
 
@@ -98,7 +97,7 @@ public class stepreq002a {
                     case 0:
                             synchronized (lockObj1) {
                                 for (int ii = 0; ii < 10; ii++) {
-                                    testField[ii] = new Thread1stepreq002a("thread" + ii);
+                                    testField[ii] = JDIThreadFactory.newThread(new Thread1stepreq002a("thread" + ii));
                                     threadStart(testField[ii]);
                                 }
                                 methodForCommunication();
@@ -137,22 +136,19 @@ public class stepreq002a {
 
 }
 
-class Thread1stepreq002a extends Thread {
-
-    String tName = null;
+class Thread1stepreq002a extends NamedTask {
 
     public Thread1stepreq002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        stepreq002a.log1("  'run': enter  :: threadName == " + tName);
+        stepreq002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(stepreq002a.waitnotifyObj) {
             stepreq002a.waitnotifyObj.notify();
         }
         synchronized(stepreq002a.lockObj1) {
-            stepreq002a.log1("  'run': exit   :: threadName == " + tName);
+            stepreq002a.log1("  'run': exit   :: threadName == " + getName());
         }
         return;
     }
