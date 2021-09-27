@@ -260,12 +260,8 @@ class MonitorLocker: public MutexLocker {
   }
 
   bool wait(int64_t timeout = 0) {
-    if (_flag == Mutex::_safepoint_check_flag) {
-      return as_monitor()->wait(timeout);
-    } else {
-      return as_monitor()->wait_without_safepoint_check(timeout);
-    }
-    return false;
+    return _flag == Mutex::_safepoint_check_flag ?
+      as_monitor()->wait(timeout) : as_monitor()->wait_without_safepoint_check(timeout);
   }
 
   void notify_all() {

@@ -21,6 +21,10 @@
  * questions.
  */
 
+import java.io.IOException;
+
+import jdk.test.lib.dcmd.CommandExecutor;
+
 /*
  * @test
  * @summary Test of diagnostic command GC.heap_dump -all=true
@@ -35,6 +39,14 @@ public class HeapDumpAllTest extends HeapDumpTest {
     public HeapDumpAllTest() {
         super();
         heapDumpArgs = "-all=true";
+    }
+
+    @Override
+    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
+        // Trigger gc by hand, so the created heap dump isnt't too large and
+        // takes too long to parse.
+        System.gc();
+        super.run(executor, overwrite);
     }
 
     /* See HeapDumpTest for test cases */
