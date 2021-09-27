@@ -34,7 +34,6 @@
   HANDLE _thread_handle;        // Win32 thread handle
   HANDLE _interrupt_event;      // Event signalled on thread interrupt for use by
                                 // Process.waitFor().
-  ThreadState _last_state;
 
  public:
   // The following will only apply in the Win32 implementation, and should only
@@ -57,12 +56,6 @@
     return false;
   }
 #endif // ASSERT
-
-  // This is a temporary fix for the thread states during
-  // suspend/resume until we throw away OSThread completely.
-  // NEEDS_CLEANUP
-  void set_last_state(ThreadState state)           { _last_state = state; }
-  ThreadState get_last_state()                     { return _last_state; }
 
  private:
   void pd_initialize();

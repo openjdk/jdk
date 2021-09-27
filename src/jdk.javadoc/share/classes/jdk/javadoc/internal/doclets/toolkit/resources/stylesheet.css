@@ -863,3 +863,24 @@ table.striped > tbody > tr > th {
         padding-right: 12px;
     }
 }
+
+pre.snippet {
+    background-color: #ebecee;
+    padding: 10px;
+    margin: 12px 0;
+    overflow: auto;
+    white-space: pre;
+}
+
+pre.snippet .italic {
+    font-style: italic;
+}
+
+pre.snippet .bold {
+    font-weight: bold;
+}
+
+pre.snippet .highlighted {
+    background-color: #f7c590;
+    border-radius: 10%;
+}
