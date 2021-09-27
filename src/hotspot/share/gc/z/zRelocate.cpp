@@ -33,6 +33,7 @@
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zGeneration.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAge.hpp"
@@ -950,35 +951,48 @@ inline void ZPage::object_iterate(Function function) {
   _livemap.iterate(generation_id(), do_bit);
 }
 
-void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
-  SuspendibleThreadSetJoiner sts_joiner;
+class ZPromotePagesTask : public ZTask {
+private:
+  ZArrayParallelIterator<ZPage*> _iter;
 
-  const bool promote_all = ZCollectedHeap::heap()->driver_major()->promote_all();
+public:
+  ZPromotePagesTask(const ZArray<ZPage*>* pages) :
+      ZTask("ZPromotePagesTask"),
+      _iter(pages) {}
 
-  // TODO: Make multi-threaded
-  for (int i = 0; i < pages->length(); i++) {
-    ZPage* prev_page = pages->at(i);
-    ZPageAge age_from = prev_page->age();
-    ZPageAge age_to = ZForwarding::compute_age_to(age_from, promote_all);
-    assert(age_from != ZPageAge::old, "invalid age for a minor collection");
+  virtual void work() {
+    SuspendibleThreadSetJoiner sts_joiner;
 
-    // Figure out if this is proper promotion
-    const ZGenerationId generation_to = age_to == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
-    const bool promotion = age_to == ZPageAge::old;
+    const bool promote_all = ZCollectedHeap::heap()->driver_major()->promote_all();
 
-    // Logging
-    prev_page->log_msg(promotion ? " (in-place promoted)" : " (in-place survived)");
+    for (ZPage* prev_page; _iter.next(&prev_page);) {
+      ZPageAge age_from = prev_page->age();
+      ZPageAge age_to = ZForwarding::compute_age_to(age_from, promote_all);
+      assert(age_from != ZPageAge::old, "invalid age for a minor collection");
 
-    // Setup to-space page
-    ZPage* new_page = promotion ? new ZPage(*prev_page) : prev_page;
-    new_page->reset(generation_to, age_to, ZPage::FlipReset);
+      // Figure out if this is proper promotion
+      const ZGenerationId generation_to = age_to == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
+      const bool promotion = age_to == ZPageAge::old;
 
-    if (promotion) {
-      ZHeap::heap()->minor_collector()->promote_flip(prev_page, new_page);
+      // Logging
+      prev_page->log_msg(promotion ? " (in-place promoted)" : " (in-place survived)");
+
+      // Setup to-space page
+      ZPage* new_page = promotion ? new ZPage(*prev_page) : prev_page;
+      new_page->reset(generation_to, age_to, ZPage::FlipReset);
+
+      if (promotion) {
+        ZHeap::heap()->minor_collector()->promote_flip(prev_page, new_page);
+      }
+
+      SuspendibleThreadSet::yield();
     }
-
-    SuspendibleThreadSet::yield();
   }
+};
+
+void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
+  ZPromotePagesTask promote_task(pages);
+  workers()->run(&promote_task);
 }
 
 void ZRelocate::synchronize() {
