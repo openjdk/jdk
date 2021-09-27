@@ -63,9 +63,6 @@ public class CommandLinePositiveTest {
         Files.createFile(TEST_FILE);
     }
 
-    @DataProvider
-    public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
-
     static final int SIGTERM = 15;
     static final int NORMAL_EXIT_CODE = normalExitCode();
 
@@ -78,11 +75,15 @@ public class CommandLinePositiveTest {
         }
     }
 
+    @DataProvider
+    public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
+
     @Test(dataProvider = "directoryOptions")
     public void testDirectory(String opt) throws Throwable {
         out.println("\n--- testDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Default bind address loopback. For all interfaces use -b 0.0.0.0 or -b ::0.")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
                         "URL http://" + LOOPBACK_ADDR);
     }
@@ -95,6 +96,7 @@ public class CommandLinePositiveTest {
         out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Default bind address loopback. For all interfaces use -b 0.0.0.0 or -b ::0.")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
                         "URL http://" + LOOPBACK_ADDR);
     }
@@ -108,13 +110,13 @@ public class CommandLinePositiveTest {
 
     static final String OPTIONS_TEXT = """
             Options:
-            -b, --bind-address    - Address to bind to. Default: 127.0.0.1 (loopback).
+            -b, --bind-address    - Address to bind to. Default: %s (loopback).
                                     For 0.0.0.0 (all interfaces) use -b 0.0.0.0 or -b ::0.
             -d, --directory       - Directory to serve. Default: current directory.
             -o, --output          - Output format. none|info|verbose. Default: info.
             -p, --port            - Port to listen on. Default: 8000.
             -h, -?, --help        - Print this help message.
-            To stop the server, press Ctrl + C.""";
+            To stop the server, press Ctrl + C.""".formatted(LOOPBACK_ADDR);
 
     @Test(dataProvider = "helpOptions")
     public void testHelp(String opt) throws Throwable {
@@ -158,6 +160,7 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR, opt, TEST_DIR_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Default bind address loopback. For all interfaces use -b 0.0.0.0 or -b ::0.")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
                         "URL http://" + LOOPBACK_ADDR);
     }
@@ -170,6 +173,7 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsOutput, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "none", opt, "verbose")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Default bind address loopback. For all interfaces use -b 0.0.0.0 or -b ::0.")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
                         "URL http://" + LOOPBACK_ADDR);
     }
@@ -179,6 +183,7 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "-999", opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                .shouldContain("Default bind address loopback. For all interfaces use -b 0.0.0.0 or -b ::0.")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
                         "URL http://" + LOOPBACK_ADDR);
     }

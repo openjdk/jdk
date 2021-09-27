@@ -30,6 +30,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.test.lib.Platform;
@@ -51,6 +52,7 @@ public class CommandLineNegativeTest {
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("CommandLineNegativeTest");
     static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
+    static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
     @BeforeTest
     public void setup() throws IOException {
@@ -62,16 +64,16 @@ public class CommandLineNegativeTest {
     }
 
     @DataProvider
-    public Object[][] badOption() {
+    public Object[][] unknownOption() {
         return new Object[][] {
-                {"--badOption"},
+                {"--unknownOption"},
                 {"null"}
         };
     }
 
-    @Test(dataProvider = "badOption")
+    @Test(dataProvider = "unknownOption")
     public void testBadOption(String opt) throws Throwable {
-        out.println("\n--- testBadOption, opt=\"%s\" ".formatted(opt));
+        out.println("\n--- testUnknownOption, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt)
                 .shouldNotHaveExitValue(0)
                 .shouldContain("Error: unknown option: " + opt);
@@ -103,24 +105,29 @@ public class CommandLineNegativeTest {
     @DataProvider
     public Object[][] noArg() {
         return new Object[][] {
-                {"-b"},
-                {"-d"},
-                {"-o"},
-                {"-p"},
-                {"--bind-address"},
-                {"--directory"},
-                {"--output"},
-                {"--port"}
+                {"-b", """
+                    -b, --bind-address    - Address to bind to. Default: %s (loopback).
+                                            For 0.0.0.0 (all interfaces) use -b 0.0.0.0 or -b ::0.""".formatted(LOOPBACK_ADDR)},
+                {"-d", "-d, --directory       - Directory to serve. Default: current directory."},
+                {"-o", "-o, --output          - Output format. none|info|verbose. Default: info."},
+                {"-p", "-p, --port            - Port to listen on. Default: 8000."},
+                {"--bind-address", """
+                        -b, --bind-address    - Address to bind to. Default: %s (loopback).
+                                                For 0.0.0.0 (all interfaces) use -b 0.0.0.0 or -b ::0.""".formatted(LOOPBACK_ADDR)},
+                {"--directory", "-d, --directory       - Directory to serve. Default: current directory."},
+                {"--output",    "-o, --output          - Output format. none|info|verbose. Default: info."},
+                {"--port",      "-p, --port            - Port to listen on. Default: 8000."}
                 // doesn't fail for -h option
         };
     }
 
     @Test(dataProvider = "noArg")
-    public void testNoArg(String opt) throws Throwable {
+    public void testNoArg(String opt, String msg) throws Throwable {
         out.println("\n--- testNoArg, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt)
                 .shouldNotHaveExitValue(0)
-                .shouldContain("Error: no value given for " + opt);
+                .shouldContain("Error: no value given for " + opt)
+                .shouldContain(msg);
     }
 
     @DataProvider

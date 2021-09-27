@@ -49,7 +49,7 @@ import java.util.Objects;
  * a given output stream.
  *
  * <p> Unless specified as arguments, the default values are:<ul>
- * <li>bind address: 127.0.0.1 (loopback)</li>
+ * <li>bind address: 127.0.0.1 or ::1 (loopback)</li>
  * <li>directory: current working directory</li>
  * <li>outputLevel: info</li></ul>
  * <li>port: 8000</li>
@@ -58,10 +58,11 @@ import java.util.Objects;
  * module.
  */
 final class SimpleFileServerImpl {
-    private static final InetAddress DEFAULT_ADDR = InetAddress.getLoopbackAddress();
+    private static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
     private static final int DEFAULT_PORT = 8000;
     private static final Path DEFAULT_ROOT = Path.of("").toAbsolutePath();
     private static final OutputLevel DEFAULT_OUTPUT_LEVEL = OutputLevel.INFO;
+    private static boolean addrSpecified = false;
 
     private SimpleFileServerImpl() { throw new AssertionError(); }
 
@@ -81,7 +82,7 @@ final class SimpleFileServerImpl {
         }
         Out out = new Out(writer);
 
-        InetAddress addr = DEFAULT_ADDR;
+        InetAddress addr = LOOPBACK_ADDR;
         int port = DEFAULT_PORT;
         Path root = DEFAULT_ROOT;
         OutputLevel outputLevel = DEFAULT_OUTPUT_LEVEL;
@@ -98,8 +99,10 @@ final class SimpleFileServerImpl {
                         out.showHelp();
                         return Startup.OK.statusCode;
                     }
-                    case "-b", "--bind-address" ->
+                    case "-b", "--bind-address" -> {
                         addr = InetAddress.getByName(optionArg = options.next());
+                        addrSpecified = true;
+                    }
                     case "-d", "--directory" ->
                         root = Path.of(optionArg = options.next());
                     case "-o", "--output" ->
@@ -116,6 +119,7 @@ final class SimpleFileServerImpl {
             return Startup.CMDERR.statusCode;
         } catch (NoSuchElementException nsee) {
             out.reportError(ResourceBundleHelper.getMessage("err.missing.arg", option));
+            out.showOption(option);
             return Startup.CMDERR.statusCode;
         } catch (Exception e) {
             out.reportError(ResourceBundleHelper.getMessage("err.invalid.arg", option, optionArg));
@@ -151,20 +155,17 @@ final class SimpleFileServerImpl {
         void printStartMessage(Path root, HttpServer server)
                 throws UnknownHostException
         {
-            var port = server.getAddress().getPort();
+            String port = Integer.toString(server.getAddress().getPort());
             var inetAddr = server.getAddress().getAddress();
             var isAnyLocal = inetAddr.isAnyLocalAddress();
             var addr = isAnyLocal ? InetAddress.getLocalHost().getHostAddress() : inetAddr.getHostAddress();
+            if (!addrSpecified) {
+                writer.println(ResourceBundleHelper.getMessage("loopback.info"));
+            }
             if (isAnyLocal) {
-                writer.printf("""
-                        Serving %s and subdirectories on 0.0.0.0 (all interfaces) port %d
-                        URL http://%s:%d/ ...
-                        """, root, port, addr, port);
+                writer.println(ResourceBundleHelper.getMessage("msg.start.anylocal", root, addr, port));
             } else {
-                writer.printf("""
-                    Serving %s and subdirectories on
-                    URL http://%s:%d/ ...
-                    """, root, addr, port);
+                writer.println(ResourceBundleHelper.getMessage("msg.start.other", root, addr, port));
             }
         }
 
@@ -174,7 +175,20 @@ final class SimpleFileServerImpl {
 
         void showHelp() {
             writer.println(ResourceBundleHelper.getMessage("usage"));
-            writer.println(ResourceBundleHelper.getMessage("options"));
+            writer.println(ResourceBundleHelper.getMessage("options", LOOPBACK_ADDR.getHostAddress()));
+        }
+
+        void showOption(String option) {
+            switch (option) {
+                case "-b", "--bind-address" ->
+                        writer.println(ResourceBundleHelper.getMessage("opt.bindaddress", LOOPBACK_ADDR.getHostAddress()));
+                case "-d", "--directory" ->
+                        writer.println(ResourceBundleHelper.getMessage("opt.directory"));
+                case "-o", "--output" ->
+                        writer.println(ResourceBundleHelper.getMessage("opt.output"));
+                case "-p", "--port" ->
+                        writer.println(ResourceBundleHelper.getMessage("opt.port"));
+            }
         }
 
         void reportError(String message) {
