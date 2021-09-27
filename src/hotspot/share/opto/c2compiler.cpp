@@ -217,9 +217,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     if (StubRoutines::unsafe_arraycopy() == NULL) return false;
     break;
   case vmIntrinsics::_encodeAsciiArray:
-#if !defined(X86)
-    return false; // not yet implemented
-#endif
+    if (!Matcher::match_rule_supported(Op_EncodeISOArray) && !Matcher::supports_encode_ascii_array) return false;
+    break;
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray)) return false;

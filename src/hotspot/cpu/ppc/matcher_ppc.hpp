@@ -161,5 +161,7 @@
     return VM_Version::has_fcfids();
   }
 
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = false;
 
 #endif // CPU_PPC_MATCHER_PPC_HPP
