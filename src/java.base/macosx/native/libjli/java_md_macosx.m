@@ -838,7 +838,7 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
      * references that are inherited from Apple JDK.
      * This inherited AWT code looks for this property and uses it for the name
      * of the app as it appears in the system menu bar.
-     * 
+     *
      * Not idea if how much external code ever sets it, but use it if set, else
      * if not set (the high probability event) set it to the application class name.
      */
@@ -847,7 +847,7 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
     NULL_CHECK(jKey = (*env)->NewStringUTF(env, propName));
 
     jclass sysClass = NULL;
-    NULL_CHECK(sysClass = (*env)->FindClass(env, "java/lang/System")); 
+    NULL_CHECK(sysClass = (*env)->FindClass(env, "java/lang/System"));
 
     jmethodID getPropertyMID = NULL;
     NULL_CHECK(getPropertyMID = (*env)->GetStaticMethodID(env, sysClass,
