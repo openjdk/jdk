@@ -59,9 +59,9 @@ Node* MulNode::Identity(PhaseGVN* phase) {
 // We also canonicalize the Node, moving constants to the right input,
 // and flatten expressions (so that 1+x+2 becomes x+3).
 Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  Node *in1 = in(1);
-  Node *in2 = in(2);
-  Node *progress = NULL;        // Progress flag
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  Node* progress = NULL;        // Progress flag
 
   // This code is used by And nodes too, but some conversions are
   // only valid for the actual Mul nodes.
@@ -110,8 +110,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  const Type *t1 = phase->type(in1);
-  const Type *t2 = phase->type(in2);
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
 
   // We are OK if right is a constant, or right is a load and
   // left is a non-constant.
