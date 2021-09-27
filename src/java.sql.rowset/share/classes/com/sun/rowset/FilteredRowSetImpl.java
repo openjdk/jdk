@@ -47,6 +47,7 @@ import com.sun.rowset.internal.*;
 
 public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, Cloneable, FilteredRowSet {
 
+    @SuppressWarnings("serial")
     private Predicate p;
 
     private boolean onInsertRow = false;

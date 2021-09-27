@@ -165,6 +165,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
  *
  * @serial
  */
+    @SuppressWarnings("serial")
     private ResultSetMetaData callerMd;
 
 /**

@@ -68,6 +68,7 @@ public class WebRowSetImpl extends CachedRowSetImpl implements WebRowSet {
      */
     private int curPosBfrWrite;
 
+    @SuppressWarnings("serial")
     private SyncProvider provider;
 
     /**

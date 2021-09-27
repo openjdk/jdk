@@ -60,6 +60,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * The <code>SyncProvider</code> used by the CachedRowSet
      */
+    @SuppressWarnings("serial")
     private SyncProvider provider;
 
     /**
@@ -68,6 +69,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * reader as part of its implementation.
      * @serial
      */
+    @SuppressWarnings("serial")
     private RowSetReader rowSetReader;
 
     /**
@@ -76,6 +78,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * this writer as part of its implementation.
      * @serial
      */
+    @SuppressWarnings("serial")
     private RowSetWriter rowSetWriter;
 
     /**
@@ -315,6 +318,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * The field object for a transactional RowSet writer
      */
+    @SuppressWarnings("serial")
     private TransactionalWriter tWriter = null;
 
     protected transient JdbcRowSetResourceBundle resBundle;
