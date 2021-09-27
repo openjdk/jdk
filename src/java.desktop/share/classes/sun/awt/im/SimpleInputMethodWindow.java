@@ -38,6 +38,7 @@ public class SimpleInputMethodWindow
         extends Frame
         implements InputMethodWindow {
 
+    @SuppressWarnings("serial")
     InputContext inputContext = null;
 
     /**

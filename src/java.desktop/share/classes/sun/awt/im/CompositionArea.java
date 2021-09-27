@@ -61,9 +61,12 @@ import javax.swing.border.LineBorder;
 // This class is final due to the 6607310 fix. Refer to the CR for details.
 public final class CompositionArea extends JPanel implements InputMethodListener {
 
+    @SuppressWarnings("serial")
     private CompositionAreaHandler handler;
 
+    @SuppressWarnings("serial")
     private TextLayout composedTextLayout;
+    @SuppressWarnings("serial")
     private TextHitInfo caret = null;
     private JFrame compositionWindow;
     private static final int TEXT_ORIGIN_X = 5;
