@@ -207,6 +207,7 @@ public class Flow {
     private final JCDiagnostic.Factory diags;
     private Env<AttrContext> attrEnv;
     private       Lint lint;
+    private final DeferredCompletionFailureHandler dcfh;
     private final boolean allowEffectivelyFinalInInnerClasses;
 
     public static Flow instance(Context context) {
@@ -331,6 +332,7 @@ public class Flow {
         lint = Lint.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
         Source source = Source.instance(context);
         allowEffectivelyFinalInInnerClasses = Feature.EFFECTIVELY_FINAL_IN_INNER_CLASSES.allowedInSource(source);
     }
@@ -783,14 +785,23 @@ public class Flow {
         }
 
         private boolean isTransitivellyCovered(Symbol sealed, Set<Symbol> covered) {
-            if (covered.stream().anyMatch(c -> sealed.isSubClass(c, types)))
-                return true;
-            if (sealed.kind == TYP && sealed.isAbstract() && sealed.isSealed()) {
-                return ((ClassSymbol) sealed).permitted
-                                             .stream()
-                                             .allMatch(s -> isTransitivellyCovered(s, covered));
+            DeferredCompletionFailureHandler.Handler prevHandler =
+                    dcfh.setHandler(dcfh.speculativeCodeHandler);
+            try {
+                if (covered.stream().anyMatch(c -> sealed.isSubClass(c, types)))
+                    return true;
+                if (sealed.kind == TYP && sealed.isAbstract() && sealed.isSealed()) {
+                    return ((ClassSymbol) sealed).permitted
+                                                 .stream()
+                                                 .allMatch(s -> isTransitivellyCovered(s, covered));
+                }
+                return false;
+            } catch (CompletionFailure cf) {
+                //safe to ignore, the symbol will be un-completed when the speculative handler is removed.
+                return false;
+            } finally {
+                dcfh.setHandler(prevHandler);
             }
-            return false;
         }
 
         private boolean isExhaustive(Type seltype, Set<Symbol> covered) {

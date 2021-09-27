@@ -801,21 +801,24 @@ public class Exhaustiveness extends TestRunner {
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
-        Path libSrc = current.resolve("lib-src");
-        for (String code : libraryCode) {
-            tb.writeJavaFiles(libSrc, code);
-        }
-
         Path libClasses = current.resolve("libClasses");
 
         Files.createDirectories(libClasses);
 
-        new JavacTask(tb)
-                .options("--enable-preview",
-                         "-source", JAVA_VERSION)
-                .outdir(libClasses)
-                .files(tb.findJavaFiles(libSrc))
-                .run();
+        if (libraryCode.length != 0) {
+            Path libSrc = current.resolve("lib-src");
+
+            for (String code : libraryCode) {
+                tb.writeJavaFiles(libSrc, code);
+            }
+
+            new JavacTask(tb)
+                    .options("--enable-preview",
+                             "-source", JAVA_VERSION)
+                    .outdir(libClasses)
+                    .files(tb.findJavaFiles(libSrc))
+                    .run();
+        }
 
         Path src = current.resolve("src");
         tb.writeJavaFiles(src, testCode);
