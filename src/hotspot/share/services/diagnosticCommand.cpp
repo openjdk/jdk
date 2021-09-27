@@ -964,10 +964,10 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
-    output()->print_cr("Static dump:");
+    output()->print("Static dump: ");
   } else if (strcmp(scmd, "dynamic_dump") == 0) {
     is_static = JNI_FALSE;
-    output()->print_cr("Dynamic dump:");
+    output()->print("Dynamic dump: ");
     if (!UseSharedSpaces) {
       output()->print_cr("Dynamic dump is unsupported when base CDS archive is not loaded");
       return;
@@ -988,7 +988,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
-  JavaValue result(T_VOID);
+  JavaValue result(T_OBJECT);
   JavaCallArguments args;
   args.push_int(is_static);
   args.push_oop(fileh);
@@ -997,6 +997,12 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::dumpSharedArchive(),
                          vmSymbols::dumpSharedArchive_signature(),
                          &args, CHECK);
+  if (!HAS_PENDING_EXCEPTION) {
+    assert(result.get_type() == T_OBJECT, "Sanity check");
+    // result contains the archive name
+    char* archive_name = java_lang_String::as_utf8_string(result.get_oop());
+    output()->print_cr("%s", archive_name);
+  }
 }
 #endif // INCLUDE_CDS
 
