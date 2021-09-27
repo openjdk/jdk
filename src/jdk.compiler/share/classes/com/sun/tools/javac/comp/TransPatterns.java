@@ -278,7 +278,7 @@ public class TransPatterns extends TreeTranslator {
                               boolean hasTotalPattern,
                               boolean patternSwitch) {
         if (patternSwitch) {
-            Type seltype = selector.type.hasTag(BOT) && false
+            Type seltype = selector.type.hasTag(BOT)
                     ? syms.objectType
                     : selector.type;
             Assert.check(preview.isEnabled());
