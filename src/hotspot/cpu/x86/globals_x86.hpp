@@ -44,7 +44,7 @@ define_pd_global(uintx, CodeCacheSegmentSize,    64 COMPILER1_AND_COMPILER2_PRES
 // the uep and the vep doesn't get real alignment but just slops on by
 // only assured that the entry instruction meets the 5 byte size requirement.
 #if COMPILER2_OR_JVMCI
-define_pd_global(intx, CodeEntryAlignment,       64);
+define_pd_global(intx, CodeEntryAlignment,       32);
 #else
 define_pd_global(intx, CodeEntryAlignment,       16);
 #endif // COMPILER2_OR_JVMCI

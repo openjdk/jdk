@@ -1170,6 +1170,11 @@ void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+// See 8273459.  Function for ensuring 64-byte alignment, intended for stubs only.
+void MacroAssembler::align64() {
+  align(64, (unsigned long long) pc());
+}
+
 void MacroAssembler::align(int modulus) {
   align(modulus, offset());
 }
