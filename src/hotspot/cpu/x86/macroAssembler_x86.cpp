@@ -1171,11 +1171,15 @@ void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src) {
 }
 
 // See 8273459.  Function for ensuring 64-byte alignment, intended for stubs only.
+// Stub code is generated once and never copied.
+// NMethods can't use this because they get copied and we can't force alignment > 32 bytes.
 void MacroAssembler::align64() {
   align(64, (unsigned long long) pc());
 }
 
 void MacroAssembler::align(int modulus) {
+  // 8273459: Ensure alignment is possible with current segment alignment
+  assert(modulus <= CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
   align(modulus, offset());
 }
 
