@@ -1072,7 +1072,7 @@ JvmtiEnv::StopThread(JavaThread* java_thread, jobject exception) {
   oop e = JNIHandles::resolve_external_guard(exception);
   NULL_CHECK(e, JVMTI_ERROR_NULL_POINTER);
 
-  JavaThread::send_async_exception(java_thread->threadObj(), e);
+  JavaThread::send_async_exception(java_thread, e);
 
   return JVMTI_ERROR_NONE;
 

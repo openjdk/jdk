@@ -2961,7 +2961,7 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
       THROW_OOP(java_throwable);
     } else {
       // Use a VM_Operation to throw the exception.
-      JavaThread::send_async_exception(java_thread, java_throwable);
+      JavaThread::send_async_exception(receiver, java_throwable);
     }
   } else {
     // Either:
