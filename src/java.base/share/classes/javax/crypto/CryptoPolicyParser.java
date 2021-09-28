@@ -487,8 +487,7 @@ final class CryptoPolicyParser {
             }
         }
 
-        CryptoPermission[] ret = result.toArray(new CryptoPermission[0]);
-        return ret;
+        return result.toArray(new CryptoPermission[0]);
     }
 
     private boolean isConsistent(String alg, String exemptionMechanism,
