@@ -120,7 +120,7 @@ public class CloseDescriptors {
     private static boolean check() throws Exception {
         long myPid = ProcessHandle.current().pid();
         ProcessBuilder pb = new ProcessBuilder(
-                        "lsof", "-U", "-a", "-p", Long.toString(myPid));
+                        "lsof", "-U", "-a", "-w", "-p", Long.toString(myPid));
         pb.redirectErrorStream(true);
         Process p = pb.start();
         p.waitFor();
