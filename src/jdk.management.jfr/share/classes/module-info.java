@@ -30,10 +30,10 @@
  * @since 9
  */
 module jdk.management.jfr {
-    requires transitive jdk.jfr;
     requires jdk.management;
 
     requires transitive java.management;
+    requires transitive jdk.jfr;
 
     exports jdk.management.jfr;
 
