@@ -63,10 +63,16 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t2 = phase->type( in(2) );
   Node *progress = NULL;        // Progress flag
 
-  // convert "(-a)*(-b)" into "a*b"
+  // This code is used by And nodes too, but some conversions are
+  // only valid for the actual Mul nodes.
+  uint op = Opcode();
+  bool real_mul = (op == Op_MulI) || (op == Op_MulL) ||
+                  (op == Op_MulF) || (op == Op_MulD);
+
+  // Convert "(-a)*(-b)" into "a*b".
   Node *in1 = in(1);
   Node *in2 = in(2);
-  if (in1->is_Sub() && in2->is_Sub()) {
+  if (real_mul && in1->is_Sub() && in2->is_Sub()) {
     if (phase->type(in1->in(1))->is_zero_type() &&
         phase->type(in2->in(1))->is_zero_type()) {
       set_req(1, in1->in(2));
@@ -119,7 +125,6 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If the right input is a constant, and the left input is a product of a
   // constant, flatten the expression tree.
-  uint op = Opcode();
   if( t2->singleton() &&        // Right input is a constant?
       op != Op_MulF &&          // Float & double cannot reassociate
       op != Op_MulD ) {

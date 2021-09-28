@@ -96,9 +96,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <i>NegativePattern:</i>
  *         <i>Prefix<sub>opt</sub></i> <i>Number</i> <i>Suffix<sub>opt</sub></i>
  * <i>Prefix:</i>
- *         any Unicode characters except &#92;uFFFE, &#92;uFFFF, and special characters
+ *         any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and special characters
  * <i>Suffix:</i>
- *         any Unicode characters except &#92;uFFFE, &#92;uFFFF, and special characters
+ *         any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and special characters
  * <i>Number:</i>
  *         <i>Integer</i> <i>Exponent<sub>opt</sub></i>
  *         <i>Integer</i> . <i>Fraction</i> <i>Exponent<sub>opt</sub></i>
@@ -221,12 +221,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Yes
  *          <td>Multiply by 100 and show as percentage
  *     <tr style="vertical-align:top">
- *          <th scope="row">{@code &#92;u2030}
+ *          <th scope="row">{@code U+2030}
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 1000 and show as per mille value
  *     <tr style="vertical-align: top">
- *          <th scope="row">{@code &#164;} ({@code &#92;u00A4})
+ *          <th scope="row">&#164; ({@code U+00A4})
  *          <td>Prefix or suffix
  *          <td>No
  *          <td>Currency sign, replaced by currency symbol.  If
@@ -309,12 +309,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <h4>Special Values</h4>
  *
  * <p>{@code NaN} is formatted as a string, which typically has a single character
- * {@code &#92;uFFFD}.  This string is determined by the
+ * {@code U+FFFD}.  This string is determined by the
  * {@code DecimalFormatSymbols} object.  This is the only value for which
  * the prefixes and suffixes are not used.
  *
  * <p>Infinity is formatted as a string, which typically has a single character
- * {@code &#92;u221E}, with the positive or negative prefixes and suffixes
+ * {@code U+221E}, with the positive or negative prefixes and suffixes
  * applied.  The infinity string is determined by the
  * {@code DecimalFormatSymbols} object.
  *
@@ -2735,7 +2735,7 @@ public class DecimalFormat extends NumberFormat {
      * For a percent format, set the multiplier to 100 and the suffixes to
      * have '%' (for Arabic, use the Arabic percent sign).
      * For a per mille format, set the multiplier to 1000 and the suffixes to
-     * have '&#92;u2030'.
+     * have '{@code U+2030}'.
      *
      * <P>Example: with multiplier 100, 1.23 is formatted as "123", and
      * "123" is parsed into 1.23.

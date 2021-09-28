@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.MethodExitRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class threadfilter003a {
 
     //====================================================== test program
 
-    static threadfilter003aThread thread1 = null;
+    static Thread thread1 = null;
 
     static threadfilter003aTestClass objTC = new threadfilter003aTestClass();
 
@@ -98,7 +97,7 @@ public class threadfilter003a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new threadfilter003aThread("thread1");
+                            thread1 = JDIThreadFactory.newThread(new threadfilter003aThread("thread1"));
                             break;
 
                     case 1:
@@ -148,7 +147,7 @@ public class threadfilter003a {
         return PASSED;
     }
 
-    static class threadfilter003aThread extends Thread {
+    static class threadfilter003aThread extends NamedTask {
 
         public threadfilter003aThread(String threadName) {
             super(threadName);

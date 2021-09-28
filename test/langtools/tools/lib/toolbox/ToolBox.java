@@ -34,10 +34,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
@@ -65,8 +63,6 @@ import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-import javax.tools.JavaFileObject.Kind;
-import javax.tools.JavaFileManager.Location;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
@@ -107,11 +103,11 @@ public class ToolBox {
     public static final float timeoutFactor;
     static {
         String ttf = System.getProperty("test.timeout.factor");
-        timeoutFactor = (ttf == null) ? 1.0f : Float.valueOf(ttf);
+        timeoutFactor = (ttf == null) ? 1.0f : Float.parseFloat(ttf);
     }
 
     /** The current directory. */
-    public static final Path currDir = Paths.get(".");
+    public static final Path currDir = Path.of(".");
 
     /** The stream used for logging output. */
     public PrintStream out = System.err;
@@ -127,6 +123,7 @@ public class ToolBox {
     /**
      * Splits a string around matches of the given regular expression.
      * If the string is empty, an empty list will be returned.
+     *
      * @param text the string to be split
      * @param sep  the delimiting regular expression
      * @return the strings between the separators
@@ -139,6 +136,7 @@ public class ToolBox {
 
     /**
      * Checks if two lists of strings are equal.
+     *
      * @param l1 the first list of strings to be compared
      * @param l2 the second list of strings to be compared
      * @throws Error if the lists are not equal
@@ -166,6 +164,7 @@ public class ToolBox {
     /**
      * Filters a list of strings according to the given regular expression,
      * returning the strings that match the regular expression.
+     *
      * @param regex the regular expression
      * @param lines the strings to be filtered
      * @return the strings matching the regular expression
@@ -177,8 +176,9 @@ public class ToolBox {
     /**
      * Filters a list of strings according to the given regular expression,
      * returning the strings that match the regular expression.
+     *
      * @param pattern the regular expression
-     * @param lines the strings to be filtered
+     * @param lines   the strings to be filtered
      * @return the strings matching the regular expression
      */
     public List<String> grep(Pattern pattern, List<String> lines) {
@@ -188,6 +188,7 @@ public class ToolBox {
     /**
      * Filters a list of strings according to the given regular expression,
      * returning either the strings that match or the strings that do not match.
+     *
      * @param regex the regular expression
      * @param lines the strings to be filtered
      * @param match if true, return the lines that match; otherwise if false, return the lines that do not match.
@@ -200,9 +201,10 @@ public class ToolBox {
     /**
      * Filters a list of strings according to the given regular expression,
      * returning either the strings that match or the strings that do not match.
+     *
      * @param pattern the regular expression
-     * @param lines the strings to be filtered
-     * @param match if true, return the lines that match; otherwise if false, return the lines that do not match.
+     * @param lines   the strings to be filtered
+     * @param match   if true, return the lines that match; otherwise if false, return the lines that do not match.
      * @return the strings matching(or not matching) the regular expression
      */
     public List<String> grep(Pattern pattern, List<String> lines, boolean match) {
@@ -217,12 +219,13 @@ public class ToolBox {
      * in that directory.  Otherwise, the copy will be placed at the destination,
      * possibly overwriting any existing file.
      * <p>Similar to the shell "cp" command: {@code cp from to}.
+     *
      * @param from the file to be copied
-     * @param to where to copy the file
+     * @param to   where to copy the file
      * @throws IOException if any error occurred while copying the file
      */
     public void copyFile(String from, String to) throws IOException {
-        copyFile(Paths.get(from), Paths.get(to));
+        copyFile(Path.of(from), Path.of(to));
     }
 
     /**
@@ -231,8 +234,9 @@ public class ToolBox {
      * in that directory.  Otherwise, the copy will be placed at the destination,
      * possibly overwriting any existing file.
      * <p>Similar to the shell "cp" command: {@code cp from to}.
+     *
      * @param from the file to be copied
-     * @param to where to copy the file
+     * @param to   where to copy the file
      * @throws IOException if an error occurred while copying the file
      */
     public void copyFile(Path from, Path to) throws IOException {
@@ -249,6 +253,7 @@ public class ToolBox {
      * For each of the series of paths, a directory will be created,
      * including any necessary parent directories.
      * <p>Similar to the shell command: {@code mkdir -p paths}.
+     *
      * @param paths the directories to be created
      * @throws IOException if an error occurred while creating the directories
      */
@@ -256,7 +261,7 @@ public class ToolBox {
         if (paths.length == 0)
             throw new IllegalArgumentException("no directories specified");
         for (String p : paths)
-            Files.createDirectories(Paths.get(p));
+            Files.createDirectories(Path.of(p));
     }
 
     /**
@@ -264,6 +269,7 @@ public class ToolBox {
      * For each of the series of paths, a directory will be created,
      * including any necessary parent directories.
      * <p>Similar to the shell command: {@code mkdir -p paths}.
+     *
      * @param paths the directories to be created
      * @throws IOException if an error occurred while creating the directories
      */
@@ -278,6 +284,7 @@ public class ToolBox {
      * Deletes one or more files, awaiting confirmation that the files
      * no longer exist. Any directories to be deleted must be empty.
      * <p>Similar to the shell command: {@code rm files}.
+     *
      * @param files the names of the files to be deleted
      * @throws IOException if an error occurred while deleting the files
      */
@@ -289,6 +296,7 @@ public class ToolBox {
      * Deletes one or more files, awaiting confirmation that the files
      * no longer exist. Any directories to be deleted must be empty.
      * <p>Similar to the shell command: {@code rm files}.
+     *
      * @param paths the paths for the files to be deleted
      * @throws IOException if an error occurred while deleting the files
      */
@@ -300,6 +308,7 @@ public class ToolBox {
      * Deletes one or more files, awaiting confirmation that the files
      * no longer exist. Any directories to be deleted must be empty.
      * <p>Similar to the shell command: {@code rm files}.
+     *
      * @param paths the paths for the files to be deleted
      * @throws IOException if an error occurred while deleting the files
      */
@@ -319,6 +328,7 @@ public class ToolBox {
     /**
      * Deletes all content of a directory (but not the directory itself),
      * awaiting confirmation that the content has been deleted.
+     *
      * @param root the directory to be cleaned
      * @throws IOException if an error occurs while cleaning the directory
      */
@@ -326,20 +336,20 @@ public class ToolBox {
         if (!Files.isDirectory(root)) {
             throw new IOException(root + " is not a directory");
         }
-        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(root, new SimpleFileVisitor<>() {
             private IOException ioe = null;
             // for each directory we visit, maintain a list of the files that we try to delete
-            private Deque<List<Path>> dirFiles = new LinkedList<>();
+            private final Deque<List<Path>> dirFiles = new LinkedList<>();
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes a) throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes a) {
                 ioe = deleteFile(file, ioe);
                 dirFiles.peekFirst().add(file);
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes a) throws IOException {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes a) {
                 if (!dir.equals(root)) {
                     dirFiles.peekFirst().add(dir);
                 }
@@ -369,10 +379,11 @@ public class ToolBox {
      * It does not wait to confirm deletion, nor does it retry.
      * If an exception occurs it is either returned or added to the set of
      * suppressed exceptions for an earlier exception.
+     *
      * @param path the path for the file to be deleted
-     * @param ioe the earlier exception, or null
+     * @param ioe  the earlier exception, or null
      * @return the earlier exception or an exception that occurred while
-     *  trying to delete the file
+     * trying to delete the file
      */
     private IOException deleteFile(Path path, IOException ioe) {
         try {
@@ -389,6 +400,7 @@ public class ToolBox {
 
     /**
      * Wait until it is confirmed that a set of files have been deleted.
+     *
      * @param paths the paths for the files to be deleted
      * @throws IOException if a file has not been deleted
      */
@@ -401,6 +413,7 @@ public class ToolBox {
 
     /**
      * Wait until it is confirmed that a file has been deleted.
+     *
      * @param path the path for the file to be deleted
      * @throws IOException if problems occur while deleting the file
      */
@@ -431,12 +444,13 @@ public class ToolBox {
      * to that directory.  Otherwise, the file will be moved to the destination,
      * possibly overwriting any existing file.
      * <p>Similar to the shell "mv" command: {@code mv from to}.
+     *
      * @param from the file to be moved
-     * @param to where to move the file
+     * @param to   where to move the file
      * @throws IOException if an error occurred while moving the file
      */
     public void moveFile(String from, String to) throws IOException {
-        moveFile(Paths.get(from), Paths.get(to));
+        moveFile(Path.of(from), Path.of(to));
     }
 
     /**
@@ -445,8 +459,9 @@ public class ToolBox {
      * to that directory.  Otherwise, the file will be moved to the destination,
      * possibly overwriting any existing file.
      * <p>Similar to the shell "mv" command: {@code mv from to}.
+     *
      * @param from the file to be moved
-     * @param to where to move the file
+     * @param to   where to move the file
      * @throws IOException if an error occurred while moving the file
      */
     public void moveFile(Path from, Path to) throws IOException {
@@ -461,6 +476,7 @@ public class ToolBox {
     /**
      * Reads the lines of a file.
      * The file is read using the default character encoding.
+     *
      * @param path the file to be read
      * @return the lines of the file
      * @throws IOException if an error occurred while reading the file
@@ -472,6 +488,7 @@ public class ToolBox {
     /**
      * Reads the lines of a file.
      * The file is read using the default character encoding.
+     *
      * @param path the file to be read
      * @return the lines of the file
      * @throws IOException if an error occurred while reading the file
@@ -482,18 +499,20 @@ public class ToolBox {
 
     /**
      * Reads the lines of a file using the given encoding.
-     * @param path the file to be read
+     *
+     * @param path     the file to be read
      * @param encoding the encoding to be used to read the file
      * @return the lines of the file.
      * @throws IOException if an error occurred while reading the file
      */
     public List<String> readAllLines(String path, String encoding) throws IOException {
-        return readAllLines(Paths.get(path), encoding);
+        return readAllLines(Path.of(path), encoding);
     }
 
     /**
      * Reads the lines of a file using the given encoding.
-     * @param path the file to be read
+     *
+     * @param path     the file to be read
      * @param encoding the encoding to be used to read the file
      * @return the lines of the file
      * @throws IOException if an error occurred while reading the file
@@ -509,6 +528,7 @@ public class ToolBox {
     /**
      * Find .java files in one or more directories.
      * <p>Similar to the shell "find" command: {@code find paths -name \*.java}.
+     *
      * @param paths the directories in which to search for .java files
      * @return the .java files found
      * @throws IOException if an error occurred while searching for files
@@ -520,18 +540,18 @@ public class ToolBox {
     /**
      * Find files matching the file extension, in one or more directories.
      * <p>Similar to the shell "find" command: {@code find paths -name \*.ext}.
+     *
      * @param fileExtension the extension to search for
-     * @param paths the directories in which to search for files
+     * @param paths         the directories in which to search for files
      * @return the files matching the file extension
      * @throws IOException if an error occurred while searching for files
      */
     public Path[] findFiles(String fileExtension, Path... paths) throws IOException {
         Set<Path> files = new TreeSet<>();  // use TreeSet to force a consistent order
         for (Path p : paths) {
-            Files.walkFileTree(p, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(p, new SimpleFileVisitor<>() {
                 @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (file.getFileName().toString().endsWith(fileExtension)) {
                         files.add(file);
                     }
@@ -539,24 +559,26 @@ public class ToolBox {
                 }
             });
         }
-        return files.toArray(new Path[files.size()]);
+        return files.toArray(new Path[0]);
     }
 
     /**
      * Writes a file containing the given content.
      * Any necessary directories for the file will be created.
-     * @param path where to write the file
+     *
+     * @param path    where to write the file
      * @param content the content for the file
      * @throws IOException if an error occurred while writing the file
      */
     public void writeFile(String path, String content) throws IOException {
-        writeFile(Paths.get(path), content);
+        writeFile(Path.of(path), content);
     }
 
     /**
      * Writes a file containing the given content.
      * Any necessary directories for the file will be created.
-     * @param path where to write the file
+     *
+     * @param path    where to write the file
      * @param content the content for the file
      * @throws IOException if an error occurred while writing the file
      */
@@ -580,7 +602,8 @@ public class ToolBox {
      * <p>Note: the content is analyzed using regular expressions;
      * errors can occur if any contents have initial comments that might trip
      * up the analysis.
-     * @param dir the base directory
+     *
+     * @param dir      the base directory
      * @param contents the contents of the files to be written
      * @throws IOException if an error occurred while writing any of the files.
      */
@@ -593,17 +616,19 @@ public class ToolBox {
     }
 
     /**
-     * Returns the path for the binary of a JDK tool within {@link testJDK}.
+     * Returns the path for the binary of a JDK tool within {@link #testJDK}.
+     *
      * @param tool the name of the tool
      * @return the path of the tool
      */
     public Path getJDKTool(String tool) {
-        return Paths.get(testJDK, "bin", tool);
+        return Path.of(testJDK, "bin", tool);
     }
 
     /**
      * Returns a string representing the contents of an {@code Iterable} as a list.
-     * @param <T> the type parameter of the {@code Iterable}
+     *
+     * @param <T>   the type parameter of the {@code Iterable}
      * @param items the iterable
      * @return the string
      */
@@ -624,8 +649,9 @@ public class ToolBox {
 
         /**
          * Creates a in-memory file object for Java source code.
+         *
          * @param className the name of the class
-         * @param source the source text
+         * @param source    the source text
          */
         public JavaSource(String className, String source) {
             super(URI.create(className), JavaFileObject.Kind.SOURCE);
@@ -635,6 +661,7 @@ public class ToolBox {
         /**
          * Creates a in-memory file object for Java source code.
          * The name of the class will be inferred from the source code.
+         *
          * @param source the source text
          */
         public JavaSource(String source) {
@@ -645,6 +672,7 @@ public class ToolBox {
 
         /**
          * Writes the source code to a file in the current directory.
+         *
          * @throws IOException if there is a problem writing the file
          */
         public void write() throws IOException {
@@ -653,6 +681,7 @@ public class ToolBox {
 
         /**
          * Writes the source code to a file in a specified directory.
+         *
          * @param dir the directory
          * @throws IOException if there is a problem writing the file
          */
@@ -669,13 +698,13 @@ public class ToolBox {
             return source;
         }
 
-        private static Pattern commentPattern =
+        private final static Pattern commentPattern =
                 Pattern.compile("(?s)(\\s+//.*?\n|/\\*.*?\\*/)");
-        private static Pattern modulePattern =
+        private final static Pattern modulePattern =
                 Pattern.compile("module\\s+((?:\\w+\\.)*)");
-        private static Pattern packagePattern =
-                Pattern.compile("package\\s+(((?:\\w+\\.)*)(?:\\w+))");
-        private static Pattern classPattern =
+        private final static Pattern packagePattern =
+                Pattern.compile("package\\s+(((?:\\w+\\.)*)\\w+)");
+        private final static Pattern classPattern =
                 Pattern.compile("(?:public\\s+)?(?:class|enum|interface|record)\\s+(\\w+)");
 
         /**
@@ -689,7 +718,7 @@ public class ToolBox {
             Matcher matcher = commentPattern.matcher(source);
             int start = 0;
             while (matcher.find()) {
-                sb.append(source.substring(start, matcher.start()));
+                sb.append(source, start, matcher.start());
                 start = matcher.end();
             }
             sb.append(source.substring(start));
@@ -725,10 +754,11 @@ public class ToolBox {
      * Extracts the Java file name from the class declaration.
      * This method is intended for simple files and uses regular expressions,
      * so comments matching the pattern can make the method fail.
-     * @deprecated This is a legacy method for compatibility with ToolBox v1.
-     *      Use {@link JavaSource#getName JavaSource.getName} instead.
+     *
      * @param source the source text
      * @return the Java file name inferred from the source
+     * @deprecated This is a legacy method for compatibility with ToolBox v1.
+     * Use {@link JavaSource#getName JavaSource.getName} instead.
      */
     @Deprecated
     public static String getJavaFileNameFromSource(String source) {
@@ -741,11 +771,15 @@ public class ToolBox {
         "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8",  "lpt9"
     );
 
-    /**Validate if a given name is a valid file name
+    /**
+     * Validates if a given name is a valid file name
      * or path name on known platforms.
+     *
+     * @param name the name
+     * @throws IllegalArgumentException if the name is a reserved name
      */
     public static void validateName(String name) {
-        for (String part : name.split("\\.|/|\\\\")) {
+        for (String part : name.split("[./\\\\]")) {
             if (RESERVED_NAMES.contains(part.toLowerCase(Locale.US))) {
                 throw new IllegalArgumentException("Name: " + name + " is" +
                                                    "a reserved name on Windows, " +
@@ -753,12 +787,8 @@ public class ToolBox {
             }
         }
     }
-    /**
-     * A memory file manager, for saving generated files in memory.
-     * The file manager delegates to a separate file manager for listing and
-     * reading input files.
-     */
-    public static class MemoryFileManager extends ForwardingJavaFileManager {
+
+    public static class MemoryFileManager extends ForwardingJavaFileManager<JavaFileManager> {
         private interface Content {
             byte[] getBytes();
             String getString();
@@ -770,7 +800,7 @@ public class ToolBox {
         private final Map<Location, Map<String, Content>> files;
 
         /**
-         * Construct a memory file manager which stores output files in memory,
+         * Constructs a memory file manager which stores output files in memory,
          * and delegates to a default file manager for input files.
          */
         public MemoryFileManager() {
@@ -778,8 +808,9 @@ public class ToolBox {
         }
 
         /**
-         * Construct a memory file manager which stores output files in memory,
+         * Constructs a memory file manager which stores output files in memory,
          * and delegates to a specified file manager for input files.
+         *
          * @param fileManager the file manager to be used for input files
          */
         public MemoryFileManager(JavaFileManager fileManager) {
@@ -799,6 +830,7 @@ public class ToolBox {
         /**
          * Returns the set of names of files that have been written to a given
          * location.
+         *
          * @param location the location
          * @return the set of file names
          */
@@ -811,8 +843,9 @@ public class ToolBox {
         /**
          * Returns the content written to a file in a given location,
          * or null if no such file has been written.
+         *
          * @param location the location
-         * @param name the name of the file
+         * @param name     the name of the file
          * @return the content as an array of bytes
          */
         public byte[] getFileBytes(Location location, String name) {
@@ -823,8 +856,9 @@ public class ToolBox {
         /**
          * Returns the content written to a file in a given location,
          * or null if no such file has been written.
+         *
          * @param location the location
-         * @param name the name of the file
+         * @param name     the name of the file
          * @return the content as a string
          */
         public String getFileString(Location location, String name) {
@@ -838,10 +872,8 @@ public class ToolBox {
         }
 
         private void save(Location location, String name, Content content) {
-            Map<String, Content> filesForLocation = files.get(location);
-            if (filesForLocation == null)
-                files.put(location, filesForLocation = new HashMap<>());
-            filesForLocation.put(name, content);
+            files.computeIfAbsent(location, k -> new HashMap<>())
+                    .put(name, content);
         }
 
         /**
@@ -853,7 +885,10 @@ public class ToolBox {
 
             /**
              * Constructs a memory file object.
-             * @param name binary name of the class to be stored in this file object
+             *
+             * @param location the location in which to save the file object
+             * @param name     binary name of the class to be stored in this file object
+             * @param kind     the kind of file object
              */
             MemoryFileObject(Location location, String name, JavaFileObject.Kind kind) {
                 super(URI.create("mfm:///" + name.replace('.','/') + kind.extension),
@@ -890,7 +925,7 @@ public class ToolBox {
                     @Override
                     public void close() throws IOException {
                         out.close();
-                        String text = ((StringWriter) out).toString();
+                        String text = out.toString();
                         save(location, name, new Content() {
                             @Override
                             public byte[] getBytes() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.WatchpointRequest.addClassFilter_s;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,8 +53,8 @@ public class filter_s002a {
 
     //====================================================== test program
 
-    static Thread1filter_s002a thread1 = null;
-    static Thread2filter_s002a thread2 = null;
+    static Thread thread1 = null;
+    static Thread thread2 = null;
 
     static filter_s002aTestClass10 obj10 = new filter_s002aTestClass10();
     static filter_s002aTestClass11 obj11 = new filter_s002aTestClass11();
@@ -108,7 +107,7 @@ public class filter_s002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1filter_s002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1filter_s002a("thread1"));
                             log1("run1(thread1);");
                             run1(thread1);
 
@@ -116,7 +115,7 @@ public class filter_s002a {
                             break;
 
                     case 1:
-                            thread2 = new Thread2filter_s002a("thread2");
+                            thread2 = JDIThreadFactory.newThread(new Thread2filter_s002a("thread2"));
                             log1("run1(thread2);");
                             run1(thread2);
 
@@ -187,23 +186,20 @@ class filter_s002aTestClass11 extends filter_s002aTestClass10 {
     }
 }
 
-class Thread1filter_s002a extends Thread {
-
-    String tName = null;
+class Thread1filter_s002a extends NamedTask {
 
     public Thread1filter_s002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s002a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized (filter_s002a.waitnotifyObj) {
            filter_s002a.waitnotifyObj.notify();
         }
             filter_s002aTestClass10.method();
             filter_s002aTestClass11.method();
-        filter_s002a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
@@ -221,23 +217,20 @@ class filter_s002aTestClass20 {
     }
 }
 
-class Thread2filter_s002a extends Thread {
-
-    String tName = null;
+class Thread2filter_s002a extends NamedTask {
 
     public Thread2filter_s002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s002a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized (filter_s002a.waitnotifyObj) {
             filter_s002a.waitnotifyObj.notify();
         }
             filter_s002aTestClass20.method();
             TestClass21.method();
-        filter_s002a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 

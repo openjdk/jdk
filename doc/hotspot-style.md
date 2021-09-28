@@ -409,7 +409,7 @@ Similar discussions for some other projects:
 * [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) &mdash;
 Currently (2020) targeting C++17.
 
-* [C++11 and C++14 use in Chromium](https://chromium-cpp.appspot.com) &mdash;
+* [C++11 and C++14 use in Chromium](https://chromium.googlesource.com/chromium/src/+/main/styleguide/c++/c++11.md) &mdash;
 Categorizes features as allowed, banned, or to be discussed.
 
 * [llvm Coding Standards](https://llvm.org/docs/CodingStandards.html) &mdash;

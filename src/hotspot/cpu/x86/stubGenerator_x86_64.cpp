@@ -4412,7 +4412,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register state = c_rarg5;
     const Address subkeyH_mem(rbp, 2 * wordSize);
     const Register subkeyHtbl = r11;
-    const Address counter_mem(rbp, 3 * wordSize);
+    const Address avx512_subkeyH_mem(rbp, 3 * wordSize);
+    const Register avx512_subkeyHtbl = r13;
+    const Address counter_mem(rbp, 4 * wordSize);
     const Register counter = r12;
 #else
     const Address key_mem(rbp, 6 * wordSize);
@@ -4421,7 +4423,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register state = r13;
     const Address subkeyH_mem(rbp, 8 * wordSize);
     const Register subkeyHtbl = r14;
-    const Address counter_mem(rbp, 9 * wordSize);
+    const Address avx512_subkeyH_mem(rbp, 9 * wordSize);
+    const Register avx512_subkeyHtbl = r12;
+    const Address counter_mem(rbp, 10 * wordSize);
     const Register counter = rsi;
 #endif
     __ enter();
@@ -4438,9 +4442,10 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(state, state_mem);
 #endif
     __ movptr(subkeyHtbl, subkeyH_mem);
+    __ movptr(avx512_subkeyHtbl, avx512_subkeyH_mem);
     __ movptr(counter, counter_mem);
 
-    __ aesgcm_encrypt(in, len, ct, out, key, state, subkeyHtbl, counter);
+    __ aesgcm_encrypt(in, len, ct, out, key, state, subkeyHtbl, avx512_subkeyHtbl, counter);
 
     // Restore state before leaving routine
 #ifdef _WIN64
