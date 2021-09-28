@@ -543,7 +543,10 @@ public class Object {
      *     }
      * }</pre>
      *
-     * @deprecated The finalization mechanism is inherently problematic.
+     * @deprecated The finalization mechanism is inherently problematic, and
+     * will be removed in a future release.  At that time, finalize() will no
+     * longer be called by the garbage collector.
+     *
      * Finalization can lead to performance issues, deadlocks, and hangs.
      * Errors in finalizers can lead to resource leaks; there is no way to cancel
      * finalization if it is no longer necessary; and no ordering is specified
@@ -555,7 +558,7 @@ public class Object {
      * Classes whose instances hold non-heap resources should provide a method
      * to enable explicit release of those resources, and they should also
      * implement {@link AutoCloseable} if appropriate.
-     * The {@link java.lang.ref.Cleaner} and {@link java.lang.ref.PhantomReference}
+     * {@link java.lang.ref.Cleaner} and {@link java.lang.ref.PhantomReference}
      * provide more flexible and efficient ways to release resources when an object
      * becomes unreachable.
      *
@@ -564,6 +567,6 @@ public class Object {
      * @see java.lang.ref.PhantomReference
      * @jls 12.6 Finalization of Class Instances
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval=true)
     protected void finalize() throws Throwable { }
 }

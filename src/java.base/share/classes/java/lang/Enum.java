@@ -275,8 +275,13 @@ public abstract class Enum<E extends Enum<E>>
 
     /**
      * enum classes cannot have finalize methods.
+     * 
+     * @deprecated The finalization mechanism is inherently problematic, and
+     * will be removed in a future release.  See {@link java.lang.Object#finalize}
+     * for details.
      */
-    @SuppressWarnings("deprecation")
+    @Deprecated(since="9", forRemoval=true)
+    @SuppressWarnings("removal")
     protected final void finalize() { }
 
     /**

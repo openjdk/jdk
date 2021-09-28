@@ -1615,7 +1615,7 @@ public class PKCS11 {
      *
      * @exception Throwable If finalization fails.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         disconnect();
     }

@@ -868,7 +868,11 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * @exception Throwable if an error occurs during superclass
      * finalization.
      *
-     * @deprecated The {@code finalize} method has been deprecated.
+     * @deprecated The finalization mechanism is inherently problematic, and
+     *     will be removed in a future release.  See {@link java.lang.Object#finalize}
+     *     for details.
+     * 
+     *     The {@code finalize} method has been deprecated.
      *     Subclasses that override {@code finalize} in order to perform cleanup
      *     should be modified to use alternative cleanup mechanisms and
      *     to remove the overriding {@code finalize} method.
@@ -877,7 +881,8 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      *     See the specification for {@link Object#finalize()} for further
      *     information about migration options.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval=true)
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         if (!isClosed) {
             try {
