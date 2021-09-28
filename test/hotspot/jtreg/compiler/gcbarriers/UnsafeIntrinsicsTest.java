@@ -319,9 +319,9 @@ class Runner implements Runnable {
 
     private Node mergeImplWeakCAS(Node startNode, Node expectedNext, Node head) {
         // Weak CAS - should almost always be true within a single thread - no other thread can have overwritten
-        // Spurious failures are allowed. We expect the 2nd attempt to work.
+        // Spurious failures are allowed. So, we retry a couple of times on failure.
         boolean ok = false;
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 4; ++i) {
             ok = UNSAFE.weakCompareAndSetReference(startNode, offset, expectedNext, head);
             if (ok) break;
         }
