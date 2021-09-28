@@ -40,9 +40,8 @@ void G1SentinelTask::execute() {
 
 G1ServiceThread::G1ServiceThread() :
     ConcurrentGCThread(),
-    _monitor(Mutex::leaf,
-             "G1ServiceThread monitor",
-             true,
+    _monitor(Mutex::nosafepoint,
+             "G1ServiceThread_lock",
              Monitor::_safepoint_check_never),
     _task_queue() {
   set_name("G1 Service");

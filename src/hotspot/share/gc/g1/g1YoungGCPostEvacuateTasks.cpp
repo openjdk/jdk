@@ -31,91 +31,113 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/ticks.hpp"
 
-G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
-                                                                                 G1RedirtyCardsQueueSet* rdcqs) :
-  G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
-{
-  add_serial_task(new MergePssTask(per_thread_states));
-  add_serial_task(new RecalculateUsedTask());
-  if (SampleCollectionSetCandidatesTask::should_execute()) {
-    add_serial_task(new SampleCollectionSetCandidatesTask());
-  }
-  if (RemoveSelfForwardPtrsTask::should_execute()) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(rdcqs));
-  }
-  add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
-}
+class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
+  G1ParScanThreadStateSet* _per_thread_states;
 
-G1PostEvacuateCollectionSetCleanupTask1::MergePssTask::MergePssTask(G1ParScanThreadStateSet* per_thread_states) :
-  G1AbstractSubTask(G1GCPhaseTimes::MergePSS),
-  _per_thread_states(per_thread_states) { }
-
-void G1PostEvacuateCollectionSetCleanupTask1::MergePssTask::do_work(uint worker_id) {
-  _per_thread_states->flush();
-}
-
-double G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::worker_cost() const {
-  // If there is no evacuation failure, the work to perform is minimal.
-  return G1CollectedHeap::heap()->evacuation_failed() ? 1.0 : AlmostNoWork;
-}
-
-void G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::do_work(uint worker_id) {
-  G1CollectedHeap::heap()->update_used_after_gc();
-}
-
-bool G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::should_execute() {
-  return G1CollectedHeap::heap()->should_sample_collection_set_candidates();
-}
-
-double G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::worker_cost() const {
-  return should_execute() ? 1.0 : AlmostNoWork;
-}
-
-class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
 public:
-  G1CardSetMemoryStats _total;
+  MergePssTask(G1ParScanThreadStateSet* per_thread_states) :
+    G1AbstractSubTask(G1GCPhaseTimes::MergePSS),
+    _per_thread_states(per_thread_states) { }
 
-  bool do_heap_region(HeapRegion* r) override {
-    _total.add(r->rem_set()->card_set_memory_stats());
-    return false;
+  double worker_cost() const override { return 1.0; }
+
+  void do_work(uint worker_id) override { _per_thread_states->flush(); }
+};
+
+class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
+  bool _evacuation_failed;
+
+public:
+  RecalculateUsedTask(bool evacuation_failed) : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed), _evacuation_failed(evacuation_failed) { }
+
+  double worker_cost() const override {
+    // If there is no evacuation failure, the work to perform is minimal.
+    return _evacuation_failed ? 1.0 : AlmostNoWork;
+  }
+
+  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed); }
+};
+
+class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
+public:
+  SampleCollectionSetCandidatesTask() : G1AbstractSubTask(G1GCPhaseTimes::SampleCollectionSetCandidates) { }
+
+  static bool should_execute() {
+    return G1CollectedHeap::heap()->should_sample_collection_set_candidates();
+  }
+
+  double worker_cost() const override {
+    return should_execute() ? 1.0 : AlmostNoWork;
+  }
+
+  void do_work(uint worker_id) override {
+
+    class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
+    public:
+      G1CardSetMemoryStats _total;
+
+      bool do_heap_region(HeapRegion* r) override {
+        _total.add(r->rem_set()->card_set_memory_stats());
+        return false;
+      }
+    } cl;
+
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+    g1h->collection_set()->candidates()->iterate(&cl);
+    g1h->set_collection_set_candidates_stats(cl._total);
   }
 };
 
-void G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask::do_work(uint worker_id) {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
+  G1ParRemoveSelfForwardPtrsTask _task;
+  G1EvacFailureRegions* _evac_failure_regions;
 
-  G1SampleCollectionSetCandidatesClosure cl;
-  g1h->collection_set()->candidates()->iterate(&cl);
-  g1h->set_collection_set_candidates_stats(cl._total);
-}
+public:
+  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
+    _task(evac_failure_regions),
+    _evac_failure_regions(evac_failure_regions) { }
 
-bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::should_execute() {
-  return G1CollectedHeap::heap()->evacuation_failed();
-}
+  ~RemoveSelfForwardPtrsTask() {
+    assert(_task.num_failed_regions() == _evac_failure_regions->num_regions_failed_evacuation(),
+           "Removed regions %u inconsistent with expected %u",
+           _task.num_failed_regions(), _evac_failure_regions->num_regions_failed_evacuation());
+  }
 
-G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs) :
-  G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr), _task(rdcqs) { }
+  double worker_cost() const override {
+    assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
+    return _evac_failure_regions->num_regions_failed_evacuation();
+  }
 
-G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::~RemoveSelfForwardPtrsTask() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  assert(_task.num_failed_regions() == g1h->num_regions_failed_evacuation(),
-         "Removed regions %u inconsistent with expected %u",
-         _task.num_failed_regions(), g1h->num_regions_failed_evacuation());
-}
+  void do_work(uint worker_id) override {
+    _task.work(worker_id);
+  }
+};
 
-double G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::worker_cost() const {
-  assert(should_execute(), "Should not call this if not executed");
-  return G1CollectedHeap::heap()->num_regions_failed_evacuation();
-}
+G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
+                                                                                 G1EvacFailureRegions* evac_failure_regions) :
+  G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
+{
+  bool evacuation_failed = evac_failure_regions->evacuation_failed();
 
-void G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::do_work(uint worker_id) {
-  _task.work(worker_id);
+  add_serial_task(new MergePssTask(per_thread_states));
+  add_serial_task(new RecalculateUsedTask(evacuation_failed));
+  if (SampleCollectionSetCandidatesTask::should_execute()) {
+    add_serial_task(new SampleCollectionSetCandidatesTask());
+  }
+  if (evacuation_failed) {
+    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
+  }
+  add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
@@ -221,75 +243,94 @@ public:
   }
 };
 
-void G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask::do_work(uint worker_id) {
-  G1CollectedHeap::heap()->reset_hot_card_cache();
-}
+class G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask : public G1AbstractSubTask {
+public:
+  ResetHotCardCacheTask() : G1AbstractSubTask(G1GCPhaseTimes::ResetHotCardCache) { }
 
-void G1PostEvacuateCollectionSetCleanupTask2::PurgeCodeRootsTask::do_work(uint worker_id) {
-  G1CollectedHeap::heap()->purge_code_root_memory();
-}
+  double worker_cost() const override { return 0.5; }
+  void do_work(uint worker_id) override { G1CollectedHeap::heap()->reset_hot_card_cache(); }
+};
+
+class G1PostEvacuateCollectionSetCleanupTask2::PurgeCodeRootsTask : public G1AbstractSubTask {
+public:
+  PurgeCodeRootsTask() : G1AbstractSubTask(G1GCPhaseTimes::PurgeCodeRoots) { }
+
+  double worker_cost() const override { return 1.0; }
+  void do_work(uint worker_id) override { G1CollectedHeap::heap()->purge_code_root_memory(); }
+};
 
 #if COMPILER2_OR_JVMCI
-void G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask::do_work(uint worker_id) {
-  DerivedPointerTable::update_pointers();
-}
+class G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask : public G1AbstractSubTask {
+public:
+  UpdateDerivedPointersTask() : G1AbstractSubTask(G1GCPhaseTimes::UpdateDerivedPointers) { }
+
+  double worker_cost() const override { return 1.0; }
+  void do_work(uint worker_id) override {   DerivedPointerTable::update_pointers(); }
+};
 #endif
 
-bool G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::should_execute() {
-  return G1CollectedHeap::heap()->should_do_eager_reclaim();
-}
+class G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask : public G1AbstractSubTask {
+  uint _humongous_regions_reclaimed;
+  size_t _bytes_freed;
 
-G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::EagerlyReclaimHumongousObjectsTask() :
-  G1AbstractSubTask(G1GCPhaseTimes::EagerlyReclaimHumongousObjects),
-  _humongous_regions_reclaimed(0),
-  _bytes_freed(0) { }
+public:
+  EagerlyReclaimHumongousObjectsTask() :
+    G1AbstractSubTask(G1GCPhaseTimes::EagerlyReclaimHumongousObjects),
+    _humongous_regions_reclaimed(0),
+    _bytes_freed(0) { }
 
-void G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::do_work(uint worker_id) {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  virtual ~EagerlyReclaimHumongousObjectsTask() {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  G1FreeHumongousRegionClosure cl;
-  g1h->heap_region_iterate(&cl);
+    g1h->remove_from_old_gen_sets(0, 0, _humongous_regions_reclaimed);
+    g1h->decrement_summary_bytes(_bytes_freed);
+  }
 
-  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_objects());
-  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidates());
-  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.humongous_objects_reclaimed());
+  static bool should_execute() {   return G1CollectedHeap::heap()->should_do_eager_reclaim(); }
 
-  _humongous_regions_reclaimed = cl.humongous_regions_reclaimed();
-  _bytes_freed = cl.bytes_freed();
-}
+  double worker_cost() const override { return 1.0; }
+  void do_work(uint worker_id) override {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::~EagerlyReclaimHumongousObjectsTask() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    G1FreeHumongousRegionClosure cl;
+    g1h->heap_region_iterate(&cl);
 
-  g1h->remove_from_old_gen_sets(0, 0, _humongous_regions_reclaimed);
-  g1h->decrement_summary_bytes(_bytes_freed);
-}
+    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_objects());
+    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidates());
+    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.humongous_objects_reclaimed());
 
-bool G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::should_execute() {
-  return G1CollectedHeap::heap()->evacuation_failed();
-}
+    _humongous_regions_reclaimed = cl.humongous_regions_reclaimed();
+    _bytes_freed = cl.bytes_freed();
+  }
+};
 
-G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
-  G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks), _preserved_marks(preserved_marks), _task(preserved_marks->create_task()) { }
+class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
+  PreservedMarksSet* _preserved_marks;
+  AbstractGangTask* _task;
 
-G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::~RestorePreservedMarksTask() {
-  delete _task;
-}
+public:
+  RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
+    G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks),
+    _preserved_marks(preserved_marks),
+    _task(preserved_marks->create_task()) { }
 
-double G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::worker_cost() const {
-  assert(should_execute(), "Should not call this if not executed");
-  return _preserved_marks->num();
-}
+  virtual ~RestorePreservedMarksTask() {
+    delete _task;
+  }
 
-void G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::do_work(uint worker_id) {
-  _task->work(worker_id);
-}
+  double worker_cost() const override {
+    return _preserved_marks->num();
+  }
+
+  void do_work(uint worker_id) override { _task->work(worker_id); }
+};
 
 class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
  private:
   size_t _num_dirtied;
   G1CollectedHeap* _g1h;
   G1CardTable* _g1_ct;
+  G1EvacFailureRegions* _evac_failure_regions;
 
   HeapRegion* region_for_card(CardValue* card_ptr) const {
     return _g1h->heap_region_containing(_g1_ct->addr_for(card_ptr));
@@ -298,12 +339,16 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   bool will_become_free(HeapRegion* hr) const {
     // A region will be freed by during the FreeCollectionSet phase if the region is in the
     // collection set and has not had an evacuation failure.
-    return _g1h->is_in_cset(hr) && !_g1h->evacuation_failed(hr->hrm_index());
+    return _g1h->is_in_cset(hr) && !_evac_failure_regions->contains(hr->hrm_index());
   }
 
  public:
-  RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h) : G1CardTableEntryClosure(),
-    _num_dirtied(0), _g1h(g1h), _g1_ct(g1h->card_table()) { }
+  RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h, G1EvacFailureRegions* evac_failure_regions) :
+    G1CardTableEntryClosure(),
+    _num_dirtied(0),
+    _g1h(g1h),
+    _g1_ct(g1h->card_table()),
+    _evac_failure_regions(evac_failure_regions) { }
 
   void do_card_ptr(CardValue* card_ptr, uint worker_id) {
     HeapRegion* hr = region_for_card(card_ptr);
@@ -318,36 +363,44 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   size_t num_dirtied()   const { return _num_dirtied; }
 };
 
-G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask::RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs) :
-  G1AbstractSubTask(G1GCPhaseTimes::RedirtyCards),
-  _rdcqs(rdcqs),
-  _nodes(rdcqs->all_completed_buffers()) { }
+class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
+  G1RedirtyCardsQueueSet* _rdcqs;
+  BufferNode* volatile _nodes;
+  G1EvacFailureRegions* _evac_failure_regions;
 
-G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask::~RedirtyLoggedCardsTask() {
-  G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
-  dcq.merge_bufferlists(_rdcqs);
-  _rdcqs->verify_empty();
-}
+public:
+  RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::RedirtyCards),
+    _rdcqs(rdcqs),
+    _nodes(rdcqs->all_completed_buffers()),
+    _evac_failure_regions(evac_failure_regions) { }
 
-double G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask::worker_cost() const {
-  // Needs more investigation.
-  return G1CollectedHeap::heap()->workers()->active_workers();
-}
-
-void G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask::do_work(uint worker_id) {
-  RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap());
-  const size_t buffer_size = _rdcqs->buffer_size();
-  BufferNode* next = Atomic::load(&_nodes);
-  while (next != nullptr) {
-    BufferNode* node = next;
-    next = Atomic::cmpxchg(&_nodes, node, node->next());
-    if (next == node) {
-      cl.apply_to_buffer(node, buffer_size, worker_id);
-      next = node->next();
-    }
+  virtual ~RedirtyLoggedCardsTask() {
+    G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
+    dcq.merge_bufferlists(_rdcqs);
+    _rdcqs->verify_empty();
   }
-  record_work_item(worker_id, 0, cl.num_dirtied());
-}
+
+  double worker_cost() const override {
+    // Needs more investigation.
+    return G1CollectedHeap::heap()->workers()->active_workers();
+  }
+
+  void do_work(uint worker_id) override {
+    RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap(), _evac_failure_regions);
+    const size_t buffer_size = _rdcqs->buffer_size();
+    BufferNode* next = Atomic::load(&_nodes);
+    while (next != nullptr) {
+      BufferNode* node = next;
+      next = Atomic::cmpxchg(&_nodes, node, node->next());
+      if (next == node) {
+        cl.apply_to_buffer(node, buffer_size, worker_id);
+        next = node->next();
+      }
+    }
+    record_work_item(worker_id, 0, cl.num_dirtied());
+  }
+};
 
 // Helper class to keep statistics for the collection set freeing
 class FreeCSetStats {
@@ -380,7 +433,7 @@ public:
     _regions_freed += other->_regions_freed;
   }
 
-  void report(G1CollectedHeap* g1h, G1EvacuationInfo* evacuation_info) {
+  void report(G1CollectedHeap* g1h, G1EvacInfo* evacuation_info) {
     evacuation_info->set_regions_freed(_regions_freed);
     evacuation_info->increment_collectionset_used_after(_after_used_bytes);
 
@@ -461,6 +514,7 @@ class FreeCSetClosure : public HeapRegionClosure {
   Tickspan         _young_time;
   Tickspan         _non_young_time;
   FreeCSetStats*   _stats;
+  G1EvacFailureRegions* _evac_failure_regions;
 
   void assert_tracks_surviving_words(HeapRegion* r) {
     assert(r->young_index_in_cset() != 0 &&
@@ -503,14 +557,16 @@ class FreeCSetClosure : public HeapRegionClosure {
 public:
   FreeCSetClosure(const size_t* surviving_young_words,
                   uint worker_id,
-                  FreeCSetStats* stats) :
+                  FreeCSetStats* stats,
+                  G1EvacFailureRegions* evac_failure_regions) :
       HeapRegionClosure(),
       _g1h(G1CollectedHeap::heap()),
       _surviving_young_words(surviving_young_words),
       _worker_id(worker_id),
       _young_time(),
       _non_young_time(),
-      _stats(stats) { }
+      _stats(stats),
+      _evac_failure_regions(evac_failure_regions) { }
 
   virtual bool do_heap_region(HeapRegion* r) {
     assert(r->in_collection_set(), "Invariant: %u missing from CSet", r->hrm_index());
@@ -524,7 +580,7 @@ public:
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
     }
 
-    if (_g1h->evacuation_failed(r->hrm_index())) {
+    if (_evac_failure_regions->contains(r->hrm_index())) {
       handle_failed_region(r);
     } else {
       handle_evacuated_region(r);
@@ -545,66 +601,77 @@ public:
   }
 };
 
-FreeCSetStats* G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::worker_stats(uint worker) {
-  return &_worker_stats[worker];
-}
+class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1AbstractSubTask {
+  G1CollectedHeap*  _g1h;
+  G1EvacInfo* _evacuation_info;
+  FreeCSetStats*    _worker_stats;
+  HeapRegionClaimer _claimer;
+  const size_t*     _surviving_young_words;
+  uint              _active_workers;
+  G1EvacFailureRegions* _evac_failure_regions;
 
-void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::report_statistics() {
-  // Merge the accounting
-  FreeCSetStats total_stats;
-  for (uint worker = 0; worker < _active_workers; worker++) {
-    total_stats.merge_stats(worker_stats(worker));
+  FreeCSetStats* worker_stats(uint worker) {
+    return &_worker_stats[worker];
   }
-  total_stats.report(_g1h, _evacuation_info);
-}
 
-G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::FreeCollectionSetTask(G1EvacuationInfo* evacuation_info,
-                                                                                      const size_t* surviving_young_words) :
+  void report_statistics() {
+    // Merge the accounting
+    FreeCSetStats total_stats;
+    for (uint worker = 0; worker < _active_workers; worker++) {
+      total_stats.merge_stats(worker_stats(worker));
+    }
+    total_stats.report(_g1h, _evacuation_info);
+  }
+
+public:
+  FreeCollectionSetTask(G1EvacInfo* evacuation_info,
+                        const size_t* surviving_young_words,
+                        G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::FreeCollectionSet),
     _g1h(G1CollectedHeap::heap()),
     _evacuation_info(evacuation_info),
     _worker_stats(nullptr),
     _claimer(0),
     _surviving_young_words(surviving_young_words),
-    _active_workers(0) {
-  _g1h->clear_eden();
-}
+    _active_workers(0),
+    _evac_failure_regions(evac_failure_regions) {
 
-G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::~FreeCollectionSetTask() {
-  Ticks serial_time = Ticks::now();
-  report_statistics();
-  for (uint worker = 0; worker < _active_workers; worker++) {
-    _worker_stats[worker].~FreeCSetStats();
+    _g1h->clear_eden();
   }
-  FREE_C_HEAP_ARRAY(FreeCSetStats, _worker_stats);
-  _g1h->phase_times()->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
-  _g1h->clear_collection_set();
-}
 
-double G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::worker_cost() const {
-  return G1CollectedHeap::heap()->collection_set()->region_length();
-}
-
-void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::set_max_workers(uint max_workers) {
-  _active_workers = max_workers;
-  _worker_stats = NEW_C_HEAP_ARRAY(FreeCSetStats, max_workers, mtGC);
-  for (uint worker = 0; worker < _active_workers; worker++) {
-    ::new (&_worker_stats[worker]) FreeCSetStats();
+  virtual ~FreeCollectionSetTask() {
+    Ticks serial_time = Ticks::now();
+    report_statistics();
+    for (uint worker = 0; worker < _active_workers; worker++) {
+      _worker_stats[worker].~FreeCSetStats();
+    }
+    FREE_C_HEAP_ARRAY(FreeCSetStats, _worker_stats);
+    _g1h->phase_times()->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
+    _g1h->clear_collection_set();
   }
-  _claimer.set_n_workers(_active_workers);
-}
 
-void G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask::do_work(uint worker_id) {
-  FreeCSetClosure cl(_surviving_young_words, worker_id, worker_stats(worker_id));
-  _g1h->collection_set_par_iterate_all(&cl, &_claimer, worker_id);
-  // Report per-region type timings.
-  cl.report_timing();
-}
+  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->region_length(); }
 
-G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(PreservedMarksSet* preserved_marks_set,
-                                                                                 G1RedirtyCardsQueueSet* rdcqs,
-                                                                                 G1EvacuationInfo* evacuation_info,
-                                                                                 const size_t* surviving_young_words) :
+  void set_max_workers(uint max_workers) override {
+    _active_workers = max_workers;
+    _worker_stats = NEW_C_HEAP_ARRAY(FreeCSetStats, max_workers, mtGC);
+    for (uint worker = 0; worker < _active_workers; worker++) {
+      ::new (&_worker_stats[worker]) FreeCSetStats();
+    }
+    _claimer.set_n_workers(_active_workers);
+  }
+
+  void do_work(uint worker_id) override {
+    FreeCSetClosure cl(_surviving_young_words, worker_id, worker_stats(worker_id), _evac_failure_regions);
+    _g1h->collection_set_par_iterate_all(&cl, &_claimer, worker_id);
+    // Report per-region type timings.
+    cl.report_timing();
+  }
+};
+
+G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
+                                                                                 G1EvacInfo* evacuation_info,
+                                                                                 G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedGangTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new ResetHotCardCacheTask());
@@ -616,9 +683,11 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
-  if (RestorePreservedMarksTask::should_execute()) {
-    add_parallel_task(new RestorePreservedMarksTask(preserved_marks_set));
+  if (evac_failure_regions->evacuation_failed()) {
+    add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
   }
-  add_parallel_task(new RedirtyLoggedCardsTask(rdcqs));
-  add_parallel_task(new FreeCollectionSetTask(evacuation_info, surviving_young_words));
+  add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
+  add_parallel_task(new FreeCollectionSetTask(evacuation_info,
+                                                   per_thread_states->surviving_young_words(),
+                                                   evac_failure_regions));
 }

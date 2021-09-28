@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1062,6 +1062,13 @@ public class DocCommentParser {
         return Character.isWhitespace(ch);
     }
 
+    protected boolean isHorizontalWhitespace(char ch) {
+        // This parser treats `\f` as a line break (see `nextChar`).
+        // To be consistent with that behaviour, this method does the same.
+        // (see JDK-8273809)
+        return ch == ' ' || ch == '\t';
+    }
+
     protected void skipWhitespace() {
         while (bp < buflen && isWhitespace(ch)) {
             nextChar();
@@ -1394,6 +1401,93 @@ public class DocCommentParser {
                 public DCTree parse(int pos) {
                     List<DCTree> description = blockContent();
                     return m.at(pos).newSinceTree(description);
+                }
+            },
+
+            // {@snippet attributes :
+            //  body}
+            new TagParser(TagParser.Kind.INLINE, DCTree.Kind.SNIPPET) {
+                @Override
+                DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    List<DCTree> attributes = tagAttrs();
+                    // expect "}" or ":"
+                    if (ch == '}') {
+                        nextChar();
+                        return m.at(pos).newSnippetTree(attributes, null);
+                    } else if (ch == ':') {
+                        newline = false;
+                        // consume ':'
+                        nextChar();
+                        // expect optional whitespace followed by mandatory newline
+                        while (bp < buflen && isHorizontalWhitespace(ch)) {
+                            nextChar();
+                        }
+                        // check that we are looking at newline
+                        if (!newline) {
+                            if (bp >= buf.length - 1) {
+                                throw new ParseException("dc.no.content");
+                            }
+                            throw new ParseException("dc.unexpected.content");
+                        }
+                        // consume newline
+                        nextChar();
+                        DCText text = inlineText(WhitespaceRetentionPolicy.RETAIN_ALL);
+                        nextChar();
+                        return m.at(pos).newSnippetTree(attributes, text);
+                    } else if (bp >= buf.length - 1) {
+                        throw new ParseException("dc.no.content");
+                    } else {
+                        throw new ParseException("dc.unexpected.content");
+                    }
+                }
+
+                /*
+                 * Reads a series of inline snippet tag attributes.
+                 *
+                 * Attributes are terminated by the first of ":" (colon) or
+                 * an unmatched "}" (closing curly).
+                 */
+                private List<DCTree> tagAttrs() {
+                    ListBuffer<DCTree> attrs = new ListBuffer<>();
+                    skipWhitespace();
+                    while (bp < buflen && isIdentifierStart(ch)) {
+                        int namePos = bp;
+                        Name name = readAttributeName();
+                        skipWhitespace();
+                        List<DCTree> value = null;
+                        ValueKind vkind = ValueKind.EMPTY;
+                        if (ch == '=') {
+                            ListBuffer<DCTree> v = new ListBuffer<>();
+                            nextChar();
+                            skipWhitespace();
+                            if (ch == '\'' || ch == '"') {
+                                newline = false;
+                                vkind = (ch == '\'') ? ValueKind.SINGLE : ValueKind.DOUBLE;
+                                char quote = ch;
+                                nextChar();
+                                textStart = bp;
+                                while (bp < buflen && ch != quote) {
+                                    nextChar();
+                                }
+                                addPendingText(v, bp - 1);
+                                nextChar();
+                            } else {
+                                vkind = ValueKind.UNQUOTED;
+                                textStart = bp;
+                                // Stop on '}' and ':' for them to be re-consumed by non-attribute parts of tag
+                                while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
+                                    nextChar();
+                                }
+                                addPendingText(v, bp - 1);
+                            }
+                            skipWhitespace();
+                            value = v.toList();
+                        }
+                        DCAttribute attr = m.at(namePos).newAttributeTree(name, vkind, value);
+                        attrs.add(attr);
+                    }
+                    return attrs.toList();
                 }
             },
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import sun.security.validator.Validator;
  * constraints specified in the jdk.certpath.disabledAlgorithms security
  * property.
  */
-class CertPathConstraintsParameters implements ConstraintsParameters {
+public class CertPathConstraintsParameters implements ConstraintsParameters {
     // The public key of the certificate
     private final Key key;
     // The certificate's trust anchor which will be checked against the
@@ -103,7 +103,7 @@ class CertPathConstraintsParameters implements ConstraintsParameters {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[\n");
-        sb.append("\n  Variant: ").append(variant);
+        sb.append("  Variant: ").append(variant);
         if (anchor != null) {
             sb.append("\n  Anchor: ").append(anchor);
         }

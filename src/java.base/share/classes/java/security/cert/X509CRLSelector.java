@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,9 +314,7 @@ public class X509CRLSelector implements CRLSelector {
         throws IOException
     {
         HashSet<Object> namesCopy = new HashSet<>();
-        Iterator<?> i = names.iterator();
-        while (i.hasNext()) {
-            Object nameObject = i.next();
+        for (Object nameObject : names) {
             if (!(nameObject instanceof byte []) &&
                 !(nameObject instanceof String))
                 throw new IOException("name not byte array or String");
@@ -366,8 +364,7 @@ public class X509CRLSelector implements CRLSelector {
     private static HashSet<X500Principal> parseIssuerNames(Collection<Object> names)
     throws IOException {
         HashSet<X500Principal> x500Principals = new HashSet<>();
-        for (Iterator<Object> t = names.iterator(); t.hasNext(); ) {
-            Object nameObject = t.next();
+        for (Object nameObject : names) {
             if (nameObject instanceof String) {
                 x500Principals.add(new X500Name((String)nameObject).asX500Principal());
             } else {
@@ -573,9 +570,8 @@ public class X509CRLSelector implements CRLSelector {
         sb.append("X509CRLSelector: [\n");
         if (issuerNames != null) {
             sb.append("  IssuerNames:\n");
-            Iterator<Object> i = issuerNames.iterator();
-            while (i.hasNext())
-                sb.append("    " + i.next() + "\n");
+            for (Object issuerName : issuerNames)
+                sb.append("    " + issuerName + "\n");
         }
         if (minCRL != null)
             sb.append("  minCRLNumber: " + minCRL + "\n");
