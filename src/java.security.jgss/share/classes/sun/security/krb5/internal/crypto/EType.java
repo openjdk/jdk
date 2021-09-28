@@ -53,8 +53,8 @@ public abstract class EType {
     private static int[] supportedETypes;
     // common default etypes if not defined in krb5.conf
     private static int[] defaultETypes;
-    // allow_weak_crypto in krb5.conf
-    public static boolean allowWeakCrypto;
+    // allow_weak_crypto in krb5.conf. Also used by CksumType.
+    static boolean allowWeakCrypto;
 
     static {
         initStatic();
