@@ -1454,8 +1454,8 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       if (n_loop != loop_ctrl && n_loop->is_member(loop_ctrl)) {
         // n has a control input inside a loop but get_ctrl() is member of an outer loop. This could happen, for example,
         // for Div nodes inside a loop (control input inside loop) without a use except for an UCT (outside the loop).
-        // Rewire control of n to get_ctrl(n) to move it out of the loop, regardless if its input(s) are later sunk or not.
-        _igvn.replace_input_of(n, 0, n_ctrl);
+        // Rewire control of n to right outside of the loop, regardless if its input(s) are later sunk or not.
+        _igvn.replace_input_of(n, 0, place_outside_loop(n_ctrl, loop_ctrl));
       }
     }
     if (n_loop != _ltree_root && n->outcnt() > 1) {
