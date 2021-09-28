@@ -24,18 +24,13 @@
  */
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.*;
-import java.awt.event.*;
 import java.beans.*;
 import java.security.AccessController;
 import javax.accessibility.*;
 import javax.swing.plaf.RootPaneUI;
-import java.util.Vector;
 import java.io.Serializable;
-import javax.swing.border.*;
 
-import sun.awt.AWTAccessor;
 import sun.security.action.GetBooleanAction;
 
 
@@ -511,10 +506,10 @@ public class JRootPane extends JComponent implements Accessible {
       * @return the default <code>glassPane</code>
       */
     protected Component createGlassPane() {
-        JComponent c = new JPanel();
+        JPanel c = new JPanel();
         c.setName(this.getName()+".glassPane");
         c.setVisible(false);
-        ((JPanel)c).setOpaque(false);
+        c.setOpaque(false);
         return c;
     }
 

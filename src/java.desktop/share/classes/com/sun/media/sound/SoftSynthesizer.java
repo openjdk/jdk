@@ -289,12 +289,11 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                     c.current_instrument = null;
                     c.current_director = null;
                 }
-            for (Instrument instrument : instruments) {
+            for (ModelInstrument instrument : instruments) {
                 String pat = patchToString(instrument.getPatch());
-                SoftInstrument softins
-                        = new SoftInstrument((ModelInstrument) instrument);
+                SoftInstrument softins = new SoftInstrument(instrument);
                 inslist.put(pat, softins);
-                loadedlist.put(pat, (ModelInstrument) instrument);
+                loadedlist.put(pat, instrument);
             }
         }
 
