@@ -45,6 +45,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /*
  * @test
+ * @key headful
  * @bug 6364882 8273634
  * @summary tests if broken and last lines in paragraph are not justified
  * @run main bug6364882
