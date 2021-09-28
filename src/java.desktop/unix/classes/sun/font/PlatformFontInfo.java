@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,15 @@
 
 package sun.font;
 
-/**
- * Factory class used to retrieve a valid FontManager instance for the current
- * platform.
- *
- * A default implementation is given for Linux, Mac OS and Windows.
- */
-public final class FontManagerFactory {
+import sun.awt.X11FontManager;
 
-    /** Our singleton instance. */
-    private static volatile FontManager instance;
+final class PlatformFontInfo {
 
     /**
-     * Get a valid FontManager implementation for the current platform.
-     *
-     * @return a valid FontManager instance for the current platform
+     * The method is only to be called via the
+     * {@code FontManagerFactory.getInstance()} factory method.
      */
-    public static FontManager getInstance() {
-
-        FontManager result = instance;
-        if (result == null) {
-            synchronized (FontManagerFactory.class) {
-                result = instance;
-                if (result == null) {
-                    instance = result = PlatformFontInfo.createFontManager();
-                }
-            }
-        }
-        return result;
+    static FontManager createFontManager() {
+        return new X11FontManager();
     }
 }
