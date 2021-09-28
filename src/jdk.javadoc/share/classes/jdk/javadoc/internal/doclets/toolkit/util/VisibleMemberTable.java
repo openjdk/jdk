@@ -213,7 +213,7 @@ public class VisibleMemberTable {
      * @param kind the member kind
      * @return a list of all visible members
      */
-    public List<? extends Element> getAllVisibleMembers(Kind kind) {
+    public List<Element> getAllVisibleMembers(Kind kind) {
         ensureInitialized();
         return visibleMembers.getOrDefault(kind, Collections.emptyList());
     }
@@ -225,7 +225,7 @@ public class VisibleMemberTable {
      * @param p the predicate used to filter the output
      * @return a list of visible enclosed members
      */
-    public List<? extends Element> getVisibleMembers(Kind kind, Predicate<Element> p) {
+    public List<Element> getVisibleMembers(Kind kind, Predicate<Element> p) {
         ensureInitialized();
 
         return visibleMembers.getOrDefault(kind, Collections.emptyList()).stream()
@@ -240,7 +240,7 @@ public class VisibleMemberTable {
      * @param kind the member kind
      * @return a list of visible enclosed members
      */
-    public List<? extends Element> getVisibleMembers(Kind kind) {
+    public List<Element> getVisibleMembers(Kind kind) {
         Predicate<Element> declaredAndLeafMembers = e -> {
             TypeElement encl = utils.getEnclosingTypeElement(e);
             return encl == te || utils.isUndocumentedEnclosure(encl);
@@ -255,7 +255,7 @@ public class VisibleMemberTable {
      *
      * @return a list of visible enclosed members in this type
      */
-    public List<? extends Element> getMembers(Kind kind) {
+    public List<Element> getMembers(Kind kind) {
         Predicate<Element> onlyLocallyDeclaredMembers = e -> utils.getEnclosingTypeElement(e) == te;
         return getVisibleMembers(kind, onlyLocallyDeclaredMembers);
     }

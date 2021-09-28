@@ -341,8 +341,7 @@ public class ClassBuilder extends AbstractBuilder {
         buildPropertyDetails(detailsList);
         buildFieldDetails(detailsList);
         buildConstructorDetails(detailsList);
-        buildAnnotationTypeRequiredMemberDetails(detailsList);
-        buildAnnotationTypeOptionalMemberDetails(detailsList);
+        buildAnnotationTypeMemberDetails(detailsList);
         buildMethodDetails(detailsList);
 
         classContentTree.add(writer.getMemberDetailsTree(detailsList));
@@ -404,20 +403,9 @@ public class ClassBuilder extends AbstractBuilder {
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    protected void buildAnnotationTypeOptionalMemberDetails(Content memberDetailsTree)
+    protected void buildAnnotationTypeMemberDetails(Content memberDetailsTree)
             throws DocletException {
-        builderFactory.getAnnotationTypeOptionalMemberBuilder(writer).build(memberDetailsTree);
-    }
-
-    /**
-     * Build the annotation type required member documentation.
-     *
-     * @param memberDetailsTree the content tree to which the documentation will be added
-     * @throws DocletException if there is a problem building the documentation
-     */
-    protected void buildAnnotationTypeRequiredMemberDetails(Content memberDetailsTree)
-            throws DocletException {
-        builderFactory.getAnnotationTypeRequiredMemberBuilder(writer).build(memberDetailsTree);
+        builderFactory.getAnnotationTypeMemberBuilder(writer).build(memberDetailsTree);
     }
 
     /**

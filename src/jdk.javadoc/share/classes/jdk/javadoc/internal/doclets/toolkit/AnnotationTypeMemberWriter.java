@@ -36,7 +36,7 @@ import javax.lang.model.element.Element;
  *  deletion without notice.</b>
  */
 
-public interface AnnotationTypeRequiredMemberWriter extends MemberWriter {
+public interface AnnotationTypeMemberWriter extends MemberWriter {
 
     /**
      * Add the annotation type member tree header.
@@ -96,7 +96,7 @@ public interface AnnotationTypeRequiredMemberWriter extends MemberWriter {
      * Add the preview output for the given member.
      *
      * @param member the member being documented
-     * @param annotationDocTree content tree to which the preview information will be added
+     * @param contentTree content tree to which the preview information will be added
      */
     void addPreview(Element member, Content contentTree);
 
@@ -115,4 +115,12 @@ public interface AnnotationTypeRequiredMemberWriter extends MemberWriter {
      * @param annotationDocTree the content tree to which the tags will be added
      */
     void addTags(Element member, Content annotationDocTree);
+
+    /**
+     * Add the the default value documentation.
+     *
+     * @param member the member being documented
+     * @param annotationDocTree content tree to which the default value will be added
+     */
+    void addDefaultValueInfo(Element member, Content annotationDocTree);
 }

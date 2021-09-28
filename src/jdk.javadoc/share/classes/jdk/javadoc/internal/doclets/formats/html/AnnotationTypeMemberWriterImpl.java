@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -36,7 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
+import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 
@@ -49,26 +50,54 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
-    implements AnnotationTypeRequiredMemberWriter, MemberSummaryWriter {
+public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
+    implements AnnotationTypeMemberWriter, MemberSummaryWriter {
 
     /**
-     * Construct a new AnnotationTypeRequiredMemberWriterImpl.
+     * There are two kinds of annotation interface members, each writer handles one of them.
+     */
+    enum Kind {
+        OPTIONAL,
+        REQUIRED
+    }
+
+    private final Kind kind;
+
+    /**
+     * Construct a new AnnotationTypeMemberWriterImpl.
+     *
+     * @param writer The writer for the class that the member belong to.
+     */
+    public AnnotationTypeMemberWriterImpl(SubWriterHolderWriter writer) {
+        super(writer);
+        this.kind = Kind.OPTIONAL;
+    }
+
+    /**
+     * Construct a new AnnotationTypeMemberWriterImpl.
      *
      * @param writer         the writer that will write the output.
      * @param annotationType the AnnotationType that holds this member.
+     * @param kind           the kind of annotation interface members to handle.
      */
-    public AnnotationTypeRequiredMemberWriterImpl(SubWriterHolderWriter writer,
-            TypeElement annotationType) {
+    public AnnotationTypeMemberWriterImpl(SubWriterHolderWriter writer,
+                                          TypeElement annotationType,
+                                          Kind kind) {
         super(writer, annotationType);
+        this.kind = kind;
     }
 
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
-        memberSummaryTree.add(selectComment(
-                MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY,
-                MarkerComments.START_OF_ANNOTATION_INTERFACE_REQUIRED_MEMBER_SUMMARY));
+        switch (kind) {
+            case OPTIONAL -> memberSummaryTree.add(selectComment(
+                    MarkerComments.START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY,
+                    MarkerComments.START_OF_ANNOTATION_INTERFACE_OPTIONAL_MEMBER_SUMMARY));
+            case REQUIRED -> memberSummaryTree.add(selectComment(
+                    MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY,
+                    MarkerComments.START_OF_ANNOTATION_INTERFACE_REQUIRED_MEMBER_SUMMARY));
+        }
         Content memberTree = new ContentBuilder();
         writer.addSummaryHeader(this, memberTree);
         return memberTree;
@@ -82,7 +111,10 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.memberSummary,
-                HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY, summariesList, content);
+                kind == Kind.REQUIRED
+                        ? HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY
+                        : HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY,
+                summariesList, content);
     }
 
     @Override
@@ -95,12 +127,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     @Override
     public Content getAnnotationDetailsTreeHeader() {
         Content memberDetailsTree = new ContentBuilder();
-        if (!writer.printedAnnotationHeading) {
-            Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
-                    contents.annotationTypeDetailsLabel);
-            memberDetailsTree.add(heading);
-            writer.printedAnnotationHeading = true;
-        }
+        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+                contents.annotationTypeDetailsLabel);
+        memberDetailsTree.add(heading);
         return memberDetailsTree;
     }
 
@@ -151,7 +180,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummaryLabel(Content memberTree) {
         HtmlTree label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
-                contents.annotateTypeRequiredMemberSummaryLabel);
+                kind == Kind.REQUIRED
+                        ? contents.annotateTypeRequiredMemberSummaryLabel
+                        : contents.annotateTypeOptionalMemberSummaryLabel);
         memberTree.add(label);
     }
 
@@ -159,15 +190,20 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * Get the caption for the summary table.
      * @return the caption
      */
-    // Overridden by AnnotationTypeOptionalMemberWriterImpl
     protected Content getCaption() {
-        return contents.getContent("doclet.Annotation_Type_Required_Members");
+        return contents.getContent(
+                kind == Kind.REQUIRED
+                        ? "doclet.Annotation_Type_Required_Members"
+                        : "doclet.Annotation_Type_Optional_Members");
     }
 
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.modifierAndTypeLabel,
-                contents.annotationTypeRequiredMemberLabel, contents.descriptionLabel);
+                kind == Kind.REQUIRED
+                        ? contents.annotationTypeRequiredMemberLabel
+                        : contents.annotationTypeOptionalMemberLabel,
+                contents.descriptionLabel);
     }
 
     @Override
@@ -218,5 +254,18 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         return utils.isExecutableElement(member)
                 ? utils.getReturnType(typeElement, (ExecutableElement) member)
                 : member.asType();
+    }
+
+    public void addDefaultValueInfo(Element member, Content annotationDocTree) {
+        if (kind == Kind.OPTIONAL && utils.isAnnotationType(member)) {
+            ExecutableElement ee = (ExecutableElement) member;
+            AnnotationValue value = ee.getDefaultValue();
+            if (value != null) {
+                Content dl = HtmlTree.DL(HtmlStyle.notes);
+                dl.add(HtmlTree.DT(contents.default_));
+                dl.add(HtmlTree.DD(Text.of(value.toString())));
+                annotationDocTree.add(dl);
+            }
+        }
     }
 }

@@ -31,8 +31,6 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeOptionalMemberWriter;
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
@@ -80,19 +78,19 @@ public class WriterFactoryImpl implements WriterFactory {
     }
 
     @Override
-    public AnnotationTypeOptionalMemberWriter getAnnotationTypeOptionalMemberWriter(
+    public AnnotationTypeMemberWriterImpl getAnnotationTypeOptionalMemberWriter(
             ClassWriter classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeOptionalMemberWriterImpl(
-                (ClassWriterImpl) classWriter, te);
+        return new AnnotationTypeMemberWriterImpl(
+                (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.OPTIONAL);
     }
 
     @Override
-    public AnnotationTypeRequiredMemberWriter getAnnotationTypeRequiredMemberWriter(
+    public AnnotationTypeMemberWriterImpl getAnnotationTypeRequiredMemberWriter(
             ClassWriter classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeRequiredMemberWriterImpl(
-            (ClassWriterImpl) classWriter, te);
+        return new AnnotationTypeMemberWriterImpl(
+            (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.REQUIRED);
     }
 
     @Override
@@ -132,11 +130,9 @@ public class WriterFactoryImpl implements WriterFactory {
             case ENUM_CONSTANTS:
                 return getEnumConstantWriter(classWriter);
             case ANNOTATION_TYPE_MEMBER_OPTIONAL:
-                return (AnnotationTypeOptionalMemberWriterImpl)
-                        getAnnotationTypeOptionalMemberWriter(classWriter);
+                return getAnnotationTypeOptionalMemberWriter(classWriter);
             case ANNOTATION_TYPE_MEMBER_REQUIRED:
-                return (AnnotationTypeRequiredMemberWriterImpl)
-                        getAnnotationTypeRequiredMemberWriter(classWriter);
+                return getAnnotationTypeRequiredMemberWriter(classWriter);
             case FIELDS:
                 return getFieldWriter(classWriter);
             case PROPERTIES:

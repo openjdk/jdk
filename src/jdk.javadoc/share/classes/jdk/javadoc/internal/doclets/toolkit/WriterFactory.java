@@ -96,7 +96,7 @@ public interface WriterFactory {
      * @param classWriter the writer for the annotation type being documented
      * @return the member writer
      */
-    AnnotationTypeOptionalMemberWriter getAnnotationTypeOptionalMemberWriter(
+    AnnotationTypeMemberWriter getAnnotationTypeOptionalMemberWriter(
             ClassWriter classWriter);
 
     /**
@@ -106,7 +106,7 @@ public interface WriterFactory {
      * @param classWriter the writer for the annotation type being documented
      * @return the member writer
      */
-    AnnotationTypeRequiredMemberWriter getAnnotationTypeRequiredMemberWriter(
+    AnnotationTypeMemberWriter getAnnotationTypeRequiredMemberWriter(
             ClassWriter classWriter);
 
     /**

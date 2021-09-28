@@ -94,7 +94,7 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      * @param kind of members
      * @return a list of members
      */
-    protected List<? extends Element> getVisibleMembers(Kind kind) {
+    protected List<Element> getVisibleMembers(Kind kind) {
         return visibleMemberTable.getVisibleMembers(kind);
     }
 }
