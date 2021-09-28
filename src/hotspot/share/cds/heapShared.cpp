@@ -1758,6 +1758,7 @@ void HeapShared::finish_initialization() {
 void HeapShared::fill_failed_loaded_region() {
   assert(_loading_failed, "must be");
   if (_loaded_heap_bottom != 0) {
+    assert(_loaded_heap_top != 0, "must be");
     HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
     HeapWord* top = (HeapWord*)_loaded_heap_top;
     Universe::heap()->fill_with_objects(bottom, top - bottom);
