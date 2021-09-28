@@ -24,7 +24,7 @@
 /*
  * @test id=Z
  * @key randomness
- * @bug 8059022
+ * @bug 8059022 8271855
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
  * @requires vm.gc.Z
