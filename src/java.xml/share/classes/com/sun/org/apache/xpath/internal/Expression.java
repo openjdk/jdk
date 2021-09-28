@@ -52,6 +52,7 @@ public abstract class Expression implements java.io.Serializable, ExpressionNode
    *  messages. May be null.
    *  @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private ExpressionNode m_parent;
 
   /**

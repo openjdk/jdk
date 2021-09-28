@@ -978,6 +978,7 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    * clear that this is needed.
    * @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private PrefixResolver m_prefixResolver;
 
   /**

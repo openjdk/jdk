@@ -39,6 +39,7 @@ public class XPathException extends TransformerException
 
   /** The home of the expression that caused the error.
    *  @serial  */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   Object m_styleNode = null;
 
   /**

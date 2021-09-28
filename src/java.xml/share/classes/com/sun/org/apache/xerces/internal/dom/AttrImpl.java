@@ -132,6 +132,7 @@ public class AttrImpl
     //
 
     /** This can either be a String or the first child node. */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected Object value = null;
 
     /** Attribute name. */

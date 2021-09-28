@@ -79,6 +79,7 @@ public class NamedNodeMapImpl
     protected final static short HASDEFAULTS  = 0x1<<2;
 
     /** Nodes. */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected List<Node> nodes;
 
     protected NodeImpl ownerNode; // the node this map belongs to

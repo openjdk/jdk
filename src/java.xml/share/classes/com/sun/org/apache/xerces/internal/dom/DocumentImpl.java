@@ -507,6 +507,7 @@ public class DocumentImpl
 
         private static final long serialVersionUID = -8426757059492421631L;
         String type;
+        @SuppressWarnings("serial") // Type of field is not Serializable
         EventListener listener;
         boolean useCapture;
 

@@ -45,6 +45,7 @@ public class XMLStreamException extends Exception {
   /**
    * The location of the error.
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   protected Location location;
 
   /**

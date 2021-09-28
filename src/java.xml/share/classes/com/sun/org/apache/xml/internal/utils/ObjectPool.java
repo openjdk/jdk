@@ -43,6 +43,7 @@ public class ObjectPool implements java.io.Serializable
 
   /** Stack of given objects this points to.
    *  @serial          */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private final List<Object> freeStack;
 
   /**

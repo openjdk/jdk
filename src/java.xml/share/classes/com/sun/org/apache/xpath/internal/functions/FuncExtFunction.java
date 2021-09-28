@@ -64,6 +64,7 @@ public class FuncExtFunction extends Function
    *  order to allow caching of the method.
    *  @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   Object m_methodKey;
 
   /**
@@ -71,6 +72,7 @@ public class FuncExtFunction extends Function
    *  function.
    *  @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   List<Expression> m_argVec = new ArrayList<>();
 
   /**

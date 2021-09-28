@@ -54,6 +54,7 @@ public class XObject extends Expression implements Serializable, Cloneable
    * The java object which this object wraps.
    *  @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   protected Object m_obj;  // This may be NULL!!!
 
   /**

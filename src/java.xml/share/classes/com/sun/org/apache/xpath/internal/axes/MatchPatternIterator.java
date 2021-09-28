@@ -52,6 +52,7 @@ public class MatchPatternIterator extends LocPathIterator
   protected int m_superAxis = -1;
 
   /** The DTM inner traversal class, that corresponds to the super axis. */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   protected DTMAxisTraverser m_traverser;
 
   /** DEBUG flag for diagnostic dumps. */
