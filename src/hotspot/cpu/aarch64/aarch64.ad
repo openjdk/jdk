@@ -16855,6 +16855,7 @@ instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
                           vRegD_V2 Vtmp3, vRegD_V3 Vtmp4,
                           iRegI_R0 result, rFlagsReg cr)
 %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(USE_KILL src, USE_KILL dst, USE_KILL len,
          KILL Vtmp1, KILL Vtmp2, KILL Vtmp3, KILL Vtmp4, KILL cr);
