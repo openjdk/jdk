@@ -281,7 +281,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             if (mainClassName == null) {
                 String path = "/" + module + "/module-info.class";
                 Optional<ResourcePoolEntry> res = imageContent.findEntry(path);
-                if (!res.isPresent()) {
+                if (res.isEmpty()) {
                     throw new IOException("module-info.class not found for " + module + " module");
                 }
                 ByteArrayInputStream stream = new ByteArrayInputStream(res.get().contentBytes());
@@ -293,8 +293,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
 
             if (mainClassName != null) {
                 // make sure main class exists!
-                if (!imageContent.findEntry("/" + module + "/" +
-                        mainClassName.replace('.', '/') + ".class").isPresent()) {
+                if (imageContent.findEntry("/" + module + "/" +
+                        mainClassName.replace('.', '/') + ".class").isEmpty()) {
                     throw new IllegalArgumentException(module + " does not have main class: " + mainClassName);
                 }
 

@@ -48,6 +48,7 @@ public class TransformerException extends Exception {
     private static final long serialVersionUID = 975798773772956428L;
 
     /** Field locator specifies where the error occurred */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     SourceLocator locator;
 
     /**
