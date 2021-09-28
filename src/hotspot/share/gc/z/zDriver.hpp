@@ -83,13 +83,13 @@ private:
   bool                _promote_all;
   ZDriverMinor* const _minor;
 
-  bool should_minor_before_major();
+  bool should_minor_before_major(GCCause::Cause cause);
   void minor_block();
   void minor_unblock();
   void minor_start();
   void minor_await();
 
-  void active();
+  void active(GCCause::Cause cause);
   void inactive();
   void stop_aggressive_promotion();
 

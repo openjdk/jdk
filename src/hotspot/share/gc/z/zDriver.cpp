@@ -599,10 +599,10 @@ bool ZDriverMajor::promote_all() {
   return _promote_all;
 }
 
-void ZDriverMajor::active() {
+void ZDriverMajor::active(GCCause::Cause cause) {
   ZLocker<ZConditionLock> locker(&_lock);
   _active = true;
-  _promote_all = should_minor_before_major();
+  _promote_all = should_minor_before_major(cause);
 }
 
 void ZDriverMajor::stop_aggressive_promotion() {
@@ -886,7 +886,19 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   minor_block();
 }
 
-bool ZDriverMajor::should_minor_before_major() {
+bool ZDriverMajor::should_minor_before_major(GCCause::Cause cause) {
+  if (cause == GCCause::_wb_full_gc ||
+      cause == GCCause::_wb_breakpoint ||
+      cause == GCCause::_java_lang_system_gc ||
+      cause == GCCause::_metadata_GC_clear_soft_refs ||
+      cause == GCCause::_z_major_allocation_stall) {
+    return true;
+  }
+
+  if (ZHeap::heap()->has_alloc_stalled()) {
+    return true;
+  }
+
   return ScavengeBeforeFullGC;
 }
 
@@ -902,7 +914,7 @@ void ZDriverMajor::run_service() {
     ZBreakpoint::at_before_gc();
 
     minor_block();
-    active();
+    active(request.cause());
     minor_unblock();
 
     if (_promote_all) {
