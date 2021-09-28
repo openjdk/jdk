@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +57,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
@@ -500,14 +502,10 @@ public abstract class JavadocTester {
      * @param strings the strings to be searched for
      */
     public void checkOutput(String path, boolean expectedFound, String... strings) {
-        // Read contents of file
-        try {
-            String fileString = readFile(outputDir, path);
-            checkOutput(new File(outputDir, path).getPath(), fileString, expectedFound, strings);
-        } catch (Error e) {
-            checking("Read file");
-            failed("Error reading file: " + e);
-        }
+        new OutputChecker(path)
+                .setExpectFound(expectedFound)
+                .setExpectOrdered(false) // TODO, fix tests (32 failures) and change to true
+                .check(strings);
     }
 
     /**
@@ -521,26 +519,10 @@ public abstract class JavadocTester {
      * @param strings the strings to be searched for
      */
     public void checkOutput(Output output, boolean expectedFound, String... strings) {
-        checkOutput(output.toString(), outputMap.get(output), expectedFound, strings);
-    }
-
-    // NOTE: path may be the name of an Output stream as well as a file path
-    private void checkOutput(String path, String fileString, boolean expectedFound, String... strings) {
-        for (String stringToFind : strings) {
-//            log.logCheckOutput(path, expectedFound, stringToFind);
-            checking("checkOutput");
-            // Find string in file's contents
-            boolean isFound = findString(fileString, stringToFind);
-            if (isFound == expectedFound) {
-                passed(path + ": following text " + (isFound ? "found:" : "not found:") + "\n"
-                        + stringToFind);
-            } else {
-                failed(path + ": following text " + (isFound ? "found:" : "not found:") + "\n"
-                        + stringToFind + '\n' +
-                        "found \n" +
-                        fileString);
-            }
-        }
+        new OutputChecker(output)
+                .setExpectFound(expectedFound)
+                .setExpectOrdered(false) // TODO, fix tests (6 failures) and change to true
+                .check(strings);
     }
 
     /**
@@ -552,7 +534,7 @@ public abstract class JavadocTester {
     }
 
     /**
-     * Checks that there are no duplicate lines that either match or don't match a given patter,
+     * Checks that there are no duplicate lines that either match or don't match a given pattern,
      * in one of the streams written by javadoc.
      * @param output the output stream to check
      * @param pattern a pattern to filter the lines to be checked
@@ -560,29 +542,7 @@ public abstract class JavadocTester {
      *               if {@code false}, lines that do not match the pattern will be checked
      */
     public void checkUnique(Output output, String pattern, boolean select) {
-        checking("checkUnique");
-        Pattern filter = Pattern.compile(pattern);
-        Matcher m = filter.matcher("");
-        Map<String, Integer> linesSofar = new HashMap<>();
-        int lineNumber = 0;
-        int duplicates = 0;
-        for (String line : getOutputLines(output)) {
-            m.reset(line);
-            if (m.find() == select) {
-                Integer prev = linesSofar.putIfAbsent(line, ++lineNumber);
-                if (prev != null) {
-                    out.println("duplicate line detected on line " + lineNumber
-                            + "; first occurrence on line " + prev);
-                    out.println("line: " + line);
-                    duplicates++;
-                }
-            }
-        }
-        if (duplicates == 0) {
-            passed("All lines are unique");
-        } else {
-            failed(duplicates + " duplicate lines found");
-        }
+        new OutputChecker(output).checkUnique(pattern, select);
     }
 
     /**
@@ -708,24 +668,9 @@ public abstract class JavadocTester {
      * @param strings  the strings whose order to check
      */
     public void checkOrder(String path, String... strings) {
-        File file = new File(outputDir, path);
-        String fileString = readOutputFile(path);
-        int prevIndex = -1;
-        for (String s : strings) {
-            s = s.replace("\n", NL); // normalize new lines
-            int currentIndex = fileString.indexOf(s, prevIndex + 1);
-            checking("file: " + file + ": " + s + " at index " + currentIndex);
-            if (currentIndex == -1) {
-                failed(file, s + " not found.");
-                continue;
-            }
-            if (currentIndex > prevIndex) {
-                passed(file, s + " is in the correct order");
-            } else {
-                failed(file, s + " is in the wrong order.");
-            }
-            prevIndex = currentIndex;
-        }
+        new OutputChecker(path)
+                .setExpectOrdered(true) // be explicit
+                .check(strings);
     }
 
     /**
@@ -1010,6 +955,336 @@ public abstract class JavadocTester {
             passed("files are equal");
         } else {
             failed("files differ");
+        }
+    }
+
+    /**
+     * A flexible checker for checking the content of generated files and output streams.
+     *
+     * Configuration can be done with a series of chained method calls.
+     * Checks can be specified as either literal strings or regular expressions.
+     */
+    public class OutputChecker {
+        private final String name;
+        private final String content;
+        private boolean allowOverlaps = false;
+        private boolean expectFound = true;
+        private boolean expectOrdered = true;
+        private List<Range> matches = new ArrayList<>();
+        private Range lastMatch;
+
+        /** A half-open interval {@code [start, end)} to record the position of a match. */
+        record Range(int start, int end) {
+            static Range of(int start, int end) {
+                return new Range(start, end);
+            }
+            boolean overlaps(Range other) {
+                // Intervals do not overlap if one interval is completely before or completely after the other:
+                // that is,    other.end <= start || end <= other.start
+                // Invert that for when intervals do overlap, and simplify to the following expression:
+                return other.end > start && end > other.start;
+            }
+        }
+
+        /**
+         * Creates an output checker for a file written by the most recent run of javadoc.
+         * If the file cannot be found or there is any other error while reading the file,
+         * an error will be reported and all subsequent {@code check...} methods will be skipped
+         *
+         * @param file the file
+         */
+        public OutputChecker(String file) {
+            String c = null;
+            try {
+                c = readFile(file);
+            } catch (Error e) {
+                checking("Read file");
+                failed("Error reading file: " + e);
+            }
+
+            if (c == null) {
+                name = null;
+                content = null;
+            } else {
+                name = file;
+                content = c;
+            }
+        }
+
+        /**
+         * Creates an output checker for an output stream written by the most recent run of javadoc.
+         *
+         * @param output the output
+         */
+        public OutputChecker(Output output) {
+            name = output.name();
+            content = getOutput(output);
+        }
+
+        /**
+         * Specifies whether matches are expected to be found or not.
+         * The default is {@code true}.
+         *
+         * @param expectFound whether matches are expected to be found
+         * @return this object
+         */
+        public OutputChecker setExpectFound(boolean expectFound) {
+            this.expectFound = expectFound;
+            return this;
+        }
+
+        /**
+         * Specifies whether matches are expected to be found in order or not.
+         * The default is {@code true}.
+         *
+         * @param expectOrdered  whether matches should be ordered
+         * @return this object
+         */
+        public OutputChecker setExpectOrdered(boolean expectOrdered) {
+            this.expectOrdered = expectOrdered;
+            return this;
+        }
+
+        /**
+         * Specifies whether matches are allowed to overlap.
+         * The default is {@code false}.
+         *
+         * @param allowOverlaps whether matches may overlap
+         * @return this object
+         */
+        public OutputChecker setAllowOverlaps(boolean allowOverlaps) {
+            this.allowOverlaps = allowOverlaps;
+            return this;
+        }
+
+        /**
+         * Checks for the presence (or absence) of a series of strings.
+         * Within the search strings, the newline character {@code \n}
+         * will be translated to the platform newline character sequence.
+         *
+         * @param strings the strings to be searched for
+         */
+        public OutputChecker check(String... strings) {
+            if (name == null) {
+                out.println("Skipping checks for:\n"
+                        + List.of(strings).stream()
+                        .map(s -> "    " + toShortString(s))
+                        .collect(Collectors.joining("\n")));
+                return this;
+            }
+
+            for (String stringToFind : strings) {
+                check(startPos -> findString(stringToFind, startPos), "text", stringToFind);
+            }
+            return this;
+        }
+
+        /**
+         * Checks for the presence (or absence) of a series of regular expressions.
+         * Unlike {@link #check(String...)}, there is no special handling for
+         * newline characters. Use {@code \R} to match the platform newline sequence.
+         *
+         * @param patterns the regular expressions to be searched for
+         */
+        public OutputChecker check(Pattern... patterns) {
+            if (name == null) {
+                out.println("Skipping checks for:\n"
+                        + List.of(patterns).stream()
+                        .map(p -> "    " + toShortString(p.pattern()))
+                        .collect(Collectors.joining("\n")));
+                return this;
+            }
+            for (Pattern pattern : patterns) {
+                check(startPos -> findPattern(pattern, startPos), "pattern", pattern.pattern());
+            }
+            return this;
+        }
+
+        /**
+         * Checks that there are no duplicate lines in the content.
+         */
+        public OutputChecker checkUnique() {
+            checkUnique(".*", true);
+            return this;
+        }
+
+        /**
+         * Checks that there are no duplicate lines that either match or don't match a given pattern,
+         * in one of the streams written by javadoc.
+         *
+         * @param pattern a pattern to filter the lines to be checked
+         * @param select  if {@code true}, lines that match the pattern will be checked for uniqueness;
+         *                if {@code false}, lines that do not match the pattern will be checked
+         */
+        public OutputChecker checkUnique(String pattern, boolean select ) {
+            checking("checkUnique");
+            Pattern filter = Pattern.compile(pattern);
+            Matcher m = filter.matcher("");
+            Map<String, Integer> linesSofar = new HashMap<>();
+            int lineNumber = 0;
+            int duplicates = 0;
+            for (String line : content.split(NL)) {
+                m.reset(line);
+                if (m.find() == select) {
+                    Integer prev = linesSofar.putIfAbsent(line, ++lineNumber);
+                    if (prev != null) {
+                        out.println("duplicate line detected on line " + lineNumber
+                                + "; first occurrence on line " + prev);
+                        out.println("line: " + line);
+                        duplicates++;
+                    }
+                }
+            }
+            if (duplicates == 0) {
+                passed("All lines are unique");
+            } else {
+                failed(duplicates + " duplicate lines found");
+            }
+            return this;
+        }
+
+        /**
+         * Checks that all the output has been matched by preceding checks with this object.
+         * It does not matter whether the checks were ordered or not.
+         * The results of the matches are sorted and then checked to be adjacent and to
+         * cover the entire content.
+         *
+         * @apiNote This is probably most useful for checking diagnostic output,
+         *          in which case care must be taken to allow for platform differences
+         *          in the output, such as file separators and newline sequences.
+         */
+        public OutputChecker checkComplete() {
+            if (name == null) {
+                out.println("Skipping checkComplete");
+                return this;
+            }
+
+            JavadocTester.this.checking("checking for complete coverage of output");
+            List<Range> uncovered = new ArrayList<>();
+            List<Range> list = new ArrayList<>(matches);
+            list.sort(Comparator.comparing(Range::start));
+            int prev = 0;
+            for (Range r : list) {
+                if (r.start != prev) {
+                    uncovered.add(new Range(prev, r.start));
+                }
+                prev = r.end;
+            }
+            if (prev != content.length()) {
+                uncovered.add(new Range(prev, content.length()));
+            }
+            if (uncovered.isEmpty()) {
+                passed("All output matched");
+            } else {
+                failed("The following output was not matched: "
+                    + uncovered.stream()
+                        .map(r -> "[" + r.start + "," + r.end + ")")
+                        .collect(Collectors.joining(", ")));
+            }
+            return this;
+        }
+
+        /**
+         * Checks that no output is present.
+         */
+        public OutputChecker checkEmpty() {
+            if (name == null) {
+                out.println("Skipping checkEmpty");
+                return this;
+            }
+
+            checking("empty");
+            if (content == null || content.isEmpty()) {
+                passed(name + " is empty, as expected");
+            } else {
+                failed(name + " is not empty; contains:\n"
+                        + content);
+            }
+            return this;
+        }
+
+        /**
+         * Checks for the presence (or absence) of an item.
+         *
+         * @param finder a function to find the next occurrence of an item starting at a given position
+         * @param kind   the kind of the item ({@code "text"} or {@code "pattern:} to include in messages
+         * @param s      a string for the item, to be included in messages
+         */
+        private void check(Function<Integer, Range> finder, String kind, String s) {
+            checking(kind);
+            int start = getStart();
+            Range r = finder.apply(start);
+            boolean isFound = r != null;
+            if (isFound == expectFound) {
+                matches.add(lastMatch = r);
+                passed(name + ": following " + kind + " " + (isFound ? "found:" : "not found:") + "\n"
+                        + s);
+            } else {
+                // item not found in order, so check if the item is found out of order, to determine the best message
+                if (expectFound && expectOrdered && start > 0) {
+                    Range r2 = finder.apply(0);
+                    if (r2 != null) {
+                        failed(name + ": following " + kind + " was found on line "
+                                + getLineNumber(r2.start)
+                                + ", but not in order as expected, on or after line "
+                                + getLineNumber(start)
+                                + ":\n"
+                                + s);
+                        return;
+                    }
+                }
+                failed(name + ": following " + kind + " " + (isFound ? "found:" : "not found:") + "\n"
+                        + s + '\n' + "found \n" + content);
+            }
+
+        }
+
+        private void checking(String kind) {
+            JavadocTester.this.checking("checkOutput " + kind
+                + " allowOverlaps:" + allowOverlaps
+                + " expectFound:"   + expectFound
+                + " expectOrdered:" + expectOrdered);
+        }
+
+        private Range findString(String stringToFind, int start) {
+            // javadoc (should) always use the platform newline sequence,
+            // but in the strings to find it is more convenient to use the Java
+            // newline character. So we translate \n to NL before we search.
+            stringToFind = stringToFind.replace("\n", NL);
+            int i = content.indexOf(stringToFind, start);
+            return i >= 0 ? Range.of(i, i + stringToFind.length()) : null;
+        }
+
+        private Range findPattern(Pattern p, int start) {
+            Matcher m = p.matcher(content);
+            return m.find(start) ? Range.of(m.start(), m.end()) : null;
+        }
+        private int getStart() {
+            if (lastMatch == null || !expectOrdered) {
+                return 0;
+            }
+            return allowOverlaps ? lastMatch.start + 1 : lastMatch.end;
+        }
+
+        private int getLineNumber(int pos) {
+            Pattern p = Pattern.compile("\\R");
+            Matcher m = p.matcher(content);
+            int line = 1;
+            int start = 0;
+            while (m.find(start) && m.start() < pos) {
+                line++;
+                start = m.start() + 1;
+            }
+            return line;
+        }
+
+        private String toShortString(String s) {
+            final int MAX = 64;
+            s = s.replaceAll("\\s+", " ");
+            if (s.length() > MAX) {
+                s = s.substring(0, MAX / 2 - 2) + " ... " + s.substring(s.length() - MAX / 2 - 2);
+            }
+            return s;
         }
     }
 
