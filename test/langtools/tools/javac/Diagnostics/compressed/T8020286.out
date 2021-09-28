@@ -1,4 +1,3 @@
-T8020286.java:12:8: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
-T8020286.java:13:8: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
-- compiler.note.compressed.diags
+T8020286.java:12:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
+T8020286.java:13:10: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
 2 errors

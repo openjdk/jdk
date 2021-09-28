@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,24 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req
-// key: compiler.misc.inconvertible.types
-// key: compiler.note.compressed.diags
-// key: compiler.note.note
-// key: compiler.misc.count.error
-// key: compiler.err.error
-// run: backdoor
+/*
+ * @test
+ * @bug 8268312
+ * @summary Compilation error with nested generic functional interface
+ * @compile DiagnosticRewriterTest3.java
+ */
 
-class CompressedDiags {
+class DiagnosticRewriterTest3 {
+    void m() {
+        Optional.of("").map(outer -> {
+            Optional.of("")
+                    .map(inner -> returnGeneric(outer))
+                    .ifPresent(String::toString);
+            return "";
+        });
+    }
 
-    void m(String s) { }
-
-    void test() {
-        m(1);
+    <T> T returnGeneric(T generic) {
+        return generic;
     }
 }

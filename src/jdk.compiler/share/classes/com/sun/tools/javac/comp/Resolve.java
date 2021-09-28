@@ -68,6 +68,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -4135,8 +4136,7 @@ public class Resolve {
 
             Pair<Symbol, JCDiagnostic> c = errCandidate();
             if (compactMethodDiags) {
-                JCDiagnostic simpleDiag =
-                    MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd);
+                JCDiagnostic simpleDiag = MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd);
                 if (simpleDiag != null) {
                     return simpleDiag;
                 }
@@ -4199,13 +4199,10 @@ public class Resolve {
             if (filteredCandidates.isEmpty()) {
                 filteredCandidates = candidatesMap;
             }
-            boolean truncatedDiag = candidatesMap.size() != filteredCandidates.size();
             if (filteredCandidates.size() > 1) {
                 JCDiagnostic err = diags.create(dkind,
                         null,
-                        truncatedDiag ?
-                            EnumSet.of(DiagnosticFlag.COMPRESSED) :
-                            EnumSet.noneOf(DiagnosticFlag.class),
+                        EnumSet.noneOf(DiagnosticFlag.class),
                         log.currentSource(),
                         pos,
                         "cant.apply.symbols",
@@ -4224,9 +4221,6 @@ public class Resolve {
                     }
                 }.getDiagnostic(dkind, pos,
                     location, site, name, argtypes, typeargtypes);
-                if (truncatedDiag) {
-                    d.setFlag(DiagnosticFlag.COMPRESSED);
-                }
                 return d;
             } else {
                 return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind, pos,
@@ -4787,8 +4781,12 @@ public class Resolve {
                     DiagnosticPosition preferredPos, DiagnosticSource preferredSource,
                     DiagnosticType preferredKind, JCDiagnostic d) {
                 JCDiagnostic cause = (JCDiagnostic)d.getArgs()[causeIndex];
+                final DiagnosticPosition pos = d.getDiagnosticPosition();
+                UnaryOperator<JCDiagnostic> rewriter = pos != null ?
+                        diag -> diags.create(preferredKind, preferredSource, pos, "prob.found.req", cause) :
+                        null;
                 return diags.create(preferredKind, preferredSource, preferredPos,
-                        "prob.found.req", cause);
+                        "prob.found.req", rewriter, cause);
             }
         }
 
@@ -4850,7 +4848,6 @@ public class Resolve {
                 if (_entry.getKey().matches(d)) {
                     JCDiagnostic simpleDiag =
                             _entry.getValue().rewriteDiagnostic(diags, pos, source, dkind, d);
-                    simpleDiag.setFlag(DiagnosticFlag.COMPRESSED);
                     return simpleDiag;
                 }
             }

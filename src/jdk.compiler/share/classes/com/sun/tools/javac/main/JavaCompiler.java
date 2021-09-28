@@ -1713,9 +1713,6 @@ public class JavaCompiler {
         }
         chk.reportDeferredDiagnostics();
         preview.reportDeferredDiagnostics();
-        if (log.compressedOutput) {
-            log.mandatoryNote(null, Notes.CompressedDiags);
-        }
     }
 
     public void enterDone() {
