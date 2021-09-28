@@ -686,8 +686,13 @@ public class Runtime {
      * The method {@link System#runFinalization()} is the conventional
      * and convenient means of invoking this method.
      *
+     * @deprecated The finalization mechanism is inherently problematic, and
+     * will be removed in a future release.  See {@link java.lang.Object#finalize}
+     * for details.
+     * 
      * @see     java.lang.Object#finalize()
      */
+    @Deprecated(since="18", forRemoval=true)
     public void runFinalization() {
         SharedSecrets.getJavaLangRefAccess().runFinalization();
     }

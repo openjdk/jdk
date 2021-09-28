@@ -85,7 +85,11 @@ public abstract class PrintJob {
     /**
      * Ends this print job once it is no longer referenced.
      *
-     * @deprecated The {@code finalize} method has been deprecated.
+     * @deprecated The finalization mechanism is inherently problematic, and
+     *     will be removed in a future release.  See {@link java.lang.Object#finalize}
+     *     for details.
+     * 
+     *     The {@code finalize} method has been deprecated.
      *     Subclasses that override {@code finalize} in order to perform cleanup
      *     should be modified to use alternative cleanup mechanisms and
      *     to remove the overriding {@code finalize} method.
@@ -95,7 +99,8 @@ public abstract class PrintJob {
      *     information about migration options.
      * @see #end
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval=true)
+    @SuppressWarnings("removal")
     public void finalize() {
         end();
     }

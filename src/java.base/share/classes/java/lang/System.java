@@ -1917,8 +1917,14 @@ public final class System {
      * Runtime.getRuntime().runFinalization()
      * </pre></blockquote>
      *
+     * @deprecated The finalization mechanism is inherently problematic, and
+     * will be removed in a future release.  See {@link java.lang.Object#finalize}
+     * for details.
+     * 
      * @see     java.lang.Runtime#runFinalization()
      */
+    @Deprecated(since="18", forRemoval=true)
+    @SuppressWarnings("removal")
     public static void runFinalization() {
         Runtime.getRuntime().runFinalization();
     }
@@ -2303,7 +2309,7 @@ public final class System {
             public Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc) {
                 return new Thread(target, acc);
             }
-            @SuppressWarnings("deprecation")
+            @SuppressWarnings("removal")
             public void invokeFinalize(Object o) throws Throwable {
                 o.finalize();
             }
