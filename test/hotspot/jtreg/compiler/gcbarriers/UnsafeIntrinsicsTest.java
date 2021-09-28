@@ -321,7 +321,7 @@ class Runner implements Runnable {
         // Weak CAS - should almost always be true within a single thread - no other thread can have overwritten
         // Spurious failures are allowed. So, we retry a couple of times on failure.
         boolean ok = false;
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 3; ++i) {
             ok = UNSAFE.weakCompareAndSetReference(startNode, offset, expectedNext, head);
             if (ok) break;
         }
