@@ -194,6 +194,7 @@ class MacroAssembler: public Assembler {
   void incrementq(AddressLiteral dst);
 
   // Alignment
+  void align64();
   void align(int modulus);
   void align(int modulus, int target);
 
