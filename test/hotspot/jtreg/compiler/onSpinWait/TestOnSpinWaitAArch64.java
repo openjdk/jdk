@@ -79,7 +79,7 @@ public class TestOnSpinWaitAArch64 {
 
         System.out.println(analyzer.getOutput());
 
-        checkOutput(analyzer, getSpinWaitInstHex(spinWaitInst), Integer.parseInt(spinWaitInstCount));
+        checkOutput(analyzer, spinWaitInst, Integer.parseInt(spinWaitInstCount));
     }
 
     private static String getSpinWaitInstHex(String spinWaitInst) {
@@ -112,7 +112,24 @@ public class TestOnSpinWaitAArch64 {
     //
     // The checkOutput method adds hex instructions before 'invokestatic onSpinWait' and from the line after
     // it to a list. The list is traversed from the end to count spin wait instructions.
-    private static void checkOutput(OutputAnalyzer output, String spinWaitInstHex, int spinWaitInstCount) {
+    //
+    // If JVM finds the hsdis library the output is like:
+    //
+    // # {method} {0x0000ffff63000370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'
+    // #           [sp+0x20]  (sp of caller)
+    // 0x0000ffffa409da80:   nop
+    // 0x0000ffffa409da84:   sub sp, sp, #0x20
+    // 0x0000ffffa409da88:   stp x29, x30, [sp, #16]         ;*synchronization entry
+    //                                                       ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@-1 (line 187)
+    // 0x0000ffffa409da8c:   nop
+    // 0x0000ffffa409da90:   nop
+    // 0x0000ffffa409da94:   nop
+    // 0x0000ffffa409da98:   nop
+    // 0x0000ffffa409da9c:   nop
+    // 0x0000ffffa409daa0:   nop
+    // 0x0000ffffa409daa4:   nop                                 ;*invokestatic onSpinWait {reexecute=0 rethrow=0 return_oop=0}
+    //                                                           ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0 (line 187)
+    private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int spinWaitInstCount) {
         Iterator<String> iter = output.asLines().listIterator();
 
         String match = skipTo(iter, "'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'");
@@ -121,10 +138,15 @@ public class TestOnSpinWaitAArch64 {
         }
 
         ArrayList<String> instrs = new ArrayList<String>();
+        String line = null;
+        boolean hasHexInstInOutput = false;
         while (iter.hasNext()) {
-            String line = iter.next();
+            line = iter.next();
             if (line.contains("*invokestatic onSpinWait")) {
                 break;
+            }
+            if (!hasHexInstInOutput) {
+                hasHexInstInOutput = line.contains("|");
             }
             if (line.contains("0x") && !line.contains(";")) {
                 addInstrs(line, instrs);
@@ -135,32 +157,39 @@ public class TestOnSpinWaitAArch64 {
             throw new RuntimeException("Missing compiler output for Thread.onSpinWait intrinsic");
         }
 
-        String line = iter.next();
-        if (!line.contains("0x") || line.contains(";")) {
-            throw new RuntimeException("Expected hex instructions");
-        }
+        String strToSearch = null;
+        if (!hasHexInstInOutput) {
+            instrs.add(line.split(";")[0].trim());
+            strToSearch = spinWaitInst;
+        } else {
+            line = iter.next();
+            if (!line.contains("0x") || line.contains(";")) {
+                throw new RuntimeException("Expected hex instructions");
+            }
 
-        addInstrs(line, instrs);
+            addInstrs(line, instrs);
+            strToSearch = getSpinWaitInstHex(spinWaitInst);
+        }
 
         int foundInstCount = 0;
 
         ListIterator<String> instrReverseIter = instrs.listIterator(instrs.size());
         while (instrReverseIter.hasPrevious()) {
-            if (instrReverseIter.previous().endsWith(spinWaitInstHex)) {
+            if (instrReverseIter.previous().endsWith(strToSearch)) {
                 foundInstCount = 1;
                 break;
             }
         }
 
         while (instrReverseIter.hasPrevious()) {
-            if (!instrReverseIter.previous().endsWith(spinWaitInstHex)) {
+            if (!instrReverseIter.previous().endsWith(strToSearch)) {
                 break;
             }
             ++foundInstCount;
         }
 
         if (foundInstCount != spinWaitInstCount) {
-            throw new RuntimeException("Wrong instruction " + spinWaitInstHex + " count " + foundInstCount + "!\n  -- expecting " + spinWaitInstCount);
+            throw new RuntimeException("Wrong instruction " + strToSearch + " count " + foundInstCount + "!\n  -- expecting " + spinWaitInstCount);
         }
     }
 
