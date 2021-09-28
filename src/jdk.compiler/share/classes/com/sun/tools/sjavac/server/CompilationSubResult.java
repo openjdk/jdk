@@ -41,6 +41,7 @@ import com.sun.tools.sjavac.pubapi.PubApi;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@SuppressWarnings("serial") // Various instance fields not statically serializable
 public class CompilationSubResult implements Serializable {
 
     static final long serialVersionUID = 46739181113L;

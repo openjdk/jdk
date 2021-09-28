@@ -57,6 +57,7 @@ public class DocFileIOException extends DocletException {
     /**
      * The file that was in use when the exception occurred.
      */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     public final DocFile fileName;
 
     /**

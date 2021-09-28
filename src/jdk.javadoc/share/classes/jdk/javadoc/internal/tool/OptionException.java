@@ -43,6 +43,7 @@ class OptionException extends Exception {
 
     public final Result result;
     public final String message;
+    @SuppressWarnings("serial") // Type of field is not Serializable
     public final Runnable m;
 
     /**

@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import javax.lang.model.element.Modifier;
 
+@SuppressWarnings("serial") // Various instance fields not statically serializable
 public class PubMethod implements Serializable {
 
     private static final long serialVersionUID = -7813050194553446243L;
