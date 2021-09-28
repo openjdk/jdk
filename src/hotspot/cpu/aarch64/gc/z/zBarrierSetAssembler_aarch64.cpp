@@ -931,8 +931,18 @@ static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
   __ lsr(ref->as_register(), ref->as_register(), ZPointerLoadShift);
 }
 
-void ZBarrierSetAssembler::generate_uncolor(LIR_Assembler* ce, LIR_Opr ref) const {
+static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
+  __ movzw(rscratch2, barrier_Relocation::unpatched);
+  __ orr(ref->as_register(), rscratch2, ref->as_register(), Assembler::LSL, ZPointerLoadShift);
+}
+
+void ZBarrierSetAssembler::generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const {
   z_uncolor(ce, ref);
+}
+
+void ZBarrierSetAssembler::generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const {
+  z_color(ce, ref);
 }
 
 void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
@@ -1022,23 +1032,15 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
 
-  if (stub != NULL) {
-    store_barrier_fast(ce->masm(),
-                       ce->as_Address(addr),
-                       rnew_zaddress,
-                       rnew_zpointer,
-                       rscratch2,
-                       true,
-                       stub->is_atomic(),
-                       *stub->entry(),
-                       *stub->continuation());
-  } else {
-    // Only color pointer - used by CAS
-    assert(rnew_zpointer == rnew_zaddress, "not supported");
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
-    __ movzw(rscratch2, barrier_Relocation::unpatched);
-    __ orr(rnew_zpointer, rscratch2, rnew_zpointer, Assembler::LSL, ZPointerLoadShift);
-  }
+  store_barrier_fast(ce->masm(),
+                     ce->as_Address(addr),
+                     rnew_zaddress,
+                     rnew_zpointer,
+                     rscratch2,
+                     true,
+                     stub->is_atomic(),
+                     *stub->entry(),
+                     *stub->continuation());
 }
 
 void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,

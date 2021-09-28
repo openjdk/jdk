@@ -137,7 +137,7 @@ void ZStoreBarrierStubC1::print_name(outputStream* out) const {
 
 class LIR_OpZUncolor : public LIR_Op {
 private:
-  LIR_Opr    _opr;
+  LIR_Opr _opr;
 
 public:
   LIR_OpZUncolor(LIR_Opr opr) :
@@ -150,7 +150,7 @@ public:
   }
 
   virtual void emit_code(LIR_Assembler* ce) {
-    ZBarrierSet::assembler()->generate_uncolor(ce, _opr);
+    ZBarrierSet::assembler()->generate_c1_uncolor(ce, _opr);
   }
 
   virtual void print_instr(outputStream* out) const {
@@ -222,6 +222,37 @@ address ZBarrierSetC1::load_barrier_on_oop_field_preloaded_runtime_stub(Decorato
   }
 }
 
+class LIR_OpZColor : public LIR_Op {
+ friend class LIR_OpVisitState;
+
+private:
+  LIR_Opr _opr;
+
+public:
+  LIR_OpZColor(LIR_Opr opr) :
+    LIR_Op(lir_none, opr, NULL /* info */),
+    _opr(opr) {}
+
+  virtual void visit(LIR_OpVisitState* state) {
+    state->do_input(_opr);
+    state->do_output(_opr);
+  }
+
+  virtual void emit_code(LIR_Assembler* ce) {
+    ZBarrierSet::assembler()->generate_c1_color(ce, _opr);
+  }
+
+  virtual void print_instr(outputStream* out) const {
+    _opr->print(out); out->print(" ");
+  }
+
+#ifndef PRODUCT
+  virtual const char* name() const  {
+    return "lir_z_color";
+  }
+#endif // PRODUCT
+};
+
 class LIR_OpZStoreBarrier : public LIR_Op {
  friend class LIR_OpVisitState;
 
@@ -246,23 +277,18 @@ public:
     _info(info) {}
 
   virtual void visit(LIR_OpVisitState* state) {
-    if (_stub == NULL) {
-      state->do_input(_new_zaddress);
-      state->do_output(_new_zpointer);
-    } else {
-      state->do_input(_new_zaddress);
-      state->do_input(_addr);
+    state->do_input(_new_zaddress);
+    state->do_input(_addr);
 
-      // Use temp registers to ensure these they use different registers.
-      state->do_temp(_addr);
-      state->do_temp(_new_zaddress);
+    // Use temp registers to ensure these they use different registers.
+    state->do_temp(_addr);
+    state->do_temp(_new_zaddress);
 
-      state->do_output(_new_zpointer);
-      state->do_stub(_stub);
+    state->do_output(_new_zpointer);
+    state->do_stub(_stub);
 
-      if (_info != NULL) {
-        state->do_info(_info);
-      }
+    if (_info != NULL) {
+      state->do_info(_info);
     }
   }
 
@@ -272,28 +298,22 @@ public:
       ce->add_debug_info_for_null_check_here(_info);
     }
     bs_asm->generate_c1_store_barrier(ce,
-                                      _stub != NULL ? _addr->as_address_ptr() : NULL,
+                                      _addr->as_address_ptr(),
                                       _new_zaddress,
                                       _new_zpointer,
                                       (ZStoreBarrierStubC1*)_stub);
-    if (_stub != NULL) {
-      ce->append_code_stub(_stub);
-    }
+    ce->append_code_stub(_stub);
   }
 
   virtual void print_instr(outputStream* out) const {
-    if (_stub != NULL) {
-      _addr->print(out);         out->print(" ");
-      _new_zaddress->print(out); out->print(" ");
-      _new_zpointer->print(out); out->print(" ");
-    } else {
-      _new_zaddress->print(out); out->print(" ");
-    }
+    _addr->print(out);         out->print(" ");
+    _new_zaddress->print(out); out->print(" ");
+    _new_zpointer->print(out); out->print(" ");
   }
 
 #ifndef PRODUCT
   virtual const char* name() const  {
-    return "ZStoreBarrier";
+    return "lir_z_store_barrier";
   }
 #endif // PRODUCT
 };
@@ -304,19 +324,13 @@ public:
 #define __ access.gen()->lir()->
 #endif
 
-LIR_Opr ZBarrierSetC1::color(LIRAccess& access, LIR_Opr new_zaddress) const {
+LIR_Opr ZBarrierSetC1::color(LIRAccess& access, LIR_Opr ref) const {
   // Only used from CAS where we have control over the used register
-  assert(new_zaddress->is_single_cpu(), "Should be using a register");
+  assert(ref->is_single_cpu(), "Should be using a register");
 
-  LIR_Opr new_zpointer = new_zaddress;
+  __ append(new LIR_OpZColor(ref));
 
-  __ append(new LIR_OpZStoreBarrier(NULL /* addr  */,
-                                    new_zaddress,
-                                    new_zpointer,
-                                    NULL /* stub */,
-                                    NULL /* info */));
-
-  return new_zpointer;
+  return ref;
 }
 
 void ZBarrierSetC1::load_barrier(LIRAccess& access, LIR_Opr result) const {

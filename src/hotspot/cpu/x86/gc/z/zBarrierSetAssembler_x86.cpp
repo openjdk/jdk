@@ -745,8 +745,19 @@ static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
   __ shrq(ref->as_register(), barrier_Relocation::unpatched);
 }
 
-void ZBarrierSetAssembler::generate_uncolor(LIR_Assembler* ce, LIR_Opr ref) const {
+static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
+  __ shlq(ref->as_register(), barrier_Relocation::unpatched);
+  __ orq(ref->as_register(), barrier_Relocation::unpatched, false /* compress_encoding */);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
+}
+
+void ZBarrierSetAssembler::generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const {
   z_uncolor(ce, ref);
+}
+
+void ZBarrierSetAssembler::generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const {
+  z_color(ce, ref);
 }
 
 void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
@@ -829,24 +840,15 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
 
-  if (stub != NULL) {
-    Register rbase = addr->base()->as_pointer_register();
-    store_barrier_fast(ce->masm(),
-                       ce->as_Address(addr),
-                       rnew_zaddress,
-                       rnew_zpointer,
-                       true,
-                       stub->is_atomic(),
-                       *stub->entry(),
-                       *stub->continuation());
-  } else {
-    // Only color pointer - used by CAS
-    assert(rnew_zpointer == rnew_zaddress, "not supported");
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
-    __ shlq(rnew_zpointer, barrier_Relocation::unpatched);
-    __ orq(rnew_zpointer, barrier_Relocation::unpatched, false /* compress_encoding */);
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
-  }
+  Register rbase = addr->base()->as_pointer_register();
+  store_barrier_fast(ce->masm(),
+                     ce->as_Address(addr),
+                     rnew_zaddress,
+                     rnew_zpointer,
+                     true,
+                     stub->is_atomic(),
+                     *stub->entry(),
+                     *stub->continuation());
 }
 
 void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,

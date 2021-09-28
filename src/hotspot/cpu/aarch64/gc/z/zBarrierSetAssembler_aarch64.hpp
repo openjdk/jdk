@@ -156,12 +156,13 @@ public:
   void patch_barrier_relocation(address addr, int format);
 
 #ifdef COMPILER1
+  void generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const;
+  void generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const;
+
   void generate_c1_load_barrier(LIR_Assembler* ce,
                                 LIR_Opr ref,
                                 ZLoadBarrierStubC1* stub,
                                 bool on_non_strong) const;
-
-  void generate_uncolor(LIR_Assembler* ce, LIR_Opr ref) const;
 
   void generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                      ZLoadBarrierStubC1* stub) const;

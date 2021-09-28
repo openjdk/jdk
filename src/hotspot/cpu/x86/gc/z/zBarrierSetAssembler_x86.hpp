@@ -110,6 +110,9 @@ public:
                                              Label& slowpath);
 
 #ifdef COMPILER1
+  void generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const;
+  void generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const;
+
   void generate_c1_store_barrier(LIR_Assembler* ce,
                                  LIR_Address* addr,
                                  LIR_Opr new_zaddress,
@@ -118,8 +121,6 @@ public:
 
   void generate_c1_store_barrier_stub(LIR_Assembler* ce,
                                       ZStoreBarrierStubC1* stub) const;
-
-  void generate_uncolor(LIR_Assembler* ce, LIR_Opr ref) const;
 
   void generate_c1_load_barrier(LIR_Assembler* ce,
                                 LIR_Opr ref,

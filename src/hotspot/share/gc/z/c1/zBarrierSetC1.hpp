@@ -88,10 +88,10 @@ private:
 
   address load_barrier_on_oop_field_preloaded_runtime_stub(DecoratorSet decorators) const;
 
-  LIR_Opr color(LIRAccess& access, LIR_Opr new_persistent) const;
+  LIR_Opr color(LIRAccess& access, LIR_Opr ref) const;
 
   void load_barrier(LIRAccess& access, LIR_Opr result) const;
-  LIR_Opr store_barrier(LIRAccess& access, LIR_Opr new_persistent, bool is_atomic) const;
+  LIR_Opr store_barrier(LIRAccess& access, LIR_Opr new_zaddress, bool is_atomic) const;
 
 protected:
   virtual LIR_Opr resolve_address(LIRAccess& access, bool resolve_in_register);
