@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.*;
@@ -132,12 +133,14 @@ class AESKeyWrapPadded extends FeedbackCipher {
         if (key == null) {
             throw new InvalidKeyException("Invalid null key");
         }
-        if (iv != null && iv.length != ICV2.length) {
-            throw new InvalidAlgorithmParameterException("Invalid IV length");
+        // allow setting an iv but if non-null, must equal to ICV2
+        if (iv != null && !Arrays.equals(iv, ICV2)) {
+            HexFormat hf = HexFormat.of().withUpperCase();
+            throw new InvalidAlgorithmParameterException("Invalid IV, got 0x" +
+                    hf.formatHex(iv) + " instead of 0x" + hf.formatHex(ICV2));
         }
         embeddedCipher.init(decrypting, algorithm, key);
-        // iv is retrieved from IvParameterSpec.getIV() which is already cloned
-        this.iv = (iv == null? ICV2 : iv);
+        this.iv = ICV2;
     }
 
     /**

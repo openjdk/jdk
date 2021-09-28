@@ -481,6 +481,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Is the given object inside a CDS archive area?
   virtual bool is_archived_object(oop object) const;
 
+  // Support for loading objects from CDS archive into the heap
+  // (usually as a snapshot of the old generation).
+  virtual bool can_load_archived_objects() const { return false; }
+  virtual HeapWord* allocate_loaded_archive_space(size_t size) { return NULL; }
+  virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.
 #ifndef PRODUCT

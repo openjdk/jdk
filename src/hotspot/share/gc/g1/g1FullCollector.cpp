@@ -224,8 +224,7 @@ void G1FullCollector::complete_collection() {
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
-    // Set as Invalid by default.
-    _region_attr_table.verify_is_invalid(hr->hrm_index());
+    _region_attr_table.set_free(hr->hrm_index());
   } else if (hr->is_closed_archive()) {
     _region_attr_table.set_skip_marking(hr->hrm_index());
   } else if (hr->is_pinned()) {
@@ -249,8 +248,9 @@ public:
     G1IsAliveClosure is_alive(&_collector);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1FullKeepAliveClosure keep_alive(_collector.marker(index));
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     G1FollowStackClosure* complete_gc = _collector.marker(index)->stack_closure();
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_gc);
   }
 };
 

@@ -53,13 +53,13 @@ public class IRNode {
     private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
     private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
 
-    public static final String ALLOC = "(.*precise klass .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
-    public static final String ALLOC_OF = COMPOSITE_PREFIX + "(.*precise klass .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
-    public static final String ALLOC_ARRAY = "(.*precise klass \\[L.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
-    public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "(.*precise klass \\[L.*" + IS_REPLACED + ";:.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+    public static final String ALLOC = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+    public static final String ALLOC_OF = COMPOSITE_PREFIX + "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+    public static final String ALLOC_ARRAY = "(.*precise \\[.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+    public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
 
-    public static final String CHECKCAST_ARRAY = "(((?i:cmp|CLFI|CLR).*precise klass \\[.*;:|.*(?i:mov|or).*precise klass \\[.*;:.*\\R.*(cmp|CMP|CLR))" + END;
-    public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "(((?i:cmp|CLFI|CLR).*precise klass \\[.*" + IS_REPLACED + ";:|.*(?i:mov|or).*precise klass \\[.*" + IS_REPLACED + ";:.*\\R.*(cmp|CMP|CLR))" + END;
+    public static final String CHECKCAST_ARRAY = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
+    public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
     // Does not work on s390 (a rule containing this regex will be skipped on s390).
     public static final String CHECKCAST_ARRAYCOPY = "(.*((?i:call_leaf_nofp,runtime)|CALL,\\s?runtime leaf nofp|BCTRL.*.leaf call).*checkcast_arraycopy.*" + END;
 
@@ -115,6 +115,8 @@ public class IRNode {
     public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
 
     public static final String CALL = START + "CallStaticJava" + MID + END;
+    public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallDynamicJava" + MID + IS_REPLACED + END;
+    public static final String STATIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallStaticJava" + MID + IS_REPLACED + END;
     public static final String TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*reason" + END;
     public static final String PREDICATE_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*predicate" + END;
     public static final String UNSTABLE_IF_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*unstable_if" + END;

@@ -133,7 +133,7 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder) :
   _metaspace(NULL),
-  _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock", true,
+  _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock",
                             Mutex::_safepoint_check_never)),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true),
@@ -302,9 +302,7 @@ bool ClassLoaderData::try_claim(int claim) {
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
   if (has_class_mirror_holder()) {
-    if (!Arguments::is_dumping_archive()) {
-      assert(_keep_alive > 0, "Invalid keep alive increment count");
-    }
+    assert(_keep_alive > 0, "Invalid keep alive increment count");
     _keep_alive++;
   }
 }
@@ -964,11 +962,13 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr(" - keep alive          %d", _keep_alive);
   out->print   (" - claim               ");
   switch(_claim) {
-    case _claim_none:       out->print_cr("none"); break;
-    case _claim_finalizable:out->print_cr("finalizable"); break;
-    case _claim_strong:     out->print_cr("strong"); break;
-    case _claim_other:      out->print_cr("other"); break;
-    default:                ShouldNotReachHere();
+    case _claim_none:                       out->print_cr("none"); break;
+    case _claim_finalizable:                out->print_cr("finalizable"); break;
+    case _claim_strong:                     out->print_cr("strong"); break;
+    case _claim_other:                      out->print_cr("other"); break;
+    case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
+    case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
+    default:                                ShouldNotReachHere();
   }
   out->print_cr(" - handles             %d", _handles.count());
   out->print_cr(" - dependency count    %d", _dependency_count);

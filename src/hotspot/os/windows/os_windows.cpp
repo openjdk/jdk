@@ -258,11 +258,6 @@ static BOOL unmapViewOfFile(LPCVOID lpBaseAddress) {
   return result;
 }
 
-bool os::unsetenv(const char* name) {
-  assert(name != NULL, "Null pointer");
-  return (SetEnvironmentVariable(name, NULL) == TRUE);
-}
-
 char** os::get_environ() { return _environ; }
 
 // No setuid programs under Windows.
@@ -712,8 +707,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       } // else fall through:
         // use VMThreadStackSize if CompilerThreadStackSize is not defined
     case os::vm_thread:
-    case os::pgc_thread:
-    case os::cgc_thread:
+    case os::gc_thread:
     case os::asynclog_thread:
     case os::watcher_thread:
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
@@ -1866,9 +1860,13 @@ void os::win32::print_windows_version(outputStream* st) {
     if (is_workstation) {
       st->print("10");
     } else {
-      // distinguish Windows Server 2016 and 2019 by build number
-      // Windows server 2019 GA 10/2018 build number is 17763
-      if (build_number > 17762) {
+      // distinguish Windows Server by build number
+      // - 2016 GA 10/2016 build: 14393
+      // - 2019 GA 11/2018 build: 17763
+      // - 2022 GA 08/2021 build: 20348
+      if (build_number > 20347) {
+        st->print("Server 2022");
+      } else if (build_number > 17762) {
         st->print("Server 2019");
       } else {
         st->print("Server 2016");

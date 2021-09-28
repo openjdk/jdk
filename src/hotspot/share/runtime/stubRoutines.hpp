@@ -206,6 +206,7 @@ class StubRoutines: AllStatic {
   static address _electronicCodeBook_encryptAESCrypt;
   static address _electronicCodeBook_decryptAESCrypt;
   static address _counterMode_AESCrypt;
+  static address _galoisCounterMode_AESCrypt;
   static address _ghash_processBlocks;
   static address _base64_encodeBlock;
   static address _base64_decodeBlock;
@@ -410,6 +411,7 @@ class StubRoutines: AllStatic {
   static address montgomerySquare()    { return _montgomerySquare; }
   static address bigIntegerRightShift() { return _bigIntegerRightShiftWorker; }
   static address bigIntegerLeftShift()  { return _bigIntegerLeftShiftWorker; }
+  static address galoisCounterMode_AESCrypt()   { return _galoisCounterMode_AESCrypt; }
 
   static address vectorizedMismatch()  { return _vectorizedMismatch; }
 

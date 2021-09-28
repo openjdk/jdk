@@ -457,22 +457,22 @@ const intx ObjectAlignmentInBytes = 8;
           "Used to help diagnose memory stomping bugs.")                    \
                                                                             \
   develop(bool, ZapResourceArea, trueInDebug,                               \
-          "Zap freed resource/arena space with 0xABABABAB")                 \
+          "Zap freed resource/arena space")                                 \
                                                                             \
   notproduct(bool, ZapVMHandleArea, trueInDebug,                            \
-          "Zap freed VM handle space with 0xBCBCBCBC")                      \
+          "Zap freed VM handle space")                                      \
                                                                             \
   notproduct(bool, ZapStackSegments, trueInDebug,                           \
-          "Zap allocated/freed stack segments with 0xFADFADED")             \
+          "Zap allocated/freed stack segments")                             \
                                                                             \
   develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
-          "Zap unused heap space with 0xBAADBABE")                          \
+          "Zap unused heap space")                                          \
                                                                             \
   develop(bool, CheckZapUnusedHeapArea, false,                              \
           "Check zapping of unused heap space")                             \
                                                                             \
   develop(bool, ZapFillerObjects, trueInDebug,                              \
-          "Zap filler objects with 0xDEAFBABE")                             \
+          "Zap filler objects")                                             \
                                                                             \
   product(bool, ExecutingUnitTests, false,                                  \
           "Whether the JVM is running unit tests or not")                   \
@@ -1400,14 +1400,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(intx, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                \
           "Extra method data trap entries for speculation")                 \
                                                                             \
-  develop(intx, InlineFrequencyRatio,    20,                                \
+  product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
-          range(0, max_jint)                                                \
-                                                                            \
-  product_pd(intx, InlineFrequencyCount, DIAGNOSTIC,                        \
-          "Count of call site execution necessary to trigger frequent "     \
-          "inlining")                                                       \
-          range(0, max_jint)                                                \
                                                                             \
   develop(intx, InlineThrowCount,    50,                                    \
           "Force inlining of interpreted methods that throw this often")    \
@@ -1441,10 +1435,10 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
-  product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
+  develop(bool, MetaspaceGuardAllocations, false,                           \
           "Metapace allocations are guarded.")                              \
                                                                             \
-  product(bool, MetaspaceHandleDeallocations, true, DIAGNOSTIC,             \
+  develop(bool, MetaspaceHandleDeallocations, true,                         \
           "Switch off Metapace deallocation handling.")                     \
                                                                             \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \

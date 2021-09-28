@@ -596,7 +596,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
 
 ArrayCopyNode* MemNode::find_array_copy_clone(PhaseTransform* phase, Node* ld_alloc, Node* mem) const {
   if (mem->is_Proj() && mem->in(0) != NULL && (mem->in(0)->Opcode() == Op_MemBarStoreStore ||
-                                                 mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
+                                               mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
     if (ld_alloc != NULL) {
       // Check if there is an array copy for a clone
       Node* mb = mem->in(0);
@@ -1061,7 +1061,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   // This is more general than load from boxing objects.
   if (skip_through_membars(atp, tp, phase->C->eliminate_boxing())) {
     uint alias_idx = atp->index();
-    bool final = !atp->is_rewritable();
     Node* result = NULL;
     Node* current = st;
     // Skip through chains of MemBarNodes checking the MergeMems for
@@ -1069,17 +1068,19 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     // kind of node is encountered.  Loads from final memory can skip
     // through any kind of MemBar but normal loads shouldn't skip
     // through MemBarAcquire since the could allow them to move out of
-    // a synchronized region.
+    // a synchronized region. It is not safe to step over MemBarCPUOrder,
+    // because alias info above them may be inaccurate (e.g., due to
+    // mixed/mismatched unsafe accesses).
+    bool is_final_mem = !atp->is_rewritable();
     while (current->is_Proj()) {
       int opc = current->in(0)->Opcode();
-      if ((final && (opc == Op_MemBarAcquire ||
-                     opc == Op_MemBarAcquireLock ||
-                     opc == Op_LoadFence)) ||
+      if ((is_final_mem && (opc == Op_MemBarAcquire ||
+                            opc == Op_MemBarAcquireLock ||
+                            opc == Op_LoadFence)) ||
           opc == Op_MemBarRelease ||
           opc == Op_StoreFence ||
           opc == Op_MemBarReleaseLock ||
-          opc == Op_MemBarStoreStore ||
-          opc == Op_MemBarCPUOrder) {
+          opc == Op_MemBarStoreStore) {
         Node* mem = current->in(0)->in(TypeFunc::Memory);
         if (mem->is_MergeMem()) {
           MergeMemNode* merge = mem->as_MergeMem();
@@ -1625,7 +1626,14 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       the_clone = x;            // Remember for possible deletion.
       // Alter data node to use pre-phi inputs
       if (this->in(0) == region) {
-        x->set_req(0, in);
+        if (mem->is_Phi() && (mem->in(0) == region) && mem->in(i)->in(0) != NULL &&
+            MemNode::all_controls_dominate(address, region)) {
+          // Enable other optimizations such as loop predication which does not work
+          // if we directly pin the node to node `in`
+          x->set_req(0, mem->in(i)->in(0)); // Use same control as memory
+        } else {
+          x->set_req(0, in);
+        }
       } else {
         x->set_req(0, NULL);
       }
@@ -1971,7 +1979,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         return con_type;
       }
     }
-  } else if (tp->base() == Type::KlassPtr) {
+  } else if (tp->base() == Type::KlassPtr || tp->base() == Type::InstKlassPtr || tp->base() == Type::AryKlassPtr) {
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects
             tp->is_klassptr()->klass()->is_java_lang_Object() ||

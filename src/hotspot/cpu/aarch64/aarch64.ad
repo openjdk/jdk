@@ -1902,7 +1902,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ bind(L_skip_barrier);
   }
 
-  if (C->max_vector_size() >= 16) {
+  if (C->max_vector_size() > 0) {
     __ reinitialize_ptrue();
   }
 
@@ -2388,7 +2388,7 @@ const bool Matcher::match_rule_supported(int opcode) {
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
+  if (!match_rule_supported(opcode)) {
     return false;
   }
   int bit_size = vlen * type2aelembytes(bt) * 8;
@@ -2396,7 +2396,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     return false;
   }
   if (UseSVE > 0) {
-    return op_sve_supported(opcode);
+    return op_sve_supported(opcode, vlen, bt);
   } else { // NEON
     // Special cases
     switch (opcode) {
@@ -2438,11 +2438,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_LoadVectorGather:
+    case Op_StoreVectorScatter:
+      return false;
     default:
       break;
     }
   }
-  return true; // Per default match rules are supported.
+  return vector_size_supported(bt, vlen);
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -2488,24 +2491,20 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 const int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
+
 const int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
-  if ((UseSVE > 0) && (MaxVectorSize >= 16)) {
-    // Currently vector length less than SVE vector register size is not supported.
-    return max_size;
-  } else { // NEON
-    // Limit the vector size to 8 bytes
-    int size = 8 / type2aelembytes(bt);
-    if (bt == T_BYTE) {
-      // To support vector api shuffle/rearrange.
-      size = 4;
-    } else if (bt == T_BOOLEAN) {
-      // To support vector api load/store mask.
-      size = 2;
-    }
-    if (size < 2) size = 2;
-    return MIN2(size,max_size);
+  // Limit the min vector size to 8 bytes.
+  int size = 8 / type2aelembytes(bt);
+  if (bt == T_BYTE) {
+    // To support vector api shuffle/rearrange.
+    size = 4;
+  } else if (bt == T_BOOLEAN) {
+    // To support vector api load/store mask.
+    size = 2;
   }
+  if (size < 2) size = 2;
+  return MIN2(size, max_size);
 }
 
 // Actual max scalable vector register length.
@@ -2515,7 +2514,7 @@ const int Matcher::scalable_vector_reg_size(const BasicType bt) {
 
 // Vector ideal reg.
 const uint Matcher::vector_ideal_reg(int len) {
-  if (UseSVE > 0 && 16 <= len && len <= 256) {
+  if (UseSVE > 0 && 2 <= len && len <= 256) {
     return Op_VecA;
   }
   switch(len) {
@@ -2642,6 +2641,13 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
+    if (u->is_LoadStore()) {
+      // On AArch64, LoadStoreNodes (i.e. compare and swap
+      // instructions) only take register indirect as an operand, so
+      // any attempt to use an AddPNode as an input to a LoadStoreNode
+      // must fail.
+      return false;
+    }
     if (u->is_Mem()) {
       int opsize = u->as_Mem()->memory_size();
       assert(opsize > 0, "unexpected memory operand size");
@@ -3713,7 +3719,7 @@ encode %{
     }
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
-    if (Compile::current()->max_vector_size() >= 16 && uncommon_trap_request() == 0) {
+    if (Compile::current()->max_vector_size() > 0 && uncommon_trap_request() == 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3725,7 +3731,7 @@ encode %{
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
-    } else if (Compile::current()->max_vector_size() >= 16) {
+    } else if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3763,7 +3769,7 @@ encode %{
       __ bind(retaddr);
       __ add(sp, sp, 2 * wordSize);
     }
-    if (Compile::current()->max_vector_size() >= 16) {
+    if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3776,7 +3782,7 @@ encode %{
   enc_class aarch64_enc_ret() %{
     C2_MacroAssembler _masm(&cbuf);
 #ifdef ASSERT
-    if (Compile::current()->max_vector_size() >= 16) {
+    if (Compile::current()->max_vector_size() > 0) {
       __ verify_ptrue();
     }
 #endif
@@ -4142,6 +4148,16 @@ operand immI_M1()
 operand immIExt()
 %{
   predicate(0 <= n->get_int() && (n->get_int() <= 4));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_gt_1()
+%{
+  predicate(n->get_int() > 1);
   match(ConI);
 
   op_cost(0);

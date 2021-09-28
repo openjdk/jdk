@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary InvalidJarIndexException due to bug in sun.misc.JarIndex.merge()
  *          Test URLClassLoader usage of the merge method when using indexes
  * @author  Diego Belfer
+ * @run main/othervm -Djdk.net.URLClassPath.enableJarIndex=true JarIndexMergeForClassLoaderTest
  */
 import java.io.BufferedReader;
 import java.io.File;
