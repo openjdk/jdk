@@ -629,6 +629,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
     public Void visitAttribute(AttributeTree tree, Void ignore) {
+        // for now, ensure we're in an HTML StartElementTree;
+        // in time, we might check uses of attributes in other tree nodes
+        if (getParentKind() != DocTree.Kind.START_ELEMENT) {
+            return null;
+        }
+
         HtmlTag currTag = tagStack.peek().tag;
         if (currTag != null && currTag.elemKind != ElemKind.HTML4) {
             Name name = tree.getName();
@@ -1155,6 +1161,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Utility methods">
+
+    private DocTree.Kind getParentKind() {
+        return getCurrentPath().getParentPath().getLeaf().getKind();
+    }
 
     private boolean isCheckedException(TypeMirror t) {
         return !(env.types.isAssignable(t, env.java_lang_Error)

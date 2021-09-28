@@ -72,7 +72,7 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _n_threads(n_threads),
   _queue_set(queue_set),
   _offered_termination(0),
-  _blocker(Mutex::leaf, "TaskTerminator", Monitor::_safepoint_check_never),
+  _blocker(Mutex::nosafepoint, "TaskTerminator_lock", Monitor::_safepoint_check_never),
   _spin_master(NULL) { }
 
 TaskTerminator::~TaskTerminator() {

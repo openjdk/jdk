@@ -28,7 +28,7 @@
  * @build Util
  * @author Romain Guy
  * @summary Tests PRESSED and MOUSE_OVER and FOCUSED state for buttons with Synth.
- * @run main bug6276188
+ * @run main/othervm -Dsun.java2d.uiScale=1 bug6276188
  */
 import java.awt.*;
 import java.awt.image.*;

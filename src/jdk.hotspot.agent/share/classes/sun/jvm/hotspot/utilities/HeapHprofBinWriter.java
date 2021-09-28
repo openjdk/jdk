@@ -409,19 +409,15 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
-        hprofBufferedOut = null;
-        OutputStream dataOut = fos;
+        hprofBufferedOut = fos;
         if (useSegmentedHeapDump) {
             if (isCompression()) {
-                dataOut = new GZIPOutputStream(fos) {
+                hprofBufferedOut = new GZIPOutputStream(fos) {
                     {
                         this.def.setLevel(gzLevel);
                     }
                 };
             }
-            hprofBufferedOut = new SegmentedOutputStream(dataOut);
-        } else {
-            hprofBufferedOut = new SegmentedOutputStream(fos, false /* allowSegmented */);
         }
         out = new DataOutputStream(hprofBufferedOut);
         dbg = vm.getDebugger();
@@ -472,47 +468,157 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // flush buffer stream.
         out.flush();
-
         if (!useSegmentedHeapDump) {
-            // Fill in final length.
             fillInHeapRecordLength();
         } else {
-            hprofBufferedOut.finish();
             // Write heap segment-end record
             out.writeByte((byte) HPROF_HEAP_DUMP_END);
             out.writeInt(0);
             out.writeInt(0);
         }
-
         // flush buffer stream and throw it.
         out.flush();
         out.close();
         out = null;
         hprofBufferedOut = null;
+        currentSegmentStart = 0;
     }
 
-    @Override
-    protected void writeHeapRecordPrologue() throws IOException {
-        if (useSegmentedHeapDump) {
-            hprofBufferedOut.enterSegmentMode();
-        } else if (currentSegmentStart == 0) {
-            // write heap data header
-            out.writeByte((byte) (HPROF_HEAP_DUMP));
-            out.writeInt(0);
-
-            // remember position of dump length, we will fixup
-            // length later - hprof format requires length.
-            out.flush();
-            currentSegmentStart = fos.getChannel().position();
-            // write dummy length of 0 and we'll fix it later.
-            out.writeInt(0);
+    protected int calculateOopDumpRecordSize(Oop oop) throws IOException {
+        if (oop instanceof TypeArray taOop) {
+            return calculatePrimitiveArrayDumpRecordSize(taOop);
+        } else if (oop instanceof ObjArray oaOop) {
+            Klass klass = oop.getKlass();
+            ObjArrayKlass oak = (ObjArrayKlass) klass;
+            Klass bottomType = oak.getBottomKlass();
+            if (bottomType instanceof InstanceKlass ||
+                bottomType instanceof TypeArrayKlass) {
+                return calculateObjectArrayDumpRecordSize(oaOop);
+            } else {
+                // Internal object, nothing to write.
+                return 0;
+            }
+        } else if (oop instanceof Instance instance) {
+            Klass klass = instance.getKlass();
+            Symbol name = klass.getName();
+            if (name.equals(javaLangClass)) {
+                return calculateClassInstanceDumpRecordSize(instance);
+            }
+            return calculateInstanceDumpRecordSize(instance);
+        } else {
+            // not-a-Java-visible oop
+            return 0;
         }
     }
 
+    private int calculateInstanceDumpRecordSize(Instance instance) {
+        Klass klass = instance.getKlass();
+        if (klass.getClassLoaderData() == null) {
+            // Ignoring this object since the corresponding Klass is not loaded.
+            // Might be a dormant archive object.
+            return 0;
+        }
+
+        ClassData cd = (ClassData) classDataCache.get(klass);
+        if (Assert.ASSERTS_ENABLED) {
+            Assert.that(cd != null, "can not get class data for " + klass.getName().asString() + klass.getAddress());
+        }
+        List<Field> fields = cd.fields;
+        return (int) BYTE_SIZE + (int)OBJ_ID_SIZE * 2 + (int)INT_SIZE * 2 + getSizeForFields(fields);
+    }
+
+    private int calculateClassDumpRecordSize(Klass k) {
+        // tag + javaMirror + DUMMY_STACK_TRACE_ID + super
+        int size = (int)BYTE_SIZE + (int)INT_SIZE + (int)OBJ_ID_SIZE * 2;
+        if (k instanceof InstanceKlass ik) {
+            List<Field> fields = getInstanceFields(ik);
+            List<Field> declaredFields = ik.getImmediateFields();
+            List<Field> staticFields = new ArrayList<>();
+            List<Field> instanceFields = new ArrayList<>();
+            Iterator<Field> itr = null;
+            // loader + signer + protectionDomain + 2 reserved + fieldSize + cpool entris number
+            size += OBJ_ID_SIZE * 5 + INT_SIZE + SHORT_SIZE;
+            for (itr = declaredFields.iterator(); itr.hasNext();) {
+                Field field = itr.next();
+                if (field.isStatic()) {
+                    staticFields.add(field);
+                } else {
+                    instanceFields.add(field);
+                }
+            }
+            // size of static field descriptors
+            size += calculateFieldDescriptorsDumpRecordSize(staticFields, ik);
+            // size of instance field descriptors
+            size += calculateFieldDescriptorsDumpRecordSize(instanceFields, null);
+        } else {
+            size += OBJ_ID_SIZE * 5  + INT_SIZE + SHORT_SIZE * 3;
+        }
+        return size;
+    }
+
+    private int calculateFieldDescriptorsDumpRecordSize(List<Field> fields, InstanceKlass ik) {
+        int size = 0;
+        size += SHORT_SIZE;
+        for (Field field : fields) {
+            size += OBJ_ID_SIZE + BYTE_SIZE;
+            // ik == null for instance fields
+            if (ik != null) {
+                // static field
+                size += getSizeForField(field);
+            }
+        }
+        return size;
+    }
+
+    private int calculateClassInstanceDumpRecordSize(Instance instance) {
+        Klass reflectedKlass = java_lang_Class.asKlass(instance);
+        // Dump instance record only for primitive type Class objects.
+        // All other Class objects are covered by writeClassDumpRecords.
+        if (reflectedKlass == null) {
+            return calculateInstanceDumpRecordSize(instance);
+        }
+        return 0;
+    }
+
+    private int calculateObjectArrayDumpRecordSize(ObjArray array) {
+        int headerSize = getArrayHeaderSize(true);
+        final int length = calculateArrayMaxLength(array.getLength(),
+                headerSize,
+                OBJ_ID_SIZE,
+                "Object");
+        return headerSize + length * OBJ_ID_SIZE;
+    }
+
+    private int calculatePrimitiveArrayDumpRecordSize(TypeArray array) throws IOException {
+        int headerSize = getArrayHeaderSize(false);
+        TypeArrayKlass tak = (TypeArrayKlass) array.getKlass();
+        final int type = (int) tak.getElementType();
+        final String typeName = tak.getElementTypeName();
+        final long typeSize = getSizeForType(type);
+        final int length = calculateArrayMaxLength(array.getLength(),
+                                                   headerSize,
+                                                   typeSize,
+                                                   typeName);
+        return headerSize + (int)typeSize * length;
+    }
+
     @Override
-    protected void writeHeapRecordEpilogue() throws IOException {
+    protected void writeHeapRecordPrologue(int size) throws IOException {
+        if (size == 0 || currentSegmentStart > 0) {
+            return;
+        }
+        // write heap data header
         if (useSegmentedHeapDump) {
-            hprofBufferedOut.exitSegmentMode();
+            out.writeByte((byte)HPROF_HEAP_DUMP_SEGMENT);
+            out.writeInt(0);
+            out.writeInt(size);
+        } else {
+            out.writeByte((byte)HPROF_HEAP_DUMP);
+            out.writeInt(0);
+            // record the current position in file, it will be use for calculating the size of written data
+            currentSegmentStart = fos.getChannel().position();
+            // write dummy zero for length
+            out.writeInt(0);
         }
     }
 
@@ -576,33 +682,19 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             (2 * (int) BYTE_SIZE + 2 * (int) INT_SIZE + (int) OBJ_ID_SIZE);
     }
 
-    // Check if we need to truncate an array
+    // Check if we need to truncate an array.
+    // The limitation is that the size of "heap dump" or "heap dump segment" must be <= MAX_U4_VALUE.
     private int calculateArrayMaxLength(long originalArrayLength,
                                         int headerSize,
                                         long typeSize,
-                                        String typeName) throws IOException {
+                                        String typeName) {
 
         long length = originalArrayLength;
-        long originalLengthInBytes = originalArrayLength * typeSize;
-        long currentRecordLength = 0;
 
-        // There is an U4 slot that contains the data size written in the dump file.
-        // Need to truncate the array length if the size exceeds the MAX_U4_VALUE.
-        if (!useSegmentedHeapDump) {
-            // now get the current position to calculate length
-            long dumpEnd = fos.getChannel().position();
-            // calculate the length of heap data
-            currentRecordLength = (dumpEnd - currentSegmentStart - 4L);
-            if (currentRecordLength > 0 &&
-                (currentRecordLength + headerSize + originalLengthInBytes) > MAX_U4_VALUE) {
-                fillInHeapRecordLength();
-                currentSegmentStart = 0;
-                writeHeapRecordPrologue();
-                currentRecordLength = 0;
-            }
-        }
+        long originalLengthInBytes = originalArrayLength * typeSize;
+
         // Calculate the max bytes we can use.
-        long maxBytes = (MAX_U4_VALUE - (headerSize + currentRecordLength));
+        long maxBytes = MAX_U4_VALUE - headerSize;
 
         if (originalLengthInBytes > maxBytes) {
             length = maxBytes/typeSize;
@@ -610,14 +702,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                                + " with length " + originalArrayLength
                                + "; truncating to length " + length);
         }
-
-        // Now the total size of data to dump is known and can be filled to segment header.
-        // Disable buffer mode to avoid memory consumption and internal buffer copies.
-        if (useSegmentedHeapDump) {
-            int size = (int) (length * typeSize + headerSize);
-            hprofBufferedOut.fillSegmentSizeAndDisableBufferMode(size);
-        }
-
         return (int) length;
     }
 
@@ -627,7 +711,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
              cldGraph.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                             public void visit(Klass k) {
                                 try {
-                                    writeHeapRecordPrologue();
+                                    writeHeapRecordPrologue(calculateClassDumpRecordSize(k));
                                     writeClassDumpRecord(k);
                                     writeHeapRecordEpilogue();
                                 } catch (IOException e) {
@@ -796,6 +880,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     protected void writeJavaThread(JavaThread jt, int index) throws IOException {
+        int size = (int)BYTE_SIZE + (int)OBJ_ID_SIZE + (int)INT_SIZE * 2;
+        writeHeapRecordPrologue(size);
         out.writeByte((byte) HPROF_GC_ROOT_THREAD_OBJ);
         writeObjectID(jt.getThreadObj());
         out.writeInt(index);
@@ -816,6 +902,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                                        Oop oop = objectHeap.newOop(oopHandle);
                                        // exclude JNI handles hotspot internal objects
                                        if (oop != null && isJavaVisible(oop)) {
+                                           int size = (int)BYTE_SIZE + (int)OBJ_ID_SIZE + (int)INT_SIZE * 2;
+                                           writeHeapRecordPrologue(size);
                                            out.writeByte((byte) HPROF_GC_ROOT_JNI_LOCAL);
                                            writeObjectID(oop);
                                            out.writeInt(threadIndex);
@@ -842,6 +930,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         Oop oop = objectHeap.newOop(oopHandle);
         // exclude JNI handles of hotspot internal objects
         if (oop != null && isJavaVisible(oop)) {
+            int size = (int)BYTE_SIZE + (int)OBJ_ID_SIZE * 2;
+            writeHeapRecordPrologue(size);
             out.writeByte((byte) HPROF_GC_ROOT_JNI_GLOBAL);
             writeObjectID(oop);
             // use JNIHandle address as ID
@@ -1221,38 +1311,37 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return res;
     }
 
+    // get size in bytes (in stream) required for given field.
+    private int getSizeForField(Field field) {
+        char typeCode = (char)field.getSignature().getByteAt(0);
+        switch (typeCode) {
+        case JVM_SIGNATURE_BOOLEAN:
+        case JVM_SIGNATURE_BYTE:
+            return 1;
+        case JVM_SIGNATURE_CHAR:
+        case JVM_SIGNATURE_SHORT:
+            return 2;
+        case JVM_SIGNATURE_INT:
+        case JVM_SIGNATURE_FLOAT:
+            return 4;
+        case JVM_SIGNATURE_CLASS:
+        case JVM_SIGNATURE_ARRAY:
+            return OBJ_ID_SIZE;
+        case JVM_SIGNATURE_LONG:
+        case JVM_SIGNATURE_DOUBLE:
+            return 8;
+        default:
+            throw new RuntimeException("should not reach here");
+        }
+    }
+
     // get size in bytes (in stream) required for given fields.  Note
     // that this is not the same as object size in heap. The size in
     // heap will include size of padding/alignment bytes as well.
     private int getSizeForFields(List<Field> fields) {
         int size = 0;
-        for (Iterator<Field> itr = fields.iterator(); itr.hasNext();) {
-            Field field = itr.next();
-            char typeCode = (char) field.getSignature().getByteAt(0);
-            switch (typeCode) {
-            case JVM_SIGNATURE_BOOLEAN:
-            case JVM_SIGNATURE_BYTE:
-                size++;
-                break;
-            case JVM_SIGNATURE_CHAR:
-            case JVM_SIGNATURE_SHORT:
-                size += 2;
-                break;
-            case JVM_SIGNATURE_INT:
-            case JVM_SIGNATURE_FLOAT:
-                size += 4;
-                break;
-            case JVM_SIGNATURE_CLASS:
-            case JVM_SIGNATURE_ARRAY:
-                size += OBJ_ID_SIZE;
-                break;
-            case JVM_SIGNATURE_LONG:
-            case JVM_SIGNATURE_DOUBLE:
-                size += 8;
-                break;
-            default:
-                throw new RuntimeException("should not reach here");
-            }
+        for (Field field : fields) {
+            size += getSizeForField(field);
         }
         return size;
     }
@@ -1276,7 +1365,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private DataOutputStream out;
     private FileOutputStream fos;
-    private SegmentedOutputStream hprofBufferedOut;
+    private OutputStream hprofBufferedOut;
     private Debugger dbg;
     private ObjectHeap objectHeap;
     private ArrayList<Klass> KlassMap;
@@ -1319,265 +1408,4 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     private Map<InstanceKlass, ClassData> classDataCache = new HashMap<>();
-
-    /**
-     * The class implements a buffered output stream for segmented data dump.
-     * It is used inside HeapHprofBinWritter only for heap dump.
-     * Because the current implementation of segmented heap dump needs to update
-     * the segment size at segment header, and because it is hard to modify the
-     * compressed data after they are written to file, this class first saves the
-     * uncompressed data into an internal buffer, and then writes through to the
-     * GZIPOutputStream when the whole segmented data are ready and the size is updated.
-     * If the data to be written are larger than internal buffer, or the internal buffer
-     * is full, the internal buffer will be extend to a larger one.
-     * This class defines a switch to turn on/off the segmented mode. If turned off,
-     * it behaves the same as BufferedOutputStream.
-     * */
-    private class SegmentedOutputStream extends BufferedOutputStream {
-        /**
-         * Creates a new buffered output stream to support segmented heap dump data.
-         *
-         * @param   out                 the underlying output stream.
-         * @param   allowSegmented      whether allow segmental dump.
-         */
-        public SegmentedOutputStream(OutputStream out, boolean allowSegmented) {
-            super(out, 8192);
-            segmentMode = false;
-            bufferMode = true;
-            this.allowSegmented = allowSegmented;
-            segmentBuffer = new byte[SEGMENT_BUFFER_SIZE];
-            segmentWritten = 0;
-        }
-
-        /**
-         * Creates a new buffered output stream to support segmented heap dump data.
-         *
-         * @param   out      the underlying output stream.
-         */
-        public SegmentedOutputStream(OutputStream out) {
-            this(out, true);
-        }
-
-        /**
-         * Writes the specified byte to this buffered output stream.
-         *
-         * @param      b   the byte to be written.
-         * @throws     IOException  if an I/O error occurs.
-         */
-        @Override
-        public synchronized void write(int b) throws IOException {
-           if (segmentMode && bufferMode) {
-               if (segmentWritten == 0) {
-                   // At the begining of the segment.
-                   writeSegmentHeader();
-               } else if (segmentWritten == segmentBuffer.length) {
-                   // Internal buffer is full, extend a larger one.
-                   int newSize = segmentBuffer.length + SEGMENT_BUFFER_INC_SIZE;
-                   byte newBuf[] = new byte[newSize];
-                   System.arraycopy(segmentBuffer, 0, newBuf, 0, segmentWritten);
-                   segmentBuffer = newBuf;
-               }
-               segmentBuffer[segmentWritten++] = (byte)b;
-               return;
-           }
-           super.write(b);
-        }
-
-        /**
-         * Writes {@code len} bytes from the specified byte array
-         * starting at offset {@code off} to this output stream.
-         *
-         * @param      b     the data.
-         * @param      off   the start offset in the data.
-         * @param      len   the number of bytes to write.
-         * @throws     IOException  if an I/O error occurs.
-         */
-        @Override
-        public synchronized void write(byte b[], int off, int len) throws IOException {
-            if (segmentMode && bufferMode) {
-                if (segmentWritten == 0) {
-                    writeSegmentHeader();
-                }
-                // Data size is larger than segment buffer length, extend segment buffer.
-                if (segmentWritten + len > segmentBuffer.length) {
-                    int newSize = segmentBuffer.length + Math.max(SEGMENT_BUFFER_INC_SIZE, len);
-                    byte newBuf[] = new byte[newSize];
-                    System.arraycopy(segmentBuffer, 0, newBuf, 0, segmentWritten);
-                    segmentBuffer = newBuf;
-                }
-                System.arraycopy(b, off, segmentBuffer, segmentWritten, len);
-                segmentWritten += len;
-                return;
-            }
-            super.write(b, off, len);
-        }
-
-        /**
-         * Flushes this buffered output stream. This forces any buffered
-         * output bytes to be written out to the underlying output stream.
-         *
-         * @throws     IOException  if an I/O error occurs.
-         * @see        java.io.FilterOutputStream#out
-         */
-        @Override
-        public synchronized void flush() throws IOException {
-            if (segmentMode && bufferMode) {
-                // The case that nothing has been written in segment.
-                if (segmentWritten == 0) return;
-                // There must be more data than just header size written for non-empty segment.
-                assert segmentWritten > SEGMENT_HEADER_SIZE
-                        : "invalid header in segmented mode";
-
-                if (segmentWritten > (segmentBuffer.length)) {
-                    throw new RuntimeException("Heap segment size overflow.");
-                }
-
-                if (segmentWritten > SEGMENT_HEADER_SIZE) {
-                    fillSegmentSize(segmentWritten - SEGMENT_HEADER_SIZE);
-                    super.write(segmentBuffer, 0, segmentWritten);
-                    super.flush();
-                    segmentWritten = 0;
-                }
-                return;
-            }
-            super.flush();
-        }
-
-        /**
-         * Enters segmented mode, flush buffered data and set flag.
-         */
-        public void enterSegmentMode() throws IOException {
-            if (allowSegmented && !segmentMode && segmentWritten == 0) {
-                super.flush();
-                segmentMode = true;
-                segmentWritten = 0;
-            }
-        }
-
-        /**
-         * Before finish, flush all data in buffer.
-         */
-        public void finish() throws IOException {
-            if (allowSegmented && segmentMode) {
-                flush();
-                assert segmentWritten == 0;
-                segmentMode = false;
-                bufferMode = true;
-            }
-        }
-
-        /**
-         * Exits segmented mode, flush segmented data.
-         * @param    force    flush data regardless whether the buffer is full
-         */
-        public void exitSegmentMode() throws IOException {
-            if (!bufferMode) {
-                // no data in internal buffer.
-                assert segmentWritten == 0;
-                bufferMode = true;
-            }
-            if (allowSegmented && segmentMode && shouldFlush()) {
-                flush();
-                assert segmentWritten == 0;
-                segmentMode = false;
-            }
-        }
-
-        /**
-         * Fill segment size and disable bufferMode
-         * @param    size    size of data to be written
-         */
-        public void fillSegmentSizeAndDisableBufferMode(int size) throws IOException {
-            assert segmentMode == true;
-            assert bufferMode == true;
-            if (segmentWritten != 0) {
-                // flush previous written data and clear the internal buffer.
-                flush();
-            }
-            // disable buffer mode to write data through to underlying file.
-            bufferMode = false;
-            writeSegmentHeader(size);
-        }
-
-        /**
-         * Check whether the data should be flush based on data saved in
-         * segmentBuffer.
-         * This method is used to control the segments number and the memory usage.
-         * If segment is too small, there will be lots segments in final dump file.
-         * If it is too large, lots of memory is used in RAM.
-         */
-        private boolean shouldFlush() {
-            // flushes data if not in bufferMode.
-            if (!bufferMode) return true;
-            // return true if data in segmentBuffer has been extended.
-            return segmentWritten > SEGMENT_BUFFER_SIZE;
-        }
-
-        /**
-         * Writes the segment header with given data size.
-         */
-        private void writeSegmentHeader(int size) throws IOException {
-            assert segmentWritten == 0 : "initializing non empty segment";
-            byte flag = (byte)HPROF_HEAP_DUMP_SEGMENT;
-            if (!bufferMode) {
-                super.write(flag);
-            } else {
-                segmentBuffer[segmentWritten++] = flag;
-            }
-            // write the timestamp (dummy value 0).
-            writeInteger(0);
-            // write the segment data size.
-            writeInteger(size);
-        }
-
-        /**
-         * Writes the segment header with dummy length of 0.
-         */
-        private void writeSegmentHeader() throws IOException {
-            writeSegmentHeader(0);
-        }
-
-        /**
-         * Fills the segmented data size into the header.
-         */
-        private void fillSegmentSize(int size) {
-            assert bufferMode == true;
-            byte[] lenBytes = genByteArrayFromInt(size);
-            System.arraycopy(lenBytes, 0, segmentBuffer, 5, 4);
-        }
-
-        /**
-         * Writes an {@code int} to the internal segment buffer
-         * {@code written} is incremented by {@code 4}.
-         */
-        private final void writeInteger(int value) throws IOException {
-            byte[] intBytes = genByteArrayFromInt(value);
-            if (bufferMode) {
-                System.arraycopy(intBytes, 0, segmentBuffer, segmentWritten, 4);
-                segmentWritten += 4;
-            } else {
-                super.write(intBytes, 0, 4);
-            }
-        }
-
-        // The buffer size for segmentBuffer.
-        // Since it is hard to calculate and fill the data size of an segment in compressed
-        // data, making the segmented data stored in this buffer could help rewrite the data
-        // size before the segmented data are written to underlying GZIPOutputStream.
-        private static final int SEGMENT_BUFFER_SIZE = 1 << 20;
-        // Buffer size used to extend the segment buffer.
-        private static final int SEGMENT_BUFFER_INC_SIZE = 1 << 10;
-        // Headers:
-        //    1 byte for HPROF_HEAP_DUMP_SEGMENT
-        //    4 bytes for timestamp
-        //    4 bytes for size
-        private static final int SEGMENT_HEADER_SIZE = 9;
-        // Segment support.
-        private boolean segmentMode;
-        private boolean allowSegmented;
-        // Write data directly to underlying stream. Don't use internal buffer.
-        private boolean bufferMode;
-        private byte segmentBuffer[];
-        private int segmentWritten;
-    }
 }
