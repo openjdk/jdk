@@ -34,7 +34,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 G1SATBMarkQueueSet::G1SATBMarkQueueSet(BufferNode::Allocator* allocator) :
-  SATBMarkQueueSet(allocator), _g1h(G1CollectedHeap::heap())
+  SATBMarkQueueSet(allocator)
 {}
 
 void G1SATBMarkQueueSet::handle_zero_index_for_thread(Thread* t) {
@@ -97,9 +97,24 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
   return true;
 }
 
+static inline bool discard_entry(const void* entry, G1CollectedHeap* g1h) {
+  return !requires_marking(entry, g1h) || g1h->is_marked_next(cast_to_oop(entry));
+}
+
+// Workaround for not yet having std::bind.
+class G1SATBMarkQueueFilterFn {
+  G1CollectedHeap* _g1h;
+
+public:
+  G1SATBMarkQueueFilterFn() : _g1h(G1CollectedHeap::heap()) {}
+
+  // Return true if entry should be filtered out (removed), false if
+  // it should be retained.
+  bool operator()(const void* entry) const {
+    return discard_entry(entry, _g1h);
+  }
+};
+
 void G1SATBMarkQueueSet::filter(SATBMarkQueue& queue) {
-  auto requires_discard = [&] (const void* entry) {
-    return !requires_marking(entry, _g1h) || _g1h->is_marked_next(cast_to_oop(entry));
-  };
-  apply_filter(requires_discard, queue);
+  apply_filter(G1SATBMarkQueueFilterFn(), queue);
 }
