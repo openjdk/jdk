@@ -59,6 +59,7 @@ static jmethodID sjm_getAccessibleSelection = NULL;
     DECLARE_METHOD_RETURN(jm_getAccessibleSelection, axSelectionClass, "getAccessibleSelection", "(I)Ljavax/accessibility/Accessible;", nil);
     jobject axSelectedChild = (*env)->CallObjectMethod(env, axSelection, jm_getAccessibleSelection, 0);
     CHECK_EXCEPTION();
+    (*env)->DeleteLocalRef(env, axSelection);
     (*env)->DeleteLocalRef(env, axContext);
     if (axSelectedChild == NULL) {
         return nil;
