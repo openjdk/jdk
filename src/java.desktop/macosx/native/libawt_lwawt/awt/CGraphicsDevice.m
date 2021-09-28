@@ -289,7 +289,7 @@ Java_sun_awt_CGraphicsDevice_nativeSetDisplayMode
     __block CGError retCode = kCGErrorSuccess;
     if (closestMatch != NULL) {
         CGDisplayModeRetain(closestMatch);
-        [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
             CGDisplayConfigRef config;
             retCode = CGBeginDisplayConfiguration(&config);
             if (retCode == kCGErrorSuccess) {

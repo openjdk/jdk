@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6358034 6568560 8198613 8198335
+ * @bug 6358034 6568560 8198613 8198335 8273617
  * @key headful
  * @summary Tests that no exception is thrown when display mode is changed
  *          externally
@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.TimeUnit;
 
 public class UninitializedDisplayModeChangeTest {
     public static volatile boolean failed = false;
@@ -88,7 +87,7 @@ public class UninitializedDisplayModeChangeTest {
             err.start();
             out.start();
 
-            childProc.waitFor(30, TimeUnit.SECONDS);
+            childProc.waitFor();
         } catch (Exception e) {
             failed = true;
             e.printStackTrace();
