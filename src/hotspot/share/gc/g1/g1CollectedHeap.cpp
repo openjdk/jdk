@@ -115,7 +115,6 @@
 #include "utilities/autoRestore.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/scopeGuard.hpp"
 #include "utilities/stack.inline.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
