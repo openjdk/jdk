@@ -107,13 +107,13 @@ public class CommandLineNegativeTest {
         return new Object[][] {
                 {"-b", """
                     -b, --bind-address    - Address to bind to. Default: %s (loopback).
-                                            For 0.0.0.0 (all interfaces) use -b 0.0.0.0 or -b ::0.""".formatted(LOOPBACK_ADDR)},
+                                            For all interfaces use "-b 0.0.0.0" or "-b ::".""".formatted(LOOPBACK_ADDR)},
                 {"-d", "-d, --directory       - Directory to serve. Default: current directory."},
                 {"-o", "-o, --output          - Output format. none|info|verbose. Default: info."},
                 {"-p", "-p, --port            - Port to listen on. Default: 8000."},
                 {"--bind-address", """
                         -b, --bind-address    - Address to bind to. Default: %s (loopback).
-                                                For 0.0.0.0 (all interfaces) use -b 0.0.0.0 or -b ::0.""".formatted(LOOPBACK_ADDR)},
+                                                For all interfaces use "-b 0.0.0.0" or "-b ::".""".formatted(LOOPBACK_ADDR)},
                 {"--directory", "-d, --directory       - Directory to serve. Default: current directory."},
                 {"--output",    "-o, --output          - Output format. none|info|verbose. Default: info."},
                 {"--port",      "-p, --port            - Port to listen on. Default: 8000."}
