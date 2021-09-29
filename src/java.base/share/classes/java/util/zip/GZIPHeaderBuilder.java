@@ -374,7 +374,7 @@ public class GZIPHeaderBuilder {
           * File comment.
           */
         public static final int FCOMMENT   = 16;
-    
+
         /**
          * Get the extra field bytes.
          * @return the copy of the internal extraFieldBytes.
@@ -386,7 +386,7 @@ public class GZIPHeaderBuilder {
             }
             return Arrays.copyOf(extraFieldBytes, extraFieldBytes.length);
         }
-        
+
         /**
          * Get the header bytes.
          * @return the copy of headerBytes.
