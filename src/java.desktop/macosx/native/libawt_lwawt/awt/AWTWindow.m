@@ -653,6 +653,10 @@ AWT_ASSERT_APPKIT_THREAD;
                       (jboolean)[self.nsWindow inLiveResize]);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, platformWindow);
+
+    if (([self.nsWindow styleMask] & NSWindowStyleMaskFullScreen) != 0) {
+        [AWTWindow synthesizeMouseEnteredExitedEventsForAllWindows];
+    }
 }
 
 - (void)windowDidMove:(NSNotification *)notification {
