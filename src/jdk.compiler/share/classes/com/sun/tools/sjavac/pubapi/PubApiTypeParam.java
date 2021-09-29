@@ -29,7 +29,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("serial") // Various instance fields not statically serializable
+@SuppressWarnings("serial") // Types of instance fields are not Serializable
 public class PubApiTypeParam implements Serializable {
 
     private static final long serialVersionUID = 8899204612014329162L;

@@ -49,7 +49,7 @@ import javax.lang.model.element.Modifier;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.StringUtils;
 
-@SuppressWarnings("serial") // Various instance fields not statically serializable
+@SuppressWarnings("serial") // Types of instance fields are not Serializable
 public class PubApi implements Serializable {
 
     private static final long serialVersionUID = 5926627347801986850L;

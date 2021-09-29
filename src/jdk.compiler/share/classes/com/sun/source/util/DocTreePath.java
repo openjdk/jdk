@@ -64,7 +64,7 @@ public class DocTreePath implements Iterable<DocTree> {
 
         class Result extends Error {
             static final long serialVersionUID = -5942088234594905625L;
-            @SuppressWarnings("serial") // DocTreePath not statically Serilizable
+            @SuppressWarnings("serial") // Type of field is not Serializable
             DocTreePath path;
             Result(DocTreePath path) {
                 this.path = path;
