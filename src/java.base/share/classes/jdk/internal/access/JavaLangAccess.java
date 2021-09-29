@@ -357,6 +357,15 @@ public interface JavaLangAccess {
     int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
+     * Encodes ASCII codepoints as possible from the source array into
+     * the destination byte array, assuming that the encoding is ASCII
+     * compatible
+     *
+     * @return the number of bytes successfully encoded, or 0 if none
+     */
+    int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+
+    /**
      * Set the cause of Throwable
      * @param cause set t's cause to new value
      */
