@@ -1178,8 +1178,6 @@ void MacroAssembler::align64() {
 }
 
 void MacroAssembler::align(int modulus) {
-  // 8273459: Ensure alignment is possible with current segment alignment
-  assert(modulus <= CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
   align(modulus, offset());
 }
 
