@@ -134,6 +134,8 @@ public class BuilderFactory {
             ClassWriter classWriter) {
         return AnnotationTypeMemberBuilder.getInstance(context,
             classWriter.getTypeElement(),
+            // For the purpose of the details section both optional and required
+            // annotation member writers will work.
             writerFactory.getAnnotationTypeOptionalMemberWriter(classWriter));
     }
 

@@ -76,6 +76,8 @@ public class AnnotationTypeMemberBuilder extends AbstractMemberBuilder {
         super(context, typeElement);
         this.writer = Objects.requireNonNull(writer);
         this.members = new ArrayList<>();
+        // This builder generates annotation interface member details which in contrast
+        // to summaries share a single list for both required and optional members.
         // By convention we display required members first, followed by optional members.
         this.members.addAll(getVisibleMembers(ANNOTATION_TYPE_MEMBER_REQUIRED));
         this.members.addAll(getVisibleMembers(ANNOTATION_TYPE_MEMBER_OPTIONAL));

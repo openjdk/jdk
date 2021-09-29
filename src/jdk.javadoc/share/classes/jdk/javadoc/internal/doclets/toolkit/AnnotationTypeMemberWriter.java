@@ -117,7 +117,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
     void addTags(Element member, Content annotationDocTree);
 
     /**
-     * Add the the default value documentation.
+     * Add the the default value documentation if the member has one.
      *
      * @param member the member being documented
      * @param annotationDocTree content tree to which the default value will be added

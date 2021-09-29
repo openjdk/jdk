@@ -43,7 +43,7 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 
 
 /**
- * Writes annotation type required member documentation in HTML format.
+ * Writes annotation interface member documentation in HTML format.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -54,7 +54,9 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     implements AnnotationTypeMemberWriter, MemberSummaryWriter {
 
     /**
-     * There are two kinds of annotation interface members, each writer handles one of them.
+     * We generate separate summaries for required and optional annotation interface members,
+     * so we need dedicated writer instances for each kind. For the details section, a single
+     * shared list is generated and either kind of writer produces the same output.
      */
     enum Kind {
         OPTIONAL,
@@ -257,7 +259,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     public void addDefaultValueInfo(Element member, Content annotationDocTree) {
-        if (kind == Kind.OPTIONAL && utils.isAnnotationType(member)) {
+        if (utils.isAnnotationType(member)) {
             ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();
             if (value != null) {
