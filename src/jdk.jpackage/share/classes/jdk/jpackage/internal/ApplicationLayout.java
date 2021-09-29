@@ -209,7 +209,8 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.DESKTOP, lib,
                 PathRole.MODULES, lib.resolve("app/mods"),
                 PathRole.LINUX_APPLAUNCHER_LIB, lib.resolve(
-                        "lib/libapplauncher.so")
+                        "lib/libapplauncher.so"),
+                PathRole.CONTENT, lib
         ));
     }
 
