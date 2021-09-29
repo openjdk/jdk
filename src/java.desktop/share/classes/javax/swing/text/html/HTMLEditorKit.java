@@ -847,11 +847,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     Rectangle bounds;
                     TextUI ui = html.getUI();
                     try {
-                        Shape lBounds = ui.modelToView(html, offset,
+                        Rectangle lBounds = ui.modelToView(html, offset,
                                                    Position.Bias.Forward);
                         Rectangle rBounds = ui.modelToView(html, offset + 1,
                                                    Position.Bias.Backward);
-                        bounds = lBounds.getBounds();
+                        bounds = lBounds;
                         bounds.add(rBounds);
                     } catch (BadLocationException ble) {
                         bounds = null;

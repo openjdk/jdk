@@ -4229,9 +4229,8 @@ public class HTMLDocument extends DefaultStyledDocument {
                             // sure and set the name (otherwise it will be
                             // inherited).
                             newAttrs = new SimpleAttributeSet();
-                            newAttrs.addAttribute
-                                              (StyleConstants.NameAttribute,
-                                               HTML.Tag.CONTENT);
+                            newAttrs.addAttribute(StyleConstants.NameAttribute,
+                                                  HTML.Tag.CONTENT);
                         }
                         ElementSpec es = new ElementSpec(newAttrs,
                                      ElementSpec.ContentType, NEWLINE, 0,

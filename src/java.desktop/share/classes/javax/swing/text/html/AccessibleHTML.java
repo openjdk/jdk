@@ -741,10 +741,8 @@ class AccessibleHTML implements Accessible {
          */
         public boolean isFocusTraversable() {
             JTextComponent comp = getTextComponent();
-            if (comp != null) {
-                if (comp.isEditable()) {
-                    return true;
-                }
+            if (comp != null && comp.isEditable()) {
+                return true;
             }
             return false;
         }

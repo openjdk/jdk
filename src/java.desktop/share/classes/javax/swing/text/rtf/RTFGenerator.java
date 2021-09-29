@@ -520,7 +520,7 @@ void updateSectionAttributes(MutableAttributeSet current,
                 resetSectionAttributes(current);
             }
             if (newStyle != null) {
-                writeControlWord("ds", newStyle.intValue());
+                writeControlWord("ds", newStyle);
                 current.addAttribute("sectionStyle", newStyle);
             } else {
                 current.removeAttribute("sectionStyle");
@@ -586,7 +586,7 @@ void updateParagraphAttributes(MutableAttributeSet current,
     }
 
     if (oldStyle != newStyle && newStyle != null) {
-        writeControlWord("s", newStyle.intValue());
+        writeControlWord("s", newStyle);
         current.addAttribute("paragraphStyle", newStyle);
     }
 

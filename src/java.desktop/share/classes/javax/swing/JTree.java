@@ -2042,8 +2042,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
                 // Add the path if it is expanded, a descendant of parent,
                 // and it is visible (all parents expanded). This is rather
                 // expensive!
-                if(path != parent && value != null &&
-                   value.booleanValue() &&
+                if (path != parent && value != null && value &&
                    parent.isDescendant(path) && isVisible(path)) {
                     if (elements == null) {
                         elements = new Vector<TreePath>();
@@ -2085,7 +2084,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
         do{
             value = expandedState.get(path);
-            if (value == null || !value.booleanValue())
+            if (value == null || !value)
                 return false;
         } while( (path=path.getParentPath())!=null );
 
@@ -2109,7 +2108,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
             if(path != null) {
                 Boolean value = expandedState.get(path);
 
-                return (value != null && value.booleanValue());
+                return (value != null && value);
             }
         }
         return false;
@@ -3731,7 +3730,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
                 // collapse last path.
                 Boolean cValue = expandedState.get(path);
 
-                if (cValue != null && cValue.booleanValue()) {
+                if (cValue != null && cValue) {
                     try {
                         fireTreeWillCollapse(path);
                     }
@@ -3755,7 +3754,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
                 // Expand last path.
                 Boolean cValue = expandedState.get(path);
 
-                if (cValue == null || !cValue.booleanValue()) {
+                if (cValue == null || !cValue) {
                     try {
                         fireTreeWillExpand(path);
                     }
