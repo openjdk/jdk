@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,38 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * @test
+ * @bug 8272562
+ * @summary C2: assert(false) failed: Bad graph detected in build_loop_late
+ *
+ * @run main/othervm -XX:CompileOnly=TestSunkCastOnUnreachablePath -XX:-TieredCompilation -Xbatch TestSunkCastOnUnreachablePath
  *
  */
 
-#ifndef SHARE_GC_G1_G1EVACFAILURE_HPP
-#define SHARE_GC_G1_G1EVACFAILURE_HPP
+public class TestSunkCastOnUnreachablePath {
 
-#include "gc/g1/g1OopClosures.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/shared/workgroup.hpp"
-#include "utilities/globalDefinitions.hpp"
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 1000; i++) {
+            vMeth();
+        }
+    }
 
-class G1CollectedHeap;
-class G1EvacFailureRegions;
-class G1RedirtyCardsQueueSet;
+    static int vMeth() {
+        int i2 = 3, iArr1[] = new int[200];
 
-// Task to fixup self-forwarding pointers
-// installed as a result of an evacuation failure.
-class G1ParRemoveSelfForwardPtrsTask: public AbstractGangTask {
-protected:
-  G1CollectedHeap* _g1h;
-  G1RedirtyCardsQueueSet* _rdcqs;
-  HeapRegionClaimer _hrclaimer;
-
-  G1EvacFailureRegions* _evac_failure_regions;
-  uint volatile _num_failed_regions;
-
-public:
-  G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions);
-
-  void work(uint worker_id);
-
-  uint num_failed_regions() const;
-};
-
-#endif // SHARE_GC_G1_G1EVACFAILURE_HPP
+        for (int i9 = 3; i9 < 100; i9++) {
+            try {
+                int i10 = (iArr1[i9 - 1]);
+                i2 = (i10 / i9);
+            } catch (ArithmeticException a_e) {
+            }
+        }
+        return i2;
+    }
+}

@@ -4194,7 +4194,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_upper_word_mask() {
-    __ align(64);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "upper_word_mask");
     address start = __ pc();
     __ emit_data64(0x0000000000000000, relocInfo::none);
@@ -4203,7 +4203,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_shuffle_byte_flip_mask() {
-    __ align(64);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "shuffle_byte_flip_mask");
     address start = __ pc();
     __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);
@@ -4248,7 +4248,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_pshuffle_byte_flip_mask() {
-    __ align(64);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "pshuffle_byte_flip_mask");
     address start = __ pc();
     __ emit_data64(0x0405060700010203, relocInfo::none);
@@ -4464,7 +4464,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // This mask is used for incrementing counter value(linc0, linc4, etc.)
   address counter_mask_addr() {
-    __ align(64);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "counter_mask_addr");
     address start = __ pc();
     __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);//lbswapmask
@@ -5383,7 +5383,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_shuffle_addr()
   {
-    __ align(64, (unsigned long long)__ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "shuffle_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
@@ -5443,7 +5443,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_encoding_table_addr()
   {
-    __ align(64, (unsigned long long)__ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "encoding_table_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0, "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -5850,7 +5850,7 @@ address generate_avx_ghash_processBlocks() {
 
   // base64 AVX512vbmi tables
   address base64_vbmi_lookup_lo_addr() {
-    __ align(64, (unsigned long long) __ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "lookup_lo_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
@@ -5867,7 +5867,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_lookup_hi_addr() {
-    __ align(64, (unsigned long long) __ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "lookup_hi_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
@@ -5883,7 +5883,7 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
   address base64_vbmi_lookup_lo_url_addr() {
-    __ align(64, (unsigned long long) __ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "lookup_lo_base64url");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
@@ -5900,7 +5900,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_lookup_hi_url_addr() {
-    __ align(64, (unsigned long long) __ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "lookup_hi_base64url");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
@@ -5917,7 +5917,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_pack_vec_addr() {
-    __ align(64, (unsigned long long) __ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "pack_vec_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
@@ -5934,7 +5934,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_0_1_addr() {
-    __ align(64, (unsigned long long) __ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "join_0_1_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
@@ -5951,7 +5951,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_1_2_addr() {
-    __ align(64, (unsigned long long) __ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "join_1_2_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
@@ -5968,7 +5968,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_2_3_addr() {
-    __ align(64, (unsigned long long) __ pc());
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "join_2_3_base64");
     address start = __ pc();
     assert(((unsigned long long)start & 0x3f) == 0,
