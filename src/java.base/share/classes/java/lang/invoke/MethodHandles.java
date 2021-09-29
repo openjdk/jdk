@@ -4421,7 +4421,7 @@ return mh1;
      * <p>
      * Misaligned access, and therefore atomicity guarantees, may be determined
      * for {@code byte[]} arrays without operating on a specific array.  Given
-     * an {@code index}, {@code T} and it's corresponding boxed type,
+     * an {@code index}, {@code T} and its corresponding boxed type,
      * {@code T_BOX}, misalignment may be determined as follows:
      * <pre>{@code
      * int sizeOfT = T_BOX.BYTES;  // size in bytes of T
@@ -4508,7 +4508,7 @@ return mh1;
      * <p>
      * Misaligned access, and therefore atomicity guarantees, may be determined
      * for a {@code ByteBuffer}, {@code bb} (direct or otherwise), an
-     * {@code index}, {@code T} and it's corresponding boxed type,
+     * {@code index}, {@code T} and its corresponding boxed type,
      * {@code T_BOX}, as follows:
      * <pre>{@code
      * int sizeOfT = T_BOX.BYTES;  // size in bytes of T

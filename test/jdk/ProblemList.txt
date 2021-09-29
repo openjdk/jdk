@@ -747,8 +747,13 @@ javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
 javax/swing/JRootPane/4670486/bug4670486.java 8042381 macosx-all
 javax/swing/JPopupMenu/4634626/bug4634626.java 8017175 macosx-all
 javax/swing/JButton/8151303/PressedIconTest.java 8266246 macosx-aarch64
-javax/swing/JMenu/4515762/bug4515762.java 8273578 macosx-all
 javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8273573 macosx-all
+
+# Several tests which fail on some hidpi systems
+java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 8274106 macosx-aarch64
+java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
+java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
+javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
@@ -812,6 +817,11 @@ sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aa
 sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
+
+sun/tools/jmap/BasicJMapTest.java#G1                            8274245 generic-all
+sun/tools/jmap/BasicJMapTest.java#Parallel                      8274245 generic-all
+sun/tools/jmap/BasicJMapTest.java#Serial                        8274245 generic-all
+sun/tools/jmap/BasicJMapTest.java#Z                             8274245 generic-all
 
 ############################################################################
 

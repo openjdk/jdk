@@ -243,11 +243,15 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
         return JNI_ERR;
       }
     }
+    // Parallel thread number for heap dump, initialize based on active processor count.
+    // Note the real number of threads used is also determined by active workers and compression
+    // backend thread number. See heapDumper.cpp.
+    uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(op->arg(0), out, (int)level);
+    dumper.dump(path, out, (int)level, false, (uint)parallel_thread_num);
   }
   return JNI_OK;
 }

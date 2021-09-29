@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -606,6 +605,7 @@ public:
   void register_young_region_with_region_attr(HeapRegion* r) {
     _region_attr.set_in_young(r->hrm_index());
   }
+  inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
   inline void register_old_region_with_region_attr(HeapRegion* r);
   inline void register_optional_region_with_region_attr(HeapRegion* r);
@@ -814,8 +814,6 @@ public:
 
   // The parallel task queues
   G1ScannerTasksQueueSet *_task_queues;
-
-  G1EvacFailureRegions _evac_failure_regions;
 
   // ("Weak") Reference processing support.
   //
@@ -1034,9 +1032,6 @@ public:
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
-  // True iff an evacuation has failed in the most-recent collection.
-  inline bool evacuation_failed() const;
-
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,
                                 const uint humongous_regions_removed);
@@ -1240,19 +1235,12 @@ public:
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
-  bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
-    return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
-  }
+  inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;
 
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
   // been marked during this marking, and is not in a closed archive region.
-  bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
-    return
-      !hr->obj_allocated_since_next_marking(obj) &&
-      !is_marked_next(obj) &&
-      !hr->is_closed_archive();
-  }
+  inline bool is_obj_ill(const oop obj, const HeapRegion* hr) const;
 
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
@@ -1289,7 +1277,7 @@ public:
 
   // Recalculate amount of used memory after GC. Must be called after all allocation
   // has finished.
-  void update_used_after_gc();
+  void update_used_after_gc(bool evacuation_failed);
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.

@@ -60,6 +60,8 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/times.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
@@ -86,6 +88,10 @@
 
 #define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
 #define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
+
+static jlong initial_time_count = 0;
+
+static int clock_tics_per_sec = 100;
 
 // Check core dump limit and report possible place where core can be found
 void os::check_dump_limit(char* buffer, size_t bufferSize) {
@@ -726,6 +732,10 @@ void os::exit(int num) {
   ::exit(num);
 }
 
+void os::_exit(int num) {
+  ::_exit(num);
+}
+
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
 // which is used to find statically linked in agents.
 // Parameters:
@@ -1224,7 +1234,11 @@ static bool _use_clock_monotonic_condattr = false;
 // Determine what POSIX API's are present and do appropriate
 // configuration.
 void os::Posix::init(void) {
-
+#if defined(_ALLBSD_SOURCE)
+  clock_tics_per_sec = CLK_TCK;
+#else
+  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
+#endif
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
 
@@ -1256,6 +1270,8 @@ void os::Posix::init(void) {
       _use_clock_monotonic_condattr = true;
     }
   }
+
+  initial_time_count = javaTimeNanos();
 }
 
 void os::Posix::init_2(void) {
@@ -1423,8 +1439,58 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
 }
-
 #endif // ! APPLE && !AIX
+
+// Time since start-up in seconds to a fine granularity.
+double os::elapsedTime() {
+  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
+}
+
+jlong os::elapsed_counter() {
+  return os::javaTimeNanos() - initial_time_count;
+}
+
+jlong os::elapsed_frequency() {
+  return NANOSECS_PER_SEC; // nanosecond resolution
+}
+
+bool os::supports_vtime() { return true; }
+
+// Return the real, user, and system times in seconds from an
+// arbitrary fixed point in the past.
+bool os::getTimesSecs(double* process_real_time,
+                      double* process_user_time,
+                      double* process_system_time) {
+  struct tms ticks;
+  clock_t real_ticks = times(&ticks);
+
+  if (real_ticks == (clock_t) (-1)) {
+    return false;
+  } else {
+    double ticks_per_second = (double) clock_tics_per_sec;
+    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
+    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
+    *process_real_time = ((double) real_ticks) / ticks_per_second;
+
+    return true;
+  }
+}
+
+char * os::local_time_string(char *buf, size_t buflen) {
+  struct tm t;
+  time_t long_time;
+  time(&long_time);
+  localtime_r(&long_time, &t);
+  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
+               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+               t.tm_hour, t.tm_min, t.tm_sec);
+  return buf;
+}
+
+struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
+  return localtime_r(clock, res);
+}
+
 
 // Shared pthread_mutex/cond based PlatformEvent implementation.
 // Not currently usable by Solaris.
@@ -1884,7 +1950,11 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
   // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
   // Otherwise leave it up to the caller.
   AIX_ONLY(prefer_vfork = true;)
+  #ifdef __APPLE__
+  pid = ::fork();
+  #else
   pid = prefer_vfork ? ::vfork() : ::fork();
+  #endif
 
   if (pid < 0) {
     // fork failed

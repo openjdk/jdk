@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,8 +182,6 @@ int       os::Aix::_extshm = -1;
 // local variables
 
 static volatile jlong max_real_time = 0;
-static jlong    initial_time_count = 0;
-static int      clock_tics_per_sec = 100;
 
 // Process break recorded at startup.
 static address g_brk_at_startup = NULL;
@@ -921,21 +919,6 @@ void os::free_thread(OSThread* osthread) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
-// Time since start-up in seconds to a fine granularity.
-double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
-}
-
-jlong os::elapsed_counter() {
-  return javaTimeNanos() - initial_time_count;
-}
-
-jlong os::elapsed_frequency() {
-  return NANOSECS_PER_SEC; // nanosecond resolution
-}
-
-bool os::supports_vtime() { return true; }
-
 double os::elapsedVTime() {
   struct rusage usage;
   int retval = getrusage(RUSAGE_THREAD, &usage);
@@ -1000,41 +983,6 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_backward = false;
   info_ptr->may_skip_forward = false;
   info_ptr->kind = JVMTI_TIMER_ELAPSED;    // elapsed not CPU time
-}
-
-// Return the real, user, and system times in seconds from an
-// arbitrary fixed point in the past.
-bool os::getTimesSecs(double* process_real_time,
-                      double* process_user_time,
-                      double* process_system_time) {
-  struct tms ticks;
-  clock_t real_ticks = times(&ticks);
-
-  if (real_ticks == (clock_t) (-1)) {
-    return false;
-  } else {
-    double ticks_per_second = (double) clock_tics_per_sec;
-    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
-    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
-    *process_real_time = ((double) real_ticks) / ticks_per_second;
-
-    return true;
-  }
-}
-
-char * os::local_time_string(char *buf, size_t buflen) {
-  struct tm t;
-  time_t long_time;
-  time(&long_time);
-  localtime_r(&long_time, &t);
-  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
-               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-               t.tm_hour, t.tm_min, t.tm_sec);
-  return buf;
-}
-
-struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
-  return localtime_r(clock, res);
 }
 
 intx os::current_thread_id() {
@@ -2402,12 +2350,8 @@ void os::init(void) {
   // need libperfstat etc.
   os::Aix::initialize_system_info();
 
-  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-
   // _main_thread points to the thread that created/loaded the JVM.
   Aix::_main_thread = pthread_self();
-
-  initial_time_count = javaTimeNanos();
 
   os::Posix::init();
 }

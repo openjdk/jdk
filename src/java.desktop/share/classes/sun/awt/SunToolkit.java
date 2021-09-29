@@ -82,7 +82,6 @@ import java.net.URL;
 import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
@@ -946,13 +945,12 @@ public abstract class SunToolkit extends Toolkit
         int bestHeight = 0;
         double bestSimilarity = 3; //Impossibly high value
         double bestScaleFactor = 0;
-        for (Iterator<Image> i = multiResAndnormalImages.iterator();i.hasNext();) {
+        for (Image im : multiResAndnormalImages) {
             //Iterate imageList looking for best matching image.
             //'Similarity' measure is defined as good scale factor and small insets.
             //best possible similarity is 0 (no scale, no insets).
             //It's found while the experiments that good-looking result is achieved
             //with scale factors x1, x3/4, x2/3, xN, x1/N.
-            Image im = i.next();
             if (im == null) {
                 continue;
             }
