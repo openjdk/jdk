@@ -209,9 +209,10 @@ public:
     assert(worker_id < _max_workers, "sanity");
     PSPromotionManager* promotion_manager = (_tm == RefProcThreadModel::Single) ? PSPromotionManager::vm_thread_promotion_manager() : PSPromotionManager::gc_thread_promotion_manager(worker_id);
     PSIsAliveClosure is_alive;
-    PSKeepAliveClosure keep_alive(promotion_manager);;
+    PSKeepAliveClosure keep_alive(promotion_manager);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     PSEvacuateFollowersClosure complete_gc(promotion_manager, (_marks_oops_alive && _tm == RefProcThreadModel::Multi) ? &_terminator : nullptr, worker_id);;
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
@@ -801,7 +802,7 @@ void PSScavenge::initialize() {
                            ParallelGCThreads,          // mt processing degree
                            true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree
-                           true,                       // atomic_discovery
+                           false,                      // concurrent_discovery
                            NULL);                      // header provides liveness info
 
   // Cache the cardtable

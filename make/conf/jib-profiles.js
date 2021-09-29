@@ -249,7 +249,7 @@ var getJibProfilesCommon = function (input, data) {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
         configure_args: concat("--enable-jtreg-failure-handler",
-            "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
+            "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
@@ -394,13 +394,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    if (input.build_os == 'macosx' && input.build_cpu == 'aarch64') {
-        common.boot_jdk_version = "17";
-        common.boot_jdk_build_number = "24";
-    } else {
-        common.boot_jdk_version = "16";
-        common.boot_jdk_build_number = "36";
-    }
+    common.boot_jdk_version = "17";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -1073,11 +1068,7 @@ var getJibProfilesDependencies = function (input, common) {
     }
     var boot_jdk_os = input.build_os;
     if (input.build_os == "macosx") {
-        if (input.build_cpu == "aarch64") {
-            boot_jdk_os = "macos";
-        } else {
-            boot_jdk_os = "osx";
-        }
+        boot_jdk_os = "macos";
     }
     var boot_jdk_platform = boot_jdk_os + "-" + input.build_cpu;
     var boot_jdk_ext = (input.build_os == "windows" ? ".zip" : ".tar.gz")

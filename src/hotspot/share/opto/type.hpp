@@ -67,6 +67,8 @@ class     TypeOopPtr;
 class       TypeInstPtr;
 class       TypeAryPtr;
 class     TypeKlassPtr;
+class       TypeInstKlassPtr;
+class       TypeAryKlassPtr;
 class     TypeMetadataPtr;
 
 //------------------------------Type-------------------------------------------
@@ -108,6 +110,8 @@ public:
 
     MetadataPtr,                // Generic metadata
     KlassPtr,                   // Klass pointers
+    InstKlassPtr,
+    AryKlassPtr,
 
     Function,                   // Function signature
     Abio,                       // Abstract I/O
@@ -321,6 +325,10 @@ public:
   const TypeMetadataPtr   *is_metadataptr() const;    // Java-style GC'd pointer
   const TypeKlassPtr      *isa_klassptr() const;      // Returns NULL if not KlassPtr
   const TypeKlassPtr      *is_klassptr() const;       // assert if not KlassPtr
+  const TypeInstKlassPtr  *isa_instklassptr() const;  // Returns NULL if not IntKlassPtr
+  const TypeInstKlassPtr  *is_instklassptr() const;   // assert if not IntKlassPtr
+  const TypeAryKlassPtr   *isa_aryklassptr() const;   // Returns NULL if not AryKlassPtr
+  const TypeAryKlassPtr   *is_aryklassptr() const;    // assert if not AryKlassPtr
 
   virtual bool      is_finite() const;           // Has a finite value
   virtual bool      is_nan()    const;           // Is not a number (NaN)
@@ -916,6 +924,24 @@ protected:
   void dump_inline_depth(outputStream *st) const;
 #endif
 
+  // TypeInstPtr (TypeAryPtr resp.) and TypeInstKlassPtr (TypeAryKlassPtr resp.) implement very similar meet logic.
+  // The logic for meeting 2 instances (2 arrays resp.) is shared in the 2 utility methods below. However the logic for
+  // the oop and klass versions can be slightly different and extra logic may have to be executed depending on what
+  // exact case the meet falls into. The MeetResult struct is used by the utility methods to communicate what case was
+  // encountered so the right logic specific to klasses or oops can be executed.,
+  enum MeetResult {
+    QUICK,
+    UNLOADED,
+    SUBTYPE,
+    NOT_SUBTYPE,
+    LCA
+  };
+  static MeetResult
+  meet_instptr(PTR &ptr, ciKlass* this_klass, ciKlass* tinst_klass, bool this_xk, bool tinst_xk, PTR this_ptr,
+               PTR tinst_ptr, ciKlass*&res_klass, bool &res_xk);
+  static MeetResult
+  meet_aryptr(PTR& ptr, const Type*& elem, ciKlass* this_klass, ciKlass* tap_klass, bool this_xk, bool tap_xk, PTR this_ptr, PTR tap_ptr, ciKlass*& res_klass, bool& res_xk);
+
 public:
   const int _offset;            // Offset into oop, with TOP & BOT
   const PTR _ptr;               // Pointer equivalence class
@@ -998,7 +1024,7 @@ public:
   static const TypeRawPtr *make( address bits );
 
   // Return a 'ptr' version of this type
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeRawPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual intptr_t get_con() const;
 
@@ -1097,14 +1123,14 @@ public:
 
   virtual intptr_t get_con() const;
 
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeOopPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const Type *cast_to_exactness(bool klass_is_exact) const;
 
   virtual const TypeOopPtr *cast_to_instance_id(int instance_id) const;
 
   // corresponding pointer to klass, for a given instance
-  const TypeKlassPtr* as_klass_type() const;
+  virtual const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
 
@@ -1181,7 +1207,7 @@ class TypeInstPtr : public TypeOopPtr {
   // be a TypeInstPtr, but may also be a TypeInt::INT for int.class, etc.
   ciType* java_mirror_type() const;
 
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeInstPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const Type *cast_to_exactness(bool klass_is_exact) const;
 
@@ -1198,6 +1224,8 @@ class TypeInstPtr : public TypeOopPtr {
   virtual const Type *xmeet_helper(const Type *t) const;
   virtual const TypeInstPtr *xmeet_unloaded( const TypeInstPtr *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
+
+  const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
   // Convenience common pre-built types.
   static const TypeInstPtr *NOTNULL;
@@ -1265,7 +1293,7 @@ public:
                                 int inline_depth = InlineDepthBottom, bool is_autobox_cache = false);
 
   // Return a 'ptr' version of this type
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeAryPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const Type *cast_to_exactness(bool klass_is_exact) const;
 
@@ -1292,6 +1320,7 @@ public:
   const TypeAryPtr* cast_to_autobox_cache() const;
 
   static jint max_array_length(BasicType etype) ;
+  virtual const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
   // Convenience common pre-built types.
   static const TypeAryPtr *RANGE;
@@ -1343,7 +1372,7 @@ public:
 
   ciMetadata* metadata() const { return _metadata; }
 
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
+  virtual const TypeMetadataPtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
 
@@ -1363,74 +1392,130 @@ public:
 //------------------------------TypeKlassPtr-----------------------------------
 // Class of Java Klass pointers
 class TypeKlassPtr : public TypePtr {
-  TypeKlassPtr( PTR ptr, ciKlass* klass, int offset );
+protected:
+  TypeKlassPtr(TYPES t, PTR ptr, ciKlass* klass, int offset);
+
+  virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
+
+public:
+  virtual bool eq( const Type *t ) const;
+  virtual int hash() const;
+  virtual bool singleton(void) const;    // TRUE if type is a singleton
+  virtual bool must_be_exact() const { ShouldNotReachHere(); return false; }
 
 protected:
-  virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
- public:
-  virtual bool eq( const Type *t ) const;
-  virtual int hash() const;             // Type specific hashing
-  virtual bool singleton(void) const;    // TRUE if type is a singleton
- private:
-
-  static const TypeKlassPtr* make_from_klass_common(ciKlass* klass, bool klass_change, bool try_for_exact);
 
   ciKlass* _klass;
 
-  // Does the type exclude subclasses of the klass?  (Inexact == polymorphic.)
-  bool          _klass_is_exact;
-
 public:
-  ciSymbol* name()  const { return klass()->name(); }
 
-  ciKlass* klass() const { return  _klass; }
-  bool klass_is_exact()    const { return _klass_is_exact; }
-
+  virtual ciKlass* klass() const { return  _klass; }
+  bool klass_is_exact()    const { return _ptr == Constant; }
   bool  is_loaded() const { return klass()->is_loaded(); }
 
-  // Creates a type given a klass. Correctly handles multi-dimensional arrays
-  // Respects UseUniqueSubclasses.
-  // If the klass is final, the resulting type will be exact.
-  static const TypeKlassPtr* make_from_klass(ciKlass* klass) {
-    return make_from_klass_common(klass, true, false);
-  }
-  // Same as before, but will produce an exact type, even if
-  // the klass is not final, as long as it has exactly one implementation.
-  static const TypeKlassPtr* make_from_klass_unique(ciKlass* klass) {
-    return make_from_klass_common(klass, true, true);
-  }
-  // Same as before, but does not respects UseUniqueSubclasses.
-  // Use this only for creating array element types.
-  static const TypeKlassPtr* make_from_klass_raw(ciKlass* klass) {
-    return make_from_klass_common(klass, false, false);
-  }
+  static const TypeKlassPtr* make(ciKlass* klass);
+  static const TypeKlassPtr *make(PTR ptr, ciKlass* klass, int offset);
 
-  // Make a generic (unclassed) pointer to metadata.
-  static const TypeKlassPtr* make(PTR ptr, int offset);
 
-  // ptr to klass 'k'
-  static const TypeKlassPtr *make( ciKlass* k ) { return make( TypePtr::Constant, k, 0); }
-  // ptr to klass 'k' with offset
-  static const TypeKlassPtr *make( ciKlass* k, int offset ) { return make( TypePtr::Constant, k, offset); }
-  // ptr to klass 'k' or sub-klass
-  static const TypeKlassPtr *make( PTR ptr, ciKlass* k, int offset);
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const { ShouldNotReachHere(); return NULL; }
 
-  virtual const Type *cast_to_ptr_type(PTR ptr) const;
-
-  virtual const Type *cast_to_exactness(bool klass_is_exact) const;
+  virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const { ShouldNotReachHere(); return NULL; }
 
   // corresponding pointer to instance, for a given class
-  const TypeOopPtr* as_instance_type() const;
+  virtual const TypeOopPtr* as_instance_type() const { ShouldNotReachHere(); return NULL; }
+
+  virtual const TypePtr *add_offset( intptr_t offset ) const { ShouldNotReachHere(); return NULL; }
+  virtual const Type    *xmeet( const Type *t ) const { ShouldNotReachHere(); return NULL; }
+  virtual const Type    *xdual() const { ShouldNotReachHere(); return NULL; }
+
+  virtual intptr_t get_con() const;
+
+  virtual const TypeKlassPtr* with_offset(intptr_t offset) const { ShouldNotReachHere(); return NULL; }
+
+#ifndef PRODUCT
+  virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
+#endif
+};
+
+// Instance klass pointer, mirrors TypeInstPtr
+class TypeInstKlassPtr : public TypeKlassPtr {
+
+  TypeInstKlassPtr(PTR ptr, ciKlass* klass, int offset)
+    : TypeKlassPtr(InstKlassPtr, ptr, klass, offset) {
+  }
+
+  virtual bool must_be_exact() const;
+
+public:
+  // Instance klass ignoring any interface
+  ciInstanceKlass* instance_klass() const { return klass()->as_instance_klass();     }
+
+  static const TypeInstKlassPtr *make(ciKlass* k) {
+    return make(TypePtr::Constant, k, 0);
+  }
+  static const TypeInstKlassPtr *make(PTR ptr, ciKlass* k, int offset);
+
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
+
+  virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const;
+
+  // corresponding pointer to instance, for a given class
+  virtual const TypeOopPtr* as_instance_type() const;
+  virtual int hash() const;
+  virtual bool eq(const Type *t) const;
+
+  virtual const TypePtr *add_offset( intptr_t offset ) const;
+  virtual const Type    *xmeet( const Type *t ) const;
+  virtual const Type    *xdual() const;
+  virtual const TypeKlassPtr* with_offset(intptr_t offset) const;
+
+  // Convenience common pre-built types.
+  static const TypeInstKlassPtr* OBJECT; // Not-null object klass or below
+  static const TypeInstKlassPtr* OBJECT_OR_NULL; // Maybe-null version of same
+};
+
+// Array klass pointer, mirrors TypeAryPtr
+class TypeAryKlassPtr : public TypeKlassPtr {
+  const Type *_elem;
+
+  TypeAryKlassPtr(PTR ptr, const Type *elem, ciKlass* klass, int offset)
+    : TypeKlassPtr(AryKlassPtr, ptr, klass, offset), _elem(elem) {
+  }
+
+  virtual bool must_be_exact() const;
+
+public:
+  virtual ciKlass* klass() const;
+
+  // returns base element type, an instance klass (and not interface) for object arrays
+  const Type* base_element_type(int& dims) const;
+
+  static const TypeAryKlassPtr *make(PTR ptr, ciKlass* k, int offset);
+  static const TypeAryKlassPtr *make(PTR ptr, const Type *elem, ciKlass* k, int offset);
+  static const TypeAryKlassPtr* make(ciKlass* klass);
+
+  const Type *elem() const { return _elem; }
+
+  virtual bool eq(const Type *t) const;
+  virtual int hash() const;             // Type specific hashing
+
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
+
+  virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const;
+
+  // corresponding pointer to instance, for a given class
+  virtual const TypeOopPtr* as_instance_type() const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
   virtual const Type    *xmeet( const Type *t ) const;
   virtual const Type    *xdual() const;      // Compute dual right now.
 
-  virtual intptr_t get_con() const;
+  virtual const TypeKlassPtr* with_offset(intptr_t offset) const;
 
-  // Convenience common pre-built types.
-  static const TypeKlassPtr* OBJECT; // Not-null object klass or below
-  static const TypeKlassPtr* OBJECT_OR_NULL; // Maybe-null version of same
+  virtual bool empty(void) const {
+    return TypeKlassPtr::empty() || _elem->empty();
+  }
+
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
 #endif
@@ -1721,13 +1806,13 @@ inline const TypeVect *Type::isa_vect() const {
 
 inline const TypePtr *Type::is_ptr() const {
   // AnyPtr is the first Ptr and KlassPtr the last, with no non-ptrs between.
-  assert(_base >= AnyPtr && _base <= KlassPtr, "Not a pointer");
+  assert(_base >= AnyPtr && _base <= AryKlassPtr, "Not a pointer");
   return (TypePtr*)this;
 }
 
 inline const TypePtr *Type::isa_ptr() const {
   // AnyPtr is the first Ptr and KlassPtr the last, with no non-ptrs between.
-  return (_base >= AnyPtr && _base <= KlassPtr) ? (TypePtr*)this : NULL;
+  return (_base >= AnyPtr && _base <= AryKlassPtr) ? (TypePtr*)this : NULL;
 }
 
 inline const TypeOopPtr *Type::is_oopptr() const {
@@ -1799,12 +1884,30 @@ inline const TypeMetadataPtr *Type::isa_metadataptr() const {
 }
 
 inline const TypeKlassPtr *Type::isa_klassptr() const {
-  return (_base == KlassPtr) ? (TypeKlassPtr*)this : NULL;
+  return (_base >= KlassPtr && _base <= AryKlassPtr ) ? (TypeKlassPtr*)this : NULL;
 }
 
 inline const TypeKlassPtr *Type::is_klassptr() const {
-  assert( _base == KlassPtr, "Not a klass pointer" );
+  assert(_base >= KlassPtr && _base <= AryKlassPtr, "Not a klass pointer");
   return (TypeKlassPtr*)this;
+}
+
+inline const TypeInstKlassPtr *Type::isa_instklassptr() const {
+  return (_base == InstKlassPtr) ? (TypeInstKlassPtr*)this : NULL;
+}
+
+inline const TypeInstKlassPtr *Type::is_instklassptr() const {
+  assert(_base == InstKlassPtr, "Not a klass pointer");
+  return (TypeInstKlassPtr*)this;
+}
+
+inline const TypeAryKlassPtr *Type::isa_aryklassptr() const {
+  return (_base == AryKlassPtr) ? (TypeAryKlassPtr*)this : NULL;
+}
+
+inline const TypeAryKlassPtr *Type::is_aryklassptr() const {
+  assert(_base == AryKlassPtr, "Not a klass pointer");
+  return (TypeAryKlassPtr*)this;
 }
 
 inline const TypePtr* Type::make_ptr() const {

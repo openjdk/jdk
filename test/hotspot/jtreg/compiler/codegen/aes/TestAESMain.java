@@ -98,25 +98,25 @@
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding -DmsgSize=640
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DmsgSize=2054
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DmsgSize=8320
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DmsgSize=2054
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DmsgSize=8326
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencOutputOffset=1 -DmsgSize=2054
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencOutputOffset=1 -DmsgSize=8326
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DdecOutputOffset=1 -DmsgSize=2054
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DdecOutputOffset=1 -DmsgSize=8326
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DencOutputOffset=1 -DmsgSize=2054
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DencOutputOffset=1 -DmsgSize=8326
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DmsgSize=2054
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DmsgSize=8326
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding -DmsgSize=2048
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=GCM -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding -DmsgSize=8320
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.codegen.aes.TestAESMain
  *

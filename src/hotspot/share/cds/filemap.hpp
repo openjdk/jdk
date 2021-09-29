@@ -180,9 +180,10 @@ public:
 };
 
 class FileMapHeader: private CDSFileMapHeaderBase {
-  friend class CDSOffsets;
+  friend class CDSConstants;
   friend class VMStructs;
 
+private:
   size_t _header_size;
 
   // The following fields record the states of the VM during dump time.
@@ -209,7 +210,6 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
   char  _jvm_ident[JVM_IDENT_MAX];  // identifier string of the jvm that created this dump
-
   // size of the base archive name including NULL terminator
   size_t _base_archive_name_size;
 
@@ -477,7 +477,7 @@ public:
                                      int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
   MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
-  bool  read_region(int i, char* base, size_t size);
+  bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   void  unmap_region(int i);
   bool  verify_region_checksum(int i);

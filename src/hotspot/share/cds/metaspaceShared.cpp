@@ -584,18 +584,19 @@ void VM_PopulateDumpSharedSpace::doit() {
 
 class CollectCLDClosure : public CLDClosure {
   GrowableArray<ClassLoaderData*> _loaded_cld;
+  GrowableArray<Handle> _loaded_cld_handles; // keep the CLDs alive
+  Thread* _current_thread;
 public:
-  CollectCLDClosure() {}
+  CollectCLDClosure(Thread* thread) : _current_thread(thread) {}
   ~CollectCLDClosure() {
     for (int i = 0; i < _loaded_cld.length(); i++) {
       ClassLoaderData* cld = _loaded_cld.at(i);
-      cld->dec_keep_alive();
     }
   }
   void do_cld(ClassLoaderData* cld) {
     if (!cld->is_unloading()) {
-      cld->inc_keep_alive();
       _loaded_cld.append(cld);
+      _loaded_cld_handles.append(Handle(_current_thread, cld->holder_phantom()));
     }
   }
 
@@ -641,11 +642,10 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 }
 
 void MetaspaceShared::link_shared_classes(TRAPS) {
-  // Collect all loaded ClassLoaderData.
-  ResourceMark rm;
-
   LambdaFormInvokers::regenerate_holder_classes(CHECK);
-  CollectCLDClosure collect_cld;
+
+  // Collect all loaded ClassLoaderData.
+  CollectCLDClosure collect_cld(THREAD);
   {
     // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
     // We cannot link the classes while holding this lock (or else we may run into deadlock).
@@ -1434,7 +1434,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Finish up archived heap initialization. These must be
   // done after ReadClosure.
   static_mapinfo->patch_heap_embedded_pointers();
-  HeapShared::verify_loaded_heap();
+  HeapShared::finish_initialization();
 
   // Close the mapinfo file
   static_mapinfo->close();

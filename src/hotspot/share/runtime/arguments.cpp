@@ -4025,6 +4025,11 @@ jint Arguments::apply_ergo() {
 #ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
+
+  if (LogTouchedMethods) {
+    warning("LogTouchedMethods is not supported for Zero");
+    FLAG_SET_DEFAULT(LogTouchedMethods, false);
+  }
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {

@@ -2838,7 +2838,7 @@ bool LibraryCallKit::inline_native_classID() {
   IdealVariable result(ideal); __ declarations_done();
   Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(),
                                                  basic_plus_adr(cls, java_lang_Class::klass_offset()),
-                                                 TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
+                                                 TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
 
 
   __ if_then(kls, BoolTest::ne, null()); {
@@ -2868,7 +2868,7 @@ bool LibraryCallKit::inline_native_classID() {
   } __ else_(); {
     Node* array_kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(),
                                                    basic_plus_adr(cls, java_lang_Class::array_klass_offset()),
-                                                   TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
+                                                   TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
     __ if_then(array_kls, BoolTest::ne, null()); {
       Node* array_kls_trace_id_addr = basic_plus_adr(array_kls, in_bytes(KLASS_TRACE_ID_OFFSET));
       Node* array_kls_trace_id_raw = ideal.load(ideal.ctrl(), array_kls_trace_id_addr, TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
@@ -2961,7 +2961,7 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
                                                     int offset) {
   if (region == NULL)  never_see_null = true;
   Node* p = basic_plus_adr(mirror, offset);
-  const TypeKlassPtr*  kls_type = TypeKlassPtr::OBJECT_OR_NULL;
+  const TypeKlassPtr*  kls_type = TypeInstKlassPtr::OBJECT_OR_NULL;
   Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeRawPtr::BOTTOM, kls_type));
   Node* null_ctl = top();
   kls = null_check_oop(kls, &null_ctl, never_see_null);
@@ -3150,7 +3150,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
       phi->add_req(makecon(TypeInstPtr::make(env()->Object_klass()->java_mirror())));
     // If we fall through, it's a plain class.  Get its _super.
     p = basic_plus_adr(kls, in_bytes(Klass::super_offset()));
-    kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
+    kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
     null_ctl = top();
     kls = null_check_oop(kls, &null_ctl);
     if (null_ctl != top()) {
@@ -3292,7 +3292,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
   record_for_igvn(region);
 
   const TypePtr* adr_type = TypeRawPtr::BOTTOM;   // memory type of loads
-  const TypeKlassPtr* kls_type = TypeKlassPtr::OBJECT_OR_NULL;
+  const TypeKlassPtr* kls_type = TypeInstKlassPtr::OBJECT_OR_NULL;
   int class_klass_offset = java_lang_Class::klass_offset();
 
   // First null-check both mirrors and load each mirror's klass metaobject.
@@ -4077,6 +4077,29 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
 
 //----------------------inline_unsafe_copyMemory-------------------------
 // public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
+
+static bool has_wide_mem(PhaseGVN& gvn, Node* addr, Node* base) {
+  const TypeAryPtr* addr_t = gvn.type(addr)->isa_aryptr();
+  const Type*       base_t = gvn.type(base);
+
+  bool in_native = (base_t == TypePtr::NULL_PTR);
+  bool in_heap   = !TypePtr::NULL_PTR->higher_equal(base_t);
+  bool is_mixed  = !in_heap && !in_native;
+
+  if (is_mixed) {
+    return true; // mixed accesses can touch both on-heap and off-heap memory
+  }
+  if (in_heap) {
+    bool is_prim_array = (addr_t != NULL) && (addr_t->elem() != Type::BOTTOM);
+    if (!is_prim_array) {
+      // Though Unsafe.copyMemory() ensures at runtime for on-heap accesses that base is a primitive array,
+      // there's not enough type information available to determine proper memory slice for it.
+      return true;
+    }
+  }
+  return false;
+}
+
 bool LibraryCallKit::inline_unsafe_copyMemory() {
   if (callee()->is_static())  return false;  // caller must have the capability!
   null_check_receiver();  // null-check receiver
@@ -4084,21 +4107,17 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
 
   C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
 
-  Node* src_ptr =         argument(1);   // type: oop
-  Node* src_off = ConvL2X(argument(2));  // type: long
-  Node* dst_ptr =         argument(4);   // type: oop
-  Node* dst_off = ConvL2X(argument(5));  // type: long
-  Node* size    = ConvL2X(argument(7));  // type: long
+  Node* src_base =         argument(1);  // type: oop
+  Node* src_off  = ConvL2X(argument(2)); // type: long
+  Node* dst_base =         argument(4);  // type: oop
+  Node* dst_off  = ConvL2X(argument(5)); // type: long
+  Node* size     = ConvL2X(argument(7)); // type: long
 
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
 
-  Node* src = make_unsafe_address(src_ptr, src_off);
-  Node* dst = make_unsafe_address(dst_ptr, dst_off);
-
-  // Conservatively insert a memory barrier on all memory slices.
-  // Do not let writes of the copy source or destination float below the copy.
-  insert_mem_bar(Op_MemBarCPUOrder);
+  Node* src_addr = make_unsafe_address(src_base, src_off);
+  Node* dst_addr = make_unsafe_address(dst_base, dst_off);
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
   Node* doing_unsafe_access_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
@@ -4108,18 +4127,30 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   // update volatile field
   store_to_memory(control(), doing_unsafe_access_addr, intcon(1), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
 
+  int flags = RC_LEAF | RC_NO_FP;
+
+  const TypePtr* dst_type = TypePtr::BOTTOM;
+
+  // Adjust memory effects of the runtime call based on input values.
+  if (!has_wide_mem(_gvn, src_addr, src_base) &&
+      !has_wide_mem(_gvn, dst_addr, dst_base)) {
+    dst_type = _gvn.type(dst_addr)->is_ptr(); // narrow out memory
+
+    const TypePtr* src_type = _gvn.type(src_addr)->is_ptr();
+    if (C->get_alias_index(src_type) == C->get_alias_index(dst_type)) {
+      flags |= RC_NARROW_MEM; // narrow in memory
+    }
+  }
+
   // Call it.  Note that the length argument is not scaled.
-  make_runtime_call(RC_LEAF|RC_NO_FP,
+  make_runtime_call(flags,
                     OptoRuntime::fast_arraycopy_Type(),
                     StubRoutines::unsafe_arraycopy(),
                     "unsafe_arraycopy",
-                    TypeRawPtr::BOTTOM,
-                    src, dst, size XTOP);
+                    dst_type,
+                    src_addr, dst_addr, size XTOP);
 
   store_to_memory(control(), doing_unsafe_access_addr, intcon(0), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
-
-  // Do not let reads of the copy destination float above the copy.
-  insert_mem_bar(Op_MemBarCPUOrder);
 
   return true;
 }
@@ -5973,7 +6004,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
-  const TypeOopPtr* xtype = aklass->as_instance_type();
+  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
 
@@ -6061,7 +6092,7 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
-  const TypeOopPtr* xtype = aklass->as_instance_type();
+  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
 
@@ -6132,7 +6163,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
-  const TypeOopPtr* xtype = aklass->as_instance_type();
+  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
   // we need to get the start of the aescrypt_object's expanded key array
@@ -6650,7 +6681,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
                                                       const char* state_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_digestBase);
-  const TypeOopPtr* xtype = aklass->as_instance_type();
+  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* digest_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
   digest_obj = _gvn.transform(digest_obj);
 
@@ -6758,11 +6789,23 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* state_start = array_element_address(state, intcon(0), T_LONG);
   Node* subkeyHtbl_start = array_element_address(subkeyHtbl, intcon(0), T_LONG);
 
+  ciKlass* klass = ciTypeArrayKlass::make(T_LONG);
+  Node* klass_node = makecon(TypeKlassPtr::make(klass));
+
+  // htbl entries is set to 96 only fox x86-64
+  if (Matcher::htbl_entries == -1) return false;
+
+  // new array to hold 48 computed htbl entries
+  Node* subkeyHtbl_48_entries = new_array(klass_node, intcon(Matcher::htbl_entries), 0);
+  if (subkeyHtbl_48_entries == NULL) return false;
+
+  Node* subkeyHtbl_48_entries_start = array_element_address(subkeyHtbl_48_entries, intcon(0), T_LONG);
+
   // Call the stub, passing params
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
                                OptoRuntime::galoisCounterMode_aescrypt_Type(),
                                stubAddr, stubName, TypePtr::BOTTOM,
-                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, cnt_start);
+                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, subkeyHtbl_48_entries_start, cnt_start);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));

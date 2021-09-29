@@ -366,7 +366,7 @@ void report_java_out_of_memory(const char* message) {
 
     if (ExitOnOutOfMemoryError) {
       tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
-      os::exit(3);
+      os::_exit(3); // quick exit with no cleanup hooks run
     }
   }
 }
@@ -511,7 +511,6 @@ extern "C" JNIEXPORT void ps() { // print stack
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
-    f.pd_ps();
 #endif
   }
 }

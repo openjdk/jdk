@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,9 +165,8 @@ public class TestMetadata extends JavadocTester {
     );
 
     void checkBodyClasses() throws IOException {
-        Path outputDirPath = outputDir.toPath();
-        for (Path p : tb.findFiles(".html", outputDirPath)) {
-            checkBodyClass(outputDirPath.relativize(p));
+        for (Path p : tb.findFiles(".html", outputDir)) {
+            checkBodyClass(outputDir.relativize(p));
         }
     }
 
@@ -231,9 +230,8 @@ public class TestMetadata extends JavadocTester {
             );
 
     void checkMetadata() throws IOException {
-        Path outputDirPath = outputDir.toPath();
-        for (Path p : tb.findFiles(".html", outputDirPath)) {
-            checkMetadata(outputDirPath.relativize(p));
+        for (Path p : tb.findFiles(".html", outputDir)) {
+            checkMetadata(outputDir.relativize(p));
         }
     }
 

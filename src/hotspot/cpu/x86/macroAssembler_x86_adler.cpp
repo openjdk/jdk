@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, Intel Corporation.
+* Copyright (c) 2021, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
