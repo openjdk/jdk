@@ -31,8 +31,8 @@
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include <type_traits>
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe
@@ -322,9 +322,9 @@ class oopDesc {
 
 // An oopDesc is not initialized via a constructor.  Space is allocated in
 // the Java heap, and static functions provided here on HeapWord* are used
-// to fill in certain parts of that memory.  For that to be valid, the
-// object must not have non-trivial initialization (C++14 3.8).  For that to
-// be possible, oopDesc must be trivially default constructible.
+// to fill in certain parts of that memory.  The allocated memory is then
+// treated as referring to an oopDesc.  For that to be valid, the oopDesc
+// class must have a trivial default constructor (C++14 3.8/1).
 static_assert(std::is_trivially_default_constructible<oopDesc>::value, "required");
 
 #endif // SHARE_OOPS_OOP_HPP
