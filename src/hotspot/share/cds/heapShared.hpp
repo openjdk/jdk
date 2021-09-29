@@ -170,7 +170,7 @@ public:
 
   // Can this VM load the objects from archived heap regions into the heap at start-up?
   static bool can_load()  NOT_CDS_JAVA_HEAP_RETURN_(false);
-  static void verify_loaded_heap() NOT_CDS_JAVA_HEAP_RETURN;
+  static void finish_initialization() NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_loaded() {
     CDS_JAVA_HEAP_ONLY(return _is_loaded;)
     NOT_CDS_JAVA_HEAP(return false;)
@@ -346,7 +346,7 @@ private:
   static void init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfoRecord* record);
 
   static int init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_regions,
-                                 uintptr_t* buffer_ret);
+                                 MemRegion& archive_space);
   static void sort_loaded_regions(LoadedArchiveHeapRegion* loaded_regions, int num_loaded_regions,
                                   uintptr_t buffer);
   static bool load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_regions,

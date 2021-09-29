@@ -51,7 +51,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -306,8 +305,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (iconImages.size() != 0) {
             //read icon images from target
             winAttr.iconsInherited = false;
-            for (Iterator<Image> i = iconImages.iterator(); i.hasNext(); ) {
-                Image image = i.next();
+            for (Image image : iconImages) {
                 if (image == null) {
                     if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                         log.finest("XWindowPeer.updateIconImages: Skipping the image passed into Java because it's null.");
@@ -403,8 +401,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     static void dumpIcons(java.util.List<IconInfo> icons) {
         if (iconLog.isLoggable(PlatformLogger.Level.FINEST)) {
             iconLog.finest(">>> Sizes of icon images:");
-            for (Iterator<IconInfo> i = icons.iterator(); i.hasNext(); ) {
-                iconLog.finest("    {0}", i.next());
+            for (IconInfo icon : icons) {
+                iconLog.finest("    {0}", icon);
             }
         }
     }

@@ -2419,6 +2419,10 @@ public final class System {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
+            public int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+                return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
+            }
+
             public void setCause(Throwable t, Throwable cause) {
                 t.setCause(cause);
             }

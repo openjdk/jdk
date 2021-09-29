@@ -57,9 +57,8 @@ public:
   //
   // The other values are used for objects in regions requiring various special handling,
   // eager reclamation of humongous objects or optional regions.
-  static const region_type_t Optional     =  -4;    // The region is optional not in the current collection set.
-  static const region_type_t Humongous    =  -3;    // The region is a humongous candidate not in the current collection set.
-  static const region_type_t NewSurvivor  =  -2;    // The region is a new (ly allocated) survivor region.
+  static const region_type_t Optional     =  -3;    // The region is optional not in the current collection set.
+  static const region_type_t Humongous    =  -2;    // The region is a humongous candidate not in the current collection set.
   static const region_type_t NotInCSet    =  -1;    // The region is not in the collection set.
   static const region_type_t Young        =   0;    // The region is in the collection set and a young region.
   static const region_type_t Old          =   1;    // The region is in the collection set and an old region.
@@ -77,7 +76,6 @@ public:
     switch (type()) {
       case Optional: return "Optional";
       case Humongous: return "Humongous";
-      case NewSurvivor: return "NewSurvivor";
       case NotInCSet: return "NotInCSet";
       case Young: return "Young";
       case Old: return "Old";
@@ -87,7 +85,6 @@ public:
 
   bool needs_remset_update() const     { return _needs_remset_update != 0; }
 
-  void set_new_survivor()              { _type = NewSurvivor; }
   void set_old()                       { _type = Old; }
   void clear_humongous()               {
     assert(is_humongous() || !is_in_cset(), "must be");
@@ -99,7 +96,6 @@ public:
   bool is_in_cset() const              { return type() >= Young; }
 
   bool is_humongous() const            { return type() == Humongous; }
-  bool is_new_survivor() const         { return type() == NewSurvivor; }
   bool is_young() const                { return type() == Young; }
   bool is_old() const                  { return type() == Old; }
   bool is_optional() const             { return type() == Optional; }
@@ -130,12 +126,6 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
     set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Optional, needs_remset_update));
-  }
-
-  void set_new_survivor_region(uintptr_t index) {
-    assert(get_by_index(index).is_default(),
-           "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
-    get_ref_by_index(index)->set_new_survivor();
   }
 
   void set_humongous(uintptr_t index, bool needs_remset_update) {
