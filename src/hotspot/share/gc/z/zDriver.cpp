@@ -887,18 +887,24 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
 }
 
 bool ZDriverMajor::should_minor_before_major(GCCause::Cause cause) {
-  if (cause == GCCause::_wb_full_gc ||
-      cause == GCCause::_wb_breakpoint ||
-      cause == GCCause::_java_lang_system_gc ||
-      cause == GCCause::_metadata_GC_clear_soft_refs ||
-      cause == GCCause::_z_major_allocation_stall) {
+  if (cause != GCCause::_metadata_GC_threshold &&
+      cause != GCCause::_z_major_timer &&
+      cause != GCCause::_z_major_warmup &&
+      cause != GCCause::_z_major_allocation_rate &&
+      cause != GCCause::_z_major_proactive &&
+      cause != GCCause::_z_major_high_usage) {
+    // Cause is not relaxed to skip minor before major
     return true;
   }
 
   if (ZHeap::heap()->has_alloc_stalled()) {
+    // Even if the cause is relaxed, we have to minor before major
+    // if there is a stall, to ensure OOM is thrown correctly.
     return true;
   }
 
+  // We are now allowed to relax minor before major, unless someone
+  // specified explicitly that we should not.
   return ScavengeBeforeFullGC;
 }
 
