@@ -103,8 +103,9 @@ public class VisibleMemberTable {
         FIELDS,
         CONSTRUCTORS,
         METHODS,
-        ANNOTATION_TYPE_MEMBER_OPTIONAL,
+        ANNOTATION_TYPE_MEMBER,
         ANNOTATION_TYPE_MEMBER_REQUIRED,
+        ANNOTATION_TYPE_MEMBER_OPTIONAL,
         PROPERTIES;
 
         private static final EnumSet<Kind> defaultSummarySet = EnumSet.of(
@@ -112,11 +113,13 @@ public class VisibleMemberTable {
         private static final EnumSet<Kind> enumSummarySet = EnumSet.of(
                 NESTED_CLASSES, ENUM_CONSTANTS, FIELDS, METHODS);
         private static final EnumSet<Kind> annotationSummarySet = EnumSet.of(
-                FIELDS, ANNOTATION_TYPE_MEMBER_OPTIONAL, ANNOTATION_TYPE_MEMBER_REQUIRED);
+                FIELDS, ANNOTATION_TYPE_MEMBER_REQUIRED, ANNOTATION_TYPE_MEMBER_OPTIONAL);
         private static final EnumSet<Kind> defaultDetailSet = EnumSet.of(
                 FIELDS, CONSTRUCTORS, METHODS);
         private static final EnumSet<Kind> enumDetailSet = EnumSet.of(
                 ENUM_CONSTANTS, FIELDS, METHODS);
+        private static final EnumSet<Kind> annotationDetailSet = EnumSet.of(
+                FIELDS, ANNOTATION_TYPE_MEMBER);
 
         /**
          * {@return the set of possible member kinds for the summaries section of a type element}
@@ -135,9 +138,11 @@ public class VisibleMemberTable {
          * @param kind the kind of type element being documented
          */
         public static Set<Kind> forDetailsOf(ElementKind kind) {
-            return kind == ElementKind.ENUM
-                    ? enumDetailSet
-                    : defaultDetailSet;
+            return switch (kind) {
+                case ANNOTATION_TYPE -> annotationDetailSet;
+                case ENUM -> enumDetailSet;
+                default -> defaultDetailSet;
+            };
         }
     }
 
@@ -777,6 +782,7 @@ public class VisibleMemberTable {
                     case METHOD:
                         if (utils.isAnnotationType(te)) {
                             ExecutableElement ee = (ExecutableElement) e;
+                            addMember(e, Kind.ANNOTATION_TYPE_MEMBER);
                             addMember(e, ee.getDefaultValue() == null
                                     ? Kind.ANNOTATION_TYPE_MEMBER_REQUIRED
                                     : Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);

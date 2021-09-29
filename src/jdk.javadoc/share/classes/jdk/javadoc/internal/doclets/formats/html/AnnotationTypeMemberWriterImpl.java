@@ -56,27 +56,28 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     /**
      * We generate separate summaries for required and optional annotation interface members,
      * so we need dedicated writer instances for each kind. For the details section, a single
-     * shared list is generated and either kind of writer produces the same output.
+     * shared list is generated so a special {@code ANY} value is provided for this case.
      */
     enum Kind {
         OPTIONAL,
-        REQUIRED
+        REQUIRED,
+        ANY
     }
 
     private final Kind kind;
 
     /**
-     * Construct a new AnnotationTypeMemberWriterImpl.
+     * Construct a new AnnotationTypeMemberWriterImpl for any kind of member.
      *
      * @param writer The writer for the class that the member belong to.
      */
     public AnnotationTypeMemberWriterImpl(SubWriterHolderWriter writer) {
         super(writer);
-        this.kind = Kind.OPTIONAL;
+        this.kind = Kind.ANY;
     }
 
     /**
-     * Construct a new AnnotationTypeMemberWriterImpl.
+     * Construct a new AnnotationTypeMemberWriterImpl for a specific kind of member.
      *
      * @param writer         the writer that will write the output.
      * @param annotationType the AnnotationType that holds this member.
@@ -99,6 +100,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
             case REQUIRED -> memberSummaryTree.add(selectComment(
                     MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY,
                     MarkerComments.START_OF_ANNOTATION_INTERFACE_REQUIRED_MEMBER_SUMMARY));
+            case ANY -> throw new RuntimeException("unsupported member kind");
         }
         Content memberTree = new ContentBuilder();
         writer.addSummaryHeader(this, memberTree);
@@ -113,9 +115,11 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.memberSummary,
-                kind == Kind.REQUIRED
-                        ? HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY
-                        : HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY,
+                switch (kind) {
+                    case REQUIRED -> HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
+                    case OPTIONAL -> HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
+                    case ANY -> throw new RuntimeException("unsupported member kind");
+                },
                 summariesList, content);
     }
 
@@ -182,9 +186,11 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     @Override
     public void addSummaryLabel(Content memberTree) {
         HtmlTree label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
-                kind == Kind.REQUIRED
-                        ? contents.annotateTypeRequiredMemberSummaryLabel
-                        : contents.annotateTypeOptionalMemberSummaryLabel);
+                switch (kind) {
+                    case REQUIRED -> contents.annotateTypeRequiredMemberSummaryLabel;
+                    case OPTIONAL -> contents.annotateTypeOptionalMemberSummaryLabel;
+                    case ANY -> throw new RuntimeException("unsupported member kind");
+                });
         memberTree.add(label);
     }
 
@@ -194,17 +200,21 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
      */
     protected Content getCaption() {
         return contents.getContent(
-                kind == Kind.REQUIRED
-                        ? "doclet.Annotation_Type_Required_Members"
-                        : "doclet.Annotation_Type_Optional_Members");
+                switch (kind) {
+                    case REQUIRED -> "doclet.Annotation_Type_Required_Members";
+                    case OPTIONAL -> "doclet.Annotation_Type_Optional_Members";
+                    case ANY -> throw new RuntimeException("unsupported member kind");
+                });
     }
 
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.modifierAndTypeLabel,
-                kind == Kind.REQUIRED
-                        ? contents.annotationTypeRequiredMemberLabel
-                        : contents.annotationTypeOptionalMemberLabel,
+                switch (kind) {
+                    case REQUIRED -> contents.annotationTypeRequiredMemberLabel;
+                    case OPTIONAL -> contents.annotationTypeOptionalMemberLabel;
+                    case ANY -> throw new RuntimeException("unsupported member kind");
+                },
                 contents.descriptionLabel);
     }
 

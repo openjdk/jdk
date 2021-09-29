@@ -90,6 +90,16 @@ public interface WriterFactory {
     MethodWriter getMethodWriter(ClassWriter classWriter);
 
     /**
+     * Return the annotation type member writer for a given annotation
+     * type, or null if this writer is not supported by the doclet.
+     *
+     * @param classWriter the writer for the annotation type being documented
+     * @return the member writer
+     */
+    AnnotationTypeMemberWriter getAnnotationTypeMemberWriter(
+            ClassWriter classWriter);
+
+    /**
      * Return the annotation type optional member writer for a given annotation
      * type, or null if this writer is not supported by the doclet.
      *

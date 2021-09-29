@@ -78,6 +78,14 @@ public class WriterFactoryImpl implements WriterFactory {
     }
 
     @Override
+    public AnnotationTypeMemberWriterImpl getAnnotationTypeMemberWriter(
+            ClassWriter classWriter) {
+        TypeElement te = classWriter.getTypeElement();
+        return new AnnotationTypeMemberWriterImpl(
+                (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.ANY);
+    }
+
+    @Override
     public AnnotationTypeMemberWriterImpl getAnnotationTypeOptionalMemberWriter(
             ClassWriter classWriter) {
         TypeElement te = classWriter.getTypeElement();

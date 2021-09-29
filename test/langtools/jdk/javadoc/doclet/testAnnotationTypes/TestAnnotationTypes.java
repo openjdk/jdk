@@ -75,8 +75,8 @@ public class TestAnnotationTypes extends JavadocTester {
                     <ul class="sub-nav-list">
                     <li>Summary:&nbsp;</li>
                     <li>Field&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-optional-element-summary">Optional</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-required-element-summary">Required</a></li>
+                    <li><a href="#annotation-interface-required-element-summary">Required</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#annotation-interface-optional-element-summary">Optional</a></li>
                     </ul>""",
                 """
                     <ul class="sub-nav-list">
