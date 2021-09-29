@@ -300,6 +300,11 @@ void ZCollector::set_phase(Phase new_phase) {
   _phase = new_phase;
 }
 
+void ZCollector::set_at_collection_start() {
+  stat_cycle()->at_start();
+  stat_heap()->set_at_collection_start(_page_allocator->stats(this));
+}
+
 const char* ZCollector::phase_to_string() const {
   switch (_phase) {
   case Phase::Mark:

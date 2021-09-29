@@ -55,9 +55,9 @@ ZHeap* ZHeap::_heap = NULL;
 ZHeap::ZHeap() :
     _page_allocator(MinHeapSize, InitialHeapSize, MaxHeapSize),
     _page_table(),
-    _serviceability(min_capacity(), max_capacity()),
     _young_generation(&_page_table, &_page_allocator),
     _old_generation(),
+    _serviceability(initial_capacity(), min_capacity(), max_capacity(), &_young_generation, &_old_generation),
     _minor_collector(&_page_table, &_page_allocator),
     _major_collector(&_page_table, &_page_allocator),
     _initialized(false) {
@@ -86,6 +86,10 @@ ZHeap::ZHeap() :
 
 bool ZHeap::is_initialized() const {
   return _initialized;
+}
+
+size_t ZHeap::initial_capacity() const {
+  return _page_allocator.initial_capacity();
 }
 
 size_t ZHeap::min_capacity() const {
@@ -279,8 +283,8 @@ GCMemoryManager* ZHeap::serviceability_pause_memory_manager(ZCollectorId collect
   return _serviceability.pause_memory_manager(collector_id);
 }
 
-MemoryPool* ZHeap::serviceability_memory_pool() {
-  return _serviceability.memory_pool();
+MemoryPool* ZHeap::serviceability_memory_pool(ZGenerationId generation_id) {
+  return _serviceability.memory_pool(generation_id);
 }
 
 ZServiceabilityCounters* ZHeap::serviceability_counters() {

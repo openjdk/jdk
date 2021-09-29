@@ -539,6 +539,13 @@ private:
     size_t max_capacity;
   } _at_initialize;
 
+  struct ZAtCollectionStart {
+    size_t soft_max_capacity;
+    size_t capacity;
+    size_t free;
+    size_t used;
+  } _at_collection_start;
+
   struct ZAtMarkStart {
     size_t soft_max_capacity;
     size_t capacity;
@@ -587,6 +594,7 @@ private:
 
 public:
   void set_at_initialize(const ZPageAllocatorStats& stats);
+  void set_at_collection_start(const ZPageAllocatorStats& stats);
   void set_at_mark_start(const ZPageAllocatorStats& stats);
   void set_at_mark_end(const ZPageAllocatorStats& stats);
   void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
@@ -594,9 +602,11 @@ public:
   void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated);
 
   static size_t max_capacity();
+  size_t used_at_collection_start();
   size_t used_at_mark_start();
   size_t live_at_mark_end();
   size_t used_at_relocate_end();
+  size_t used_at_collection_end();
 
   void print();
 };

@@ -419,10 +419,10 @@ public:
       _gc_cause_setter(ZCollectedHeap::heap(), request.cause()),
       _timer(ZPhaseMinorCycle),
       _tracer(ZCollectorId::_minor) {
-    // Update statistics
-    ZHeap::heap()->minor_collector()->stat_cycle()->at_start();
-
     ZMinorCollector* collector = ZHeap::heap()->minor_collector();
+
+    // Update statistics
+    collector->set_at_collection_start();
 
     // Select number of worker threads to use
     const uint nworkers = select_active_worker_threads(request);
@@ -785,7 +785,7 @@ public:
     ZMajorCollector* const collector = ZHeap::heap()->major_collector();
 
     // Update statistics
-    collector->stat_cycle()->at_start();
+    collector->set_at_collection_start();
 
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request);
@@ -811,6 +811,18 @@ public:
 
 void ZDriverMajor::gc(const ZDriverRequest& request) {
   ZDriverMajorGCScope scope(request);
+
+  if (_promote_all) {
+    _minor->collect(GCCause::_z_minor_before_major);
+  }
+
+  minor_block();
+
+  _promote_all = false;
+
+  if (ZAbort::should_abort()) {
+    return;
+  }
 
   // Phase 1: Pause Mark Starts
   pause_mark_start();
@@ -903,18 +915,8 @@ void ZDriverMajor::run_service() {
 
     minor_unblock();
 
-    if (_promote_all) {
-      _minor->collect(GCCause::_z_minor_before_major);
-    }
-
-    minor_block();
-
-    _promote_all = false;
-
     // Run GC
-    if (!ZAbort::should_abort()) {
-      gc(request);
-    }
+    gc(request);
 
     // Notify GC completed
     _port.ack();

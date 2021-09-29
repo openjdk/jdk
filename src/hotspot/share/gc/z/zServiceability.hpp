@@ -31,11 +31,15 @@
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 
+class ZGeneration;
 class ZServiceabilityCounters;
 
 class ZServiceabilityMemoryPool : public CollectedMemoryPool {
+private:
+  const ZGeneration* const _generation;
+
 public:
-  ZServiceabilityMemoryPool(size_t min_capacity, size_t max_capacity);
+  ZServiceabilityMemoryPool(const char* name, const ZGeneration* generation, size_t min_capacity, size_t max_capacity);
 
   virtual size_t used_in_bytes();
   virtual MemoryUsage get_memory_usage();
@@ -50,9 +54,11 @@ public:
 
 class ZServiceability {
 private:
+  const size_t                 _initial_capacity;
   const size_t                 _min_capacity;
   const size_t                 _max_capacity;
-  ZServiceabilityMemoryPool    _memory_pool;
+  ZServiceabilityMemoryPool    _young_memory_pool;
+  ZServiceabilityMemoryPool    _old_memory_pool;
   ZServiceabilityMemoryManager _minor_cycle_memory_manager;
   ZServiceabilityMemoryManager _major_cycle_memory_manager;
   ZServiceabilityMemoryManager _minor_pause_memory_manager;
@@ -60,11 +66,15 @@ private:
   ZServiceabilityCounters*     _counters;
 
 public:
-  ZServiceability(size_t min_capacity, size_t max_capacity);
+  ZServiceability(size_t initial_capacity,
+                  size_t min_capacity,
+                  size_t max_capacity,
+                  const ZGeneration* young_generation,
+                  const ZGeneration* old_generation);
 
   void initialize();
 
-  MemoryPool* memory_pool();
+  MemoryPool* memory_pool(ZGenerationId generation_id);
   GCMemoryManager* cycle_memory_manager(ZCollectorId collector_id);
   GCMemoryManager* pause_memory_manager(ZCollectorId collector_id);
   ZServiceabilityCounters* counters();

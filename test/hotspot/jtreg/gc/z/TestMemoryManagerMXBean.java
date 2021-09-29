@@ -61,7 +61,7 @@ public class TestMemoryManagerMXBean {
 
                 System.out.println("   MemoryPool:   " + memoryPoolName);
 
-                if (memoryPoolName.equals("ZHeap")) {
+                if (memoryPoolName.equals("ZYoungGeneration") || memoryPoolName.equals("ZOldGeneration")) {
                     if (memoryManagerName.equals("ZGC Minor Cycles") || memoryManagerName.equals("ZGC Major Cycles")) {
                         zgcCyclesMemoryPools++;
                     } else if (memoryManagerName.equals("ZGC Minor Pauses") || memoryManagerName.equals("ZGC Major Pauses")) {

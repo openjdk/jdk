@@ -119,6 +119,8 @@ public:
   ZStatMark* stat_mark();
   ZStatRelocation* stat_relocation();
 
+  void set_at_collection_start();
+
   // Workers
   ZWorkers* workers();
   uint active_workers() const;

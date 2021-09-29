@@ -244,8 +244,9 @@ GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
 }
 
 GrowableArray<MemoryPool*> ZCollectedHeap::memory_pools() {
-  GrowableArray<MemoryPool*> memory_pools(1);
-  memory_pools.append(_heap.serviceability_memory_pool());
+  GrowableArray<MemoryPool*> memory_pools(2);
+  memory_pools.append(_heap.serviceability_memory_pool(ZGenerationId::young));
+  memory_pools.append(_heap.serviceability_memory_pool(ZGenerationId::old));
   return memory_pools;
 }
 

@@ -284,6 +284,10 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   return true;
 }
 
+size_t ZPageAllocator::initial_capacity() const {
+  return _initial_capacity;
+}
+
 size_t ZPageAllocator::min_capacity() const {
   return _min_capacity;
 }

@@ -45,10 +45,11 @@ private:
 
   ZPageAllocator      _page_allocator;
   ZPageTable          _page_table;
-  ZServiceability     _serviceability;
 
   ZYoungGeneration    _young_generation;
   ZOldGeneration      _old_generation;
+
+  ZServiceability     _serviceability;
 
   ZMinorCollector     _minor_collector;
   ZMajorCollector     _major_collector;
@@ -77,6 +78,7 @@ public:
   ZMajorCollector* major_collector();
 
   // Heap metrics
+  size_t initial_capacity() const;
   size_t min_capacity() const;
   size_t max_capacity() const;
   size_t soft_max_capacity() const;
@@ -141,7 +143,7 @@ public:
   void serviceability_initialize();
   GCMemoryManager* serviceability_cycle_memory_manager(ZCollectorId collector_id);
   GCMemoryManager* serviceability_pause_memory_manager(ZCollectorId collector_id);
-  MemoryPool* serviceability_memory_pool();
+  MemoryPool* serviceability_memory_pool(ZGenerationId generation_id);
   ZServiceabilityCounters* serviceability_counters();
 
   // Printing

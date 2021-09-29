@@ -676,8 +676,8 @@ void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start,
 
   log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
                GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_mark_start()),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_relocate_end()));
+               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_start()),
+               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_end()));
 }
 
 Tickspan ZStatPhasePause::_max;
@@ -1394,6 +1394,13 @@ void ZStatHeap::set_at_initialize(const ZPageAllocatorStats& stats) {
   _at_initialize.max_capacity = stats.max_capacity();
 }
 
+void ZStatHeap::set_at_collection_start(const ZPageAllocatorStats& stats) {
+  _at_collection_start.soft_max_capacity = stats.soft_max_capacity();
+  _at_collection_start.capacity = stats.capacity();
+  _at_collection_start.free = free(stats.used());
+  _at_collection_start.used = stats.used();
+}
+
 void ZStatHeap::set_at_mark_start(const ZPageAllocatorStats& stats) {
   _at_mark_start.soft_max_capacity = stats.soft_max_capacity();
   _at_mark_start.capacity = stats.capacity();
@@ -1444,6 +1451,10 @@ size_t ZStatHeap::max_capacity() {
   return _at_initialize.max_capacity;
 }
 
+size_t ZStatHeap::used_at_collection_start() {
+  return _at_collection_start.used;
+}
+
 size_t ZStatHeap::used_at_mark_start() {
   return _at_mark_start.used;
 }
@@ -1454,6 +1465,10 @@ size_t ZStatHeap::live_at_mark_end() {
 
 size_t ZStatHeap::used_at_relocate_end() {
   return _at_relocate_end.used;
+}
+
+size_t ZStatHeap::used_at_collection_end() {
+  return used_at_relocate_end();
 }
 
 void ZStatHeap::print() {
