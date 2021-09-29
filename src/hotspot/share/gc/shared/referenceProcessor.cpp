@@ -264,7 +264,6 @@ void DiscoveredListIterator::remove() {
 }
 
 void DiscoveredListIterator::make_referent_alive() {
-  assert(referent() != nullptr, "precondition");
   HeapWord* addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
   if (UseCompressedOops) {
     _keep_alive->do_oop((narrowOop*)addr);
