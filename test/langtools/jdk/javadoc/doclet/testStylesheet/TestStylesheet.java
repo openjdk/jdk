@@ -180,18 +180,18 @@ public class TestStylesheet extends JavadocTester {
                     }""",
                 """
                     #reset-button {
-                        background-color: rgb(255,255,255);
+                        background-color: transparent;
                         background-image:url('resources/x.png');
-                        background-position:center;
                         background-repeat:no-repeat;
-                        background-size:12px;
-                        border:0 none;
-                        width:16px;
-                        height:16px;
-                        position:relative;
-                        left:-4px;
-                        top:-4px;
-                        font-size:0px;
+                        background-size:contain;
+                        border:0;
+                        border-radius:0;
+                        width:12px;
+                        height:12px;
+                        position:absolute;
+                        right:12px;
+                        top:10px;
+                        font-size:0;
                     }""",
                 """
                     .watermark {
@@ -381,7 +381,7 @@ public class TestStylesheet extends JavadocTester {
         checking("Check CSS class names");
         CSSClassChecker c = new CSSClassChecker(out, this::readFile, styles);
         try {
-            c.checkDirectory(outputDir.toPath());
+            c.checkDirectory(outputDir);
             c.report();
             int errors = c.getErrorCount();
             if (errors == 0) {

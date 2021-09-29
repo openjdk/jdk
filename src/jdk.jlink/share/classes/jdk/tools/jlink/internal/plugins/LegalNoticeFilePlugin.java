@@ -111,7 +111,7 @@ public final class LegalNoticeFilePlugin extends AbstractPlugin {
             .filter(e -> e.linkedTarget() == null)
             .filter(e -> Arrays.equals(e.contentBytes(), entry.contentBytes()))
             .findFirst();
-        if (!otarget.isPresent()) {
+        if (otarget.isEmpty()) {
             if (errorIfNotSameContent) {
                 // all legal notices of the same file name are expected
                 // to contain the same content

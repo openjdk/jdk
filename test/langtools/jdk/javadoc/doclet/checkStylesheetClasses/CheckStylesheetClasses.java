@@ -151,7 +151,7 @@ public class CheckStylesheetClasses {
         // (a) it is a poorly chosen name
         // (b) it does not seem to be used in make/Docs.gmk or anywhere else
         removeAll(styleSheetNames, "all-classes-container", "all-packages-container",
-                "bottom-nav", "clear", "constant-values-container", "deprecated-content",
+                "clear", "constant-values-container", "deprecated-content", "expanded",
                 "footer", "hidden", "override-specify-label", "serialized-class-details",
                 "tab", "table-sub-heading-color");
 

@@ -47,9 +47,11 @@ class G1EvacFailureRegions {
 public:
   G1EvacFailureRegions();
   ~G1EvacFailureRegions();
-  void initialize(uint max_regions);
 
-  void reset();
+  // Sets up the bitmap and failed regions array for addition.
+  void pre_collection(uint max_regions);
+  // Drops memory for internal data structures, but keep counts.
+  void post_collection();
 
   bool contains(uint region_idx) const;
   void par_iterate(HeapRegionClosure* closure,
@@ -58,6 +60,10 @@ public:
 
   uint num_regions_failed_evacuation() const {
     return Atomic::load(&_evac_failure_regions_cur_length);
+  }
+
+  bool evacuation_failed() const {
+    return num_regions_failed_evacuation() > 0;
   }
 
   // Record that the garbage collection encountered an evacuation failure in the

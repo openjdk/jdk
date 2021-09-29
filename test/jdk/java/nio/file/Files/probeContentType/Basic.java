@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -177,8 +177,8 @@ public class Basic {
                 new ExType("png", List.of("image/png")),
                 new ExType("ppt", List.of("application/vnd.ms-powerpoint")),
                 new ExType("pptx",List.of("application/vnd.openxmlformats-officedocument.presentationml.presentation")),
-                new ExType("py", List.of("text/plain", "text/x-python-script")),
-                new ExType("rar", List.of("application/vnd.rar")),
+                new ExType("py", List.of("text/plain", "text/x-python", "text/x-python-script")),
+                new ExType("rar", List.of("application/rar", "application/vnd.rar")),
                 new ExType("rtf", List.of("application/rtf", "text/rtf")),
                 new ExType("webm", List.of("video/webm")),
                 new ExType("webp", List.of("image/webp")),

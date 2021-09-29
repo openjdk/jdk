@@ -1489,9 +1489,7 @@ public final class Main {
         info.set(X509CertInfo.SUBJECT,
                     dname==null?req.getSubjectName():new X500Name(dname));
         CertificateExtensions reqex = null;
-        Iterator<PKCS10Attribute> attrs = req.getAttributes().getAttributes().iterator();
-        while (attrs.hasNext()) {
-            PKCS10Attribute attr = attrs.next();
+        for (PKCS10Attribute attr : req.getAttributes().getAttributes()) {
             if (attr.getAttributeId().equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 reqex = (CertificateExtensions)attr.getAttributeValue();
             }
