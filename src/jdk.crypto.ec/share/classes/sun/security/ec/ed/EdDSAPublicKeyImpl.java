@@ -41,9 +41,9 @@ public final class EdDSAPublicKeyImpl extends X509Key implements EdECPublicKey {
 
     private static final long serialVersionUID = 1L;
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final EdECPoint point;
-    @SuppressWarnings("serial")
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final NamedParameterSpec paramSpec;
 
     public EdDSAPublicKeyImpl(EdDSAParameters params, EdECPoint point)

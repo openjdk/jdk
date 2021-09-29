@@ -46,9 +46,10 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
 
     private static final long serialVersionUID = -2462037275160462289L;
 
-    @SuppressWarnings("serial") // see writeReplace
+    @SuppressWarnings("serial") // Type of field is not
+                                // Serializable;see writeReplace
     private ECPoint w;
-    @SuppressWarnings("serial")
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private ECParameterSpec params;
 
     /**
