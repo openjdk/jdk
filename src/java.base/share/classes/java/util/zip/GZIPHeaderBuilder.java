@@ -61,8 +61,17 @@ public class GZIPHeaderBuilder {
 
     /**
      * Add extra field in GZIP file header.
-     * This method verifies the extra fileds layout per RFC-1952.
-     * See comments of {@code verifyExtraFieldLayout}
+     * Per RFC 1952:
+     * If the FEXTRA bit is set, an "extra field" is present in
+     * the header, with total length XLEN bytes.  It consists of a
+     * series of subfields, each of the form:
+     *
+     * +---+---+---+---+==================================+
+     * |SI1|SI2|  LEN  |... LEN bytes of subfield data ...|
+     * +---+---+---+---+==================================+
+     *
+     * SI1 and SI2 provide a subfield ID, typically two ASCII letters
+     * with some mnemonic value
      *
      * @param extraFieldBytes The byte array of extra field.
      * @return {@code this}
@@ -183,7 +192,7 @@ public class GZIPHeaderBuilder {
      *
      * @since 18
      */
-    public byte[] generateBytes(byte cm,
+    private byte[] generateBytes(byte cm,
                                 byte[] extraFieldBytes,
                                 String filename,
                                 String fileComment) throws IOException {
@@ -244,7 +253,7 @@ public class GZIPHeaderBuilder {
              *    |...original file name, zero-terminated...|
              *    +=========================================+
              */
-            byte[] filenameBytes = filename.getBytes("ISO-8859-1");
+            byte[] filenameBytes = filename.getBytes(StandardCharsets.ISO_8859_1);
             baos.write(filenameBytes);
             baos.write(0);
             if ((flags & GZIPHeaderData.FHCRC) == GZIPHeaderData.FHCRC) {
@@ -259,7 +268,7 @@ public class GZIPHeaderBuilder {
              *    |...file comment, zero-terminated...|
              *    +===================================+
              */
-            byte[] fcommBytes = fileComment.getBytes("ISO-8859-1");
+            byte[] fcommBytes = fileComment.getBytes(StandardCharsets.ISO_8859_1);
             baos.write(fcommBytes);
             baos.write(0);
             if ((flags & GZIPHeaderData.FHCRC) == GZIPHeaderData.FHCRC) {
@@ -280,17 +289,8 @@ public class GZIPHeaderBuilder {
 
     /**
      * Verify extra field data layout.
-     * Per RFC 1952:
-     * If the FEXTRA bit is set, an "extra field" is present in
-     * the header, with total length XLEN bytes.  It consists of a
-     * series of subfields, each of the form:
-     *
-     * +---+---+---+---+==================================+
-     * |SI1|SI2|  LEN  |... LEN bytes of subfield data ...|
-     * +---+---+---+---+==================================+
-     *
-     * SI1 and SI2 provide a subfield ID, typically two ASCII letters
-     * with some mnemonic value
+     * This method verifies the extra fileds layout per RFC-1952.
+     * See comments of {@code extraFieldBytes}
      *
      * @param fieldBytes    the data of extra fileds.
      * @return {@code true} if field data layout is correct.
@@ -352,10 +352,30 @@ public class GZIPHeaderBuilder {
          *                bit 7   reserved
          *
          */
-        private static final int FTEXT      = 1;    // Extra text
-        private static final int FHCRC      = 2;    // Header CRC
-        private static final int FEXTRA     = 4;    // Extra field
-        private static final int FNAME      = 8;    // File name
-        private static final int FCOMMENT   = 16;   // File comment
+        public static final int FTEXT      = 1;    // Extra text
+        public static final int FHCRC      = 2;    // Header CRC
+        public static final int FEXTRA     = 4;    // Extra field
+        public static final int FNAME      = 8;    // File name
+        public static final int FCOMMENT   = 16;   // File comment
+    
+        /**
+         * Returns the copy of the internal extraFieldBytes.
+         */
+        @Override
+        public byte[] extraFieldBytes() {
+            if (extraFieldBytes == null) {
+                return null;
+            }
+            return Arrays.copyOf(extraFieldBytes, extraFieldBytes.length);
+        }
+        
+        /**
+         * Returns the copy of headerBytes.
+         */
+        @Override
+        public byte[] headerBytes() {
+            assert headerBytes != null : "GZIPHeaderData must be generated first";
+            return Arrays.copyOf(headerBytes, headerBytes.length);
+        }
     }
 }
