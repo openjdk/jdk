@@ -81,14 +81,21 @@ public class bug6364882 {
         final boolean saveImage = argList.contains("-save");
 
         SwingUtilities.invokeAndWait(() -> {
+            boolean exceptionThrown = false;
+
             createUI(showFrame);
-
             BufferedImage image = paintToImage();
-            errors = checkJustification();
-
-            if (errors.size() > 0 || saveImage) {
-                saveImage(image);
-                dumpViews();
+            try {
+                errors = checkJustification();
+            } catch (Throwable t) {
+                exceptionThrown = true;
+                throw t;
+            } finally {
+                if (exceptionThrown || errors.size() > 0 || saveImage) {
+                    saveImage(image);
+                    System.err.println(editorPane.getFont());
+                    dumpViews();
+                }
             }
         });
 
