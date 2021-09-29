@@ -1146,9 +1146,8 @@ public abstract class Signature extends SignatureSpi {
         public Object clone() throws CloneNotSupportedException {
             chooseFirstProvider();
             if (sigSpi instanceof Cloneable) {
-                // Because 'algorithm' and 'provider' are private
-                // members of our supertype, we must perform a cast to
-                // access them.
+                // Because 'algorithm' is private member of our supertype,
+                // we must perform a cast to access it.
                 Signature that = new CloneableDelegate(
                    (SignatureSpi)sigSpi.clone(),
                    ((Signature)this).algorithm);
