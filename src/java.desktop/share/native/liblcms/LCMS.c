@@ -71,7 +71,6 @@ typedef union {
 } TagSignature_t, *TagSignature_p;
 
 static jfieldID Trans_renderType_fID;
-static jfieldID Trans_ID_fID;
 static jfieldID IL_isIntPacked_fID;
 static jfieldID IL_dataType_fID;
 static jfieldID IL_pixelType_fID;
@@ -510,9 +509,9 @@ void releaseILData (JNIEnv *env, void* pData, jint dataType,
  * Signature: (Lsun/java2d/cmm/lcms/LCMSTransform;Lsun/java2d/cmm/lcms/LCMSImageLayout;Lsun/java2d/cmm/lcms/LCMSImageLayout;)V
  */
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
-  (JNIEnv *env, jclass cls, jobject trans, jobject src, jobject dst)
+  (JNIEnv *env, jclass cls, jlong ID, jobject src, jobject dst)
 {
-    cmsHTRANSFORM sTrans = NULL;
+    cmsHTRANSFORM sTrans = jlong_to_ptr(ID);
     int srcDType, dstDType;
     int srcOffset, srcNextRowOffset, dstOffset, dstNextRowOffset;
     int width, height, i;
@@ -532,8 +531,6 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
 
     srcAtOnce = (*env)->GetBooleanField(env, src, IL_imageAtOnce_fID);
     dstAtOnce = (*env)->GetBooleanField(env, dst, IL_imageAtOnce_fID);
-
-    sTrans = jlong_to_ptr((*env)->GetLongField (env, trans, Trans_ID_fID));
 
     if (sTrans == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_colorConvert: transform == NULL");
@@ -626,11 +623,6 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_initLCMS
     if (Trans_renderType_fID == NULL) {
         return;
     }
-    Trans_ID_fID = (*env)->GetFieldID (env, Trans, "ID", "J");
-    if (Trans_ID_fID == NULL) {
-        return;
-    }
-
     IL_isIntPacked_fID = (*env)->GetFieldID (env, IL, "isIntPacked", "Z");
     if (IL_isIntPacked_fID == NULL) {
         return;

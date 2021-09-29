@@ -50,6 +50,7 @@
 <li><a href="#nullptr">nullptr</a></li>
 <li><a href="#atomic">&lt;atomic&gt;</a></li>
 <li><a href="#uniform-initialization">Uniform Initialization</a></li>
+<li><a href="#local-function-objects">Local Function Objects</a></li>
 <li><a href="#additional-permitted-features">Additional Permitted Features</a></li>
 <li><a href="#excluded-features">Excluded Features</a></li>
 <li><a href="#undecided-features">Undecided Features</a></li>
@@ -254,8 +255,7 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p>Function argument deduction. This is always permitted, and indeed encouraged. It is nearly always better to allow the type of a function template argument to be deduced rather than explicitly specified.</p></li>
 <li><p><code>auto</code> variable declarations (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n1984.pdf">n1984</a>)<br> For local variables, this can be used to make the code clearer by eliminating type information that is obvious or irrelevant. Excessive use can make code much harder to understand.</p></li>
 <li><p>Function return type deduction (<a href="https://isocpp.org/files/papers/N3638.html">n3638</a>)<br> Only use if the function body has a very small number of <code>return</code> statements, and generally relatively little other code.</p></li>
-<li><p>Generic lambdas. Lambdas are not (yet) permitted.</p></li>
-<li><p>Lambda init captures. Lambdas are not (yet) permitted.</p></li>
+<li><p>Also see <a href="#lambdaexpressions">lambda expressions</a>.</p></li>
 </ul>
 <h3 id="expression-sfinae">Expression SFINAE</h3>
 <p><a href="https://en.cppreference.com/w/cpp/language/sfinae" title="Substitution Failure Is Not An Error">Substitution Failure Is Not An Error</a> (SFINAE) is a template metaprogramming technique that makes use of template parameter substitution failures to make compile-time decisions.</p>
@@ -288,6 +288,121 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><a href="https://en.cppreference.com/w/cpp/language/aggregate_initialization">aggregate initialization</a></li>
 </ul>
 <p>Although related, the use of <code>std::initializer_list</code> remains forbidden, as part of the avoidance of the C++ Standard Library in HotSpot code.</p>
+<h3 id="local-function-objects">Local Function Objects</h3>
+<ul>
+<li>Local function objects, including lambda expressions, may be used.</li>
+<li>Lambda expressions must only be used as a downward value.</li>
+<li>Prefer <code>[&amp;]</code> as the capture list of a lambda expression.</li>
+<li>Return type deduction for lambda expressions is permitted, and indeed encouraged.</li>
+<li>An empty parameter list for a lambda expression may be elided.</li>
+<li>A lambda expression must not be <code>mutable</code>.</li>
+<li>Generic lambda expressions are permitted.</li>
+<li>Lambda expressions should be relatively simple.</li>
+<li>Anonymous lambda expressions should not overly clutter the enclosing expression.</li>
+<li>An anonymous lambda expression must not be directly invoked.</li>
+<li>Bind expressions are forbidden.</li>
+</ul>
+<p>Single-use function objects can be defined locally within a function, directly at the point of use. This is an alternative to having a function or function object class defined at class or namespace scope.</p>
+<p>This usage was somewhat limited by C++03, which does not permit such a class to be used as a template parameter. That restriction was removed by C++11 (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm">n2657</a>). Use of this feature is permitted.</p>
+<p>Many HotSpot protocols involve &quot;function-like&quot; objects that involve some named member function rather than a call operator. For example, a function that performs some action on all threads might be written as</p>
+<pre><code>void do_something() {
+  struct DoSomething : public ThreadClosure {
+    virtual void do_thread(Thread* t) {
+      ... do something with t ...
+    }
+  } closure;
+  Threads::threads_do(&amp;closure);
+}</code></pre>
+<p>HotSpot code has historically usually placed the DoSomething class at namespace (or sometimes class) scope. This separates the function's code from its use, often to the detriment of readability. It requires giving the class a globally unique name (if at namespace scope). It also loses the information that the class is intended for use in exactly one place, and does not have any subclasses. (However, the latter can now be indicated by declaring it <code>final</code>.) Often, for simplicity, a local class will skip things like access control and accessor functions, giving the enclosing function direct access to the implementation and eliminating some boilerplate that might be provided if the class is in some outer (more accessible) scope. On the other hand, if there is a lot of surrounding code in the function body or the local class is of significant size, defining it locally can increase clutter and reduce readability.</p>
+<p><a name="lambdaexpressions"></a> C++11 added <em>lambda expressions</em> as a new way to write a function object. Simple lambda expressions can be significantly more concise than a function object, eliminating a lot of boiler-plate. On the other hand, a complex lambda expression may not provide much, if any, readability benefit compared to an ordinary function object. Also, while a lambda can encapsulate a call to a &quot;function-like&quot; object, it cannot be used in place of such.</p>
+<p>A common use for local functions is as one-use <a href="https://en.cppreference.com/w/cpp/language/raii" title="Resource Acquisition Is Initialization">RAII</a> objects. The amount of boilerplate for a function object class (local or not) makes such usage somewhat clumsy and verbose. But with the help of a small amount of supporting utility code, lambdas work particularly well for this use case.</p>
+<p>Another use for local functions is <a href="https://en.wikipedia.org/wiki/Partial_application" title="Partial Application">partial application</a>. Again here, lambdas are typically much simpler and less verbose than function object classes.</p>
+<p>Because of these benefits, lambda expressions are permitted in HotSpot code, with some restrictions and usage guidance. An anonymous lambda is one which is passed directly as an argument. A named lambda is the value of a variable, which is its name.</p>
+<p>Lambda expressions should only be passed downward. In particular, a lambda should not be returned from a function or stored in a global variable, whether directly or as the value of a member of some other object. Lambda capture is syntactically subtle (by design), and propagating a lambda in such ways can easily pass references to captured values to places where they are no longer valid. In particular, members of the enclosing <code>this</code> object are effectively captured by reference, even if the default capture is by-value. For such uses-cases a function object class should be used to make the desired value capturing and propagation explicit.</p>
+<p>Limiting the capture list to <code>[&amp;]</code> (implicitly capture by reference) is a simplifying restriction that still provides good support for HotSpot usage, while reducing the cases a reader must recognize and understand.</p>
+<ul>
+<li><p>Many common lambda uses require reference capture. Not permitting it would substantially reduce the utility of lambdas.</p></li>
+<li><p>Referential transparency. Implicit reference capture makes variable references in the lambda body have the same meaning they would have in the enclosing code. There isn't a semantic barrier across which the meaning of a variable changes.</p></li>
+<li><p>Explicit reference capture introduces significant clutter, especially when lambda expressions are relatively small and simple, as they should be in HotSpot code.</p></li>
+<li><p>There are a number of reasons why by-value capture might be used, but for the most part they don't apply to HotSpot code, given other usage restrictions.</p>
+<ul>
+<li><p>A primary use-case for by-value capture is to support escaping uses, where values captured by-reference might become invalid. That use-case doesn't apply if only downward lambdas are used.</p></li>
+<li><p>By-value capture can also make a lambda-local copy for mutation, which requires making the lambda <code>mutable</code>; see below.</p></li>
+<li><p>By-value capture might be viewed as an optimization, avoiding any overhead for reference capture of cheap to copy values. But the compiler can often eliminate any such overhead.</p></li>
+<li><p>By-value capture by a non-<code>mutable</code> lambda makes the captured values const, preventing any modification by the lambda and making the captured value unaffected by modifications to the outer variable. But this only applies to captured auto variables, not member variables, and is inconsistent with referential transparency.</p></li>
+</ul></li>
+<li><p>Non-capturing lambdas (with an empty capture list - <code>[]</code>) have limited utility. There are cases where no captures are required (pure functions, for example), but if the function is small and simple then that's obvious anyway.</p></li>
+<li><p>Capture initializers (a C++14 feature - <a href="https://isocpp.org/files/papers/N3649.html">N3649</a>) are not permitted. Capture initializers inherently increase the complexity of the capture list, and provide little benefit over an additional in-scope local variable.</p></li>
+</ul>
+<p>The use of <code>mutable</code> lambda expressions is forbidden because there don't seem to be many, if any, good use-cases for them in HotSpot. A lambda expression needs to be mutable in order to modify a by-value captured value. But with only downward lambdas, such usage seems likely to be rare and complicated. It is better to use a function object class in any such cases that arise, rather than requiring all HotSpot developers to understand this relatively obscure feature.</p>
+<p>While it is possible to directly invoke an anonymous lambda expression, that feature should not be used, as such a form can be confusing to readers. Instead, name the lambda and call it by name.</p>
+<p>Some reasons to prefer a named lambda instead of an anonymous lambda are</p>
+<ul>
+<li><p>The body contains non-trivial control flow or declarations or other nested constructs.</p></li>
+<li><p>Its role in an argument list is hard to guess without examining the function declaration. Give it a name that indicates its purpose.</p></li>
+<li><p>It has an unusual capture list.</p></li>
+<li><p>It has a complex explicit return type or parameter types.</p></li>
+</ul>
+<p>Lambda expressions, and particularly anonymous lambda expressions, should be simple and compact. One-liners are good. Anonymous lambdas should usually be limited to a couple lines of body code. More complex lambdas should be named. A named lambda should not clutter the enclosing function and make it long and complex; do continue to break up large functions via the use of separate helper functions.</p>
+<p>An anonymous lambda expression should either be a one-liner in a one-line expression, or isolated in its own set of lines. Don't place part of a lambda expression on the same line as other arguments to a function. The body of a multi-line lambda argument should be indented from the start of the capture list, as if that were the start of an ordinary function definition. The body of a multi-line named lambda should be indented one step from the variable's indentation.</p>
+<p>Some examples:</p>
+<ol type="1">
+<li><code>foo([&amp;] { ++counter; });</code></li>
+<li><code>foo(x, [&amp;] { ++counter; });</code></li>
+<li><code>foo([&amp;] { if (predicate) ++counter; });</code></li>
+<li><code>foo([&amp;] { auto tmp = process(x); tmp.f(); return tmp.g(); })</code></li>
+<li><p>Separate one-line lambda from other arguments:</p>
+<pre><code>foo(c.begin(), c.end(),
+    [&amp;] (const X&amp; x) { do_something(x); return x.value(); });</code></pre></li>
+<li><p>Indentation for multi-line lambda:</p>
+<pre><code>c.do_entries([&amp;] (const X&amp; x) {
+               do_something(x, a);
+               do_something1(x, b);
+               do_something2(x, c);
+             });</code></pre></li>
+<li><p>Separate multi-line lambda from other arguments:</p>
+<pre><code>foo(c.begin(), c.end(),
+    [&amp;] (const X&amp; x) {
+      do_something(x, a);
+      do_something1(x, b);
+      do_something2(x, c);
+    });</code></pre></li>
+<li><p>Multi-line named lambda:</p>
+<pre><code>auto do_entry = [&amp;] (const X&amp; x) {
+  do_something(x, a);
+  do_something1(x, b);
+  do_something2(x, c);
+};</code></pre></li>
+</ol>
+<p>Item 4, and especially items 6 and 7, are pushing the simplicity limits for anonymous lambdas. Item 6 might be better written using a named lambda:</p>
+<pre><code>c.do_entries(do_entry);</code></pre>
+<p>Note that C++11 also added <em>bind expressions</em> as a way to write a function object for partial application, using <code>std::bind</code> and related facilities from the Standard Library. <code>std::bind</code> generalizes and replaces some of the binders from C++03. Bind expressions are not permitted in HotSpot code. They don't provide enough benefit over lambdas or local function classes in the cases where bind expressions are applicable to warrant the introduction of yet another mechanism in this space into HotSpot code.</p>
+<p>References:</p>
+<ul>
+<li>Local and unnamed types as template parameters (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm">n2657</a>)</li>
+<li>New wording for C++0x lambdas (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2009/n2927.pdf">n2927</a>)</li>
+<li>Generalized lambda capture (init-capture) (<a href="https://isocpp.org/files/papers/N3648.html">N3648</a>)</li>
+<li>Generic (polymorphic) lambda expressions (<a href="https://isocpp.org/files/papers/N3649.html">N3649</a>)</li>
+</ul>
+<p>References from C++17</p>
+<ul>
+<li>Wording for constexpr lambda (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0170r1.pdf">p0170r1</a>)</li>
+<li>Lambda capture of *this by Value (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0018r3.html">p0018r3</a>)</li>
+</ul>
+<p>References from C++20</p>
+<ul>
+<li>Allow lambda capture [=, this] (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0409r2.html">p0409r2</a>)</li>
+<li>Familiar template syntax for generic lambdas (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0428r2.pdf">p0428r2</a>)</li>
+<li>Simplifying implicit lambda capture (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0588r1.html">p0588r1</a>)</li>
+<li>Default constructible and assignable stateless lambdas (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0624r2.pdf">p0624r2</a>)</li>
+<li>Lambdas in unevaluated contexts (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0315r4.pdf">p0315r4</a>)</li>
+<li>Allow pack expansion in lambda init-capture (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0780r2.html">p0780r2</a>) (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2095r0.html">p2095r0</a>)</li>
+<li>Deprecate implicit capture of this via [=] (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0806r2.html">p0806r2</a>)</li>
+</ul>
+<p>References from C++23</p>
+<ul>
+<li>Make () more optional for lambdas (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1102r2.html">p1102r2</a>)</li>
+</ul>
 <h3 id="additional-permitted-features">Additional Permitted Features</h3>
 <ul>
 <li><p><code>constexpr</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>) (<a href="https://isocpp.org/files/papers/N3652.html">n3652</a>)</p></li>
@@ -305,7 +420,6 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p>Dynamic initialization and destruction with concurrency (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2660.htm">n2660</a>)</p></li>
 <li><p><code>final</code> virtual specifiers for classes and virtual functions (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">n2928</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">n3206</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">n3272</a>)</p></li>
 <li><p><code>override</code> virtual specifiers for virtual functions (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">n2928</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">n3206</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">n3272</a>)</p></li>
-<li><p>Local and unnamed types as template parameters (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm">n2657</a>)</p></li>
 <li><p>Range-based <code>for</code> loops (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html">n2930</a>) (<a href="https://en.cppreference.com/w/cpp/language/range-for">range-for</a>)</p></li>
 </ul>
 <h3 id="excluded-features">Excluded Features</h3>
@@ -337,7 +451,6 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p>Member initializers and aggregates (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html">n3653</a>)</p></li>
 <li><p><code>[[noreturn]]</code> attribute (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf">n2761</a>)</p></li>
 <li><p>Rvalue references and move semantics</p></li>
-<li><p>Lambdas</p></li>
 </ul>
 </body>
 </html>

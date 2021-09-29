@@ -44,18 +44,30 @@ import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
+import java.lang.ref.Reference;
 
 import sun.java2d.cmm.ColorTransform;
 
 import static sun.java2d.cmm.lcms.LCMSImageLayout.ImageLayoutException;
 
 final class LCMSTransform implements ColorTransform {
-    long ID;
-    private int inFormatter = 0;
-    private boolean isInIntPacked = false;
-    private int outFormatter = 0;
-    private boolean isOutIntPacked = false;
 
+    private final static class NativeTransform {
+        private long ID;
+        private int inFormatter;
+        private boolean isInIntPacked;
+        private int outFormatter;
+        private boolean isOutIntPacked;
+
+        private boolean match(LCMSImageLayout in, LCMSImageLayout out) {
+            return inFormatter == in.pixelType
+                    && isInIntPacked == in.isIntPacked
+                    && outFormatter == out.pixelType
+                    && isOutIntPacked == out.isIntPacked;
+        }
+    }
+
+    private volatile NativeTransform transform;
     ICC_Profile[] profiles;
     LCMSProfile[] lcmsProfiles;
     int renderType;
@@ -63,8 +75,6 @@ final class LCMSTransform implements ColorTransform {
 
     private int numInComponents = -1;
     private int numOutComponents = -1;
-
-    private Object disposerReferent = new Object();
 
     public LCMSTransform(ICC_Profile profile, int renderType,
                          int transformType)
@@ -122,31 +132,32 @@ final class LCMSTransform implements ColorTransform {
         return numOutComponents;
     }
 
-    private synchronized void doTransform(LCMSImageLayout in,
-                                          LCMSImageLayout out) {
-        // update native transfrom if needed
-        if (ID == 0L ||
-            inFormatter != in.pixelType || isInIntPacked != in.isIntPacked ||
-            outFormatter != out.pixelType || isOutIntPacked != out.isIntPacked)
-        {
+    private void doTransform(LCMSImageLayout in, LCMSImageLayout out) {
+        NativeTransform tfm = transform;
+        // update native transform if needed
+        if (tfm == null || !tfm.match(in, out)) {
+            synchronized (this) {
+                tfm = transform;
+                if (tfm == null || !tfm.match(in, out)) {
+                    tfm = new NativeTransform();
+                    tfm.inFormatter = in.pixelType;
+                    tfm.isInIntPacked = in.isIntPacked;
 
-            if (ID != 0L) {
-                // Disposer will destroy forgotten transform
-                disposerReferent = new Object();
+                    tfm.outFormatter = out.pixelType;
+                    tfm.isOutIntPacked = out.isIntPacked;
+
+                    tfm.ID = LCMS.createTransform(lcmsProfiles, renderType,
+                                                  tfm.inFormatter,
+                                                  tfm.isInIntPacked,
+                                                  tfm.outFormatter,
+                                                  tfm.isOutIntPacked, tfm);
+                    // Disposer will destroy forgotten transform
+                    transform = tfm;
+                }
             }
-            inFormatter = in.pixelType;
-            isInIntPacked = in.isIntPacked;
-
-            outFormatter = out.pixelType;
-            isOutIntPacked = out.isIntPacked;
-
-            ID = LCMS.createTransform(lcmsProfiles, renderType,
-                                            inFormatter, isInIntPacked,
-                                            outFormatter, isOutIntPacked,
-                                            disposerReferent);
         }
-
-        LCMS.colorConvert(this, in, out);
+        LCMS.colorConvert(tfm.ID, in, out);
+        Reference.reachabilityFence(tfm); // prevent deallocation of "tfm.ID"
     }
 
     /**

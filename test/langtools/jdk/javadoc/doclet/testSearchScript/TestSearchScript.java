@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,9 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import jtreg.SkippedException;
@@ -71,9 +70,9 @@ public class TestSearchScript extends JavadocTester {
         // see https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md
         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put("polyglot.js.nashorn-compat", true);
-        engine.eval(new BufferedReader(new FileReader(new File(testSrc, "javadoc-search.js"))));
+        engine.eval(Files.newBufferedReader(Path.of(testSrc).resolve("javadoc-search.js")));
         Invocable inv = (Invocable) engine;
-        inv.invokeFunction("loadIndexFiles", outputDir.getAbsolutePath());
+        inv.invokeFunction("loadIndexFiles", outputDir.toAbsolutePath().toString());
         return inv;
     }
 

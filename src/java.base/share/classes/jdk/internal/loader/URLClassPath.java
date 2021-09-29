@@ -597,7 +597,7 @@ public class URLClassPath {
         /*
          * Returns the base URL for this Loader.
          */
-        URL getBaseURL() {
+        final URL getBaseURL() {
             return base;
         }
 
@@ -1199,7 +1199,8 @@ public class URLClassPath {
      */
     private static class FileLoader extends Loader {
         /* Canonicalized File */
-        private File dir;
+        private final File dir;
+        private final URL normalizedBase;
 
         /*
          * Creates a new FileLoader for the specified URL with a file protocol.
@@ -1209,6 +1210,7 @@ public class URLClassPath {
             String path = url.getFile().replace('/', File.separatorChar);
             path = ParseUtil.decode(path);
             dir = (new File(path)).getCanonicalFile();
+            normalizedBase = new URL(getBaseURL(), ".");
         }
 
         /*
@@ -1227,7 +1229,6 @@ public class URLClassPath {
         Resource getResource(final String name, boolean check) {
             final URL url;
             try {
-                URL normalizedBase = new URL(getBaseURL(), ".");
                 url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
 
                 if (url.getFile().startsWith(normalizedBase.getFile()) == false) {
