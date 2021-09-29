@@ -71,6 +71,7 @@ public class TestEncodeIntrinsics {
             enc.replaceWith(new byte[]{repl});
 
             // Populate char[] with chars which can be encoded by ISO_8859_1 (<= 0xFF)
+            // - or ASCII (<= 0x7F) if requested
             Random rnd = Utils.getRandomInstance();
             int maxchar = asciiOnly ? 0x7F : 0xFF;
             char[] a = new char[SIZE];
@@ -194,7 +195,7 @@ public class TestEncodeIntrinsics {
                 System.out.println("Failed: a != at");
             }
 
-            // Test encoder with char > 0xFF
+            // Test encoder with chars outside of the range the intrinsic deals with
             System.out.println("Testing big char");
 
             bt = new byte[SIZE + 10]; // add some spare room to deal with encoding multi-byte
