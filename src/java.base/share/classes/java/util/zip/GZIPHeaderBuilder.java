@@ -23,8 +23,10 @@
 
 package java.util.zip;
 
+import java.util.Arrays;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 /**
  * This class implements the GZIP file header builder.
  * The {@code GZIPHeaderData} could be composed by (optionally) call
@@ -352,14 +354,30 @@ public class GZIPHeaderBuilder {
          *                bit 7   reserved
          *
          */
-        public static final int FTEXT      = 1;    // Extra text
-        public static final int FHCRC      = 2;    // Header CRC
-        public static final int FEXTRA     = 4;    // Extra field
-        public static final int FNAME      = 8;    // File name
-        public static final int FCOMMENT   = 16;   // File comment
+        /**
+          *  Extra text.
+          */
+        public static final int FTEXT      = 1;
+        /**
+          * Header CRC.
+          */
+        public static final int FHCRC      = 2;
+        /**
+          * Extra field.
+          */
+        public static final int FEXTRA     = 4;
+        /**
+          * File name.
+          */
+        public static final int FNAME      = 8;
+        /**
+          * File comment.
+          */
+        public static final int FCOMMENT   = 16;
     
         /**
-         * Returns the copy of the internal extraFieldBytes.
+         * Get the extra field bytes.
+         * @return the copy of the internal extraFieldBytes.
          */
         @Override
         public byte[] extraFieldBytes() {
@@ -370,7 +388,8 @@ public class GZIPHeaderBuilder {
         }
         
         /**
-         * Returns the copy of headerBytes.
+         * Get the header bytes.
+         * @return the copy of headerBytes.
          */
         @Override
         public byte[] headerBytes() {
