@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import javax.swing.border.*;
 import javax.accessibility.*;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collections;
 
 import sun.awt.AWTAccessor;
@@ -924,7 +923,7 @@ public class JViewport extends JComponent implements Accessible
 
         @Override
         public java.util.List<Image> getResolutionVariants() {
-            return Collections.unmodifiableList(Arrays.asList(rvImage));
+            return Collections.singletonList(rvImage);
         }
     }
 
