@@ -2778,6 +2778,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         @SuppressWarnings("serial") // Conditionally serializable
         volatile E result;
         final AtomicInteger count;  // in case all throw
+        @SuppressWarnings("serial")
         final ForkJoinPool pool;    // to check shutdown while collecting
         InvokeAnyRoot(int n, ForkJoinPool p) {
             pool = p;

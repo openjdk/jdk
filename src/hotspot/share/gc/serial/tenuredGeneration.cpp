@@ -219,6 +219,18 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
   _the_space->object_iterate(blk);
 }
 
+void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
+  // Create the BOT for the archive space.
+  TenuredSpace* space = (TenuredSpace*)_the_space;
+  space->initialize_threshold();
+  HeapWord* start = archive_space.start();
+  while (start < archive_space.end()) {
+    size_t word_size = _the_space->block_size(start);
+    space->alloc_block(start, start + word_size);
+    start += word_size;
+  }
+}
+
 void TenuredGeneration::save_marks() {
   _the_space->set_saved_mark();
 }
