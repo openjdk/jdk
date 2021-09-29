@@ -197,16 +197,16 @@ public class TestEncodeIntrinsics {
             // Test encoder with char > 0xFF
             System.out.println("Testing big char");
 
-            byte orig = (byte) 'A';
             bt = new byte[SIZE + 10]; // add some spare room to deal with encoding multi-byte
             ba = CharBuffer.wrap(a);
             bbt = ByteBuffer.wrap(bt);
             for (int i = 1; i <= SIZE; i++) {
                 for (int j = 0; j < i; j++) {
-                    char bigChar = (char)(ba.get(j) + 0x100);
-                    ba.put(j, bigChar);
-                    // make sure to replace a different byte
-                    bbt.put(j, orig);
+                    char bigChar = (char)((asciiOnly ? 0x7F : 0xFF) + 1 + rnd.nextInt(0x100));
+                    char aOrig = a[j];
+                    a[j] = bigChar;
+                    // make sure to replace with a different byte
+                    bt[j] = (byte)(bt[j] + 1);
                     ba.clear();
                     ba.limit(i);
                     bbt.clear();
@@ -225,12 +225,12 @@ public class TestEncodeIntrinsics {
 
                     // Check that all bytes prior to the replaced one was encoded properly
                     for (int k = 0; k < j; k++) {
-                        if (bbt.get(k) != b[k]) {
+                        if (bt[k] != b[k]) {
                             failed = true;
                             System.out.println("Failed: encoded byte[" + k + "] (" + bt[k] + ") != " + b[k]);
                         }
                     }
-                    ba.put(j, (char)(ba.get(j) - 0x100)); // Restore
+                    a[j] = aOrig; // Restore
                 }
             }
 
