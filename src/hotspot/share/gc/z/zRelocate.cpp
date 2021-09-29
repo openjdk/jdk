@@ -35,6 +35,7 @@
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zWorkers.hpp"
+#include "gc/z/zValue.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
@@ -142,6 +143,10 @@ static void free_page(ZPage* page) {
   ZHeap::heap()->free_page(page, true /* reclaimed */);
 }
 
+static void free_pages(ZArray<ZPage*>* pages) {
+  ZHeap::heap()->free_pages(pages, true /* reclaimed */);
+}
+
 static bool should_free_target_page(ZPage* page) {
   // Free target page if it is empty. We can end up with an empty target
   // page if we allocated a new target page, and then lost the race to
@@ -153,12 +158,28 @@ static bool should_free_target_page(ZPage* page) {
 class ZRelocateSmallAllocator {
 private:
   volatile size_t _in_place_count;
+  ZPerWorker<ZArray<ZPage*>> _empty_pages;
+  static const int BULK_FREE_LIMIT = 64;
+
+  void free_empty_pages(bool free_all) {
+    if ((free_all && _empty_pages.get().is_nonempty()) ||
+        (_empty_pages.get().length() == BULK_FREE_LIMIT)) {
+      free_pages(_empty_pages.addr());
+      _empty_pages.get().clear();
+    }
+  }
 
 public:
   ZRelocateSmallAllocator() :
       _in_place_count(0) {}
 
   ZPage* alloc_target_page(ZForwarding* forwarding, ZPage* target) {
+    if (_empty_pages.get().is_nonempty()) {
+      ZPage* const page = _empty_pages.get().pop();
+      page->reset();
+      return page;
+    }
+
     ZPage* const page = alloc_page(forwarding);
     if (page == NULL) {
       Atomic::inc(&_in_place_count);
@@ -173,12 +194,16 @@ public:
 
   void free_target_page(ZPage* page) {
     if (should_free_target_page(page)) {
-      free_page(page);
+      _empty_pages.get().push(page);
     }
+
+    free_empty_pages(true /* free_all */);
   }
 
   void free_relocated_page(ZPage* page) {
-    free_page(page);
+    _empty_pages.get().push(page);
+
+    free_empty_pages(Atomic::load(&_in_place_count) > 0);
   }
 
   uintptr_t alloc_object(ZPage* page, size_t size) const {
@@ -190,7 +215,7 @@ public:
   }
 
   const size_t in_place_count() const {
-    return Atomic::load(&_in_place_count);
+    return _in_place_count;
   }
 };
 
@@ -267,7 +292,7 @@ public:
   }
 
   const size_t in_place_count() const {
-    return Atomic::load(&_in_place_count);
+    return _in_place_count;
   }
 };
 
@@ -277,41 +302,6 @@ private:
   Allocator* const _allocator;
   ZForwarding*     _forwarding;
   ZPage*           _target;
-  ZArray<ZPage*>   _relocated_pages;
-  bool             _bulk_free_mode;
-  static const int BULK_FREE_LEN = 64;
-
-  inline bool should_bulk_free() {
-    return std::is_same<Allocator, ZRelocateSmallAllocator>::value && _bulk_free_mode;
-  }
-
-  inline void append_relocated_pages(ZPage* page) {
-    _relocated_pages.append(page);
-  }
-
-  inline void bulk_free_relocated_page(int bulk) {
-    if (_relocated_pages.length() >= bulk && _relocated_pages.is_nonempty()) {
-      ZHeap::heap()->free_pages(&_relocated_pages, true /* reclaimed */);
-      _relocated_pages.clear();
-    }
-  }
-
-  inline ZPage* alloc_bulk_free_page() {
-    if (_relocated_pages.length() > 0) {
-      ZPage* result = _relocated_pages.last();
-      _relocated_pages.pop();
-      result->reset();
-      return result;
-    }
-    return NULL;
-  }
-
-  inline void bulk_free_mode_check() {
-    if (_bulk_free_mode && _allocator->in_place_count() > 0) {
-      _bulk_free_mode = false;
-      bulk_free_relocated_page(0);
-    }
-  }
 
   bool relocate_object(uintptr_t from_addr) const {
     ZForwardingCursor cursor;
@@ -352,13 +342,6 @@ private:
     assert(ZHeap::heap()->is_object_live(addr), "Should be live");
 
     while (!relocate_object(addr)) {
-      if (should_bulk_free()) {
-        _target = alloc_bulk_free_page();
-        bulk_free_mode_check();
-        if (_target != NULL) {
-          continue;
-        }
-      }
       // Allocate a new target page, or if that fails, use the page being
       // relocated as the new target, which will cause it to be relocated
       // in-place.
@@ -380,14 +363,9 @@ public:
   ZRelocateClosure(Allocator* allocator) :
       _allocator(allocator),
       _forwarding(NULL),
-      _target(NULL),
-      _relocated_pages(BULK_FREE_LEN),
-      _bulk_free_mode(true) {}
+      _target(NULL) {}
 
   ~ZRelocateClosure() {
-    if (should_bulk_free()) {
-      bulk_free_relocated_page(0);
-    }
     _allocator->free_target_page(_target);
   }
 
@@ -419,13 +397,7 @@ public:
     } else {
       // Detach and free relocated page
       ZPage* const page = _forwarding->detach_page();
-      if (should_bulk_free()) {
-        append_relocated_pages(page);
-        bulk_free_relocated_page(BULK_FREE_LEN);
-        bulk_free_mode_check();
-      } else {
-        _allocator->free_relocated_page(page);
-      }
+      _allocator->free_relocated_page(page);
     }
   }
 };
