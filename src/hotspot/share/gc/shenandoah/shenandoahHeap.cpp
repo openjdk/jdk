@@ -921,16 +921,20 @@ HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size) {
 }
 
 void ShenandoahHeap::retire_plab(PLAB* plab) {
-  size_t waste = plab->waste();
-  HeapWord* top = plab->top();
-  plab->retire();
-  if (top != NULL && plab->waste() > waste) {
-    // If retiring the plab created a filler object, then we
-    // need to register it with our card scanner so it can
-    // safely walk the region backing the plab.
-    log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
-                  plab->waste() - waste, p2i(top));
-    card_scan()->register_object_wo_lock(top);
+  if (!mode()->is_generational()) {
+    plab->retire();
+  } else {
+    size_t waste = plab->waste();
+    HeapWord* top = plab->top();
+    plab->retire();
+    if (top != NULL && plab->waste() > waste) {
+      // If retiring the plab created a filler object, then we
+      // need to register it with our card scanner so it can
+      // safely walk the region backing the plab.
+      log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
+                    plab->waste() - waste, p2i(top));
+      card_scan()->register_object_wo_lock(top);
+    }
   }
 }
 
@@ -1241,7 +1245,7 @@ public:
   void do_thread(Thread* thread) {
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
     assert(gclab != NULL, "GCLAB should be initialized for %s", thread->name());
-    gclab->retire();
+    ShenandoahHeap::heap()->retire_plab(gclab);
     if (_resize && ShenandoahThreadLocalData::gclab_size(thread) > 0) {
       ShenandoahThreadLocalData::set_gclab_size(thread, 0);
     }
