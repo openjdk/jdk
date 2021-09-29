@@ -828,10 +828,33 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
     jmethodID getCanonicalNameMID = NULL;
     NULL_CHECK(getCanonicalNameMID = (*env)->GetMethodID(env, classClass, "getCanonicalName", "()Ljava/lang/String;"));
 
+    jclass strClass = NULL;
+    NULL_CHECK(strClass = (*env)->FindClass(env, "java/lang/String"));
+
+    jmethodID lastIndexMID = NULL;
+    NULL_CHECK(lastIndexMID = (*env)->GetMethodID(env, strClass, "lastIndexOf", "(I)I"));
+
+    jmethodID subStringMID = NULL;
+    NULL_CHECK(subStringMID = (*env)->GetMethodID(env, strClass, "substring", "(I)Ljava/lang/String;"));
+
     jstring mainClassString = (*env)->CallObjectMethod(env, mainClass, getCanonicalNameMID);
     if ((*env)->ExceptionCheck(env) || NULL == mainClassString) {
         (*env)->ExceptionClear(env);
         return;
+    }
+
+    jint lastPeriod = (*env)->CallIntMethod(env, mainClassString, lastIndexMID, (jint)'.');
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        return;
+    }
+
+    if (lastPeriod != -1) {
+        mainClassString = (*env)->CallObjectMethod(env, mainClassString, subStringMID, lastPeriod+1);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+            return;
+        }
     }
 
     /* There are multiple apple.awt.*" system properties that AWT(the desktop module)
@@ -839,7 +862,7 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
      * This inherited AWT code looks for this property and uses it for the name
      * of the app as it appears in the system menu bar.
      *
-     * Not idea if how much external code ever sets it, but use it if set, else
+     * No idea if how much external code ever sets it, but use it if set, else
      * if not set (the high probability event) set it to the application class name.
      */
     const char* propName = "apple.awt.application.name";
