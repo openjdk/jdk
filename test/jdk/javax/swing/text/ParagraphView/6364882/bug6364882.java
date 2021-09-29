@@ -81,10 +81,11 @@ public class bug6364882 {
         final boolean saveImage = argList.contains("-save");
 
         SwingUtilities.invokeAndWait(() -> {
-            boolean exceptionThrown = false;
-
             createUI(showFrame);
+
             BufferedImage image = paintToImage();
+
+            boolean exceptionThrown = false;
             try {
                 errors = checkJustification();
             } catch (Throwable t) {
@@ -93,7 +94,6 @@ public class bug6364882 {
             } finally {
                 if (exceptionThrown || errors.size() > 0 || saveImage) {
                     saveImage(image);
-                    System.err.println(editorPane.getFont());
                     dumpViews();
                 }
             }
@@ -230,7 +230,8 @@ public class bug6364882 {
         try {
             ImageIO.write(image, "png", new File(IMAGE_FILENAME));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            // Don't propagate the exception
+            e.printStackTrace();
         }
     }
 
@@ -240,7 +241,7 @@ public class bug6364882 {
     }
 
     private static void dumpViews(final View view, final String indent) {
-        System.out.println(indent + view.getClass().getName() + ": "
+        System.err.println(indent + view.getClass().getName() + ": "
                            + view.getStartOffset() + ", " + view.getEndOffset()
                            + "; span: " + view.getPreferredSpan(View.X_AXIS));
         final String nestedIndent = indent + "    ";
