@@ -477,7 +477,7 @@ public:
                                      int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
   MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
-  bool  read_region(int i, char* base, size_t size);
+  bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   void  unmap_region(int i);
   bool  verify_region_checksum(int i);

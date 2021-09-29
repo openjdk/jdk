@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -606,6 +605,7 @@ public:
   void register_young_region_with_region_attr(HeapRegion* r) {
     _region_attr.set_in_young(r->hrm_index());
   }
+  inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
   inline void register_old_region_with_region_attr(HeapRegion* r);
   inline void register_optional_region_with_region_attr(HeapRegion* r);
@@ -814,8 +814,6 @@ public:
 
   // The parallel task queues
   G1ScannerTasksQueueSet *_task_queues;
-
-  G1EvacFailureRegions _evac_failure_regions;
 
   // ("Weak") Reference processing support.
   //
@@ -1033,9 +1031,6 @@ public:
   bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
-
-  // True iff an evacuation has failed in the most-recent collection.
-  inline bool evacuation_failed() const;
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,
@@ -1282,7 +1277,7 @@ public:
 
   // Recalculate amount of used memory after GC. Must be called after all allocation
   // has finished.
-  void update_used_after_gc();
+  void update_used_after_gc(bool evacuation_failed);
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.

@@ -941,7 +941,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  certainty a measure of the uncertainty that the caller is
      *         willing to tolerate: if the call returns {@code true}
      *         the probability that this BigInteger is prime exceeds
-     *         {@code (1 - 1/2<sup>certainty</sup>)}.  The execution time of
+     *         <code>(1 - 1/2<sup>certainty</sup>)</code>.  The execution time of
      *         this method is proportional to the value of this parameter.
      * @return {@code true} if this BigInteger is probably prime,
      *         {@code false} if it's definitely composite.
@@ -2066,20 +2066,20 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     // Squaring
 
     /**
-     * Returns a BigInteger whose value is {@code (this<sup>2</sup>)}.
+     * Returns a BigInteger whose value is <code>(this<sup>2</sup>)</code>.
      *
-     * @return {@code this<sup>2</sup>}
+     * @return <code>this<sup>2</sup></code>
      */
     private BigInteger square() {
         return square(false);
     }
 
     /**
-     * Returns a BigInteger whose value is {@code (this<sup>2</sup>)}. If
+     * Returns a BigInteger whose value is <code>(this<sup>2</sup>)</code>. If
      * the invocation is recursive certain overflow checks are skipped.
      *
      * @param isRecursion whether this is a recursive invocation
-     * @return {@code this<sup>2</sup>}
+     * @return <code>this<sup>2</sup></code>
      */
     private BigInteger square(boolean isRecursion) {
         if (signum == 0) {

@@ -1434,7 +1434,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Finish up archived heap initialization. These must be
   // done after ReadClosure.
   static_mapinfo->patch_heap_embedded_pointers();
-  HeapShared::verify_loaded_heap();
+  HeapShared::finish_initialization();
 
   // Close the mapinfo file
   static_mapinfo->close();
