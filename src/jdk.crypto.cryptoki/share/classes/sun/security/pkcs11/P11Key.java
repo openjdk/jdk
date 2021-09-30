@@ -90,7 +90,7 @@ abstract class P11Key implements Key, Length {
     // flags indicating whether the key is a token object, sensitive, extractable
     final boolean tokenObject, sensitive, extractable;
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final NativeKeyHolder keyIDHolder;
 
     private static final boolean DISABLE_NATIVE_KEYS_EXTRACTION;
@@ -724,7 +724,7 @@ abstract class P11Key implements Key, Length {
         private static final long serialVersionUID = 5989753793316396637L;
 
         private BigInteger y;
-        @SuppressWarnings("serial")
+        @SuppressWarnings("serial") // Type of field is not Serializable
         private DSAParams params;
         private byte[] encoded;
         P11DSAPublicKey(Session session, long keyID, String algorithm,
@@ -788,7 +788,7 @@ abstract class P11Key implements Key, Length {
         private static final long serialVersionUID = 3119629997181999389L;
 
         private BigInteger x;
-        @SuppressWarnings("serial")
+        @SuppressWarnings("serial") // Type of field is not Serializable
         private DSAParams params;
         private byte[] encoded;
         P11DSAPrivateKey(Session session, long keyID, String algorithm,
@@ -843,7 +843,7 @@ abstract class P11Key implements Key, Length {
         private static final long serialVersionUID = -1698576167364928838L;
 
         private BigInteger x;
-        @SuppressWarnings("serial")
+        @SuppressWarnings("serial") // Type of field is not Serializable
         private DHParameterSpec params;
         private byte[] encoded;
         P11DHPrivateKey(Session session, long keyID, String algorithm,
@@ -926,7 +926,7 @@ abstract class P11Key implements Key, Length {
         static final long serialVersionUID = -598383872153843657L;
 
         private BigInteger y;
-        @SuppressWarnings("serial")
+        @SuppressWarnings("serial") // Type of field is not Serializable
         private DHParameterSpec params;
         private byte[] encoded;
         P11DHPublicKey(Session session, long keyID, String algorithm,
@@ -1014,7 +1014,7 @@ abstract class P11Key implements Key, Length {
         private static final long serialVersionUID = -7786054399510515515L;
 
         private BigInteger s;
-        @SuppressWarnings("serial")
+        @SuppressWarnings("serial") // Type of field is not Serializable
         private ECParameterSpec params;
         private byte[] encoded;
         P11ECPrivateKey(Session session, long keyID, String algorithm,
@@ -1070,9 +1070,9 @@ abstract class P11Key implements Key, Length {
                                                 implements ECPublicKey {
         private static final long serialVersionUID = -6371481375154806089L;
 
-        @SuppressWarnings("serial")
+        @SuppressWarnings("serial") // Type of field is not Serializable
         private ECPoint w;
-        @SuppressWarnings("serial")
+        @SuppressWarnings("serial") // Type of field is not Serializable
         private ECParameterSpec params;
         private byte[] encoded;
         P11ECPublicKey(Session session, long keyID, String algorithm,
