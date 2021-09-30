@@ -23,13 +23,13 @@
 
 /*
  * @test TestOutOfMemoryErrorFromNIO
+ * @bug 8155004 8273608
  * @summary Test OutOfMemoryError thrown from NIO. OnError will react to OOME.
  *     After we transition the current thread into Native, OnError allows jcmd to itself.
  *
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run main/othervm TestOutOfMemoryErrorFromNIO
- * @bug 8155004 8273608
  */
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
@@ -62,7 +62,6 @@ public class TestOutOfMemoryErrorFromNIO {
         String cmds = before.toString() + ";echo " + msg + ";"
                     + after.toString();
 
-        // else this is the main test
         ProcessBuilder pb_single = ProcessTools.createJavaProcessBuilder(
            "-XX:MaxDirectMemorySize=100M",
            "-XX:+UnlockDiagnosticVMOptions",
@@ -84,8 +83,14 @@ public class TestOutOfMemoryErrorFromNIO {
            #   Executing /bin/sh -c "echo Test1 Succeeded" ...
         */
         output_single.shouldContain("Saw java.lang.OutOfMemoryError, aborting");
+        // before
+        output_single.stdoutShouldMatch("^Full thread dump");
+        // echo $msg
         output_single.stdoutShouldMatch("^" + msg); // match start of line only
+        // after
+        output_single.stdoutShouldContain("Heap dump file created");
 
         System.out.println("PASSED");
+        //output_single.reportDiagnosticSummary();
     }
 }

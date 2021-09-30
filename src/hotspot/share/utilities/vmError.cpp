@@ -1324,7 +1324,8 @@ bool transition_into_native() {
     JavaThread* jt = JavaThread::cast(t);
 
     if (jt->thread_state() == _thread_in_vm) {
-      unlock_locks_owned_by(t);
+      unlock_locks_on_error(jt);
+
       ThreadStateTransition::transition_from_vm(jt, _thread_in_native);
       return true;
     }

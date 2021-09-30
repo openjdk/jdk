@@ -373,12 +373,8 @@ void print_owned_locks_on_error(outputStream* st) {
   if (none) st->print_cr("None");
 }
 
-void unlock_locks_owned_by(Thread* thread) {
+void unlock_locks_on_error(JavaThread* thread) {
   assert(thread != NULL, "can't be owned by NULL");
-  if (thread->is_Watcher_thread()) {
-    // need WatcherThread as a safeguard against potential deadlocks
-    return;
-  }
 
 #ifdef ASSERT
   Mutex* owned_lock = thread->owned_locks();
@@ -387,11 +383,11 @@ void unlock_locks_owned_by(Thread* thread) {
     owned_lock->unlock();
     owned_lock = next;
   }
-#endif // ASSERT
-
+#else
   for (int i = 0; i < _num_mutex; i++) {
      if (_mutex_array[i]->owner() == thread) {
        _mutex_array[i]->unlock();
      }
   }
+#endif // ASSERT
 }
