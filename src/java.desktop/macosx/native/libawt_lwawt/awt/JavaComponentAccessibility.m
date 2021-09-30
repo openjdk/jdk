@@ -1404,6 +1404,7 @@ static NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
 
 - (id)accessibilityHitTest:(NSPoint)point withEnv:(JNIEnv *)env
 {
+    GET_CACCESSIBILITY_CLASS_RETURN(nil);
     DECLARE_CLASS_RETURN(jc_Container, "java/awt/Container", nil);
     DECLARE_STATIC_METHOD_RETURN(jm_accessibilityHitTest, sjc_CAccessibility, "accessibilityHitTest",
                                  "(Ljava/awt/Container;FF)Ljavax/accessibility/Accessible;", nil);
