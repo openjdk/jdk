@@ -33,27 +33,20 @@
  * @run main TestSnippetTag
  */
 
-import builder.ClassBuilder;
-import builder.ClassBuilder.MethodBuilder;
-import javadoc.tester.JavadocTester;
-import toolbox.ModuleBuilder;
-import toolbox.ToolBox;
-
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.ObjIntConsumer;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
+
+import builder.ClassBuilder;
+import builder.ClassBuilder.MethodBuilder;
+import toolbox.ModuleBuilder;
+import toolbox.ToolBox;
 
 // FIXME
 //   0. Add tests for snippets in all types of elements: e.g., fields
@@ -73,11 +66,11 @@ import java.util.stream.Stream;
  * if x is passed to that method additionally N times: JavadocTester.checkOutput(x, x, ..., x).
  * This is because a single occurrence of x in the output will be matched N times.
  */
-public class TestSnippetTag extends JavadocTester {
+public class TestSnippetTag extends SnippetTester {
 
     private final ToolBox tb = new ToolBox();
 
-    private TestSnippetTag() { }
+    private TestSnippetTag() {}
 
     public static void main(String... args) throws Exception {
         new TestSnippetTag().runTests(m -> new Object[]{Paths.get(m.getName())});
@@ -313,19 +306,6 @@ public class TestSnippetTag extends JavadocTester {
                     <pre class="snippet" id="snippet9"><code>user=jane
                     home=/home/jane
                     </code></pre>""");
-    }
-
-    /*
-     * This is a convenience method to iterate through a list.
-     * Unlike List.forEach, this method provides the consumer not only with an
-     * element but also that element's index.
-     *
-     * See JDK-8184707.
-     */
-    private static <T> void forEachNumbered(List<T> list, ObjIntConsumer<? super T> action) {
-        for (var iterator = list.listIterator(); iterator.hasNext(); ) {
-            action.accept(iterator.next(), iterator.previousIndex());
-        }
     }
 
     @Test
@@ -664,43 +644,6 @@ public class TestSnippetTag extends JavadocTester {
                 """)
             // </editor-fold>
         ));
-    }
-
-    // TODO This is a temporary method; it should be removed after JavadocTester has provided similar functionality (JDK-8273154).
-    private void checkOrder(Output output, String... strings) {
-        String outputString = getOutput(output);
-        int prevIndex = -1;
-        for (String s : strings) {
-            s = s.replace("\n", NL); // normalize new lines
-            int currentIndex = outputString.indexOf(s, prevIndex + 1);
-            checking("output: " + output + ": " + s + " at index " + currentIndex);
-            if (currentIndex == -1) {
-                failed(output + ": " + s + " not found.");
-                continue;
-            }
-            if (currentIndex > prevIndex) {
-                passed(output + ": " + " is in the correct order");
-            } else {
-                failed(output + ": " + " is in the wrong order.");
-            }
-            prevIndex = currentIndex;
-        }
-    }
-
-    /*
-     * When checking for errors, it is important not to confuse one error with
-     * another. This method checks that there are no crashes (which are also
-     * errors) by checking for stack traces. We never expect crashes.
-     */
-    private void checkNoCrashes() {
-        checking("check crashes");
-        Matcher matcher = Pattern.compile("\s*at.*\\(.*\\.java:\\d+\\)")
-                .matcher(getOutput(Output.STDERR));
-        if (!matcher.find()) {
-            passed("");
-        } else {
-            failed("Looks like a stacktrace: " + matcher.group());
-        }
     }
 
     /*
@@ -1052,20 +995,6 @@ public class TestSnippetTag extends JavadocTester {
         });
     }
 
-    // TODO:
-    //   Explore the toolbox.ToolBox.writeFile and toolbox.ToolBox.writeJavaFiles methods:
-    //   see if any of them could be used instead of this one
-    private void addSnippetFile(Path srcDir, String packageName, String fileName, String content) throws UncheckedIOException {
-        String[] components = packageName.split("\\.");
-        Path snippetFiles = Path.of(components[0], Arrays.copyOfRange(components, 1, components.length)).resolve("snippet-files");
-        try {
-            Path p = Files.createDirectories(srcDir.resolve(snippetFiles));
-            Files.writeString(p.resolve(fileName), content, StandardOpenOption.CREATE_NEW);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     @Test
     public void testInlineSnippetInDocFiles(Path base) throws IOException {
         Path srcDir = base.resolve("src");
@@ -1295,19 +1224,6 @@ public class TestSnippetTag extends JavadocTester {
                           """
                           A.java:3: error: @snippet specifies multiple external contents, which is ambiguous""");
         checkNoCrashes();
-    }
-
-    // TODO: perhaps this method could be added to JavadocTester
-    private void checkOutputEither(Output out, String first, String... other) {
-        checking("checkOutputEither");
-        String output = getOutput(out);
-        Stream<String> strings = Stream.concat(Stream.of(first), Stream.of(other));
-        Optional<String> any = strings.filter(output::contains).findAny();
-        if (any.isPresent()) {
-            passed(": following text is found:\n" + any.get());
-        } else {
-            failed(": nothing found");
-        }
     }
 
     @Test

@@ -28,7 +28,6 @@ import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 /*
@@ -42,11 +41,11 @@ import toolbox.ToolBox;
  * @build javadoc.tester.* toolbox.ToolBox toolbox.ModuleBuilder builder.ClassBuilder
  * @run main TestSnippetPathOption
  */
-public class TestSnippetPathOption extends JavadocTester {
+public class TestSnippetPathOption extends SnippetTester {
 
     private final ToolBox tb = new ToolBox();
 
-    private TestSnippetPathOption() { }
+    private TestSnippetPathOption() {}
 
     public static void main(String... args) throws Exception {
         new TestSnippetPathOption().runTests(m -> new Object[]{Paths.get(m.getName())});
