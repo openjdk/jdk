@@ -589,30 +589,8 @@ bool ZDriverMajor::is_busy() const {
   return _port.is_busy();
 }
 
-bool ZDriverMajor::is_active() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  return _active;
-}
-
 bool ZDriverMajor::promote_all() {
-  ZLocker<ZConditionLock> locker(&_lock);
   return _promote_all;
-}
-
-void ZDriverMajor::active(GCCause::Cause cause) {
-  ZLocker<ZConditionLock> locker(&_lock);
-  _active = true;
-  _promote_all = should_minor_before_major(cause);
-}
-
-void ZDriverMajor::stop_aggressive_promotion() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  _promote_all = false;
-}
-
-void ZDriverMajor::inactive() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  _active = false;
 }
 
 void ZDriverMajor::minor_block() {
@@ -920,7 +898,9 @@ void ZDriverMajor::run_service() {
     ZBreakpoint::at_before_gc();
 
     minor_block();
-    active(request.cause());
+
+    _promote_all = should_minor_before_major(request.cause());
+
     minor_unblock();
 
     if (_promote_all) {
@@ -929,7 +909,7 @@ void ZDriverMajor::run_service() {
 
     minor_block();
 
-    stop_aggressive_promotion();
+    _promote_all = false;
 
     // Run GC
     if (!ZAbort::should_abort()) {
@@ -940,8 +920,6 @@ void ZDriverMajor::run_service() {
     _port.ack();
 
     minor_unblock();
-
-    inactive();
 
     // Check for out of memory condition
     check_out_of_memory();

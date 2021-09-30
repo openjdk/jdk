@@ -89,10 +89,6 @@ private:
   void minor_start();
   void minor_await();
 
-  void active(GCCause::Cause cause);
-  void inactive();
-  void stop_aggressive_promotion();
-
   template <typename T> bool pause();
 
   void pause_mark_start();
@@ -121,7 +117,6 @@ public:
 
   bool is_busy() const;
 
-  bool is_active();
   bool promote_all();
 
   void collect(const ZDriverRequest& request);
