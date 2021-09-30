@@ -29,9 +29,9 @@
  * @summary Sinking a data node used as divisor of a DivI node into a zero check UCT loses its pin outside the loop due to
  *          optimizing the CastII node away, resulting in a div by zero crash (SIGFPE) due to letting the DivI node floating
  *          back inside the loop.
- * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.loopopts.TestSinkingDivisorLostPin -XX:-TieredCompilation
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.loopopts.TestSinkingDivisorLostPin::* -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=4177789702 compiler.loopopts.TestSinkingDivisorLostPin
- * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.loopopts.TestSinkingDivisorLostPin -XX:-TieredCompilation
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.loopopts.TestSinkingDivisorLostPin::* -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM compiler.loopopts.TestSinkingDivisorLostPin
  */
 

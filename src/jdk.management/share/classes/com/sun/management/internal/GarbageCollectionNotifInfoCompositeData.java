@@ -47,7 +47,7 @@ import sun.management.Util;
  * construction of a CompositeData use in the local case.
  */
 public class GarbageCollectionNotifInfoCompositeData extends LazyCompositeData {
-    @SuppressWarnings("serial")
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final GarbageCollectionNotificationInfo gcNotifInfo;
 
     public GarbageCollectionNotifInfoCompositeData(GarbageCollectionNotificationInfo info) {
