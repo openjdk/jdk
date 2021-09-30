@@ -58,6 +58,8 @@ public class SharedArchiveConsistency {
 
     public static int num_regions = shared_region_name.length;
     public static String[] matchMessages = {
+        "UseSharedSpaces: Header checksum verification failed.",
+        "The shared archive file has an incorrect header size.",
         "Unable to use shared archive",
         "An error has occurred while processing the shared archive file.",
         "Checksum verification failed.",
@@ -213,10 +215,22 @@ public class SharedArchiveConsistency {
         CDSArchiveUtils.deleteBytesAtRandomPositionAfterHeader(orgJsaFile, deleteBytes, 4096 /*bytes*/);
         testAndCheck(verifyExecArgs);
 
+        // modify contents in random area
         System.out.println("\n7. modify Content in random areas, should fail\n");
         String randomAreas = startNewArchive("random-areas");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, randomAreas);
         CDSArchiveUtils.modifyRegionContentRandomly(copiedJsa);
+        testAndCheck(verifyExecArgs);
+
+        // modify _base_archive_path_offet to not zero
+        System.out.println("\n8. modify _base_archive_path_offset to not zero\n");
+        String baseArchivePathOffsetName = startNewArchive("base-arhive-path-offset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, baseArchivePathOffsetName);
+        int baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        System.out.println("    baseArchivePathOffset = " + baseArchivePathOffset);
+        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset, 1024);
+        baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        System.out.println("new baseArchivePathOffset = " + baseArchivePathOffset);
         testAndCheck(verifyExecArgs);
     }
 }
