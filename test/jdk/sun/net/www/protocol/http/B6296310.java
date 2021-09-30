@@ -32,7 +32,6 @@
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.CacheRequest;
 import java.net.CacheResponse;
 import java.net.HttpURLConnection;
@@ -98,9 +97,7 @@ class SimpleHttpTransaction implements HttpHandler
    public void handle(HttpExchange trans) {
       try {
          trans.sendResponseHeaders(200, 0);
-         try(PrintWriter pw = new PrintWriter(trans.getResponseBody())) {
-            pw.print("");
-         }
+         trans.close();
       } catch (Exception e) {
          e.printStackTrace();
       }
