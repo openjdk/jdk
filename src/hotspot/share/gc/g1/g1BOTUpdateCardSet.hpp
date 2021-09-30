@@ -5,8 +5,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 class HeapRegion;
-class G1BOTFixingCardSetArray;
-class G1BOTFixingCardSetBitMap;
+class G1BOTUpdateCardSetArray;
+class G1BOTUpdateCardSetBitMap;
 
 // This card set contains the BOT entries (cards) that need to be fixed in a region.
 // Each member uniquely identifies a plab by being the last card covered by the plab.
@@ -37,7 +37,7 @@ class G1BOTFixingCardSetBitMap;
 //
 // The above two containers are dynamically allocated. To prevent too many dynamic allocations,
 // there is also a fixed-sized array, which is supposed to handle most of the cases.
-class G1BOTFixingCardSet {
+class G1BOTUpdateCardSet {
 public:
   typedef uint16_t CardIndex;
   typedef uint32_t WordType; // Atomic operations work with this granularity
@@ -59,7 +59,7 @@ private:
 
   // CardIndex 0 is considered an invalid card, because we never need to fix the first BOT entry.
   static const CardIndex _first_card_index = 1;
-  // Fixing starts from this card. This should be set to the first card
+  // Update starts from this card. This should be set to the first card
   // after region top (not including region top) before gc.
   // This card is in [_first_card_index, _last_card_index].
   CardIndex _start_card_index;
@@ -85,7 +85,7 @@ private:
   void* _dynamic_container;
 
   // To form a list of card sets. Used in job dispatching and cleaning up.
-  G1BOTFixingCardSet* _next;
+  G1BOTUpdateCardSet* _next;
 
   // The owner heap region.
   HeapRegion* _hr;
@@ -97,8 +97,8 @@ private:
   // Transition from static to dynamic container.
   void transition_to_dynamic();
 
-  G1BOTFixingCardSetArray* as_array();
-  G1BOTFixingCardSetBitMap* as_bitmap();
+  G1BOTUpdateCardSetArray* as_array();
+  G1BOTUpdateCardSetBitMap* as_bitmap();
 
   void add_card_to_dynamic(CardIndex card_index);
 
@@ -110,12 +110,12 @@ private:
   void iterate_cards_in_dynamic(CardIterator& iter);
 
 public:
-  G1BOTFixingCardSet(HeapRegion* hr);
+  G1BOTUpdateCardSet(HeapRegion* hr);
 
   static void prepare(size_t plab_word_size);
 
-  G1BOTFixingCardSet* next() const { return _next; }
-  void set_next(G1BOTFixingCardSet* next) {
+  G1BOTUpdateCardSet* next() const { return _next; }
+  void set_next(G1BOTUpdateCardSet* next) {
     _next = next;
   }
 
@@ -153,11 +153,11 @@ public:
   void verify();
 };
 
-class G1BOTFixingCardSetArray {
+class G1BOTUpdateCardSetArray {
 private:
-  typedef G1BOTFixingCardSet::CardIndex CardIndex;
-  typedef G1BOTFixingCardSet::WordType WordType;
-  typedef G1BOTFixingCardSet::CardIterator CardIterator;
+  typedef G1BOTUpdateCardSet::CardIndex CardIndex;
+  typedef G1BOTUpdateCardSet::WordType WordType;
+  typedef G1BOTUpdateCardSet::CardIterator CardIterator;
   static constexpr size_t EntriesPerWord = sizeof(WordType) / sizeof(CardIndex);
 
   const size_t _size;
@@ -172,12 +172,12 @@ private:
   inline CardIndex try_clear_entry(size_t i);
 
 public:
-  G1BOTFixingCardSetArray(size_t num_elems) : _size(num_elems) {
+  G1BOTUpdateCardSetArray(size_t num_elems) : _size(num_elems) {
     assert(_size > 0, "Sanity");
   }
 
   static size_t size_in_bytes(size_t num_elems) {
-    return header_size_in_bytes_internal<G1BOTFixingCardSetArray>() +
+    return header_size_in_bytes_internal<G1BOTUpdateCardSetArray>() +
            align_up(num_elems, EntriesPerWord) * sizeof(CardIndex);
   }
 
@@ -189,10 +189,10 @@ public:
   void iterate_cards(CardIterator& iter);
 };
 
-class G1BOTFixingCardSetBitMap {
+class G1BOTUpdateCardSetBitMap {
 private:
-  typedef G1BOTFixingCardSet::CardIndex CardIndex;
-  typedef G1BOTFixingCardSet::CardIterator CardIterator;
+  typedef G1BOTUpdateCardSet::CardIndex CardIndex;
+  typedef G1BOTUpdateCardSet::CardIterator CardIterator;
 
   const size_t _size_in_bits;
   BitMap::bm_word_t _bits[1];
@@ -203,12 +203,12 @@ private:
   }
 
 public:
-  G1BOTFixingCardSetBitMap(size_t size_in_bits) : _size_in_bits(size_in_bits) {
+  G1BOTUpdateCardSetBitMap(size_t size_in_bits) : _size_in_bits(size_in_bits) {
     assert(_size_in_bits > 0, "Sanity");
   }
 
   static size_t size_in_bytes(size_t size_in_bits) {
-    return header_size_in_bytes_internal<G1BOTFixingCardSetBitMap>() +
+    return header_size_in_bytes_internal<G1BOTUpdateCardSetBitMap>() +
            BitMap::calc_size_in_words(size_in_bits) * BytesPerWord;
   }
 

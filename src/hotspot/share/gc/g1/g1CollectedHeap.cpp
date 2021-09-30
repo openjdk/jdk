@@ -36,7 +36,7 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1ConcurrentBOTFixing.hpp"
+#include "gc/g1/g1ConcurrentBOTUpdate.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
@@ -1697,8 +1697,8 @@ jint G1CollectedHeap::initialize() {
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
   _bot = new G1BlockOffsetTable(reserved(), bot_storage);
-  if (G1UseConcurrentBOTFixing) {
-    _concurrent_bot_fixing = new G1ConcurrentBOTFixing(this);
+  if (G1UseConcurrentBOTUpdate) {
+    _concurrent_bot_fixing = new G1ConcurrentBOTUpdate(this);
   }
 
   {
@@ -1797,7 +1797,7 @@ void G1CollectedHeap::stop() {
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
   _cr->stop();
-  if (G1UseConcurrentBOTFixing) {
+  if (G1UseConcurrentBOTUpdate) {
     _concurrent_bot_fixing->stop();
   }
   _service_thread->stop();
@@ -2489,7 +2489,7 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_cm_thread);
   _cm->threads_do(tc);
   _cr->threads_do(tc);
-  if (G1UseConcurrentBOTFixing) {
+  if (G1UseConcurrentBOTUpdate) {
     _concurrent_bot_fixing->threads_do(tc);
   }
   tc->do_thread(_service_thread);
@@ -2497,7 +2497,7 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 
 void G1CollectedHeap::print_tracing_info() const {
   rem_set()->print_summary_info();
-  if (G1UseConcurrentBOTFixing) {
+  if (G1UseConcurrentBOTUpdate) {
     _concurrent_bot_fixing->print_summary_info();
   }
   concurrent_mark()->print_summary_info();
@@ -2770,7 +2770,7 @@ void G1CollectedHeap::wait_for_root_region_scanning() {
 }
 
 void G1CollectedHeap::finalize_concurrent_bot_fixing() {
-  if (G1UseConcurrentBOTFixing) {
+  if (G1UseConcurrentBOTUpdate) {
     double start_t = os::elapsedTime();
     _concurrent_bot_fixing->abort_and_wait();
     _concurrent_bot_fixing->clear_card_sets();
@@ -3156,7 +3156,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     start_concurrent_cycle(concurrent_operation_is_full_mark);
     ConcurrentGCBreakpoints::notify_idle_to_active();
   }
-  if (G1UseConcurrentBOTFixing) {
+  if (G1UseConcurrentBOTUpdate) {
     _concurrent_bot_fixing->activate();
   }
 }
@@ -3387,7 +3387,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
     }
 
     void prepare_bot_fixing_card_set(HeapRegion* hr) {
-      if (G1UseConcurrentBOTFixing) {
+      if (G1UseConcurrentBOTUpdate) {
         DEBUG_ONLY(hr->bot_fixing_card_set()->verify();)
         if (hr->is_old()) {
           hr->set_bot_fixing_start();
@@ -3595,7 +3595,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_i
   }
 
   {
-    if (G1UseConcurrentBOTFixing) {
+    if (G1UseConcurrentBOTUpdate) {
       _concurrent_bot_fixing->pre_record_plab_allocation();
     }
 
@@ -3862,7 +3862,7 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo* evacuation_
 
   WeakProcessor::weak_oops_do(workers(), &is_alive, &keep_alive, p->weak_phase_times());
 
-  if (G1UseConcurrentBOTFixing) {
+  if (G1UseConcurrentBOTUpdate) {
     _concurrent_bot_fixing->post_record_plab_allocation();
   }
 

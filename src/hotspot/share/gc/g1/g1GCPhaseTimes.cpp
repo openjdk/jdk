@@ -389,7 +389,7 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   info_time("Pre Evacuate Collection Set", sum_ms);
 
   if (_concurrent_bot_fixing_finalize_time_ms > 0.0) {
-    debug_time("Concurrent BOT Fixing Finalization", _concurrent_bot_fixing_finalize_time_ms);
+    debug_time("Concurrent BOT Update Finalization", _concurrent_bot_fixing_finalize_time_ms);
   }
   if (_root_region_scan_wait_time_ms > 0.0) {
     debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);

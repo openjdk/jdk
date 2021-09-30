@@ -1,18 +1,18 @@
 #include "gc/g1/g1BlockOffsetTable.hpp"
-#include "gc/g1/g1BOTFixingCardSet.inline.hpp"
+#include "gc/g1/g1BOTUpdateCardSet.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
-using CardIndex = G1BOTFixingCardSet::CardIndex;
+using CardIndex = G1BOTUpdateCardSet::CardIndex;
 
-CardIndex G1BOTFixingCardSet::_last_card_index = 0;
-size_t G1BOTFixingCardSet::_plab_word_size = 0;
-G1BOTFixingCardSet::ContainerType G1BOTFixingCardSet::_dynamic_container_type = Array;
+CardIndex G1BOTUpdateCardSet::_last_card_index = 0;
+size_t G1BOTUpdateCardSet::_plab_word_size = 0;
+G1BOTUpdateCardSet::ContainerType G1BOTUpdateCardSet::_dynamic_container_type = Array;
 
-G1BOTFixingCardSet::G1BOTFixingCardSet(HeapRegion* hr) :
+G1BOTUpdateCardSet::G1BOTUpdateCardSet(HeapRegion* hr) :
   _type(Static),
   _start_card_index(_first_card_index),
   _num_plabs(0),
@@ -28,7 +28,7 @@ G1BOTFixingCardSet::G1BOTFixingCardSet(HeapRegion* hr) :
 }
 
 // Prepare globals for adding cards.
-void G1BOTFixingCardSet::prepare(size_t plab_word_size) {
+void G1BOTUpdateCardSet::prepare(size_t plab_word_size) {
   // The last word's card.
   _last_card_index = (CardIndex)((HeapRegion::GrainWords - 1) >> BOTConstants::LogN_words);
   _plab_word_size = plab_word_size;
@@ -43,7 +43,7 @@ void G1BOTFixingCardSet::prepare(size_t plab_word_size) {
 
 // New plabs are allocated above the current top. So BOT fixing starts at the current top.
 // Anything below is considered fixed.
-void G1BOTFixingCardSet::set_bot_fixing_start() {
+void G1BOTUpdateCardSet::set_bot_fixing_start() {
   assert(_hr->is_old(), "Only set for old regions");
   if (_hr->top() == _hr->end()) {
     // Nothing to do.
@@ -57,7 +57,7 @@ void G1BOTFixingCardSet::set_bot_fixing_start() {
   _start_card_index = card_index_for_top + 1;
 }
 
-void G1BOTFixingCardSet::transition_to_dynamic() {
+void G1BOTUpdateCardSet::transition_to_dynamic() {
   void* container_mem = NULL;
   // Size of the area in the region that needs fixing. We don't need to reserve space for
   // cards that don't need fixing in the container.
@@ -68,17 +68,17 @@ void G1BOTFixingCardSet::transition_to_dynamic() {
     // smaller than _plab_word_size. A plab can still be allocated
     // into that space. We have to take that into account.
     size_t array_size = fix_size / _plab_word_size + (fix_size % _plab_word_size != 0) + 1;
-    size_t container_size = G1BOTFixingCardSetArray::size_in_bytes(array_size);
+    size_t container_size = G1BOTUpdateCardSetArray::size_in_bytes(array_size);
     container_mem = NEW_C_HEAP_ARRAY(jbyte, container_size, mtGC);
     memset(container_mem, 0, container_size);
-    new (container_mem) G1BOTFixingCardSetArray(array_size);
+    new (container_mem) G1BOTUpdateCardSetArray(array_size);
   } else {
     assert(_dynamic_container_type == BitMap, "Sanity");
     size_t max_num_cards = (fix_size >> BOTConstants::LogN_words);
-    size_t container_size = G1BOTFixingCardSetBitMap::size_in_bytes(max_num_cards);
+    size_t container_size = G1BOTUpdateCardSetBitMap::size_in_bytes(max_num_cards);
     container_mem = NEW_C_HEAP_ARRAY(jbyte, container_size, mtGC);
     memset(container_mem, 0, container_size);
-    new (container_mem) G1BOTFixingCardSetBitMap(max_num_cards);
+    new (container_mem) G1BOTUpdateCardSetBitMap(max_num_cards);
   }
 
   // Guarantees that whoever fails must see the correct dynamic container.
@@ -97,16 +97,16 @@ void G1BOTFixingCardSet::transition_to_dynamic() {
   for (uint i = 0; i < static_container_size; i++) {
     CardIndex c = (CardIndex)_static_container[i];
     if (_dynamic_container_type == Array) {
-      ((G1BOTFixingCardSetArray*)container_mem)->add_card(array_index_for(c), c);
+      ((G1BOTUpdateCardSetArray*)container_mem)->add_card(array_index_for(c), c);
     } else {
       assert(_dynamic_container_type == BitMap, "Sanity");
-      ((G1BOTFixingCardSetBitMap*)container_mem)->add_card(bitmap_effect_card_index_for(c));
+      ((G1BOTUpdateCardSetBitMap*)container_mem)->add_card(bitmap_effect_card_index_for(c));
     }
     _static_container[i] = 0;
   }
 }
 
-void G1BOTFixingCardSet::add_card_to_dynamic(CardIndex card_index) {
+void G1BOTUpdateCardSet::add_card_to_dynamic(CardIndex card_index) {
   if (_dynamic_container_type == Array) {
     as_array()->add_card(array_index_for(card_index), card_index);
   } else {
@@ -115,7 +115,7 @@ void G1BOTFixingCardSet::add_card_to_dynamic(CardIndex card_index) {
   }
 }
 
-bool G1BOTFixingCardSet::add_card(HeapWord* addr) {
+bool G1BOTUpdateCardSet::add_card(HeapWord* addr) {
   CardIndex card_index = card_index_for(addr);
   assert(card_index >= _start_card_index, "No need to fix");
   // Try to add to the static array first.
@@ -134,7 +134,7 @@ bool G1BOTFixingCardSet::add_card(HeapWord* addr) {
   return false;
 }
 
-bool G1BOTFixingCardSet::claim_card_from_dynamic(CardIndex card_index) {
+bool G1BOTUpdateCardSet::claim_card_from_dynamic(CardIndex card_index) {
   if (_dynamic_container_type == Array) {
     return as_array()->claim_card(array_index_for(card_index)) == card_index;
   } else {
@@ -144,7 +144,7 @@ bool G1BOTFixingCardSet::claim_card_from_dynamic(CardIndex card_index) {
   }
 }
 
-bool G1BOTFixingCardSet::claim_card(CardIndex card_index) {
+bool G1BOTUpdateCardSet::claim_card(CardIndex card_index) {
   assert(card_index >= _start_card_index, "No need to fix this card");
   if (_type == Static) {
     for (uint i = 0; i < static_container_size; i++) {
@@ -160,7 +160,7 @@ bool G1BOTFixingCardSet::claim_card(CardIndex card_index) {
   return claim_card_from_dynamic(card_index);
 }
 
-CardIndex G1BOTFixingCardSet::find_first_card_in(CardIndex min_card_index,
+CardIndex G1BOTUpdateCardSet::find_first_card_in(CardIndex min_card_index,
                                                  CardIndex max_card_index) {
   if (_dynamic_container_type == Array) {
     return as_array()->find_first_card_in(array_index_for(min_card_index),
@@ -182,7 +182,7 @@ CardIndex G1BOTFixingCardSet::find_first_card_in(CardIndex min_card_index,
 // This should be used by concurrent refinement to get the covering plab of a card table card.
 // A possible plab start will help us narrow down the search range for this plab, where we
 // assume the plab starts no later than latest_plab_start.
-CardIndex G1BOTFixingCardSet::find_plab_covering(HeapWord* card_boundary,
+CardIndex G1BOTUpdateCardSet::find_plab_covering(HeapWord* card_boundary,
                                                  HeapWord* latest_plab_start) {
   assert(card_boundary < _hr->top(), "Sanity");
   assert(is_aligned(card_boundary, BOTConstants::N_bytes), "Must be aligned");
@@ -215,21 +215,21 @@ CardIndex G1BOTFixingCardSet::find_plab_covering(HeapWord* card_boundary,
   return find_first_card_in(min_card_index, max_card_index);
 }
 
-void G1BOTFixingCardSet::iterate_cards_in_dynamic(CardIterator& iter) {
+void G1BOTUpdateCardSet::iterate_cards_in_dynamic(CardIterator& iter) {
   if (_dynamic_container_type == Array) {
     return as_array()->iterate_cards(iter);
   } else {
     assert(_dynamic_container_type == BitMap, "Sanity");
 
-    class BOTFixingBitMapClosure: public BitMapClosure {
-      G1BOTFixingCardSet* _card_set;
+    class BOTUpdateBitMapClosure: public BitMapClosure {
+      G1BOTUpdateCardSet* _card_set;
       CardIterator* _iter;
     public:
-      BOTFixingBitMapClosure(G1BOTFixingCardSet* card_set, CardIterator* iter) :
+      BOTUpdateBitMapClosure(G1BOTUpdateCardSet* card_set, CardIterator* iter) :
         _card_set(card_set), _iter(iter) {}
       bool do_bit(BitMap::idx_t index) {
         return _iter->do_card(
-          _card_set->bitmap_card_index_for((G1BOTFixingCardSetBitMap::card_index_for(index))));
+          _card_set->bitmap_card_index_for((G1BOTUpdateCardSetBitMap::card_index_for(index))));
       }
     } cl(this, &iter);
 
@@ -237,7 +237,7 @@ void G1BOTFixingCardSet::iterate_cards_in_dynamic(CardIterator& iter) {
   }
 }
 
-void G1BOTFixingCardSet::iterate_cards(CardIterator& iter) {
+void G1BOTUpdateCardSet::iterate_cards(CardIterator& iter) {
   if (_type == Static) {
     for (uint i = 0; i < static_container_size; i++) {
       CardIndex card_index = (CardIndex)_static_container[i];
@@ -255,7 +255,7 @@ void G1BOTFixingCardSet::iterate_cards(CardIterator& iter) {
   }
 }
 
-void G1BOTFixingCardSet::clear() {
+void G1BOTUpdateCardSet::clear() {
   if (_type != Static) {
     // First transition back to static.
     _type = Static;
@@ -270,12 +270,12 @@ void G1BOTFixingCardSet::clear() {
   }
 }
 
-void G1BOTFixingCardSet::print_stats() {
-  log_info(gc, bot)("BOT Fixing Card Set: region=%s, type=%d, start/last=%d/%d, n=%d",
+void G1BOTUpdateCardSet::print_stats() {
+  log_info(gc, bot)("BOT Update Card Set: region=%s, type=%d, start/last=%d/%d, n=%d",
                     _hr->get_type_str(), _type, _start_card_index, _last_card_index, _num_plabs);
 }
 
-void G1BOTFixingCardSet::verify() {
+void G1BOTUpdateCardSet::verify() {
   assert(_type == Static, "Type incorrect");
   // An old region might not have its card set cleared since last gc, because it's never enlisted.
   assert(_start_card_index == _first_card_index || _hr->is_old(),

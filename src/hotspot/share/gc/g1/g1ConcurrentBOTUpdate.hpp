@@ -1,20 +1,20 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTBOTFIXING_HPP
 #define SHARE_GC_G1_G1CONCURRENTBOTFIXING_HPP
 
-#include "gc/g1/g1BOTFixingCardSet.hpp"
+#include "gc/g1/g1BOTUpdateCardSet.hpp"
 
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-struct G1BOTFixingStats {
+struct G1BOTUpdateStats {
   Ticks concurrent_phase_start_time;
 };
 
 class G1CollectedHeap;
-class G1ConcurrentBOTFixingThread;
+class G1ConcurrentBOTUpdateThread;
 
-class G1ConcurrentBOTFixing: public CHeapObj<mtGC> {
+class G1ConcurrentBOTUpdate: public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
 
   volatile bool _in_progress;
@@ -24,7 +24,7 @@ class G1ConcurrentBOTFixing: public CHeapObj<mtGC> {
   // Two counters to know when all workers have finished.
   uint _inactive_count; // Number of workers waiting for jobs
   uint _stopped_count; // Number of workers terminated
-  G1ConcurrentBOTFixingThread** _fixer_threads;
+  G1ConcurrentBOTUpdateThread** _fixer_threads;
 
   // The plab size recorded before evacuation.
   size_t _plab_word_size;
@@ -33,18 +33,18 @@ class G1ConcurrentBOTFixing: public CHeapObj<mtGC> {
   bool _plab_recording_in_progress;
 
   // A list of card sets, each recording the cards (of plabs) that need to be fixed.
-  G1BOTFixingCardSet* _card_sets;
+  G1BOTUpdateCardSet* _card_sets;
   // A pointer into the list for job dispatching.
-  G1BOTFixingCardSet* _current;
+  G1BOTUpdateCardSet* _current;
 
-  G1BOTFixingStats _stats;
+  G1BOTUpdateStats _stats;
 
-  void enlist_card_set(G1BOTFixingCardSet* card_set);
+  void enlist_card_set(G1BOTUpdateCardSet* card_set);
 
-  void fix_bot_for_card_set(G1BOTFixingCardSet* card_set);
+  void fix_bot_for_card_set(G1BOTUpdateCardSet* card_set);
 
 public:
-  G1ConcurrentBOTFixing(G1CollectedHeap* g1h);
+  G1ConcurrentBOTUpdate(G1CollectedHeap* g1h);
 
   bool in_progress() const { return _in_progress; }
   bool should_abort() const { return _should_abort; }

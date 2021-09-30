@@ -345,7 +345,7 @@
            number of free regions and the expected survival rates in each   \
            section of the heap.")                                           \
                                                                             \
-  product(bool, G1UseConcurrentBOTFixing, true,                             \
+  product(bool, G1UseConcurrentBOTUpdate, true,                             \
           "Concurrently refine block offset table entries.")
 
 // end of GC_G1_FLAGS

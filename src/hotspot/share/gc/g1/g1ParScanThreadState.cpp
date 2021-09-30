@@ -26,7 +26,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
-#include "gc/g1/g1ConcurrentBOTFixing.hpp"
+#include "gc/g1/g1ConcurrentBOTUpdate.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -410,7 +410,7 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
   if (obj_ptr != NULL) {
     if (actual_plab_size != 0) {
       // A new plab has been allocated to accomodate the allocation. Record it.
-      if (G1UseConcurrentBOTFixing && dest_attr->is_old()) {
+      if (G1UseConcurrentBOTUpdate && dest_attr->is_old()) {
         _g1h->concurrent_bot_fixing()->record_plab_allocation(obj_ptr, actual_plab_size);
       }
     }
