@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,8 +170,7 @@ public class SignatureUtil {
     // for verification with the specified key and params (may be null)
     public static void initVerifyWithParam(Signature s, PublicKey key,
             AlgorithmParameterSpec params)
-            throws ProviderException, InvalidAlgorithmParameterException,
-            InvalidKeyException {
+            throws InvalidAlgorithmParameterException, InvalidKeyException {
         SharedSecrets.getJavaSecuritySignatureAccess().initVerify(s, key, params);
     }
 
@@ -180,8 +179,7 @@ public class SignatureUtil {
     public static void initVerifyWithParam(Signature s,
             java.security.cert.Certificate cert,
             AlgorithmParameterSpec params)
-            throws ProviderException, InvalidAlgorithmParameterException,
-            InvalidKeyException {
+            throws InvalidAlgorithmParameterException, InvalidKeyException {
         SharedSecrets.getJavaSecuritySignatureAccess().initVerify(s, cert, params);
     }
 
