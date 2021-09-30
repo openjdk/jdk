@@ -116,7 +116,7 @@ public class TestFtpTimeValue {
         public void handleClient(Socket client) throws IOException {
             String str;
 
-            client.setSoTimeout(2000);
+            client.setSoTimeout(10000);
             BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
             PrintWriter out = new PrintWriter(client.getOutputStream(), true);
             out.println("220 FTP serverSocket is ready.");
