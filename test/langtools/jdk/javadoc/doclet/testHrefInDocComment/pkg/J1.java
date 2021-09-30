@@ -24,7 +24,7 @@
 package pkg;
 
 /**
- *This class has <a href="{@docRoot}/pkg/J1.html#functions">various functions</
+ *This class has <a href="{@docRoot}/pkg/J1.html#functions">various functions</a>,
  * see <a href="ftp://www.example.com/">FTP Site</a>,
  *  <a href="file:///path/to/somefile">file service</a> for further information
  *<a id="functions">various functions</a>
@@ -47,7 +47,7 @@ public class J1 {
     protected Object field1;
 
     /**
-     *<a href="{@docRoot}/pkg/J1.html#functions">Creates an instance which has
+     *<a href="{@docRoot}/pkg/J1.html#functions">Creates an instance which has various functions.</a>
      */
     public J1(){
     }
@@ -67,7 +67,7 @@ public class J1 {
     }
 
     /**
-     *See <a href="file:///path/to/somefile">file service</a> for more informat
+     *See <a href="file:///path/to/somefile">file service</a> for more information.
      *@param p1 arg1
      */
     public void method3(int p1){
