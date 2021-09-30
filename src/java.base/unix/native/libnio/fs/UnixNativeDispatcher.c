@@ -317,7 +317,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports extended attributes */
 
-#ifdef _SYS_XATTR_H_
+#ifdef XATTR_CREATE
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_XATTR;
 #endif
 
