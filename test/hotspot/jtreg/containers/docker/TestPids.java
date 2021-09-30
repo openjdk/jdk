@@ -40,11 +40,15 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Container;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 public class TestPids {
     private static final String imageName = Common.imageName("pids");
+    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
+    private static final int UNLIMITED_PIDS_PODMAN = 0;
+    private static final int UNLIMITED_PIDS_DOCKER = -1;
 
     static final String warning_kernel_no_pids_support = "WARNING: Your kernel does not support pids limit capabilities";
 
@@ -139,7 +143,8 @@ public class TestPids {
 
         DockerRunOptions opts = commonOpts();
         if (value.equals("Unlimited")) {
-            opts.addDockerOpts("--pids-limit=-1");
+            int unlimited = IS_PODMAN ? UNLIMITED_PIDS_PODMAN : UNLIMITED_PIDS_DOCKER;
+            opts.addDockerOpts("--pids-limit=" + unlimited);
         } else {
             opts.addDockerOpts("--pids-limit="+value);
         }

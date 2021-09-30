@@ -34,6 +34,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -249,7 +252,51 @@ public class ToolBox {
     }
 
     /**
-     * Creates one of more directories.
+     * Copies the contents of a directory to another directory.
+     * <p>Similar to the shell command: {@code rsync fromDir/ toDir/}.
+     *
+     * @param fromDir the directory containing the files to be copied
+     * @param toDir   the destination to which to copy the files
+     */
+    public void copyDir(String fromDir, String toDir) {
+        copyDir(Path.of(fromDir), Path.of(toDir));
+    }
+
+    /**
+     * Copies the contents of a directory to another directory.
+     * The destination direction should not already exist.
+     * <p>Similar to the shell command: {@code rsync fromDir/ toDir/}.
+     *
+     * @param fromDir the directory containing the files to be copied
+     * @param toDir   the destination to which to copy the files
+     */
+    public void copyDir(Path fromDir, Path toDir) {
+        try {
+            if (toDir.getParent() != null) {
+                Files.createDirectories(toDir.getParent());
+            }
+            Files.walkFileTree(fromDir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path fromSubdir, BasicFileAttributes attrs)
+                        throws IOException {
+                    Files.copy(fromSubdir, toDir.resolve(fromDir.relativize(fromSubdir)));
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path fromFile, BasicFileAttributes attrs)
+                        throws IOException {
+                    Files.copy(fromFile, toDir.resolve(fromDir.relativize(fromFile)));
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new Error("Could not copy " + fromDir + " to " + toDir + ": " + e, e);
+        }
+    }
+
+    /**
+     * Creates one or more directories.
      * For each of the series of paths, a directory will be created,
      * including any necessary parent directories.
      * <p>Similar to the shell command: {@code mkdir -p paths}.

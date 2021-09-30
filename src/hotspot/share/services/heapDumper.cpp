@@ -748,7 +748,7 @@ class ParDumpWriter : public AbstractDumpWriter {
 
   static void before_work() {
     assert(_lock == NULL, "ParDumpWriter lock must be initialized only once");
-    _lock = new (std::nothrow) PaddedMonitor(Mutex::leaf, "Parallel HProf writer lock", Mutex::_safepoint_check_never);
+    _lock = new (std::nothrow) PaddedMonitor(Mutex::leaf, "ParallelHProfWriter_lock", Mutex::_safepoint_check_always);
   }
 
   static void after_work() {
@@ -1626,7 +1626,7 @@ class JNIGlobalsDumper : public OopClosure {
 };
 
 void JNIGlobalsDumper::do_oop(oop* obj_p) {
-  oop o = *obj_p;
+  oop o = NativeAccess<AS_NO_KEEPALIVE>::oop_load(obj_p);
 
   // ignore these
   if (o == NULL) return;
@@ -1814,8 +1814,8 @@ class DumperController : public CHeapObj<mtInternal> {
  public:
    DumperController(uint number) :
      _started(false),
-     _lock(new (std::nothrow) PaddedMonitor(Mutex::leaf, "Dumper Controller lock",
-    Mutex::_safepoint_check_never)),
+     _lock(new (std::nothrow) PaddedMonitor(Mutex::leaf, "DumperController_lock",
+    Mutex::_safepoint_check_always)),
      _dumper_number(number),
      _complete_number(0) { }
 
@@ -1910,11 +1910,11 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
       _num_writer_threads = 1;
       _num_dumper_threads = num_total - _num_writer_threads;
     }
-    // Number of dumper threads that only iterate heap.
-    uint _heap_only_dumper_threads = _num_dumper_threads - 1 /* VMDumper thread */;
     // Prepare parallel writer.
     if (_num_dumper_threads > 1) {
       ParDumpWriter::before_work();
+      // Number of dumper threads that only iterate heap.
+      uint _heap_only_dumper_threads = _num_dumper_threads - 1 /* VMDumper thread */;
       _dumper_controller = new (std::nothrow) DumperController(_heap_only_dumper_threads);
       _poi = Universe::heap()->parallel_object_iterator(_num_dumper_threads);
     }
@@ -2252,6 +2252,9 @@ void VM_HeapDumper::doit() {
   WorkGang* gang = ch->safepoint_workers();
 
   if (gang == NULL) {
+    // Use serial dump, set dumper threads and writer threads number to 1.
+    _num_dumper_threads=1;
+    _num_writer_threads=1;
     work(0);
   } else {
     prepare_parallel_dump(gang->active_workers());
@@ -2315,7 +2318,6 @@ void VM_HeapDumper::work(uint worker_id) {
     // technically not jni roots, but global roots
     // for things like preallocated throwable backtraces
     Universe::vm_global()->oops_do(&jni_dumper);
-
     // HPROF_GC_ROOT_STICKY_CLASS
     // These should be classes in the NULL class loader data, and not all classes
     // if !ClassUnloading
@@ -2353,10 +2355,8 @@ void VM_HeapDumper::work(uint worker_id) {
          _dumper_controller->wait_all_dumpers_complete();
          // clear internal buffer;
          pw.finish_dump_segment(true);
-
          // refresh the global_writer's buffer and position;
          writer()->refresh();
-
        } else {
          pw.finish_dump_segment(true);
          _dumper_controller->dumper_complete();

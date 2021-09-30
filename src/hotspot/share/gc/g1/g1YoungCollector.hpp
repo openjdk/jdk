@@ -142,6 +142,7 @@ class G1YoungCollector {
 #endif // TASKQUEUE_STATS
 
 public:
+
   G1YoungCollector(GCCause::Cause gc_cause,
                    double target_pause_time_ms);
   void collect();
