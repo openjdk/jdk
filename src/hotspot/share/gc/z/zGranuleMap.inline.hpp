@@ -56,19 +56,20 @@ inline size_t ZGranuleMap<T>::index_for_offset(zoffset offset) const {
 
 template <typename T>
 inline T ZGranuleMap<T>::at(size_t index) const {
-  return _map[index];
+  assert(index < _size, "Invalid index");
+  return Atomic::load(_map + index);
 }
 
 template <typename T>
 inline T ZGranuleMap<T>::get(zoffset offset) const {
   const size_t index = index_for_offset(offset);
-  return _map[index];
+  return at(index);
 }
 
 template <typename T>
 inline void ZGranuleMap<T>::put(zoffset offset, T value) {
   const size_t index = index_for_offset(offset);
-  _map[index] = value;
+  Atomic::store(_map + index, value);
 }
 
 template <typename T>
@@ -78,7 +79,7 @@ inline void ZGranuleMap<T>::put(zoffset offset, size_t size, T value) {
   const size_t start_index = index_for_offset(offset);
   const size_t end_index = start_index + (size >> ZGranuleSizeShift);
   for (size_t index = start_index; index < end_index; index++) {
-    _map[index] = value;
+    Atomic::store(_map + index, value);
   }
 }
 
