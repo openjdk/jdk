@@ -927,7 +927,7 @@ void ShenandoahHeap::retire_plab(PLAB* plab) {
     size_t waste = plab->waste();
     HeapWord* top = plab->top();
     plab->retire();
-    if (top != NULL && plab->waste() > waste) {
+    if (top != NULL && plab->waste() > waste && is_in_old(top)) {
       // If retiring the plab created a filler object, then we
       // need to register it with our card scanner so it can
       // safely walk the region backing the plab.
