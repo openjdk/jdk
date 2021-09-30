@@ -64,6 +64,8 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     private int iterCount;
     private byte[] key;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable;
+                                // see writeReplace method
     private Mac prf;
 
     private static byte[] getPasswordBytes(char[] passwd) {

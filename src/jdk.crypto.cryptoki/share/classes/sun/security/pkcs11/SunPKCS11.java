@@ -66,25 +66,32 @@ public final class SunPKCS11 extends AuthProvider {
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
     // the PKCS11 object through which we make the native calls
+    @SuppressWarnings("serial") // Type of field is not Serializable;
+                                // see writeReplace
     final PKCS11 p11;
 
     // configuration information
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final Config config;
 
     // id of the PKCS#11 slot we are using
     final long slotID;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private CallbackHandler pHandler;
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final Object LOCK_HANDLER = new Object();
 
     final boolean removable;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final Secmod.Module nssModule;
 
     final boolean nssUseSecmodTrust;
 
     private volatile Token token;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private TokenPoller poller;
 
     static NativeResourceCleaner cleaner;
