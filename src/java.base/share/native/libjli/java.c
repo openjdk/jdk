@@ -53,6 +53,7 @@
 
 #include "java.h"
 #include "jni.h"
+#include <string.h>
 
 /*
  * A NOTE TO DEVELOPERS: For performance reasons it is important that
@@ -1428,6 +1429,36 @@ ParseArguments(int *pargc, char ***pargv,
     return JNI_TRUE;
 }
 
+#define FILE_ENCODING "-Dfile.encoding="
+static char* prgnames[] = {
+    "java",
+    "javaw",
+    NULL
+};
+static void
+AddFileEncoding()
+{
+    size_t felen = strlen(FILE_ENCODING);
+    int i = 0;
+    int flg = 0;
+    for (i = 0; prgnames[i] != NULL; i++) {
+        if (strcmp(_program_name, prgnames[i]) == 0) {
+            flg = 1;
+            break;
+        }
+    }
+    if (flg == 0) {
+        for (i = 0; i < numOptions; i++) {
+            if (strncmp(options[i].optionString, FILE_ENCODING, felen) == 0) {
+                break;
+            }
+        }
+        if (i == numOptions) {
+            AddOption(FILE_ENCODING "COMPAT", NULL);
+        }
+    }
+}
+
 /*
  * Initializes the Java Virtual Machine. Also frees options array when
  * finished.
@@ -1438,6 +1469,7 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
     JavaVMInitArgs args;
     jint r;
 
+    AddFileEncoding();
     memset(&args, 0, sizeof(args));
     args.version  = JNI_VERSION_1_2;
     args.nOptions = numOptions;
