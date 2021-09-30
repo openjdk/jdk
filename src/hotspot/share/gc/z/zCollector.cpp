@@ -426,7 +426,6 @@ void ZMinorCollector::relocate() {
 
 void ZMinorCollector::promote_flip(ZPage* old_page, ZPage* new_page) {
   _page_table->replace(old_page, new_page);
-  _relocation_set.register_promote_flip_page(old_page);
 
   ZHeap::heap()->young_generation()->decrease_used(old_page->size());
   ZHeap::heap()->old_generation()->increase_used(old_page->size());
@@ -434,10 +433,17 @@ void ZMinorCollector::promote_flip(ZPage* old_page, ZPage* new_page) {
 
 void ZMinorCollector::promote_reloc(ZPage* old_page, ZPage* new_page) {
   _page_table->replace(old_page, new_page);
-  _relocation_set.register_promote_reloc_page(old_page);
 
   ZHeap::heap()->young_generation()->decrease_used(old_page->size());
   ZHeap::heap()->old_generation()->increase_used(old_page->size());
+}
+
+void ZMinorCollector::register_promote_flipped(const ZArray<ZPage*>& pages) {
+  _relocation_set.register_promote_flipped(pages);
+}
+
+void ZMinorCollector::register_promote_relocated(ZPage* page) {
+  _relocation_set.register_promote_relocated(page);
 }
 
 GCTracer* ZMinorCollector::tracer() {

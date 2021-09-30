@@ -120,8 +120,8 @@ ZRelocationSet::ZRelocationSet(ZCollector* collector) :
     _forwardings(NULL),
     _nforwardings(0),
     _promotion_lock(),
-    _promote_flip_pages(),
-    _promote_reloc_pages() {}
+    _promote_flipped_pages(),
+    _promote_relocated_pages() {}
 
 ZWorkers* ZRelocationSet::workers() const {
   return _collector->workers();
@@ -131,12 +131,12 @@ ZCollector* ZRelocationSet::collector() const {
   return _collector;
 }
 
-ZArray<ZPage*>* ZRelocationSet::promote_flip_pages() {
-  return &_promote_flip_pages;
+ZArray<ZPage*>* ZRelocationSet::promote_flipped_pages() {
+  return &_promote_flipped_pages;
 }
 
-ZArray<ZPage*>* ZRelocationSet::promote_reloc_pages() {
-  return &_promote_reloc_pages;
+ZArray<ZPage*>* ZRelocationSet::promote_relocated_pages() {
+  return &_promote_relocated_pages;
 }
 
 void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
@@ -168,18 +168,20 @@ void ZRelocationSet::reset(ZPageAllocator* page_allocator) {
 
   _nforwardings = 0;
 
-  destroy_and_clear(page_allocator, &_promote_reloc_pages);
-  destroy_and_clear(page_allocator, &_promote_flip_pages);
+  destroy_and_clear(page_allocator, &_promote_relocated_pages);
+  destroy_and_clear(page_allocator, &_promote_flipped_pages);
 }
 
-void ZRelocationSet::register_promote_reloc_page(ZPage* page) {
+void ZRelocationSet::register_promote_flipped(const ZArray<ZPage*>& pages) {
   ZLocker<ZLock> locker(&_promotion_lock);
-  assert(!_promote_reloc_pages.contains(page), "no duplicates allowed");
-  _promote_reloc_pages.append(page);
+  for (ZPage* page : pages) {
+    assert(!_promote_flipped_pages.contains(page), "no duplicates allowed");
+    _promote_flipped_pages.append(page);
+  }
 }
 
-void ZRelocationSet::register_promote_flip_page(ZPage* page) {
+void ZRelocationSet::register_promote_relocated(ZPage* page) {
   ZLocker<ZLock> locker(&_promotion_lock);
-  assert(!_promote_flip_pages.contains(page), "no duplicates allowed");
-  _promote_flip_pages.append(page);
+  assert(!_promote_relocated_pages.contains(page), "no duplicates allowed");
+  _promote_relocated_pages.append(page);
 }

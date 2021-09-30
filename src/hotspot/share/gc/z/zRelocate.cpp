@@ -671,6 +671,7 @@ private:
     if (promotion) {
       // Register the the promotion
       ZHeap::heap()->minor_collector()->promote_reloc(prev_page, new_page);
+      ZHeap::heap()->minor_collector()->register_promote_relocated(prev_page);
     }
 
     return new_page;
@@ -927,7 +928,7 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
 
   if (relocation_set->collector()->is_minor()) {
     ZStatTimerMinor timer(ZSubPhaseConcurrentMinorRelocateRemsetFlipPagePromoted);
-    ZRelocateAddRemsetForInPlacePromoted task(relocation_set->promote_flip_pages());
+    ZRelocateAddRemsetForInPlacePromoted task(relocation_set->promote_flipped_pages());
     workers()->run(&task);
   }
 
@@ -949,8 +950,11 @@ public:
       ZTask("ZPromotePagesTask"),
       _iter(pages) {}
 
+
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
+
+    ZArray<ZPage*> promoted_pages;
 
     const bool promote_all = ZCollectedHeap::heap()->driver_major()->promote_all();
 
@@ -972,10 +976,14 @@ public:
 
       if (promotion) {
         ZHeap::heap()->minor_collector()->promote_flip(prev_page, new_page);
+        // Defer promoted page registration times the lock is taken
+        promoted_pages.push(prev_page);
       }
 
       SuspendibleThreadSet::yield();
     }
+
+    ZHeap::heap()->minor_collector()->register_promote_flipped(promoted_pages);
   }
 };
 
