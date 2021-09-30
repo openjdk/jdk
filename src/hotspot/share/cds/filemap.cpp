@@ -1210,6 +1210,7 @@ bool FileMapInfo::init_from_file(int fd) {
     n = os::read(fd, (void*)_header, size);
     if (n != (size_t)size) {
       fail_continue("Failed to read file header from the top archive file\n");
+      return false;
     }
   }
 
