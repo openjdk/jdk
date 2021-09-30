@@ -1207,7 +1207,8 @@ bool FileMapInfo::init_from_file(int fd) {
     os::free(_header);
     _header = (FileMapHeader*)os::malloc(size, mtInternal);
     lseek(fd, 0, SEEK_SET); // reset to begin of the archive
-    if (os::read(fd, (void*)_header, size) != size) {
+    n = os::read(fd, (void*)_header, size);
+    if (n != (size_t)size) {
       fail_continue("Failed to read file header from the top archive file\n");
     }
   }
