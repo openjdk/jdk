@@ -1134,8 +1134,15 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
   }
 }
 
-// Walk the given discovered ref list, and remove all reference objects
-// whose referents are still alive or NULL.
+// Walk the given discovered ref list, and remove all reference objects whose
+// referents are still alive or NULL. NOTE: When we are precleaning the
+// ref lists, we do not disable refs discovery to honor the correct semantics of
+// java.lang.Reference. Therefore, as we iterate over the discovered list (DL)
+// and drop elements from it, newly discovered refs can be discovered and added
+// to the DL. Because precleaning is implemented single-threaded today, for
+// each per-thread DL, the insertion of refs (calling `complete_gc`) happens
+// after the iteration. The clear separation means no special synchronization
+// is needed.
 bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
                                                      BoolObjectClosure* is_alive,
                                                      OopClosure*        keep_alive,
