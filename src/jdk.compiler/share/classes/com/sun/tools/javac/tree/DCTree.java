@@ -174,7 +174,8 @@ public abstract class DCTree implements DocTree {
                 return ident.pos + ident.name.length();
             }
 
-            case AUTHOR, DEPRECATED, HIDDEN, PARAM, RETURN, SEE, SERIAL, SERIAL_DATA, SERIAL_FIELD, SINCE, THROWS, UNKNOWN_BLOCK_TAG, VERSION -> {
+            case AUTHOR, DEPRECATED, HIDDEN, PARAM, PROVIDES, RETURN, SEE, SERIAL, SERIAL_DATA, SERIAL_FIELD, SINCE,
+                    THROWS, UNKNOWN_BLOCK_TAG, USES, VERSION -> {
                 DCTree last = getLastChild();
 
                 if (last != null) {
@@ -182,9 +183,8 @@ public abstract class DCTree implements DocTree {
                     return last.getEndPosition() + correction;
                 }
 
-                int pos = this.pos;
                 String name = ((BlockTagTree) this).getTagName();
-                return pos + name.length() + 1;
+                return this.pos + name.length() + 1;
             }
 
             case ENTITY -> {

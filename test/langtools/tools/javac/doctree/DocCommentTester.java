@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Name;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
@@ -108,7 +109,8 @@ public class DocCommentTester {
             new ASTChecker(this, trees),
             new PosChecker(this, trees),
             new PrettyChecker(this, trees),
-            new RangeChecker(this, trees)
+            new RangeChecker(this, trees),
+            new StartEndPosChecker(this, trees)
         };
 
         DeclScanner d = new DeclScanner() {
@@ -996,6 +998,79 @@ public class DocCommentTester {
             error("Checking " + name + " for " + tree.getKind() + " `" + t + "`;  first:" + first + ", second:" + second);
 
         }
+    }
+
+    static class StartEndPosChecker extends Checker {
+
+        StartEndPosChecker(DocCommentTester test, DocTrees docTrees) {
+            test.super(docTrees);
+        }
+
+        @Override
+        void check(TreePath path, Name name) throws Exception {
+            final DCDocComment dc = (DCDocComment) trees.getDocCommentTree(path);
+            JavaFileObject jfo = path.getCompilationUnit().getSourceFile();
+            CharSequence content = jfo.getCharContent(true);
+
+            DocTreeScanner<Void, Void> scanner = new DocTreeScanner<>() {
+                @Override
+                public Void scan(DocTree node, Void ignore) {
+                    if (node instanceof DCTree dcTree) {
+                        int start = dc.getSourcePosition(dc.getStartPosition());
+                        int end = dc.getSourcePosition(dcTree.getEndPosition());
+
+                        try {
+                            StringWriter out = new StringWriter();
+                            DocPretty dp = new DocPretty(out);
+                            dp.print(trees.getDocCommentTree(path));
+                            String pretty = out.toString();
+
+                            if (pretty.isEmpty()) {
+                                if (start != end) {
+                                    error("Error: expected content is empty, but actual content is not: "
+                                            + dcTree.getKind() + " [" + start + "," + end + ")"
+                                            + ": \"" + content.subSequence(start, end) + "\"" );
+                                }
+                            } else {
+                                check(dcTree, "start", content, start, pretty, 0);
+                                check(dcTree, "end", content, end - 1, pretty, pretty.length() - 1);
+                            }
+
+                        } catch (IOException e) {
+                            error("Error generating Pretty for tree at position " + start + "; " + e);
+                        }
+                    }
+                    return null;
+                }
+            };
+
+            scanner.scan(dc, null);
+        }
+
+        void check(DCTree tree, String label, CharSequence content, int contentIndex, String pretty, int prettyIndex) {
+            if (contentIndex == Diagnostic.NOPOS) {
+                error("NOPOS for content " + label + ": " + tree.getKind() + " >>" + abbrev(pretty, MAX) + "<<");
+            }
+
+            char contentChar = content.charAt(contentIndex);
+            char prettyChar = pretty.charAt(prettyIndex);
+            if (contentChar != prettyChar) {
+                error ("Mismatch for content " + label + ": "
+                        + "expect: '" + prettyChar + "', found: '" + contentChar + "' at position " + contentIndex + ": "
+                        + tree.getKind() + " >>" + abbrev(pretty, MAX) + "<<");
+            }
+        }
+
+        static final int MAX = 64;
+
+        static String abbrev(String s, int max) {
+            s = s.replaceAll("\\s+", " ");
+            if (s.length() > max) {
+                s = s.substring(0, max / 2 - 2) + " ... " + s.substring(max / 2 + 2);
+            }
+            return s;
+        }
+
     }
 }
 
