@@ -36,7 +36,7 @@ import java.awt.Point;
  * @library /lib/client
  * @build ExtendedRobot
  * @author Sergey Bylokhov
- * @run main/othervm -Dsun.java2d.uiScale=1 PaintNativeOnUpdate
+ * @run main PaintNativeOnUpdate
  */
 public final class PaintNativeOnUpdate extends Label {
 

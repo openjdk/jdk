@@ -37,7 +37,7 @@ import java.awt.Window;
  * @author Sergey Bylokhov
  * @library /lib/client
  * @build ExtendedRobot
- * @run main/othervm -Dsun.java2d.uiScale=1 BackgroundIsNotUpdated
+ * @run main BackgroundIsNotUpdated
  */
 public final class BackgroundIsNotUpdated extends Window {
 

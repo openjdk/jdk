@@ -750,10 +750,18 @@ javax/swing/JButton/8151303/PressedIconTest.java 8266246 macosx-aarch64
 javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8273573 macosx-all
 
 # Several tests which fail on some hidpi systems
+java/awt/Dialog/SiblingChildOrder/SiblingChildOrderTest.java 8274106 macosx-aarch64
 java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 8274106 macosx-aarch64
+java/awt/Paint/PaintNativeOnUpdate.java 8274106 macosx-aarch64
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
+java/awt/Window/BackgroundIsNotUpdated/BackgroundIsNotUpdated.java 8274106 macosx-aarch64
+java/awt/Window/MultiWindowApp/ChildAlwaysOnTopTest.java 8274106 macosx-aarch64
+java/awt/Window/TranslucentJAppletTest/TranslucentJAppletTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
+javax/swing/JTabbedPane/TestBackgroundScrollPolicy.java 8274106 macosx-aarch64
+javax/swing/plaf/nimbus/TestNimbusBGColor.java 8274106 macosx-aarch64
+javax/swing/plaf/synth/SynthButtonUI/6276188/bug6276188.java 8274106 macosx-aarch64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all

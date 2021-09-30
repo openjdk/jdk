@@ -28,7 +28,7 @@
  *          certain scenarios
  * @bug 8021961
  * @author Semyon Sadetsky
- * @run main/othervm -Dsun.java2d.uiScale=1 ChildAlwaysOnTopTest
+ * @run main ChildAlwaysOnTopTest
  */
 
 import javax.swing.*;
