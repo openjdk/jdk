@@ -83,6 +83,7 @@ public class AcceptDropMultipleTimes {
                     new Point(FRAME_LOCATION + FRAME_SIZE / 3 * 2, FRAME_LOCATION + FRAME_SIZE / 3 * 2),
                     InputEvent.BUTTON1_MASK);
             Util.waitForIdle(r);
+            Thread.sleep(100);
         } finally {
             if (f != null) {
                 f.dispose();

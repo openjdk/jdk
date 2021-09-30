@@ -108,6 +108,7 @@ public class MissedDragExitTest {
             if (!dragExitCalled) {
                 throw new RuntimeException("Failed. Drag exit was not called" );
             }
+            Thread.sleep(100);
         } finally {
             if (f != null) {
                 f.dispose();
