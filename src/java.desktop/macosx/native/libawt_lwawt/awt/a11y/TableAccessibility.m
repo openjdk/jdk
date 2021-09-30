@@ -232,9 +232,9 @@ static jmethodID sjm_getAccessibleName = NULL;
     for (NSNumber *row in selectedRows) {
         for (NSNumber *col in selectedColumns ) {
             CellAccessibility *cell = [self accessibilityCellForColumn:[col integerValue] row:[row integerValue]];
-            if ([self isAccessibleChildSelectedFromIndex:[cell accessibilityIndex]]) {
+//            if ([self isAccessibleChildSelectedFromIndex:[cell accessibilityIndex]]) {
                 [selectedCells addObject:cell];
-            }
+//            }
         }
     }
     return [NSArray arrayWithArray:selectedCells];
