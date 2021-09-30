@@ -1177,6 +1177,10 @@ void MacroAssembler::align64() {
   align(64, (unsigned long long) pc());
 }
 
+void MacroAssembler::align32() {
+  align(32, (unsigned long long) pc());
+}
+
 void MacroAssembler::align(int modulus) {
   // 8273459: Ensure alignment is possible with current segment alignment
   assert(modulus <= CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
@@ -6905,7 +6909,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   // 128 bits per each of 4 parallel streams.
   movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 32));
 
-  align(32);
+  align32();
   BIND(L_fold_512b_loop);
   fold_128bit_crc32(xmm1, xmm0, xmm5, buf,  0);
   fold_128bit_crc32(xmm2, xmm0, xmm5, buf, 16);
