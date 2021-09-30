@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -218,10 +219,10 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
   return stats;
 }
 
-void BarrierEnqueueDiscoveredFieldClosure::enqueue(oop reference, oop value) {
-  HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(reference,
-                                            java_lang_ref_Reference::discovered_offset(),
-                                            value);
+void BarrierEnqueueDiscoveredFieldClosure::enqueue(HeapWord* discovered_field_addr, oop value) {
+  assert(Universe::heap()->is_in(discovered_field_addr), PTR_FORMAT " not in heap", p2i(discovered_field_addr));
+  HeapAccess<AS_NO_KEEPALIVE>::oop_store(discovered_field_addr,
+                                         value);
 }
 
 void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
@@ -243,7 +244,7 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
 
 void DiscoveredListIterator::remove() {
   assert(oopDesc::is_oop(_current_discovered), "Dropping a bad reference");
-  RawAccess<>::oop_store(_current_discovered_addr, oop(NULL));
+  _enqueue->enqueue(_current_discovered_addr, oop(nullptr));
 
   // First _prev_next ref actually points into DiscoveredList (gross).
   oop new_next;
@@ -258,7 +259,11 @@ void DiscoveredListIterator::remove() {
   // Remove Reference object from discovered list. Note that G1 does not need a
   // pre-barrier here because we know the Reference has already been found/marked,
   // that's how it ended up in the discovered list in the first place.
-  RawAccess<>::oop_store(_prev_discovered_addr, new_next);
+  if (_prev_discovered_addr != _refs_list.adr_head()) {
+    _enqueue->enqueue(_prev_discovered_addr, new_next);
+  } else {
+    RawAccess<>::oop_store(_prev_discovered_addr, new_next);
+  }
   _removed++;
   _refs_list.dec_length(1);
 }
@@ -277,7 +282,7 @@ void DiscoveredListIterator::clear_referent() {
 }
 
 void DiscoveredListIterator::enqueue() {
-  _enqueue->enqueue(_current_discovered, _next_discovered);
+  _enqueue->enqueue(_current_discovered_addr, _next_discovered);
 }
 
 void DiscoveredListIterator::complete_enqueue() {
@@ -286,7 +291,7 @@ void DiscoveredListIterator::complete_enqueue() {
     // Swap refs_list into pending list and set obj's
     // discovered to what we read from the pending list.
     oop old = Universe::swap_reference_pending_list(_refs_list.head());
-    _enqueue->enqueue(_prev_discovered, old);
+    _enqueue->enqueue(java_lang_ref_Reference::discovered_addr_raw(_prev_discovered), old);
   }
 }
 

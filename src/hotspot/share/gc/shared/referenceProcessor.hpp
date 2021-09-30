@@ -48,14 +48,14 @@ class RefProcProxyTask;
 class EnqueueDiscoveredFieldClosure {
 public:
   // For the given j.l.ref.Reference reference, set the discovered field to value.
-  virtual void enqueue(oop reference, oop value) = 0;
+  virtual void enqueue(HeapWord* discovered_field_addr, oop value) = 0;
 };
 
 // EnqueueDiscoveredFieldClosure that executes the default barrier on the discovered
-// field of the j.l.ref.Reference reference with the given value.
+// field of the j.l.ref.Reference with the given value.
 class BarrierEnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
 public:
-  void enqueue(oop reference, oop value) override;
+  void enqueue(HeapWord* discovered_field_addr, oop value) override;
 };
 
 // List of discovered references.
