@@ -51,44 +51,48 @@ public final class TestRecordedFrameType {
 
     public static void main(String[] args) throws Exception {
         WhiteBox WB = WhiteBox.getWhiteBox();
+        String directive =
+            """
+            [
+              {
+                match: "jdk/jfr/api/consumer/TestRecordedFrameType.interpreted()",
+                Exclude: true,
+              },
+              {
+                match: "jdk/jfr/api/consumer/TestRecordedFrameType.compiled()",
+                BackgroundCompilation: false,
+              },
+            ]
+            """;
+        WB.addCompilerDirective(directive);
+        while (true) { // Retry if method is being deoptimized
+            int count = 0;
+            try (Recording recording = new Recording()) {
+                recording.start();
+                Method mtd = TestRecordedFrameType.class.getMethod("compiled", new Class[0]);
+                if (!WB.enqueueMethodForCompilation(mtd, 1)) {
+                    throw new Exception("Could not enqueue method for CompLevel_simple");
+                }
+                Utils.waitForCondition(() -> WB.isMethodCompiled(mtd));
 
-        try (Recording recording = new Recording()) {
-            recording.start();
+                interpreted();
+                compiled();
 
-            String directive =
-                """
-                [
-                  {
-                    match: "jdk/jfr/api/consumer/TestRecordedFrameType.interpreted()",
-                    Exclude: true,
-                  },
-                  {
-                    match: "jdk/jfr/api/consumer/TestRecordedFrameType.compiled()",
-                    BackgroundCompilation: false,
-                  },
-                ]
-                """;
-            WB.addCompilerDirective(directive);
-            Method mtd = TestRecordedFrameType.class.getMethod("compiled", new Class[0]);
-            if (!WB.enqueueMethodForCompilation(mtd, 1)) {
-                throw new Exception("Could not enqueue method for CompLevel_simple");
+                List<RecordedEvent> events = Events.fromRecording(recording);
+
+                RecordedFrame interpreted = findFrame(events, "interpreted");
+                System.out.println(interpreted);
+                String iType = interpreted.getType();
+
+                RecordedFrame compiled = findFrame(events, "compiled");
+                System.out.println(compiled);
+                String cType = compiled.getType(); // Can be "JIT compiled" or "Inlined"
+                if (iType.equals("Interpreted") && !cType.equals("Interpreted"))  {
+                    return; // OK
+                }
+                count++;
+                System.out.println("Incorrect frame type. Retry " + count);
             }
-            Utils.waitForCondition(() -> WB.isMethodCompiled(mtd));
-
-            interpreted();
-            compiled();
-
-            List<RecordedEvent> events = Events.fromRecording(recording);
-
-            RecordedFrame interpreted = findFrame(events, "interpreted");
-            System.out.println(interpreted);
-            String iType = interpreted.getType();
-            Asserts.assertEquals(iType, "Interpreted");
-
-            RecordedFrame compiled = findFrame(events, "compiled");
-            System.out.println(compiled);
-            String cType = compiled.getType();
-            Asserts.assertNotEquals(cType, "Interpreted"); // "JIT compiled" or "Inlined"
         }
     }
 
@@ -101,7 +105,7 @@ public final class TestRecordedFrameType {
                 }
             }
         }
-        throw new Exception("Could not find frame with method named " + methodName);
+        throw new Exception("Could not find frame with method named: " + methodName);
     }
 
     public static void interpreted() {

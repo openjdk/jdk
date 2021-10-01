@@ -34,6 +34,7 @@ class G1CollectedHeap;
 class G1EvacFailureRegions;
 class G1EvacInfo;
 class G1ParScanThreadStateSet;
+class G1RedirtyCardsQueueSet;
 
 // First set of post evacuate collection set tasks containing ("s" means serial):
 // - Merge PSS (s)

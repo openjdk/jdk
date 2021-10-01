@@ -24,12 +24,15 @@ package org.openjdk.bench.java.nio;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -45,8 +48,11 @@ import java.util.concurrent.TimeUnit;
  * char and byte arrays.
  */
 @BenchmarkMode(Mode.AverageTime)
+@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
+@Fork(3)
 public class CharsetEncodeDecode {
 
     private byte[] BYTES;
@@ -55,7 +61,7 @@ public class CharsetEncodeDecode {
     private CharsetEncoder encoder;
     private CharsetDecoder decoder;
 
-    @Param({"BIG5", "ISO-8859-15", "ASCII", "UTF-16"})
+    @Param({"UTF-8", "BIG5", "ISO-8859-15", "ASCII", "UTF-16"})
     private String type;
 
     @Param("16384")

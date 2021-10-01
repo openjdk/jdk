@@ -11770,14 +11770,32 @@ instruct string_inflate_evex(Universe dummy, rsi_RegP src, rdi_RegP dst, rdx_Reg
 instruct encode_iso_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
                           legRegD tmp1, legRegD tmp2, legRegD tmp3, legRegD tmp4,
                           rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
 
-  format %{ "Encode array $src,$dst,$len -> $result    // KILL RCX, RDX, $tmp1, $tmp2, $tmp3, $tmp4, RSI, RDI " %}
+  format %{ "Encode iso array $src,$dst,$len -> $result    // KILL RCX, RDX, $tmp1, $tmp2, $tmp3, $tmp4, RSI, RDI " %}
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
                         $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
-                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register, false);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
+                            legRegD tmp1, legRegD tmp2, legRegD tmp3, legRegD tmp4,
+                            rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
+
+  format %{ "Encode ascii array $src,$dst,$len -> $result    // KILL RCX, RDX, $tmp1, $tmp2, $tmp3, $tmp4, RSI, RDI " %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register, true);
   %}
   ins_pipe( pipe_slow );
 %}

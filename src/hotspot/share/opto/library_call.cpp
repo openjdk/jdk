@@ -591,7 +591,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
-    return inline_encodeISOArray();
+    return inline_encodeISOArray(false);
+  case vmIntrinsics::_encodeAsciiArray:
+    return inline_encodeISOArray(true);
 
   case vmIntrinsics::_updateCRC32:
     return inline_updateCRC32();
@@ -4882,8 +4884,8 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
 }
 
 //-------------inline_encodeISOArray-----------------------------------
-// encode char[] to byte[] in ISO_8859_1
-bool LibraryCallKit::inline_encodeISOArray() {
+// encode char[] to byte[] in ISO_8859_1 or ASCII
+bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   assert(callee()->signature()->size() == 5, "encodeISOArray has 5 parameters");
   // no receiver since it is static method
   Node *src         = argument(0);
@@ -4918,7 +4920,7 @@ bool LibraryCallKit::inline_encodeISOArray() {
   // 'dst_start' points to dst array + scaled offset
 
   const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length);
+  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
   set_memory(res_mem, mtype);
@@ -6203,7 +6205,7 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   if (objSessionK == NULL) {
     return (Node *) NULL;
   }
-  Node* objAESCryptKey = load_array_element(control(), objSessionK, intcon(0), TypeAryPtr::OOPS);
+  Node* objAESCryptKey = load_array_element(objSessionK, intcon(0), TypeAryPtr::OOPS, /* set_ctrl */ true);
 #else
   Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I");
 #endif // PPC64

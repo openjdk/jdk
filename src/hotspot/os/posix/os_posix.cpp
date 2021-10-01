@@ -732,6 +732,10 @@ void os::exit(int num) {
   ::exit(num);
 }
 
+void os::_exit(int num) {
+  ::_exit(num);
+}
+
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
 // which is used to find statically linked in agents.
 // Parameters:
@@ -1946,7 +1950,11 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
   // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
   // Otherwise leave it up to the caller.
   AIX_ONLY(prefer_vfork = true;)
+  #ifdef __APPLE__
+  pid = ::fork();
+  #else
   pid = prefer_vfork ? ::vfork() : ::fork();
+  #endif
 
   if (pid < 0) {
     // fork failed

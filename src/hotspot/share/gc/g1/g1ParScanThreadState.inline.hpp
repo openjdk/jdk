@@ -97,34 +97,19 @@ G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const Heap
 }
 
 template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj) {
-  assert(obj != nullptr, "Must be");
+  assert(obj != NULL, "Must be");
   if (HeapRegion::is_in_same_region(p, obj)) {
     return;
   }
-  G1HeapRegionAttr from_attr = _g1h->region_attr(p);
-  // If this is a reference from (current) survivor regions, we do not need
-  // to track references from it.
-  if (from_attr.is_new_survivor()) {
-    return;
+  HeapRegion* from = _g1h->heap_region_containing(p);
+  if (!from->is_young()) {
+    enqueue_card_if_tracked(_g1h->region_attr(obj), p, obj);
   }
-  G1HeapRegionAttr dest_attr = _g1h->region_attr(obj);
-  // References to the current collection set are references to objects that failed
-  // evacuation. Currently these regions are always relabelled as old without
-  // remembered sets, so skip them.
-  assert(dest_attr.is_in_cset() == (obj->forwardee() == obj),
-         "Only evac-failed objects must be in the collection set here but " PTR_FORMAT " is not", p2i(obj));
-  if (dest_attr.is_in_cset()) {
-    return;
-  }
-  enqueue_card_if_tracked(dest_attr, p, obj);
 }
 
 template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
   assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
-  assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-newly allocated survivor references already.");
-  // We relabel all regions that failed evacuation as old gen without remembered,
-  // and so pre-filter them out in the caller.
-  assert(!_g1h->heap_region_containing(o)->in_collection_set(), "Should not try to enqueue reference into collection set region");
+  assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
 
 #ifdef ASSERT
   HeapRegion* const hr_obj = _g1h->heap_region_containing(o);

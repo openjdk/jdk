@@ -608,12 +608,12 @@ public class Throwable implements Serializable {
      *
      * <pre>
      * Exception in thread "main" java.lang.Exception: Something happened
-     *  at Foo.bar(Foo.java:10)
-     *  at Foo.main(Foo.java:5)
-     *  Suppressed: Resource$CloseFailException: Resource ID = 0
-     *          at Resource.close(Resource.java:26)
-     *          at Foo.bar(Foo.java:9)
-     *          ... 1 more
+     *         at Foo.bar(Foo.java:10)
+     *         at Foo.main(Foo.java:5)
+     *         Suppressed: Resource$CloseFailException: Resource ID = 0
+     *                 at Resource.close(Resource.java:26)
+     *                 at Foo.bar(Foo.java:9)
+     *                 ... 1 more
      * </pre>
      * Note that the "... n more" notation is used on suppressed exceptions
      * just as it is used on causes. Unlike causes, suppressed exceptions are
@@ -623,26 +623,26 @@ public class Throwable implements Serializable {
      * exceptions:
      * <pre>
      * Exception in thread "main" java.lang.Exception: Main block
-     *  at Foo3.main(Foo3.java:7)
-     *  Suppressed: Resource$CloseFailException: Resource ID = 2
-     *          at Resource.close(Resource.java:26)
-     *          at Foo3.main(Foo3.java:5)
-     *  Suppressed: Resource$CloseFailException: Resource ID = 1
-     *          at Resource.close(Resource.java:26)
-     *          at Foo3.main(Foo3.java:5)
+     *         at Foo3.main(Foo3.java:7)
+     *         Suppressed: Resource$CloseFailException: Resource ID = 2
+     *                 at Resource.close(Resource.java:26)
+     *                 at Foo3.main(Foo3.java:5)
+     *         Suppressed: Resource$CloseFailException: Resource ID = 1
+     *                 at Resource.close(Resource.java:26)
+     *                 at Foo3.main(Foo3.java:5)
      * Caused by: java.lang.Exception: I did it
-     *  at Foo3.main(Foo3.java:8)
+     *         at Foo3.main(Foo3.java:8)
      * </pre>
      * Likewise, a suppressed exception can have a cause:
      * <pre>
      * Exception in thread "main" java.lang.Exception: Main block
-     *  at Foo4.main(Foo4.java:6)
-     *  Suppressed: Resource2$CloseFailException: Resource ID = 1
-     *          at Resource2.close(Resource2.java:20)
-     *          at Foo4.main(Foo4.java:5)
-     *  Caused by: java.lang.Exception: Rats, you caught me
-     *          at Resource2$CloseFailException.&lt;init&gt;(Resource2.java:45)
-     *          ... 2 more
+     *         at Foo4.main(Foo4.java:6)
+     *         Suppressed: Resource2$CloseFailException: Resource ID = 1
+     *                 at Resource2.close(Resource2.java:20)
+     *                 at Foo4.main(Foo4.java:5)
+     *         Caused by: java.lang.Exception: Rats, you caught me
+     *                 at Resource2$CloseFailException.&lt;init&gt;(Resource2.java:45)
+     *                 ... 2 more
      * </pre>
      */
     public void printStackTrace() {
