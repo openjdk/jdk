@@ -50,8 +50,8 @@ import jdk.test.lib.RandomFactory;
 import org.testng.Assert;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -59,7 +59,10 @@ public class ReadXBytes {
 
     private static final Random RAND = RandomFactory.getRandom();
 
+    // The largest source from which to read all bytes
     private static final int  BIG_LENGTH = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
+
+    // A length greater than a 32-bit integer can accommodate
     private static final long HUGE_LENGTH = Integer.MAX_VALUE + 27L;
 
     // --- Framework ---
@@ -177,15 +180,12 @@ public class ReadXBytes {
     }
 
     // Verifies readAllBytes() throws OOME if the source is too large
-    @Test(expectedExceptions = OutOfMemoryError.class)
+    @Test
     public void readAllBytesFromBeyondMaxLengthFile() throws IOException {
         dataTest(HUGE_LENGTH, (length) -> createFile(length),
             (length, cis, fis) -> {
-                byte[] cisBytes = cis.readAllBytes();
-                assertNotNull(cisBytes);
-                assertEquals(cisBytes.length, (long)length);
-                byte[] fisBytes = fis.readAllBytes();
-                assertEquals(cisBytes, fisBytes);
+                assertThrows(OutOfMemoryError.class,
+                             () -> {cis.readAllBytes();});
             }
         );
     }
@@ -222,13 +222,12 @@ public class ReadXBytes {
     // --- readNBytes tests ---
 
     // Verifies readNBytes() behavior for a negative length
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void readNBytesWithNegativeLength() throws IOException {
         edgeTest(0L, (length) -> createFile(length),
             (length, cis) -> {
-                byte[] bytes = cis.readNBytes(-1);
-                assertNotNull(bytes);
-                assertEquals(bytes.length, (long)length);
+                assertThrows(IllegalArgumentException.class,
+                             () -> {cis.readNBytes(-1);});
             }
         );
     }
