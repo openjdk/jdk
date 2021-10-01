@@ -187,8 +187,7 @@ public class SignatureUtil {
     // for signing with the specified key and params (may be null)
     public static void initSignWithParam(Signature s, PrivateKey key,
             AlgorithmParameterSpec params, SecureRandom sr)
-            throws ProviderException, InvalidAlgorithmParameterException,
-            InvalidKeyException {
+            throws InvalidAlgorithmParameterException, InvalidKeyException {
         SharedSecrets.getJavaSecuritySignatureAccess().initSign(s, key, params, sr);
     }
 
