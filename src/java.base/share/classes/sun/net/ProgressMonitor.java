@@ -68,7 +68,7 @@ public class ProgressMonitor {
             synchronized (progressSourceList) {
                 for (ProgressSource pi : progressSourceList) {
                     // Clone ProgressSource and add to snapshot
-                    snapshot.add((ProgressSource) pi.clone());
+                    snapshot.add((ProgressSource)pi.clone());
                 }
             }
         } catch (CloneNotSupportedException e) {
@@ -161,7 +161,7 @@ public class ProgressMonitor {
     public void updateProgress(ProgressSource pi) {
 
         synchronized (progressSourceList) {
-            if (progressSourceList.contains(pi) == false)
+            if (!progressSourceList.contains(pi))
                 return;
         }
 
