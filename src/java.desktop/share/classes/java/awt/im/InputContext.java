@@ -67,6 +67,8 @@ import sun.awt.im.InputMethodContext;
  * input contexts can still be created and used; their behavior is specified with
  * the individual methods below.
  *
+ * @implSpec the default implementation does nothing and does not throw any exceptions
+ *
  * @see java.awt.Component#getInputContext
  * @see java.awt.Component#enableInputMethods
  * @author JavaSoft Asia/Pacific
