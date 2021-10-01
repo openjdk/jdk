@@ -33,8 +33,7 @@ import java.net.URL;
  *
  * @author Stanley Man-Kit Ho
  */
-public class ProgressMonitor
-{
+public class ProgressMonitor {
     /**
      * Return default ProgressMonitor.
      */
@@ -45,7 +44,7 @@ public class ProgressMonitor
     /**
      * Change default ProgressMonitor implementation.
      */
-    public static synchronized void setDefault(ProgressMonitor m)   {
+    public static synchronized void setDefault(ProgressMonitor m) {
         if (m != null)
             pm = m;
     }
@@ -53,7 +52,7 @@ public class ProgressMonitor
     /**
      * Change progress metering policy.
      */
-    public static synchronized void setMeteringPolicy(ProgressMeteringPolicy policy)    {
+    public static synchronized void setMeteringPolicy(ProgressMeteringPolicy policy) {
         if (policy != null)
             meteringPolicy = policy;
     }
@@ -62,18 +61,17 @@ public class ProgressMonitor
     /**
      * Return a snapshot of the ProgressSource list
      */
-    public ArrayList<ProgressSource> getProgressSources()    {
+    public ArrayList<ProgressSource> getProgressSources() {
         ArrayList<ProgressSource> snapshot = new ArrayList<>();
 
         try {
-            synchronized(progressSourceList)    {
+            synchronized (progressSourceList) {
                 for (ProgressSource pi : progressSourceList) {
                     // Clone ProgressSource and add to snapshot
                     snapshot.add((ProgressSource) pi.clone());
                 }
             }
-        }
-        catch(CloneNotSupportedException e) {
+        } catch (CloneNotSupportedException e) {
             e.printStackTrace();
         }
 
@@ -83,7 +81,7 @@ public class ProgressMonitor
     /**
      * Return update notification threshold
      */
-    public synchronized int getProgressUpdateThreshold()    {
+    public synchronized int getProgressUpdateThreshold() {
         return meteringPolicy.getProgressUpdateThreshold();
     }
 
@@ -100,29 +98,28 @@ public class ProgressMonitor
      */
     public void registerSource(ProgressSource pi) {
 
-        synchronized(progressSourceList)    {
+        synchronized (progressSourceList) {
             if (progressSourceList.contains(pi))
                 return;
 
             progressSourceList.add(pi);
         }
 
-        // Notify only if there is at least one listener
-        if (progressListenerList.size() > 0)
-        {
-            // Notify progress listener if there is progress change
-            ArrayList<ProgressListener> listeners;
+        ArrayList<ProgressListener> listeners;
+        synchronized (progressListenerList) {
+            // Notify only if there is at least one listener
+            if (progressListenerList.isEmpty()) {
+                return;
+            }
 
             // Copy progress listeners to another list to avoid holding locks
-            synchronized(progressListenerList) {
-                listeners = new ArrayList<>(progressListenerList);
-            }
+            listeners = new ArrayList<>(progressListenerList);
+        }
 
-            // Fire event on each progress listener
-            for (ProgressListener pl : listeners) {
-                ProgressEvent pe = new ProgressEvent(pi, pi.getURL(), pi.getMethod(), pi.getContentType(), pi.getState(), pi.getProgress(), pi.getExpected());
-                pl.progressStart(pe);
-            }
+        // Fire event on each progress listener
+        for (ProgressListener pl : listeners) {
+            ProgressEvent pe = new ProgressEvent(pi, pi.getURL(), pi.getMethod(), pi.getContentType(), pi.getState(), pi.getProgress(), pi.getExpected());
+            pl.progressStart(pe);
         }
     }
 
@@ -131,9 +128,9 @@ public class ProgressMonitor
      */
     public void unregisterSource(ProgressSource pi) {
 
-        synchronized(progressSourceList) {
+        synchronized (progressSourceList) {
             // Return if ProgressEvent does not exist
-            if (progressSourceList.contains(pi) == false)
+            if (!progressSourceList.contains(pi))
                 return;
 
             // Close entry and remove from map
@@ -141,51 +138,48 @@ public class ProgressMonitor
             progressSourceList.remove(pi);
         }
 
-        // Notify only if there is at least one listener
-        if (progressListenerList.size() > 0)
-        {
-            // Notify progress listener if there is progress change
-            ArrayList<ProgressListener> listeners;
+        ArrayList<ProgressListener> listeners;
+        synchronized (progressListenerList) {
+            // Notify only if there is at least one listener
+            if (progressListenerList.isEmpty()) {
+                return;
+            }
 
             // Copy progress listeners to another list to avoid holding locks
-            synchronized(progressListenerList) {
-                listeners = new ArrayList<>(progressListenerList);
-            }
-
-            // Fire event on each progress listener
-            for (ProgressListener pl : listeners) {
-                ProgressEvent pe = new ProgressEvent(pi, pi.getURL(), pi.getMethod(), pi.getContentType(), pi.getState(), pi.getProgress(), pi.getExpected());
-                pl.progressFinish(pe);
-            }
+            listeners = new ArrayList<>(progressListenerList);
+        }
+        // Fire event on each progress listener
+        for (ProgressListener pl : listeners) {
+            ProgressEvent pe = new ProgressEvent(pi, pi.getURL(), pi.getMethod(), pi.getContentType(), pi.getState(), pi.getProgress(), pi.getExpected());
+            pl.progressFinish(pe);
         }
     }
 
     /**
      * Progress source is updated.
      */
-    public void updateProgress(ProgressSource pi)   {
+    public void updateProgress(ProgressSource pi) {
 
-        synchronized (progressSourceList)   {
+        synchronized (progressSourceList) {
             if (progressSourceList.contains(pi) == false)
                 return;
         }
 
-        // Notify only if there is at least one listener
-        if (progressListenerList.size() > 0)
-        {
-            // Notify progress listener if there is progress change
-            ArrayList<ProgressListener> listeners;
+        ArrayList<ProgressListener> listeners;
+        synchronized (progressListenerList) {
+            // Notify only if there is at least one listener
+            if (progressListenerList.isEmpty()) {
+                return;
+            }
 
             // Copy progress listeners to another list to avoid holding locks
-            synchronized(progressListenerList)  {
-                listeners = new ArrayList<>(progressListenerList);
-            }
+            listeners = new ArrayList<>(progressListenerList);
+        }
 
-            // Fire event on each progress listener
-            for (ProgressListener pl : listeners) {
-                ProgressEvent pe = new ProgressEvent(pi, pi.getURL(), pi.getMethod(), pi.getContentType(), pi.getState(), pi.getProgress(), pi.getExpected());
-                pl.progressUpdate(pe);
-            }
+        // Fire event on each progress listener
+        for (ProgressListener pl : listeners) {
+            ProgressEvent pe = new ProgressEvent(pi, pi.getURL(), pi.getMethod(), pi.getContentType(), pi.getState(), pi.getProgress(), pi.getExpected());
+            pl.progressUpdate(pe);
         }
     }
 
@@ -193,7 +187,7 @@ public class ProgressMonitor
      * Add progress listener in progress monitor.
      */
     public void addProgressListener(ProgressListener l) {
-        synchronized(progressListenerList) {
+        synchronized (progressListenerList) {
             progressListenerList.add(l);
         }
     }
@@ -202,7 +196,7 @@ public class ProgressMonitor
      * Remove progress listener from progress monitor.
      */
     public void removeProgressListener(ProgressListener l) {
-        synchronized(progressListenerList) {
+        synchronized (progressListenerList) {
             progressListenerList.remove(l);
         }
     }
@@ -214,22 +208,21 @@ public class ProgressMonitor
     private static ProgressMonitor pm = new ProgressMonitor();
 
     // ArrayList for outstanding progress sources
-    private final ArrayList<ProgressSource> progressSourceList = new ArrayList<ProgressSource>();
+    private final ArrayList<ProgressSource> progressSourceList = new ArrayList<>();
 
     // ArrayList for progress listeners
-    private final ArrayList<ProgressListener> progressListenerList = new ArrayList<ProgressListener>();
+    private final ArrayList<ProgressListener> progressListenerList = new ArrayList<>();
 }
 
 
 /**
  * Default progress metering policy.
  */
-class DefaultProgressMeteringPolicy implements ProgressMeteringPolicy  {
+class DefaultProgressMeteringPolicy implements ProgressMeteringPolicy {
     /**
      * Return true if metering should be turned on for a particular network input stream.
      */
-    public boolean shouldMeterInput(URL url, String method)
-    {
+    public boolean shouldMeterInput(URL url, String method) {
         // By default, no URL input stream is metered for
         // performance reason.
         return false;
