@@ -125,6 +125,8 @@ public class CoverageTest {
 
         counts.forEach((k, v) -> System.err.printf("%20s: %5d%n", k, v));
 
+        // Note: DOC_TYPE cannot appear in any doc comment in a *.java file,
+        // and OTHER is a special value that never appears in any standard DocTree node.
         List<DocTree.Kind> notFound = Stream.of(DocTree.Kind.values())
                 .filter(k -> switch (k) { case DOC_TYPE, OTHER -> false; default -> true; })
                 .filter(k -> !counts.containsKey(k))

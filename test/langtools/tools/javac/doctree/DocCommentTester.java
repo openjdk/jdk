@@ -1000,6 +1000,14 @@ public class DocCommentTester {
         }
     }
 
+    /**
+     * Verifies that the start and end positions of all nodes in a DocCommentTree point to the
+     * expected characters in the source code.
+     *
+     * The expected characters are derived from the beginning and end of the DocPretty output
+     * for each node. Note that while the whitespace within the DocPretty output may not exactly
+     * match the original source code, the first and last characters should match.
+     */
     static class StartEndPosChecker extends Checker {
 
         StartEndPosChecker(DocCommentTester test, DocTrees docTrees) {
@@ -1037,7 +1045,7 @@ public class DocCommentTester {
                             }
 
                         } catch (IOException e) {
-                            error("Error generating Pretty for tree at position " + start + "; " + e);
+                            error("Error generating DocPretty for tree at position " + start + "; " + e);
                         }
                     }
                     return null;
