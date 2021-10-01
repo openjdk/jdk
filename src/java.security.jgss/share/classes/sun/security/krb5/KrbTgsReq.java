@@ -318,7 +318,7 @@ public class KrbTgsReq {
         byte[] temp = reqBody.asn1Encode(Krb5.KRB_TGS_REQ);
         // if the checksum type is one of the keyed checksum types,
         // use session key.
-        Checksum cksum  = new Checksum(Checksum.CKSUMTYPE_DEFAULT, temp, key,
+        Checksum cksum  = new Checksum(-1, temp, key,
                 KeyUsage.KU_PA_TGS_REQ_CKSUM);
 
         // Usage will be KeyUsage.KU_PA_TGS_REQ_AUTHENTICATOR

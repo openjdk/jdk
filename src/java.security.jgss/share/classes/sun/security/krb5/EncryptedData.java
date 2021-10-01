@@ -126,7 +126,7 @@ public class EncryptedData implements Cloneable {
     }
     */
 
-    // used in KrbApRep, KrbApReq, KrbAsReq, KrbCred, KrbPriv
+    // used in KrbApRep, KrbApReq, KrbAsReq
     public EncryptedData(
                          EncryptionKey key,
                          byte[] plaintext,
