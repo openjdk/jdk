@@ -528,6 +528,9 @@ Zone	Europe/London	-0:01:15 -	LMT	1847 Dec  1  0:00s
 			 1:00	-	BST	1971 Oct 31  2:00u
 			 0:00	GB-Eire	%s	1996
 			 0:00	EU	GMT/BST
+Link	Europe/London	Europe/Jersey
+Link	Europe/London	Europe/Guernsey
+Link	Europe/London	Europe/Isle_of_Man
 
 # From Paul Eggert (2018-02-15):
 # In January 2018 we discovered that the negative SAVE values in the
@@ -1326,8 +1329,9 @@ Zone	Europe/Helsinki	1:39:49 -	LMT	1878 May 31
 			1:39:49	-	HMT	1921 May    # Helsinki Mean Time
 			2:00	Finland	EE%sT	1983
 			2:00	EU	EE%sT
+
 # Åland Is
-# See Europe/Helsinki.
+Link	Europe/Helsinki	Europe/Mariehamn
 
 
 # France
@@ -1523,7 +1527,8 @@ Zone	Europe/Berlin	0:53:28 -	LMT	1893 Apr
 
 # From Arthur David Olson (2012-03-03):
 # Büsingen and Zurich have shared clocks since 1970.
-# See Europe/Zurich.
+
+Link	Europe/Zurich	Europe/Busingen
 
 # Georgia
 # Please see the "asia" file for Asia/Tbilisi.
@@ -1821,6 +1826,9 @@ Zone	Europe/Rome	0:49:56 -	LMT	1866 Dec 12
 # See Europe/Belgrade.
 
 
+Link	Europe/Rome	Europe/Vatican
+Link	Europe/Rome	Europe/San_Marino
+
 # Latvia
 
 # From Liene Kanepe (1998-09-17):
@@ -1913,7 +1921,7 @@ Zone	Europe/Riga	1:36:34	-	LMT	1880
 # I could confirm from the paper that Liechtenstein did in fact follow
 # the same DST in 1941 and 1942 as Switzerland did.
 
-# See Europe/Zurich.
+Link Europe/Zurich Europe/Vaduz
 
 
 # Lithuania
@@ -2270,7 +2278,8 @@ Zone	Europe/Oslo	0:43:00 -	LMT	1895 Jan  1
 # Haudegen did not surrender to the Allies until September 1945.
 #
 # All these events predate our cutoff date of 1970, so use Europe/Oslo
-# for these regions; see 'backward'.
+# for these regions.
+Link	Europe/Oslo	Arctic/Longyearbyen
 
 # Poland
 
@@ -3539,9 +3548,14 @@ Zone	Europe/Belgrade	1:22:00	-	LMT	1884
 # Shanks & Pottenger don't give as much detail, so go with Koželj.
 			1:00	-	CET	1982 Nov 27
 			1:00	EU	CE%sT
+Link Europe/Belgrade Europe/Ljubljana	# Slovenia
+Link Europe/Belgrade Europe/Podgorica	# Montenegro
+Link Europe/Belgrade Europe/Sarajevo	# Bosnia and Herzegovina
+Link Europe/Belgrade Europe/Skopje	# North Macedonia
+Link Europe/Belgrade Europe/Zagreb	# Croatia
 
 # Slovakia
-# See Europe/Prague.
+Link Europe/Prague Europe/Bratislava
 
 # Slovenia
 # See Europe/Belgrade.
@@ -4012,7 +4026,7 @@ Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			2:00	1:00	EEST	2015 Nov  8  1:00u
 			2:00	EU	EE%sT	2016 Sep  7
 			3:00	-	+03
-# See the 'backward' file for Asia/Istanbul.
+Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 
 # Ukraine
 #

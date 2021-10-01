@@ -1196,9 +1196,10 @@ Zone	Asia/Famagusta	2:15:48	-	LMT	1921 Nov 14
 			2:00	EUAsia	EE%sT	2016 Sep  8
 			3:00	-	+03	2017 Oct 29 1:00u
 			2:00	EUAsia	EE%sT
+
 # Classically, Cyprus belongs to Asia; e.g. see Herodotus, Histories, I.72.
 # However, for various reasons many users expect to find it under Europe.
-# See the 'backward' file for the Europe/Nicosia link.
+Link	Asia/Nicosia	Europe/Nicosia
 
 # Georgia
 # From Paul Eggert (1994-11-19):
@@ -3554,6 +3555,7 @@ Zone	Asia/Manila	-15:56:00 -	LMT	1844 Dec 31
 Zone	Asia/Qatar	3:26:08 -	LMT	1920     # Al Dawhah / Doha
 			4:00	-	+04	1972 Jun
 			3:00	-	+03
+Link Asia/Qatar Asia/Bahrain
 
 # Saudi Arabia
 #
@@ -3600,6 +3602,9 @@ Zone	Asia/Qatar	3:26:08 -	LMT	1920     # Al Dawhah / Doha
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Riyadh	3:06:52 -	LMT	1947 Mar 14
 			3:00	-	+03
+Link Asia/Riyadh Antarctica/Syowa
+Link Asia/Riyadh Asia/Aden	# Yemen
+Link Asia/Riyadh Asia/Kuwait
 
 # Singapore
 # taken from Mok Ly Yng (2003-10-30)
@@ -3856,6 +3861,8 @@ Zone	Asia/Dushanbe	4:35:12 -	LMT	1924 May  2
 Zone	Asia/Bangkok	6:42:04	-	LMT	1880
 			6:42:04	-	BMT	1920 Apr # Bangkok Mean Time
 			7:00	-	+07
+Link Asia/Bangkok Asia/Phnom_Penh	# Cambodia
+Link Asia/Bangkok Asia/Vientiane	# Laos
 
 # Turkmenistan
 # From Shanks & Pottenger.
@@ -3870,6 +3877,7 @@ Zone	Asia/Ashgabat	3:53:32 -	LMT	1924 May  2 # or Ashkhabad
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dubai	3:41:12 -	LMT	1920
 			4:00	-	+04
+Link Asia/Dubai Asia/Muscat	# Oman
 
 # Uzbekistan
 # Byalokoz 1919 says Uzbekistan was 4:27:53.

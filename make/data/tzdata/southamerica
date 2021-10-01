@@ -1398,8 +1398,8 @@ Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
 # use links for places with new iso3166 codes.
 # The name "Lower Prince's Quarter" is both longer than fourteen characters
 # and contains an apostrophe; use "Lower_Princes"....
-# From Paul Eggert (2021-05-06):
-# These backward-compatibility links now are in the 'backward' file.
+# From Paul Eggert (2021-09-29):
+# These backward-compatibility links now are in the 'northamerica' file.
 
 # Ecuador
 #

@@ -481,6 +481,7 @@ Zone	Pacific/Guam	-14:21:00 -	LMT	1844 Dec 31
 			 9:00	-	+09	1944 Jul 31
 			10:00	Guam	G%sT	2000 Dec 23
 			10:00	-	ChST	# Chamorro Standard Time
+Link Pacific/Guam Pacific/Saipan # N Mariana Is
 
 # Kiribati
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -606,6 +607,8 @@ Zone Pacific/Chatham	12:13:48 -	LMT	1868 Nov  2
 			12:15	-	+1215	1946 Jan  1
 			12:45	Chatham	+1245/+1345
 
+Link Pacific/Auckland Antarctica/McMurdo
+
 # Auckland Is
 # uninhabited; Māori and Moriori, colonial settlers, pastoralists, sealers,
 # and scientific personnel have wintered
@@ -699,6 +702,7 @@ Zone Pacific/Palau	-15:02:04 -	LMT	1844 Dec 31	# Koror
 Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 			9:48:32	-	PMMT	1895 # Port Moresby Mean Time
 			10:00	-	+10
+Link Pacific/Port_Moresby Antarctica/DumontDUrville
 #
 # From Paul Eggert (2014-10-13):
 # Base the Bougainville entry on the Arawa-Kieta region, which appears to have
@@ -734,6 +738,7 @@ Zone Pacific/Pitcairn	-8:40:20 -	LMT	1901        # Adamstown
 Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1892 Jul  5
 			-11:22:48 -	LMT	1911
 			-11:00	-	SST	            # S=Samoa
+Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 
 # Samoa (formerly and also known as Western Samoa)
 

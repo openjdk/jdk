@@ -852,6 +852,8 @@ Zone America/Phoenix	-7:28:18 -	LMT	1883 Nov 18 11:31:42
 			-7:00	-	MST	1967
 			-7:00	US	M%sT	1968 Mar 21
 			-7:00	-	MST
+Link America/Phoenix America/Creston
+
 # From Arthur David Olson (1988-02-13):
 # A writer from the Inter Tribal Council of Arizona, Inc.,
 # notes in private correspondence dated 1987-12-28 that "Presently, only the
@@ -1789,6 +1791,7 @@ Zone America/Toronto	-5:17:32 -	LMT	1895
 			-5:00	Canada	E%sT	1946
 			-5:00	Toronto	E%sT	1974
 			-5:00	Canada	E%sT
+Link America/Toronto America/Nassau
 Zone America/Thunder_Bay -5:57:00 -	LMT	1895
 			-6:00	-	CST	1910
 			-5:00	-	EST	1942
@@ -2833,7 +2836,7 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 # See America/Puerto_Rico.
 
 # The Bahamas
-# See America/Montreal.
+# See America/Toronto.
 
 
 # Barbados
@@ -3588,6 +3591,8 @@ Zone	America/Managua	-5:45:08 -	LMT	1890
 Zone	America/Panama	-5:18:08 -	LMT	1890
 			-5:19:36 -	CMT	1908 Apr 22 # Colón Mean Time
 			-5:00	-	EST
+Link America/Panama America/Atikokan
+Link America/Panama America/Cayman
 
 # Puerto Rico
 # There are too many San Juans elsewhere, so we'll use 'Puerto_Rico'.
@@ -3596,6 +3601,25 @@ Zone America/Puerto_Rico -4:24:25 -	LMT	1899 Mar 28 12:00 # San Juan
 			-4:00	-	AST	1942 May  3
 			-4:00	US	A%sT	1946
 			-4:00	-	AST
+Link America/Puerto_Rico America/Anguilla
+Link America/Puerto_Rico America/Antigua
+Link America/Puerto_Rico America/Aruba
+Link America/Puerto_Rico America/Curacao
+Link America/Puerto_Rico America/Blanc-Sablon	# Quebec (Lower North Shore)
+Link America/Puerto_Rico America/Dominica
+Link America/Puerto_Rico America/Grenada
+Link America/Puerto_Rico America/Guadeloupe
+Link America/Puerto_Rico America/Kralendijk	# Caribbean Netherlands
+Link America/Puerto_Rico America/Lower_Princes	# Sint Maarten
+Link America/Puerto_Rico America/Marigot	# St Martin (French part)
+Link America/Puerto_Rico America/Montserrat
+Link America/Puerto_Rico America/Port_of_Spain	# Trinidad & Tobago
+Link America/Puerto_Rico America/St_Barthelemy	# St Barthélemy
+Link America/Puerto_Rico America/St_Kitts	# St Kitts & Nevis
+Link America/Puerto_Rico America/St_Lucia
+Link America/Puerto_Rico America/St_Thomas	# Virgin Islands (US)
+Link America/Puerto_Rico America/St_Vincent
+Link America/Puerto_Rico America/Tortola	# Virgin Islands (UK)
 
 # St Kitts-Nevis
 # St Lucia

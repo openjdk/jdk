@@ -173,6 +173,16 @@ Zone	Africa/Ndjamena	1:00:12 -	LMT	1912        # N'Djamena
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Abidjan	-0:16:08 -	LMT	1912
 			 0:00	-	GMT
+Link Africa/Abidjan Africa/Accra	# Ghana
+Link Africa/Abidjan Africa/Bamako	# Mali
+Link Africa/Abidjan Africa/Banjul	# The Gambia
+Link Africa/Abidjan Africa/Conakry	# Guinea
+Link Africa/Abidjan Africa/Dakar	# Senegal
+Link Africa/Abidjan Africa/Freetown	# Sierra Leone
+Link Africa/Abidjan Africa/Lome		# Togo
+Link Africa/Abidjan Africa/Nouakchott	# Mauritania
+Link Africa/Abidjan Africa/Ouagadougou	# Burkina Faso
+Link Africa/Abidjan Atlantic/St_Helena	# St Helena
 
 # Djibouti
 # See Africa/Nairobi.
@@ -459,6 +469,15 @@ Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
 			2:30	-	+0230	1936 Dec 31 24:00
 			2:45	-	+0245	1942 Jul 31 24:00
 			3:00	-	EAT
+Link Africa/Nairobi Africa/Addis_Ababa	 # Ethiopia
+Link Africa/Nairobi Africa/Asmara	 # Eritrea
+Link Africa/Nairobi Africa/Dar_es_Salaam # Tanzania
+Link Africa/Nairobi Africa/Djibouti
+Link Africa/Nairobi Africa/Kampala	 # Uganda
+Link Africa/Nairobi Africa/Mogadishu	 # Somalia
+Link Africa/Nairobi Indian/Antananarivo	 # Madagascar
+Link Africa/Nairobi Indian/Comoro
+Link Africa/Nairobi Indian/Mayotte
 
 # Lesotho
 # See Africa/Johannesburg.
@@ -1145,6 +1164,13 @@ Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Maputo	2:10:20 -	LMT	1903 Mar
 			2:00	-	CAT
+Link Africa/Maputo Africa/Blantyre	# Malawi
+Link Africa/Maputo Africa/Bujumbura	# Burundi
+Link Africa/Maputo Africa/Gaborone	# Botswana
+Link Africa/Maputo Africa/Harare	# Zimbabwe
+Link Africa/Maputo Africa/Kigali	# Rwanda
+Link Africa/Maputo Africa/Lubumbashi	# E Dem. Rep. of Congo
+Link Africa/Maputo Africa/Lusaka	# Zambia
 
 
 # Namibia
@@ -1292,6 +1318,15 @@ Zone	Africa/Lagos	0:13:35 -	LMT	1905 Jul  1
 			0:13:35	-	LMT	1914 Jan  1
 			0:30	-	+0030	1919 Sep  1
 			1:00	-	WAT
+Link Africa/Lagos Africa/Bangui		# Central African Republic
+Link Africa/Lagos Africa/Brazzaville	# Rep. of the Congo
+Link Africa/Lagos Africa/Douala		# Cameroon
+Link Africa/Lagos Africa/Kinshasa	# Dem. Rep. of the Congo (west)
+Link Africa/Lagos Africa/Libreville	# Gabon
+Link Africa/Lagos Africa/Luanda		# Angola
+Link Africa/Lagos Africa/Malabo		# Equatorial Guinea
+Link Africa/Lagos Africa/Niamey		# Niger
+Link Africa/Lagos Africa/Porto-Novo	# Benin
 
 # Réunion
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -1389,6 +1424,8 @@ Rule	SA	1943	1944	-	Mar	Sun>=15	2:00	0	-
 Zone Africa/Johannesburg 1:52:00 -	LMT	1892 Feb 8
 			1:30	-	SAST	1903 Mar
 			2:00	SA	SAST
+Link Africa/Johannesburg Africa/Maseru	# Lesotho
+Link Africa/Johannesburg Africa/Mbabane	# Eswatini
 #
 # Marion and Prince Edward Is
 # scientific station since 1947
