@@ -773,7 +773,7 @@ public class Flow {
                     case TYP -> {
                         for (Type sup : types.directSupertypes(sym.type)) {
                             if (sup.tsym.kind == TYP) {
-                                if (isTransitivellyCovered(sup.tsym, covered) &&
+                                if (isTransitivelyCovered(sup.tsym, covered) &&
                                     covered.add(sup.tsym)) {
                                     todo = todo.prepend(sup.tsym);
                                 }
@@ -784,7 +784,7 @@ public class Flow {
             }
         }
 
-        private boolean isTransitivellyCovered(Symbol sealed, Set<Symbol> covered) {
+        private boolean isTransitivelyCovered(Symbol sealed, Set<Symbol> covered) {
             DeferredCompletionFailureHandler.Handler prevHandler =
                     dcfh.setHandler(dcfh.speculativeCodeHandler);
             try {
@@ -793,7 +793,7 @@ public class Flow {
                 if (sealed.kind == TYP && sealed.isAbstract() && sealed.isSealed()) {
                     return ((ClassSymbol) sealed).permitted
                                                  .stream()
-                                                 .allMatch(s -> isTransitivellyCovered(s, covered));
+                                                 .allMatch(s -> isTransitivelyCovered(s, covered));
                 }
                 return false;
             } catch (CompletionFailure cf) {
