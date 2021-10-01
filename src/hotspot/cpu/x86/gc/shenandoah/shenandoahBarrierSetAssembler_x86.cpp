@@ -682,13 +682,14 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   //
   // Try to CAS with given arguments. If successful, then we are done.
 
-  if (os::is_MP()) __ lock();
 #ifdef _LP64
   if (UseCompressedOops) {
+    __ lock();
     __ cmpxchgl(newval, addr);
   } else
 #endif
   {
+    __ lock();
     __ cmpxchgptr(newval, addr);
   }
   __ jcc(Assembler::equal, L_success);
@@ -765,13 +766,14 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   }
 #endif
 
-  if (os::is_MP()) __ lock();
 #ifdef _LP64
   if (UseCompressedOops) {
+    __ lock();
     __ cmpxchgl(tmp2, addr);
   } else
 #endif
   {
+    __ lock();
     __ cmpxchgptr(tmp2, addr);
   }
 
@@ -791,13 +793,14 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
     __ movptr(oldval, tmp2);
   }
 
-  if (os::is_MP()) __ lock();
 #ifdef _LP64
   if (UseCompressedOops) {
+    __ lock();
     __ cmpxchgl(newval, addr);
   } else
 #endif
   {
+    __ lock();
     __ cmpxchgptr(newval, addr);
   }
   if (!exchange) {
