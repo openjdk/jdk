@@ -131,7 +131,6 @@ public class RoleResult implements Serializable {
 
         setRoles(list);
         setRolesUnresolved(unresolvedList);
-        return;
     }
 
     //
@@ -173,13 +172,12 @@ public class RoleResult implements Serializable {
             roleList = new RoleList();
 
             for (Object o : list) {
-                Role currRole = (Role) o;
-                roleList.add((Role) currRole.clone());
+                Role currRole = (Role)o;
+                roleList.add((Role)currRole.clone());
             }
         } else {
             roleList = null;
         }
-        return;
     }
 
     /**
@@ -195,13 +193,12 @@ public class RoleResult implements Serializable {
             unresolvedRoleList = new RoleUnresolvedList();
 
             for (Object o : unresolvedList) {
-                RoleUnresolved currRoleUnres = (RoleUnresolved) o;
-                unresolvedRoleList.add((RoleUnresolved) currRoleUnres.clone());
+                RoleUnresolved currRoleUnres = (RoleUnresolved)o;
+                unresolvedRoleList.add((RoleUnresolved)currRoleUnres.clone());
             }
         } else {
             unresolvedRoleList = null;
         }
-        return;
     }
 
     /**
