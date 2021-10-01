@@ -339,10 +339,10 @@ public class SignatureUtil {
      * Create a Signature that has been initialized with proper key and params.
      *
      * @param sigAlg signature algorithms
-     * @param key public or private key
+     * @param key private key
      * @param provider (optional) provider
      */
-    public static Signature fromKey(String sigAlg, Key key, String provider)
+    public static Signature fromKey(String sigAlg, PrivateKey key, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException,
                    InvalidKeyException{
         Signature sigEngine = (provider == null || provider.isEmpty())
@@ -355,10 +355,10 @@ public class SignatureUtil {
      * Create a Signature that has been initialized with proper key and params.
      *
      * @param sigAlg signature algorithms
-     * @param key public or private key
+     * @param key private key
      * @param provider (optional) provider
      */
-    public static Signature fromKey(String sigAlg, Key key, Provider provider)
+    public static Signature fromKey(String sigAlg, PrivateKey key, Provider provider)
             throws NoSuchAlgorithmException, InvalidKeyException{
         Signature sigEngine = (provider == null)
                 ? Signature.getInstance(sigAlg)
@@ -366,17 +366,12 @@ public class SignatureUtil {
         return autoInitInternal(sigAlg, key, sigEngine);
     }
 
-    private static Signature autoInitInternal(String alg, Key key, Signature s)
+    private static Signature autoInitInternal(String alg, PrivateKey key, Signature s)
             throws InvalidKeyException {
         AlgorithmParameterSpec params = SignatureUtil
                 .getDefaultParamSpec(alg, key);
         try {
-            if (key instanceof PrivateKey) {
-                SignatureUtil.initSignWithParam(s, (PrivateKey) key, params,
-                        null);
-            } else {
-                SignatureUtil.initVerifyWithParam(s, (PublicKey) key, params);
-            }
+            SignatureUtil.initSignWithParam(s, key, params, null);
         } catch (InvalidAlgorithmParameterException e) {
             throw new AssertionError("Should not happen", e);
         }
