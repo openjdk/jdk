@@ -102,7 +102,7 @@ public class TransferTo {
         // tests empty input stream
         checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
 
-        // tests input stream with a lenght between 1k and 4k
+        // tests input stream with a length between 1k and 4k
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
 
         // tests input stream with several data chunks, as 16k is more than a single chunk can hold
