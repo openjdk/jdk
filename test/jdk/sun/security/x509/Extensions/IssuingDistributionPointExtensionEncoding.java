@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,27 @@
 
 /*
  * @test
- * @bug 4638015 8248001
- * @summary Determine if Hrefs are processed properly when they
- * appear in doc comments.
- * @library ../../lib
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build javadoc.tester.*
- * @run main TestHrefInDocComment
+ * @summary Incorrect encoding of the DistributionPointName object
+ *          in IssuingDistributionPointExtension
+ * @bug 8274330
+ * @modules java.base/sun.security.x509
  */
 
-import javadoc.tester.JavadocTester;
+import sun.security.x509.DistributionPointName;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.IssuingDistributionPointExtension;
+import sun.security.x509.URIName;
 
-public class TestHrefInDocComment extends JavadocTester {
-
-    public static void main(String... args) throws Exception {
-        TestHrefInDocComment tester = new TestHrefInDocComment();
-        tester.runTests();
-    }
-
-    @Test
-    public void test() {
-        javadoc("-d", "out",
-                "-sourcepath", testSrc, "pkg");
-        checkExit(Exit.OK);
+public class IssuingDistributionPointExtensionEncoding {
+    public static void main(String [] args) throws Exception {
+        var names = new GeneralNames();
+        names.add(new GeneralName(new URIName("http://here")));
+        // write one
+        var ext = new IssuingDistributionPointExtension(
+                new DistributionPointName(names),
+                null, true, false, false, false);
+        // read it
+        new IssuingDistributionPointExtension(true, ext.getValue());
     }
 }

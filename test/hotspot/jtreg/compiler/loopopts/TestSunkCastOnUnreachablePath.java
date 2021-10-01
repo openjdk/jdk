@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,33 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 4638015 8248001
- * @summary Determine if Hrefs are processed properly when they
- * appear in doc comments.
- * @library ../../lib
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build javadoc.tester.*
- * @run main TestHrefInDocComment
+ * @bug 8272562
+ * @summary C2: assert(false) failed: Bad graph detected in build_loop_late
+ *
+ * @run main/othervm -XX:CompileOnly=TestSunkCastOnUnreachablePath -XX:-TieredCompilation -Xbatch TestSunkCastOnUnreachablePath
+ *
  */
 
-import javadoc.tester.JavadocTester;
+public class TestSunkCastOnUnreachablePath {
 
-public class TestHrefInDocComment extends JavadocTester {
-
-    public static void main(String... args) throws Exception {
-        TestHrefInDocComment tester = new TestHrefInDocComment();
-        tester.runTests();
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 1000; i++) {
+            vMeth();
+        }
     }
 
-    @Test
-    public void test() {
-        javadoc("-d", "out",
-                "-sourcepath", testSrc, "pkg");
-        checkExit(Exit.OK);
+    static int vMeth() {
+        int i2 = 3, iArr1[] = new int[200];
+
+        for (int i9 = 3; i9 < 100; i9++) {
+            try {
+                int i10 = (iArr1[i9 - 1]);
+                i2 = (i10 / i9);
+            } catch (ArithmeticException a_e) {
+            }
+        }
+        return i2;
     }
 }

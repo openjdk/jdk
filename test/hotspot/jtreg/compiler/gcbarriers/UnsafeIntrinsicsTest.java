@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test id=Z
  * @key randomness
- * @bug 8059022
+ * @bug 8059022 8271855
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
  * @requires vm.gc.Z
@@ -301,7 +301,7 @@ class Runner implements Runnable {
     private Node mergeImplCAS(Node startNode, Node expectedNext, Node head) {
         // CAS - should always be true within a single thread - no other thread can have overwritten
         if (!UNSAFE.compareAndSetReference(startNode, offset, expectedNext, head)) {
-            throw new Error("CAS should always succeed on thread local objects, check you barrier implementation");
+            throw new Error("CAS should always succeed on thread local objects, check your barrier implementation");
         }
         return expectedNext; // continue on old circle
     }
@@ -309,7 +309,7 @@ class Runner implements Runnable {
     private Node mergeImplCASFail(Node startNode, Node expectedNext, Node head) {
         // Force a fail
         if (UNSAFE.compareAndSetReference(startNode, offset, "fail", head)) {
-            throw new Error("This CAS should always fail, check you barrier implementation");
+            throw new Error("This CAS should always fail, check your barrier implementation");
         }
         if (startNode.next() != expectedNext) {
             throw new Error("Shouldn't have changed");
@@ -318,9 +318,15 @@ class Runner implements Runnable {
     }
 
     private Node mergeImplWeakCAS(Node startNode, Node expectedNext, Node head) {
-        // Weak CAS - should always be true within a single thread - no other thread can have overwritten
-        if (!UNSAFE.weakCompareAndSetReference(startNode, offset, expectedNext, head)) {
-            throw new Error("Weak CAS should always succeed on thread local objects, check you barrier implementation");
+        // Weak CAS - should almost always be true within a single thread - no other thread can have overwritten
+        // Spurious failures are allowed. So, we retry a couple of times on failure.
+        boolean ok = false;
+        for (int i = 0; i < 3; ++i) {
+            ok = UNSAFE.weakCompareAndSetReference(startNode, offset, expectedNext, head);
+            if (ok) break;
+        }
+        if (!ok) {
+            throw new Error("Weak CAS should almost always succeed on thread local objects, check your barrier implementation");
         }
         return expectedNext; // continue on old circle
     }
@@ -328,7 +334,7 @@ class Runner implements Runnable {
     private Node mergeImplWeakCASFail(Node startNode, Node expectedNext, Node head) {
         // Force a fail
         if (UNSAFE.weakCompareAndSetReference(startNode, offset, "fail", head)) {
-            throw new Error("This weak CAS should always fail, check you barrier implementation");
+            throw new Error("This weak CAS should always fail, check your barrier implementation");
         }
         if (startNode.next() != expectedNext) {
             throw new Error("Shouldn't have changed");
@@ -340,7 +346,7 @@ class Runner implements Runnable {
         // CmpX - should always be true within a single thread - no other thread can have overwritten
         Object res = UNSAFE.compareAndExchangeReference(startNode, offset, expectedNext, head);
         if (!res.equals(expectedNext)) {
-            throw new Error("Fail CmpX should always succeed on thread local objects, check you barrier implementation");
+            throw new Error("Fail CmpX should always succeed on thread local objects, check your barrier implementation");
         }
         return expectedNext; // continue on old circle
     }

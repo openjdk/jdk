@@ -44,6 +44,3 @@ serviceability/sa/TestJmapCoreMetaspace.java                  8268722,8268636   
 serviceability/sa/TestJhsdbJstackMixed.java                   8248912   generic-all
 serviceability/sa/ClhsdbPstack.java#process                   8248912   generic-all
 serviceability/sa/ClhsdbPstack.java#core                      8248912   generic-all
-
-serviceability/dcmd/gc/HeapDumpAllTest.java                   8274196   generic-all
-serviceability/dcmd/gc/HeapDumpTest.java                      8274196   generic-all

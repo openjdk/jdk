@@ -1484,7 +1484,7 @@ class StubGenerator: public StubCodeGenerator {
         __ subq(temp1, loop_size[shift]);
 
         // Main loop with aligned copy block size of 192 bytes at 32 byte granularity.
-        __ align(32);
+        __ align32();
         __ BIND(L_main_loop);
            __ copy64_avx(to, from, temp4, xmm1, false, shift, 0);
            __ copy64_avx(to, from, temp4, xmm1, false, shift, 64);
@@ -1551,7 +1551,7 @@ class StubGenerator: public StubCodeGenerator {
 
         // Main loop with aligned copy block size of 192 bytes at
         // 64 byte copy granularity.
-        __ align(32);
+        __ align32();
         __ BIND(L_main_loop_64bytes);
            __ copy64_avx(to, from, temp4, xmm1, false, shift, 0 , true);
            __ copy64_avx(to, from, temp4, xmm1, false, shift, 64, true);
@@ -1691,7 +1691,7 @@ class StubGenerator: public StubCodeGenerator {
         __ BIND(L_main_pre_loop);
 
         // Main loop with aligned copy block size of 192 bytes at 32 byte granularity.
-        __ align(32);
+        __ align32();
         __ BIND(L_main_loop);
            __ copy64_avx(to, from, temp1, xmm1, true, shift, -64);
            __ copy64_avx(to, from, temp1, xmm1, true, shift, -128);
@@ -1724,7 +1724,7 @@ class StubGenerator: public StubCodeGenerator {
 
         // Main loop with aligned copy block size of 192 bytes at
         // 64 byte copy granularity.
-        __ align(32);
+        __ align32();
         __ BIND(L_main_loop_64bytes);
            __ copy64_avx(to, from, temp1, xmm1, true, shift, -64 , true);
            __ copy64_avx(to, from, temp1, xmm1, true, shift, -128, true);
@@ -4274,7 +4274,7 @@ class StubGenerator: public StubCodeGenerator {
 
   //Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
   address generate_pshuffle_byte_flip_mask_sha512() {
-    __ align(32);
+    __ align32();
     StubCodeMark mark(this, "StubRoutines", "pshuffle_byte_flip_mask_sha512");
     address start = __ pc();
     if (VM_Version::supports_avx2()) {
@@ -5401,7 +5401,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_avx2_shuffle_addr()
   {
-    __ align(32);
+    __ align32();
     StubCodeMark mark(this, "StubRoutines", "avx2_shuffle_base64");
     address start = __ pc();
     __ emit_data64(0x0809070805060405, relocInfo::none);
@@ -5413,7 +5413,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_avx2_input_mask_addr()
   {
-    __ align(32);
+    __ align32();
     StubCodeMark mark(this, "StubRoutines", "avx2_input_mask_base64");
     address start = __ pc();
     __ emit_data64(0x8000000000000000, relocInfo::none);
@@ -5425,7 +5425,7 @@ address generate_avx_ghash_processBlocks() {
 
   address base64_avx2_lut_addr()
   {
-    __ align(32);
+    __ align32();
     StubCodeMark mark(this, "StubRoutines", "avx2_lut_base64");
     address start = __ pc();
     __ emit_data64(0xfcfcfcfcfcfc4741, relocInfo::none);
@@ -5530,7 +5530,7 @@ address generate_avx_ghash_processBlocks() {
       __ evmovdquq(xmm2, Address(encode_table, 0), Assembler::AVX_512bit);
       __ evpbroadcastq(xmm1, rax, Assembler::AVX_512bit);
 
-      __ align(32);
+      __ align32();
       __ BIND(L_vbmiLoop);
 
       __ vpermb(xmm0, xmm3, Address(source, start_offset), Assembler::AVX_512bit);
@@ -5730,7 +5730,7 @@ address generate_avx_ghash_processBlocks() {
       __ cmpl(length, 31);
       __ jcc(Assembler::belowEqual, L_process3);
 
-      __ align(32);
+      __ align32();
       __ BIND(L_32byteLoop);
 
       // Get next 32 bytes
@@ -6177,7 +6177,7 @@ address generate_avx_ghash_processBlocks() {
       __ evmovdquq(join12, ExternalAddress(StubRoutines::x86::base64_vbmi_join_1_2_addr()), Assembler::AVX_512bit, r13);
       __ evmovdquq(join23, ExternalAddress(StubRoutines::x86::base64_vbmi_join_2_3_addr()), Assembler::AVX_512bit, r13);
 
-      __ align(32);
+      __ align32();
       __ BIND(L_process256);
       // Grab input data
       __ evmovdquq(input0, Address(source, start_offset, Address::times_1, 0x00), Assembler::AVX_512bit);
@@ -6259,7 +6259,7 @@ address generate_avx_ghash_processBlocks() {
       __ cmpl(length, 63);
       __ jcc(Assembler::lessEqual, L_finalBit);
 
-      __ align(32);
+      __ align32();
       __ BIND(L_process64Loop);
 
       // Handle first 64-byte block
@@ -6395,7 +6395,7 @@ address generate_avx_ghash_processBlocks() {
       __ shrq(rax, 1);
       __ jmp(L_donePadding);
 
-      __ align(32);
+      __ align32();
       __ BIND(L_bruteForce);
     }   // End of if(avx512_vbmi)
 
@@ -6439,7 +6439,7 @@ address generate_avx_ghash_processBlocks() {
 
     __ jmp(L_bottomLoop);
 
-    __ align(32);
+    __ align32();
     __ BIND(L_forceLoop);
     __ shll(byte1, 18);
     __ shll(byte2, 12);
