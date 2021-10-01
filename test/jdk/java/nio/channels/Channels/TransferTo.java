@@ -77,7 +77,7 @@ public class TransferTo {
         };
     }
 
-    /**
+    /*
      * Testing API compliance: Input stream must throw NullPointerException when parameter "out" is null.
      */
     @Test(dataProvider = "streamCombinations")
@@ -93,7 +93,7 @@ public class TransferTo {
         assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null));
     }
 
-    /**
+    /*
      * Testing API compliance: Complete content of input stream must be transferred to output stream.
      */
     @Test(dataProvider = "streamCombinations")
@@ -123,32 +123,20 @@ public class TransferTo {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
     }
 
-    /**
+    /*
      * Asserts that the transferred content is correct, i. e. compares the actually transferred bytes
      * to the expected assumption. The position of the input and output stream before the transfer is
      * the start of stream (BOF).
-     *
-     * @param inputStreamProvider Providing the input stream to test, i. e. the source of the bytes
-     * @param outputStreamProvider Providing the output stream to test, i. e. the target of the bytes
-     * @param inBytes The bytes to actually transfer from input to output
-     * @throws Exception If the test fails
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider, byte[] inBytes) throws Exception {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0);
     }
 
-    /**
+    /*
      * Asserts that the transferred content is correct, i. e. compares the actually transferred bytes
      * to the expected assumption. The position of the input and output stream before the transfer is
      * provided by the caller.
-     *
-     * @param inputStreamProvider Providing the input stream to test, i. e. the source of the bytes
-     * @param outputStreamProvider Providing the output stream to test, i. e. the target of the bytes
-     * @param inBytes The bytes to actually transfer from input to output
-     * @param posIn The position inside the input stream before the transfer takes place
-     * @param posOut The position inside the output stream before the transfer takes place
-     * @throws Exception If the test fails
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut) throws Exception {
