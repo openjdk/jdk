@@ -34,7 +34,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -59,9 +58,6 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
 
     // Cache for incomplete handshake messages.
     private ByteBuffer handshakeBuffer = null;
-
-    // reading lock
-    private final ReentrantLock readLock = new ReentrantLock();
 
     SSLSocketInputRecord(HandshakeHash handshakeHash) {
         super(handshakeHash, SSLReadCipher.nullTlsReadCipher());
@@ -478,16 +474,8 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         return headerSize;
     }
 
-    private int read(InputStream is, byte[] buf, int off, int len)  throws IOException {
-
-        int readLen = 0;
-        readLock.lock();
-        try {
-            readLen = is.read(buf, off, len);
-        } finally {
-            readLock.unlock();
-        }
-
+    private static int read(InputStream is, byte[] buf, int off, int len)  throws IOException {
+        int readLen = is.read(buf, off, len);
         if (readLen < 0) {
             if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
                 SSLLogger.fine("Raw read: EOF");
@@ -504,19 +492,14 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
 
     // Try to use up the input stream without impact the performance too much.
     void deplete(boolean tryToRead) throws IOException {
-        readLock.lock();
-        try {
-            int remaining = is.available();
-            if (tryToRead && (remaining == 0)) {
-                // try to wait and read one byte if no buffered input
-                is.read();
-            }
+        int remaining = is.available();
+        if (tryToRead && (remaining == 0)) {
+            // try to wait and read one byte if no buffered input
+            is.read();
+        }
 
-            while ((remaining = is.available()) != 0) {
-                is.skip(remaining);
-            }
-        } finally {
-            readLock.unlock();
+        while ((remaining = is.available()) != 0) {
+            is.skip(remaining);
         }
     }
 }

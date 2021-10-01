@@ -1410,21 +1410,26 @@ public final class SSLSocketImpl
      * Read the initial handshake records.
      */
     private int readHandshakeRecord() throws IOException {
-        while (!conContext.isInboundClosed()) {
-            try {
-                Plaintext plainText = decode(null);
-                if ((plainText.contentType == ContentType.HANDSHAKE.id) &&
-                        conContext.isNegotiated) {
-                    return 0;
+        appInput.readLock.lock();
+        try {
+            while (!conContext.isInboundClosed()) {
+                try {
+                    Plaintext plainText = decode(null);
+                    if ((plainText.contentType == ContentType.HANDSHAKE.id) &&
+                            conContext.isNegotiated) {
+                        return 0;
+                    }
+                } catch (SSLException |
+                        InterruptedIOException | SocketException se) {
+                    // Don't change exception in case of timeouts or interrupts
+                    // or SocketException.
+                    throw se;
+                } catch (IOException ioe) {
+                    throw new SSLException("readHandshakeRecord", ioe);
                 }
-            } catch (SSLException |
-                    InterruptedIOException | SocketException se) {
-                // Don't change exception in case of timeouts or interrupts
-                // or SocketException.
-                throw se;
-            } catch (IOException ioe) {
-                throw new SSLException("readHandshakeRecord", ioe);
             }
+        } finally {
+            appInput.readLock.unlock();
         }
 
         return -1;
