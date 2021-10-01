@@ -77,6 +77,9 @@ class markWord {
 
   // It is critical for performance that this class be trivially
   // destructable, copyable, and assignable.
+  ~markWord() = default;
+  markWord(const markWord&) = default;
+  markWord& operator=(const markWord&) = default;
 
   static markWord from_pointer(void* ptr) {
     return markWord((uintptr_t)ptr);
