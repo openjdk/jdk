@@ -369,6 +369,52 @@ public class TestJavadocTester extends JavadocTester {
         checkMessages("Passed: All output matched");
     }
 
+    @Test
+    public void testEmpty() {
+        messages.clear();
+        new OutputChecker(Output.STDERR)
+                .checkEmpty();
+        checkMessages("Passed: STDERR is empty, as expected");
+    }
+
+    @Test
+    public void testBadFile() {
+        messages.clear();
+        new OutputChecker("does-not-exist.html")
+                .check("abcdef",
+                        "very long string ".repeat(10))
+                .check(Pattern.quote("abcdef"),
+                        Pattern.quote("very long string".repeat(10)));
+        checkMessages("FAILED: File not found: does-not-exist.html");
+    }
+
+    @Test
+    public void testAnyOf() {
+        messages.clear();
+        new OutputChecker("p/C.html")
+                .checkAnyOf("m1()", "m2()", "m3()")    // expect all found
+                .checkAnyOf("m1()", "m2()", "M3()")    // expect some found
+                .checkAnyOf("M1()", "M2()", "M3()");   // expect none found
+        checkMessages("Passed: 3 matches found",
+                "Passed: 2 matches found",
+                "FAILED: no match found for any text");
+    }
+
+    @Test
+    public void testUnique() {
+        messages.clear();
+        new OutputChecker("p/C.html")
+                .setExpectOrdered(false)
+                .checkUnique("id=\"m1()\"", "id=\"m2()\"", "id=\"m3()\"")   // expect unique
+                .checkUnique("m1()", "m2()", "m3()");                       // expect not unique
+        checkMessages(fix("Passed: p/C.html: id=\"m1()\" is unique",
+                "Passed: p/C.html: id=\"m2()\" is unique",
+                "Passed: p/C.html: id=\"m3()\" is unique",
+                "FAILED: p/C.html: m1() is not unique",
+                "FAILED: p/C.html: m2() is not unique",
+                "FAILED: p/C.html: m3() is not unique"));
+    }
+
     /**
      * {@return a string with {@code /} replaced by the platform file separator}
      *
@@ -387,23 +433,5 @@ public class TestJavadocTester extends JavadocTester {
         return List.of(items).stream()
                 .map(this::fix)
                 .toArray(String[]::new);
-    }
-
-    @Test
-    public void testEmpty() {
-        messages.clear();
-        new OutputChecker(Output.STDERR)
-                .checkEmpty();
-        checkMessages("Passed: STDERR is empty, as expected");
-    }
-
-    @Test
-    public void testBadFile() {
-        messages.clear();
-        new OutputChecker("does-not-exist.html")
-                .check("abcdef",
-                        "very long string ".repeat(10))
-                .check(Pattern.quote("abcdef"),
-                        Pattern.quote("very long string".repeat(10)));
     }
 }

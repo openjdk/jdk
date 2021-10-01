@@ -39,6 +39,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -49,8 +50,10 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -180,6 +183,7 @@ public abstract class JavadocTester {
 
     /**
      * Get the path for a source file in the test source directory.
+     *
      * @param path the path of a file or directory in the source directory
      * @return the full path of the specified file
      */
@@ -261,6 +265,7 @@ public abstract class JavadocTester {
     /**
      * Run all methods annotated with @Test, followed by printSummary.
      * Typically called on a tester object in main()
+     *
      * @throws Exception if any errors occurred
      */
     public void runTests() throws Exception {
@@ -270,6 +275,7 @@ public abstract class JavadocTester {
     /**
      * Runs all methods annotated with @Test, followed by printSummary.
      * Typically called on a tester object in main()
+     *
      * @param f a function which will be used to provide arguments to each
      *          invoked method
      * @throws Exception if any errors occurred
@@ -299,12 +305,12 @@ public abstract class JavadocTester {
      * put each option and the arguments it takes on a separate line.
      *
      * Example:
-     * <pre><code>
+     * {@snippet :
      *  javadoc("-d", "out",
      *          "-sourcepath", testSrc,
      *          "-notimestamp",
      *          "pkg1", "pkg2", "pkg3/C.java");
-     * </code></pre>
+     * }
      *
      * @param args the arguments to pass to javadoc
      */
@@ -398,6 +404,7 @@ public abstract class JavadocTester {
      * Sets the kind of check for the initial contents of the output directory
      * before javadoc is run.
      * The filter should return true for files that should <b>not</b> appear.
+     *
      * @param c the kind of check to perform
      */
     public void setOutputDirectoryCheck(DirectoryCheck c) {
@@ -461,8 +468,7 @@ public abstract class JavadocTester {
     /**
      * Checks the exit code of the most recent call of javadoc.
      *
-     * @param expected the exit code that is required for the test
-     * to pass.
+     * @param expected the exit code that is required for the test to pass
      */
     public void checkExit(Exit expected) {
         checking("check exit code");
@@ -477,12 +483,13 @@ public abstract class JavadocTester {
      * Checks for content in (or not in) the generated output.
      * Within the search strings, the newline character \n
      * will be translated to the platform newline character sequence.
-     * @param path a path within the most recent output directory
-     *  or the name of one of the output buffers, identifying
-     *  where to look for the search strings.
+     *
+     * @param path          a path within the most recent output directory
+     *                      or the name of one of the output buffers, identifying
+     *                      where to look for the search strings.
      * @param expectedFound true if all of the search strings are expected
-     *  to be found, or false if the file is not expected to be found
-     * @param strings the strings to be searched for
+     *                      to be found, or false if the file is not expected to be found
+     * @param strings       the strings to be searched for
      */
     public void checkFileAndOutput(String path, boolean expectedFound, String... strings) {
         if (expectedFound) {
@@ -496,12 +503,15 @@ public abstract class JavadocTester {
      * Checks for content in (or not in) the generated output.
      * Within the search strings, the newline character \n
      * will be translated to the platform newline character sequence.
-     * @param path a path within the most recent output directory, identifying
-     *  where to look for the search strings.
+     *
+     * @param path          a path within the most recent output directory, identifying
+     *                      where to look for the search strings.
      * @param expectedFound true if all of the search strings are expected
-     *  to be found, or false if all of the strings are expected to be
-     *  not found
-     * @param strings the strings to be searched for
+     *                      to be found, or false if all of the strings are expected to be
+     *                      not found
+     * @param strings       the strings to be searched for
+     *
+     * @see OutputChecker#check(String...)
      */
     public void checkOutput(String path, boolean expectedFound, String... strings) {
         new OutputChecker(path)
@@ -514,11 +524,14 @@ public abstract class JavadocTester {
      * Checks for content in (or not in) the one of the output streams written by
      * javadoc. Within the search strings, the newline character \n
      * will be translated to the platform newline character sequence.
-     * @param output the output stream to check
+     *
+     * @param output        the output stream to check
      * @param expectedFound true if all of the search strings are expected
-     *  to be found, or false if all of the strings are expected to be
-     *  not found
-     * @param strings the strings to be searched for
+     *                      to be found, or false if all of the strings are expected to be
+     *                      not found
+     * @param strings       the strings to be searched for
+     *
+     * @see OutputChecker#check(String...)
      */
     public void checkOutput(Output output, boolean expectedFound, String... strings) {
         new OutputChecker(output)
@@ -529,7 +542,10 @@ public abstract class JavadocTester {
 
     /**
      * Checks that there are no duplicate lines in one of the streams written by javadoc.
+     *
      * @param output the output stream to check
+     *
+     * @see OutputChecker#checkUnique()
      */
     public void checkUnique(Output output) {
         checkUnique(output, ".*", true);
@@ -538,13 +554,30 @@ public abstract class JavadocTester {
     /**
      * Checks that there are no duplicate lines that either match or don't match a given pattern,
      * in one of the streams written by javadoc.
-     * @param output the output stream to check
+     *
+     * @param output  the output stream to check
      * @param pattern a pattern to filter the lines to be checked
-     * @param select if {@code true}, lines that match the pattern will be checked for uniqueness;
-     *               if {@code false}, lines that do not match the pattern will be checked
+     * @param select  if {@code true}, lines that match the pattern will be checked for uniqueness;
+     *                if {@code false}, lines that do not match the pattern will be checked
+     *
+     * @see OutputChecker#checkUnique(Pattern, boolean)
      */
     public void checkUnique(Output output, String pattern, boolean select) {
-        new OutputChecker(output).checkUnique(pattern, select);
+        new OutputChecker(output).checkUnique(Pattern.compile(pattern), select);
+    }
+
+    /**
+     * Ensures that a series of strings appear only once, in the generated output.
+     * Note: this test does not exhaustively check for all other possible
+     * duplicates once one is found.
+     *
+     * @param path    the file to check
+     * @param strings the strings
+     *
+     * @see OutputChecker#checkUnique(String...)
+     */
+    public void checkUnique(String path, String... strings) {
+        new OutputChecker(path).checkUnique(strings);
     }
 
     /**
@@ -613,7 +646,8 @@ public abstract class JavadocTester {
     }
 
     /**
-     * Gets the content of the one of the output streams written by javadoc.
+     * Returns the content of one of the output streams written by javadoc.
+     *
      * @param output the name of the output stream
      * @return the content of the output stream
      */
@@ -622,7 +656,8 @@ public abstract class JavadocTester {
     }
 
     /**
-     * Gets the content of the one of the output streams written by javadoc.
+     * Returns the content of one of the output streams written by javadoc.
+     *
      * @param output the name of the output stream
      * @return the content of the output stream, as a line of lines
      */
@@ -633,22 +668,23 @@ public abstract class JavadocTester {
 
     /**
      * Checks for files in (or not in) the generated output.
+     *
      * @param expectedFound true if all of the files are expected
-     *  to be found, or false if all of the files are expected to be
-     *  not found
-     * @param paths the files to check, within the most recent output directory.
-     * */
+     *                      to be found, or false if all of the files are expected to be
+     *                      not found
+     * @param paths         the files to check, within the most recent output directory.
+     */
     public void checkFiles(boolean expectedFound, String... paths) {
         checkFiles(expectedFound, Arrays.asList(paths));
     }
 
     /**
      * Checks for files in (or not in) the generated output.
-     * @param expectedFound true if all of the files are expected
-     *  to be found, or false if all of the files are expected to be
-     *  not found
-     * @param paths the files to check, within the most recent output directory.
-     * */
+     *
+     * @param expectedFound true if all of the files are expected to be found,
+     *                      or false if all of the files are expected to be not found
+     * @param paths         the files to check, within the most recent output directory.
+     */
     public void checkFiles(boolean expectedFound, Collection<String> paths) {
         for (String path: paths) {
 //            log.logCheckFile(path, expectedFound);
@@ -666,8 +702,11 @@ public abstract class JavadocTester {
     /**
      * Checks that a series of strings are found in order in a file in
      * the generated output.
-     * @param path the file to check
-     * @param strings  the strings whose order to check
+     *
+     * @param path    the file to check
+     * @param strings the strings whose order to check
+     *
+     * @see OutputChecker#check(String...)
      */
     public void checkOrder(String path, String... strings) {
         new OutputChecker(path)
@@ -676,37 +715,11 @@ public abstract class JavadocTester {
     }
 
     /**
-     * Ensures that a series of strings appear only once, in the generated output,
-     * noting that, this test does not exhaustively check for all other possible
-     * duplicates once one is found.
-     * @param path the file to check
-     * @param strings ensure each are unique
-     */
-    public void checkUnique(String path, String... strings) {
-        Path file = outputDir.resolve(path);
-        String fileString = readOutputFile(path);
-        for (String s : strings) {
-            int currentIndex = fileString.indexOf(s);
-            checking(s + " at index " + currentIndex);
-            if (currentIndex == -1) {
-                failed(file, s + " not found.");
-                continue;
-            }
-            int nextindex = fileString.indexOf(s, currentIndex + s.length());
-            if (nextindex == -1) {
-                passed(file, s + " is unique");
-            } else {
-                failed(file, s + " is not unique, found at " + nextindex);
-            }
-        }
-    }
-
-    /**
      * Compares a set of files in each of two directories.
      *
      * @param baseDir1 the directory containing the first set of files
      * @param baseDir2 the directory containing the second set of files
-     * @param files the set of files to be compared
+     * @param files    the set of files to be compared
      */
     public void diff(String baseDir1, String baseDir2, String... files) {
         Path bd1 = Path.of(baseDir1);
@@ -770,10 +783,10 @@ public abstract class JavadocTester {
             content = new String(Files.readAllBytes(file), charset);
             fileContentCache.put(file, new SoftReference<>(content));
             return content;
-        } catch (FileNotFoundException e) {
-            throw new Error("File not found: " + fileName + ": " + e);
+        } catch (FileNotFoundException | NoSuchFileException e) {
+            throw new Error("File not found: " + fileName + ": " + e, e);
         } catch (IOException e) {
-            throw new Error("Error reading file: " + fileName + ": " + e);
+            throw new Error("Error reading file: " + fileName + ": " + e, e);
         }
     }
 
@@ -930,6 +943,14 @@ public abstract class JavadocTester {
         private List<Range> matches = new ArrayList<>();
         private Range lastMatch;
 
+        private enum SearchKind {
+            TEXT, PATTERN;
+            @Override
+            public String toString() {
+                return name().toLowerCase(Locale.ROOT);
+            }
+        }
+
         /** A half-open interval {@code [start, end)} to record the position of a match. */
         record Range(int start, int end) {
             static Range of(int start, int end) {
@@ -940,6 +961,9 @@ public abstract class JavadocTester {
                 // that is,    other.end <= start || end <= other.start
                 // Invert that for when intervals do overlap, and simplify to the following expression:
                 return other.end > start && end > other.start;
+            }
+            String toIntervalString() {
+                return "[" + start + "," + end + ")";
             }
         }
 
@@ -955,8 +979,13 @@ public abstract class JavadocTester {
             try {
                 c = readFile(file);
             } catch (Error e) {
-                checking("Read file");
-                failed("Error reading file: " + e);
+                JavadocTester.this.checking("Read file " + file);
+                if (e.getCause() instanceof IOException) {
+                    // exception probably thrown (with known message) by readFile
+                    failed(e.getMessage());
+                } else {
+                    failed("Error reading file: " + e);
+                }
             }
 
             if (c == null) {
@@ -1031,7 +1060,7 @@ public abstract class JavadocTester {
             }
 
             for (String stringToFind : strings) {
-                check(startPos -> findString(stringToFind, startPos), "text", stringToFind);
+                check(startPos -> findString(stringToFind, startPos), SearchKind.TEXT, stringToFind);
             }
             return this;
         }
@@ -1052,16 +1081,53 @@ public abstract class JavadocTester {
                 return this;
             }
             for (Pattern pattern : patterns) {
-                check(startPos -> findPattern(pattern, startPos), "pattern", pattern.pattern());
+                check(startPos -> findPattern(pattern, startPos), SearchKind.PATTERN, pattern.pattern());
             }
             return this;
+        }
+
+        /**
+         * Checks for the presence (or absence) of an item.
+         *
+         * @param finder a function to find the next occurrence of an item starting at a given position
+         * @param kind   the kind of the item ({@code "text"} or {@code "pattern:} to include in messages
+         * @param s      a string for the item, to be included in messages
+         */
+        private void check(Function<Integer, Range> finder, SearchKind kind, String s) {
+            checking("checkOutput", kind);
+            int start = getStart();
+            Range r = finder.apply(start);
+            boolean isFound = r != null;
+            if (isFound == expectFound) {
+                matches.add(lastMatch = r);
+                passed(name + ": following " + kind + " " + (isFound ? "found:" : "not found:") + "\n"
+                        + s);
+            } else {
+                // item not found in order, so check if the item is found out of order, to determine the best message
+                if (expectFound && expectOrdered && start > 0) {
+                    Range r2 = finder.apply(0);
+                    if (r2 != null) {
+                        failed(name + ": following " + kind + " was found on line "
+                                + getLineNumber(r2.start)
+                                + ", but not in order as expected, on or after line "
+                                + getLineNumber(start)
+                                + ":\n"
+                                + s);
+                        return;
+                    }
+                }
+                failed(name + ": following " + kind + " "
+                        + (isFound ? "found:" : "not found:") + "\n"
+                        + s + '\n' + "found \n" + content);
+            }
+
         }
 
         /**
          * Checks that there are no duplicate lines in the content.
          */
         public OutputChecker checkUnique() {
-            checkUnique(".*", true);
+            checkUnique(Pattern.compile(".*"), true);
             return this;
         }
 
@@ -1073,10 +1139,14 @@ public abstract class JavadocTester {
          * @param select  if {@code true}, lines that match the pattern will be checked for uniqueness;
          *                if {@code false}, lines that do not match the pattern will be checked
          */
-        public OutputChecker checkUnique(String pattern, boolean select ) {
-            checking("checkUnique");
-            Pattern filter = Pattern.compile(pattern);
-            Matcher m = filter.matcher("");
+        public OutputChecker checkUnique(Pattern pattern, boolean select ) {
+            if (name == null) {
+                out.println("Skipping checkUnique");
+                return this;
+            }
+
+            checking("checkUnique", SearchKind.PATTERN);
+            Matcher m = pattern.matcher("");
             Map<String, Integer> linesSofar = new HashMap<>();
             int lineNumber = 0;
             int duplicates = 0;
@@ -1096,6 +1166,58 @@ public abstract class JavadocTester {
                 passed("All lines are unique");
             } else {
                 failed(duplicates + " duplicate lines found");
+            }
+            return this;
+        }
+
+        /**
+         * Checks that each of a series of strings appears only once in the generated output.
+         * Note: this test does not exhaustively check for all other possible duplicates once one is found.
+         *
+         * @param strings the strings
+         */
+        public OutputChecker checkUnique(String... strings) {
+            return checkUnique(SearchKind.TEXT, List.of(strings), this::findString);
+        }
+
+        /**
+         * Checks that each of a series of pattern matches appears only once in the generated output.
+         * Note: this test does not exhaustively check for all other possible duplicates once one is found.
+         *
+         * @param patterns the patterns
+         */
+        public OutputChecker checkUnique(Pattern... patterns) {
+            return checkUnique(SearchKind.PATTERN, List.of(patterns), this::findPattern);
+        }
+
+        private <T> OutputChecker checkUnique(SearchKind kind, List<T> items, BiFunction<T, Integer, Range> finder) {
+            if (name == null) {
+                out.println("Skipping checkUnique");
+                return this;
+            }
+
+            Range latest = null;
+            for (T item : items) {
+                int start = getStart();
+                Range r = finder.apply(item, start);
+                checking("checkUnique at index " + start, SearchKind.TEXT);
+                if (r == null) {
+                    failed(name + ": " + item + " not found.");
+                    continue;
+                }
+                // only update lastMatch for the initial match of each item
+                if (lastMatch == null) {
+                    lastMatch = r;
+                }
+                Range next = finder.apply(item, r.end);
+                if (next == null) {
+                    passed(name + ": " + item + " is unique");
+                } else {
+                    failed(name + ": " + item + " is not unique, found at " + next.start);
+                }
+            }
+            if (latest != null) {
+                lastMatch = latest;
             }
             return this;
         }
@@ -1135,7 +1257,7 @@ public abstract class JavadocTester {
             } else {
                 failed("The following output was not matched: "
                     + uncovered.stream()
-                        .map(r -> "[" + r.start + "," + r.end + ")")
+                        .map(Range::toIntervalString)
                         .collect(Collectors.joining(", ")));
             }
             return this;
@@ -1150,7 +1272,7 @@ public abstract class JavadocTester {
                 return this;
             }
 
-            checking("empty");
+            JavadocTester.this.checking("empty");
             if (content == null || content.isEmpty()) {
                 passed(name + " is empty, as expected");
             } else {
@@ -1161,43 +1283,57 @@ public abstract class JavadocTester {
         }
 
         /**
-         * Checks for the presence (or absence) of an item.
-         *
-         * @param finder a function to find the next occurrence of an item starting at a given position
-         * @param kind   the kind of the item ({@code "text"} or {@code "pattern:} to include in messages
-         * @param s      a string for the item, to be included in messages
+         * Checks that at least of a set of alternatives is found.
          */
-        private void check(Function<Integer, Range> finder, String kind, String s) {
-            checking(kind);
-            int start = getStart();
-            Range r = finder.apply(start);
-            boolean isFound = r != null;
-            if (isFound == expectFound) {
-                matches.add(lastMatch = r);
-                passed(name + ": following " + kind + " " + (isFound ? "found:" : "not found:") + "\n"
-                        + s);
-            } else {
-                // item not found in order, so check if the item is found out of order, to determine the best message
-                if (expectFound && expectOrdered && start > 0) {
-                    Range r2 = finder.apply(0);
-                    if (r2 != null) {
-                        failed(name + ": following " + kind + " was found on line "
-                                + getLineNumber(r2.start)
-                                + ", but not in order as expected, on or after line "
-                                + getLineNumber(start)
-                                + ":\n"
-                                + s);
-                        return;
-                    }
-                }
-                failed(name + ": following " + kind + " " + (isFound ? "found:" : "not found:") + "\n"
-                        + s + '\n' + "found \n" + content);
-            }
-
+        public OutputChecker checkAnyOf(String... strings) {
+            return checkAnyOf(SearchKind.TEXT, List.of(strings), this::findString);
         }
 
-        private void checking(String kind) {
-            JavadocTester.this.checking("checkOutput " + kind
+        /**
+         * Checks that at least of a set of alternatives is found.
+         */
+        public OutputChecker checkAnyOf(Pattern... patterns) {
+            return checkAnyOf(SearchKind.PATTERN, List.of(patterns), this::findPattern);
+        }
+
+        /**
+         * Checks that at least of a set of alternatives is found.
+         *
+         */
+        private <T> OutputChecker checkAnyOf(SearchKind kind, List<T> items, BiFunction<T, Integer, Range> finder) {
+            if (name == null) {
+                out.println("Skipping checkAnyOf");
+                return this;
+            }
+
+            checking("checkAnyOf", kind);
+            Range earliest = null;
+            int start = getStart();
+            int count = 0;
+            for (T item : items) {
+                Range r = finder.apply(item, start);
+                if (r != null) {
+                    count++;
+                    if (earliest == null || rangeComparator.compare(earliest, r) > 0) {
+                        earliest = r;
+                    }
+                }
+            }
+            if (earliest != null) {
+                lastMatch = earliest;
+            }
+            if (count == 0) {
+                failed("no match found for any " + kind);
+            } else {
+                passed(count + " matches found; earliest is " + earliest.toIntervalString());
+            }
+            return this;
+        }
+
+        Comparator<Range> rangeComparator = Comparator.comparing(Range::start).thenComparing(Range::end);
+
+        private void checking(String name, SearchKind kind) {
+            JavadocTester.this.checking(name + " " + kind.name()
                 + " allowOverlaps:" + allowOverlaps
                 + " expectFound:"   + expectFound
                 + " expectOrdered:" + expectOrdered);
