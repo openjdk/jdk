@@ -222,7 +222,7 @@ public abstract class DCTree implements DocTree {
             }
         }
 
-        return Position.NOPOS;
+        return NOPOS;
     }
 
     /**
