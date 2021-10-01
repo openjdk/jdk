@@ -21,12 +21,6 @@
  * questions.
  */
 
-import static java.lang.String.format;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,6 +41,12 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import jdk.test.lib.RandomFactory;
+
+import static java.lang.String.format;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 /*
  * @test
