@@ -1803,8 +1803,8 @@ public abstract class SunToolkit extends Toolkit
         if (useSystemAAFontSettings()) {
              Toolkit tk = Toolkit.getDefaultToolkit();
              if (tk instanceof SunToolkit) {
-                 Object map = ((SunToolkit)tk).getDesktopAAHints();
-                 return (RenderingHints)map;
+                 RenderingHints map = ((SunToolkit)tk).getDesktopAAHints();
+                 return map;
              } else { /* Headless Toolkit */
                  return null;
              }
