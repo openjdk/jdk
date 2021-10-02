@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class ParagraphView extends FlowView implements TabExpander {
         setPropertiesFromAttributes();
         Document doc = elem.getDocument();
         Object i18nFlag = doc.getProperty(AbstractDocument.I18NProperty);
-        if ((i18nFlag != null) && i18nFlag.equals(Boolean.TRUE)) {
+        if (Boolean.TRUE.equals(i18nFlag)) {
             try {
                 // the classname should probably come from a property file.
                 strategy = new TextLayoutStrategy();
@@ -115,7 +115,7 @@ public class ParagraphView extends FlowView implements TabExpander {
             if (a == null) {
                 Document doc = getElement().getDocument();
                 Object o = doc.getProperty(TextAttribute.RUN_DIRECTION);
-                if ((o != null) && o.equals(TextAttribute.RUN_DIRECTION_RTL)) {
+                if (TextAttribute.RUN_DIRECTION_RTL.equals(o)) {
                     alignment = StyleConstants.ALIGN_RIGHT;
                 } else {
                     alignment = StyleConstants.ALIGN_LEFT;

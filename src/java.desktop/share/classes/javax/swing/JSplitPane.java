@@ -989,25 +989,23 @@ public class JSplitPane extends JComponent implements Accessible
         }
 
         /* Find the Component that already exists and remove it. */
-        if (constraints != null && (constraints.equals(JSplitPane.LEFT) ||
-                                   constraints.equals(JSplitPane.TOP))) {
+        if (JSplitPane.LEFT.equals(constraints) ||
+            JSplitPane.TOP.equals(constraints)) {
             toRemove = getLeftComponent();
             if (toRemove != null) {
                 remove(toRemove);
             }
             leftComponent = comp;
             index = -1;
-        } else if (constraints != null &&
-                   (constraints.equals(JSplitPane.RIGHT) ||
-                    constraints.equals(JSplitPane.BOTTOM))) {
+        } else if (JSplitPane.RIGHT.equals(constraints) ||
+                   JSplitPane.BOTTOM.equals(constraints)) {
             toRemove = getRightComponent();
             if (toRemove != null) {
                 remove(toRemove);
             }
             rightComponent = comp;
             index = -1;
-        } else if (constraints != null &&
-                constraints.equals(JSplitPane.DIVIDER)) {
+        } else if (JSplitPane.DIVIDER.equals(constraints)) {
             index = -1;
         }
         /* LayoutManager should raise for else condition here. */

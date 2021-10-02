@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package javax.swing.plaf.basic;
 
 import java.beans.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.InputEvent;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.text.*;
@@ -146,7 +144,7 @@ public class BasicTextAreaUI extends BasicTextUI {
     public View create(Element elem) {
         Document doc = elem.getDocument();
         Object i18nFlag = doc.getProperty("i18n"/*AbstractDocument.I18NProperty*/);
-        if ((i18nFlag != null) && i18nFlag.equals(Boolean.TRUE)) {
+        if (Boolean.TRUE.equals(i18nFlag)) {
             // build a view that support bidi
             return createI18N(elem);
         } else {
