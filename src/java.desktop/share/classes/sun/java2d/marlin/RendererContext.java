@@ -49,12 +49,12 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
      */
     static RendererContext createContext() {
         return new RendererContext("ctx"
-                       + Integer.toString(CTX_COUNT.getAndIncrement()));
+                       + CTX_COUNT.getAndIncrement());
     }
 
     // Smallest object used as Cleaner's parent reference
     private final Object cleanerObj;
-    // dirty flag indicating an exception occured during pipeline in pathTo()
+    // dirty flag indicating an exception occurred during pipeline in pathTo()
     boolean dirty = false;
     // shared data
     final double[] double6 = new double[6];
