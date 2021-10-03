@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXReason;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
-import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -598,8 +597,8 @@ class ForwardBuilder extends Builder {
                 X500Name tAo1 = tSubjectName.commonAncestor(cIssuer1Name);
                 X500Name tAo2 = tSubjectName.commonAncestor(cIssuer2Name);
                 if (debug != null) {
-                    debug.println(METHOD_NME +" tAo1: " + String.valueOf(tAo1));
-                    debug.println(METHOD_NME +" tAo2: " + String.valueOf(tAo2));
+                    debug.println(METHOD_NME +" tAo1: " + tAo1);
+                    debug.println(METHOD_NME +" tAo2: " + tAo2);
                 }
                 if (tAo1 != null || tAo2 != null) {
                     if (tAo1 != null && tAo2 != null) {

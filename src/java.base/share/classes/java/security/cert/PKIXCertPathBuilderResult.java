@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,8 @@ public class PKIXCertPathBuilderResult extends PKIXCertPathValidatorResult
         StringBuilder sb = new StringBuilder();
         sb.append("PKIXCertPathBuilderResult: [\n");
         sb.append("  Certification Path: " + certPath + "\n");
-        sb.append("  Trust Anchor: " + getTrustAnchor().toString() + "\n");
-        sb.append("  Policy Tree: " + String.valueOf(getPolicyTree()) + "\n");
+        sb.append("  Trust Anchor: " + getTrustAnchor() + "\n");
+        sb.append("  Policy Tree: " + getPolicyTree() + "\n");
         sb.append("  Subject Public Key: " + getPublicKey() + "\n");
         sb.append("]");
         return sb.toString();
