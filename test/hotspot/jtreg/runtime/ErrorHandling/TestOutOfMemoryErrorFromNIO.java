@@ -91,6 +91,5 @@ public class TestOutOfMemoryErrorFromNIO {
         output_single.stdoutShouldContain("Heap dump file created");
 
         System.out.println("PASSED");
-        //output_single.reportDiagnosticSummary();
     }
 }
