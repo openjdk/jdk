@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -935,6 +935,29 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
 
     @Override
     Spliterator.OfDouble spliterator();
+
+    /**
+     * Applies given function to this stream, then closes the stream.
+     * No further operation on the stream will be possible after that.
+     *
+     * @apiNote
+     * This method allows consuming and closing the stream in the single
+     * operation, making it possible to perform the operation on the stream
+     * holding a resource in a single statement.
+     *
+     * @param function function to apply
+     * @param <R>      type of the function result
+     * @return result of the function
+     * @throws NullPointerException if the supplied function is null
+     * @see #close()
+     * @since 18
+     */
+    default <R> R consumeAndClose(Function<? super DoubleStream, ? extends R> function) {
+        Objects.requireNonNull(function);
+        try (this) {
+            return function.apply(this);
+        }
+    }
 
 
     // Static factories

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,16 @@
 /*
  * @test
  * @summary close handlers and closing streams
- * @bug 8044047 8147505
+ * @bug 8044047 8147505 8274412
  */
 
 package org.openjdk.tests.java.util.stream;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 
@@ -187,5 +191,27 @@ public class StreamCloseTest extends OpTestCase {
             // Adding onClose handler when stream is closed is also illegal
             checkISE(() -> s.onClose(() -> fail("3")));
         }
+    }
+
+    public void testConsumeAndClose() {
+        AtomicInteger count = new AtomicInteger();
+        int result = Stream.of(1, 2, 3).onClose(count::incrementAndGet)
+          .consumeAndClose(s -> s.mapToInt(x -> x).sum());
+        assertEquals(result, 6);
+        assertEquals(count.get(), 1);
+        int resultInt = IntStream.of(1, 2, 3).onClose(count::incrementAndGet)
+          .consumeAndClose(IntStream::sum);
+        assertEquals(resultInt, 6);
+        assertEquals(count.get(), 2);
+        long resultLong = LongStream.of(1, 2, 3).onClose(count::incrementAndGet)
+          .consumeAndClose(LongStream::sum);
+        assertEquals(resultLong, 6L);
+        assertEquals(count.get(), 3);
+        double resultDouble = DoubleStream.of(1, 2, 3).onClose(count::incrementAndGet)
+          .consumeAndClose(DoubleStream::sum);
+        assertEquals(resultDouble, 6.0);
+        assertEquals(count.get(), 4);
+
+        checkISE(() -> Stream.of(1, 2, 3).consumeAndClose(s -> s).consumeAndClose(s -> s));
     }
 }
