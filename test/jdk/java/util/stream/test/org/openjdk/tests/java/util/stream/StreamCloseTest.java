@@ -212,6 +212,12 @@ public class StreamCloseTest extends OpTestCase {
         assertEquals(resultDouble, 6.0);
         assertEquals(count.get(), 4);
 
-        checkISE(() -> Stream.of(1, 2, 3).consumeAndClose(s -> s).consumeAndClose(s -> s));
+        checkISE(() -> Stream.of(1, 2, 3)
+          .consumeAndClose(s -> s.filter(n -> n > 0))
+          .consumeAndClose(Stream::count));
+        checkNPE(() -> Stream.empty().consumeAndClose(null));
+        checkNPE(() -> IntStream.empty().consumeAndClose(null));
+        checkNPE(() -> LongStream.empty().consumeAndClose(null));
+        checkNPE(() -> DoubleStream.empty().consumeAndClose(null));
     }
 }
