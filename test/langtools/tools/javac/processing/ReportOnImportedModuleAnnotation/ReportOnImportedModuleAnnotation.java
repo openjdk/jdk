@@ -30,10 +30,14 @@
  * @modules jdk.compiler
  */
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.util.List;
 
 import javax.tools.JavaCompiler;
@@ -49,6 +53,20 @@ public class ReportOnImportedModuleAnnotation {
 
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
+        // Clean any existing class files in output directory
+        Files.walkFileTree(testOutputPath,
+                           new SimpleFileVisitor<Path>() {
+                               @Override
+                               public FileVisitResult visitFile(Path path,
+                                                         BasicFileAttributes attrs) {
+                                   File file = path.toFile();
+                                   if (file.getName().endsWith(".class")) {
+                                       file.delete();
+                                   }
+                                   return FileVisitResult.CONTINUE;
+                               }
+                           });
+
         // Compile annotation and processor modules
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
         fileManager.setLocationFromPaths(StandardLocation.MODULE_SOURCE_PATH, List.of(testBasePath.resolve("mods-src1/")));
@@ -63,7 +81,7 @@ public class ReportOnImportedModuleAnnotation {
         fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, List.of(testOutputPath));
 
         final StringWriter outputWriter = new StringWriter();
-        compiler.getTask(outputWriter, fileManager, null, List.of("-XDrawDiagnostics", "-Xprefer:source", "--module", "mod"), null, null).call();
+        compiler.getTask(outputWriter, fileManager, null, List.of("-XDrawDiagnostics", "--module", "mod"), null, null).call();
 
         String actualOutput = outputWriter.toString();
         String expectedOutput = Files.readString(testBasePath.resolve("ReportOnImportedModuleAnnotation.out"));
