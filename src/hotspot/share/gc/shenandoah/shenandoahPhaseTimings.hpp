@@ -118,7 +118,6 @@ class outputStream;
   f(final_update_refs_update_region_states,         "  Update Region States")          \
   f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
-  f(final_update_refs_promote_tenured_regions,      "  Promote Tenured Regions")       \
                                                                                        \
   f(conc_cleanup_complete,                          "Concurrent Cleanup")              \
                                                                                        \

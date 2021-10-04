@@ -378,6 +378,23 @@
           "Testing: use simplified, very inefficient but much less complex" \
           " card table scanning.")                                          \
                                                                             \
+  product(uintx, ShenandoahTenuredRegionUsageBias, 192, EXPERIMENTAL,       \
+          "The collection set is comprised of heap regions that contain "   \
+          "the greatest amount of garbage.  "                               \
+          "For purposes of selecting regions to be included in the "        \
+          "collection set, regions that have reached the tenure age will "  \
+          "be treated as if their contained garbage is the actual "         \
+          "contained garbage multiplied by "                                \
+          "(ShenandoahTenuredRegionUsageBias / 128 (e.g. 150% for the "     \
+          "default value) as many times as the region's age meets or "      \
+          "exceeds the tenure age.  For example, if tenure age is 7, "      \
+          "the region age is 9, ShenandoahTenuredRegionUsageBias is "       \
+          "192, and the region is 12.5% garbage, this region "              \
+          "will by treated as if its garbage content is "                   \
+          "1/8 * 27/8 = 42.2% when comparing this region to untenured "     \
+          "regions.")                                                       \
+          range(128, 256)                                                   \
+                                                                            \
   product(bool, ShenandoahPromoteTenuredObjects, true, DIAGNOSTIC,          \
           "Turn on/off evacuating individual tenured young objects "        \
           " to the old generation.")                                        \
@@ -390,5 +407,8 @@
           "Allow young generation collections to suspend concurrent"        \
           " marking in the old generation.")
 // end of GC_SHENANDOAH_FLAGS
+
+// 2^ShenandoahTenuredRegionUsageBiasLogBase2 is 128
+#define ShenandoahTenuredRegionUsageBiasLogBase2 7
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

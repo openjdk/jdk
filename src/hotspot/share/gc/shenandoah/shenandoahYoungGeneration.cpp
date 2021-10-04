@@ -50,42 +50,6 @@ void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress
   }
 }
 
-class ShenandoahPromoteTenuredRegionsTask : public AbstractGangTask {
-private:
-  ShenandoahRegionIterator* _regions;
-public:
-  volatile size_t _promoted;
-
-  ShenandoahPromoteTenuredRegionsTask(ShenandoahRegionIterator* regions) :
-    AbstractGangTask("Shenandoah Promote Tenured Regions"),
-    _regions(regions),
-    _promoted(0) {
-  }
-
-  void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahHeapRegion* r = _regions->next();
-    while (r != NULL) {
-      if (r->is_young() && r->age() >= InitialTenuringThreshold && ((r->is_regular() && !r->has_young_lab_flag()) || r->is_humongous_start())) {
-        // The thread that first encounters a humongous start region promotes the associated humonogous continuations,
-        // so we do not process humongous continuations directly.  Below, we rely on promote() to promote related
-        // continuation regions when encountering a homongous start.
-        size_t promoted = r->promote(false);
-        Atomic::add(&_promoted, promoted);
-      }
-      r = _regions->next();
-    }
-  }
-};
-
-void ShenandoahYoungGeneration::promote_tenured_regions() {
-  ShenandoahHeap::heap()->set_young_lab_region_flags();
-  ShenandoahRegionIterator regions;
-  ShenandoahPromoteTenuredRegionsTask task(&regions);
-  ShenandoahHeap::heap()->workers()->run_task(&task);
-  log_info(gc)("Promoted " SIZE_FORMAT " regions.", task._promoted);
-}
-
 bool ShenandoahYoungGeneration::contains(ShenandoahHeapRegion* region) const {
   // TODO: why not test for equals YOUNG_GENERATION?  As written, returns true for regions that are FREE
   return region->affiliation() != OLD_GENERATION;

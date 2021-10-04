@@ -184,7 +184,6 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
       return;
     }
-
     while (satb_mq_set.completed_buffers_num() > 0) {
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }

@@ -90,15 +90,17 @@ public:
           size_t size = obj->size();
           HeapWord* end_object = r->bottom() + size;
 
-          // First, clear the remembered set
-          scanner->reset_remset(r->bottom(), size);
+          // First, clear the remembered set for all spanned humongous regions
+          size_t num_regions = (size + ShenandoahHeapRegion::region_size_words() - 1) / ShenandoahHeapRegion::region_size_words();
+          size_t region_span = num_regions * ShenandoahHeapRegion::region_size_words();
+          scanner->reset_remset(r->bottom(), region_span);
           size_t region_index = r->index();
           ShenandoahHeapRegion* humongous_region = heap->get_region(region_index);
-          do {
+          while (num_regions-- != 0) {
             scanner->reset_object_range(humongous_region->bottom(), humongous_region->end());
             region_index++;
             humongous_region = heap->get_region(region_index);
-          } while (humongous_region->top() < end_object);
+          }
 
           // Then register the humongous object and DIRTY relevant remembered set cards
           scanner->register_object_wo_lock(obj_addr);

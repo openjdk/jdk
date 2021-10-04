@@ -419,12 +419,8 @@ public:
   void increment_age() { if (_age < markWord::max_age) { _age++; } }
   void reset_age()     { _age = 0; }
 
-  // Adjusts remembered set information by setting all cards to clean if promoting all, setting
-  // all cards to dirty otherwise.
-  //
-  // Returns the number of regions promoted, which is generally one, but may be greater than 1 if
-  // this is humongous region with multiple continuations.
-  size_t promote(bool promoting_all);
+  // Sets all remembered set cards to dirty.  Returns the number of regions spanned by the associated humongous object.
+  size_t promote_humongous();
 
 private:
   void do_commit();
@@ -433,10 +429,6 @@ private:
   // This is an old-region that was not part of the collection set during a GLOBAL collection.  We coalesce the dead
   // objects, but do not need to register the live objects as they are already registered.
   void global_oop_iterate_objects_and_fill_dead(OopIterateClosure* cl);
-
-  // Process the contents of a region when it is being promoted en masse by registering each marked object, coalescing
-  // contiguous ranges of unmarked objects into registered dead objects.  Do not touch card marks.
-  void fill_dead_and_register_for_promotion();
 
   inline void internal_increase_live_data(size_t s);
 

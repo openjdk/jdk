@@ -106,6 +106,7 @@ void ShenandoahScanRememberedTask::work(uint worker_id) {
   _rp->set_mark_closure(worker_id, &cl);
   ShenandoahHeapRegion* region = _regions->next();
   while (region != NULL) {
+    log_debug(gc)("ShenandoahScanRememberedTask::work(%u), looking at region " SIZE_FORMAT, worker_id, region->index());
     if (region->affiliation() == OLD_GENERATION) {
       scanner->process_region(region, &cl);
     }

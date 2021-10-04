@@ -84,12 +84,13 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(!is_in(r), "Already in collection set");
+  assert(!r->is_humongous(), "Only add regular regions to the collection set");
+
   _cset_map[r->index()] = 1;
   _region_count++;
+  _has_old_regions |= r->is_old();
   _garbage += r->garbage();
   _used += r->used();
-  _has_old_regions |= r->is_old();
-
   // Update the region status too. State transition would be checked internally.
   r->make_cset();
 }

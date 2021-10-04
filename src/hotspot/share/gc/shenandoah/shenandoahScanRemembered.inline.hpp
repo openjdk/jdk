@@ -589,6 +589,9 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
   process_clusters(first_cluster, count, end_of_range, cl, false);
 }
 
+// Process all objects starting within count clusters beginning with first_cluster for which the start address is
+// less than end_of_range.  For any such object, process the complete object, even if its end reaches beyond
+// end_of_range.
 template<typename RememberedSet>
 template <typename ClosureType>
 inline void
@@ -655,7 +658,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
               // Future TODO:
               // For improved efficiency, we might want to give special handling of obj->is_objArray().  In
               // particular, in that case, we might want to divide the effort for scanning of a very long object array
-              // between multiple threads.
+              // between multiple threads.  Also, skip parts of the array that are not marked as dirty.
               if (obj->is_objArray()) {
                 objArrayOop array = objArrayOop(obj);
                 int len = array->length();
@@ -790,16 +793,23 @@ ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *re
     end_of_range = region->top();
   }
 
+  log_debug(gc)("Remembered set scan processing Region " SIZE_FORMAT ", from " PTR_FORMAT " to " PTR_FORMAT ", using %s table",
+                region->index(), p2i(region->bottom()), p2i(end_of_range),
+                use_write_table? "read/write (updating)": "read (marking)");
   // end_of_range may point to the middle of a cluster because region->top() may be different than region->end().
   // We want to assure that our process_clusters() request spans all relevant clusters.  Note that each cluster
   // processed will avoid processing beyond end_of_range.
 
+  // Note that any object that starts between start_of_range and end_of_range, including humongous objects, will
+  // be fully processed by process_clusters, even though the object may reach beyond end_of_range.
   size_t num_heapwords = end_of_range - start_of_range;
   unsigned int cluster_size = CardTable::card_size_in_words * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
   size_t num_clusters = (size_t) ((num_heapwords - 1 + cluster_size) / cluster_size);
 
-  // Remembered set scanner
-  process_clusters(start_cluster_no, num_clusters, end_of_range, cl, use_write_table);
+  if (!region->is_humongous_continuation()) {
+    // Remembered set scanner
+    process_clusters(start_cluster_no, num_clusters, end_of_range, cl, use_write_table);
+  }
 }
 
 template<typename RememberedSet>
@@ -810,6 +820,7 @@ ShenandoahScanRemembered<RememberedSet>::cluster_for_addr(HeapWordImpl **addr) {
   return result;
 }
 
+// This is used only for debug verification so don't worry about making the scan parallel.
 template<typename RememberedSet>
 inline void ShenandoahScanRemembered<RememberedSet>::roots_do(OopIterateClosure* cl) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();

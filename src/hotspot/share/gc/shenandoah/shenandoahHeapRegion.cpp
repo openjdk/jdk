@@ -511,55 +511,6 @@ void ShenandoahHeapRegion::global_oop_iterate_objects_and_fill_dead(OopIterateCl
   }
 }
 
-// This function does not set card dirty bits.  The decision of which cards to dirty is best
-// made in the caller's context.
-void ShenandoahHeapRegion::fill_dead_and_register_for_promotion() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahMarkingContext* marking_context = heap->marking_context();
-  HeapWord* obj_addr = bottom();
-  RememberedScanner* rem_set_scanner = heap->card_scan();
-  // Objects allocated above TAMS are not marked, but are considered live for purposes of current GC efforts.
-  HeapWord* t = marking_context->top_at_mark_start(this);
-
-  assert(!is_humongous(), "no humongous region here");
-  assert(heap->active_generation()->is_mark_complete(), "sanity");
-
-  // end() might be overkill as end of range, but top() may not align with card boundary.
-  rem_set_scanner->reset_object_range(bottom(), end());
-  while (obj_addr < t) {
-    oop obj = cast_to_oop(obj_addr);
-    if (marking_context->is_marked(obj)) {
-      assert(obj->klass() != NULL, "klass should not be NULL");
-      // when promoting an entire region, we have to register the marked objects as well
-      rem_set_scanner->register_object_wo_lock(obj_addr);
-      obj_addr += obj->size();
-    } else {
-      // Object is not marked.  Coalesce and fill dead object with dead neighbors.
-      HeapWord* next_marked_obj = marking_context->get_next_marked_addr(obj_addr, t);
-      assert(next_marked_obj <= t, "next marked object cannot exceed top");
-      size_t fill_size = next_marked_obj - obj_addr;
-      assert(fill_size >= (size_t) oopDesc::header_size(),
-             "fill size " SIZE_FORMAT " for obj @ " PTR_FORMAT ", next_marked: " PTR_FORMAT ", TAMS: " PTR_FORMAT " is too small",
-             fill_size, p2i(obj_addr), p2i(next_marked_obj), p2i(t));
-      ShenandoahHeap::fill_with_object(obj_addr, fill_size);
-      rem_set_scanner->register_object_wo_lock(obj_addr);
-      obj_addr = next_marked_obj;
-    }
-  }
-
-  // Any object above TAMS and below top() is considered live.
-  t = top();
-  while (obj_addr < t) {
-    oop obj = cast_to_oop(obj_addr);
-    assert(obj->klass() != NULL, "klass should not be NULL");
-    // when promoting an entire region, we have to register the marked objects as well
-    rem_set_scanner->register_object_wo_lock(obj_addr);
-    obj_addr += obj->size();
-  }
-
-  // Remembered set scanning stops at top() so no need to fill beyond it.
-}
-
 void ShenandoahHeapRegion::oop_iterate_humongous(OopIterateClosure* blk) {
   assert(is_humongous(), "only humongous region here");
   // Find head.
@@ -916,94 +867,52 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affil
   _affiliation = new_affiliation;
 }
 
-size_t ShenandoahHeapRegion::promote(bool promoting_all) {
-  // TODO: Not sure why region promotion must be performed at safepoint.  Reconsider this requirement.
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-
-  // Note that region promotion occurs at a safepoint following all evacuation.  When a region is promoted, we leave
-  // its TAMS and update_watermark information as is.
-  //
-  // Note that update_watermark represents the state of this region as of the moment at which the most recent evacuation
-  // began.  The value of update_watermark is the same for old regions and young regions, as both participate equally in
-  // the processes of a mixed evacuation.
-  //
-  // The meaning of TAMS is different for young-gen and old-gen regions.  For a young-gen region, TAMS represents
-  // top() at start of most recent young-gen concurrent mark.  For an old-gen region, TAMS represents top() at start
-  // of most recent old-gen concurrent mark().  In the case that a young-gen heap region is promoted into old-gen,
-  // we can preserve its TAMS information with the following understandings:
-  //   1. The most recent young-GC concurrent mark phase began at the same time or after the most recent old-GC
-  //      concurrent mark phase.
-  //   2. After the region is promoted, it is still the case that any object within the region that is beneath TAMS
-  //      and is considered alive for the current old GC pass will be "marked" within the current marking context, and
-  //      any object within the region that is above TAMS will be considered alive for the current old GC pass.  Objects
-  //      that were dead at promotion time will all reside below TAMS and will be unmarked.
+size_t ShenandoahHeapRegion::promote_humongous() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahMarkingContext* marking_context = heap->marking_context();
   assert(heap->active_generation()->is_mark_complete(), "sanity");
-  assert(affiliation() == YOUNG_GENERATION, "Only young regions can be promoted");
+  assert(is_young(), "Only young regions can be promoted");
+  assert(is_humongous_start(), "Should not promote humongous continuation in isolation");
+  assert(age() >= InitialTenuringThreshold, "Only promote regions that are sufficiently aged");
 
   ShenandoahGeneration* old_generation = heap->old_generation();
   ShenandoahGeneration* young_generation = heap->young_generation();
 
-  if (is_humongous_start()) {
-    oop obj = cast_to_oop(bottom());
-    assert(marking_context->is_marked(obj), "promoted humongous object should be alive");
+  oop obj = cast_to_oop(bottom());
+  assert(marking_context->is_marked(obj), "promoted humongous object should be alive");
 
-    // Since the humongous region holds only one object, no lock is necessary for this register_object() invocation.
-    heap->card_scan()->register_object_wo_lock(bottom());
-    size_t index_limit = index() + ShenandoahHeapRegion::required_regions(obj->size() * HeapWordSize);
+  size_t spanned_regions = ShenandoahHeapRegion::required_regions(obj->size() * HeapWordSize);
+  size_t index_limit = index() + spanned_regions;
 
-    // For this region and each humongous continuation region spanned by this humongous object, change
-    // affiliation to OLD_GENERATION and adjust the generation-use tallies.  The remnant of memory
-    // in the last humongous region that is not spanned by obj is currently not used.
-    for (size_t i = index(); i < index_limit; i++) {
-      ShenandoahHeapRegion* r = heap->get_region(i);
-      log_debug(gc)("promoting region " SIZE_FORMAT ", from " SIZE_FORMAT " to " SIZE_FORMAT,
-        r->index(), (size_t) r->bottom(), (size_t) r->top());
-      if (r->top() < r->end()) {
-        ShenandoahHeap::fill_with_object(r->top(), (r->end() - r->top()) / HeapWordSize);
-        heap->card_scan()->register_object_wo_lock(r->top());
-        heap->card_scan()->mark_range_as_clean(top(), r->end() - r->top());
-      }
-      // We mark the entire humongous object's range as dirty after loop terminates, so no need to dirty the range here
-      r->set_affiliation(OLD_GENERATION);
-      log_debug(gc)("promoting humongous region " SIZE_FORMAT ", dirtying cards from " SIZE_FORMAT " to " SIZE_FORMAT,
-                    i, (size_t) r->bottom(), (size_t) r->top());
-      old_generation->increase_used(r->used());
-      young_generation->decrease_used(r->used());
-    }
-    if (promoting_all || obj->is_typeArray()) {
-      // Primitive arrays don't need to be scanned.  Likewise, if we are promoting_all, there's nothing
-      // left in young-gen, so there can exist no "interesting" pointers.  See above TODO question about requiring
-      // region promotion at safepoint.  If we're not at a safepoint, then we can't really "promote all" without
-      // directing new allocations to old-gen.  That's probably not what we want.  The whole "promote-all strategy"
-      // probably needs to be revisited at some future point.
-      heap->card_scan()->mark_range_as_clean(bottom(), obj->size());
-    } else {
-      heap->card_scan()->mark_range_as_dirty(bottom(), obj->size());
-    }
-    return index_limit - index();
-  } else {
-    log_debug(gc)("promoting region " SIZE_FORMAT ", dirtying cards from " SIZE_FORMAT " to " SIZE_FORMAT,
-      index(), (size_t) bottom(), (size_t) top());
-    assert(!is_humongous_continuation(), "should not promote humongous object continuation in isolation");
+  log_debug(gc)("promoting humongous region " SIZE_FORMAT ", spanning " SIZE_FORMAT, index(), spanned_regions);
 
-    fill_dead_and_register_for_promotion();
-    // Rather than scanning entire contents of the promoted region right now to determine which
-    // cards to mark as dirty, we just mark them all as dirty (unless promoting_all).  Later, when we
-    // scan the remembered set, we will clear cards that are found to not contain live references to
-    // young memory.  Ultimately, this approach is more efficient as it only scans the "dirty" cards
-    // once and the clean cards once.  The alternative approach of scanning all cards now and then
-    // scanning dirty cards again at next concurrent mark pass scans the clean cards once and the dirty
-    // cards twice.
-    if (promoting_all) {
-      heap->card_scan()->mark_range_as_clean(bottom(), top() - bottom());
-    } else {
-      heap->card_scan()->mark_range_as_dirty(bottom(), top() - bottom());
-    }
-    set_affiliation(OLD_GENERATION);
-    old_generation->increase_used(used());
-    young_generation->decrease_used(used());
-    return 1;
+  // Since this region may have served previously as OLD, it may hold obsolete object range info.
+  heap->card_scan()->reset_object_range(bottom(), bottom() + spanned_regions * ShenandoahHeapRegion::region_size_words());
+  // Since the humongous region holds only one object, no lock is necessary for this register_object() invocation.
+  heap->card_scan()->register_object_wo_lock(bottom());
+
+  // For this region and each humongous continuation region spanned by this humongous object, change
+  // affiliation to OLD_GENERATION and adjust the generation-use tallies.  The remnant of memory
+  // in the last humongous region that is not spanned by obj is currently not used.
+  for (size_t i = index(); i < index_limit; i++) {
+    ShenandoahHeapRegion* r = heap->get_region(i);
+    log_debug(gc)("promoting humongous region " SIZE_FORMAT ", from " PTR_FORMAT " to " PTR_FORMAT,
+                  r->index(), p2i(r->bottom()), p2i(r->top()));
+    // We mark the entire humongous object's range as dirty after loop terminates, so no need to dirty the range here
+    r->set_affiliation(OLD_GENERATION);
+    old_generation->increase_used(r->used());
+    young_generation->decrease_used(r->used());
   }
+  if (obj->is_typeArray()) {
+    // Primitive arrays don't need to be scanned.  See above TODO question about requiring
+    // region promotion at safepoint.
+    log_debug(gc)("Clean cards for promoted humongous object (Region " SIZE_FORMAT ") from " PTR_FORMAT " to " PTR_FORMAT,
+                  index(), p2i(bottom()), p2i(bottom() + obj->size()));
+    heap->card_scan()->mark_range_as_clean(bottom(), obj->size());
+  } else {
+    log_debug(gc)("Dirty cards for promoted humongous object (Region " SIZE_FORMAT ") from " PTR_FORMAT " to " PTR_FORMAT,
+                  index(), p2i(bottom()), p2i(bottom() + obj->size()));
+    heap->card_scan()->mark_range_as_dirty(bottom(), obj->size());
+  }
+  return index_limit - index();
 }
