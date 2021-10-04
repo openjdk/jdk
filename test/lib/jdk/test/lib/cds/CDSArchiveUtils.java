@@ -159,7 +159,7 @@ public class CDSArchiveUtils {
     public static String baseArchiveName(File jsaFile) throws Exception {
         int size = baseArchiveNameSize(jsaFile);
         int baseArchivePathOffset = (int)readInt(jsaFile, offsetBaseArchivePathOffset, 4);
-        return readString(jsaFile, baseArchivePathOffset, size - 1); // exclude including ending '\0'
+        return readString(jsaFile, baseArchivePathOffset, size - 1); // exclude terminating '\0'
     }
 
     private static long alignUpWithAlignment(long l) {
