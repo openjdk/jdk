@@ -387,7 +387,7 @@ void Mutex::check_rank(Thread* thread) {
     // For JavaThreads, we enforce not holding locks of rank nosafepoint or lower while waiting
     // because the held lock has a NoSafepointVerifier so waiting on a lower ranked lock will not be
     // able to check for safepoints first with a TBIVM.
-    // For NonJavaThreads, we enforce not waiting on the tty lock since that could block progress also.
+    // For all threads, we enforce not waiting on the tty lock since that could block progress also.
     // Also "this" should be the monitor with lowest rank owned by this thread.
     if (least != NULL && ((least->rank() <= Mutex::nosafepoint && thread->is_Java_thread()) ||
                            least->rank() <= Mutex::tty ||
