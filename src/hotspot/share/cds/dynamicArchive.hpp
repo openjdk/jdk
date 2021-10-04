@@ -38,7 +38,7 @@
 #if INCLUDE_CDS
 
 class DynamicArchiveHeader : public FileMapHeader {
-  friend class CDSOffsets;
+  friend class CDSConstants;
 private:
   int _base_header_crc;
   int _base_region_crc[MetaspaceShared::n_regions];

@@ -245,7 +245,7 @@ class ParHeapInspectTask : public AbstractGangTask {
       _filter(filter),
       _missed_count(0),
       _success(true),
-      _mutex(Mutex::leaf, "ParHeapInspectTask_lock", Mutex::_safepoint_check_never) {}
+      _mutex(Mutex::nosafepoint, "ParHeapInspectTask_lock", Mutex::_safepoint_check_never) {}
 
   uintx missed_count() const {
     return _missed_count;

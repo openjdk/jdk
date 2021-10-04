@@ -75,6 +75,11 @@ public enum HtmlStyle {
     typeNameLabel,
     typeNameLink,
 
+    /**
+     * The class of the {@code pre} element presenting a snippet.
+     */
+    snippet,
+
     //<editor-fold desc="navigation bar">
     //
     // The following constants are used for the main navigation bar that appears in the
@@ -97,6 +102,11 @@ public enum HtmlStyle {
      */
     // The etymology of the name is a mystery.
     navBarCell1Rev,
+
+    /**
+     * The class for the navigation bar toggle button for smaller displays.
+     */
+    navBarToggleIcon,
 
     /**
      * The class for the primary list of navigation links.
@@ -124,6 +134,11 @@ public enum HtmlStyle {
      * The class for the list of subsidiary navigation links.
      */
     subNavList,
+
+    /**
+     * The class for the list of subsidiary navigation links for smaller displays.
+     */
+    subNavListSmall,
 
     //</editor-fold>
 
@@ -803,6 +818,7 @@ public enum HtmlStyle {
      * The class of the {@code body} element for the page for the class hierarchy.
      */
     treePage,
+
     //</editor-fold>
 
     //<editor-fold desc="help page">

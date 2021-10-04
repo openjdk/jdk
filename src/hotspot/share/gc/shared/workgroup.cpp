@@ -116,13 +116,12 @@ public:
 };
 // Definitions of WorkGang methods.
 
-WorkGang::WorkGang(const char* name, uint workers, bool are_ConcurrentGC_threads) :
+WorkGang::WorkGang(const char* name, uint workers) :
     _workers(NULL),
     _total_workers(workers),
     _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
     _created_workers(0),
     _name(name),
-    _are_ConcurrentGC_threads(are_ConcurrentGC_threads),
     _dispatcher(new GangTaskDispatcher())
   { }
 
@@ -246,14 +245,9 @@ void GangWorker::loop() {
 // *** WorkGangBarrierSync
 
 WorkGangBarrierSync::WorkGangBarrierSync()
-  : _monitor(Mutex::safepoint, "work gang barrier sync",
+  : _monitor(Mutex::nosafepoint, "WorkGangBarrierSync_lock",
              Monitor::_safepoint_check_never),
     _n_workers(0), _n_completed(0), _should_reset(false), _aborted(false) {
-}
-
-WorkGangBarrierSync::WorkGangBarrierSync(uint n_workers, const char* name)
-  : _monitor(Mutex::safepoint, name, Monitor::_safepoint_check_never),
-    _n_workers(n_workers), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 
 void WorkGangBarrierSync::set_n_workers(uint n_workers) {

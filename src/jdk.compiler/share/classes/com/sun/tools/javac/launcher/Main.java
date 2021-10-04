@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public class Main {
      * arguments to the main method of the first class found in the file.
      *
      * <p>If any problem occurs before executing the main class, it will
-     * be reported to the standard error stream, and the the JVM will be
+     * be reported to the standard error stream, and the JVM will be
      * terminated by calling {@code System.exit} with a non-zero return code.
      *
      * @param args the arguments

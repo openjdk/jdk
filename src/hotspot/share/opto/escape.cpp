@@ -3117,7 +3117,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // to the actual Array type.
       if (alloc->is_Allocate() && n->as_Type()->type() == TypeInstPtr::NOTNULL
           && (alloc->is_AllocateArray() ||
-              igvn->type(alloc->in(AllocateNode::KlassNode)) != TypeKlassPtr::OBJECT)) {
+              igvn->type(alloc->in(AllocateNode::KlassNode)) != TypeInstKlassPtr::OBJECT)) {
         Node *cast2 = NULL;
         for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
           Node *use = n->fast_out(i);

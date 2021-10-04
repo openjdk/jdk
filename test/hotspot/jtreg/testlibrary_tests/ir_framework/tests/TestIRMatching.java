@@ -207,9 +207,9 @@ public class TestIRMatching {
         } else {
             cmp = "cmp";
         }
-        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array()", 1, cmp, "precise klass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 1,cmp, "precise klass", "MyClass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 2,cmp, "precise klass", "ir_framework/tests/MyClass"),
+        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array()", 1, cmp, "precise"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 1,cmp, "precise", "MyClass"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 2,cmp, "precise", "ir_framework/tests/MyClass"),
                  GoodFailOnConstraint.create(CheckCastArray.class, "array()", 3),
                  Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
                      GoodFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1)

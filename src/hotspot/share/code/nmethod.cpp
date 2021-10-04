@@ -1193,7 +1193,9 @@ void nmethod::make_unloaded() {
   // recorded in instanceKlasses get flushed.
   // Since this work is being done during a GC, defer deleting dependencies from the
   // InstanceKlass.
-  assert(Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread(),
+  assert(Universe::heap()->is_gc_active() ||
+         Thread::current()->is_ConcurrentGC_thread() ||
+         Thread::current()->is_Worker_thread(),
          "should only be called during gc");
   flush_dependencies(/*delete_immediately*/false);
 
@@ -1233,7 +1235,9 @@ void nmethod::make_unloaded() {
   }
 
   // Make the class unloaded - i.e., change state and notify sweeper
-  assert(SafepointSynchronize::is_at_safepoint() || Thread::current()->is_ConcurrentGC_thread(),
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         Thread::current()->is_ConcurrentGC_thread() ||
+         Thread::current()->is_Worker_thread(),
          "must be at safepoint");
 
   {
@@ -1554,7 +1558,9 @@ oop nmethod::oop_at_phantom(int index) const {
 // notifies instanceKlasses that are reachable
 
 void nmethod::flush_dependencies(bool delete_immediately) {
-  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread();)
+  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() ||
+                                 Thread::current()->is_ConcurrentGC_thread() ||
+                                 Thread::current()->is_Worker_thread();)
   assert(called_by_gc != delete_immediately,
   "delete_immediately is false if and only if we are called during GC");
   if (!has_flushed_dependencies()) {

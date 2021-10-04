@@ -397,7 +397,7 @@ public class JlinkTask {
         }
 
         ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, roots);
-        if (!finder.find("java.base").isPresent()) {
+        if (finder.find("java.base").isEmpty()) {
             Path defModPath = getDefaultModulePath();
             if (defModPath != null) {
                 options.modulePath.add(defModPath);
@@ -517,7 +517,7 @@ public class JlinkTask {
 
     private static Path toPathLocation(ResolvedModule m) {
         Optional<URI> ouri = m.reference().location();
-        if (!ouri.isPresent())
+        if (ouri.isEmpty())
             throw new InternalError(m + " does not have a location");
         URI uri = ouri.get();
         return Paths.get(uri);

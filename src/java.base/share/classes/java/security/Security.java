@@ -622,8 +622,7 @@ public final class Security {
 
         // For each selection criterion, remove providers
         // which don't satisfy the criterion from the candidate set.
-        for (Iterator<String> ite = keySet.iterator(); ite.hasNext(); ) {
-            String key = ite.next();
+        for (String key : keySet) {
             String value = filter.get(key);
 
             LinkedHashSet<Provider> newCandidates = getAllQualifyingCandidates(key, value,
@@ -809,7 +808,7 @@ public final class Security {
      * setProperty() was either "package.access" or
      * "package.definition", we need to signal to the SecurityManager
      * class that the value has just changed, and that it should
-     * invalidate it's local cache values.
+     * invalidate its local cache values.
      */
     private static void invalidateSMCache(String key) {
 

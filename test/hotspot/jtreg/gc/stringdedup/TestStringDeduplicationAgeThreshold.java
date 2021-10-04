@@ -24,7 +24,7 @@
 package gc.stringdedup;
 
 /*
- * @test TestStringDeduplicationAgeThreshold
+ * @test id=Serial
  * @summary Test string deduplication age threshold
  * @bug 8029075
  * @requires vm.gc.Serial
@@ -37,7 +37,7 @@ package gc.stringdedup;
  */
 
 /*
- * @test TestStringDeduplicationAgeThreshold
+ * @test id=G1
  * @summary Test string deduplication age threshold
  * @bug 8029075
  * @requires vm.gc.G1
@@ -50,7 +50,7 @@ package gc.stringdedup;
  */
 
 /*
- * @test TestStringDeduplicationAgeThreshold
+ * @test id=Parallel
  * @summary Test string deduplication age threshold
  * @bug 8029075
  * @requires vm.gc.Parallel
@@ -63,7 +63,7 @@ package gc.stringdedup;
  */
 
 /*
- * @test TestStringDeduplicationAgeThreshold
+ * @test id=Shenandoah
  * @summary Test string deduplication age threshold
  * @bug 8029075
  * @requires vm.gc.Shenandoah
@@ -76,7 +76,7 @@ package gc.stringdedup;
  */
 
 /*
- * @test TestStringDeduplicationAgeThreshold
+ * @test id=Z
  * @summary Test string deduplication age threshold
  * @bug 8029075
  * @requires vm.gc.Z

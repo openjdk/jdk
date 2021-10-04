@@ -122,7 +122,6 @@ LatestMethodCache* Universe::_throw_illegal_access_error_cache = NULL;
 LatestMethodCache* Universe::_throw_no_such_method_error_cache = NULL;
 LatestMethodCache* Universe::_do_stack_walk_cache     = NULL;
 
-bool Universe::_verify_in_progress                    = false;
 long Universe::verify_flags                           = Universe::Verify_All;
 
 Array<int>* Universe::_the_empty_int_array            = NULL;
@@ -1077,12 +1076,6 @@ bool Universe::should_verify_subset(uint subset) {
 }
 
 void Universe::verify(VerifyOption option, const char* prefix) {
-  // The use of _verify_in_progress is a temporary work around for
-  // 6320749.  Don't bother with a creating a class to set and clear
-  // it since it is only used in this method and the control flow is
-  // straight forward.
-  _verify_in_progress = true;
-
   COMPILER2_PRESENT(
     assert(!DerivedPointerTable::is_active(),
          "DPT should not be active during verification "
@@ -1113,7 +1106,6 @@ void Universe::verify(VerifyOption option, const char* prefix) {
     StringTable::verify();
   }
   if (should_verify_subset(Verify_CodeCache)) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     log_debug(gc, verify)("CodeCache");
     CodeCache::verify();
   }
@@ -1145,8 +1137,6 @@ void Universe::verify(VerifyOption option, const char* prefix) {
     log_debug(gc, verify)("String Deduplication");
     StringDedup::verify();
   }
-
-  _verify_in_progress = false;
 }
 
 
