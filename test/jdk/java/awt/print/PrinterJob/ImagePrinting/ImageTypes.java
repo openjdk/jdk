@@ -86,6 +86,11 @@ public class ImageTypes {
             @Override
             public void actionPerformed(ActionEvent e) {
                 PrinterJob pj = PrinterJob.getPrinterJob();
+                if (pj.getPrintService() == null) {
+                    System.out.println("No printers. Test cannot continue. Install " +
+                            "printer and restart the test.");
+                    return;
+                }
                 PrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
                 if (pj != null && pj.printDialog(attrs)) {
                     pj.setPrintable(imageCanvas);
