@@ -378,8 +378,8 @@ public class VM {
         } else {
            // Otherwise print warning to allow mismatch not release versions
            // during development.
-           System.err.println("WARNING: Hotspot VM version " + vmVersion.toString() +
-                              " does not match with SA version " + saVersion.toString() +
+           System.err.println("WARNING: Hotspot VM version " + vmVersion +
+                              " does not match with SA version " + saVersion +
                               "." + " You may see unexpected results. ");
         }
      } else {

@@ -34,8 +34,8 @@ public class VMVersionMismatchException extends RuntimeException {
     }
 
     public String getMessage() {
-        return "Supported versions are " + supportedVersions.toString() +
-                ". Target VM is " + targetVersion.toString();
+        return "Supported versions are " + supportedVersions +
+                ". Target VM is " + targetVersion;
     }
 
     public Runtime.Version getSupportedVersions() {
