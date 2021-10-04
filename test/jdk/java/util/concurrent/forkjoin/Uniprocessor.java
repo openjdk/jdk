@@ -29,6 +29,7 @@
  *          level in a uniprocessor environment.
  */
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 
 public class Uniprocessor {
@@ -38,9 +39,8 @@ public class Uniprocessor {
     public static void main(String[] args) throws InterruptedException {
         // If the default parallelism were zero then this task would not
         // complete and the test will timeout.
-        ForkJoinPool.commonPool().submit(() -> done = true);
-        while (!done) {
-            Thread.sleep(500);
-        }
+        CountDownLatch ran = new CountDownLatch(1);
+        ForkJoinPool.commonPool().submit(() -> ran.countDown());
+        ran.await();
     }
 }
