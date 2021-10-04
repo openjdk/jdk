@@ -334,6 +334,7 @@ void mutex_init() {
   def(LambdaFormInvokers_lock      , PaddedMutex  , nonleaf,     false, _safepoint_check_always);
 #endif // INCLUDE_CDS
   def(Bootclasspath_lock           , PaddedMutex  , nosafepoint, true,  _safepoint_check_never);
+  def(Zip_lock                     , PaddedMonitor, nosafepoint-1, true, _safepoint_check_never); // Holds DumpTimeTable_lock
 
 #if INCLUDE_JVMCI
   def(JVMCI_lock                   , PaddedMonitor, nonleaf,     true,  _safepoint_check_always);
@@ -345,7 +346,6 @@ void mutex_init() {
   defl(CodeCache_lock              , PaddedMonitor, VtableStubs_lock, true,  _safepoint_check_never);
   defl(CompiledMethod_lock         , PaddedMutex  , CodeCache_lock,   true,  _safepoint_check_never);
   defl(CodeSweeper_lock            , PaddedMonitor, CompiledMethod_lock, true,  _safepoint_check_never);
-  defl(Zip_lock                    , PaddedMonitor, DumpTimeTable_lock,  true,  _safepoint_check_never);
 
   // These locks have safepoint_check_always and relative rankings.
   defl(Threads_lock                , PaddedMonitor, CompileThread_lock, true, _safepoint_check_always);
