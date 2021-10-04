@@ -27,7 +27,10 @@
  *      8235458
  * @summary javac shouldn't fail when an annotation processor report a message about an annotation on a module
  *          javac should process annotated module when imports statement are present
+ * @library /tools/lib
  * @modules jdk.compiler
+ * @build toolbox.ToolBox
+ * @run main ReportOnImportedModuleAnnotation
  */
 
 import java.io.File;
@@ -45,6 +48,8 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
+import toolbox.ToolBox;
+
 public class ReportOnImportedModuleAnnotation {
 
     public static void main(String[] args) throws Exception {
@@ -54,6 +59,7 @@ public class ReportOnImportedModuleAnnotation {
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
         // Clean any existing class files in output directory
+        var tb = new ToolBox();
         Files.walkFileTree(testOutputPath,
                            new SimpleFileVisitor<Path>() {
                                @Override
@@ -61,7 +67,11 @@ public class ReportOnImportedModuleAnnotation {
                                                          BasicFileAttributes attrs) {
                                    File file = path.toFile();
                                    if (file.getName().endsWith(".class")) {
-                                       file.delete();
+                                       try {
+                                           tb.deleteFiles(path);
+                                       } catch (java.io.IOException ioe) {
+                                           ; // ignore
+                                       }
                                    }
                                    return FileVisitResult.CONTINUE;
                                }
