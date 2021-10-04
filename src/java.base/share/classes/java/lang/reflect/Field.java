@@ -74,6 +74,7 @@ class Field extends AccessibleObject implements Member {
     private String              name;
     @Stable
     private Class<?>            type;
+    @Stable
     private int                 modifiers;
     private boolean             trustedFinal;
     // Generics and annotations support
