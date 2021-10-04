@@ -160,7 +160,7 @@ public class SharedArchiveConsistency {
         System.out.println("\n2c. Corrupt _magic, should fail\n");
         String modMagic = startNewArchive("modify-magic");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modMagic);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetMagic, -1);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetMagic(), -1);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
@@ -172,7 +172,7 @@ public class SharedArchiveConsistency {
         System.out.println("\n2d. Corrupt _version, should fail\n");
         String modVersion = startNewArchive("modify-version");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion, 0x00000000);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x00000000);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has the wrong version");
         output.shouldNotContain("Checksum verification failed");
@@ -222,13 +222,13 @@ public class SharedArchiveConsistency {
         CDSArchiveUtils.modifyRegionContentRandomly(copiedJsa);
         testAndCheck(verifyExecArgs);
 
-        // modify _base_archive_path_offet to not zero
-        System.out.println("\n8. modify _base_archive_path_offset to not zero\n");
+        // modify _base_archive_path_offet to non-zero
+        System.out.println("\n8. modify _base_archive_path_offset to non-zero\n");
         String baseArchivePathOffsetName = startNewArchive("base-arhive-path-offset");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, baseArchivePathOffsetName);
         int baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
         System.out.println("    baseArchivePathOffset = " + baseArchivePathOffset);
-        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset, 1024);
+        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset(), 1024);
         baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
         System.out.println("new baseArchivePathOffset = " + baseArchivePathOffset);
         testAndCheck(verifyExecArgs);

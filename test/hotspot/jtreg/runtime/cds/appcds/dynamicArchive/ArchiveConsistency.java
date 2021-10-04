@@ -105,11 +105,11 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                new String[] {"Header checksum verification failed",
                              "Unable to use shared archive"});
 
-        // 2. Make header size biger than the archive size
-        System.out.println("\n2. Make header size biger than the archive size");
+        // 2. Make header size larger than the archive size
+        System.out.println("\n2. Make header size larger than the archive size");
         String largerHeaderSize = getNewArchiveName("largerHeaderSize");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, largerHeaderSize);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetHeaderSize,  (int)copiedJsa.length() + 1024);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetHeaderSize(),  (int)copiedJsa.length() + 1024);
         runTwo(baseArchiveName, largerHeaderSize,
                appJar, mainClass, 1,
                new String[] {"_header_size should be equal to _base_archive_path_offset plus _base_archive_name_size",
@@ -121,7 +121,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseArchivePathOffset);
         int fileHeaderSize = (int)CDSArchiveUtils.fileHeaderSize(copiedJsa);
         int baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset, baseArchivePathOffset + 1024);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset(), baseArchivePathOffset + 1024);
         // any change to the header leads to checksum failed.
         runTwo(baseArchiveName, wrongBaseArchivePathOffset,
                appJar, mainClass, 1,

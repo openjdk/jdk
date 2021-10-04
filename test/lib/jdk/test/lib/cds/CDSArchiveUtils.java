@@ -46,28 +46,28 @@ import sun.hotspot.WhiteBox;
 // This class performs operations on shared archive file
 public class CDSArchiveUtils {
     // offsets
-    public static int offsetMagic;                // offset of GenericCDSFileMapHeader::_magic
-    public static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
-    public static int offsetVersion;              // offset of GenericCDSFileMapHeader::_version
-    public static int offsetHeaderSize;           // offset of GenericCDSFileMapHeader::_header_size
-    public static int offsetBaseArchivePathOffset;// offset of GenericCDSFileMapHeader::_base_archive_path_offset
-    public static int offsetBaseArchiveNameSize;  // offset of GenericCDSFileMapHeader::_base_archive_name_size
-    public static int offsetJvmIdent;             // offset of FileMapHeader::_jvm_ident
-    public static int spOffsetCrc;                // offset of CDSFileMapRegion::_crc
-    public static int spOffset;                   // offset of CDSFileMapRegion
-    public static int spUsedOffset;               // offset of CDSFileMapRegion::_used
+    private static int offsetMagic;                // offset of GenericCDSFileMapHeader::_magic
+    private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
+    private static int offsetVersion;              // offset of GenericCDSFileMapHeader::_version
+    private static int offsetHeaderSize;           // offset of GenericCDSFileMapHeader::_header_size
+    private static int offsetBaseArchivePathOffset;// offset of GenericCDSFileMapHeader::_base_archive_path_offset
+    private static int offsetBaseArchiveNameSize;  // offset of GenericCDSFileMapHeader::_base_archive_name_size
+    private static int offsetJvmIdent;             // offset of FileMapHeader::_jvm_ident
+    private static int spOffsetCrc;                // offset of CDSFileMapRegion::_crc
+    private static int spOffset;                   // offset of CDSFileMapRegion
+    private static int spUsedOffset;               // offset of CDSFileMapRegion::_used
     // constants
-    public static int staticMagic;                // static magic value defined in hotspot
-    public static int dynamicMagic;               // dyamic magic value defined in hotspot
-    public static int sizetSize;                  // size of size_t
-    public static int intSize;                    // size of int
-    public static int staticArchiveHeaderSize;    // static archive file header size
-    public static int dynamicArchiveHeaderSize;   // dynamic archive file header size
-    public static int cdsFileMapRegionSize;       // size of CDSFileMapRegion
-    public static long alignment;                 // MetaspaceShared::core_region_alignment
+    private static int staticMagic;                // static magic value defined in hotspot
+    private static int dynamicMagic;               // dyamic magic value defined in hotspot
+    private static int sizetSize;                  // size of size_t
+    private static int intSize;                    // size of int
+    private static int staticArchiveHeaderSize;    // static archive file header size
+    private static int dynamicArchiveHeaderSize;   // dynamic archive file header size
+    private static int cdsFileMapRegionSize;       // size of CDSFileMapRegion
+    private static long alignment;                 // MetaspaceShared::core_region_alignment
 
     // The following should be consistent with the enum in the C++ MetaspaceShared class
-    public static String[] shared_region_name = {
+    private static String[] shared_region_name = {
         "rw",          // ReadWrite
         "ro",          // ReadOnly
         "bm",          // relocation bitmaps
@@ -76,7 +76,7 @@ public class CDSArchiveUtils {
         "first_open_archive",
         "last_open_archive"
     };
-    public static int num_regions = shared_region_name.length;
+    private static int num_regions = shared_region_name.length;
 
     static {
         WhiteBox wb;
@@ -114,6 +114,29 @@ public class CDSArchiveUtils {
             // success
         }
     }
+
+    // accessors
+    // offsets
+    public static int offsetMagic()                 { return offsetMagic;                 }
+    public static int offsetCrc()                   { return offsetCrc;                   }
+    public static int offsetVersion()               { return offsetVersion;               }
+    public static int offsetHeaderSize()            { return offsetHeaderSize;            }
+    public static int offsetBaseArchivePathOffset() { return offsetBaseArchivePathOffset; }
+    public static int offsetBaseArchiveNameSize()   { return offsetBaseArchiveNameSize;   }
+    public static int offsetJvmIdent()              { return offsetJvmIdent;              }
+    public static int spOffsetCrc()                 { return spOffsetCrc;                 }
+    public static int spOffset()                    { return spOffset;                    }
+    public static int spUsedOffset()                { return spUsedOffset;                }
+    // constants
+    public static int staticMagic()                 { return staticMagic;                 }
+    public static int dynamicMagic()                { return dynamicMagic;                }
+    public static int sizetSize()                   { return sizetSize;                   }
+    public static int staticArchiveHeaderSize()     { return staticArchiveHeaderSize;     }
+    public static int dynamicArchiveHeaderSize()    { return dynamicArchiveHeaderSize;    }
+    public static int cdsFileMapRegionSize()        { return cdsFileMapRegionSize;        }
+    public static long alignment()                  { return alignment;                   }
+
+
 
     public static long fileHeaderSize(File jsaFile) throws Exception {
         long  headerSize = readInt(jsaFile, offsetHeaderSize, 4);

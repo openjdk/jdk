@@ -280,7 +280,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t core_region_alignment)
 void FileMapHeader::set_base_archive_name(const char* archive) {
   assert(base_archive_name_size() != 0, "_base_archive_name_size not set");
   assert(base_archive_path_offset() != 0, "_base_archive_path_offset not set");
-  assert(header_size() > sizeof(*this), "_base_archive_name_size not included in head size?");
+  assert(header_size() > sizeof(*this), "_base_archive_name_size not included in header size?");
   memcpy((char*)this + base_archive_path_offset(), archive, base_archive_name_size());
 }
 
@@ -1151,7 +1151,7 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   } else {
     // read the base archive name
     size_t name_size = (size_t)header->_base_archive_name_size;
-    assert(name_size != 0, "None default base archive, name size should not be zero!");
+    assert(name_size != 0, "For non-default base archive, name size should be non-zero!");
     *base_archive_name = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
     lseek(fd, header->_base_archive_path_offset, SEEK_SET); // position to correct offset.
     n = os::read(fd, *base_archive_name, (unsigned int)name_size);
