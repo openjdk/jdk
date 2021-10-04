@@ -37,6 +37,7 @@ enum IneffectualSerialEnum implements Serializable {
     // The readObject method is ineffectual for enum classes.
     private void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
         return;
     }
 }

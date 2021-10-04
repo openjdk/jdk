@@ -16,7 +16,7 @@ enum EnumSerial implements Serializable {
     private static final ObjectStreamField[] serialPersistentFields = {};
 
     private void writeObject(ObjectOutputStream stream) throws IOException {
-        return;
+        stream.defaultWriteObject();
     }
 
     private Object writeReplace() throws ObjectStreamException {
@@ -25,7 +25,7 @@ enum EnumSerial implements Serializable {
 
     private void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException {
-        return;
+        stream.defaultReadObject();
     }
 
     private void readObjectNoData() throws ObjectStreamException {

@@ -18,7 +18,7 @@ record RecordSerial(int foo) implements Serializable {
 
     // ineffectual
     private void writeObject(ObjectOutputStream stream) throws IOException {
-        return;
+        stream.defaultWriteObject();
     }
 
     // (possibly) effective
@@ -29,7 +29,7 @@ record RecordSerial(int foo) implements Serializable {
     // ineffectual
     private void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException {
-        return;
+        stream.defaultReadObject();
     }
 
     // ineffectual

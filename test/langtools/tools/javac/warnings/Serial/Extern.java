@@ -27,12 +27,12 @@ class Extern implements Externalizable {
     // ineffectual
     private void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException {
-        return;
+        stream.defaultReadObject();
     }
 
     // ineffectual
     private void writeObject(ObjectOutputStream stream) throws IOException {
-        return;
+        stream.defaultWriteObject();
     }
 
     // ineffectual
