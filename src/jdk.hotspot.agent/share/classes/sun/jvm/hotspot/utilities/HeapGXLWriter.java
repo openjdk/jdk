@@ -275,6 +275,11 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
         out.println("</gxl>");
     }
 
+    @Override
+    protected int calculateOopDumpRecordSize(Oop oop) throws IOException {
+        return 0;
+    }
+
     //-- Internals only below this point
 
     // Java identifier to XML NMTOKEN type string

@@ -55,23 +55,22 @@ public class TestJcmd {
     private static final String IMAGE_NAME = Common.imageName("jcmd");
     private static final int TIME_TO_RUN_CONTAINER_PROCESS = (int) (10 * Utils.TIMEOUT_FACTOR); // seconds
     private static final String CONTAINER_NAME = "test-container";
+    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
+    private static final String ROOT_UID = "0";
 
 
     public static void main(String[] args) throws Exception {
         DockerTestUtils.canTestDocker();
 
-        // See JDK-8273216 for details
-        if (Container.ENGINE_COMMAND.equals("podman")) {
-            throw new SkippedException("JCMD does not work across container boundaries when using Podman");
+        // podman versions below 3.3.1 hava a bug where cross-container testing with correct
+        // permissions fails. See JDK-8273216
+        if (IS_PODMAN && PodmanVersion.VERSION_3_3_1.compareTo(getPodmanVersion()) > 0) {
+            throw new SkippedException("Podman version too old for this test. Expected >= 3.3.1");
         }
 
         // Need to create a custom dockerfile where user name and id, as well as group name and id
         // of the JVM running in container must match the ones from the inspecting JCMD process.
-        String uid = getId("-u");
-        String gid = getId("-g");
-        String userName = getId("-un");
-        String groupName = getId("-gn");
-        String content = generateCustomDockerfile(uid, gid, userName, groupName);
+        String content = generateCustomDockerfile();
         DockerTestUtils.buildJdkContainerImage(IMAGE_NAME, content);
 
         try {
@@ -135,17 +134,26 @@ public class TestJcmd {
 
     // Need to make sure that user name+id and group name+id are created for the image, and
     // match the host system. This is necessary to allow proper permission/access for JCMD.
-    private static String generateCustomDockerfile(String uid, String gid,
-                                            String userName, String groupName) throws Exception {
+    // For podman --userns=keep-id is sufficient.
+    private static String generateCustomDockerfile() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("FROM %s:%s\n", DockerfileConfig.getBaseImageName(),
                                 DockerfileConfig.getBaseImageVersion()));
         sb.append("COPY /jdk /jdk\n");
         sb.append("ENV JAVA_HOME=/jdk\n");
 
-        sb.append(String.format("RUN groupadd --gid %s %s \n", gid, groupName));
-        sb.append(String.format("RUN useradd  --uid %s --gid %s %s \n", uid, gid, userName));
-        sb.append(String.format("USER %s \n", userName));
+        if (!IS_PODMAN) { // only needed for docker
+            String uid = getId("-u");
+            String gid = getId("-g");
+            String userName = getId("-un");
+            String groupName = getId("-gn");
+            // Only needed when run as regular user. UID == 0 should already exist
+            if (!ROOT_UID.equals(uid)) {
+                sb.append(String.format("RUN groupadd --gid %s %s \n", gid, groupName));
+                sb.append(String.format("RUN useradd  --uid %s --gid %s %s \n", uid, gid, userName));
+                sb.append(String.format("USER %s \n", userName));
+            }
+        }
 
         sb.append("CMD [\"/bin/bash\"]\n");
 
@@ -155,11 +163,16 @@ public class TestJcmd {
 
     private static Process startObservedContainer() throws Exception {
         DockerRunOptions opts = new DockerRunOptions(IMAGE_NAME, "/jdk/bin/java", "EventGeneratorLoop");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addJavaOpts("-cp", "/test-classes/")
             .addDockerOpts("--cap-add=SYS_PTRACE")
             .addDockerOpts("--name", CONTAINER_NAME)
             .addClassOptions("" + TIME_TO_RUN_CONTAINER_PROCESS);
+
+        if (IS_PODMAN) {
+            // map the current userid to the one in the target namespace
+            opts.addDockerOpts("--userns=keep-id");
+        }
 
         // avoid large Xmx
         opts.appendTestJavaOptions = false;
@@ -189,5 +202,79 @@ public class TestJcmd {
         String result = out.asLines().get(0);
         System.out.println("getId() " + param + " returning: " + result);
         return result;
+    }
+
+    // pre: IS_PODMAN == true
+    private static String getPodmanVersionStr() {
+        if (!IS_PODMAN) {
+            return null;
+        }
+        try {
+            ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "--version");
+            OutputAnalyzer out = new OutputAnalyzer(pb.start())
+                .shouldHaveExitValue(0);
+            String result = out.asLines().get(0);
+            System.out.println(Container.ENGINE_COMMAND + " --version returning: " + result);
+            return result;
+        } catch (Exception e) {
+            System.out.println(Container.ENGINE_COMMAND + " --version command failed. Returning null");
+            return null;
+        }
+    }
+
+    private static PodmanVersion getPodmanVersion() {
+        return PodmanVersion.fromVersionString(getPodmanVersionStr());
+    }
+
+    private static class PodmanVersion implements Comparable<PodmanVersion> {
+        private static final PodmanVersion DEFAULT = new PodmanVersion(0, 0, 0);
+        private static final PodmanVersion VERSION_3_3_1 = new PodmanVersion(3, 3, 1);
+        private final int major;
+        private final int minor;
+        private final int micro;
+
+        private PodmanVersion(int major, int minor, int micro) {
+            this.major = major;
+            this.minor = minor;
+            this.micro = micro;
+        }
+
+        @Override
+        public int compareTo(PodmanVersion other) {
+            if (this.major > other.major) {
+                return 1;
+            } else if (this.major < other.major) {
+                return -1;
+            } else { // equal major
+                if (this.minor > other.minor) {
+                    return 1;
+                } else if (this.minor < other.minor) {
+                    return -1;
+                } else { // equal majors and minors
+                    if (this.micro > other.micro) {
+                        return 1;
+                    } else if (this.micro < other.micro) {
+                        return -1;
+                    } else {
+                        // equal majors, minors, micro
+                        return 0;
+                    }
+                }
+            }
+        }
+
+        private static PodmanVersion fromVersionString(String version) {
+            try {
+                // Example 'podman version 3.2.1'
+                String versNums = version.split("\\s+", 3)[2];
+                String[] numbers = versNums.split("\\.", 3);
+                return new PodmanVersion(Integer.parseInt(numbers[0]),
+                                         Integer.parseInt(numbers[1]),
+                                         Integer.parseInt(numbers[2]));
+            } catch (Exception e) {
+                System.out.println("Failed to parse podman version: " + version);
+                return DEFAULT;
+            }
+        }
     }
 }

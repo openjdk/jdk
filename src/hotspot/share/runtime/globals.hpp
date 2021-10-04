@@ -1435,10 +1435,10 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
-  product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
+  develop(bool, MetaspaceGuardAllocations, false,                           \
           "Metapace allocations are guarded.")                              \
                                                                             \
-  product(bool, MetaspaceHandleDeallocations, true, DIAGNOSTIC,             \
+  develop(bool, MetaspaceHandleDeallocations, true,                         \
           "Switch off Metapace deallocation handling.")                     \
                                                                             \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \

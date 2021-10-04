@@ -90,6 +90,7 @@ public class URLClassPath {
     private static final boolean DISABLE_ACC_CHECKING;
     private static final boolean DISABLE_CP_URL_CHECK;
     private static final boolean DEBUG_CP_URL_CHECK;
+    private static final boolean ENABLE_JAR_INDEX;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -109,6 +110,9 @@ public class URLClassPath {
         // the check is not disabled).
         p = props.getProperty("jdk.net.URLClassPath.showIgnoredClassPathEntries");
         DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
+
+        p = props.getProperty("jdk.net.URLClassPath.enableJarIndex");
+        ENABLE_JAR_INDEX = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
     /* The original search path of URLs. */
@@ -593,7 +597,7 @@ public class URLClassPath {
         /*
          * Returns the base URL for this Loader.
          */
-        URL getBaseURL() {
+        final URL getBaseURL() {
             return base;
         }
 
@@ -763,8 +767,10 @@ public class URLClassPath {
                                     System.err.println("Opening " + csu);
                                     Thread.dumpStack();
                                 }
-
                                 jar = getJarFile(csu);
+                                if (!ENABLE_JAR_INDEX) {
+                                    return null;
+                                }
                                 index = JarIndex.getJarIndex(jar);
                                 if (index != null) {
                                     String[] jarfiles = index.getJarFiles();
@@ -1193,7 +1199,8 @@ public class URLClassPath {
      */
     private static class FileLoader extends Loader {
         /* Canonicalized File */
-        private File dir;
+        private final File dir;
+        private final URL normalizedBase;
 
         /*
          * Creates a new FileLoader for the specified URL with a file protocol.
@@ -1203,6 +1210,7 @@ public class URLClassPath {
             String path = url.getFile().replace('/', File.separatorChar);
             path = ParseUtil.decode(path);
             dir = (new File(path)).getCanonicalFile();
+            normalizedBase = new URL(getBaseURL(), ".");
         }
 
         /*
@@ -1221,7 +1229,6 @@ public class URLClassPath {
         Resource getResource(final String name, boolean check) {
             final URL url;
             try {
-                URL normalizedBase = new URL(getBaseURL(), ".");
                 url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
 
                 if (url.getFile().startsWith(normalizedBase.getFile()) == false) {

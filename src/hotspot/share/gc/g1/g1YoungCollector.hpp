@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1YOUNGCOLLECTOR_HPP
 #define SHARE_GC_G1_G1YOUNGCOLLECTOR_HPP
 
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -56,6 +57,9 @@ class WorkGang;
 class outputStream;
 
 class G1YoungCollector {
+  friend class G1YoungGCNotifyPauseMark;
+  friend class G1YoungGCTraceTime;
+  friend class G1YoungGCVerifierMark;
 
   G1CollectedHeap* _g1h;
 
@@ -81,6 +85,9 @@ class G1YoungCollector {
   double _target_pause_time_ms;
 
   bool _concurrent_operation_is_full_mark;
+
+  // Evacuation failure tracking.
+  G1EvacFailureRegions _evac_failure_regions;
 
   // Runs the given AbstractGangTask with the current active workers,
   // returning the total time taken.
@@ -124,7 +131,8 @@ class G1YoungCollector {
   void post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 
-  G1EvacFailureRegions* _evac_failure_regions;
+  // True iff an evacuation has failed in the most-recent collection.
+  bool evacuation_failed() const;
 
 #if TASKQUEUE_STATS
   uint num_task_queues() const;
@@ -136,8 +144,7 @@ class G1YoungCollector {
 public:
 
   G1YoungCollector(GCCause::Cause gc_cause,
-                   double target_pause_time_ms,
-                   G1EvacFailureRegions* evac_failure_regions);
+                   double target_pause_time_ms);
   void collect();
 
   bool concurrent_operation_is_full_mark() const { return _concurrent_operation_is_full_mark; }

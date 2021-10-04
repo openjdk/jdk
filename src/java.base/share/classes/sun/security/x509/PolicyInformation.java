@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.security.cert.PolicyQualifierInfo;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -201,9 +200,7 @@ public class PolicyInformation {
                     "PolicyQualifierInfo can be set.");
             }
             if (obj instanceof Set) {
-                Iterator<?> i = ((Set<?>)obj).iterator();
-                while (i.hasNext()) {
-                    Object obj1 = i.next();
+                for (Object obj1 : (Set<?>) obj) {
                     if (!(obj1 instanceof PolicyQualifierInfo)) {
                         throw new IOException("Attribute value must be a" +
                                     "Set of PolicyQualifierInfo objects.");

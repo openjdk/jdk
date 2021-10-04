@@ -457,7 +457,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   return _cur_collection_initial_evac_time_ms + _cur_merge_heap_roots_time_ms;
 }
 
-double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
+double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed) const {
   const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
@@ -481,13 +481,13 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   debug_phase(_gc_par_phases[MergePSS], 1);
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
-  if (G1CollectedHeap::heap()->evacuation_failed()) {
+  if (evacuation_failed) {
     debug_phase(_gc_par_phases[RemoveSelfForwardingPtr], 1);
   }
 
   trace_phase(_gc_par_phases[RedirtyCards]);
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
-  if (G1CollectedHeap::heap()->evacuation_failed()) {
+  if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
     debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
   }
@@ -526,7 +526,7 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
   info_time("Other", _gc_pause_time_ms - accounted_ms);
 }
 
-void G1GCPhaseTimes::print() {
+void G1GCPhaseTimes::print(bool evacuation_failed) {
   // Check if some time has been recorded for verification and only then print
   // the message. We do not use Verify*GC here to print because VerifyGCType
   // further limits actual verification.
@@ -538,7 +538,7 @@ void G1GCPhaseTimes::print() {
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
-  accounted_ms += print_post_evacuate_collection_set();
+  accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
   print_other(accounted_ms);
 
   // See above comment on the _cur_verify_before_time_ms check.

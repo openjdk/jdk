@@ -258,11 +258,6 @@ static BOOL unmapViewOfFile(LPCVOID lpBaseAddress) {
   return result;
 }
 
-bool os::unsetenv(const char* name) {
-  assert(name != NULL, "Null pointer");
-  return (SetEnvironmentVariable(name, NULL) == TRUE);
-}
-
 char** os::get_environ() { return _environ; }
 
 // No setuid programs under Windows.
@@ -4164,8 +4159,8 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
     ::exit(exit_code);
-  } else {
-    _exit(exit_code);
+  } else { // EPT_PROCESS_DIE
+    ::_exit(exit_code);
   }
 
   // Should not reach here
@@ -4766,6 +4761,10 @@ int os::close(int fd) {
 
 void os::exit(int num) {
   win32::exit_process_or_thread(win32::EPT_PROCESS, num);
+}
+
+void os::_exit(int num) {
+  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, num);
 }
 
 // Is a (classpath) directory empty?

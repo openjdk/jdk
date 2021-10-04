@@ -194,6 +194,8 @@ class MacroAssembler: public Assembler {
   void incrementq(AddressLiteral dst);
 
   // Alignment
+  void align32();
+  void align64();
   void align(int modulus);
   void align(int modulus, int target);
 
@@ -946,7 +948,7 @@ private:
   void lastroundDec(XMMRegister key, int rnum);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
   void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
-  void generateHtbl_48_block_zmm(Register htbl);
+  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl);
   void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
@@ -957,7 +959,7 @@ public:
   void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
                       Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
   void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
-                      Register state, Register subkeyHtbl, Register counter);
+                      Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
 
 #endif
 
@@ -1724,7 +1726,7 @@ public:
 
   void encode_iso_array(Register src, Register dst, Register len,
                         XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
-                        XMMRegister tmp4, Register tmp5, Register result);
+                        XMMRegister tmp4, Register tmp5, Register result, bool ascii);
 
 #ifdef _LP64
   void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2);

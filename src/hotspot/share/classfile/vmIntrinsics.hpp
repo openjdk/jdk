@@ -353,6 +353,9 @@ class methodHandle;
                                                                                                                         \
   do_intrinsic(_encodeByteISOArray,     java_lang_StringCoding, encodeISOArray_name, indexOfI_signature,         F_S)   \
                                                                                                                         \
+  do_intrinsic(_encodeAsciiArray,       java_lang_StringCoding, encodeAsciiArray_name, encodeISOArray_signature, F_S)   \
+   do_name(     encodeAsciiArray_name,                           "implEncodeAsciiArray")                                \
+                                                                                                                        \
   do_class(java_math_BigInteger,                      "java/math/BigInteger")                                           \
   do_intrinsic(_multiplyToLen,      java_math_BigInteger, multiplyToLen_name, multiplyToLen_signature, F_S)             \
    do_name(     multiplyToLen_name,                             "implMultiplyToLen")                                    \
@@ -417,7 +420,7 @@ class methodHandle;
                                                                                                                         \
   do_class(com_sun_crypto_provider_galoisCounterMode, "com/sun/crypto/provider/GaloisCounterMode")                      \
    do_intrinsic(_galoisCounterMode_AESCrypt, com_sun_crypto_provider_galoisCounterMode, gcm_crypt_name, aes_gcm_signature, F_S)   \
-   do_name(gcm_crypt_name, "implGCMCrypt")                                                                                 \
+   do_name(gcm_crypt_name, "implGCMCrypt0")                                                                                 \
    do_signature(aes_gcm_signature, "([BII[BI[BILcom/sun/crypto/provider/GCTR;Lcom/sun/crypto/provider/GHASH;)I")                                                             \
                                                                                                                         \
   /* support for sun.security.provider.MD5 */                                                                           \

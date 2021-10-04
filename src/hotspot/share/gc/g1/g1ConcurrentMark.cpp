@@ -1581,8 +1581,9 @@ public:
     G1CMIsAliveClosure is_alive(&_g1h);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     G1CMDrainMarkingStackClosure complete_gc(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
@@ -1695,6 +1696,7 @@ void G1ConcurrentMark::preclean() {
   SuspendibleThreadSetJoiner joiner;
 
   G1CMKeepAliveAndDrainClosure keep_alive(this, task(0), true /* is_serial */);
+  BarrierEnqueueDiscoveredFieldClosure enqueue;
   G1CMDrainMarkingStackClosure drain_mark_stack(this, task(0), true /* is_serial */);
 
   set_concurrency_and_phase(1, true);
@@ -1706,6 +1708,7 @@ void G1ConcurrentMark::preclean() {
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(rp, false);
   rp->preclean_discovered_references(rp->is_alive_non_header(),
                                      &keep_alive,
+                                     &enqueue,
                                      &drain_mark_stack,
                                      &yield_cl,
                                      _gc_timer_cm);
@@ -2036,8 +2039,9 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   for (uint i = 0; i < _max_num_tasks; ++i) {
     _tasks[i]->clear_region_fields();
   }
-
-  abort_marking_threads();
+  _first_overflow_barrier_sync.abort();
+  _second_overflow_barrier_sync.abort();
+  _has_aborted = true;
 
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
@@ -2046,12 +2050,6 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   satb_mq_set.set_active_all_threads(
                                  false, /* new active value */
                                  satb_mq_set.is_active() /* expected_active */);
-}
-
-void G1ConcurrentMark::abort_marking_threads() {
-  _has_aborted = true;
-  _first_overflow_barrier_sync.abort();
-  _second_overflow_barrier_sync.abort();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,

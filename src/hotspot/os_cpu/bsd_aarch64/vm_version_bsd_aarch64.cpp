@@ -60,6 +60,9 @@ void VM_Version::get_os_cpu_info() {
   assert(cpu_has("hw.optional.neon"), "should be");
   _features = CPU_FP | CPU_ASIMD;
 
+  // All Apple-darwin Arm processors have AES.
+  _features |= CPU_AES;
+
   // Only few features are available via sysctl, see line 614
   // https://opensource.apple.com/source/xnu/xnu-6153.141.1/bsd/kern/kern_mib.c.auto.html
   if (cpu_has("hw.optional.armv8_crc32"))     _features |= CPU_CRC32;
@@ -88,6 +91,7 @@ void VM_Version::get_os_cpu_info() {
   if (sysctlbyname("hw.cpufamily", &family, &sysctllen, NULL, 0)) {
     family = 0;
   }
+
   _model = family;
   _cpu = CPU_APPLE;
 }

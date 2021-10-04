@@ -95,16 +95,10 @@ ifeq ($(call And, $(call isTargetOs, windows) $(call isTargetCpu, x86)), true)
 endif
 DEFAULT_CFG_VARIANT ?= server
 
-# Any variant other than server, client, minimal, or zero is represented as server in
-# the cfg file.
-VALID_CFG_VARIANTS := server client minimal zero
-CFG_VARIANTS := $(filter $(VALID_CFG_VARIANTS), $(JVM_VARIANTS)) \
-    $(if $(filter-out $(VALID_CFG_VARIANTS), $(JVM_VARIANTS)), server)
-
 # Change the order to put the default variant first if present.
 ORDERED_CFG_VARIANTS := \
-    $(if $(filter $(DEFAULT_CFG_VARIANT), $(CFG_VARIANTS)), $(DEFAULT_CFG_VARIANT)) \
-    $(filter-out $(DEFAULT_CFG_VARIANT), $(CFG_VARIANTS))
+    $(if $(filter $(DEFAULT_CFG_VARIANT), $(JVM_VARIANTS)), $(DEFAULT_CFG_VARIANT)) \
+    $(filter-out $(DEFAULT_CFG_VARIANT), $(JVM_VARIANTS))
 
 JVMCFG := $(LIB_DST_DIR)/jvm.cfg
 
