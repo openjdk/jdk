@@ -34,6 +34,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -59,33 +60,43 @@ public class ReflectionSpeedBenchmark {
     static final Method instanceMethodConst;
     static final Field staticFieldConst;
     static final Field instanceFieldConst;
+    static final Constructor<?> constructorConst;
+    static final Object[] constructorArgs;
 
     static Method staticMethodVar;
     static Method instanceMethodVar;
     static Field staticFieldVar;
     static Field instanceFieldVar;
+    static Constructor<?> constructorVar;
 
     static Method[] staticMethodsPoly;
     static Method[] instanceMethodsPoly;
     static Field[] staticFieldsPoly;
     static Field[] instanceFieldsPoly;
+    static Constructor<?>[] constructorsPoly;
+    static Object[][] constructorsArgsPoly;
 
     static {
         try {
-            staticMethodConst = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumStatic", int.class, int.class);
-            staticMethodVar = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumStatic", int.class, int.class);
-            instanceMethodConst = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumInstance", int.class, int.class);
-            instanceMethodVar = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumInstance", int.class, int.class);
+            staticMethodConst = staticMethodVar = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumStatic", int.class, int.class);
+            instanceMethodConst = instanceMethodVar = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumInstance", int.class, int.class);
 
-            staticFieldConst = ReflectionSpeedBenchmark.class.getDeclaredField("staticField");
-            staticFieldVar = ReflectionSpeedBenchmark.class.getDeclaredField("staticField");
-            instanceFieldConst = ReflectionSpeedBenchmark.class.getDeclaredField("instanceField");
-            instanceFieldVar = ReflectionSpeedBenchmark.class.getDeclaredField("instanceField");
+            staticFieldConst = staticFieldVar = ReflectionSpeedBenchmark.class.getDeclaredField("staticField");
+            instanceFieldConst = instanceFieldVar = ReflectionSpeedBenchmark.class.getDeclaredField("instanceField");
+
+            constructorConst = constructorVar = NestedConstruction.class.getDeclaredConstructor();
+            constructorArgs = new Object[0];
 
             staticMethodsPoly = NestedStatic.class.getDeclaredMethods();
             staticFieldsPoly = NestedStatic.class.getDeclaredFields();
             instanceMethodsPoly = NestedInstance.class.getDeclaredMethods();
             instanceFieldsPoly = NestedInstance.class.getDeclaredFields();
+
+            constructorsPoly = NestedConstruction.class.getDeclaredConstructors();
+            constructorsArgsPoly = new Object[constructorsPoly.length][];
+            for (int i = 0; i < constructorsPoly.length; i++) {
+                constructorsArgsPoly[i] = new Object[constructorsPoly[i].getParameterCount()];
+            }
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         } catch (NoSuchFieldException e) {
@@ -237,6 +248,25 @@ public class ReflectionSpeedBenchmark {
         public Object m1F(Object p) {return p;}
     }
 
+    public static class NestedConstruction {
+        // # of constructors must be 2^N
+        public NestedConstruction() {}
+
+        public NestedConstruction(Void p1) {}
+
+        public NestedConstruction(Void p1, Void p2) {}
+
+        public NestedConstruction(Void p1, Void p2, Void p3) {}
+
+        public NestedConstruction(Void p1, Void p2, Void p3, Void p4) {}
+
+        public NestedConstruction(Void p1, Void p2, Void p3, Void p4, Void p5) {}
+
+        public NestedConstruction(Void p1, Void p2, Void p3, Void p4, Void p5, Void p6) {}
+
+        public NestedConstruction(Void p1, Void p2, Void p3, Void p4, Void p5, Void p6, Void p7) {}
+    }
+
     private int rnd = 0;
     private int a, b;
     private Object o;
@@ -373,6 +403,36 @@ public class ReflectionSpeedBenchmark {
         try {
             return instanceFieldsPoly[nextRnd() & (instanceFieldsPoly.length - 1)].get(instance);
         } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    // constructors
+
+    @Benchmark
+    public Object constructorConst() {
+        try {
+            return constructorConst.newInstance(constructorArgs);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Benchmark
+    public Object constructorVar() {
+        try {
+            return constructorVar.newInstance(constructorArgs);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Benchmark
+    public Object constructorPoly() {
+        try {
+            int i = nextRnd() & (constructorsPoly.length - 1);
+            return constructorsPoly[i].newInstance(constructorsArgsPoly[i]);
+        } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
     }
