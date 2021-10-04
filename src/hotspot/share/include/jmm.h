@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,8 @@ enum {
   JMM_VERSION_1_2_2 = 0x20010202,
   JMM_VERSION_2   = 0x20020000, // JDK 10
   JMM_VERSION_3   = 0x20030000, // JDK 14
-  JMM_VERSION     = JMM_VERSION_3
+  JMM_VERSION_4   = 0x20040000, // JDK 18
+  JMM_VERSION     = JMM_VERSION_4
 };
 
 typedef struct {
@@ -340,6 +341,9 @@ typedef struct jmmInterface_1_ {
   void         (JNICALL *SetDiagnosticFrameworkNotificationEnabled)
                                                  (JNIEnv *env,
                                                   jboolean enabled);
+  void         (JNICALL *ReportFinalizationComplete)
+                                                 (JNIEnv *env,
+                                                  jobject finalizee);
 } JmmInterface;
 
 #ifdef __cplusplus

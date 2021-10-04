@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@ package jdk.test.lib.jfr;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.security.cert.Certificate;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 
 /**
  * Custom class loader which will try to load the class via getResourceAsStream().
@@ -53,7 +57,10 @@ public class TestClassLoader extends ClassLoader {
                 dis = new DataInputStream(is);
                 dis.readFully(buf);
                 dis.close();
-                return defineClass(name, buf, 0, buf.length);
+                URL url = getResource(resourceName);
+                CodeSource cs = new CodeSource(url, (Certificate[])null);
+                ProtectionDomain pd = new ProtectionDomain(cs, null);
+                return defineClass(name, buf, 0, buf.length, pd);
             }
         } catch (SecurityException e) {
             // This error will happen quite often (for example when loading

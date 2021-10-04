@@ -55,6 +55,7 @@
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
+#include "services/finalizerService.hpp"
 #include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
@@ -94,6 +95,7 @@ void management_init() {
   ThreadService::init();
   RuntimeService::init();
   ClassLoadingService::init();
+  FinalizerService::init();
 #else
   ThreadService::init();
 #endif // INCLUDE_MANAGEMENT
@@ -206,6 +208,15 @@ InstanceKlass* Management::initialize_klass(Klass* k, TRAPS) {
   return ik;
 }
 
+
+void Management::record_vm_init_completed() {
+  // Initialize the timestamp to get the current time
+  _vm_init_done_time->set_value(os::javaTimeMillis());
+
+  // Update the timestamp to the vm init done time
+  _stamp.update();
+}
+
 void Management::record_vm_startup_time(jlong begin, jlong duration) {
   // if the performance counter is not initialized,
   // then vm initialization failed; simply return.
@@ -214,6 +225,14 @@ void Management::record_vm_startup_time(jlong begin, jlong duration) {
   _begin_vm_creation_time->set_value(begin);
   _end_vm_creation_time->set_value(begin + duration);
   PerfMemory::set_accessible(true);
+}
+
+jlong Management::begin_vm_creation_time() {
+  return _begin_vm_creation_time->get_value();
+}
+
+jlong Management::vm_init_done_time() {
+  return _vm_init_done_time->get_value();
 }
 
 jlong Management::timestamp() {
@@ -2063,6 +2082,11 @@ jlong Management::ticks_to_ms(jlong ticks) {
   return (jlong)(((double)ticks / (double)os::elapsed_frequency())
                  * (double)1000.0);
 }
+
+JVM_ENTRY(void, jmm_ReportFinalizationComplete(JNIEnv* env, jobject finalizee))
+  FinalizerService::on_complete(JNIHandles::resolve_non_null(finalizee), THREAD);
+JVM_END
+
 #endif // INCLUDE_MANAGEMENT
 
 // Gets the amount of memory allocated on the Java heap for a single thread.
@@ -2197,8 +2221,6 @@ JVM_ENTRY(void, jmm_GetThreadCpuTimesWithKind(JNIEnv *env, jlongArray ids,
   }
 JVM_END
 
-
-
 #if INCLUDE_MANAGEMENT
 const struct jmmInterface_1_ jmm_interface = {
   NULL,
@@ -2240,7 +2262,8 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetDiagnosticCommandInfo,
   jmm_GetDiagnosticCommandArgumentsInfo,
   jmm_ExecuteDiagnosticCommand,
-  jmm_SetDiagnosticFrameworkNotificationEnabled
+  jmm_SetDiagnosticFrameworkNotificationEnabled,
+  jmm_ReportFinalizationComplete
 };
 #endif // INCLUDE_MANAGEMENT
 

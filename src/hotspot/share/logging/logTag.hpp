@@ -71,6 +71,7 @@
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
   DEBUG_ONLY(LOG_TAG(foreign)) \
   LOG_TAG(free) \

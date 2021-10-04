@@ -45,6 +45,13 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
     private Finalizer next, prev;
 
+    static {
+        initIDs();
+    }
+
+    private static native void initIDs();
+    private static native void reportComplete(Object finalizee);
+
     private Finalizer(Object finalizee) {
         super(finalizee, queue);
         // push onto unfinalized
@@ -60,6 +67,8 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
     static ReferenceQueue<Object> getQueue() {
         return queue;
     }
+
+
 
     /* Invoked by VM */
     static void register(Object finalizee) {
@@ -86,6 +95,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             assert finalizee != null;
             if (!(finalizee instanceof java.lang.Enum)) {
                 jla.invokeFinalize(finalizee);
+                reportComplete(finalizee);
 
                 // Clear stack slot containing this variable, to decrease
                 // the chances of false retention with a conservative GC
