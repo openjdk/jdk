@@ -305,9 +305,10 @@ void mutex_init() {
   }
 
 #if INCLUDE_JFR
-  def(JfrBuffer_lock               , PaddedMutex  , nosafepoint, true);
+  def(JfrBuffer_lock               , PaddedMutex  , nosafepoint,       true);
   def(JfrStacktrace_lock           , PaddedMutex  , stackwatermark-1,  true);
-  def(JfrThreadSampler_lock        , PaddedMonitor, nosafepoint, true);
+  def(JfrThreadSampler_lock        , PaddedMonitor, nosafepoint,       true);
+  def(JfrMsg_lock                  , PaddedMonitor, nosafepoint-3,     true);
 #endif
 
 #ifndef SUPPORTS_NATIVE_CX8
@@ -366,10 +367,6 @@ void mutex_init() {
   defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock,              true);
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock, false);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock,               true);
-
-#if INCLUDE_JFR
-  defl(JfrMsg_lock                 , PaddedMonitor, Module_lock,               true);
-#endif
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {

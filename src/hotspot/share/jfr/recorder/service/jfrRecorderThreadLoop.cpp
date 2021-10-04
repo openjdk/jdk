@@ -50,24 +50,25 @@ void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
   JfrPostBox& post_box = JfrRecorderThread::post_box();
   log_debug(jfr, system)("Recorder thread STARTED");
 
-  {
     bool done = false;
     int msgs = 0;
     JfrRecorderService service;
-    MutexLocker msg_lock(JfrMsg_lock);
 
     // JFR MESSAGE LOOP PROCESSING - BEGIN
     while (!done) {
+
+      NoHandleMark nhm;
+      ThreadToNativeFromVM transition(thread);
+      MonitorLocker msg_lock(JfrMsg_lock, Mutex::_no_safepoint_check_flag);
+
       if (post_box.is_empty()) {
-        JfrMsg_lock->wait();
+        msg_lock.wait();
       }
       msgs = post_box.collect();
-      JfrMsg_lock->unlock();
       {
+        MutexUnlocker mul(JfrMsg_lock, Mutex::_no_safepoint_check_flag);
         // Run as _thread_in_native as much a possible
         // to minimize impact on safepoint synchronizations.
-        NoHandleMark nhm;
-        ThreadToNativeFromVM transition(thread);
         if (PROCESS_FULL_BUFFERS) {
           service.process_full_buffers();
         }
@@ -82,15 +83,12 @@ void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
           service.flushpoint();
         }
       }
-      JfrMsg_lock->lock();
       post_box.notify_waiters();
       if (SHUTDOWN) {
         log_debug(jfr, system)("Request to STOP recorder");
         done = true;
       }
     } // JFR MESSAGE LOOP PROCESSING - END
-
-  } // JfrMsg_lock scope
 
   assert(!JfrMsg_lock->owned_by_self(), "invariant");
   post_box.notify_collection_stop();
