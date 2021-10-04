@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ package jdk.jpackage.main;
 import jdk.jpackage.internal.Arguments;
 import jdk.jpackage.internal.Log;
 import jdk.jpackage.internal.CLIHelp;
+import java.io.Console;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.util.ResourceBundle;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -45,10 +47,25 @@ public class Main {
      *
      * @param args command line arguments
      */
+    private final static Charset nativeCharset;
+    static {
+        Charset cs = Charset.defaultCharset();
+        Console cons;
+        if ((cons = System.console()) != null) {
+            cs = cons.charset();
+        } else {
+            try {
+                cs = Charset.forName(System.getProperty("native.encoding"));
+            } catch (Exception e) {
+            }
+        }
+        nativeCharset = cs;
+    }
+
     public static void main(String... args) throws Exception {
 
-        PrintWriter out = new PrintWriter(System.out);
-        PrintWriter err = new PrintWriter(System.err);
+        PrintWriter out = new PrintWriter(System.out, true, nativeCharset);
+        PrintWriter err = new PrintWriter(System.err, true, nativeCharset);
         int status = new jdk.jpackage.main.Main().execute(out, err, args);
         System.exit(status);
     }

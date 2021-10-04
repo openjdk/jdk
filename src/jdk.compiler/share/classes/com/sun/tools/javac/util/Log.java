@@ -26,6 +26,7 @@
 package com.sun.tools.javac.util;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -261,12 +262,27 @@ public class Log extends AbstractLog {
      * @param context the context in which to find writers to use
      * @return a map of writers
      */
+    private final static Charset nativeCharset;
+    static {
+        Charset cs = Charset.defaultCharset();
+        Console cons;
+        if ((cons = System.console()) != null) {
+            cs = cons.charset();
+        } else {
+            try {
+                cs = Charset.forName(System.getProperty("native.encoding"));
+            } catch (Exception e) {
+            }
+        }
+        nativeCharset = cs;
+    }
+
     private static Map<WriterKind, PrintWriter> initWriters(Context context) {
         PrintWriter out = context.get(outKey);
         PrintWriter err = context.get(errKey);
         if (out == null && err == null) {
-            out = new PrintWriter(System.out, true);
-            err = new PrintWriter(System.err, true);
+            out = new PrintWriter(System.out, true, nativeCharset);
+            err = new PrintWriter(System.err, true, nativeCharset);
             return initWriters(out, err);
         } else if (out == null || err == null) {
             PrintWriter pw = (out != null) ? out : err;

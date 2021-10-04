@@ -26,12 +26,28 @@
 package jdk.tools.jlink.internal;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.spi.ToolProvider;
 
 public class Main {
+    private final static Charset nativeCharset;
+    static {
+        Charset cs = Charset.defaultCharset();
+        Console cons;
+        if ((cons = System.console()) != null) {
+            cs = cons.charset();
+        } else {
+            try {
+                cs = Charset.forName(System.getProperty("native.encoding"));
+            } catch (Exception e) {
+            }
+        }
+        nativeCharset = cs;
+    }
+
     public static void main(String... args) throws Exception {
-        System.exit(run(new PrintWriter(System.out, true),
-                        new PrintWriter(System.err, true),
+        System.exit(run(new PrintWriter(System.out, true, nativeCharset),
+                        new PrintWriter(System.err, true, nativeCharset),
                         args));
     }
 

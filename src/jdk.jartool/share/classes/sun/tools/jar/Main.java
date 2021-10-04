@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -212,9 +213,24 @@ public class Main {
         return MessageFormat.format(msg, (Object[]) args);
     }
 
+    private final static Charset nativeCharset;
+    static {
+        Charset cs = Charset.defaultCharset();
+        Console cons;
+        if ((cons = System.console()) != null) {
+            cs = cons.charset();
+        } else {
+            try {
+                cs = Charset.forName(System.getProperty("native.encoding"));
+            } catch (Exception e) {
+            }
+        }
+        nativeCharset = cs;
+    }
+
     public Main(PrintStream out, PrintStream err, String program) {
-        this.out = new PrintWriter(out, true);
-        this.err = new PrintWriter(err, true);
+        this.out = new PrintWriter(out, true, nativeCharset);
+        this.err = new PrintWriter(err, true, nativeCharset);
         this.program = program;
     }
 

@@ -25,10 +25,12 @@
 
 package jdk.javadoc.internal.tool;
 
+import java.io.Console;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.nio.charset.Charset;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -170,8 +172,23 @@ public class JavadocLog extends Log implements Reporter {
     private final JavacMessages messages;
     private final JCDiagnostic.Factory javadocDiags;
 
+    private final static Charset nativeCharset;
+    static {
+        Charset cs = Charset.defaultCharset();
+        Console cons;
+        if ((cons = System.console()) != null) {
+            cs = cons.charset();
+        } else {
+            try {
+                cs = Charset.forName(System.getProperty("native.encoding"));
+            } catch (Exception e) {
+            }
+        }
+        nativeCharset = cs;
+    }
+
     private static PrintWriter createPrintWriter(PrintStream ps, boolean autoflush) {
-        return new PrintWriter(ps, autoflush) {
+        return new PrintWriter(ps, autoflush, nativeCharset) {
             // avoid closing system streams
             @Override
             public void close() {
