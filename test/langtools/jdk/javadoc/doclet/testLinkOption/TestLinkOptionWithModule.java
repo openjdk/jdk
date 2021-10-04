@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8205593 8240169
+ * @bug 8205593 8240169 8274639
  * @summary Javadoc -link makes broken links if module name matches package name
  * @library /tools/lib ../../lib
  * @modules
@@ -71,6 +71,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 "--module", "com.ex1");
 
         javadoc("-d", out2.toString(),
+                "-Werror", "-Xdoclint:-missing",
                 "--module-source-path", moduleSrc.toString(),
                 "--module", "com.ex2",
                 "-link", "../" + out1.getFileName());
@@ -90,6 +91,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 "-subpackages", "com.ex1");
 
         javadoc("-d", out2.toString(),
+                "-Werror", "-Xdoclint:-missing",
                 "-sourcepath", packageSrc.toString(),
                 "-subpackages", "com.ex2",
                 "-link", "../" + out1.getFileName());
@@ -109,6 +111,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 "-subpackages", "com.ex1");
 
         javadoc("-d", out2.toString(),
+                "-Werror", "-Xdoclint:-missing",
                 "--module-source-path", moduleSrc.toString(),
                 "--module", "com.ex2",
                 "-link", "../" + out1.getFileName());
@@ -131,6 +134,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 "--module", "com.ex1");
 
         javadoc("-d", out2.toString(),
+                "-Werror", "-Xdoclint:-missing",
                 "-sourcepath", packageSrc.toString(),
                 "-subpackages", "com.ex2",
                 "-link", "../" + out1.getFileName());

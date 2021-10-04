@@ -514,7 +514,7 @@ public class Extern {
             DocPath elempath;
             String moduleName = null;
             DocPath basePath  = DocPath.create(path);
-            boolean issueWarning = true;
+            boolean showMessage = true;
             while ((elemname = in.readLine()) != null) {
                 if (elemname.length() > 0) {
                     elempath = basePath;
@@ -534,14 +534,14 @@ public class Extern {
                         // For user provided libraries we check whether modularity matches the actual library.
                         // We trust modularity to be correct for platform library element lists.
                         if (platformVersion == 0) {
-                            actualModuleName = checkLinkCompatibility(elemname, moduleName, path, issueWarning);
+                            actualModuleName = checkLinkCompatibility(elemname, moduleName, path, showMessage);
                         } else {
                             actualModuleName = moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
                         }
                         Item item = new Item(elemname, elempath, relative);
                         packageItems.computeIfAbsent(actualModuleName, k -> new TreeMap<>())
                             .putIfAbsent(elemname, item); // first-one-wins semantics
-                        issueWarning = false;
+                        showMessage = false;
                     }
                 }
             }
@@ -556,24 +556,24 @@ public class Extern {
      * @param packageName the package name
      * @param moduleName the module name or null
      * @param path the documentation path
-     * @param issueWarning whether to print a warning in case of modularity mismatch
+     * @param showMessage whether to print a message in case of modularity mismatch
      * @return the module name to use according to actual modularity of the package
      */
-    private String checkLinkCompatibility(String packageName, String moduleName, String path, boolean issueWarning)  {
+    private String checkLinkCompatibility(String packageName, String moduleName, String path, boolean showMessage)  {
         PackageElement pe = utils.elementUtils.getPackageElement(packageName);
         if (pe != null) {
             ModuleElement me = (ModuleElement)pe.getEnclosingElement();
             if (me == null || me.isUnnamed()) {
-                if (moduleName != null && issueWarning) {
-                    configuration.getReporter().print(Kind.WARNING,
+                if (moduleName != null && showMessage) {
+                    configuration.getReporter().print(Kind.NOTE,
                             resources.getText("doclet.linkMismatch_PackagedLinkedtoModule", path));
                 }
                 // library is not modular, ignore module name even if documentation is modular
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
-                // suppress the warning message in the case of automatic modules
-                if (!utils.elementUtils.isAutomaticModule(me) && issueWarning) {
-                    configuration.getReporter().print(Kind.WARNING,
+                // suppress the message in the case of automatic modules
+                if (!utils.elementUtils.isAutomaticModule(me) && showMessage) {
+                    configuration.getReporter().print(Kind.NOTE,
                             resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
                 }
                 // library is modular, use module name for lookup even though documentation is not
