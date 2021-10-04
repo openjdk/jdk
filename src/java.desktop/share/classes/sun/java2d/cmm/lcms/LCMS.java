@@ -152,7 +152,7 @@ final class LCMS implements PCMM {
                                     int srcOffset, int srcNextRowOffset,
                                     int dstOffset, int dstNextRowOffset,
                                     boolean srcAtOnce, boolean dstAtOnce,
-                                    Object inputBuffer, Object outputBuffer,
+                                    Object srcData, Object dstData,
                                     int srcType, int dstType);
 
     private LCMS() {};
