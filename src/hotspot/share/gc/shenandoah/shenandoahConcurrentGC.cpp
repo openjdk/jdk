@@ -72,20 +72,6 @@ public:
   }
 };
 
-class ShenandoahGlobalCoalesceAndFill : public ShenandoahHeapRegionClosure {
- public:
-  virtual void heap_region_do(ShenandoahHeapRegion* region) override {
-    // old region is not in the collection set and was not immediately trashed
-    if (region->is_old() && region->is_active() && !region->is_humongous()) {
-      region->oop_fill_and_coalesce();
-    }
-  }
-
-  virtual bool is_thread_safe() override {
-    return true;
-  }
-};
-
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   _mark(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
@@ -1068,9 +1054,7 @@ void ShenandoahConcurrentGC::op_cleanup_complete() {
 }
 
 void ShenandoahConcurrentGC::op_global_coalesce_and_fill() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGlobalCoalesceAndFill coalesce;
-  heap->parallel_heap_region_iterate(&coalesce);
+  ShenandoahHeap::heap()->coalesce_and_fill_old_regions();
 }
 
 bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint point) {

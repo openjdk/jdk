@@ -134,6 +134,10 @@ void ShenandoahDegenGC::op_degenerated() {
 
       op_cleanup_early();
 
+      if (heap->mode()->is_generational() && _generation->generation_mode() == GLOBAL) {
+        op_global_coalesce_and_fill();
+      }
+
     case _degenerated_evac:
       // If heuristics thinks we should do the cycle, this flag would be set,
       // and we can do evacuation. Otherwise, it would be the shortcut cycle.
@@ -280,6 +284,10 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
 void ShenandoahDegenGC::op_cleanup_early() {
   ShenandoahHeap::heap()->recycle_trash();
+}
+
+void ShenandoahDegenGC::op_global_coalesce_and_fill() {
+  ShenandoahHeap::heap()->coalesce_and_fill_old_regions();
 }
 
 void ShenandoahDegenGC::op_evacuate() {
