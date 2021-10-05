@@ -1800,6 +1800,7 @@ public class Attr extends JCTree.Visitor {
                 }
                 addVars(c.stats, switchEnv.info.scope);
 
+                preFlow(c);
                 c.completesNormally = flow.aliveAfter(caseEnv, c, make);
 
                 prevBindings = c.caseKind == CaseTree.CaseKind.STATEMENT && c.completesNormally ? currentBindings
