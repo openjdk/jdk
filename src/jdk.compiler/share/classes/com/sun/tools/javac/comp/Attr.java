@@ -5749,9 +5749,10 @@ public class Attr extends JCTree.Visitor {
 
                     name = enclosed.getSimpleName().toString();
                     if (serialFieldNames.contains(name)) {
+                        VarSymbol field = (VarSymbol)enclosed;
                         switch (name) {
-                        case "serialVersionUID"       ->  checkSerialVersionUID(tree, e, enclosed);
-                        case "serialPersistentFields" ->  checkSerialPersistentFields(tree, e, enclosed);
+                        case "serialVersionUID"       ->  checkSerialVersionUID(tree, e, field);
+                        case "serialPersistentFields" ->  checkSerialPersistentFields(tree, e, field);
                         default -> throw new AssertionError();
                         }
                     }
@@ -5777,7 +5778,10 @@ public class Attr extends JCTree.Visitor {
                 // elements and does not directly check the inherited
                 // methods. If all the types are being checked this is
                 // less of a concern; however, there are cases that
-                // could be missed.
+                // could be missed. In particular, readResolve and
+                // writeReplace could, in principle, by inherited from
+                // a non-serializable superclass and thus not checked
+                // even if compiled with a serializable child class.
                 case METHOD -> {
                     var method = toMethod(enclosed);
                     name = enclosed.getSimpleName().toString();
@@ -5855,43 +5859,44 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private void checkSerialVersionUID(JCClassDecl tree, Element e, Element field) {
-            // To be effective, serialVersionUID must be marked
-            // static and final, but private is recommended.
+        private void checkSerialVersionUID(JCClassDecl tree, Element e, VarSymbol svuid) {
+            // To be effective, serialVersionUID must be marked static
+            // and final, but private is recommended.
 
             // But alas, in practice there are many non-private
             // serialVersionUID fields
 
-            // TODO: need to pass in warningKey of type Warning...
-//             if ((svuid.flags() & (STATIC | FINAL)) !=
-//                 (STATIC | FINAL))
-//                 log.warning(LintCategory.SERIAL,
-//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ImproperSVUID(c));
-
-            checkMandatoryModifiers(tree, e, field, STATIC_FINAL_MODS, Warnings.ImproperSVUID( (Symbol) e));
+             if ((svuid.flags() & (STATIC | FINAL)) !=
+                 (STATIC | FINAL)) {
+                 log.warning(LintCategory.SERIAL,
+                             TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ImproperSVUID((Symbol)e));
+             }
 
 //             // check that it is long
 //             else if (!svuid.type.hasTag(LONG))
 //                 log.warning(LintCategory.SERIAL,
 //                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.LongSVUID(c));
-            checkTypeOfField(tree, e, field, LONG_TYPE, Warnings.LongSVUID((Symbol) e));
+            checkTypeOfField(tree, e, svuid, LONG_TYPE, Warnings.LongSVUID((Symbol) e));
 
-            VarSymbol svuidField = (VarSymbol)field;
-            if (svuidField.getConstValue() == null)
+            if (svuid.getConstValue() == null)
                 log.warning(LintCategory.SERIAL,
-                            TreeInfo.diagnosticPositionFor(svuidField, tree),
+                            TreeInfo.diagnosticPositionFor(svuid, tree),
                             Warnings.ConstantSVUID((Symbol)e));
         }
 
-        private void checkSerialPersistentFields(JCClassDecl tree, Element e, Element field) {
+        private void checkSerialPersistentFields(JCClassDecl tree, Element e, VarSymbol spf) {
             // To be effective, serialPersisentFields must be private, static, and final.
-            checkMandatoryModifiers(tree, e, field, PRIVATE_STATIC_FINAL_MODS, null /*FIXME*/);
-            checkTypeOfField(tree, e, field, OSF_TYPE);
+             if ((spf.flags() & (PRIVATE | STATIC | FINAL)) !=
+                 (PRIVATE | STATIC | FINAL)) {
+                 log.warning(LintCategory.SERIAL,
+                             TreeInfo.diagnosticPositionFor(spf, tree), Warnings.ImproperSPF);
+             }
+
+             // TOOD: checkTypeOfField(tree, e, spf, OSF_TYPE);
             if (isExternalizable((Type)(e.asType()))) {
                 log.warning(LintCategory.SERIAL, tree.pos(),
                             Warnings.IneffectualSerialFieldExternalizable);
             }
-
 
             // If additional compile-time information is
             // available, should check for a "constant null"
@@ -5910,8 +5915,7 @@ public class Attr extends JCTree.Visitor {
             // innocuous.
 
             // private void writeObject(ObjectOutputStream stream) throws IOException
-            checkMandatoryModifiers(tree, e, method, PRIVATE_MODS, null /*FIXME*/);
-            checkExcludedModifiers(tree, e,  method, STATIC_MODS);
+            checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
             checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
             checkOneArg(tree, e, method, OOS_TYPE);
             checkExceptions(tree, e, method, IOE_TYPE);
@@ -5931,14 +5935,14 @@ public class Attr extends JCTree.Visitor {
         }
 
         private void checkReadObject(JCClassDecl tree, Element e, ExecutableElement method) {
+            MethodSymbol methodSym = (MethodSymbol)method;
             // The "synchronized" modifier is seen in the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
             // private void readObject(ObjectInputStream stream)
-            // throws IOException, ClassNotFoundException
-            checkMandatoryModifiers(tree, e, method, PRIVATE_MODS, null /*FIXME*/);
-            checkExcludedModifiers(tree, e,  method, STATIC_MODS);
+            //   throws IOException, ClassNotFoundException
+            checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
             checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
             checkOneArg(tree, e, method, OIS_TYPE);
             checkExceptions(tree, e, method, IOE_TYPE, CNFE_TYPE);
@@ -5946,10 +5950,8 @@ public class Attr extends JCTree.Visitor {
         }
 
         private void checkReadObjectNoData(JCClassDecl tree, Element e, ExecutableElement method) {
-            // private void readObjectNoData()
-            // throws ObjectStreamException
-            checkMandatoryModifiers(tree, e, method, PRIVATE_MODS, null /*FIXME*/);
-            checkExcludedModifiers(tree, e,  method, STATIC_MODS);
+            // private void readObjectNoData() throws ObjectStreamException
+            checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
             checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
@@ -5966,6 +5968,21 @@ public class Attr extends JCTree.Visitor {
             checkReturnTypeOfMethod(tree,e, method, OBJECT_TYPE);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
+        }
+
+        void checkPrivateNonStaticMethod(JCClassDecl tree, MethodSymbol method) {
+            var flags = method.flags();
+            if ((flags & PRIVATE) == 0) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodNotPrivate(method));
+            }
+
+            if ((flags & STATIC) != 0) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodStatic(method));
+            }
         }
 
 
@@ -6132,7 +6149,7 @@ public class Attr extends JCTree.Visitor {
                     case "serialVersionUID" -> {
                         // TODO Extra warning that svuid value not
                         // checked to match for records?
-                        checkSerialVersionUID(tree, e, enclosed);
+                        checkSerialVersionUID(tree, e, (VarSymbol)enclosed);
                     }
 
                     }
@@ -6194,28 +6211,6 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
                 return false;
-            }
-        }
-
-        void checkMandatoryModifiers(JCClassDecl tree,
-                                     Element enclosing,
-                                     Element element,
-                                     Set<Modifier> mandatoryMods,
-                                     Warning warningKey) {
-            String name = element.getSimpleName().toString();
-            Set<Modifier> mods = element.getModifiers();
-            for (Modifier mandatoryMod : mandatoryMods) {
-                if (!mods.contains(mandatoryMod) ) {
-                    if (warningKey == null) {
-                        System.out.println("Serialization-related declaration " + name +
-                                           " in " + enclosing.getKind() + " " + enclosing.toString() +
-                                           " is missing expected modifier " + mandatoryMod);
-                    } else {
-                        log.warning(LintCategory.SERIAL,
-                                    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
-                                    warningKey);
-                    }
-                }
             }
         }
 
