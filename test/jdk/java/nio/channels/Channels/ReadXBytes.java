@@ -23,22 +23,25 @@
 
 /*
  * @test
- * @bug 8268435
+ * @bug 8268435 8274780
  * @summary Verify ChannelInputStream methods readAllBytes and readNBytes
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @modules java.base/jdk.internal.util
- * @run testng/othervm -Xmx8G ReadXBytes
+ * @run testng/othervm/timeout=3600 -Xmx8G ReadXBytes
  * @key randomness
  */
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.READ;
@@ -128,10 +131,33 @@ public class ReadXBytes {
     // Construct for testing correctness of content
     public void dataTest(long length, FileCreator c, DataTest f)
         throws IOException {
+        dataTestFileChannel(length, c, f);
+        dataTestWrappedInputStream(length, c,f);
+    }
+
+    // Runs test against an InputStream based on a FileChannel.
+    public void dataTestFileChannel(long length, FileCreator c, DataTest f)
+        throws IOException {
         Path file = c.create(length);
         try (FileInputStream fis = new FileInputStream(file.toFile());
              FileChannel fc = FileChannel.open(file, READ);
              InputStream cis = Channels.newInputStream(fc)) {
+            f.test(length, cis, fis);
+        } finally {
+            Files.delete(file);
+        }
+    }
+
+    // Runs test against an InputStream where the FileChannel
+    // relationship is obscured.
+    public void dataTestWrappedInputStream(long length, FileCreator c,
+        DataTest f) throws IOException {
+        Path file = c.create(length);
+        try (FileInputStream fis = new FileInputStream(file.toFile());
+             FileInputStream fis2 = new FileInputStream(file.toFile());
+             ReadableByteChannel ch = Channels.newChannel(
+                 new FilterInputStream(fis2) {});
+             InputStream cis = Channels.newInputStream(ch)) {
             f.test(length, cis, fis);
         } finally {
             Files.delete(file);
