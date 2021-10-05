@@ -256,79 +256,16 @@ public class JavacTrees extends DocTrees {
 
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
-                    return ((DCTree) tree).getSourcePosition((DCDocComment) comment);
+                    DCDocComment dcComment = (DCDocComment) comment;
+                    DCTree dcTree = (DCTree) tree;
+                    return dcComment.getSourcePosition(dcTree.getStartPosition());
                 }
-                @Override  @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
+
+                @Override  @DefinedBy(Api.COMPILER_TREE)
                 public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
                     DCDocComment dcComment = (DCDocComment) comment;
-                    if (tree instanceof DCEndPosTree<?> dcEndPosTree) {
-                        int endPos = dcEndPosTree.getEndPos(dcComment);
-
-                        if (endPos != Position.NOPOS) {
-                            return endPos;
-                        }
-                    }
-                    int correction = 0;
-                    switch (tree.getKind()) {
-                        case TEXT:
-                            DCText text = (DCText) tree;
-
-                            return dcComment.comment.getSourcePos(text.pos + text.text.length());
-                        case ERRONEOUS:
-                            DCErroneous err = (DCErroneous) tree;
-
-                            return dcComment.comment.getSourcePos(err.pos + err.body.length());
-                        case IDENTIFIER:
-                            DCIdentifier ident = (DCIdentifier) tree;
-
-                            return dcComment.comment.getSourcePos(ident.pos + (ident.name != names.error ? ident.name.length() : 0));
-                        case PARAM:
-                            DCParam param = (DCParam) tree;
-
-                            if (param.isTypeParameter && param.getDescription().isEmpty()) {
-                                correction = 1;
-                            }
-                        case AUTHOR: case DEPRECATED: case RETURN: case SEE:
-                        case SERIAL: case SERIAL_DATA: case SERIAL_FIELD: case SINCE:
-                        case THROWS: case UNKNOWN_BLOCK_TAG: case VERSION: {
-                            DocTree last = getLastChild(tree);
-
-                            if (last != null) {
-                                return getEndPosition(file, comment, last) + correction;
-                            }
-
-                            int pos;
-                            String name;
-                            if (tree.getKind() == DocTree.Kind.RETURN) {
-                                DCTree.DCReturn dcReturn = (DCTree.DCReturn) tree;
-                                pos = dcReturn.pos;
-                                name = dcReturn.getTagName();
-                            } else {
-                                DCBlockTag block = (DCBlockTag) tree;
-                                pos = block.pos;
-                                name = block.getTagName();
-                            }
-
-                            return dcComment.comment.getSourcePos(pos + name.length() + 1);
-                        }
-                        case ENTITY: {
-                            DCEntity endEl = (DCEntity) tree;
-                            return dcComment.comment.getSourcePos(endEl.pos + (endEl.name != names.error ? endEl.name.length() : 0) + 2);
-                        }
-                        case COMMENT: {
-                            DCComment endEl = (DCComment) tree;
-                            return dcComment.comment.getSourcePos(endEl.pos + endEl.body.length());
-                        }
-                        default:
-                            DocTree last = getLastChild(tree);
-
-                            if (last != null) {
-                                return getEndPosition(file, comment, last);
-                            }
-                            break;
-                    }
-
-                    return Position.NOPOS;
+                    DCTree dcTree = (DCTree) tree;
+                    return dcComment.getSourcePosition(dcTree.getEndPosition());
                 }
             };
     }

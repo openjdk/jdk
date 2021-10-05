@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,9 +79,8 @@ public class AuthCacheImpl implements AuthCache {
             // list should contain only one element
             return (AuthenticationInfo)list.get (0);
         }
-        ListIterator<AuthCacheValue> iter = list.listIterator();
-        while (iter.hasNext()) {
-            AuthenticationInfo inf = (AuthenticationInfo)iter.next();
+        for (AuthCacheValue authCacheValue : list) {
+            AuthenticationInfo inf = (AuthenticationInfo) authCacheValue;
             if (skey.startsWith (inf.path)) {
                 return inf;
             }

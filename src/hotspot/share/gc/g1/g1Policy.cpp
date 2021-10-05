@@ -629,7 +629,7 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark) {
+void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure) {
   G1GCPhaseTimes* p = phase_times();
 
   double start_time_sec = phase_times()->cur_collection_start_sec();
@@ -637,8 +637,6 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
   G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
-
-  bool update_stats = should_update_gc_stats();
 
   if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
     record_concurrent_mark_init_end();
@@ -654,6 +652,10 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     app_time_ms = 1.0;
   }
 
+  // Evacuation failures skew the timing too much to be considered for some statistics updates.
+  // We make the assumption that these are rare.
+  bool update_stats = !evacuation_failure;
+
   if (update_stats) {
     // We maintain the invariant that all objects allocated by mutator
     // threads will be allocated out of eden regions. So, we can use
@@ -668,7 +670,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
   }
 
-  record_pause(this_pause, start_time_sec, end_time_sec);
+  record_pause(this_pause, start_time_sec, end_time_sec, evacuation_failure);
 
   if (G1GCPauseTypeHelper::is_last_young_pause(this_pause)) {
     assert(!G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause),
@@ -891,9 +893,9 @@ void G1Policy::report_ihop_statistics() {
   _ihop_control->print();
 }
 
-void G1Policy::record_young_gc_pause_end() {
+void G1Policy::record_young_gc_pause_end(bool evacuation_failed) {
   phase_times()->record_gc_pause_end();
-  phase_times()->print();
+  phase_times()->print(evacuation_failed);
 }
 
 double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards,
@@ -1176,12 +1178,6 @@ void G1Policy::maybe_start_marking() {
   }
 }
 
-bool G1Policy::should_update_gc_stats() {
-  // Evacuation failures skew the timing too much to be considered for statistics updates.
-  // We make the assumption that these are rare.
-  return !_g1h->evacuation_failed();
-}
-
 void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_time_sec, double end_time_sec) {
 
   double pause_time_sec = end_time_sec - start_time_sec;
@@ -1199,13 +1195,14 @@ void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_t
 
 void G1Policy::record_pause(G1GCPauseType gc_type,
                             double start,
-                            double end) {
+                            double end,
+                            bool evacuation_failure) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (gc_type != G1GCPauseType::FullGC) {
     _mmu_tracker->add_pause(start, end);
   }
 
-  if (should_update_gc_stats()) {
+  if (!evacuation_failure) {
     update_gc_pause_time_ratios(gc_type, start, end);
   }
 

@@ -65,7 +65,8 @@ class StringConcat : public ResourceObj {
     StringMode,
     IntMode,
     CharMode,
-    StringNullCheckMode
+    StringNullCheckMode,
+    NegativeIntCheckMode
   };
 
   StringConcat(PhaseStringOpts* stringopts, CallStaticJavaNode* end):
@@ -122,12 +123,19 @@ class StringConcat : public ResourceObj {
   void push_string(Node* value) {
     push(value, StringMode);
   }
+
   void push_string_null_check(Node* value) {
     push(value, StringNullCheckMode);
   }
+
+  void push_negative_int_check(Node* value) {
+    push(value, NegativeIntCheckMode);
+  }
+
   void push_int(Node* value) {
     push(value, IntMode);
   }
+
   void push_char(Node* value) {
     push(value, CharMode);
   }
@@ -502,13 +510,35 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 #ifndef PRODUCT
                 if (PrintOptimizeStringConcat) {
                   tty->print("giving up because StringBuilder(null) throws exception");
-                  alloc->jvms()->dump_spec(tty); tty->cr();
+                  alloc->jvms()->dump_spec(tty);
+                  tty->cr();
                 }
 #endif
                 return NULL;
               }
               // StringBuilder(str) argument needs null check.
               sc->push_string_null_check(use->in(TypeFunc::Parms + 1));
+            } else if (sig == ciSymbols::int_void_signature()) {
+              // StringBuilder(int) case.
+              Node* parm = use->in(TypeFunc::Parms + 1);
+              assert(parm != NULL, "must exist");
+              const TypeInt* type = _gvn->type(parm)->is_int();
+              if (type->_hi < 0) {
+                // Initial capacity argument is always negative in which case StringBuilder(int) throws
+                // a NegativeArraySizeException. Bail out from string opts.
+#ifndef PRODUCT
+                if (PrintOptimizeStringConcat) {
+                  tty->print("giving up because a negative argument is passed to StringBuilder(int) which "
+                             "throws a NegativeArraySizeException");
+                  alloc->jvms()->dump_spec(tty);
+                  tty->cr();
+                }
+#endif
+                return NULL;
+              } else if (type->_lo < 0) {
+                // Argument could be negative: We need a runtime check to throw NegativeArraySizeException in that case.
+                sc->push_negative_int_check(parm);
+              }
             }
             // The int variant takes an initial size for the backing
             // array so just treat it like the void version.
@@ -1244,7 +1274,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     kit.set_control(loop);
     Node* sizeTable = fetch_static_field(kit, size_table_field);
 
-    Node* value = kit.load_array_element(NULL, sizeTable, index, TypeAryPtr::INTS);
+    Node* value = kit.load_array_element(sizeTable, index, TypeAryPtr::INTS, /* set_ctrl */ false);
     C->record_for_igvn(value);
     Node* limit = __ CmpI(phi, value);
     Node* limitb = __ Bool(limit, BoolTest::le);
@@ -1794,6 +1824,23 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   for (int argi = 0; argi < sc->num_arguments(); argi++) {
     Node* arg = sc->argument(argi);
     switch (sc->mode(argi)) {
+      case StringConcat::NegativeIntCheckMode: {
+        // Initial capacity argument might be negative in which case StringBuilder(int) throws
+        // a NegativeArraySizeException. Insert a runtime check with an uncommon trap.
+        const TypeInt* type = kit.gvn().type(arg)->is_int();
+        assert(type->_hi >= 0 && type->_lo < 0, "no runtime int check needed");
+        Node* p = __ Bool(__ CmpI(arg, kit.intcon(0)), BoolTest::ge);
+        IfNode* iff = kit.create_and_map_if(kit.control(), p, PROB_MIN, COUNT_UNKNOWN);
+        {
+          // Negative int -> uncommon trap.
+          PreserveJVMState pjvms(&kit);
+          kit.set_control(__ IfFalse(iff));
+          kit.uncommon_trap(Deoptimization::Reason_intrinsic,
+                            Deoptimization::Action_maybe_recompile);
+        }
+        kit.set_control(__ IfTrue(iff));
+        break;
+      }
       case StringConcat::IntMode: {
         Node* string_size = int_stringSize(kit, arg);
 
@@ -1963,6 +2010,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       for (int argi = 0; argi < sc->num_arguments(); argi++) {
         Node* arg = sc->argument(argi);
         switch (sc->mode(argi)) {
+          case StringConcat::NegativeIntCheckMode:
+            break; // Nothing to do, was only needed to add a runtime check earlier.
           case StringConcat::IntMode: {
             start = int_getChars(kit, arg, dst_array, coder, start, string_sizes->in(argi));
             break;

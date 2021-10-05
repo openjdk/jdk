@@ -350,21 +350,28 @@ public class Navigation {
      * Adds the summary links to the sub-navigation.
      *
      * @param tree the content tree to which the sub-navigation will added
+     * @param nested whether to create a flat or nested list
      */
-    private void addSummaryLinks(Content tree) {
+    private void addSummaryLinks(Content tree, boolean nested) {
         switch (documentedPage) {
             case MODULE, PACKAGE, CLASS, HELP -> {
                 List<? extends Content> listContents = subNavLinks.getSubNavLinks()
                         .stream().map(HtmlTree::LI).toList();
                 if (!listContents.isEmpty()) {
-                    tree.add(HtmlTree.LI(switch (documentedPage) {
+                Content label = switch (documentedPage) {
                         case MODULE -> contents.moduleSubNavLabel;
                         case PACKAGE -> contents.packageSubNavLabel;
                         case CLASS -> contents.summaryLabel;
                         case HELP -> contents.helpSubNavLabel;
                         default -> Text.EMPTY;
-                    }).add(Entity.NO_BREAK_SPACE));
-                    addListToNav(listContents, tree);
+                    };
+                    if (nested) {
+                        tree.add(HtmlTree.LI(HtmlTree.P(label))
+                                .add(new HtmlTree(TagName.UL).add(listContents)));
+                    } else {
+                        tree.add(HtmlTree.LI(label).add(Entity.NO_BREAK_SPACE));
+                        addListToNav(listContents, tree);
+                    }
                 }
             }
         }
@@ -374,8 +381,9 @@ public class Navigation {
      * Adds the detail links to sub-navigation.
      *
      * @param tree the content tree to which the links will be added
+     * @param nested whether to create a flat or nested list
      */
-    private void addDetailLinks(Content tree) {
+    private void addDetailLinks(Content tree, boolean nested) {
         if (documentedPage == PageMode.CLASS) {
             List<Content> listContents = new ArrayList<>();
             VisibleMemberTable vmt = configuration.getVisibleMemberTable((TypeElement) element);
@@ -394,10 +402,16 @@ public class Navigation {
                 }
             }
             if (!listContents.isEmpty()) {
-                Content li = HtmlTree.LI(contents.detailLabel);
-                li.add(Entity.NO_BREAK_SPACE);
-                tree.add(li);
-                addListToNav(listContents, tree);
+                if (nested) {
+                    Content li = HtmlTree.LI(HtmlTree.P(contents.detailLabel));
+                    li.add(new HtmlTree(TagName.UL).add(listContents));
+                    tree.add(li);
+                } else {
+                    Content li = HtmlTree.LI(contents.detailLabel);
+                    li.add(Entity.NO_BREAK_SPACE);
+                    tree.add(li);
+                    addListToNav(listContents, tree);
+                }
             }
         }
     }
@@ -605,9 +619,17 @@ public class Navigation {
 
         HtmlTree navDiv = new HtmlTree(TagName.DIV);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
+        String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         tree.add(MarkerComments.START_OF_TOP_NAVBAR);
         navDiv.setStyle(HtmlStyle.topNav)
                 .setId(HtmlIds.NAVBAR_TOP)
+                .add(new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
+                        .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
+                        .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
+                        .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
+                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
+                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
+                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY)))
                 .add(HtmlTree.DIV(HtmlStyle.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
@@ -622,18 +644,22 @@ public class Navigation {
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navDiv.add(navList);
+        HtmlTree ulNavSummaryRight = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavListSmall);
+        addSummaryLinks(ulNavSummaryRight, true);
+        addDetailLinks(ulNavSummaryRight, true);
+        navDiv.add(ulNavSummaryRight);
         tree.add(navDiv);
 
         HtmlTree subDiv = new HtmlTree(TagName.DIV).setStyle(HtmlStyle.subNav);
 
-        HtmlTree div = new HtmlTree(TagName.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV).setId(HtmlIds.NAVBAR_SUB_LIST);
         // Add the summary links if present.
         HtmlTree ulNavSummary = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
-        addSummaryLinks(ulNavSummary);
+        addSummaryLinks(ulNavSummary, false);
         div.add(ulNavSummary);
         // Add the detail links if present.
         HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
-        addDetailLinks(ulNavDetail);
+        addDetailLinks(ulNavDetail, false);
         div.add(ulNavDetail);
         subDiv.add(div);
 

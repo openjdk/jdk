@@ -25,7 +25,7 @@ import java.math.BigInteger;
 
 /**
  * @test Test for Math.*Exact integer and long methods.
- * @bug 6708398 8075806
+ * @bug 6708398 8075806 8271225 8271602
  * @summary Basic tests for Math exact arithmetic operations.
  *
  * @author Roger Riggs
@@ -57,8 +57,8 @@ public class ExactArithTests {
 
     /**
      * Test Math.addExact, multiplyExact, divideExact, subtractExact,
-     * floorDivExact, incrementExact, decrementExact, negateExact methods with
-     * {@code int} arguments.
+     * floorDivExact, ceilDivExact, incrementExact, decrementExact, negateExact
+     * methods with {@code int} arguments.
      */
     static void testIntegerExact() {
         testIntegerExact(0, 0);
@@ -194,6 +194,34 @@ public class ExactArithTests {
             }
         }
 
+        exceptionExpected = false;
+        try {
+            // Test ceilDivExact
+            int q = 0;
+            try {
+                q = Math.ceilDiv(x, y);
+            } catch (ArithmeticException e) {
+                exceptionExpected = true;
+            }
+            if (!exceptionExpected && x == Integer.MIN_VALUE && y == -1) {
+                exceptionExpected = true;
+            }
+            int z = Math.ceilDivExact(x, y);
+            if (exceptionExpected) {
+                fail("FAIL: int Math.ceilDivExact(" + x + " / " + y + ")" +
+                        "; expected ArithmeticException not thrown");
+            }
+            if (z != q) {
+                fail("FAIL: int Math.ceilDivExact(" + x + " / " + y + ") = " +
+                        z + "; expected: " + q);
+            }
+        } catch (ArithmeticException ex) {
+            if (!exceptionExpected) {
+                fail("FAIL: int Math.ceilDivExact(" + x + " / " + y + ")" +
+                        "; Unexpected exception: " + ex);
+            }
+        }
+
         try {
             // Test incrementExact
             int inc = Math.incrementExact(x);
@@ -245,7 +273,7 @@ public class ExactArithTests {
 
     /**
      * Test Math.addExact, multiplyExact, divideExact, subtractExact,
-     * floorDivExact, incrementExact, decrementExact, negateExact, toIntExact
+     * floorDivExact, ceilDivExact, incrementExact, decrementExact, negateExact, toIntExact
      * methods with {@code long} arguments.
      */
     static void testLongExact() {
@@ -377,6 +405,34 @@ public class ExactArithTests {
             if (!exceptionExpected) {
                 fail("FAIL: long Math.floorDivExact(" + x + " / " + y + ")" +
                     "; Unexpected exception: " + ex);
+            }
+        }
+
+        exceptionExpected = false;
+        try {
+            // Test ceilDivExact
+            long q = 0;
+            try {
+                q = Math.ceilDiv(x, y);
+            } catch (ArithmeticException e) {
+                exceptionExpected = true;
+            }
+            if (!exceptionExpected && x == Long.MIN_VALUE && y == -1) {
+                exceptionExpected = true;
+            }
+            long z = Math.ceilDivExact(x, y);
+            if (exceptionExpected) {
+                fail("FAIL: long Math.ceilDivExact(" + x + " / " + y + ")" +
+                        "; expected ArithmeticException not thrown");
+            }
+            if (z != q) {
+                fail("FAIL: long Math.ceilDivExact(" + x + " / " + y + ") = " +
+                        z + "; expected: " + q);
+            }
+        } catch (ArithmeticException ex) {
+            if (!exceptionExpected) {
+                fail("FAIL: long Math.ceilDivExact(" + x + " / " + y + ")" +
+                        "; Unexpected exception: " + ex);
             }
         }
 

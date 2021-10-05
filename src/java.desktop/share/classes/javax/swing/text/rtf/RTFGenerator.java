@@ -27,7 +27,6 @@ package javax.swing.text.rtf;
 import java.lang.*;
 import java.util.*;
 import java.awt.Color;
-import java.awt.Font;
 import java.io.OutputStream;
 import java.io.IOException;
 
@@ -515,13 +514,13 @@ void updateSectionAttributes(MutableAttributeSet current,
 {
     if (emitStyleChanges) {
         Object oldStyle = current.getAttribute("sectionStyle");
-        Object newStyle = findStyleNumber(newAttributes, Constants.STSection);
+        Integer newStyle = findStyleNumber(newAttributes, Constants.STSection);
         if (oldStyle != newStyle) {
             if (oldStyle != null) {
                 resetSectionAttributes(current);
             }
             if (newStyle != null) {
-                writeControlWord("ds", ((Integer)newStyle).intValue());
+                writeControlWord("ds", newStyle);
                 current.addAttribute("sectionStyle", newStyle);
             } else {
                 current.removeAttribute("sectionStyle");
@@ -554,8 +553,8 @@ void updateParagraphAttributes(MutableAttributeSet current,
                                boolean emitStyleChanges)
     throws IOException
 {
-    Object parm;
-    Object oldStyle, newStyle;
+    Object oldStyle;
+    Integer newStyle;
 
     /* The only way to get rid of tabs or styles is with the \pard keyword,
        emitted by resetParagraphAttributes(). Ideally we should avoid
@@ -587,7 +586,7 @@ void updateParagraphAttributes(MutableAttributeSet current,
     }
 
     if (oldStyle != newStyle && newStyle != null) {
-        writeControlWord("s", ((Integer)newStyle).intValue());
+        writeControlWord("s", newStyle);
         current.addAttribute("paragraphStyle", newStyle);
     }
 
@@ -706,14 +705,14 @@ void updateCharacterAttributes(MutableAttributeSet current,
 
     if (updateStyleChanges) {
         Object oldStyle = current.getAttribute("characterStyle");
-        Object newStyle = findStyleNumber(newAttributes,
+        Integer newStyle = findStyleNumber(newAttributes,
                                           Constants.STCharacter);
         if (oldStyle != newStyle) {
             if (oldStyle != null) {
                 resetCharacterAttributes(current);
             }
             if (newStyle != null) {
-                writeControlWord("cs", ((Integer)newStyle).intValue());
+                writeControlWord("cs", newStyle.intValue());
                 current.addAttribute("characterStyle", newStyle);
             } else {
                 current.removeAttribute("characterStyle");

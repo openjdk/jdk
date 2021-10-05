@@ -275,7 +275,7 @@
                                                                             \
   develop(uintx, G1EvacuationFailureALotCount, 1000,                        \
           "Number of successful evacuations between evacuation failures "   \
-          "occurring at object copying")                                    \
+          "occurring at object copying per thread")                         \
                                                                             \
   develop(uintx, G1EvacuationFailureALotInterval, 5,                        \
           "Total collections between forced triggering of evacuation "      \

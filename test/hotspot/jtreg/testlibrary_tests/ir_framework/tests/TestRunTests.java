@@ -32,7 +32,7 @@ import java.util.Arrays;
 
 /*
  * @test
- * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
+ * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler1.enabled & vm.compiler2.enabled & vm.flagless
  * @summary Test different custom run tests.
  * @library /test/lib /testlibrary_tests /
  * @run driver ir_framework.tests.TestRunTests

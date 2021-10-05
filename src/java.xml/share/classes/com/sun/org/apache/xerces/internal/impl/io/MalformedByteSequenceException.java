@@ -45,6 +45,7 @@ public class MalformedByteSequenceException extends CharConversionException {
     //
 
     /** message formatter **/
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private MessageFormatter fFormatter;
 
     /** locale for error message **/

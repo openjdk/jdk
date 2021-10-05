@@ -520,8 +520,12 @@ class os: AllStatic {
   // child process (ignored on AIX, which always uses vfork).
   static int fork_and_exec(const char *cmd, bool prefer_vfork = false);
 
-  // Call ::exit() on all platforms but Windows
+  // Call ::exit() on all platforms
   static void exit(int num);
+
+  // Call ::_exit() on all platforms. Similar semantics to die() except we never
+  // want a core dump.
+  static void _exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();

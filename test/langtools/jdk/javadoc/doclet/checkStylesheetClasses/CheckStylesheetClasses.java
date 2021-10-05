@@ -138,7 +138,10 @@ public class CheckStylesheetClasses {
         removeAll(styleSheetNames, "result-highlight", "result-item",
                 "search-tag-desc-result", "search-tag-holder-result",
                 "ui-autocomplete", "ui-autocomplete-category",
-                "watermark");
+                "watermark", "expanded");
+
+        // snippet-related
+        removeAll(styleSheetNames, "bold", "highlighted", "italic");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");
