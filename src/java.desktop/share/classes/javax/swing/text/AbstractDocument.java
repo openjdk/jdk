@@ -765,7 +765,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             // if a default direction of right-to-left has been specified,
             // we want complex layout even if the text is all left to right.
             Object d = getProperty(TextAttribute.RUN_DIRECTION);
-            if (TextAttribute.RUN_DIRECTION_RTL.equals(d)) {
+            if ((d != null) && (d.equals(TextAttribute.RUN_DIRECTION_RTL))) {
                 putProperty( I18NProperty, Boolean.TRUE);
             } else {
                 char[] chars = str.toCharArray();

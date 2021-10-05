@@ -2192,7 +2192,7 @@ public class JEditorPane extends JTextComponent {
             Document doc = elem.getDocument();
             Object i18nFlag
                 = doc.getProperty("i18n"/*AbstractDocument.I18NProperty*/);
-            if (Boolean.TRUE.equals(i18nFlag)) {
+            if ((i18nFlag != null) && i18nFlag.equals(Boolean.TRUE)) {
                 // build a view that support bidi
                 return createI18N(elem);
             } else {

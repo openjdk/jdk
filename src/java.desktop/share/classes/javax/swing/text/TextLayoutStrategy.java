@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.*;
 import java.text.AttributedCharacterIterator;
 import java.text.BreakIterator;
 import java.awt.font.*;
+import java.awt.geom.AffineTransform;
 import javax.swing.JComponent;
 import javax.swing.event.DocumentEvent;
 import sun.font.BidiUtils;
@@ -126,7 +127,7 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
         View row = fv.getView(rowIndex);
         Document doc = fv.getDocument();
         Object i18nFlag = doc.getProperty(AbstractDocument.I18NProperty);
-        if (Boolean.TRUE.equals(i18nFlag)) {
+        if ((i18nFlag != null) && i18nFlag.equals(Boolean.TRUE)) {
             int n = row.getViewCount();
             if (n > 1) {
                 AbstractDocument d = (AbstractDocument)fv.getDocument();

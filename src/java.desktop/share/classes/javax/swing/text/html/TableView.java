@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ import javax.swing.text.*;
             short h = (short) caption.getPreferredSpan(Y_AXIS);
             AttributeSet a = caption.getAttributes();
             Object align = a.getAttribute(CSS.Attribute.CAPTION_SIDE);
-            if ("bottom".equals(align)) {
+            if ((align != null) && (align.equals("bottom"))) {
                 bottom += h;
             } else {
                 top += h;

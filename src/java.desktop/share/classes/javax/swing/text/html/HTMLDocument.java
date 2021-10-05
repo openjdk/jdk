@@ -2755,7 +2755,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 // if a default direction of right-to-left has been specified,
                 // we want complex layout even if the text is all left to right.
                 Object d = getProperty(TextAttribute.RUN_DIRECTION);
-                if (TextAttribute.RUN_DIRECTION_RTL.equals(d)) {
+                if ((d != null) && (d.equals(TextAttribute.RUN_DIRECTION_RTL))) {
                     HTMLDocument.this.putProperty( I18NProperty, Boolean.TRUE);
                 } else {
                     if (SwingUtilities2.isComplexLayout(data, 0, data.length)) {
