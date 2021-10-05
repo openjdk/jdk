@@ -25,6 +25,11 @@
 
 package java.net;
 
+import java.net.spi.InetAddressResolver;
+import java.net.spi.InetAddressResolverProvider;
+import java.net.spi.InetAddressResolver.LookupPolicy;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.ArrayList;
@@ -40,18 +45,29 @@ import java.io.ObjectInputStream.GetField;
 import java.io.ObjectOutputStream;
 import java.io.ObjectOutputStream.PutField;
 import java.lang.annotation.Native;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Arrays;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Stream;
+
+import jdk.internal.misc.VM;
 
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
+import sun.net.ResolverProviderConfiguration;
 import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
 import sun.net.util.IPAddressUtil;
 import sun.nio.cs.UTF_8;
+
+import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4;
+import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4_FIRST;
+import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6;
+import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
 
 /**
  * This class represents an Internet Protocol (IP) address.
@@ -188,6 +204,45 @@ import sun.nio.cs.UTF_8;
  * </dd>
  * </dl>
  *
+ * <h3 id="resolverProviders"> InetAddress Resolver Providers </h3>
+ *
+ * <p> Host name resolution and reverse name resolution operations are delegated to a
+ * {@linkplain InetAddressResolver resolver}. Lookup operations performed by
+ * this class use the <i>system-wide resolver</i>. The system-wide resolver
+ * is set once, lazily, after the VM is fully initialized and when
+ * an invocation of a method in this class triggers the first lookup operation.
+ *
+ * <p> A <i>custom resolver</i> can be installed as the system-wide resolver
+ * by deploying a {@linkplain InetAddressResolverProvider resolver provider}.
+ * A resolver provider is essentially a factory for resolvers, and is used
+ * to instantiate a custom resolver. If no resolver provider
+ * is found, then the <i>built-in resolver</i> will be set as the
+ * system-wide resolver.
+ *
+ * <p> A custom resolver is found and installed as the system-wide resolver
+ * as follows:
+ * <ol>
+ *  <li>The {@link ServiceLoader} mechanism is used to locate an
+ *      {@link InetAddressResolverProvider InetAddressResolverProvider} using the
+ *      system class loader. The order in which providers are located is
+ *      {@linkplain ServiceLoader#load(java.lang.Class, java.lang.ClassLoader) implementation specific}.
+ *      The first provider found will be used to instantiate the {@link InetAddressResolver InetAddressResolver}
+ *      by invoking the {@link InetAddressResolverProvider#get(InetAddressResolverProvider.Configuration)}
+ *      method. The instantiated {@code InetAddressResolver} will be installed as the system-wide
+ *      resolver.
+ *  <li>If the previous step fails to find any resolver provider the
+ *      built-in resolver will be set as the system-wide resolver.
+ * </ol>
+ *
+ * <p> If instantiating a custom resolver from a provider discovered in
+ * step 1 throws an error or exception, the system-wide resolver will not be
+ * installed and the error or exception will be propagated to the calling thread.
+ * Otherwise, any lookup operation will be performed through the installed
+ * <i>system-wide resolver</i>.
+ * @implNote
+ * For any lookup operation that might occur before the VM is fully booted the <i>built-in
+ * resolver</i> will be used.
+ *
  * @author  Chris Warth
  * @see     java.net.InetAddress#getByAddress(byte[])
  * @see     java.net.InetAddress#getByAddress(java.lang.String, byte[])
@@ -197,10 +252,6 @@ import sun.nio.cs.UTF_8;
  * @since 1.0
  */
 public class InetAddress implements java.io.Serializable {
-
-    @Native static final int PREFER_IPV4_VALUE = 0;
-    @Native static final int PREFER_IPV6_VALUE = 1;
-    @Native static final int PREFER_SYSTEM_VALUE = 2;
 
     /**
      * Specify the address family: Internet Protocol, Version 4
@@ -213,9 +264,6 @@ public class InetAddress implements java.io.Serializable {
      * @since 1.4
      */
     @Native static final int IPv6 = 2;
-
-    /* Specify address family preference */
-    static transient final int preferIPv6Address;
 
     static class InetAddressHolder {
         /**
@@ -288,8 +336,10 @@ public class InetAddress implements java.io.Serializable {
         return holder;
     }
 
-    /* Used to store the name service provider */
-    private static transient NameService nameService;
+    /* Used to store the system-wide resolver */
+    private static volatile InetAddressResolver resolver;
+
+    private static final InetAddressResolver BUILTIN_RESOLVER;
 
     /**
      * Used to store the best available hostname.
@@ -301,34 +351,30 @@ public class InetAddress implements java.io.Serializable {
     @java.io.Serial
     private static final long serialVersionUID = 3286316764910316507L;
 
+    // "java.net.preferIPv4Stack" system property value
+    private static final String PREFER_IPV4_STACK_VALUE;
+
+    // "java.net.preferIPv6Addresses" system property value
+    private static final String PREFER_IPV6_ADDRESSES_VALUE;
+
+    // "jdk.net.hosts.file" system property value
+    private static final String HOSTS_FILE_NAME;
+
     /*
      * Load net library into runtime, and perform initializations.
      */
     static {
-        String str = GetPropertyAction.privilegedGetProperty("java.net.preferIPv6Addresses");
-        if (str == null) {
-            preferIPv6Address = PREFER_IPV4_VALUE;
-        } else if (str.equalsIgnoreCase("true")) {
-            preferIPv6Address = PREFER_IPV6_VALUE;
-        } else if (str.equalsIgnoreCase("false")) {
-            preferIPv6Address = PREFER_IPV4_VALUE;
-        } else if (str.equalsIgnoreCase("system")) {
-            preferIPv6Address = PREFER_SYSTEM_VALUE;
-        } else {
-            preferIPv6Address = PREFER_IPV4_VALUE;
-        }
+        PREFER_IPV4_STACK_VALUE =
+                GetPropertyAction.privilegedGetProperty("java.net.preferIPv4Stack");
+        PREFER_IPV6_ADDRESSES_VALUE =
+                GetPropertyAction.privilegedGetProperty("java.net.preferIPv6Addresses");
+        HOSTS_FILE_NAME =
+                GetPropertyAction.privilegedGetProperty("jdk.net.hosts.file");
         jdk.internal.loader.BootLoader.loadLibrary("net");
         SharedSecrets.setJavaNetInetAddressAccess(
                 new JavaNetInetAddressAccess() {
                     public String getOriginalHostName(InetAddress ia) {
                         return ia.holder.getOriginalHostName();
-                    }
-
-                    public InetAddress getByName(String hostName,
-                                                 InetAddress hostAddress)
-                        throws UnknownHostException
-                    {
-                        return InetAddress.getByName(hostName, hostAddress);
                     }
 
                     public int addressValue(Inet4Address inet4Address) {
@@ -341,6 +387,125 @@ public class InetAddress implements java.io.Serializable {
                 }
         );
         init();
+    }
+
+    /**
+     * Creates an address lookup policy from {@code "java.net.preferIPv4Stack"},
+     * {@code "java.net.preferIPv6Addresses"} system property values, and O/S configuration.
+     */
+    private static final LookupPolicy initializePlatformLookupPolicy() {
+        // Calculate AddressFamily value first
+        boolean ipv4Available = isIPv4Available();
+        if ("true".equals(PREFER_IPV4_STACK_VALUE) && ipv4Available) {
+            return LookupPolicy.of(IPV4);
+        }
+        // Check if IPv6 is not supported
+        if (InetAddress.impl instanceof Inet4AddressImpl) {
+            return LookupPolicy.of(IPV4);
+        }
+        // Check if system supports IPv4, if not use IPv6
+        if (!ipv4Available) {
+            return LookupPolicy.of(IPV6);
+        }
+        // If both address families are needed - check preferIPv6Addresses value
+        if (PREFER_IPV6_ADDRESSES_VALUE != null) {
+            if (PREFER_IPV6_ADDRESSES_VALUE.equalsIgnoreCase("true")) {
+                return LookupPolicy.of(IPV4 | IPV6 | IPV6_FIRST);
+            }
+            if (PREFER_IPV6_ADDRESSES_VALUE.equalsIgnoreCase("false")) {
+                return LookupPolicy.of(IPV4 | IPV6 | IPV4_FIRST);
+            }
+            if (PREFER_IPV6_ADDRESSES_VALUE.equalsIgnoreCase("system")) {
+                return LookupPolicy.of(IPV4 | IPV6);
+            }
+        }
+        // Default value with both address families needed - IPv4 addresses come first
+        return LookupPolicy.of(IPV4 | IPV6 | IPV4_FIRST);
+    }
+
+    static boolean systemAddressesOrder(int lookupCharacteristics) {
+        return (lookupCharacteristics & (IPV4_FIRST | IPV6_FIRST)) == 0;
+    }
+
+    static boolean ipv4AddressesFirst(int lookupCharacteristics) {
+        return (lookupCharacteristics & IPV4_FIRST) != 0;
+    }
+
+    static boolean ipv6AddressesFirst(int lookupCharacteristics) {
+        return (lookupCharacteristics & IPV6_FIRST) != 0;
+    }
+
+    // Native method to check if IPv4 is available
+    private static native boolean isIPv4Available();
+
+    /**
+     * The {@code RuntimePermission("inetAddressResolverProvider")} is
+     * necessary to subclass and instantiate the {@code InetAddressResolverProvider}
+     * class, as well as to obtain resolver from an instance of that class,
+     * and it is also required to obtain the operating system name resolution configurations.
+     */
+    private static final RuntimePermission INET_ADDRESS_RESOLVER_PERMISSION =
+            new RuntimePermission("inetAddressResolverProvider");
+
+    private static final ReentrantLock RESOLVER_LOCK = new ReentrantLock();
+    private static volatile InetAddressResolver bootstrapResolver;
+
+    @SuppressWarnings("removal")
+    private static InetAddressResolver resolver() {
+        InetAddressResolver cns = resolver;
+        if (cns != null) {
+            return cns;
+        }
+        if (VM.isBooted()) {
+            RESOLVER_LOCK.lock();
+            try {
+                cns = resolver;
+                if (cns != null) {
+                    return cns;
+                }
+                // Protection against provider calling InetAddress APIs during initialization
+                if (bootstrapResolver != null) {
+                    return bootstrapResolver;
+                } else {
+                    bootstrapResolver = BUILTIN_RESOLVER;
+                }
+                if (HOSTS_FILE_NAME != null) {
+                    // The default resolver service is already host file resolver
+                    cns = BUILTIN_RESOLVER;
+                } else if (System.getSecurityManager() != null) {
+                    PrivilegedAction<InetAddressResolver> pa = InetAddress::loadResolver;
+                    cns = AccessController.doPrivileged(
+                            pa, null, INET_ADDRESS_RESOLVER_PERMISSION);
+                } else {
+                    cns = loadResolver();
+                }
+
+                InetAddress.resolver = cns;
+                return cns;
+            } finally {
+                bootstrapResolver = null;
+                RESOLVER_LOCK.unlock();
+            }
+        } else {
+            return BUILTIN_RESOLVER;
+        }
+    }
+
+    private static InetAddressResolver loadResolver() {
+        return ServiceLoader.load(InetAddressResolverProvider.class)
+                .findFirst()
+                .map(nsp -> nsp.get(builtinConfiguration()))
+                .orElse(BUILTIN_RESOLVER);
+    }
+
+    private static InetAddressResolverProvider.Configuration builtinConfiguration() {
+        return new ResolverProviderConfiguration(BUILTIN_RESOLVER, () -> {
+            try {
+                return impl.getLocalHostName();
+            } catch (UnknownHostException unknownHostException) {
+                return "localhost";
+            }
+        });
     }
 
     /**
@@ -555,7 +720,7 @@ public class InetAddress implements java.io.Serializable {
      * this host name will be remembered and returned;
      * otherwise, a reverse name lookup will be performed
      * and the result will be returned based on the system
-     * configured name lookup service. If a lookup of the name service
+     * configured resolver. If a lookup of the name service
      * is required, call
      * {@link #getCanonicalHostName() getCanonicalHostName}.
      *
@@ -656,10 +821,11 @@ public class InetAddress implements java.io.Serializable {
      * @see SecurityManager#checkConnect
      */
     private static String getHostFromNameService(InetAddress addr, boolean check) {
-        String host = null;
+        String host;
+        var resolver = resolver();
         try {
             // first lookup the hostname
-            host = nameService.getHostByAddr(addr.getAddress());
+            host = resolver.lookupHostName(addr.getAddress());
 
             /* check to see if calling code is allowed to know
              * the hostname for this IP address, ie, connect to the host
@@ -691,11 +857,8 @@ public class InetAddress implements java.io.Serializable {
                 host = addr.getHostAddress();
                 return host;
             }
-        } catch (SecurityException e) {
+        } catch (RuntimeException | UnknownHostException e) {
             host = addr.getHostAddress();
-        } catch (UnknownHostException e) {
-            host = addr.getHostAddress();
-            // let next provider resolve the hostname
         }
         return host;
     }
@@ -755,8 +918,9 @@ public class InetAddress implements java.io.Serializable {
      * string returned is of the form: hostname / literal IP
      * address.
      *
-     * If the host name is unresolved, no reverse name service lookup
-     * is performed. The hostname part will be represented by an empty string.
+     * If the host name is unresolved, no reverse lookup
+     * is performed. The hostname part will be represented
+     * by an empty string.
      *
      * @return  a string representation of this IP address.
      */
@@ -821,11 +985,9 @@ public class InetAddress implements java.io.Serializable {
     // in cache when the result is obtained
     private static final class NameServiceAddresses implements Addresses {
         private final String host;
-        private final InetAddress reqAddr;
 
-        NameServiceAddresses(String host, InetAddress reqAddr) {
+        NameServiceAddresses(String host) {
             this.host = host;
-            this.reqAddr = reqAddr;
         }
 
         @Override
@@ -849,7 +1011,7 @@ public class InetAddress implements java.io.Serializable {
                     UnknownHostException ex;
                     int cachePolicy;
                     try {
-                        inetAddresses = getAddressesFromNameService(host, reqAddr);
+                        inetAddresses = getAddressesFromNameService(host);
                         ex = null;
                         cachePolicy = InetAddressCachePolicy.get();
                     } catch (UnknownHostException uhe) {
@@ -889,81 +1051,46 @@ public class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * NameService provides host and address lookup service
-     *
-     * @since 9
-     */
-    private interface NameService {
-
-        /**
-         * Lookup a host mapping by name. Retrieve the IP addresses
-         * associated with a host
-         *
-         * @param host the specified hostname
-         * @return array of IP addresses for the requested host
-         * @throws UnknownHostException
-         *             if no IP address for the {@code host} could be found
-         */
-        InetAddress[] lookupAllHostAddr(String host)
-                throws UnknownHostException;
-
-        /**
-         * Lookup the host corresponding to the IP address provided
-         *
-         * @param addr byte array representing an IP address
-         * @return {@code String} representing the host name mapping
-         * @throws UnknownHostException
-         *             if no host found for the specified IP address
-         */
-        String getHostByAddr(byte[] addr) throws UnknownHostException;
-
-    }
-
-    /**
-     * The default NameService implementation, which delegates to the underlying
+     * The default InetAddressResolver implementation, which delegates to the underlying
      * OS network libraries to resolve host address mappings.
      *
      * @since 9
      */
-    private static final class PlatformNameService implements NameService {
+    private static final class PlatformResolver implements InetAddressResolver {
 
-        public InetAddress[] lookupAllHostAddr(String host)
-            throws UnknownHostException
-        {
-            return impl.lookupAllHostAddr(host);
+        public Stream<InetAddress> lookupAddresses(String host, LookupPolicy policy)
+                throws UnknownHostException {
+            Objects.requireNonNull(host);
+            return Arrays.stream(impl.lookupAllHostAddr(host, policy));
         }
 
-        public String getHostByAddr(byte[] addr)
-            throws UnknownHostException
-        {
+        public String lookupHostName(byte[] addr)
+                throws UnknownHostException {
+            if (addr.length != Inet4Address.INADDRSZ && addr.length != Inet6Address.INADDRSZ) {
+                throw new IllegalArgumentException("Invalid address length");
+            }
             return impl.getHostByAddr(addr);
         }
     }
 
     /**
-     * The HostsFileNameService provides host address mapping
+     * The HostsFileResolver provides host address mapping
      * by reading the entries in a hosts file, which is specified by
      * {@code jdk.net.hosts.file} system property
      *
      * <p>The file format is that which corresponds with the /etc/hosts file
      * IP Address host alias list.
      *
-     * <p>When the file lookup is enabled it replaces the default NameService
+     * <p>When the file lookup is enabled it replaces the default InetAddressResolver
      * implementation
      *
      * @since 9
      */
-    private static final class HostsFileNameService implements NameService {
-
-        private static final InetAddress[] EMPTY_ARRAY = new InetAddress[0];
-
-        // Specify if only IPv4 addresses should be returned by HostsFileService implementation
-        private static final boolean preferIPv4Stack = Boolean.parseBoolean(
-                GetPropertyAction.privilegedGetProperty("java.net.preferIPv4Stack"));
+    private static final class HostsFileResolver implements InetAddressResolver {
 
         private final String hostsFile;
 
-        public HostsFileNameService(String hostsFileName) {
+        public HostsFileResolver(String hostsFileName) {
             this.hostsFile = hostsFileName;
         }
 
@@ -974,17 +1101,21 @@ public class InetAddress implements java.io.Serializable {
          *
          * @param addr byte array representing an IP address
          * @return {@code String} representing the host name mapping
-         * @throws UnknownHostException
-         *             if no host found for the specified IP address
+         * @throws UnknownHostException if no host found for the specified IP address
+         * @throws IllegalArgumentException if IP address is of illegal length
          */
         @Override
-        public String getHostByAddr(byte[] addr) throws UnknownHostException {
+        public String lookupHostName(byte[] addr) throws UnknownHostException {
             String hostEntry;
             String host = null;
 
+            // Check the length of the address array
+            if (addr.length != Inet4Address.INADDRSZ && addr.length != Inet6Address.INADDRSZ) {
+                throw new IllegalArgumentException("Invalid address length");
+            }
+
             try (Scanner hostsFileScanner = new Scanner(new File(hostsFile),
-                                                        UTF_8.INSTANCE))
-            {
+                                                        UTF_8.INSTANCE)) {
                 while (hostsFileScanner.hasNextLine()) {
                     hostEntry = hostsFileScanner.nextLine();
                     if (!hostEntry.startsWith("#")) {
@@ -1020,11 +1151,13 @@ public class InetAddress implements java.io.Serializable {
          * with the specified host name.
          *
          * @param host the specified hostname
-         * @return array of IP addresses for the requested host
+         * @param lookupPolicy IP addresses lookup policy which specifies addresses
+         *                     family and their order
+         * @return stream of IP addresses for the requested host
          * @throws UnknownHostException
          *             if no IP address for the {@code host} could be found
          */
-        public InetAddress[] lookupAllHostAddr(String host)
+        public Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy)
                 throws UnknownHostException {
             String hostEntry;
             String addrStr;
@@ -1032,10 +1165,15 @@ public class InetAddress implements java.io.Serializable {
             List<InetAddress> inetAddresses = new ArrayList<>();
             List<InetAddress> inet4Addresses = new ArrayList<>();
             List<InetAddress> inet6Addresses = new ArrayList<>();
+            int flags = lookupPolicy.characteristics();
+            boolean needIPv4 = (flags & IPv4) != 0;
+            boolean needIPv6 = (flags & IPv6) != 0;
+
+            Objects.requireNonNull(host);
 
             // lookup the file and create a list InetAddress for the specified host
             try (Scanner hostsFileScanner = new Scanner(new File(hostsFile),
-                                                        UTF_8.INSTANCE)) {
+                    UTF_8.INSTANCE)) {
                 while (hostsFileScanner.hasNextLine()) {
                     hostEntry = hostsFileScanner.nextLine();
                     if (!hostEntry.startsWith("#")) {
@@ -1047,10 +1185,10 @@ public class InetAddress implements java.io.Serializable {
                                 if (addr != null) {
                                     InetAddress address = InetAddress.getByAddress(host, addr);
                                     inetAddresses.add(address);
-                                    if (address instanceof Inet4Address) {
+                                    if (address instanceof Inet4Address && needIPv4) {
                                         inet4Addresses.add(address);
                                     }
-                                    if (address instanceof Inet6Address) {
+                                    if (address instanceof Inet6Address && needIPv6) {
                                         inet6Addresses.add(address);
                                     }
                                 }
@@ -1062,33 +1200,38 @@ public class InetAddress implements java.io.Serializable {
                 throw new UnknownHostException("Unable to resolve host " + host
                         + " as hosts file " + hostsFile + " not found ");
             }
-
-            List<InetAddress> res;
-            // If "preferIPv4Stack" system property is set to "true" then return
-            // only IPv4 addresses
-            if (preferIPv4Stack) {
-                res = inet4Addresses;
-            } else {
-                // Otherwise, analyse "preferIPv6Addresses" value
-                res = switch (preferIPv6Address) {
-                    case PREFER_IPV4_VALUE -> concatAddresses(inet4Addresses, inet6Addresses);
-                    case PREFER_IPV6_VALUE -> concatAddresses(inet6Addresses, inet4Addresses);
-                    default -> inetAddresses;
-                };
+            // Check number of found addresses:
+            // If none found - throw an exception
+            boolean noAddressFound = inetAddresses.isEmpty();
+            // needIPv4 == false and needIPv6 is not a valid combination. See LookupPolicy.of.
+            if (needIPv4 != needIPv6) {
+                if (needIPv4) {
+                    noAddressFound = inet4Addresses.isEmpty();
+                } else {
+                    noAddressFound = inet6Addresses.isEmpty();
+                }
             }
-
-            if (res.isEmpty()) {
+            if (noAddressFound) {
                 throw new UnknownHostException("Unable to resolve host " + host
                         + " in hosts file " + hostsFile);
             }
-            return res.toArray(EMPTY_ARRAY);
-        }
 
-        private static List<InetAddress> concatAddresses(List<InetAddress> firstPart,
-                                                         List<InetAddress> secondPart) {
-            List<InetAddress> result = new ArrayList<>(firstPart);
-            result.addAll(secondPart);
-            return result;
+            // If both address types are requested
+            if (needIPv4 == needIPv6) {
+                if (systemAddressesOrder(flags)) {
+                    return inetAddresses.stream();
+                } else if (ipv6AddressesFirst(flags)) {
+                    return Stream.concat(inet6Addresses.stream(), inet4Addresses.stream());
+                } else if (ipv4AddressesFirst(flags)) {
+                    return Stream.concat(inet4Addresses.stream(), inet6Addresses.stream());
+                }
+            }
+            // Only IPv4 addresses are requested
+            if (needIPv4) {
+                return inet4Addresses.stream();
+            }
+            // Only IPv6 addresses are requested
+            return inet6Addresses.stream();
         }
 
         private String removeComments(String hostsEntry) {
@@ -1130,45 +1273,52 @@ public class InetAddress implements java.io.Serializable {
 
     static final InetAddressImpl  impl;
 
+    /**
+     * Platform-wide {@code LookupPolicy} initialized from {@code "java.net.preferIPv4Stack"},
+     * {@code "java.net.preferIPv6Addresses"} system properties.
+     */
+    static final LookupPolicy PLATFORM_LOOKUP_POLICY;
+
     static {
         // create the impl
         impl = InetAddressImplFactory.create();
 
-        // create name service
-        nameService = createNameService();
+        // impl must be initialized before calling this method
+        PLATFORM_LOOKUP_POLICY = initializePlatformLookupPolicy();
+
+        // create built-in resolver
+        BUILTIN_RESOLVER = createBuiltinInetAddressResolver();
     }
 
     /**
-     * Create an instance of the NameService interface based on
+     * Create an instance of the InetAddressResolver interface based on
      * the setting of the {@code jdk.net.hosts.file} system property.
      *
-     * <p>The default NameService is the PlatformNameService, which typically
+     * <p>The default InetAddressResolver is the PlatformResolver, which typically
      * delegates name and address resolution calls to the underlying
      * OS network libraries.
      *
-     * <p> A HostsFileNameService is created if the {@code jdk.net.hosts.file}
+     * <p> A HostsFileResolver is created if the {@code jdk.net.hosts.file}
      * system property is set. If the specified file doesn't exist, the name or
      * address lookup will result in an UnknownHostException. Thus, non existent
      * hosts file is handled as if the file is empty.
      *
-     * @return a NameService
+     * @return an InetAddressResolver
      */
-    private static NameService createNameService() {
-
-        String hostsFileName =
-                GetPropertyAction.privilegedGetProperty("jdk.net.hosts.file");
-        NameService theNameService;
-        if (hostsFileName != null) {
-            theNameService = new HostsFileNameService(hostsFileName);
+    private static InetAddressResolver createBuiltinInetAddressResolver() {
+        InetAddressResolver theResolver;
+        if (HOSTS_FILE_NAME != null) {
+            theResolver = new HostsFileResolver(HOSTS_FILE_NAME);
         } else {
-            theNameService = new PlatformNameService();
+            theResolver = new PlatformResolver();
         }
-        return theNameService;
+        return theResolver;
     }
 
     /**
      * Creates an InetAddress based on the provided host name and IP address.
-     * No name service is checked for the validity of the address.
+     * System {@linkplain InetAddressResolver resolver} is not used to check
+     * the validity of the address.
      *
      * <p> The host name can either be a machine name, such as
      * "{@code www.example.com}", or a textual representation of its IP
@@ -1251,15 +1401,9 @@ public class InetAddress implements java.io.Serializable {
         return InetAddress.getAllByName(host)[0];
     }
 
-    // called from deployment cache manager
-    private static InetAddress getByName(String host, InetAddress reqAddr)
-        throws UnknownHostException {
-        return InetAddress.getAllByName(host, reqAddr)[0];
-    }
-
     /**
      * Given the name of a host, returns an array of its IP addresses,
-     * based on the configured name service on the system.
+     * based on the configured system {@linkplain InetAddressResolver resolver}.
      *
      * <p> The host name can either be a machine name, such as
      * "{@code www.example.com}", or a textual representation of its IP
@@ -1297,11 +1441,6 @@ public class InetAddress implements java.io.Serializable {
      * @see SecurityManager#checkConnect
      */
     public static InetAddress[] getAllByName(String host)
-        throws UnknownHostException {
-        return getAllByName(host, null);
-    }
-
-    private static InetAddress[] getAllByName(String host, InetAddress reqAddr)
         throws UnknownHostException {
 
         if (host == null || host.isEmpty()) {
@@ -1364,7 +1503,7 @@ public class InetAddress implements java.io.Serializable {
             // We were expecting an IPv6 Literal, but got something else
             throw new UnknownHostException("["+host+"]");
         }
-        return getAllByName0(host, reqAddr, true, true);
+        return getAllByName0(host, true, true);
     }
 
     /**
@@ -1414,25 +1553,18 @@ public class InetAddress implements java.io.Serializable {
         return zone;
     }
 
-    private static InetAddress[] getAllByName0 (String host)
-        throws UnknownHostException
-    {
-        return getAllByName0(host, true);
-    }
-
     /**
      * package private so SocketPermission can call it
      */
     static InetAddress[] getAllByName0 (String host, boolean check)
         throws UnknownHostException  {
-        return getAllByName0 (host, null, check, true);
+        return getAllByName0(host, check, true);
     }
 
     /**
      * Designated lookup method.
      *
      * @param host host name to look up
-     * @param reqAddr requested address to be the 1st in returned array
      * @param check perform security check
      * @param useCache use cached value if not expired else always
      *                 perform name service lookup (and cache the result)
@@ -1440,7 +1572,6 @@ public class InetAddress implements java.io.Serializable {
      * @throws UnknownHostException if host name is not found
      */
     private static InetAddress[] getAllByName0(String host,
-                                               InetAddress reqAddr,
                                                boolean check,
                                                boolean useCache)
         throws UnknownHostException  {
@@ -1498,7 +1629,7 @@ public class InetAddress implements java.io.Serializable {
             // the name service and install it within cache...
             Addresses oldAddrs = cache.putIfAbsent(
                 host,
-                addrs = new NameServiceAddresses(host, reqAddr)
+                    addrs = new NameServiceAddresses(host)
             );
             if (oldAddrs != null) { // lost putIfAbsent race
                 addrs = oldAddrs;
@@ -1509,47 +1640,29 @@ public class InetAddress implements java.io.Serializable {
         return addrs.get().clone();
     }
 
-    static InetAddress[] getAddressesFromNameService(String host, InetAddress reqAddr)
+    static InetAddress[] getAddressesFromNameService(String host)
             throws UnknownHostException {
-        InetAddress[] addresses = null;
+        Stream<InetAddress> addresses = null;
         UnknownHostException ex = null;
 
+        var resolver = resolver();
         try {
-            addresses = nameService.lookupAllHostAddr(host);
-        } catch (UnknownHostException uhe) {
+            addresses = resolver.lookupAddresses(host, PLATFORM_LOOKUP_POLICY);
+        } catch (RuntimeException | UnknownHostException x) {
             if (host.equalsIgnoreCase("localhost")) {
-                addresses = new InetAddress[]{impl.loopbackAddress()};
-            } else {
+                addresses = Stream.of(impl.loopbackAddress());
+            } else if (x instanceof UnknownHostException uhe) {
                 ex = uhe;
+            } else {
+                ex = new UnknownHostException();
+                ex.initCause(x);
             }
         }
 
         if (addresses == null) {
             throw ex == null ? new UnknownHostException(host) : ex;
         }
-
-        // More to do?
-        if (reqAddr != null && addresses.length > 1 && !addresses[0].equals(reqAddr)) {
-            // Find it?
-            int i = 1;
-            for (; i < addresses.length; i++) {
-                if (addresses[i].equals(reqAddr)) {
-                    break;
-                }
-            }
-            // Rotate
-            if (i < addresses.length) {
-                InetAddress tmp, tmp2 = reqAddr;
-                for (int j = 0; j < i; j++) {
-                    tmp = addresses[j];
-                    addresses[j] = tmp2;
-                    tmp2 = tmp;
-                }
-                addresses[i] = tmp2;
-            }
-        }
-
-        return addresses;
+        return addresses.toArray(InetAddress[]::new);
     }
 
     /**
@@ -1557,8 +1670,7 @@ public class InetAddress implements java.io.Serializable {
      * The argument is in network byte order: the highest order
      * byte of the address is in {@code getAddress()[0]}.
      *
-     * <p> This method doesn't block, i.e. no reverse name service lookup
-     * is performed.
+     * <p> This method doesn't block, i.e. no reverse lookup is performed.
      *
      * <p> IPv4 address byte array must be 4 bytes long and IPv6 byte array
      * must be 16 bytes long
@@ -1637,7 +1749,7 @@ public class InetAddress implements java.io.Serializable {
                 // call getAllByName0 without security checks and
                 // without using cached data
                 try {
-                    localAddr = getAllByName0(local, null, false, false)[0];
+                    localAddr = getAllByName0(local, false, false)[0];
                 } catch (UnknownHostException uhe) {
                     // Rethrow with a more informative error message.
                     UnknownHostException uhe2 =

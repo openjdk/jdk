@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,13 +21,22 @@
  * questions.
  */
 
-/**
- * Service-provider classes for the {@link java.net} package.
- *
- * <p> Only developers who are defining new URL stream handler providers or implementing
- * a custom resolver provider should need to make direct use of this package.
- *
- * @since 9
- */
+package impl;
 
-package java.net.spi;
+import java.net.spi.InetAddressResolverProvider;
+import java.net.spi.InetAddressResolver;
+
+public class FaultyResolverProviderGetImpl extends InetAddressResolverProvider {
+    public static final String EXCEPTION_MESSAGE = "This provider provides nothing";
+
+    @Override
+    public InetAddressResolver get(Configuration configuration) {
+        System.out.println("The following provider will be used by current test:" + this.getClass().getCanonicalName());
+        throw new IllegalArgumentException(EXCEPTION_MESSAGE);
+    }
+
+    @Override
+    public String name() {
+        return "faultyInetAddressResolverGet";
+    }
+}

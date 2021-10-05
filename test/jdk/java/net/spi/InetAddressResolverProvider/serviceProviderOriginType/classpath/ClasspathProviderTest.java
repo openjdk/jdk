@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,29 @@
  * questions.
  */
 
-package jdk.internal.access;
-
-import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 
-public interface JavaNetInetAddressAccess {
-    /**
-     * Return the original application specified hostname of
-     * the given InetAddress object.
-     */
-    String getOriginalHostName(InetAddress ia);
+import org.testng.annotations.Test;
 
-    /**
-     * Returns the 32-bit IPv4 address.
-     */
-    int addressValue(Inet4Address inet4Address);
+import static org.testng.Assert.assertThrows;
 
-    /**
-     * Returns a reference to the byte[] with the IPv6 address.
-     */
-    byte[] addressBytes(Inet6Address inet6Address);
+/*
+ * @test
+ * @summary Test that InetAddressResolverProvider implementation can be installed to a class path.
+ * @library ../../lib
+ * @build test.library/testlib.ResolutionRegistry ClasspathResolverProviderImpl
+ * @run testng/othervm ClasspathProviderTest
+ */
+
+public class ClasspathProviderTest {
+
+    @Test
+    public void testResolution() throws Exception {
+        InetAddress inetAddress = InetAddress.getByName("classpath-provider-test.org");
+        System.err.println("Resolved address:" + inetAddress);
+
+        if (!ClasspathResolverProviderImpl.registry.containsAddressMapping(inetAddress)) {
+            throw new RuntimeException("InetAddressResolverProvider was not properly installed");
+        }
+    }
 }

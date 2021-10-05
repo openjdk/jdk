@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,13 +21,24 @@
  * questions.
  */
 
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import java.net.InetAddress;
+
 /**
- * Service-provider classes for the {@link java.net} package.
- *
- * <p> Only developers who are defining new URL stream handler providers or implementing
- * a custom resolver provider should need to make direct use of this package.
- *
- * @since 9
+ * @test
+ * @summary Test that provider which uses InetAddress APIs during its initialization
+ * wouldn't cause stack overflow and will be successfully installed.
+ * @library providers/recursive
+ * @build recursive.init.provider/impl.InetAddressUsageInGetProviderImpl
+ * @run testng/othervm InetAddressUsageInGetProviderTest
  */
 
-package java.net.spi;
+public class InetAddressUsageInGetProviderTest {
+
+    @Test
+    public void testSuccessfulProviderInstantiationTest() throws Exception {
+        System.err.println(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()));
+    }
+}

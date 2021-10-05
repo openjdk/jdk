@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,29 @@
  * questions.
  */
 
-package jdk.internal.access;
-
-import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 
-public interface JavaNetInetAddressAccess {
-    /**
-     * Return the original application specified hostname of
-     * the given InetAddress object.
-     */
-    String getOriginalHostName(InetAddress ia);
+import org.testng.annotations.Test;
 
-    /**
-     * Returns the 32-bit IPv4 address.
-     */
-    int addressValue(Inet4Address inet4Address);
+/*
+ * @test
+ * @summary Test that implementation of InetAddressResolverProvider can be installed to a module path.
+ * @library ../../lib ../../providers/simple
+ * @build test.library/testlib.ResolutionRegistry simple.provider/impl.SimpleResolverProviderImpl
+ *        ModularProviderTest
+ * @run testng/othervm ModularProviderTest
+ */
 
-    /**
-     * Returns a reference to the byte[] with the IPv6 address.
-     */
-    byte[] addressBytes(Inet6Address inet6Address);
+
+public class ModularProviderTest {
+
+    @Test
+    public void testResolution() throws Exception {
+        InetAddress inetAddress = InetAddress.getByName("modular-provider-test.org");
+        System.err.println("Resolved address:" + inetAddress);
+
+        if (!impl.SimpleResolverProviderImpl.registry.containsAddressMapping(inetAddress)) {
+            throw new RuntimeException("InetAddressResolverProvider was not properly installed");
+        }
+    }
 }

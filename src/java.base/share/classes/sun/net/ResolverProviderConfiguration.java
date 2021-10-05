@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,31 @@
  * questions.
  */
 
-/**
- * Service-provider classes for the {@link java.net} package.
- *
- * <p> Only developers who are defining new URL stream handler providers or implementing
- * a custom resolver provider should need to make direct use of this package.
- *
- * @since 9
- */
+package sun.net;
 
-package java.net.spi;
+import java.net.spi.InetAddressResolver;
+import java.net.spi.InetAddressResolverProvider;
+import java.util.function.Supplier;
+
+public final class ResolverProviderConfiguration implements
+        InetAddressResolverProvider.Configuration {
+
+    private final InetAddressResolver builtinResolver;
+    private final Supplier<String> localHostNameSupplier;
+
+    public ResolverProviderConfiguration(InetAddressResolver builtinResolver,
+                                         Supplier<String> localHostNameSupplier) {
+        this.builtinResolver = builtinResolver;
+        this.localHostNameSupplier = localHostNameSupplier;
+    }
+
+    @Override
+    public InetAddressResolver builtinResolver() {
+        return builtinResolver;
+    }
+
+    @Override
+    public String lookupLocalHostName() {
+        return localHostNameSupplier.get();
+    }
+}
