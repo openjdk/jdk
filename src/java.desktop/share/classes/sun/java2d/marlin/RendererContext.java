@@ -48,8 +48,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
      * @return new RendererContext instance
      */
     static RendererContext createContext() {
-        return new RendererContext("ctx"
-                       + CTX_COUNT.getAndIncrement());
+        return new RendererContext("ctx" + CTX_COUNT.getAndIncrement());
     }
 
     // Smallest object used as Cleaner's parent reference
