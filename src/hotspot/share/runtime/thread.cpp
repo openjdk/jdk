@@ -1001,8 +1001,10 @@ JavaThread::JavaThread() :
   _monitor_chunks(nullptr),
 
   _suspend_flags(0),
-  _async_exception_condition(_no_async_condition),
   _pending_async_exception(nullptr),
+#ifdef ASSERT
+  _is_unsafe_access_error(false),
+#endif
 
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
@@ -1597,12 +1599,10 @@ void JavaThread::check_and_handle_async_exceptions() {
     }
   }
 
-  AsyncExceptionCondition condition = clear_async_exception_condition();
-  if (condition == _no_async_condition) {
+  if (!clear_async_exception_condition()) {
     return;
   }
 
-  // Check for pending async. exception
   if (_pending_async_exception != NULL) {
     // Only overwrite an already pending exception if it is not a threadDeath.
     if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
@@ -1625,11 +1625,10 @@ void JavaThread::check_and_handle_async_exceptions() {
     // Always null out the _pending_async_exception oop here since the async condition was
     // already cleared above and thus considered handled.
     _pending_async_exception = NULL;
-    // Clear condition from _suspend_flags since we have finished processing it.
-    clear_suspend_flag(_has_async_exception);
-  }
+  } else {
+    assert(_is_unsafe_access_error, "must be");
+    DEBUG_ONLY(_is_unsafe_access_error = false);
 
-  if (condition == _async_unsafe_access_error && !has_pending_exception()) {
     // We may be at method entry which requires we save the do-not-unlock flag.
     UnlockFlagSaver fs(this);
     switch (thread_state()) {
@@ -1651,7 +1650,6 @@ void JavaThread::check_and_handle_async_exceptions() {
       ShouldNotReachHere();
     }
   }
-
   assert(has_pending_exception(), "must have handled the async condition if no exception");
 }
 
@@ -1720,7 +1718,8 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
       }
 
       // Set async. pending exception in thread.
-      set_pending_async_exception(java_throwable);
+      _pending_async_exception = java_throwable;
+      set_suspend_flag(_has_async_exception);
 
       if (log_is_enabled(Info, exceptions)) {
          ResourceMark rm;
