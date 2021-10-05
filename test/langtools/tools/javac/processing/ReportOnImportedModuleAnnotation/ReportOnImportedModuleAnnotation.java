@@ -33,14 +33,10 @@
  * @run main ReportOnImportedModuleAnnotation
  */
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.util.List;
 
 import javax.tools.JavaCompiler;
