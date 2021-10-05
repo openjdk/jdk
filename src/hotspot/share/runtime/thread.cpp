@@ -1572,9 +1572,6 @@ void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
 
 // Asynchronous exceptions support
 //
-// Note: this function shouldn't block if it's called in
-// _thread_in_native_trans state (such as from
-// check_special_condition_for_native_trans()).
 void JavaThread::check_and_handle_async_exceptions() {
   if (has_last_Java_frame() && has_async_exception_condition()) {
     // If we are at a polling page safepoint (not a poll return)
@@ -1644,6 +1641,9 @@ void JavaThread::check_and_handle_async_exceptions() {
     case _thread_in_vm: {
       JavaThread* THREAD = this;
       Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
+      // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
+      // suspend requests and object reallocation operations if any since we might be going to Java after this.
+      SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
       return;
     }
     case _thread_in_native: {
@@ -1847,21 +1847,17 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
 
+  thread->set_thread_state(_thread_in_vm);
+
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
-  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
+  SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
 
   // After returning from native, it could be that the stack frames are not
   // yet safe to use. We catch such situations in the subsequent stack watermark
   // barrier, which will trap unsafe stack frames.
   StackWatermarkSet::before_unwind(thread);
-
-  if (thread->has_async_exception_condition(false /* check unsafe access error */)) {
-    // We are in _thread_in_native_trans state, don't handle unsafe
-    // access error since that may block.
-    thread->check_and_handle_async_exceptions();
-  }
 }
 
 #ifndef PRODUCT

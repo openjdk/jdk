@@ -818,9 +818,8 @@ class JavaThread: public Thread {
   }
 
  public:
-  bool has_async_exception_condition(bool check_unsafe_access_error = true) {
-    return check_unsafe_access_error ? _async_exception_condition != _no_async_condition
-                                     : _async_exception_condition == _async_exception;
+  bool has_async_exception_condition() {
+    return _async_exception_condition != _no_async_condition;
   }
   inline void set_pending_async_exception(oop e);
   void set_pending_unsafe_access_error()  {
