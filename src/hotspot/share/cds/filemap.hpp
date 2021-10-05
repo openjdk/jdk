@@ -201,7 +201,6 @@ private:
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
   address _heap_begin;              // heap begin at dump time.
   address _heap_end;                // heap end at dump time.
-  bool _base_archive_is_default;    // indicates if the base archive is the system default one
   bool _has_non_jar_in_classpath;   // non-jar file entry exists in classpath
 
   // The following fields are all sanity checks for whether this archive
@@ -267,7 +266,6 @@ public:
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   address heap_begin()                     const { return _heap_begin; }
   address heap_end()                       const { return _heap_end; }
-  bool base_archive_is_default()           const { return _base_archive_is_default; }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
@@ -286,11 +284,10 @@ public:
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
-  void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
-  void set_base_archive_name(const char* name);
+  void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
@@ -315,8 +312,8 @@ public:
     return FileMapRegion::cast(&_space[i]);
   }
 
-  void populate(FileMapInfo* info, size_t core_region_alignment);
-
+  void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
+                size_t base_archive_name_size, size_t base_archive_path_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
