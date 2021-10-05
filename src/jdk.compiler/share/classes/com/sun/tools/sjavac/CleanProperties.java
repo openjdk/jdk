@@ -99,8 +99,8 @@ public class CleanProperties implements Transformer {
                   Map<String,Set<URI>> packageArtifacts) {
         // Load the properties file.
         Properties p = new Properties();
-        try {
-            p.load(new FileInputStream(src));
+        try (FileInputStream fis = new FileInputStream(src)) {
+            p.load(fis);
         } catch (IOException e) {
             Log.error("Error reading file "+src.getPath());
             return false;

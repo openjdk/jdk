@@ -109,8 +109,8 @@ public class CompileProperties implements Transformer {
         }
         // Load the properties file.
         Properties p = new Properties();
-        try {
-            p.load(new FileInputStream(src));
+        try (FileInputStream fis = new FileInputStream(src)) {
+            p.load(fis);
         } catch (IOException e) {
             Log.error("Error reading file "+src.getPath());
             return false;
