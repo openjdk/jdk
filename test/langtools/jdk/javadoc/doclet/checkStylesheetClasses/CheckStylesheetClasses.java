@@ -137,8 +137,7 @@ public class CheckStylesheetClasses {
         // used in search.js; may be worth documenting in HtmlStyle
         removeAll(styleSheetNames, "result-highlight", "result-item",
                 "search-tag-desc-result", "search-tag-holder-result",
-                "ui-autocomplete", "ui-autocomplete-category",
-                "watermark");
+                "ui-autocomplete", "ui-autocomplete-category");
 
         // snippet-related
         removeAll(styleSheetNames, "bold", "highlighted", "italic");

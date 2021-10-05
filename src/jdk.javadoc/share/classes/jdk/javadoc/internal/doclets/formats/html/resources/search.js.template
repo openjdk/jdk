@@ -96,28 +96,16 @@ function createMatcher(pattern, flags) {
     var isCamelCase = /[A-Z]/.test(pattern);
     return new RegExp(pattern, flags + (isCamelCase ? "" : "i"));
 }
-var watermark = 'Search';
 $(function() {
     var search = $("#search-input");
     var reset = $("#reset-button");
     search.val('');
     search.prop("disabled", false);
     reset.prop("disabled", false);
-    search.val(watermark).addClass('watermark');
-    search.blur(function() {
-        if ($(this).val().length === 0) {
-            $(this).val(watermark).addClass('watermark');
-        }
-    });
-    search.on('click keydown paste', function() {
-        if ($(this).val() === watermark) {
-            $(this).val('').removeClass('watermark');
-        }
-    });
     reset.click(function() {
         search.val('').focus();
     });
-    search.focus()[0].setSelectionRange(0, 0);
+    search.focus();
 });
 $.widget("custom.catcomplete", $.ui.autocomplete, {
     _create: function() {

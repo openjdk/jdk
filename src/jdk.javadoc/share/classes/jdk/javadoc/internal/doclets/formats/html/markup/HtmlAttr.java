@@ -57,6 +57,7 @@ public enum HtmlAttr {
     ONCLICK,
     ONKEYDOWN,
     ONLOAD,
+    PLACEHOLDER,
     REL,
     ROLE,
     ROWS,
