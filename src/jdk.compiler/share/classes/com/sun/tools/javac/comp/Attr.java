@@ -5921,7 +5921,7 @@ public class Attr extends JCTree.Visitor {
 
             // private void writeObject(ObjectOutputStream stream) throws IOException
             checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
-            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
+            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE, /* fixme */ null);
             checkOneArg(tree, e, method, OOS_TYPE);
             checkExceptions(tree, e, method, IOE_TYPE);
             checkExternalizable(tree, e, method);
@@ -5934,7 +5934,7 @@ public class Attr extends JCTree.Visitor {
             // Excluding abstract, could have a more complicated
             // rule based on abstract-ness of the class?
             checkExcludedModifiers(tree, e, method, ABSTRACT_STATIC_MODS);
-            checkReturnTypeOfMethod(tree, e, method, OBJECT_TYPE);
+            checkReturnTypeOfMethod(tree, e, method, OBJECT_TYPE, /* fixme */ null);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
         }
@@ -5948,7 +5948,7 @@ public class Attr extends JCTree.Visitor {
             // private void readObject(ObjectInputStream stream)
             //   throws IOException, ClassNotFoundException
             checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
-            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
+            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE, /* fixme */ null);
             checkOneArg(tree, e, method, OIS_TYPE);
             checkExceptions(tree, e, method, IOE_TYPE, CNFE_TYPE);
             checkExternalizable(tree, e, method);
@@ -5957,7 +5957,7 @@ public class Attr extends JCTree.Visitor {
         private void checkReadObjectNoData(JCClassDecl tree, Element e, ExecutableElement method) {
             // private void readObjectNoData() throws ObjectStreamException
             checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
-            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE);
+            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE, /* fixme */ null);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
             checkExternalizable(tree, e, method);
@@ -5970,7 +5970,7 @@ public class Attr extends JCTree.Visitor {
             // Excluding abstract, could have a more complicated
             // rule based on abstract-ness of the class?
             checkExcludedModifiers(tree, e, method, ABSTRACT_STATIC_MODS);
-            checkReturnTypeOfMethod(tree,e, method, OBJECT_TYPE);
+            checkReturnTypeOfMethod(tree,e, method, OBJECT_TYPE, /* fixme */ null);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
         }
@@ -6252,7 +6252,13 @@ public class Attr extends JCTree.Visitor {
         private void checkReturnTypeOfMethod(JCClassDecl tree,
                                              Element enclosing,
                                              ExecutableElement method,
-                                             TypeMirror expectedReturnType) {
+                                             TypeMirror expectedReturnType,
+                                             Warning warningKey) {
+            // Note: there may be complications checking writeReplace
+            // and readResolve since they return Object and could, in
+            // principle, have covariant overrides and any synthetic
+            // bridge method would not be represented here for
+            // checking.
             String name = method.getSimpleName().toString();
             TypeMirror tm = method.getReturnType();
             if (!types.isSameType((Type)expectedReturnType, /* fixme*/ (Type)tm)) {
