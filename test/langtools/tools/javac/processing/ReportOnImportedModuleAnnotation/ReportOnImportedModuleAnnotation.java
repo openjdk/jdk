@@ -58,24 +58,8 @@ public class ReportOnImportedModuleAnnotation {
 
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
-        // Clean any existing class files in output directory
-        var tb = new ToolBox();
-        Files.walkFileTree(testOutputPath,
-                           new SimpleFileVisitor<Path>() {
-                               @Override
-                               public FileVisitResult visitFile(Path path,
-                                                         BasicFileAttributes attrs) {
-                                   File file = path.toFile();
-                                   if (file.getName().endsWith(".class")) {
-                                       try {
-                                           tb.deleteFiles(path);
-                                       } catch (java.io.IOException ioe) {
-                                           ; // ignore
-                                       }
-                                   }
-                                   return FileVisitResult.CONTINUE;
-                               }
-                           });
+        // Clean any existing files in output directory
+        (new ToolBox()).cleanDirectory(testOutputPath);
 
         // Compile annotation and processor modules
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
