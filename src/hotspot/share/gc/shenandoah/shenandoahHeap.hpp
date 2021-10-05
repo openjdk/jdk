@@ -150,7 +150,6 @@ class ShenandoahHeap : public CollectedHeap {
 private:
   ShenandoahHeapLock _lock;
   ShenandoahGeneration* _gc_generation;
-  ShenandoahOldHeuristics* _old_heuristics;
   bool _mixed_evac;             // true iff most recent evac included at least one old-gen HeapRegion
 
 public:
@@ -171,9 +170,7 @@ public:
     _mixed_evac = mixed_evac;
   }
 
-  ShenandoahOldHeuristics* old_heuristics() {
-    return _old_heuristics;
-  }
+  ShenandoahOldHeuristics* old_heuristics();
 
   bool doing_mixed_evacuations();
 

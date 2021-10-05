@@ -24,13 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAdaptiveOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAggressiveOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahCompactOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahStaticOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 
@@ -53,20 +49,3 @@ ShenandoahHeuristics* ShenandoahMode::initialize_heuristics(ShenandoahGeneration
   return NULL;
 }
 
-ShenandoahOldHeuristics* ShenandoahMode::initialize_old_heuristics(ShenandoahGeneration* generation) const {
-
-  assert(ShenandoahGCHeuristics != NULL, "ShenandoahGCHeuristics should not equal NULL");
-  if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-    return new ShenandoahAggressiveOldHeuristics(generation);
-  } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-    return new ShenandoahStaticOldHeuristics(generation);
-  } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-    return new ShenandoahAdaptiveOldHeuristics(generation);
-  } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-    return new ShenandoahCompactOldHeuristics(generation);
-  } else {
-    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
-    ShouldNotReachHere();
-    return NULL;
-  }
-}

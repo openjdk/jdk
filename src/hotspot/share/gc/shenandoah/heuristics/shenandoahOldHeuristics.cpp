@@ -27,18 +27,24 @@
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "utilities/quickSort.hpp"
 
-ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahGeneration* generation) :
+ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahGeneration* generation, ShenandoahHeuristics* trigger_heuristic) :
     ShenandoahHeuristics(generation),
     _old_collection_candidates(0),
     _next_old_collection_candidate(0),
     _hidden_old_collection_candidates(0),
     _hidden_next_old_collection_candidate(0),
     _old_coalesce_and_fill_candidates(0),
-    _first_coalesce_and_fill_candidate(0)
+    _first_coalesce_and_fill_candidate(0),
+    _trigger_heuristic(trigger_heuristic)
 {
 }
 
 bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* collection_set) {
+  if (unprocessed_old_collection_candidates() == 0) {
+    // no candidates for inclusion in collection set.
+    return false;
+  }
+
   uint included_old_regions = 0;
   size_t evacuated_old_bytes = 0;
 
@@ -46,12 +52,11 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   // The max_old_evacuation_bytes and promotion_budget_bytes constants represent a first
   // approximation to desired operating parameters.  Eventually, these values should be determined
   // by heuristics and should adjust dynamically based on most current execution behavior.  In the
-  // interrim, we may choose to offer command-line options to set the values of these configuration
-  // parameters.
+  // interim, we offer command-line options to set the values of these configuration parameters.
 
   // max_old_evacuation_bytes represents an "arbitrary" bound on how much evacuation effort is dedicated
   // to old-gen regions.
-  const size_t max_old_evacuation_bytes = (ShenandoahHeapRegion::region_size_bytes() * 8);
+  const size_t max_old_evacuation_bytes = (size_t) ((double)_generation->soft_max_capacity() / 100 * ShenandoahOldEvacReserve);
 
   // promotion_budget_bytes represents an "arbitrary" bound on how many bytes can be consumed by young-gen
   // objects promoted into old-gen memory.  We need to avoid a scenario under which promotion of objects
@@ -95,6 +100,10 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   } else
     excess_free_capacity = 0;
 
+  log_info(gc)("Choose old regions for mixed collection: excess capacity: " SIZE_FORMAT "%s, evacuation budget: " SIZE_FORMAT "%s",
+                byte_size_in_proper_unit((size_t) excess_free_capacity), proper_unit_for_byte_size(excess_free_capacity),
+                byte_size_in_proper_unit(old_evacuation_budget), proper_unit_for_byte_size(old_evacuation_budget));
+
   size_t remaining_old_evacuation_budget = old_evacuation_budget;
 
   // The number of old-gen regions that were selected as candidates for collection at the end of the most recent
@@ -137,9 +146,8 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   }
 
   if (included_old_regions > 0) {
-    log_info(gc)("Old-gen piggyback evac (%llu regions, %llu bytes)",
-                 (unsigned long long) included_old_regions,
-                 (unsigned long long) evacuated_old_bytes);
+    log_info(gc)("Old-gen piggyback evac (" UINT32_FORMAT " regions, " SIZE_FORMAT " %s)",
+                 included_old_regions, byte_size_in_proper_unit(evacuated_old_bytes), proper_unit_for_byte_size(evacuated_old_bytes));
   }
   return (included_old_regions > 0);
 }
@@ -155,10 +163,12 @@ bool ShenandoahOldHeuristics::choose_collection_set(ShenandoahCollectionSet* col
 void ShenandoahOldHeuristics::prepare_for_old_collections() {
   assert(_generation->generation_mode() == OLD, "This service only available for old-gc heuristics");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  uint free_regions = 0;
+
   size_t cand_idx = 0;
   size_t total_garbage = 0;
   size_t num_regions = heap->num_regions();
+  size_t immediate_garbage = 0;
+  size_t immediate_regions = 0;
 
   RegionData* candidates = _region_data;
   for (size_t i = 0; i < num_regions; i++) {
@@ -173,6 +183,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     if (region->is_regular()) {
       if (!region->has_live()) {
         region->make_trash_immediate();
+        immediate_regions++;
+        immediate_garbage += garbage;
       } else {
         candidates[cand_idx]._region = region;
         candidates[cand_idx]._garbage = garbage;
@@ -187,28 +199,31 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
         size_t region_count = heap->trash_humongous_region_at(region);
         log_debug(gc)("Trashed " SIZE_FORMAT " regions for humongous object.", region_count);
       }
+    } else if (region->is_trash()) {
+      // Count humongous objects made into trash here.
+      immediate_regions++;
+      immediate_garbage += garbage;
     }
   }
+
+  // TODO: Consider not running mixed collects if we recovered some threshold percentage of memory from immediate garbage.
+  // This would be similar to young and global collections shortcutting evacuation, though we'd probably want a separate
+  // threshold for the old generation.
 
   // Prioritize regions to select garbage-first regions
   QuickSort::sort<RegionData>(candidates, cand_idx, compare_by_garbage, false);
 
-  // Any old-gen region that contains (ShenandoahGarbageThreshold (default value 25))% garbage or more is to
+  // Any old-gen region that contains (ShenandoahOldGarbageThreshold (default value 25))% garbage or more is to
   // be evacuated.
   //
-  // TODO: it probably makes sense to define old-generation collection_threshold_garbage_percent differently
-  // than the young-gen ShenandoahGarbageThreshold.  So a different command-line option might allow specification
-  // distinct values for each.  Even better, allow collection_threshold_garbage_percent to be determined
-  // adaptively, by heuristics.
+  // TODO: allow ShenandoahOldGarbageThreshold to be determined adaptively, by heuristics.
 
-  const size_t collection_threshold_garbage_percent = ShenandoahGarbageThreshold;
-
-  size_t region_size = ShenandoahHeapRegion::region_size_bytes();
+  const size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold / 100;
+  size_t candidates_garbage = 0;
   for (size_t i = 0; i < cand_idx; i++) {
-    // Do approximate percent to avoid floating point math
-    size_t percent_garbage = candidates[i]._garbage * 100 / region_size;
-
-    if (percent_garbage < collection_threshold_garbage_percent) {
+    candidates_garbage += candidates[i]._garbage;
+    if (candidates[i]._garbage < garbage_threshold) {
+      // Candidates are sorted in decreasing order of garbage, so no regions after this will be above the threshold
       _hidden_next_old_collection_candidate = 0;
       _hidden_old_collection_candidates = (uint)i;
       _first_coalesce_and_fill_candidate = (uint)i;
@@ -216,9 +231,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
       // Note that we do not coalesce and fill occupied humongous regions
       // HR: humongous regions, RR: regular regions, CF: coalesce and fill regions
-      log_info(gc)("Old-gen mark evac (%llu RR, %llu CF)",
-                   (unsigned long long) (_hidden_old_collection_candidates),
-                   (unsigned long long) _old_coalesce_and_fill_candidates);
+      log_info(gc)("Old-gen mark evac (" UINT32_FORMAT " RR, " UINT32_FORMAT " CF)",
+                   _hidden_old_collection_candidates, _old_coalesce_and_fill_candidates);
       return;
     }
   }
@@ -231,9 +245,13 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
   // Note that we do not coalesce and fill occupied humongous regions
   // HR: humongous regions, RR: regular regions, CF: coalesce and fill regions
-  log_info(gc)("Old-gen mark evac (%llu RR, %llu CF)",
-               (unsigned long long) (_hidden_old_collection_candidates),
-               (unsigned long long) _old_coalesce_and_fill_candidates);
+  size_t collectable_garbage = immediate_garbage + candidates_garbage;
+  log_info(gc)("Old-gen mark evac (" UINT32_FORMAT " RR, " UINT32_FORMAT " CF), "
+               "Collectable Garbage: " SIZE_FORMAT "%s, "
+               "Immediate Garbage: " SIZE_FORMAT "%s",
+               _hidden_old_collection_candidates, _old_coalesce_and_fill_candidates,
+               byte_size_in_proper_unit(collectable_garbage), proper_unit_for_byte_size(collectable_garbage),
+               byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage));
 }
 
 void ShenandoahOldHeuristics::start_old_evacuations() {
@@ -242,7 +260,8 @@ void ShenandoahOldHeuristics::start_old_evacuations() {
   _old_collection_candidates = _hidden_old_collection_candidates;
   _next_old_collection_candidate = _hidden_next_old_collection_candidate;
 
-  _hidden_old_collection_candidates = 0;}
+  _hidden_old_collection_candidates = 0;
+}
 
 
 uint ShenandoahOldHeuristics::unprocessed_old_collection_candidates() {
@@ -280,7 +299,7 @@ bool ShenandoahOldHeuristics::should_defer_gc() {
     // Cannot start a new old-gen GC until previous one has finished.
     //
     // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
-    // For example, we could choose to abandon the prevoius old collection before it has completed evacuations,
+    // For example, we could choose to abandon the previous old collection before it has completed evacuations,
     // but this would require that we coalesce and fill all garbage within unevacuated collection-set regions.
     return true;
   }
@@ -294,5 +313,76 @@ void ShenandoahOldHeuristics::abandon_collection_candidates() {
   _hidden_next_old_collection_candidate = 0;
   _old_coalesce_and_fill_candidates = 0;
   _first_coalesce_and_fill_candidate = 0;
+}
+
+void ShenandoahOldHeuristics::record_cycle_start() {
+  _trigger_heuristic->record_cycle_start();
+}
+
+void ShenandoahOldHeuristics::record_cycle_end() {
+  _trigger_heuristic->record_cycle_end();
+}
+
+bool ShenandoahOldHeuristics::should_start_gc() {
+  if (should_defer_gc()) {
+    return false;
+  }
+  return _trigger_heuristic->should_start_gc();
+}
+
+bool ShenandoahOldHeuristics::should_degenerate_cycle() {
+  return _trigger_heuristic->should_degenerate_cycle();
+}
+
+void ShenandoahOldHeuristics::record_success_concurrent() {
+  _trigger_heuristic->record_success_concurrent();
+}
+
+void ShenandoahOldHeuristics::record_success_degenerated() {
+  _trigger_heuristic->record_success_degenerated();
+}
+
+void ShenandoahOldHeuristics::record_success_full() {
+  _trigger_heuristic->record_success_full();
+}
+
+void ShenandoahOldHeuristics::record_allocation_failure_gc() {
+  _trigger_heuristic->record_allocation_failure_gc();
+}
+
+void ShenandoahOldHeuristics::record_requested_gc() {
+  _trigger_heuristic->record_requested_gc();
+}
+
+bool ShenandoahOldHeuristics::can_unload_classes() {
+  return _trigger_heuristic->can_unload_classes();
+}
+
+bool ShenandoahOldHeuristics::can_unload_classes_normal() {
+  return _trigger_heuristic->can_unload_classes_normal();
+}
+
+bool ShenandoahOldHeuristics::should_unload_classes() {
+  return _trigger_heuristic->should_unload_classes();
+}
+
+const char* ShenandoahOldHeuristics::name() {
+  static char name[128];
+  jio_snprintf(name, sizeof(name), "%s (OLD)", _trigger_heuristic->name());
+  return name;
+}
+
+bool ShenandoahOldHeuristics::is_diagnostic() {
+  return false;
+}
+
+bool ShenandoahOldHeuristics::is_experimental() {
+  return true;
+}
+
+void ShenandoahOldHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                                                    ShenandoahHeuristics::RegionData* data,
+                                                                    size_t data_size, size_t free) {
+  ShouldNotReachHere();
 }
 

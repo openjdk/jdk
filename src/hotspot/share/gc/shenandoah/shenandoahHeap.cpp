@@ -485,9 +485,11 @@ void ShenandoahHeap::initialize_heuristics() {
                     _gc_mode->name()));
   }
 
-  _old_heuristics = _old_generation->initialize_old_heuristics(_gc_mode);
   _global_generation->initialize_heuristics(_gc_mode);
-  _young_generation->initialize_heuristics(_gc_mode);
+  if (mode()->is_generational()) {
+    _young_generation->initialize_heuristics(_gc_mode);
+    _old_generation->initialize_heuristics(_gc_mode);
+  }
 }
 
 #ifdef _MSC_VER
@@ -498,7 +500,6 @@ void ShenandoahHeap::initialize_heuristics() {
 ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   CollectedHeap(),
   _gc_generation(NULL),
-  _old_heuristics(nullptr),
   _mixed_evac(false),
   _initial_size(0),
   _used(0),
@@ -625,8 +626,13 @@ void ShenandoahHeap::post_initialize() {
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers());
 }
 
+
+ShenandoahOldHeuristics* ShenandoahHeap::old_heuristics() {
+  return (ShenandoahOldHeuristics*) _old_generation->heuristics();
+}
+
 bool ShenandoahHeap::doing_mixed_evacuations() {
-  return (_old_heuristics->unprocessed_old_collection_candidates() > 0);
+  return old_heuristics()->unprocessed_old_collection_candidates() > 0;
 }
 
 bool ShenandoahHeap::is_gc_generation_young() const {
@@ -940,7 +946,7 @@ void ShenandoahHeap::retire_plab(PLAB* plab) {
 
 void ShenandoahHeap::cancel_mixed_collections() {
   assert(_old_generation != NULL, "Should only have mixed collections in generation mode.");
-  _old_heuristics->abandon_collection_candidates();
+  old_heuristics()->abandon_collection_candidates();
 }
 
 void ShenandoahHeap::coalesce_and_fill_old_regions() {

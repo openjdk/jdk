@@ -201,9 +201,9 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t available = _generation->available();
   size_t allocated = _generation->bytes_allocated_since_gc_start();
 
-  log_debug(gc)("should_start_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
+  log_debug(gc)("should_start_gc (%s)? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
                 ", max_capacity: " SIZE_FORMAT ", allocated: " SIZE_FORMAT,
-                available, capacity, max_capacity, allocated);
+                _generation->name(), available, capacity, max_capacity, allocated);
 
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;

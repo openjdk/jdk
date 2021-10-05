@@ -43,7 +43,7 @@ ShenandoahRegulatorThread::ShenandoahRegulatorThread(ShenandoahControlThread* co
   _last_sleep_adjust_time(os::elapsedTime()) {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  _old_heuristics = heap->old_heuristics();
+  _old_heuristics = get_heuristics(heap->old_generation());
   _young_heuristics = get_heuristics(heap->young_generation());
   _global_heuristics = get_heuristics(heap->global_generation());
 
@@ -134,7 +134,7 @@ void ShenandoahRegulatorThread::regulator_sleep() {
 }
 
 bool ShenandoahRegulatorThread::start_old_cycle() {
-  return !_old_heuristics->should_defer_gc() && _old_heuristics->should_start_gc() && _control_thread->request_concurrent_gc(OLD);
+  return _old_heuristics->should_start_gc() && _control_thread->request_concurrent_gc(OLD);
 }
 
 bool ShenandoahRegulatorThread::start_young_cycle() {

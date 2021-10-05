@@ -50,6 +50,7 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahGeneration* generation) :
   _region_data(NULL),
   _degenerated_cycles_in_a_row(0),
   _successful_cycles_in_a_row(0),
+  _guaranteed_gc_interval(0),
   _cycle_start(os::elapsedTime()),
   _last_cycle_end(0),
   _gc_times_learned(0),
@@ -221,11 +222,11 @@ bool ShenandoahHeuristics::should_start_gc() {
     return true;
   }
 
-  if (ShenandoahGuaranteedGCInterval > 0) {
+  if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
-    if (last_time_ms > ShenandoahGuaranteedGCInterval) {
+    if (last_time_ms > _guaranteed_gc_interval) {
       log_info(gc)("Trigger (%s): Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
-                   _generation->name(), last_time_ms, ShenandoahGuaranteedGCInterval);
+                   _generation->name(), last_time_ms, _guaranteed_gc_interval);
       return true;
     }
   }

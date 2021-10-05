@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahPassiveOldHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -61,9 +60,4 @@ ShenandoahHeuristics* ShenandoahPassiveMode::initialize_heuristics(ShenandoahGen
   }
   ShouldNotReachHere();
   return NULL;
-}
-
-ShenandoahOldHeuristics* ShenandoahPassiveMode::initialize_old_heuristics(ShenandoahGeneration* generation) const {
-  assert(ShenandoahGCHeuristics != NULL, "ShenandoahGCHeuristics should not equal NULL");
-  return new ShenandoahPassiveOldHeuristics(generation);
 }

@@ -103,15 +103,9 @@ void ShenandoahGeneration::confirm_heuristics_mode() {
   }
 }
 
-ShenandoahOldHeuristics* ShenandoahGeneration::initialize_old_heuristics(ShenandoahMode* gc_mode) {
-  ShenandoahOldHeuristics* old_heuristics = gc_mode->initialize_old_heuristics(this);
-  _heuristics = old_heuristics;
-  confirm_heuristics_mode();
-  return old_heuristics;
-}
-
 ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
   _heuristics = gc_mode->initialize_heuristics(this);
+  _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedGCInterval);
   confirm_heuristics_mode();
   return _heuristics;
 }
@@ -282,7 +276,8 @@ ShenandoahGeneration::ShenandoahGeneration(GenerationMode generation_mode,
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
   _affiliated_region_count(0), _used(0), _bytes_allocated_since_gc_start(0),
-  _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity) {
+  _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity),
+  _heuristics(nullptr) {
   _is_marking_complete.set();
   assert(max_workers > 0, "At least one queue");
   for (uint i = 0; i < max_workers; ++i) {

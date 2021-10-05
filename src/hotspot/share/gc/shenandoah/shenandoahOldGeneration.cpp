@@ -22,9 +22,14 @@
  *
  */
 
+
 #include "precompiled.hpp"
 
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -197,4 +202,23 @@ bool ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     heap->free_set()->rebuild();
   }
   return false;
+}
+
+ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
+  assert(ShenandoahOldGCHeuristics != NULL, "ShenandoahOldGCHeuristics should not equal NULL");
+  ShenandoahHeuristics* trigger;
+  if (strcmp(ShenandoahOldGCHeuristics, "static") == 0) {
+    trigger = new ShenandoahStaticHeuristics(this);
+  } else if (strcmp(ShenandoahOldGCHeuristics, "adaptive") == 0) {
+    trigger = new ShenandoahAdaptiveHeuristics(this);
+  } else if (strcmp(ShenandoahOldGCHeuristics, "compact") == 0) {
+    trigger = new ShenandoahCompactHeuristics(this);
+  } else {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahOldGCHeuristics option (must be one of: static, adaptive, compact)");
+    ShouldNotReachHere();
+    return NULL;
+  }
+  trigger->set_guaranteed_gc_interval(ShenandoahGuaranteedOldGCInterval);
+  _heuristics = new ShenandoahOldHeuristics(this, trigger);
+  return _heuristics;
 }

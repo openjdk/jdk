@@ -48,6 +48,8 @@ class ShenandoahOldGeneration : public ShenandoahGeneration {
 
   bool prepare_regions_and_collection_set(bool concurrent) override;
 
+  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
+
   // We leave the SATB barrier on for the entirety of the old generation
   // marking phase. In some cases, this can cause a write to a perfectly
   // reachable oop to enqueue a pointer that later becomes garbage (because

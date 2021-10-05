@@ -38,7 +38,6 @@ class ShenandoahReferenceProcessor;
 class ShenandoahGeneration : public CHeapObj<mtGC> {
 private:
   GenerationMode const _generation_mode;
-  ShenandoahHeuristics* _heuristics;
 
   // Marking task queues and completeness
   ShenandoahObjToScanQueueSet* _task_queues;
@@ -54,7 +53,8 @@ protected:
   size_t _max_capacity;
   size_t _soft_max_capacity;
 
-public:
+  ShenandoahHeuristics* _heuristics;
+ public:
   ShenandoahGeneration(GenerationMode generation_mode, uint max_workers, size_t max_capacity, size_t soft_max_capacity);
   ~ShenandoahGeneration();
 
@@ -66,9 +66,7 @@ public:
 
   virtual const char* name() const = 0;
 
-  ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
-
-  ShenandoahOldHeuristics* initialize_old_heuristics(ShenandoahMode* gc_mode);
+  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
 
   virtual size_t soft_max_capacity() const { return _soft_max_capacity; }
   virtual size_t max_capacity() const      { return _max_capacity; }

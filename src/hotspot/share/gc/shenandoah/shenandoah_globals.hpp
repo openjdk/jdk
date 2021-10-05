@@ -77,6 +77,12 @@
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
                                                                             \
+  product(ccstr, ShenandoahOldGCHeuristics, "adaptive",                     \
+          "Similar to ShenandoahGCHeuristics, but applied to the old "      \
+          "generation. This configuration is only used to trigger old "     \
+          "collections and does not change how regions are selected "       \
+          "for collection.")                                                \
+                                                                            \
   product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
           "Unload the classes every Nth cycle. Normally affects concurrent "\
           "GC cycles, as degenerated and full GCs would try to unload "     \
@@ -88,6 +94,11 @@
           "may select the region for collection even if it has little "     \
           "garbage. This also affects how much internal fragmentation the " \
           "collector accepts. In percents of heap region size.")            \
+          range(0,100)                                                      \
+                                                                            \
+  product(uintx, ShenandoahOldGarbageThreshold, 25, EXPERIMENTAL,           \
+          "How much garbage an old region has to contain before it would "  \
+          "be taken for collection.")                                       \
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahInitFreeThreshold, 70, EXPERIMENTAL,             \
@@ -163,6 +174,11 @@
           "intervals are present, where GC can run without stealing "       \
           "time from active application. Time is in milliseconds. "         \
           "Setting this to 0 disables the feature.")                        \
+                                                                            \
+  product(uintx, ShenandoahGuaranteedOldGCInterval, 10*60*1000,  EXPERIMENTAL,  \
+          "Run a collection of the old generation at least this often. "    \
+          "Heuristics may trigger collections more frequently. Time is in " \
+          "milliseconds. Setting this to 0 disables the feature.")          \
                                                                             \
   product(bool, ShenandoahAlwaysClearSoftRefs, false, EXPERIMENTAL,         \
           "Unconditionally clear soft references, instead of using any "    \
@@ -248,6 +264,12 @@
           "will make evacuations more resilient when evacuation "           \
           "reserve/waste is incorrect, at the risk that application "       \
           "runs out of memory too early.")                                  \
+                                                                            \
+  product(double, ShenandoahOldEvacReserve, 5.0, EXPERIMENTAL,              \
+          "How much of old generation to withhold from evacuations. "       \
+           "Larger values will result in fewer live objects being "         \
+           "evacuated in the old generation.")                              \
+          range(1,100)                                                      \
                                                                             \
   product(bool, ShenandoahPacing, true, EXPERIMENTAL,                       \
           "Pace application allocations to give GC chance to start "        \

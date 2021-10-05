@@ -90,6 +90,8 @@ protected:
   uint _degenerated_cycles_in_a_row;
   uint _successful_cycles_in_a_row;
 
+  size_t _guaranteed_gc_interval;
+
   double _cycle_start;
   double _last_cycle_end;
 
@@ -121,6 +123,10 @@ public:
   void record_metaspace_oom()     { _metaspace_oom.set(); }
   void clear_metaspace_oom()      { _metaspace_oom.unset(); }
   bool has_metaspace_oom() const  { return _metaspace_oom.is_set(); }
+
+  void set_guaranteed_gc_interval(size_t guaranteed_gc_interval) {
+    _guaranteed_gc_interval = guaranteed_gc_interval;
+  }
 
   virtual void record_cycle_start();
 

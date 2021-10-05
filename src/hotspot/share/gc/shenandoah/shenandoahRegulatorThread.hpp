@@ -26,10 +26,11 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "runtime/mutex.hpp"
+
+class ShenandoahHeuristics;
+class ShenandoahControlThread;
 
 /*
  * The purpose of this class (and thread) is to allow us to continue
@@ -75,7 +76,7 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   ShenandoahSharedFlag _heap_changed;
   ShenandoahControlThread* _control_thread;
   ShenandoahHeuristics* _young_heuristics;
-  ShenandoahOldHeuristics* _old_heuristics;
+  ShenandoahHeuristics* _old_heuristics;
   ShenandoahHeuristics* _global_heuristics;
 
   int _sleep;

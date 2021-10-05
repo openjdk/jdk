@@ -610,7 +610,6 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
   // collected and their memory repurposed, and because zombie objects might refer to objects that are themselves dead.
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
   ShenandoahMarkingContext* ctx;
 
   if (heap->doing_mixed_evacuations()) {
