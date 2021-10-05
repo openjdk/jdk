@@ -1131,7 +1131,7 @@ public class Font implements java.io.Serializable
                 if (tracker != null) {
                     tracker.set(tFile, outStream);
                 }
-                try {
+                try (outStream) { /* don't close the input stream */
                     byte[] buf = new byte[8192];
                     for (;;) {
                         int bytesRead = fontStream.read(buf);
@@ -1152,9 +1152,6 @@ public class Font implements java.io.Serializable
                         }
                         outStream.write(buf, 0, bytesRead);
                     }
-                    /* don't close the input stream */
-                } finally {
-                    outStream.close();
                 }
                 /* After all references to a Font2D are dropped, the file
                  * will be removed. To support long-lived AppContexts,
