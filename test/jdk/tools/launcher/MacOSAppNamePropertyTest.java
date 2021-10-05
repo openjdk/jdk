@@ -54,6 +54,8 @@ public class MacOSAppNamePropertyTest extends TestHelper {
     static void execTest(String propSetting, String expect) {
         List<String> cmdList = new ArrayList<>();
         cmdList.add(javaCmd);
+        cmdList.add("-cp");
+        cmdList.add(TEST_CLASSES_DIR.getAbsolutePath());
         if (propSetting != null) {
             cmdList.add(propSetting);
         }
