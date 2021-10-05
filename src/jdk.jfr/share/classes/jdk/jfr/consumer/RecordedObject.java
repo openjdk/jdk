@@ -34,7 +34,6 @@ import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.EventType;
@@ -43,7 +42,6 @@ import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 import jdk.jfr.internal.consumer.ObjectContext;
 import jdk.jfr.internal.consumer.ObjectFactory;
@@ -63,10 +61,12 @@ public class RecordedObject {
 
     static{
         JdkJfrConsumer access = new JdkJfrConsumer() {
+            @Override
             public List<Type> readTypes(RecordingFile file) throws IOException {
                 return file.readTypes();
             }
 
+            @Override
             public boolean isLastEventInChunk(RecordingFile file) {
                 return file.isLastEventInChunk();
             }
@@ -150,7 +150,7 @@ public class RecordedObject {
         JdkJfrConsumer.setAccess(access);
     }
 
-    private final static class UnsignedValue {
+    private static final class UnsignedValue {
         private final Object o;
 
         UnsignedValue(Object o) {
@@ -261,7 +261,7 @@ public class RecordedObject {
      * @see #hasField(String)
      *
      */
-    final public <T> T getValue(String name) {
+    public final <T> T getValue(String name) {
         @SuppressWarnings("unchecked")
         T t = (T) getValue(name, false);
         return t;
@@ -430,8 +430,8 @@ public class RecordedObject {
      */
     public final boolean getBoolean(String name) {
         Object o = getValue(name);
-        if (o instanceof Boolean) {
-            return ((Boolean) o).booleanValue();
+        if (o instanceof Boolean b) {
+            return b;
         }
         throw newIllegalArgumentException(name, "boolean");
     }
@@ -457,8 +457,8 @@ public class RecordedObject {
      */
     public final byte getByte(String name) {
         Object o = getValue(name);
-        if (o instanceof Byte) {
-            return ((Byte) o).byteValue();
+        if (o instanceof Byte b) {
+            return b;
         }
         throw newIllegalArgumentException(name, "byte");
     }
@@ -484,8 +484,8 @@ public class RecordedObject {
      */
     public final char getChar(String name) {
         Object o = getValue(name);
-        if (o instanceof Character) {
-            return ((Character) o).charValue();
+        if (o instanceof Character c) {
+            return c;
         }
 
         throw newIllegalArgumentException(name, "char");
@@ -519,19 +519,19 @@ public class RecordedObject {
      */
     public final short getShort(String name) {
         Object o = getValue(name, true);
-        if (o instanceof Short) {
-            return ((Short) o).shortValue();
+        if (o instanceof Short s) {
+            return s;
         }
-        if (o instanceof Byte) {
-            return ((Byte) o).byteValue();
+        if (o instanceof Byte b) {
+            return b;
         }
-        if (o instanceof UnsignedValue) {
-            Object u = ((UnsignedValue) o).value();
-            if (u instanceof Short) {
-                return ((Short) u).shortValue();
+        if (o instanceof UnsignedValue unsigned) {
+            Object u = unsigned.value();
+            if (u instanceof Short s) {
+                return s;
             }
-            if (u instanceof Byte) {
-                return (short) Byte.toUnsignedInt(((Byte) u));
+            if (u instanceof Byte b) {
+                return (short) Byte.toUnsignedInt(b);
             }
         }
         throw newIllegalArgumentException(name, "short");
@@ -566,28 +566,28 @@ public class RecordedObject {
      */
     public final int getInt(String name) {
         Object o = getValue(name, true);
-        if (o instanceof Integer) {
-            return ((Integer) o).intValue();
+        if (o instanceof Integer i) {
+            return i;
         }
-        if (o instanceof Short) {
-            return ((Short) o).intValue();
+        if (o instanceof Short s) {
+            return s;
         }
-        if (o instanceof Character) {
-            return ((Character) o).charValue();
+        if (o instanceof Character c) {
+            return c;
         }
-        if (o instanceof Byte) {
-            return ((Byte) o).intValue();
+        if (o instanceof Byte b) {
+            return b;
         }
-        if (o instanceof UnsignedValue) {
-            Object u = ((UnsignedValue) o).value();
-            if (u instanceof Integer) {
-                return ((Integer) u).intValue();
+        if (o instanceof UnsignedValue unsigned) {
+            Object u = unsigned.value();
+            if (u instanceof Integer i) {
+                return i;
             }
-            if (u instanceof Short) {
-                return Short.toUnsignedInt(((Short) u));
+            if (u instanceof Short s) {
+                return Short.toUnsignedInt(s);
             }
-            if (u instanceof Byte) {
-                return Byte.toUnsignedInt(((Byte) u));
+            if (u instanceof Byte b) {
+                return Byte.toUnsignedInt(b);
             }
         }
         throw newIllegalArgumentException(name, "int");
@@ -619,23 +619,23 @@ public class RecordedObject {
      */
     public final float getFloat(String name) {
         Object o = getValue(name);
-        if (o instanceof Float) {
-            return ((Float) o).floatValue();
+        if (o instanceof Float f) {
+            return f;
         }
-        if (o instanceof Long) {
-            return ((Long) o).floatValue();
+        if (o instanceof Long l) {
+            return l;
         }
-        if (o instanceof Integer) {
-            return ((Integer) o).floatValue();
+        if (o instanceof Integer i) {
+            return i;
         }
-        if (o instanceof Short) {
-            return ((Short) o).floatValue();
+        if (o instanceof Short s) {
+            return s;
         }
-        if (o instanceof Byte) {
-            return ((Byte) o).byteValue();
+        if (o instanceof Byte b) {
+            return b;
         }
-        if (o instanceof Character) {
-            return ((Character) o).charValue();
+        if (o instanceof Character c) {
+            return c;
         }
         throw newIllegalArgumentException(name, "float");
     }
@@ -669,31 +669,31 @@ public class RecordedObject {
      */
     public final long getLong(String name) {
         Object o = getValue(name, true);
-        if (o instanceof Long) {
-            return ((Long) o).longValue();
+        if (o instanceof Long l) {
+            return l;
         }
-        if (o instanceof Integer) {
-            return ((Integer) o).longValue();
+        if (o instanceof Integer i) {
+            return i;
         }
-        if (o instanceof Short) {
-            return ((Short) o).longValue();
+        if (o instanceof Short s) {
+            return s;
         }
-        if (o instanceof Character) {
-            return ((Character) o).charValue();
+        if (o instanceof Character c) {
+            return c;
         }
-        if (o instanceof Byte) {
-            return ((Byte) o).longValue();
+        if (o instanceof Byte b) {
+            return b.longValue();
         }
-        if (o instanceof UnsignedValue) {
-            Object u = ((UnsignedValue) o).value();
-            if (u instanceof Integer) {
-                return Integer.toUnsignedLong(((Integer) u));
+        if (o instanceof UnsignedValue unsigned) {
+            Object u = unsigned.value();
+            if (u instanceof Integer i) {
+                return Integer.toUnsignedLong(i);
             }
-            if (u instanceof Short) {
-                return Short.toUnsignedLong(((Short) u));
+            if (u instanceof Short s) {
+                return Short.toUnsignedLong(s);
             }
-            if (u instanceof Byte) {
-                return Byte.toUnsignedLong(((Byte) u));
+            if (u instanceof Byte b) {
+                return Byte.toUnsignedLong(b);
             }
         }
         throw newIllegalArgumentException(name, "long");
@@ -725,26 +725,26 @@ public class RecordedObject {
      */
     public final double getDouble(String name) {
         Object o = getValue(name);
-        if (o instanceof Double) {
-            return ((Double) o).doubleValue();
+        if (o instanceof Double d) {
+            return d.doubleValue();
         }
-        if (o instanceof Float) {
-            return ((Float) o).doubleValue();
+        if (o instanceof Float f) {
+            return f.doubleValue();
         }
-        if (o instanceof Long) {
-            return ((Long) o).doubleValue();
+        if (o instanceof Long l) {
+            return l.doubleValue();
         }
-        if (o instanceof Integer) {
-            return ((Integer) o).doubleValue();
+        if (o instanceof Integer i) {
+            return i.doubleValue();
         }
-        if (o instanceof Short) {
-            return ((Short) o).doubleValue();
+        if (o instanceof Short s) {
+            return s.doubleValue();
         }
-        if (o instanceof Byte) {
-            return ((Byte) o).byteValue();
+        if (o instanceof Byte b) {
+            return b.doubleValue();
         }
-        if (o instanceof Character) {
-            return ((Character) o).charValue();
+        if (o instanceof Character c) {
+            return c;
         }
         throw newIllegalArgumentException(name, "double");
     }
@@ -797,31 +797,31 @@ public class RecordedObject {
      */
     public final Duration getDuration(String name) {
         Object o = getValue(name);
-        if (o instanceof Long) {
-            return getDuration(((Long) o).longValue(), name);
+        if (o instanceof Long l) {
+            return getDuration(l, name);
         }
-        if (o instanceof Integer) {
-            return getDuration(((Integer) o).longValue(), name);
+        if (o instanceof Integer i) {
+            return getDuration(i, name);
         }
-        if (o instanceof Short) {
-            return getDuration(((Short) o).longValue(), name);
+        if (o instanceof Short s) {
+            return getDuration(s, name);
         }
-        if (o instanceof Character) {
-            return getDuration(((Character) o).charValue(), name);
+        if (o instanceof Character c) {
+            return getDuration(c, name);
         }
-        if (o instanceof Byte) {
-            return getDuration(((Byte) o).longValue(), name);
+        if (o instanceof Byte b) {
+            return getDuration(b, name);
         }
-        if (o instanceof UnsignedValue) {
-            Object u = ((UnsignedValue) o).value();
-            if (u instanceof Integer) {
-                return getDuration(Integer.toUnsignedLong((Integer) u), name);
+        if (o instanceof UnsignedValue unsigned) {
+            Object u = unsigned.value();
+            if (u instanceof Integer i) {
+                return getDuration(Integer.toUnsignedLong(i), name);
             }
-            if (u instanceof Short) {
-                return getDuration(Short.toUnsignedLong((Short) u), name);
+            if (u instanceof Short s) {
+                return getDuration(Short.toUnsignedLong(s), name);
             }
-            if (u instanceof Byte) {
-                return getDuration(Short.toUnsignedLong((Byte) u), name);
+            if (u instanceof Byte b) {
+                return getDuration(Short.toUnsignedLong(b), name);
             }
         }
         throw newIllegalArgumentException(name, "java.time.Duration");
@@ -876,31 +876,31 @@ public class RecordedObject {
      */
     public final Instant getInstant(String name) {
         Object o = getValue(name, true);
-        if (o instanceof Long) {
-            return getInstant(((Long) o).longValue(), name);
+        if (o instanceof Long l) {
+            return getInstant(l, name);
         }
-        if (o instanceof Integer) {
-            return getInstant(((Integer) o).longValue(), name);
+        if (o instanceof Integer i) {
+            return getInstant(i, name);
         }
-        if (o instanceof Short) {
-            return getInstant(((Short) o).longValue(), name);
+        if (o instanceof Short s) {
+            return getInstant(s, name);
         }
-        if (o instanceof Character) {
-            return getInstant(((Character) o).charValue(), name);
+        if (o instanceof Character c) {
+            return getInstant(c, name);
         }
-        if (o instanceof Byte) {
-            return getInstant(((Byte) o).longValue(), name);
+        if (o instanceof Byte b) {
+            return getInstant(b, name);
         }
-        if (o instanceof UnsignedValue) {
-            Object u = ((UnsignedValue) o).value();
-            if (u instanceof Integer) {
-                return getInstant(Integer.toUnsignedLong((Integer) u), name);
+        if (o instanceof UnsignedValue unsigned) {
+            Object u = unsigned.value();
+            if (u instanceof Integer i) {
+                return getInstant(Integer.toUnsignedLong(i), name);
             }
-            if (u instanceof Short) {
-                return getInstant(Short.toUnsignedLong((Short) u), name);
+            if (u instanceof Short s) {
+                return getInstant(Short.toUnsignedLong(s), name);
             }
-            if (u instanceof Byte) {
-                return getInstant(Short.toUnsignedLong((Byte) u), name);
+            if (u instanceof Byte b) {
+                return getInstant(Short.toUnsignedLong(b), name);
             }
         }
         throw newIllegalArgumentException(name, "java.time.Instant");
@@ -978,12 +978,12 @@ public class RecordedObject {
      * @return textual description of this object
      */
     @Override
-    final public String toString() {
+    public final String toString() {
         StringWriter s = new StringWriter();
         PrettyWriter p = new PrettyWriter(new PrintWriter(s));
         p.setStackDepth(5);
-        if (this instanceof RecordedEvent) {
-            p.print((RecordedEvent) this);
+        if (this instanceof RecordedEvent event) {
+            p.print(event);
         } else {
             p.print(this, "");
         }

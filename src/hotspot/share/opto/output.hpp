@@ -164,8 +164,7 @@ public:
                     bool              has_wide_vectors,
                     RTMState          rtm_state);
 
-  void install_stub(const char* stub_name,
-                    bool        caller_must_gc_arguments);
+  void install_stub(const char* stub_name);
 
   // Constant table
   ConstantTable& constant_table() { return _constant_table; }

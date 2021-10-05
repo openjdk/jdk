@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,8 @@ void G1SentinelTask::execute() {
 
 G1ServiceThread::G1ServiceThread() :
     ConcurrentGCThread(),
-    _monitor(Mutex::nonleaf,
-             "G1ServiceThread monitor",
-             true,
+    _monitor(Mutex::nosafepoint,
+             "G1ServiceThread_lock",
              Monitor::_safepoint_check_never),
     _task_queue() {
   set_name("G1 Service");
@@ -71,7 +70,7 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay_ms) {
   schedule_task(task, delay_ms);
 }
 
-void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
+void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms, bool notify) {
   guarantee(task->is_registered(), "Must be registered before scheduled");
   guarantee(task->next() == NULL, "Task already in queue");
 
@@ -79,94 +78,79 @@ void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
   jlong delay = TimeHelper::millis_to_counter(delay_ms);
   task->set_time(os::elapsed_counter() + delay);
 
-  MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   _task_queue.add_ordered(task);
+  if (notify) {
+    ml.notify();
+  }
 
   log_trace(gc, task)("G1 Service Thread (%s) (schedule) @%1.3fs",
                       task->name(), TimeHelper::counter_to_seconds(task->time()));
 }
 
 void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
-  schedule(task, delay_ms);
-  notify();
+  schedule(task, delay_ms, true /* notify */);
 }
 
-int64_t G1ServiceThread::time_to_next_task_ms() {
-  assert(_monitor.owned_by_self(), "Must be owner of lock");
-  assert(!_task_queue.is_empty(), "Should not be called for empty list");
-
-  jlong time_diff = _task_queue.peek()->time() - os::elapsed_counter();
-  if (time_diff < 0) {
-    // Run without sleeping.
-    return 0;
-  }
-
-  // Return sleep time in milliseconds. Using ceil to make sure we never
-  // schedule a task too early.
-  return (int64_t) ceil(TimeHelper::counter_to_millis(time_diff));
-}
-
-void G1ServiceThread::notify() {
+G1ServiceTask* G1ServiceThread::wait_for_task() {
   MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  ml.notify();
-}
-
-void G1ServiceThread::sleep_before_next_cycle() {
-  if (should_terminate()) {
-    return;
-  }
-
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  if (_task_queue.is_empty()) {
-    // Sleep until new task is registered if no tasks available.
-    log_trace(gc, task)("G1 Service Thread (wait for new tasks)");
-    ml.wait(0);
-  } else {
-    int64_t sleep_ms = time_to_next_task_ms();
-    if (sleep_ms > 0) {
-      log_trace(gc, task)("G1 Service Thread (wait) %1.3fs", sleep_ms / 1000.0);
-      ml.wait(sleep_ms);
+  while (!should_terminate()) {
+    if (_task_queue.is_empty()) {
+      log_trace(gc, task)("G1 Service Thread (wait for new tasks)");
+      ml.wait();
+    } else {
+      G1ServiceTask* task = _task_queue.front();
+      jlong scheduled = task->time();
+      jlong now = os::elapsed_counter();
+      if (scheduled <= now) {
+        _task_queue.remove_front();
+        return task;
+      } else {
+        // Round up to try not to wake up early, and to avoid round down to
+        // zero (which has special meaning of wait forever) by conversion.
+        double delay = ceil(TimeHelper::counter_to_millis(scheduled - now));
+        log_trace(gc, task)("G1 Service Thread (wait %1.3fs)", (delay / 1000.0));
+        int64_t delay_ms = static_cast<int64_t>(delay);
+        assert(delay_ms > 0, "invariant");
+        ml.wait(delay_ms);
+      }
     }
   }
-}
-
-G1ServiceTask* G1ServiceThread::pop_due_task() {
-  MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  if (_task_queue.is_empty() || time_to_next_task_ms() != 0) {
-    return NULL;
-  }
-
-  return _task_queue.pop();
+  return nullptr;               // Return nullptr when terminating.
 }
 
 void G1ServiceThread::run_task(G1ServiceTask* task) {
-  double start = os::elapsedTime();
+  jlong start = os::elapsed_counter();
   double vstart = os::elapsedVTime();
 
-  log_debug(gc, task, start)("G1 Service Thread (%s) (run)", task->name());
+  assert(task->time() <= start,
+         "task run early: " JLONG_FORMAT " > " JLONG_FORMAT,
+         task->time(), start);
+  log_debug(gc, task, start)("G1 Service Thread (%s) (run %1.3fms after schedule)",
+                             task->name(),
+                             TimeHelper::counter_to_millis(start - task->time()));
+
   task->execute();
 
-  double duration = os::elapsedTime() - start;
-  double vduration = os::elapsedVTime() - vstart;
-  log_debug(gc, task)("G1 Service Thread (%s) (run) %1.3fms (cpu: %1.3fms)",
-                      task->name(), duration * MILLIUNITS, vduration * MILLIUNITS);
+  log_debug(gc, task)("G1 Service Thread (%s) (run: %1.3fms) (cpu: %1.3fms)",
+                      task->name(),
+                      TimeHelper::counter_to_millis(os::elapsed_counter() - start),
+                      (os::elapsedVTime() - vstart) * MILLIUNITS);
 }
 
 void G1ServiceThread::run_service() {
-  while (!should_terminate()) {
-    G1ServiceTask* task = pop_due_task();
-    if (task != NULL) {
-      run_task(task);
-    }
-
-    sleep_before_next_cycle();
+  while (true) {
+    G1ServiceTask* task = wait_for_task();
+    if (task == nullptr) break;
+    run_task(task);
   }
-
+  assert(should_terminate(), "invariant");
   log_debug(gc, task)("G1 Service Thread (stopping)");
 }
 
 void G1ServiceThread::stop_service() {
-  notify();
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
+  ml.notify();
 }
 
 G1ServiceTask::G1ServiceTask(const char* name) :
@@ -186,7 +170,8 @@ bool G1ServiceTask::is_registered() {
 void G1ServiceTask::schedule(jlong delay_ms) {
   assert(Thread::current() == _service_thread,
          "Can only be used when already running on the service thread");
-  _service_thread->schedule(this, delay_ms);
+  // No need to notify, since we *are* the service thread.
+  _service_thread->schedule(this, delay_ms, false /* notify */);
 }
 
 const char* G1ServiceTask::name() {
@@ -212,17 +197,15 @@ G1ServiceTask* G1ServiceTask::next() {
 
 G1ServiceTaskQueue::G1ServiceTaskQueue() : _sentinel() { }
 
-G1ServiceTask* G1ServiceTaskQueue::pop() {
+void G1ServiceTaskQueue::remove_front() {
   verify_task_queue();
 
   G1ServiceTask* task = _sentinel.next();
   _sentinel.set_next(task->next());
   task->set_next(NULL);
-
-  return task;
 }
 
-G1ServiceTask* G1ServiceTaskQueue::peek() {
+G1ServiceTask* G1ServiceTaskQueue::front() {
   verify_task_queue();
   return _sentinel.next();
 }

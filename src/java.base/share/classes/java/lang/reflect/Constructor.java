@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,6 +223,7 @@ public final class Constructor<T> extends Executable {
 
     /**
      * {@inheritDoc}
+     * @jls 8.8.3 Constructor Modifiers
      */
     @Override
     public int getModifiers() {
@@ -332,7 +333,7 @@ public final class Constructor<T> extends Executable {
      * followed by a parenthesized, comma-separated list of the
      * constructor's formal parameter types.  For example:
      * <pre>{@code
-     *    public java.util.Hashtable(int,float)
+     *    public java.util.HashMap(int,float)
      * }</pre>
      *
      * <p>If the constructor is declared to throw exceptions, the
@@ -502,6 +503,7 @@ public final class Constructor<T> extends Executable {
     /**
      * {@inheritDoc}
      * @since 1.5
+     * @jls 8.4.1 Formal Parameters
      */
     @Override
     public boolean isVarArgs() {
@@ -511,7 +513,11 @@ public final class Constructor<T> extends Executable {
     /**
      * {@inheritDoc}
      * @jls 13.1 The Form of a Binary
+     * @jvms 4.6 Methods
      * @since 1.5
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      */
     @Override
     public boolean isSynthetic() {
@@ -602,9 +608,14 @@ public final class Constructor<T> extends Executable {
     }
 
     @Override
-    boolean handleParameterNumberMismatch(int resultLength, int numParameters) {
+    boolean handleParameterNumberMismatch(int resultLength, Class<?>[] parameterTypes) {
+        int numParameters = parameterTypes.length;
         Class<?> declaringClass = getDeclaringClass();
-        if (declaringClass.isEnum() ||
+        if (declaringClass.isEnum()) {
+            return resultLength + 2 == numParameters &&
+                    parameterTypes[0] == String.class &&
+                    parameterTypes[1] == int.class;
+        } else if (
             declaringClass.isAnonymousClass() ||
             declaringClass.isLocalClass() )
             return false; // Can't do reliable parameter counting

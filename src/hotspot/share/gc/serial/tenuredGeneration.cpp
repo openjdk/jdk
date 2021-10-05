@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new TenuredSpace(_bts, MemRegion(bottom, end));
   _the_space->reset_saved_mark();
-  _shrink_factor = 0;
+  // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
+  _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
 
   _gc_stats = new GCStats();
@@ -188,34 +189,10 @@ void TenuredGeneration::collect(bool   full,
 }
 
 HeapWord*
-TenuredGeneration::expand_and_allocate(size_t word_size,
-                                       bool is_tlab,
-                                       bool parallel) {
+TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
-  if (parallel) {
-    MutexLocker x(ParGCRareEvent_lock);
-    HeapWord* result = NULL;
-    size_t byte_size = word_size * HeapWordSize;
-    while (true) {
-      expand(byte_size, _min_heap_delta_bytes);
-      if (GCExpandToAllocateDelayMillis > 0) {
-        os::naked_sleep(GCExpandToAllocateDelayMillis);
-      }
-      result = _the_space->par_allocate(word_size);
-      if ( result != NULL) {
-        return result;
-      } else {
-        // If there's not enough expansion space available, give up.
-        if (_virtual_space.uncommitted_size() < byte_size) {
-          return NULL;
-        }
-        // else try again
-      }
-    }
-  } else {
-    expand(word_size*HeapWordSize, _min_heap_delta_bytes);
-    return _the_space->allocate(word_size);
-  }
+  expand(word_size*HeapWordSize, _min_heap_delta_bytes);
+  return _the_space->allocate(word_size);
 }
 
 bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
@@ -240,6 +217,18 @@ void TenuredGeneration::prepare_for_verify() {}
 
 void TenuredGeneration::object_iterate(ObjectClosure* blk) {
   _the_space->object_iterate(blk);
+}
+
+void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
+  // Create the BOT for the archive space.
+  TenuredSpace* space = (TenuredSpace*)_the_space;
+  space->initialize_threshold();
+  HeapWord* start = archive_space.start();
+  while (start < archive_space.end()) {
+    size_t word_size = _the_space->block_size(start);
+    space->alloc_block(start, start + word_size);
+    start += word_size;
+  }
 }
 
 void TenuredGeneration::save_marks() {

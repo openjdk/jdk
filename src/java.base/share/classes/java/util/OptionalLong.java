@@ -293,14 +293,10 @@ public final class OptionalLong {
             return true;
         }
 
-        if (!(obj instanceof OptionalLong)) {
-            return false;
-        }
-
-        OptionalLong other = (OptionalLong) obj;
-        return (isPresent && other.isPresent)
+        return obj instanceof OptionalLong other
+                && (isPresent && other.isPresent
                 ? value == other.value
-                : isPresent == other.isPresent;
+                : isPresent == other.isPresent);
     }
 
     /**

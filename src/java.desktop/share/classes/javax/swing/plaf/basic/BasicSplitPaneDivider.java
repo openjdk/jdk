@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,7 +299,15 @@ public class BasicSplitPaneDivider extends Container
     }
 
     /**
-     * Returns dividerSize x dividerSize
+     * Returns the preferred size of the divider.
+     * @implNote In current implementation,
+     * if the splitpane is HORIZONTAL_SPLIT, the preferred size is obtained from
+     * width of {@code getDividerSize} pixels and height of 1 pixel
+     * If the splitpane is VERTICAL_SPLIT, the preferred size is obtained from
+     * height of {@code getDividerSize} pixels and width of 1 pixel
+     *
+     * @return a {@code Dimension} object containing the preferred size of
+     *         {@code BasicSplitPaneDivider}
      */
     public Dimension getPreferredSize() {
         // Ideally this would return the size from the layout manager,
@@ -313,7 +321,15 @@ public class BasicSplitPaneDivider extends Container
     }
 
     /**
-     * Returns dividerSize x dividerSize
+     * Returns the minimum size of the divider.
+     * @implNote In current implementation,
+     * if the splitpane is HORIZONTAL_SPLIT, the minimum size is obtained from
+     * width of {@code getDividerSize} pixels and height of 1 pixel
+     * If the splitpane is VERTICAL_SPLIT, the minimum size is obtained from
+     * height of {@code getDividerSize} pixels and width of 1 pixel
+     *
+     * @return a {@code Dimension} object containing the minimum size of
+     *         {@code BasicSplitPaneDivider}
      */
     public Dimension getMinimumSize() {
         return getPreferredSize();

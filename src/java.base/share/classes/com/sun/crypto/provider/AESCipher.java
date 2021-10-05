@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 /**
  * This class implements the AES algorithm in its various modes
@@ -137,21 +138,6 @@ abstract class AESCipher extends CipherSpi {
             super(32, "CFB", "NOPADDING");
         }
     }
-    public static final class AES128_GCM_NoPadding extends OidImpl {
-        public AES128_GCM_NoPadding() {
-            super(16, "GCM", "NOPADDING");
-        }
-    }
-    public static final class AES192_GCM_NoPadding extends OidImpl {
-        public AES192_GCM_NoPadding() {
-            super(24, "GCM", "NOPADDING");
-        }
-    }
-    public static final class AES256_GCM_NoPadding extends OidImpl {
-        public AES256_GCM_NoPadding() {
-            super(32, "GCM", "NOPADDING");
-        }
-    }
 
     // utility method used by AESCipher and AESWrapCipher
     static final void checkKeySize(Key key, int fixedKeySize)
@@ -163,9 +149,12 @@ abstract class AESCipher extends CipherSpi {
             byte[] value = key.getEncoded();
             if (value == null) {
                 throw new InvalidKeyException("Key encoding must not be null");
-            } else if (value.length != fixedKeySize) {
-                throw new InvalidKeyException("The key must be " +
-                    fixedKeySize + " bytes");
+            } else {
+                Arrays.fill(value, (byte)0);
+                if (value.length != fixedKeySize) {
+                    throw new InvalidKeyException("The key must be " +
+                            fixedKeySize + " bytes");
+                }
             }
         }
     }
@@ -181,10 +170,6 @@ abstract class AESCipher extends CipherSpi {
      */
     private final int fixedKeySize; // in bytes, -1 if no restriction
 
-    /*
-     * needed to enforce ISE thrown when updateAAD is called after update for GCM mode.
-     */
-    private boolean updateCalled;
 
     /**
      * Creates an instance of AES cipher with default ECB mode and
@@ -318,7 +303,6 @@ abstract class AESCipher extends CipherSpi {
     protected void engineInit(int opmode, Key key, SecureRandom random)
         throws InvalidKeyException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, random);
     }
 
@@ -351,7 +335,6 @@ abstract class AESCipher extends CipherSpi {
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, params, random);
     }
 
@@ -360,7 +343,6 @@ abstract class AESCipher extends CipherSpi {
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, params, random);
     }
 
@@ -385,7 +367,6 @@ abstract class AESCipher extends CipherSpi {
      */
     protected byte[] engineUpdate(byte[] input, int inputOffset,
                                   int inputLen) {
-        updateCalled = true;
         return core.update(input, inputOffset, inputLen);
     }
 
@@ -415,7 +396,6 @@ abstract class AESCipher extends CipherSpi {
     protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
                                byte[] output, int outputOffset)
         throws ShortBufferException {
-        updateCalled = true;
         return core.update(input, inputOffset, inputLen, output,
                            outputOffset);
     }
@@ -454,7 +434,6 @@ abstract class AESCipher extends CipherSpi {
     protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
         throws IllegalBlockSizeException, BadPaddingException {
         byte[] out = core.doFinal(input, inputOffset, inputLen);
-        updateCalled = false;
         return out;
     }
 
@@ -500,7 +479,6 @@ abstract class AESCipher extends CipherSpi {
                BadPaddingException {
         int outLen = core.doFinal(input, inputOffset, inputLen, output,
                                   outputOffset);
-        updateCalled = false;
         return outLen;
     }
 
@@ -515,6 +493,7 @@ abstract class AESCipher extends CipherSpi {
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
+        Arrays.fill(encoded, (byte)0);
         if (!AESCrypt.isKeySizeValid(encoded.length)) {
             throw new InvalidKeyException("Invalid AES key length: " +
                                           encoded.length + " bytes");
@@ -573,86 +552,6 @@ abstract class AESCipher extends CipherSpi {
     }
 
     /**
-     * Continues a multi-part update of the Additional Authentication
-     * Data (AAD), using a subset of the provided buffer.
-     * <p>
-     * Calls to this method provide AAD to the cipher when operating in
-     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
-     * either GCM or CCM mode, all AAD must be supplied before beginning
-     * operations on the ciphertext (via the {@code update} and {@code
-     * doFinal} methods).
-     *
-     * @param src the buffer containing the AAD
-     * @param offset the offset in {@code src} where the AAD input starts
-     * @param len the number of AAD bytes
-     *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
-     * encryption/decryption operation
-     * @throws UnsupportedOperationException if this method
-     * has not been overridden by an implementation
-     *
-     * @since 1.8
-     */
-    @Override
-    protected void engineUpdateAAD(byte[] src, int offset, int len) {
-        if (core.getMode() == CipherCore.GCM_MODE && updateCalled) {
-            throw new IllegalStateException("AAD must be supplied before encryption/decryption starts");
-        }
-        core.updateAAD(src, offset, len);
-    }
-
-    /**
-     * Continues a multi-part update of the Additional Authentication
-     * Data (AAD).
-     * <p>
-     * Calls to this method provide AAD to the cipher when operating in
-     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
-     * either GCM or CCM mode, all AAD must be supplied before beginning
-     * operations on the ciphertext (via the {@code update} and {@code
-     * doFinal} methods).
-     * <p>
-     * All {@code src.remaining()} bytes starting at
-     * {@code src.position()} are processed.
-     * Upon return, the input buffer's position will be equal
-     * to its limit; its limit will not have changed.
-     *
-     * @param src the buffer containing the AAD
-     *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
-     * encryption/decryption operation
-     * @throws UnsupportedOperationException if this method
-     * has not been overridden by an implementation
-     *
-     * @since 1.8
-     */
-    @Override
-    protected void engineUpdateAAD(ByteBuffer src) {
-        if (core.getMode() == CipherCore.GCM_MODE && updateCalled) {
-            throw new IllegalStateException("AAD must be supplied before encryption/decryption starts");
-        }
-        if (src != null) {
-            int aadLen = src.limit() - src.position();
-            if (aadLen > 0) {
-                if (src.hasArray()) {
-                    int aadOfs = Math.addExact(src.arrayOffset(), src.position());
-                    core.updateAAD(src.array(), aadOfs, aadLen);
-                    src.position(src.limit());
-                } else {
-                    byte[] aad = new byte[aadLen];
-                    src.get(aad);
-                    core.updateAAD(aad, 0, aadLen);
-                }
-            }
-        }
-    }
-
-    /**
      * Finalize crypto operation with ByteBuffers
      *
      * @param input the input ByteBuffer
@@ -667,10 +566,6 @@ abstract class AESCipher extends CipherSpi {
     protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
         throws ShortBufferException, IllegalBlockSizeException,
         BadPaddingException {
-        if (core.getMode() == CipherCore.GCM_MODE && !input.hasArray()) {
-            return core.gcmDoFinal(input, output);
-        } else {
-            return super.engineDoFinal(input, output);
-        }
+        return super.engineDoFinal(input, output);
     }
 }

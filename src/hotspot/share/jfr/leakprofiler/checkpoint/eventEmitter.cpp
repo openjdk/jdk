@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +160,7 @@ void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store
   e.set_starttime(_start_time);
   e.set_endtime(_end_time);
   e.set_allocationTime(sample->allocation_time());
+  e.set_objectSize(sample->allocated());
   e.set_objectAge(object_age);
   e.set_lastKnownHeapUsage(sample->heap_used_at_last_gc());
   e.set_object(object_id);

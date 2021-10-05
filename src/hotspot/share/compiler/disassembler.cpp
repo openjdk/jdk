@@ -36,11 +36,10 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
-#include CPU_HEADER(depChecker)
 
 void*       Disassembler::_library               = NULL;
 bool        Disassembler::_tried_to_load_library = false;
@@ -73,7 +72,10 @@ class decode_env {
   bool          _print_help;
   bool          _helpPrinted;
   static bool   _optionsParsed;
-  NOT_PRODUCT(const CodeStrings* _strings;)
+#ifndef PRODUCT
+  const AsmRemarks* _remarks; // Used with start/end range to provide code remarks.
+  ptrdiff_t         _disp;    // Adjustment to offset -> remark mapping.
+#endif
 
   enum {
     tabspacing = 8
@@ -167,12 +169,6 @@ class decode_env {
     };
     Link *head, *tail;
 
-    static unsigned hash(const address& a) {
-      return primitive_hash<address>(a);
-    }
-    static bool equals(const address& a0, const address& a1) {
-      return primitive_equals<address>(a0, a1);
-    }
     void append(const char* file, int line) {
       if (tail != NULL && tail->file == file && tail->line == line) {
         // Don't print duplicated lines at the same address. This could happen with C
@@ -194,8 +190,6 @@ class decode_env {
 
   typedef ResourceHashtable<
       address, SourceFileInfo,
-      SourceFileInfo::hash,
-      SourceFileInfo::equals,
       15889,      // prime number
       ResourceObj::C_HEAP> SourceFileInfoTable;
 
@@ -215,7 +209,8 @@ class decode_env {
   decode_env(nmethod*    code, outputStream* output);
   // Constructor for a 'decode_env' to decode an arbitrary
   // piece of memory, hopefully containing code.
-  decode_env(address start, address end, outputStream* output, const CodeStrings* strings = NULL);
+  decode_env(address start, address end, outputStream* output
+             NOT_PRODUCT(COMMA const AsmRemarks* remarks = NULL COMMA ptrdiff_t disp = 0));
 
   // Add 'original_start' argument which is the the original address
   // the instructions were located at (if this is not equal to 'start').
@@ -333,11 +328,11 @@ decode_env::decode_env(CodeBlob* code, outputStream* output) :
   _print_file_name(false),
   _print_help(false),
   _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings(NULL)) {
-
+  NOT_PRODUCT(COMMA _remarks(nullptr))
+  NOT_PRODUCT(COMMA _disp(0))
+{
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
-
 }
 
 decode_env::decode_env(nmethod* code, outputStream* output) :
@@ -355,15 +350,17 @@ decode_env::decode_env(nmethod* code, outputStream* output) :
   _print_file_name(false),
   _print_help(false),
   _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings(NULL))  {
-
+  NOT_PRODUCT(COMMA _remarks(nullptr))
+  NOT_PRODUCT(COMMA _disp(0))
+{
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
 }
 
 // Constructor for a 'decode_env' to decode a memory range [start, end)
 // of unknown origin, assuming it contains code.
-decode_env::decode_env(address start, address end, outputStream* output, const CodeStrings* c) :
+decode_env::decode_env(address start, address end, outputStream* output
+                       NOT_PRODUCT(COMMA const AsmRemarks* remarks COMMA ptrdiff_t disp)) :
   _output(output ? output : tty),
   _codeBlob(NULL),
   _nm(NULL),
@@ -378,8 +375,9 @@ decode_env::decode_env(address start, address end, outputStream* output, const C
   _print_file_name(false),
   _print_help(false),
   _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings(c))  {
-
+  NOT_PRODUCT(COMMA _remarks(remarks))
+  NOT_PRODUCT(COMMA _disp(disp))
+{
   assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
@@ -646,15 +644,15 @@ void decode_env::print_insn_labels() {
     //---<  Block comments for nmethod  >---
     // Outputs a bol() before and a cr() after, but only if a comment is printed.
     // Prints nmethod_section_label as well.
-    if (_nm != NULL) {
+    if (_nm != nullptr) {
       _nm->print_block_comment(st, p);
     }
-    if (_codeBlob != NULL) {
+    else if (_codeBlob != nullptr) {
       _codeBlob->print_block_comment(st, p);
     }
 #ifndef PRODUCT
-    if (_strings != NULL) {
-      _strings->print_block_comment(st, (intptr_t)(p - _start));
+    else if (_remarks != nullptr) {
+      _remarks->print((p - _start) + _disp, st);
     }
 #endif
   }
@@ -685,7 +683,7 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
     raw = format+1;
   }
   if (raw != NULL) {
-    st->print_raw(raw, (int) flen);
+    st->print_raw(raw, flen);
     return (int) flen;
   }
   va_list ap;
@@ -756,6 +754,17 @@ address decode_env::decode_instructions(address start, address end, address orig
 // Each method will create a decode_env before decoding.
 // You can call the decode_env methods directly if you already have one.
 
+void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int ebuflen, outputStream* st) {
+  int sz = buflen - offset;
+  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, os::dll_file_extension());
+  if (written < sz) { // written successfully, not truncated.
+    if (Verbose) st->print_cr("Trying to load: %s", buf);
+    return os::dll_load(buf, ebuf, ebuflen);
+  } else if (Verbose) {
+    st->print_cr("Try to load hsdis library failed: the length of path is beyond the OS limit");
+  }
+  return NULL;
+}
 
 bool Disassembler::load_library(outputStream* st) {
   // Do not try to load multiple times. Failed once -> fails always.
@@ -805,16 +814,10 @@ bool Disassembler::load_library(outputStream* st) {
   // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
   if (jvm_offset >= 0) {
     // 1. <home>/lib/<vm>/libhsdis-<arch>.so
-    strcpy(&buf[jvm_offset], hsdis_library_name);
-    strcat(&buf[jvm_offset], os::dll_file_extension());
-    if (Verbose) st->print_cr("Trying to load: %s", buf);
-    _library = os::dll_load(buf, ebuf, sizeof ebuf);
+    _library = dll_load(buf, sizeof buf, jvm_offset, ebuf, sizeof ebuf, st);
     if (_library == NULL && lib_offset >= 0) {
       // 2. <home>/lib/<vm>/hsdis-<arch>.so
-      strcpy(&buf[lib_offset], hsdis_library_name);
-      strcat(&buf[lib_offset], os::dll_file_extension());
-      if (Verbose) st->print_cr("Trying to load: %s", buf);
-      _library = os::dll_load(buf, ebuf, sizeof ebuf);
+      _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
     }
     if (_library == NULL && lib_offset > 0) {
       // 3. <home>/lib/hsdis-<arch>.so
@@ -822,19 +825,12 @@ bool Disassembler::load_library(outputStream* st) {
       const char* p = strrchr(buf, *os::file_separator());
       if (p != NULL) {
         lib_offset = p - buf + 1;
-        strcpy(&buf[lib_offset], hsdis_library_name);
-        strcat(&buf[lib_offset], os::dll_file_extension());
-        if (Verbose) st->print_cr("Trying to load: %s", buf);
-        _library = os::dll_load(buf, ebuf, sizeof ebuf);
+        _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
       }
     }
   }
   if (_library == NULL) {
-    // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
-    strcpy(&buf[0], hsdis_library_name);
-    strcat(&buf[0], os::dll_file_extension());
-    if (Verbose) st->print_cr("Trying to load: %s via LD_LIBRARY_PATH or equivalent", buf);
-    _library = os::dll_load(buf, ebuf, sizeof ebuf);
+    _library = dll_load(buf, sizeof buf, 0, ebuf, sizeof ebuf, st);
   }
 
   // load the decoder function to use.
@@ -882,23 +878,9 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
 
   decode_env env(cb, st);
   env.output()->print_cr("--------------------------------------------------------------------------------");
-  if (cb->is_aot()) {
-    env.output()->print("A ");
-    if (cb->is_compiled()) {
-      CompiledMethod* cm = (CompiledMethod*)cb;
-      env.output()->print("%d ",cm->compile_id());
-      cm->method()->method_holder()->name()->print_symbol_on(env.output());
-      env.output()->print(".");
-      cm->method()->name()->print_symbol_on(env.output());
-      cm->method()->signature()->print_symbol_on(env.output());
-    } else {
-      env.output()->print_cr("%s", cb->name());
-    }
-  } else {
-    env.output()->print("Decoding CodeBlob");
-    if (cb->name() != NULL) {
-      env.output()->print(", name: %s,", cb->name());
-    }
+  env.output()->print("Decoding CodeBlob");
+  if (cb->name() != NULL) {
+    env.output()->print(", name: %s,", cb->name());
   }
   env.output()->print_cr(" at  [" PTR_FORMAT ", " PTR_FORMAT "]  " JLONG_FORMAT " bytes", p2i(cb->code_begin()), p2i(cb->code_end()), ((jlong)(cb->code_end() - cb->code_begin())));
 
@@ -933,7 +915,8 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
 }
 
 // Decode a range, given as [start address, end address)
-void Disassembler::decode(address start, address end, outputStream* st, const CodeStrings* c) {
+void Disassembler::decode(address start, address end, outputStream* st
+                          NOT_PRODUCT(COMMA const AsmRemarks* remarks COMMA ptrdiff_t disp)) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   //---<  Test memory before decoding  >---
   if (!os::is_readable_range(start, end)) {
@@ -946,22 +929,9 @@ void Disassembler::decode(address start, address end, outputStream* st, const Co
 
   if (is_abstract()) {
     AbstractDisassembler::decode_abstract(start, end, st, Assembler::instr_maxlen());
-    return;
-  }
-
-// Don't do that fancy stuff. If we just have two addresses, live with it
-// and treat the memory contents as "amorphic" piece of code.
-#if 0
-  CodeBlob* cb = CodeCache::find_blob_unsafe(start);
-  if (cb != NULL) {
-    // If we  have an CodeBlob at hand,
-    // call the specialized decoder directly.
-    decode(cb, st, c);
-  } else
-#endif
-  {
+  } else {
     // This seems to be just a chunk of memory.
-    decode_env env(start, end, st, c);
+    decode_env env(start, end, st NOT_PRODUCT(COMMA remarks COMMA disp));
     env.output()->print_cr("--------------------------------------------------------------------------------");
     env.decode_instructions(start, end);
     env.output()->print_cr("--------------------------------------------------------------------------------");

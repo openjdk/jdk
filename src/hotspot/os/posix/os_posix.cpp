@@ -22,7 +22,11 @@
  *
  */
 
+
 #include "jvm.h"
+#ifdef LINUX
+#include "classfile/classLoader.hpp"
+#endif
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,10 +37,13 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/perfMemory.hpp"
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -46,15 +53,25 @@
 #include <dirent.h>
 #include <dlfcn.h>
 #include <grp.h>
+#include <netdb.h>
 #include <pwd.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/times.h>
+#include <sys/types.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <utmpx.h>
+
+#ifdef __APPLE__
+  #include <crt_externs.h>
+#endif
 
 #define ROOT_UID 0
 
@@ -71,6 +88,10 @@
 
 #define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
 #define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
+
+static jlong initial_time_count = 0;
+
+static int clock_tics_per_sec = 100;
 
 // Check core dump limit and report possible place where core can be found
 void os::check_dump_limit(char* buffer, size_t bufferSize) {
@@ -145,12 +166,6 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return num_of_frames;
 }
 
-
-bool os::unsetenv(const char* name) {
-  assert(name != NULL, "Null pointer");
-  return (::unsetenv(name) == 0);
-}
-
 int os::get_last_error() {
   return errno;
 }
@@ -166,6 +181,12 @@ size_t os::lasterror(char *buf, size_t len) {
   ::strncpy(buf, s, n);
   buf[n] = '\0';
   return n;
+}
+
+// Return true if user is running as root.
+bool os::have_special_privileges() {
+  static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
+  return privileges;
 }
 
 void os::wait_for_keypress_at_exit(void) {
@@ -534,6 +555,26 @@ bool os::get_host_name(char* buf, size_t buflen) {
   return true;
 }
 
+#ifndef _LP64
+// Helper, on 32bit, for os::has_allocatable_memory_limit
+static bool is_allocatable(size_t s) {
+  if (s < 2 * G) {
+    return true;
+  }
+  // Use raw anonymous mmap here; no need to go through any
+  // of our reservation layers. We will unmap right away.
+  void* p = ::mmap(NULL, s, PROT_NONE,
+                   MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS, -1, 0);
+  if (p == MAP_FAILED) {
+    return false;
+  } else {
+    ::munmap(p, s);
+    return true;
+  }
+}
+#endif // !_LP64
+
+
 bool os::has_allocatable_memory_limit(size_t* limit) {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
@@ -598,6 +639,37 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
 #endif
 }
 
+void* os::get_default_process_handle() {
+#ifdef __APPLE__
+  // MacOS X needs to use RTLD_FIRST instead of RTLD_LAZY
+  // to avoid finding unexpected symbols on second (or later)
+  // loads of a library.
+  return (void*)::dlopen(NULL, RTLD_FIRST);
+#else
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+#endif
+}
+
+void* os::dll_lookup(void* handle, const char* name) {
+  return dlsym(handle, name);
+}
+
+void os::dll_unload(void *lib) {
+  ::dlclose(lib);
+}
+
+jlong os::lseek(int fd, jlong offset, int whence) {
+  return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
+}
+
+int os::fsync(int fd) {
+  return ::fsync(fd);
+}
+
+int os::ftruncate(int fd, jlong length) {
+   return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
+}
+
 const char* os::get_current_directory(char *buf, size_t buflen) {
   return getcwd(buf, buflen);
 }
@@ -606,8 +678,18 @@ FILE* os::open(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
+size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  size_t res;
+  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+  return res;
+}
+
 ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   return ::pread(fd, buf, nBytes, offset);
+}
+
+int os::close(int fd) {
+  return ::close(fd);
 }
 
 void os::flockfile(FILE* fp) {
@@ -631,6 +713,42 @@ struct dirent* os::readdir(DIR* dirp) {
 int os::closedir(DIR *dirp) {
   assert(dirp != NULL, "just checking");
   return ::closedir(dirp);
+}
+
+int os::socket_close(int fd) {
+  return ::close(fd);
+}
+
+int os::socket(int domain, int type, int protocol) {
+  return ::socket(domain, type, protocol);
+}
+
+int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
+}
+
+int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+}
+
+int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+  return os::send(fd, buf, nBytes, flags);
+}
+
+int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+  RESTARTABLE_RETURN_INT(::connect(fd, him, len));
+}
+
+struct hostent* os::get_host_by_name(char* name) {
+  return ::gethostbyname(name);
+}
+
+void os::exit(int num) {
+  ::exit(num);
+}
+
+void os::_exit(int num) {
+  ::_exit(num);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
@@ -759,6 +877,14 @@ char * os::native_path(char *path) {
 }
 
 bool os::same_files(const char* file1, const char* file2) {
+  if (file1 == nullptr && file2 == nullptr) {
+    return true;
+  }
+
+  if (file1 == nullptr || file2 == nullptr) {
+    return false;
+  }
+
   if (strcmp(file1, file2) == 0) {
     return true;
   }
@@ -878,8 +1004,7 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
                       _compiler_thread_min_stack_allowed);
     break;
   case os::vm_thread:
-  case os::pgc_thread:
-  case os::cgc_thread:
+  case os::gc_thread:
   case os::watcher_thread:
   default:  // presume the unknown thr_type is a VM internal
     if (req_stack_size == 0 && VMThreadStackSize > 0) {
@@ -1124,7 +1249,11 @@ static bool _use_clock_monotonic_condattr = false;
 // Determine what POSIX API's are present and do appropriate
 // configuration.
 void os::Posix::init(void) {
-
+#if defined(_ALLBSD_SOURCE)
+  clock_tics_per_sec = CLK_TCK;
+#else
+  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
+#endif
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
 
@@ -1156,6 +1285,8 @@ void os::Posix::init(void) {
       _use_clock_monotonic_condattr = true;
     }
   }
+
+  initial_time_count = javaTimeNanos();
 }
 
 void os::Posix::init_2(void) {
@@ -1323,8 +1454,58 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
 }
-
 #endif // ! APPLE && !AIX
+
+// Time since start-up in seconds to a fine granularity.
+double os::elapsedTime() {
+  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
+}
+
+jlong os::elapsed_counter() {
+  return os::javaTimeNanos() - initial_time_count;
+}
+
+jlong os::elapsed_frequency() {
+  return NANOSECS_PER_SEC; // nanosecond resolution
+}
+
+bool os::supports_vtime() { return true; }
+
+// Return the real, user, and system times in seconds from an
+// arbitrary fixed point in the past.
+bool os::getTimesSecs(double* process_real_time,
+                      double* process_user_time,
+                      double* process_system_time) {
+  struct tms ticks;
+  clock_t real_ticks = times(&ticks);
+
+  if (real_ticks == (clock_t) (-1)) {
+    return false;
+  } else {
+    double ticks_per_second = (double) clock_tics_per_sec;
+    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
+    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
+    *process_real_time = ((double) real_ticks) / ticks_per_second;
+
+    return true;
+  }
+}
+
+char * os::local_time_string(char *buf, size_t buflen) {
+  struct tm t;
+  time_t long_time;
+  time(&long_time);
+  localtime_r(&long_time, &t);
+  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
+               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+               t.tm_hour, t.tm_min, t.tm_sec);
+  return buf;
+}
+
+struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
+  return localtime_r(clock, res);
+}
+
 
 // Shared pthread_mutex/cond based PlatformEvent implementation.
 // Not currently usable by Solaris.
@@ -1571,8 +1752,6 @@ void Parker::park(bool isAbsolute, jlong time) {
   }
 
   OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-  jt->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
 
   assert(_cur_index == -1, "invariant");
   if (time == 0) {
@@ -1595,11 +1774,6 @@ void Parker::park(bool isAbsolute, jlong time) {
   // Paranoia to ensure our locked and lock-free paths interact
   // correctly with each other and Java-level accesses.
   OrderAccess::fence();
-
-  // If externally suspended while waiting, re-suspend
-  if (jt->handle_special_suspend_equivalent_condition()) {
-    jt->java_suspend_self();
-  }
 }
 
 void Parker::unpark() {
@@ -1763,5 +1937,134 @@ int os::PlatformMonitor::wait(jlong millis) {
     assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
                   status, "cond_wait");
     return OS_OK;
+  }
+}
+
+// Darwin has no "environ" in a dynamic library.
+#ifdef __APPLE__
+  #define environ (*_NSGetEnviron())
+#else
+  extern char** environ;
+#endif
+
+char** os::get_environ() { return environ; }
+
+// Run the specified command in a separate process. Return its exit value,
+// or -1 on failure (e.g. can't fork a new process).
+// Notes: -Unlike system(), this function can be called from signal handler. It
+//         doesn't block SIGINT et al.
+//        -this function is unsafe to use in non-error situations, mainly
+//         because the child process will inherit all parent descriptors.
+int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
+  const char * argv[4] = {"sh", "-c", cmd, NULL};
+
+  pid_t pid ;
+
+  char** env = os::get_environ();
+
+  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
+  // Otherwise leave it up to the caller.
+  AIX_ONLY(prefer_vfork = true;)
+  #ifdef __APPLE__
+  pid = ::fork();
+  #else
+  pid = prefer_vfork ? ::vfork() : ::fork();
+  #endif
+
+  if (pid < 0) {
+    // fork failed
+    return -1;
+
+  } else if (pid == 0) {
+    // child process
+
+    ::execve("/bin/sh", (char* const*)argv, env);
+
+    // execve failed
+    ::_exit(-1);
+
+  } else  {
+    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
+    // care about the actual exit code, for now.
+
+    int status;
+
+    // Wait for the child process to exit.  This returns immediately if
+    // the child has already exited. */
+    while (::waitpid(pid, &status, 0) < 0) {
+      switch (errno) {
+      case ECHILD: return 0;
+      case EINTR: break;
+      default: return -1;
+      }
+    }
+
+    if (WIFEXITED(status)) {
+      // The child exited normally; get its exit code.
+      return WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+      // The child exited because of a signal
+      // The best value to return is 0x80 + signal number,
+      // because that is what all Unix shells do, and because
+      // it allows callers to distinguish between process exit and
+      // process death by signal.
+      return 0x80 + WTERMSIG(status);
+    } else {
+      // Unknown exit code; pass it through
+      return status;
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// runtime exit support
+
+// Note: os::shutdown() might be called very early during initialization, or
+// called from signal handler. Before adding something to os::shutdown(), make
+// sure it is async-safe and can handle partially initialized VM.
+void os::shutdown() {
+
+  // allow PerfMemory to attempt cleanup of any persistent resources
+  perfMemory_exit();
+
+  // needs to remove object in file system
+  AttachListener::abort();
+
+  // flush buffered output, finish log files
+  ostream_abort();
+
+  // Check for abort hook
+  abort_hook_t abort_hook = Arguments::abort_hook();
+  if (abort_hook != NULL) {
+    abort_hook();
+  }
+
+}
+
+// Note: os::abort() might be called very early during initialization, or
+// called from signal handler. Before adding something to os::abort(), make
+// sure it is async-safe and can handle partially initialized VM.
+// Also note we can abort while other threads continue to run, so we can
+// easily trigger secondary faults in those threads. To reduce the likelihood
+// of that we use _exit rather than exit, so that no atexit hooks get run.
+// But note that os::shutdown() could also trigger secondary faults.
+void os::abort(bool dump_core, void* siginfo, const void* context) {
+  os::shutdown();
+  if (dump_core) {
+    LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
+    ::abort(); // dump core
+  }
+  ::_exit(1);
+}
+
+// Die immediately, no exit hook, no abort hook, no cleanup.
+// Dump a core file, if possible, for debugging.
+void os::die() {
+  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
+    // For TimeoutInErrorHandlingTest.java, we just kill the VM
+    // and don't take the time to generate a core file.
+    os::signal_raise(SIGKILL);
+  } else {
+    ::abort();
   }
 }

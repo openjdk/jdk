@@ -275,7 +275,7 @@ class AuthenticationFilter implements HeaderFilter {
         for (String aval : authvals) {
             HeaderParser parser = new HeaderParser(aval);
             String scheme = parser.findKey(0);
-            if (scheme.equalsIgnoreCase("Basic")) {
+            if (scheme != null && scheme.equalsIgnoreCase("Basic")) {
                 authval = aval;
                 var charset = parser.findValue("charset");
                 isUTF8 = (charset != null && charset.equalsIgnoreCase("UTF-8"));

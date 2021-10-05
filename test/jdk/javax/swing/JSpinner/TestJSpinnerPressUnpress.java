@@ -101,7 +101,6 @@ public class TestJSpinnerPressUnpress {
         JTextArea instructionTextArea = new JTextArea();
         instructionTextArea.setText(INSTRUCTIONS);
         instructionTextArea.setEditable(false);
-        instructionTextArea.setBackground(Color.white);
 
         gbc.gridx = 0;
         gbc.gridy = 1;

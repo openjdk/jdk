@@ -1066,12 +1066,10 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @see    #size()
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof BitSet))
+        if (!(obj instanceof BitSet set))
             return false;
         if (this == obj)
             return true;
-
-        BitSet set = (BitSet) obj;
 
         checkInvariants();
         set.checkInvariants();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,6 +491,27 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitSnippet(SnippetTree node, Void p) {
+        try {
+            print("{");
+            printTagName(node);
+            List<? extends DocTree> attrs = node.getAttributes();
+            if (!attrs.isEmpty()) {
+                print(" ");
+                print(attrs, " ");
+            }
+            if (node.getBody() != null) {
+                print(" :\n");
+                print(node.getBody());
+            }
+            print("}");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitStartElement(StartElementTree node, Void p) {
         try {
             print("<");
@@ -500,8 +521,8 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
                 print(" ");
                 print(attrs, " ");
                 DocTree last = node.getAttributes().get(attrs.size() - 1);
-                if (node.isSelfClosing() && last instanceof AttributeTree
-                        && ((AttributeTree) last).getValueKind() == ValueKind.UNQUOTED)
+                if (node.isSelfClosing() && last instanceof AttributeTree attributeTree
+                        && attributeTree.getValueKind() == ValueKind.UNQUOTED)
                     print(" ");
             }
             if (node.isSelfClosing())

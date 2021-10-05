@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   static const char *CONTROL_FLOW_ELEMENT;
   static const char *REMOVE_EDGE_ELEMENT;
   static const char *REMOVE_NODE_ELEMENT;
+  static const char *COMPILATION_ID_PROPERTY;
+  static const char *COMPILATION_OSR_PROPERTY;
   static const char *METHOD_NAME_PROPERTY;
   static const char *BLOCK_NAME_PROPERTY;
   static const char *BLOCK_DOMINATOR_PROPERTY;
@@ -92,6 +94,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   PhaseChaitin* _chaitin;
   bool _traverse_outs;
   Compile *C;
+  double _max_freq;
 
   void print_method(ciMethod *method, int bci, InlineTree *tree);
   void print_inline_tree(InlineTree *tree);

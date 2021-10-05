@@ -36,6 +36,30 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
+class ShenandoahInitMarkRootsClosure : public OopClosure {
+private:
+  ShenandoahObjToScanQueue* const _queue;
+  ShenandoahMarkingContext* const _mark_context;
+
+  template <class T>
+  inline void do_oop_work(T* p);
+public:
+  ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
+
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(oop* p)       { do_oop_work(p); }
+};
+
+ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
+  _queue(q),
+  _mark_context(ShenandoahHeap::heap()->marking_context()) {
+}
+
+template <class T>
+void ShenandoahInitMarkRootsClosure::do_oop_work(T* p) {
+  ShenandoahMark::mark_through_ref<T>(p, _queue, _mark_context, false);
+}
+
 class ShenandoahSTWMarkTask : public AbstractGangTask {
 private:
   ShenandoahSTWMark* const _mark;
@@ -107,9 +131,10 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
+  StringDedup::Requests requests;
 
   mark_loop(worker_id, &_terminator, rp,
-            false, // not cancellable
-            ShenandoahStringDedup::is_enabled());
+            false /* not cancellable */,
+            ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
 }
 

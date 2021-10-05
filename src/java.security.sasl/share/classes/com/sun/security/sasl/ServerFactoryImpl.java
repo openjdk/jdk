@@ -40,7 +40,7 @@ import javax.security.auth.callback.CallbackHandler;
  *
  * @author Rosanna Lee
  */
-final public class ServerFactoryImpl implements SaslServerFactory {
+public final class ServerFactoryImpl implements SaslServerFactory {
     private static final String[] myMechs = {
         "CRAM-MD5", //
     };

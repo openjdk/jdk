@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_COMPRESSEDOOPS_INLINE_HPP
 #define SHARE_OOPS_COMPRESSEDOOPS_INLINE_HPP
 
-#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
+
+#include "memory/universe.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -47,7 +48,7 @@ inline oop CompressedOops::decode_raw_not_null(narrowOop v) {
 }
 
 inline oop CompressedOops::decode_raw(narrowOop v) {
-  return (oop)(void*)((uintptr_t)base() + ((uintptr_t)v << shift()));
+  return cast_to_oop((uintptr_t)base() + ((uintptr_t)v << shift()));
 }
 
 inline oop CompressedOops::decode_not_null(narrowOop v) {

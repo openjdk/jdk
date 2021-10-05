@@ -295,10 +295,9 @@ public class JavacTaskPool {
         TreeScanner<Void, Symtab> pollutionScanner = new TreeScanner<Void, Symtab>() {
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Void scan(Tree tree, Symtab syms) {
-                if (tree instanceof LetExpr) {
-                    LetExpr le = (LetExpr) tree;
-                    scan(le.defs, syms);
-                    scan(le.expr, syms);
+                if (tree instanceof LetExpr letExpr) {
+                    scan(letExpr.defs, syms);
+                    scan(letExpr.expr, syms);
                     return null;
                 } else {
                     return super.scan(tree, syms);
@@ -360,7 +359,7 @@ public class JavacTaskPool {
          */
         static class ReusableJavaCompiler extends JavaCompiler {
 
-            final static Factory<JavaCompiler> factory = ReusableJavaCompiler::new;
+            static final Factory<JavaCompiler> factory = ReusableJavaCompiler::new;
 
             ReusableJavaCompiler(Context context) {
                 super(context);
@@ -387,7 +386,7 @@ public class JavacTaskPool {
          */
         static class ReusableLog extends Log {
 
-            final static Factory<Log> factory = ReusableLog::new;
+            static final Factory<Log> factory = ReusableLog::new;
 
             Context context;
 

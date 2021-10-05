@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
@@ -117,7 +117,7 @@ void vmClasses::resolve_all(TRAPS) {
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
-  ClassLoader::classLoader_init2(CHECK);
+  ClassLoader::classLoader_init2(THREAD);
 
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;
@@ -133,13 +133,13 @@ void vmClasses::resolve_all(TRAPS) {
     // ConstantPool::restore_unshareable_info (restores the archived
     // resolved_references array object).
     //
-    // HeapShared::fixup_mapped_heap_regions() fills the empty
+    // HeapShared::fixup_regions() fills the empty
     // spaces in the archived heap regions and may use
     // vmClasses::Object_klass(), so we can do this only after
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
-    HeapShared::fixup_mapped_heap_regions();
+    HeapShared::fixup_regions();
 
     // Initialize the constant pool for the Object_class
     assert(Object_klass()->is_shared(), "must be");
@@ -239,7 +239,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   }
 
   klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
-  SystemDictionary::load_shared_class_misc(klass, loader_data, CHECK);
+  SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int hash = dictionary->compute_hash(klass->name());
   dictionary->add_klass(hash, klass->name(), klass);

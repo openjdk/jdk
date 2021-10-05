@@ -297,13 +297,13 @@ abstract class HandshakeContext implements ConnectionContext {
                 } else if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                     SSLLogger.fine(
                         "Ignore unsupported cipher suite: " + suite +
-                             " for " + protocol);
+                             " for " + protocol.name);
                 }
             }
 
             if (!found && (SSLLogger.isOn) && SSLLogger.isOn("handshake")) {
                 SSLLogger.fine(
-                    "No available cipher suite for " + protocol);
+                    "No available cipher suite for " + protocol.name);
             }
         }
 
@@ -532,15 +532,6 @@ abstract class HandshakeContext implements ConnectionContext {
      */
     boolean isNegotiable(ProtocolVersion protocolVersion) {
         return activeProtocols.contains(protocolVersion);
-    }
-
-    /**
-     * Set the active protocol version and propagate it to the SSLSocket
-     * and our handshake streams. Called from ClientHandshaker
-     * and ServerHandshaker with the negotiated protocol version.
-     */
-    void setVersion(ProtocolVersion protocolVersion) {
-        this.conContext.protocolVersion = protocolVersion;
     }
 
     private static boolean isActivatable(CipherSuite suite,

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,22 @@
  */
 package jdk.internal.foreign;
 
-import jdk.internal.foreign.abi.SharedUtils;
+import sun.security.action.GetPropertyAction;
 
 import static jdk.incubator.foreign.MemoryLayouts.ADDRESS;
+import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 public enum CABI {
     SysV,
     Win64,
-    AArch64;
+    LinuxAArch64,
+    MacOsAArch64;
 
     private static final CABI current;
 
     static {
-        String arch = System.getProperty("os.arch");
-        String os = System.getProperty("os.name");
+        String arch = privilegedGetProperty("os.arch");
+        String os = privilegedGetProperty("os.name");
         long addressSize = ADDRESS.bitSize();
         // might be running in a 32-bit VM on a 64-bit platform.
         // addressSize will be correctly 32
@@ -49,7 +51,12 @@ public enum CABI {
                 current = SysV;
             }
         } else if (arch.equals("aarch64")) {
-            current = AArch64;
+            if (os.startsWith("Mac")) {
+                current = MacOsAArch64;
+            } else {
+                // The Linux ABI follows the standard AAPCS ABI
+                current = LinuxAArch64;
+            }
         } else {
             throw new ExceptionInInitializerError(
                 "Unsupported os, arch, or address size: " + os + ", " + arch + ", " + addressSize);

@@ -25,10 +25,12 @@
 #ifndef SHARE_RUNTIME_FRAME_INLINE_HPP
 #define SHARE_RUNTIME_FRAME_INLINE_HPP
 
+#include "runtime/frame.hpp"
+
 #include "code/compiledMethod.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/method.hpp"
-#include "runtime/frame.hpp"
+#include "runtime/registerMap.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO
@@ -48,21 +50,27 @@ inline bool frame::is_stub_frame() const {
 }
 
 inline bool frame::is_first_frame() const {
-  return is_entry_frame() && entry_frame_is_first();
+  return (is_entry_frame() && entry_frame_is_first())
+      // Optimized entry frames are only present on certain platforms
+      || (is_optimized_entry_frame() && optimized_entry_frame_is_first());
 }
 
-inline oop* frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const {
+inline bool frame::is_optimized_entry_frame() const {
+  return _cb != NULL && _cb->is_optimized_entry_blob();
+}
+
+inline address frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const {
   if(reg->is_reg()) {
     // If it is passed in a register, it got spilled in the stub frame.
-    return (oop *)reg_map->location(reg);
+    return reg_map->location(reg);
   } else {
     int sp_offset_in_bytes = reg->reg2stack() * VMRegImpl::stack_slot_size;
-    return (oop*)(((address)unextended_sp()) + sp_offset_in_bytes);
+    return ((address)unextended_sp()) + sp_offset_in_bytes;
   }
 }
 
-inline bool StackFrameStream::is_done() {
-  return (_is_done) ? true : (_is_done = _fr.is_first_frame(), false);
+inline oop* frame::oopmapreg_to_oop_location(VMReg reg, const RegisterMap* reg_map) const {
+  return (oop*)oopmapreg_to_location(reg, reg_map);
 }
 
 #endif // SHARE_RUNTIME_FRAME_INLINE_HPP

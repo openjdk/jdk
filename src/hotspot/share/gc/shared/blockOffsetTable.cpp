@@ -340,7 +340,7 @@ void BlockOffsetArray::verify() const {
     HeapWord* start = block_start(p);
     // First check if the start is an allocated block and only
     // then if it is a valid object.
-    oop o = oop(start);
+    oop o = cast_to_oop(start);
     assert(!Universe::is_fully_initialized() ||
            _sp->is_free_block(start) ||
            oopDesc::is_oop_or_null(o), "Bad object was found");
@@ -474,12 +474,11 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
 #endif
 }
 
-HeapWord* BlockOffsetArrayContigSpace::initialize_threshold() {
+void BlockOffsetArrayContigSpace::initialize_threshold() {
   _next_offset_index = _array->index_for(_bottom);
   _next_offset_index++;
   _next_offset_threshold =
     _array->address_for_index(_next_offset_index);
-  return _next_offset_threshold;
 }
 
 void BlockOffsetArrayContigSpace::zero_bottom_entry() {

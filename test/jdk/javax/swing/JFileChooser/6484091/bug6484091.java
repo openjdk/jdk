@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 6484091
  * @summary FileSystemView leaks directory info
  * @author Pavel Porvatov
-   @run main bug6484091
+   @run main/othervm -Djava.security.manager=allow bug6484091
  */
 
 import javax.swing.filechooser.FileSystemView;

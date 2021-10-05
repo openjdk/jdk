@@ -29,10 +29,12 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar hello.jar Hello
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. HelloDynamic
  */
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class HelloDynamic extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {

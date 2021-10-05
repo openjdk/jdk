@@ -41,7 +41,7 @@
  *          user cancels the first one
  * @library /test/lib
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
- * @run main/othervm -Djdk.net.hosts.file=TestHosts HttpNegotiateServer
+ * @run main/othervm -Djava.security.manager=allow -Djdk.net.hosts.file=TestHosts HttpNegotiateServer
  */
 
 import com.sun.net.httpserver.Headers;

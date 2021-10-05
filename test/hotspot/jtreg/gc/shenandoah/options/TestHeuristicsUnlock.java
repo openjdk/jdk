@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestHeuristicsUnlock
+ * @test
  * @summary Test that Shenandoah heuristics are unlocked properly
  * @requires vm.gc.Shenandoah
  * @library /test/lib

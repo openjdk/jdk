@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,7 +643,8 @@ void LinearScan::compute_local_live_sets() {
         CodeEmitInfo* info = visitor.info_at(k);
         ValueStack* stack = info->stack();
         for_each_state_value(stack, value,
-          set_live_gen_kill(value, op, live_gen, live_kill)
+          set_live_gen_kill(value, op, live_gen, live_kill);
+          local_has_fpu_registers = local_has_fpu_registers || value->type()->is_float_kind();
         );
       }
 
@@ -1659,22 +1660,33 @@ void LinearScan::allocate_registers() {
   Interval* precolored_cpu_intervals, *not_precolored_cpu_intervals;
   Interval* precolored_fpu_intervals, *not_precolored_fpu_intervals;
 
-  // allocate cpu registers
+  // collect cpu intervals
   create_unhandled_lists(&precolored_cpu_intervals, &not_precolored_cpu_intervals,
                          is_precolored_cpu_interval, is_virtual_cpu_interval);
 
-  // allocate fpu registers
+  // collect fpu intervals
   create_unhandled_lists(&precolored_fpu_intervals, &not_precolored_fpu_intervals,
                          is_precolored_fpu_interval, is_virtual_fpu_interval);
-
-  // the fpu interval allocation cannot be moved down below with the fpu section as
+  // this fpu interval collection cannot be moved down below with the allocation section as
   // the cpu_lsw.walk() changes interval positions.
 
+  if (!has_fpu_registers()) {
+#ifdef ASSERT
+    assert(not_precolored_fpu_intervals == Interval::end(), "missed an uncolored fpu interval");
+#else
+    if (not_precolored_fpu_intervals != Interval::end()) {
+      BAILOUT("missed an uncolored fpu interval");
+    }
+#endif
+  }
+
+  // allocate cpu registers
   LinearScanWalker cpu_lsw(this, precolored_cpu_intervals, not_precolored_cpu_intervals);
   cpu_lsw.walk();
   cpu_lsw.finish_allocation();
 
   if (has_fpu_registers()) {
+    // allocate fpu registers
     LinearScanWalker fpu_lsw(this, precolored_fpu_intervals, not_precolored_fpu_intervals);
     fpu_lsw.walk();
     fpu_lsw.finish_allocation();
@@ -3928,8 +3940,8 @@ void MoveResolver::insert_move(Interval* from_interval, Interval* to_interval) {
   assert(_insert_list != NULL && _insert_idx != -1, "must setup insert position first");
   assert(_insertion_buffer.lir_list() == _insert_list, "wrong insertion buffer");
 
-  LIR_Opr from_opr = LIR_OprFact::virtual_register(from_interval->reg_num(), from_interval->type());
-  LIR_Opr to_opr = LIR_OprFact::virtual_register(to_interval->reg_num(), to_interval->type());
+  LIR_Opr from_opr = get_virtual_register(from_interval);
+  LIR_Opr to_opr = get_virtual_register(to_interval);
 
   if (!_multiple_reads_allowed) {
     // the last_use flag is an optimization for FPU stack allocation. When the same
@@ -3947,12 +3959,27 @@ void MoveResolver::insert_move(LIR_Opr from_opr, Interval* to_interval) {
   assert(_insert_list != NULL && _insert_idx != -1, "must setup insert position first");
   assert(_insertion_buffer.lir_list() == _insert_list, "wrong insertion buffer");
 
-  LIR_Opr to_opr = LIR_OprFact::virtual_register(to_interval->reg_num(), to_interval->type());
+  LIR_Opr to_opr = get_virtual_register(to_interval);
   _insertion_buffer.move(_insert_idx, from_opr, to_opr);
 
   TRACE_LINEAR_SCAN(4, tty->print("MoveResolver: inserted move from constant "); from_opr->print(); tty->print_cr("  to %d (%d, %d)", to_interval->reg_num(), to_interval->assigned_reg(), to_interval->assigned_regHi()));
 }
 
+LIR_Opr MoveResolver::get_virtual_register(Interval* interval) {
+  // Add a little fudge factor for the bailout since the bailout is only checked periodically. This allows us to hand out
+  // a few extra registers before we really run out which helps to avoid to trip over assertions.
+  int reg_num = interval->reg_num();
+  if (reg_num + 20 >= LIR_OprDesc::vreg_max) {
+    _allocator->bailout("out of virtual registers in linear scan");
+    if (reg_num + 2 >= LIR_OprDesc::vreg_max) {
+      // Wrap it around and continue until bailout really happens to avoid hitting assertions.
+      reg_num = LIR_OprDesc::vreg_base;
+    }
+  }
+  LIR_Opr vreg = LIR_OprFact::virtual_register(reg_num, interval->type());
+  assert(vreg != LIR_OprFact::illegal(), "ran out of virtual registers");
+  return vreg;
+}
 
 void MoveResolver::resolve_mappings() {
   TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: resolving mappings for Block B%d, index %d", _insert_list->block() != NULL ? _insert_list->block()->block_id() : -1, _insert_idx));
@@ -6645,8 +6672,7 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
 
         case lir_rtcall:
         case lir_static_call:
-        case lir_optvirtual_call:
-        case lir_virtual_call:    inc_counter(counter_call); break;
+        case lir_optvirtual_call: inc_counter(counter_call); break;
 
         case lir_move: {
           inc_counter(counter_move);
@@ -6700,9 +6726,7 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_add:
         case lir_sub:
         case lir_mul:
-        case lir_mul_strictfp:
         case lir_div:
-        case lir_div_strictfp:
         case lir_rem:
         case lir_sqrt:
         case lir_abs:

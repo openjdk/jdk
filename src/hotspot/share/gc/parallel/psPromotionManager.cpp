@@ -121,6 +121,7 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
       promotion_failure_occurred = true;
     }
     manager->flush_labs();
+    manager->flush_string_dedup_requests();
   }
   if (!promotion_failure_occurred) {
     // If there was no promotion failure, the preserved mark stacks
@@ -190,7 +191,6 @@ PSPromotionManager::PSPromotionManager() {
   _old_lab.set_start_array(old_gen()->start_array());
 
   uint queue_size;
-  claimed_stack_depth()->initialize();
   queue_size = claimed_stack_depth()->max_elems();
 
   _totally_drain = (ParallelGCThreads == 1) || (GCDrainStackTargetSize == 0);
@@ -352,7 +352,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   // this started.  If it is the same (i.e., no forwarding
   // pointer has been installed), then this thread owns
   // it.
-  if (obj->cas_forward_to(obj, obj_mark)) {
+  if (obj->forward_to_atomic(obj, obj_mark) == NULL) {
     // We won any races, we "own" this object.
     assert(obj == obj->forwardee(), "Sanity");
 
@@ -368,8 +368,6 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
     // No unallocation to worry about.
     obj = obj->forwardee();
   }
-
-  log_develop_trace(gc, scavenge)("{promotion-failure %s " PTR_FORMAT " (%d)}", obj->klass()->internal_name(), p2i(obj), obj->size());
 
   return obj;
 }

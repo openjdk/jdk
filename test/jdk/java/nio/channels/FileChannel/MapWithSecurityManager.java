@@ -24,7 +24,7 @@
 /* @test
  * @bug 8236582
  * @summary Tests the map method when running with a security manager
- * @run main/othervm MapWithSecurityManager
+ * @run main/othervm -Djava.security.manager=allow MapWithSecurityManager
  */
 
 import java.io.IOException;

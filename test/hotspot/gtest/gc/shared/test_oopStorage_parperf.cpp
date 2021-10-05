@@ -76,10 +76,7 @@ WorkGang* OopStorageParIterPerf::_workers = NULL;
 
 WorkGang* OopStorageParIterPerf::workers() const {
   if (_workers == NULL) {
-    WorkGang* wg = new WorkGang("OopStorageParIterPerf workers",
-                                _num_workers,
-                                false,
-                                false);
+    WorkGang* wg = new WorkGang("OopStorageParIterPerf workers", _num_workers);
     wg->initialize_workers();
     wg->update_active_workers(_num_workers);
     _workers = wg;
@@ -88,7 +85,7 @@ WorkGang* OopStorageParIterPerf::workers() const {
 }
 
 OopStorageParIterPerf::OopStorageParIterPerf() :
-  _storage("Test Storage")
+  _storage("Test Storage", mtGC)
 {
   for (size_t i = 0; i < _storage_entries; ++i) {
     _entries[i] = _storage.allocate();

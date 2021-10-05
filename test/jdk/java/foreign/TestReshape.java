@@ -43,7 +43,7 @@ public class TestReshape {
     @Test(dataProvider = "shapes")
     public void testReshape(MemoryLayout layout, long[] expectedShape) {
         long flattenedSize = LongStream.of(expectedShape).reduce(1L, Math::multiplyExact);
-        SequenceLayout seq_flattened = MemoryLayout.ofSequence(flattenedSize, layout);
+        SequenceLayout seq_flattened = MemoryLayout.sequenceLayout(flattenedSize, layout);
         assertDimensions(seq_flattened, flattenedSize);
         for (long[] shape : new Shape(expectedShape)) {
             SequenceLayout seq_shaped = seq_flattened.reshape(shape);
@@ -54,43 +54,43 @@ public class TestReshape {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidReshape() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, MemoryLayouts.JAVA_INT);
         seq.reshape(3, 2);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadReshapeInference() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, MemoryLayouts.JAVA_INT);
         seq.reshape(-1, -1);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadReshapeParameterZero() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, MemoryLayouts.JAVA_INT);
         seq.reshape(0, 4);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadReshapeParameterNegative() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, MemoryLayouts.JAVA_INT);
         seq.reshape(-2, 2);
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testReshapeOnUnboundSequence() {
-        SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_INT);
         seq.reshape(3, 2);
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testFlattenOnUnboundSequence() {
-        SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_INT);
         seq.flatten();
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testFlattenOnUnboundNestedSequence() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_INT));
         seq.flatten();
     }
 
@@ -124,7 +124,7 @@ public class TestReshape {
         }
     }
 
-    static MemoryLayout POINT = MemoryLayout.ofStruct(
+    static MemoryLayout POINT = MemoryLayout.structLayout(
             MemoryLayouts.JAVA_INT,
             MemoryLayouts.JAVA_INT
     );

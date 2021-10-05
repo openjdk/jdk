@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@
 package jdk.internal.access;
 
 import javax.crypto.SealedObject;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
+import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
 import java.util.jar.JarFile;
 import java.io.Console;
@@ -76,7 +78,9 @@ public class SharedSecrets {
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaSecurityAccess javaSecurityAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
+    private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
+    private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -88,7 +92,7 @@ public class SharedSecrets {
             try {
                 Class.forName("java.util.ImmutableCollections$Access", true, null);
                 access = javaUtilCollectionAccess;
-            } catch (ClassNotFoundException e) {};
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }
@@ -126,7 +130,7 @@ public class SharedSecrets {
             try {
                 Class.forName("java.lang.invoke.MethodHandleImpl", true, null);
                 access = javaLangInvokeAccess;
-            } catch (ClassNotFoundException e) {};
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }
@@ -396,6 +400,28 @@ public class SharedSecrets {
             access = javaSecuritySignatureAccess;
         }
         return access;
+    }
+
+    public static void setJavaSecuritySpecAccess(JavaSecuritySpecAccess jssa) {
+        javaSecuritySpecAccess = jssa;
+    }
+
+    public static JavaSecuritySpecAccess getJavaSecuritySpecAccess() {
+        if (javaSecuritySpecAccess == null) {
+            ensureClassInitialized(EncodedKeySpec.class);
+        }
+        return javaSecuritySpecAccess;
+    }
+
+    public static void setJavaxCryptoSpecAccess(JavaxCryptoSpecAccess jcsa) {
+        javaxCryptoSpecAccess = jcsa;
+    }
+
+    public static JavaxCryptoSpecAccess getJavaxCryptoSpecAccess() {
+        if (javaxCryptoSpecAccess == null) {
+            ensureClassInitialized(SecretKeySpec.class);
+        }
+        return javaxCryptoSpecAccess;
     }
 
     public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {

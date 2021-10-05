@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -407,7 +407,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">मोलडावियन</language>
 			<language type="rof">रोम्बो</language>
 			<language type="rom">रोमानी</language>
-			<language type="root">रूट</language>
 			<language type="ru">रूसी</language>
 			<language type="rup">अरोमानियन</language>
 			<language type="rw">किन्यारवांडा</language>
@@ -3086,14 +3085,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>सांता इसाबेल</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>एचएसटी</generic>
-					<standard>एचएसटी</standard>
-					<daylight draft="provisional">HST</daylight>
-				</short>
-				<exemplarCity>होनोलुलु</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>समन्वित वैश्विक समय</standard>
@@ -3213,11 +3204,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>ब्रोकन हिल</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>क्यूरी</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>मेलबोर्न</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>क्यूरी</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>होबार्ट</exemplarCity>
@@ -3850,7 +3841,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>चोइबालसन</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
-				<exemplarCity>मकाउ</exemplarCity>
+				<exemplarCity>मकाऊ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Saipan">
 				<exemplarCity>सायपान</exemplarCity>
@@ -4250,6 +4241,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>नोम</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>एचएसटी</generic>
+					<standard>एचएसटी</standard>
+					<daylight draft="provisional">HST</daylight>
+				</short>
+				<exemplarCity>होनोलुलु</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>जॉनस्टन</exemplarCity>
@@ -6577,7 +6576,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>पश्चिमी अफ़्रीकी CFA फ़्रैंक</displayName>
 				<displayName count="one">पश्चिमी अफ़्रीकी CFA फ़्रैंक</displayName>
 				<displayName count="other">पश्चिमी अफ़्रीकी CFA फ़्रैंक</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>[CFP] फ़्रैंक</displayName>
@@ -6860,7 +6859,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} कैरट</unitPattern>
 				<unitPattern count="other">{0} कैरट</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>मिलिग्राम प्रति डेसीलीटर</displayName>
 				<unitPattern count="one">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
 				<unitPattern count="other">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
@@ -8079,7 +8078,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>मि॰ग्रा॰/डे॰ली॰</displayName>
 				<unitPattern count="one">{0} मि॰ग्रा॰/डे॰ली॰</unitPattern>
 				<unitPattern count="other">{0} मि॰ग्रा॰/डे॰ली॰</unitPattern>
@@ -8371,9 +8370,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} मि॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µ मा॰मी॰</displayName>
-				<unitPattern count="one">{0} µ मा॰मी॰</unitPattern>
-				<unitPattern count="other">{0} µ मा॰मी॰</unitPattern>
+				<displayName>μ मा॰मी॰</displayName>
+				<unitPattern count="one">{0} μ मा॰मी॰</unitPattern>
+				<unitPattern count="other">{0} μ मा॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>नै॰मी॰</displayName>

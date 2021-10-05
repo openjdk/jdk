@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -238,15 +240,6 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 // 8 bytes vector registers are saved by default on AArch64.
 bool SharedRuntime::is_wide_vector(int size) {
   return size > 8;
-}
-
-size_t SharedRuntime::trampoline_size() {
-  return 16;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  __ mov(rscratch1, destination);
-  __ br(rscratch1);
 }
 
 // The java_calling_convention describes stack locations as ideal slots on
@@ -601,7 +594,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   __ ldr(rscratch1, Address(rmethod, in_bytes(Method::from_compiled_offset())));
 
 #if INCLUDE_JVMCI
-  if (EnableJVMCI || UseAOT) {
+  if (EnableJVMCI) {
     // check if this call should be routed towards a specific entry point
     __ ldr(rscratch2, Address(rthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
     Label no_alternative_target;
@@ -782,7 +775,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
 }
 
-int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
+static int c_calling_convention_priv(const BasicType *sig_bt,
                                          VMRegPair *regs,
                                          VMRegPair *regs2,
                                          int total_args_passed) {
@@ -813,6 +806,11 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         if (int_args < Argument::n_int_register_parameters_c) {
           regs[i].set1(INT_ArgReg[int_args++]->as_VMReg());
         } else {
+#ifdef __APPLE__
+          // Less-than word types are stored one after another.
+          // The code is unable to handle this so bailout.
+          return -1;
+#endif
           regs[i].set1(VMRegImpl::stack2reg(stk_args));
           stk_args += 2;
         }
@@ -835,6 +833,11 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         if (fp_args < Argument::n_float_register_parameters_c) {
           regs[i].set1(FP_ArgReg[fp_args++]->as_VMReg());
         } else {
+#ifdef __APPLE__
+          // Less-than word types are stored one after another.
+          // The code is unable to handle this so bailout.
+          return -1;
+#endif
           regs[i].set1(VMRegImpl::stack2reg(stk_args));
           stk_args += 2;
         }
@@ -859,6 +862,23 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     }
 
   return stk_args;
+}
+
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
+int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
+                                         VMRegPair *regs,
+                                         VMRegPair *regs2,
+                                         int total_args_passed)
+{
+  int result = c_calling_convention_priv(sig_bt, regs, regs2, total_args_passed);
+  guarantee(result >= 0, "Unsupported arguments configuration");
+  return result;
 }
 
 // On 64 bit we will store integer like items to the stack as
@@ -1366,7 +1386,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Now figure out where the args must be stored and how much stack space
   // they require.
   int out_arg_slots;
-  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, NULL, total_c_args);
+  out_arg_slots = c_calling_convention_priv(out_sig_bt, out_regs, NULL, total_c_args);
+
+  if (out_arg_slots < 0) {
+    return NULL;
+  }
 
   // Compute framesize for the wrapper.  We need to handlize all oops in
   // incoming registers
@@ -1749,12 +1773,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    __ resolve(IS_NOT_NULL, obj_reg);
-
-    if (UseBiasedLocking) {
-      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp, false, lock_done, &slow_path_lock);
-    }
-
     // Load (object->mark() | 1) into swap_reg %r0
     __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ orr(swap_reg, rscratch1, 1);
@@ -1901,14 +1919,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Get locked oop from the handle we passed to jni
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    __ resolve(IS_NOT_NULL, obj_reg);
-
     Label done;
-
-    if (UseBiasedLocking) {
-      __ biased_locking_exit(obj_reg, old_hdr, done);
-    }
-
     // Simple recursive lock?
 
     __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
@@ -2160,7 +2171,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Setup code generation tools
   int pad = 0;
 #if INCLUDE_JVMCI
-  if (EnableJVMCI || UseAOT) {
+  if (EnableJVMCI) {
     pad += 512; // Increase the buffer size when compiling for JVMCI
   }
 #endif
@@ -2235,7 +2246,7 @@ void SharedRuntime::generate_deopt_blob() {
   int implicit_exception_uncommon_trap_offset = 0;
   int uncommon_trap_offset = 0;
 
-  if (EnableJVMCI || UseAOT) {
+  if (EnableJVMCI) {
     implicit_exception_uncommon_trap_offset = __ pc() - start;
 
     __ ldr(lr, Address(rthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
@@ -2361,7 +2372,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ reset_last_Java_frame(false);
 
 #if INCLUDE_JVMCI
-  if (EnableJVMCI || UseAOT) {
+  if (EnableJVMCI) {
     __ bind(after_fetch_unroll_info_call);
   }
 #endif
@@ -2524,7 +2535,7 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 #if INCLUDE_JVMCI
-  if (EnableJVMCI || UseAOT) {
+  if (EnableJVMCI) {
     _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
     _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
   }
@@ -3072,7 +3083,6 @@ void OptoRuntime::generate_exception_blob() {
   // Set exception blob
   _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
 }
-#endif // COMPILER2
 
 // ---------------------------------------------------------------
 
@@ -3082,6 +3092,10 @@ class NativeInvokerGenerator : public StubCodeGenerator {
 
   const GrowableArray<VMReg>& _input_registers;
   const GrowableArray<VMReg>& _output_registers;
+
+  int _frame_complete;
+  int _framesize;
+  OopMapSet* _oop_maps;
 public:
   NativeInvokerGenerator(CodeBuffer* buffer,
                          address call_target,
@@ -3092,8 +3106,89 @@ public:
      _call_target(call_target),
      _shadow_space_bytes(shadow_space_bytes),
      _input_registers(input_registers),
-     _output_registers(output_registers) {}
+     _output_registers(output_registers),
+     _frame_complete(0),
+     _framesize(0),
+     _oop_maps(NULL) {
+    assert(_output_registers.length() <= 1
+           || (_output_registers.length() == 2 && !_output_registers.at(1)->is_valid()), "no multi-reg returns");
+  }
+
   void generate();
+
+  int spill_size_in_bytes() const {
+    if (_output_registers.length() == 0) {
+      return 0;
+    }
+    VMReg reg = _output_registers.at(0);
+    assert(reg->is_reg(), "must be a register");
+    if (reg->is_Register()) {
+      return 8;
+    } else if (reg->is_FloatRegister()) {
+      bool use_sve = Matcher::supports_scalable_vector();
+      if (use_sve) {
+        return Matcher::scalable_vector_reg_size(T_BYTE);
+      }
+      return 16;
+    } else {
+      ShouldNotReachHere();
+    }
+    return 0;
+  }
+
+  void spill_output_registers() {
+    if (_output_registers.length() == 0) {
+      return;
+    }
+    VMReg reg = _output_registers.at(0);
+    assert(reg->is_reg(), "must be a register");
+    MacroAssembler* masm = _masm;
+    if (reg->is_Register()) {
+      __ spill(reg->as_Register(), true, 0);
+    } else if (reg->is_FloatRegister()) {
+      bool use_sve = Matcher::supports_scalable_vector();
+      if (use_sve) {
+        __ spill_sve_vector(reg->as_FloatRegister(), 0, Matcher::scalable_vector_reg_size(T_BYTE));
+      } else {
+        __ spill(reg->as_FloatRegister(), __ Q, 0);
+      }
+    } else {
+      ShouldNotReachHere();
+    }
+  }
+
+  void fill_output_registers() {
+    if (_output_registers.length() == 0) {
+      return;
+    }
+    VMReg reg = _output_registers.at(0);
+    assert(reg->is_reg(), "must be a register");
+    MacroAssembler* masm = _masm;
+    if (reg->is_Register()) {
+      __ unspill(reg->as_Register(), true, 0);
+    } else if (reg->is_FloatRegister()) {
+      bool use_sve = Matcher::supports_scalable_vector();
+      if (use_sve) {
+        __ unspill_sve_vector(reg->as_FloatRegister(), 0, Matcher::scalable_vector_reg_size(T_BYTE));
+      } else {
+        __ unspill(reg->as_FloatRegister(), __ Q, 0);
+      }
+    } else {
+      ShouldNotReachHere();
+    }
+  }
+
+  int frame_complete() const {
+    return _frame_complete;
+  }
+
+  int framesize() const {
+    return (_framesize >> (LogBytesPerWord - LogBytesPerInt));
+  }
+
+  OopMapSet* oop_maps() const {
+    return _oop_maps;
+  }
 
 private:
 #ifdef ASSERT
@@ -3105,21 +3200,23 @@ private:
 
 static const int native_invoker_code_size = 1024;
 
-BufferBlob* SharedRuntime::make_native_invoker(address call_target,
-                                               int shadow_space_bytes,
-                                               const GrowableArray<VMReg>& input_registers,
-                                               const GrowableArray<VMReg>& output_registers) {
-  BufferBlob* _invoke_native_blob =
-    BufferBlob::create("nep_invoker_blob", native_invoker_code_size);
-  if (_invoke_native_blob == NULL)
-    return NULL; // allocation failure
-
-  CodeBuffer code(_invoke_native_blob);
+RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
+                                                int shadow_space_bytes,
+                                                const GrowableArray<VMReg>& input_registers,
+                                                const GrowableArray<VMReg>& output_registers) {
+  int locs_size  = 64;
+  CodeBuffer code("nep_invoker_blob", native_invoker_code_size, locs_size);
   NativeInvokerGenerator g(&code, call_target, shadow_space_bytes, input_registers, output_registers);
   g.generate();
   code.log_section_sizes("nep_invoker_blob");
 
-  return _invoke_native_blob;
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub("nep_invoker_blob",
+                                  &code,
+                                  g.frame_complete(),
+                                  g.framesize(),
+                                  g.oop_maps(), false);
+  return stub;
 }
 
 void NativeInvokerGenerator::generate() {
@@ -3128,25 +3225,39 @@ void NativeInvokerGenerator::generate() {
            || target_uses_register(rthread->as_VMReg())),
          "Register conflict");
 
+  enum layout {
+    rbp_off,
+    rbp_off2,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  assert(_shadow_space_bytes == 0, "not expecting shadow space on AArch64");
+  _framesize = align_up(framesize + (spill_size_in_bytes() >> LogBytesPerInt), 4);
+  assert(is_even(_framesize/2), "sp not 16-byte aligned");
+
+  _oop_maps  = new OopMapSet();
   MacroAssembler* masm = _masm;
 
-  __ set_last_Java_frame(sp, noreg, lr, rscratch1);
+  address start = __ pc();
 
   __ enter();
 
-  // Store a pointer to the previous R29 (RFP) saved on the stack as it
-  // may contain an oop if PreserveFramePointer is off. This value is
-  // retrieved later by frame::sender_for_entry_frame() when the stack
-  // is walked.
-  __ mov(rscratch1, sp);
-  __ str(rscratch1, Address(rthread, JavaThread::saved_fp_address_offset()));
+  // lr and fp are already in place
+  __ sub(sp, rfp, ((unsigned)_framesize-4) << LogBytesPerInt); // prolog
+
+  _frame_complete = __ pc() - start;
+
+  address the_pc = __ pc();
+  __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
+  OopMap* map = new OopMap(_framesize, 0);
+  _oop_maps->add_gc_map(the_pc - start, map);
 
   // State transition
   __ mov(rscratch1, _thread_in_native);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
-
-  assert(_shadow_space_bytes == 0, "not expecting shadow space on AArch64");
 
   rt_call(masm, _call_target);
 
@@ -3193,27 +3304,14 @@ void NativeInvokerGenerator::generate() {
   __ bind(L_safepoint_poll_slow_path);
 
   // Need to save the native result registers around any runtime calls.
-  RegSet spills;
-  FloatRegSet fp_spills;
-  for (int i = 0; i < _output_registers.length(); i++) {
-    VMReg output = _output_registers.at(i);
-    if (output->is_Register()) {
-      spills += RegSet::of(output->as_Register());
-    } else if (output->is_FloatRegister()) {
-      fp_spills += FloatRegSet::of(output->as_FloatRegister());
-    }
-  }
-
-  __ push(spills, sp);
-  __ push_fp(fp_spills, sp);
+  spill_output_registers();
 
   __ mov(c_rarg0, rthread);
   assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
   __ blr(rscratch1);
 
-  __ pop_fp(fp_spills, sp);
-  __ pop(spills, sp);
+  fill_output_registers();
 
   __ b(L_after_safepoint_poll);
   __ block_comment("} L_safepoint_poll_slow_path");
@@ -3223,13 +3321,11 @@ void NativeInvokerGenerator::generate() {
   __ block_comment("{ L_reguard");
   __ bind(L_reguard);
 
-  __ push(spills, sp);
-  __ push_fp(fp_spills, sp);
+  spill_output_registers();
 
   rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
 
-  __ pop_fp(fp_spills, sp);
-  __ pop(spills, sp);
+  fill_output_registers();
 
   __ b(L_after_reguard);
 
@@ -3239,3 +3335,4 @@ void NativeInvokerGenerator::generate() {
 
   __ flush();
 }
+#endif // COMPILER2

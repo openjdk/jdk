@@ -28,7 +28,8 @@
 #if INCLUDE_NMT
 
 #include "memory/allocation.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/metaspace.hpp" // For MetadataType
+#include "memory/metaspaceStats.hpp"
 #include "services/allocationSite.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/linkedlist.hpp"
@@ -68,17 +69,18 @@ class VirtualMemory {
 };
 
 // Virtual memory allocation site, keeps track where the virtual memory is reserved.
-class VirtualMemoryAllocationSite : public AllocationSite<VirtualMemory> {
+class VirtualMemoryAllocationSite : public AllocationSite {
+  VirtualMemory _c;
  public:
   VirtualMemoryAllocationSite(const NativeCallStack& stack, MEMFLAGS flag) :
-    AllocationSite<VirtualMemory>(stack, flag) { }
+    AllocationSite(stack, flag) { }
 
-  inline void reserve_memory(size_t sz)  { data()->reserve_memory(sz);  }
-  inline void commit_memory (size_t sz)  { data()->commit_memory(sz);   }
-  inline void uncommit_memory(size_t sz) { data()->uncommit_memory(sz); }
-  inline void release_memory(size_t sz)  { data()->release_memory(sz);  }
-  inline size_t reserved() const  { return peek()->reserved(); }
-  inline size_t committed() const { return peek()->committed(); }
+  inline void reserve_memory(size_t sz)  { _c.reserve_memory(sz);  }
+  inline void commit_memory (size_t sz)  { _c.commit_memory(sz);   }
+  inline void uncommit_memory(size_t sz) { _c.uncommit_memory(sz); }
+  inline void release_memory(size_t sz)  { _c.release_memory(sz);  }
+  inline size_t reserved() const  { return _c.reserved(); }
+  inline size_t committed() const { return _c.committed(); }
 };
 
 class VirtualMemorySummary;
@@ -204,8 +206,7 @@ class VirtualMemoryRegion {
   inline bool overlap_region(address addr, size_t sz) const {
     assert(sz > 0, "Invalid size");
     assert(size() > 0, "Invalid size");
-    return contain_address(addr) ||
-           contain_address(addr + sz - 1);
+    return MAX2(addr, base()) < MIN2(addr + sz, end());
   }
 
   inline bool adjacent_to(address addr, size_t sz) const {
@@ -370,9 +371,6 @@ class VirtualMemoryTracker : AllStatic {
  public:
   static bool initialize(NMT_TrackingLevel level);
 
-  // Late phase initialization
-  static bool late_initialize(NMT_TrackingLevel level);
-
   static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
 
   static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
@@ -396,32 +394,6 @@ class VirtualMemoryTracker : AllStatic {
 
  private:
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
-};
-
-// Todo: clean up after jep387, see JDK-8251392
-class MetaspaceSnapshot : public ResourceObj {
-private:
-  size_t  _reserved_in_bytes[Metaspace::MetadataTypeCount];
-  size_t  _committed_in_bytes[Metaspace::MetadataTypeCount];
-  size_t  _used_in_bytes[Metaspace::MetadataTypeCount];
-  size_t  _free_in_bytes[Metaspace::MetadataTypeCount];
-
-public:
-  MetaspaceSnapshot();
-  size_t reserved_in_bytes(Metaspace::MetadataType type)   const { assert_valid_metadata_type(type); return _reserved_in_bytes[type]; }
-  size_t committed_in_bytes(Metaspace::MetadataType type)  const { assert_valid_metadata_type(type); return _committed_in_bytes[type]; }
-  size_t used_in_bytes(Metaspace::MetadataType type)       const { assert_valid_metadata_type(type); return _used_in_bytes[type]; }
-  size_t free_in_bytes(Metaspace::MetadataType type)       const { assert_valid_metadata_type(type); return _free_in_bytes[type]; }
-
-  static void snapshot(MetaspaceSnapshot& s);
-
-private:
-  static void snapshot(Metaspace::MetadataType type, MetaspaceSnapshot& s);
-
-  static void assert_valid_metadata_type(Metaspace::MetadataType type) {
-    assert(type == Metaspace::ClassType || type == Metaspace::NonClassType,
-      "Invalid metadata type");
-  }
 };
 
 #endif // INCLUDE_NMT

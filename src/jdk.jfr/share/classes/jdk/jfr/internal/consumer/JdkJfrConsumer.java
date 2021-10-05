@@ -28,11 +28,9 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Consumer;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.EventType;
-import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedClassLoader;

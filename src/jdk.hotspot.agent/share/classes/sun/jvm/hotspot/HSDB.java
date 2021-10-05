@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,10 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   private JInternalFrame consoleFrame;
   private WorkerThread workerThread;
   // These had to be made data members because they are referenced in inner classes.
-  private String pidText;
   private int pid;
   private String execPath;
   private String coreFilename;
+  private String debugServerName;
 
   private void doUsage() {
     System.out.println("Usage:  java HSDB [[pid] | [path-to-java-executable [path-to-corefile]] | help ]");
@@ -94,10 +94,19 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   }
 
   public HSDB(JVMDebugger d) {
+    pid = -1;
+    execPath = null;
+    coreFilename = null;
+    debugServerName = null;
     jvmDebugger = d;
   }
 
   private HSDB(String[] args) {
+    pid = -1;
+    execPath = null;
+    coreFilename = null;
+    debugServerName = null;
+
     switch (args.length) {
     case (0):
       break;
@@ -106,15 +115,12 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
       if (args[0].equals("help") || args[0].equals("-help")) {
         doUsage();
       }
-      // If all numbers, it is a PID to attach to
-      // Else, it is a pathname to a .../bin/java for a core file.
       try {
-        int unused = Integer.parseInt(args[0]);
-        // If we get here, we have a PID and not a core file name
-        pidText = args[0];
+        // Attempt to attach as a PID
+        pid = Integer.parseInt(args[0]);
       } catch (NumberFormatException e) {
-        execPath = args[0];
-        coreFilename = "core";
+        // Attempt to connect to remote debug server
+        debugServerName = args[0];
       }
       break;
 
@@ -422,17 +428,21 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
       });
 
     // If jvmDebugger is already set, we have been given a JVMDebugger.
-    // Otherwise, if pidText != null we are supposed to attach to it.
-    // Finally, if execPath != null, it is the path of a jdk/bin/java
+    // Otherwise, if pid != -1 we are supposed to attach to it.
+    // If execPath != null, it is the path of a jdk/bin/java
     // and coreFilename is the pathname of a core file we are
     // supposed to attach to.
+    // Finally, if debugServerName != null, we are supposed to
+    // connect to remote debug server.
 
     if (jvmDebugger != null) {
       attach(jvmDebugger);
-    } else if (pidText != null) {
-      attach(pidText);
+    } else if (pid != -1) {
+      attach(pid);
     } else if (execPath != null) {
       attach(execPath, coreFilename);
+    } else if (debugServerName != null) {
+      connect(debugServerName);
     }
   }
 
@@ -456,7 +466,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
           desktop.remove(attachDialog);
           workerThread.invokeLater(new Runnable() {
               public void run() {
-                attach(pidTextField.getText());
+                attach(Integer.parseInt(pidTextField.getText()));
               }
             });
         }
@@ -1172,24 +1182,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   /** NOTE we are in a different thread here than either the main
       thread or the Swing/AWT event handler thread, so we must be very
       careful when creating or removing widgets */
-  private void attach(String pidText) {
-      try {
-      this.pidText = pidText;
-      pid = Integer.parseInt(pidText);
-    }
-    catch (NumberFormatException e) {
-      SwingUtilities.invokeLater(new Runnable() {
-          public void run() {
-            setMenuItemsEnabled(attachMenuItems, true);
-            JOptionPane.showInternalMessageDialog(desktop,
-                                                  "Unable to parse process ID \"" + HSDB.this.pidText + "\".\nPlease enter a number.",
-                                                  "Parse error",
-                                                  JOptionPane.WARNING_MESSAGE);
-          }
-        });
-      return;
-    }
-
+  private void attach(int pid) {
+    this.pid = pid;
     // Try to attach to this process
     Runnable remover = new Runnable() {
           public void run() {
@@ -1293,7 +1287,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   /** NOTE we are in a different thread here than either the main
       thread or the Swing/AWT event handler thread, so we must be very
       careful when creating or removing widgets */
-  private void connect(final String remoteMachineName) {
+  private void connect(final String debugServerName) {
     // Try to open this core file
     Runnable remover = new Runnable() {
           public void run() {
@@ -1313,7 +1307,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
           }
         });
 
-      agent.attach(remoteMachineName);
+      agent.attach(debugServerName);
       if (agent.getDebugger().hasConsole()) {
         showDbgConsoleMenuItem.setEnabled(true);
       }
@@ -1327,7 +1321,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
           public void run() {
             setMenuItemsEnabled(attachMenuItems, true);
             JOptionPane.showInternalMessageDialog(desktop,
-                                                  "Unable to connect to machine \"" + remoteMachineName + "\":\n\n" + errMsg,
+                                                  "Unable to connect to machine \"" + debugServerName + "\":\n\n" + errMsg,
                                                   "Unable to Connect",
                                                   JOptionPane.WARNING_MESSAGE);
           }
@@ -1499,10 +1493,13 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
               public boolean isAttached() {
                   return attached;
               }
-              public void attach(String pid) {
+              public void attach(int pid) {
                   HSDB.this.attach(pid);
               }
               public void attach(String java, String core) {
+              }
+              public void attach(String debugServerName) {
+                  HSDB.this.connect(debugServerName);
               }
               public void detach() {
                   detachDebugger();
@@ -1511,8 +1508,10 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                   if (attached) {
                       detachDebugger();
                   }
-                  if (pidText != null) {
-                      attach(pidText);
+                  if (pid != -1) {
+                      attach(pid);
+                  } else if (debugServerName != null) {
+                      connect(debugServerName);
                   } else {
                       attach(execPath, coreFilename);
                   }
@@ -1812,7 +1811,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
       exceed the given number of characters per line. Strips
       extraneous whitespace. */
   private String formatMessage(String message, int charsPerLine) {
-    StringBuffer buf = new StringBuffer(message.length());
+    StringBuilder buf = new StringBuilder(message.length());
     StringTokenizer tokenizer = new StringTokenizer(message);
     int curLineLength = 0;
     while (tokenizer.hasMoreTokens()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 #ifndef SHARE_GC_SHARED_GENOOPCLOSURES_INLINE_HPP
 #define SHARE_GC_SHARED_GENOOPCLOSURES_INLINE_HPP
 
+#include "gc/shared/genOopClosures.hpp"
+
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.hpp"
 #include "oops/access.inline.hpp"

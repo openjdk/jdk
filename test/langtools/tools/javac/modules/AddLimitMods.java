@@ -361,22 +361,24 @@ public class AddLimitMods extends ModuleTestBase {
 
                 StringBuilder testClassNamed = new StringBuilder();
 
-                testClassNamed.append("package test;\n" +
-                                      "public class Test {\n" +
-                                      "    public static void main(String... args) throws Exception {\n");
+                testClassNamed.append("""
+                        package test;
+                        public class Test {
+                            public static void main(String... args) throws Exception {
+                        """);
 
                 for (Entry<String, String> e : MODULES_TO_CHECK_TO_SAMPLE_CLASS.entrySet()) {
                     testClassNamed.append("        System.err.println(\"visible:" + e.getKey() + ":\" + ModuleLayer.boot().findModule(\"" + e.getKey() + "\").isPresent());\n");
                 }
 
-                testClassNamed.append("        Class<?> cp = Class.forName(Test.class.getClassLoader().getUnnamedModule(), \"cp.CP\");\n");
-                testClassNamed.append("        cp.getDeclaredMethod(\"runMe\").invoke(null);\n");
-
-                testClassNamed.append("        Class<?> automatic = Class.forName(ModuleLayer.boot().findModule(\"automatic\").get(), \"automatic.Automatic\");\n");
-                testClassNamed.append("        automatic.getDeclaredMethod(\"runMe\").invoke(null);\n");
-
-                testClassNamed.append("    }\n" +
-                                      "}");
+                testClassNamed.append("""
+                                Class<?> cp = Class.forName(Test.class.getClassLoader().getUnnamedModule(), "cp.CP");
+                                cp.getDeclaredMethod("runMe").invoke(null);
+                                Class<?> automatic = Class.forName(ModuleLayer.boot().findModule("automatic").get(), "automatic.Automatic");
+                                automatic.getDeclaredMethod("runMe").invoke(null);
+                            }
+                        }
+                        """);
 
                 tb.writeJavaFiles(m2Runtime, moduleInfo, testClassNamed.toString());
 
@@ -415,8 +417,10 @@ public class AddLimitMods extends ModuleTestBase {
 
                 tb.writeJavaFiles(m2,
                                   moduleInfo,
-                                  "package test;\n" +
-                                  "public class Test {}\n");
+                                  """
+                                      package test;
+                                      public class Test {}
+                                      """);
 
                 List<String> auxOptions = success ? Arrays.asList(
                     "--processor-path", System.getProperty("test.class.path"),
@@ -448,12 +452,13 @@ public class AddLimitMods extends ModuleTestBase {
                                       "public class " + simpleName + " {" +
                                       "    public static void runMe() throws Exception {");
         for (Entry<String, String> e : MODULES_TO_CHECK_TO_SAMPLE_CLASS.entrySet()) {
-            checkClassesAccessible.append("try {");
-            checkClassesAccessible.append("Class.forName(\"" + e.getValue() + "\").newInstance();");
-            checkClassesAccessible.append("System.err.println(\"" + fqn + ":" + e.getKey() + ":true\");");
-            checkClassesAccessible.append("} catch (Exception ex) {");
-            checkClassesAccessible.append("System.err.println(\"" + fqn + ":" + e.getKey() + ":false\");");
-            checkClassesAccessible.append("}");
+            checkClassesAccessible
+                    .append("try {")
+                    .append("Class.forName(\"" + e.getValue() + "\").newInstance();")
+                    .append("System.err.println(\"" + fqn + ":" + e.getKey() + ":true\");")
+                    .append("} catch (Exception ex) {")
+                    .append("System.err.println(\"" + fqn + ":" + e.getKey() + ":false\");")
+                    .append("}");
         }
 
         checkClassesAccessible.append("    }\n" +

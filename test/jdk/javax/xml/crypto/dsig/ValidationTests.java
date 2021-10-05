@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  *          java.xml.crypto/org.jcp.xml.dsig.internal.dom
+ * @library /test/lib
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java ValidationTests.java
  * @run main/othervm ValidationTests
@@ -46,6 +47,8 @@ import javax.xml.crypto.URIReferenceException;
 import javax.xml.crypto.XMLCryptoContext;
 import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class ValidationTests {
 
@@ -138,6 +141,9 @@ public class ValidationTests {
     };
 
     public static void main(String args[]) throws Exception {
+        // Re-enable sha1 algs
+        SecurityUtils.removeAlgsFromDSigPolicy("sha1");
+
         httpUd = new HttpURIDereferencer();
 
         validator = new SignatureValidator(new File(DATA_DIR));

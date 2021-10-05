@@ -37,7 +37,7 @@ import java.util.concurrent.ThreadFactory;
 public final class CleanerFactory {
 
     /* The common Cleaner. */
-    private final static Cleaner commonCleaner = Cleaner.create(new ThreadFactory() {
+    private static final Cleaner commonCleaner = Cleaner.create(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             return InnocuousThread.newSystemThread("Common-Cleaner",

@@ -69,7 +69,7 @@ public class TableHeader extends Content {
     public TableHeader(Contents contents, String... colHeaderKeys) {
         this.cellContents = Arrays.stream(colHeaderKeys)
                 .map(contents::getContent)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

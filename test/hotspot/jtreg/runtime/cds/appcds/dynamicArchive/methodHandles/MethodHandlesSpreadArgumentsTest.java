@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,14 @@
  *        ../../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
  *        ../test-classes/TestMHApp.java
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MethodHandlesSpreadArgumentsTest
  */
 
 import org.junit.Test;
 
 import java.io.File;
+import jdk.test.lib.Platform;
 
 public class MethodHandlesSpreadArgumentsTest extends DynamicArchiveTestBase {
     @Test
@@ -64,6 +65,10 @@ public class MethodHandlesSpreadArgumentsTest extends DynamicArchiveTestBase {
     static void testImpl() throws Exception {
         String topArchiveName = getNewArchiveName();
         String appJar = JarBuilder.build("MH", new File(classDir), null);
+        // Disable VerifyDpendencies when running with debug build because
+        // the test requires a lot more time to execute with the option enabled.
+        String verifyOpt =
+            Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
         String[] classPaths = javaClassPath.split(File.pathSeparator);
         String junitJar = null;
@@ -75,7 +80,7 @@ public class MethodHandlesSpreadArgumentsTest extends DynamicArchiveTestBase {
         }
 
         dumpAndRun(topArchiveName, "-Xlog:cds,cds+dynamic=debug,class+load=trace",
-            "-cp", appJar + ps + junitJar,
+            "-cp", appJar + ps + junitJar, verifyOpt,
             mainClass, testPackageName + "." + testClassName);
     }
 }

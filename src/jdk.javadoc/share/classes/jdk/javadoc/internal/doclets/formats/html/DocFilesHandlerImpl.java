@@ -198,7 +198,6 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         PackageElement pkg = dfElement.getPackageElement();
 
         HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element, pkg);
-        configuration.messages.notice("doclet.Generating_0", docletWriter.filename.getPath());
 
         List<? extends DocTree> localTags = getLocalHeaderTags(utils.getPreamble(dfElement));
         Content localTagsContent = docletWriter.commentTagsToContent(null, dfElement, localTags, false);

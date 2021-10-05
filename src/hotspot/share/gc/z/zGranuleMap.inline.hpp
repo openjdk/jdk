@@ -24,9 +24,10 @@
 #ifndef SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 #define SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 
+#include "gc/z/zGranuleMap.hpp"
+
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"

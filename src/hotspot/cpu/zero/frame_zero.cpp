@@ -34,6 +34,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "vmreg_zero.inline.hpp"
 
 #ifdef ASSERT
@@ -61,6 +62,16 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   return frame(zeroframe()->next(), sender_sp());
 }
 
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_interpreter_frame() ||
          zeroframe()->is_fake_stub_frame(), "wrong type of frame");
@@ -72,10 +83,15 @@ frame frame::sender(RegisterMap* map) const {
   // sender_for_xxx methods update this accordingly.
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame())
-    return sender_for_entry_frame(map);
-  else
-    return sender_for_nonentry_frame(map);
+  frame result = zeroframe()->is_entry_frame() ?
+                 sender_for_entry_frame(map) :
+                 sender_for_nonentry_frame(map);
+
+  if (map->process_frames()) {
+    StackWatermarkSet::on_iteration(map->thread(), result);
+  }
+
+  return result;
 }
 
 BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
@@ -95,7 +111,7 @@ void frame::patch_pc(Thread* thread, address pc) {
     // We borrow this call to set the thread pointer in the interpreter
     // state; the hook to set up deoptimized frames isn't supplied it.
     assert(pc == NULL, "should be");
-    get_interpreterState()->set_thread(thread->as_Java_thread());
+    get_interpreterState()->set_thread(JavaThread::cast(thread));
   }
 }
 
@@ -380,5 +396,4 @@ frame::frame(void* sp, void* fp, void* pc) {
   Unimplemented();
 }
 
-void frame::pd_ps() {}
 #endif

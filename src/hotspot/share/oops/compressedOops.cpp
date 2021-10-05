@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/compressedOops.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "runtime/arguments.hpp"
@@ -63,8 +63,6 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
   } else {
     set_base((address)heap_space.compressed_oop_base());
   }
-
-  AOTLoader::set_narrow_oop_shift();
 
   _heap_address_range = heap_space.region();
 
@@ -221,7 +219,16 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     //  cannot be larger than that).
 
     base = addr;
-    shift = LogKlassAlignmentInBytes;
+
+    // JDK-8265705
+    // This is a temporary fix for aarch64: there, if the range-to-be-encoded is located
+    //  below 32g, either encoding base should be zero or base should be aligned to 4G
+    //  and shift should be zero. The simplest way to fix this for now is to force
+    //  shift to zero for both runtime and dumptime.
+    // Note however that this is not a perfect solution. Ideally this whole function
+    //  should be CDS agnostic, that would simplify it - and testing - alot. See JDK-8267141
+    //  for details.
+    shift = 0;
 
     // This must be true since at dumptime cds+ccs is 4G, at runtime it can
     //  only be smaller, see comment above.
@@ -253,9 +260,6 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   set_base(base);
   set_shift(shift);
   set_range(range);
-
-  // Note: this may modify our shift.
-  AOTLoader::set_narrow_klass_shift();
 #else
   fatal("64bit only.");
 #endif

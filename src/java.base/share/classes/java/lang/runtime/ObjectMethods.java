@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Bootstrap methods for state-driven implementations of core methods,
@@ -76,6 +78,7 @@ public class ObjectMethods {
             MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
             MethodHandles.Lookup lookup = MethodHandles.lookup();
 
+            @SuppressWarnings("removal")
             ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                 @Override public ClassLoader run() { return ClassLoader.getPlatformClassLoader(); }
             });
@@ -316,50 +319,58 @@ public class ObjectMethods {
      * @param recordClass  the record class hosting the record components
      * @param names        the list of component names, joined into a string
      *                     separated by ";", or the empty string if there are no
-     *                     components. Maybe be null, if the {@code methodName}
-     *                     is {@code "equals"} or {@code "hashCode"}.
+     *                     components. This parameter is ignored if the {@code methodName}
+     *                     parameter is {@code "equals"} or {@code "hashCode"}
      * @param getters      method handles for the accessor methods for the components
      * @return             a call site if invoked by indy, or a method handle
      *                     if invoked by a condy
      * @throws IllegalArgumentException if the bootstrap arguments are invalid
      *                                  or inconsistent
+     * @throws NullPointerException if any argument but {@code lookup} is {@code null},
+     *                              in the case of the {@code getters} argument, its
+     *                              contents cannot be {@code null} either
      * @throws Throwable if any exception is thrown during call site construction
      */
     public static Object bootstrap(MethodHandles.Lookup lookup, String methodName, TypeDescriptor type,
                                    Class<?> recordClass,
                                    String names,
                                    MethodHandle... getters) throws Throwable {
+        requireNonNull(methodName);
+        requireNonNull(type);
+        requireNonNull(recordClass);
+        requireNonNull(names);
+        requireNonNull(getters);
+        Arrays.stream(getters).forEach(Objects::requireNonNull);
         MethodType methodType;
-        if (type instanceof MethodType)
-            methodType = (MethodType) type;
+        if (type instanceof MethodType mt)
+            methodType = mt;
         else {
             methodType = null;
             if (!MethodHandle.class.equals(type))
                 throw new IllegalArgumentException(type.toString());
         }
         List<MethodHandle> getterList = List.of(getters);
-        MethodHandle handle;
-        switch (methodName) {
-            case "equals":
+        MethodHandle handle = switch (methodName) {
+            case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                handle = makeEquals(recordClass, getterList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            case "hashCode":
+                yield makeEquals(recordClass, getterList);
+            }
+            case "hashCode" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(int.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                handle = makeHashCode(recordClass, getterList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            case "toString":
+                yield makeHashCode(recordClass, getterList);
+            }
+            case "toString" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(String.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
                 List<String> nameList = "".equals(names) ? List.of() : List.of(names.split(";"));
                 if (nameList.size() != getterList.size())
                     throw new IllegalArgumentException("Name list and accessor list do not match");
-                handle = makeToString(recordClass, getterList, nameList);
-                return methodType != null ? new ConstantCallSite(handle) : handle;
-            default:
-                throw new IllegalArgumentException(methodName);
-        }
+                yield makeToString(recordClass, getterList, nameList);
+            }
+            default -> throw new IllegalArgumentException(methodName);
+        };
+        return methodType != null ? new ConstantCallSite(handle) : handle;
     }
 }

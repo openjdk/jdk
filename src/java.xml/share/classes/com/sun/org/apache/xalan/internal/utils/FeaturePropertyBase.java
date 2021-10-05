@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 package com.sun.org.apache.xalan.internal.utils;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.SecuritySupport;
 
 /**
  * This is the base class for features and properties
  *
+ * @LastModified: May 2021
  */
 public abstract class FeaturePropertyBase {
 
@@ -113,9 +114,9 @@ public abstract class FeaturePropertyBase {
         int index = getIndex(propertyName);
         if (index > -1) {
             if (value) {
-                setValue(index, state, XalanConstants.FEATURE_TRUE);
+                setValue(index, state, JdkConstants.FEATURE_TRUE);
             } else {
-                setValue(index, state, XalanConstants.FEATURE_FALSE);
+                setValue(index, state, JdkConstants.FEATURE_FALSE);
             }
             return true;
         }

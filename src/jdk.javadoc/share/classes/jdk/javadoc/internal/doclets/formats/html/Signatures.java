@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.doclet.DocletEnvironment;
@@ -5,27 +30,36 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementKindVisitor14;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static javax.lang.model.element.Modifier.ABSTRACT;
+import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.NATIVE;
+import static javax.lang.model.element.Modifier.PRIVATE;
+import static javax.lang.model.element.Modifier.PROTECTED;
 import static javax.lang.model.element.Modifier.PUBLIC;
+import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.element.Modifier.STRICTFP;
 import static javax.lang.model.element.Modifier.SYNCHRONIZED;
 
@@ -49,6 +83,9 @@ public class Signatures {
     }
 
     public static Content getPackageSignature(PackageElement pkg, PackageWriterImpl pkgWriter) {
+        if (pkg.isUnnamed()) {
+            return Text.EMPTY;
+        }
         Content signature = HtmlTree.DIV(HtmlStyle.packageSignature);
         Content annotations = pkgWriter.getAnnotationInfo(pkg, true);
         if (!annotations.isEmpty()) {
@@ -64,44 +101,46 @@ public class Signatures {
     static class TypeSignature {
 
         private final TypeElement typeElement;
-        private final ClassWriterImpl classWriter;
+        private final HtmlDocletWriter writer;
         private final Utils utils;
         private final HtmlConfiguration configuration;
         private Content modifiers;
 
-        TypeSignature(TypeElement typeElement, ClassWriterImpl classWriter) {
-            this.typeElement = typeElement;
-            this.classWriter = classWriter;
-            this.utils = classWriter.utils;
-            this.configuration = classWriter.configuration;
-        }
+        private static final Set<String> previewModifiers = Collections.emptySet();
+
+         TypeSignature(TypeElement typeElement, HtmlDocletWriter writer) {
+             this.typeElement = typeElement;
+             this.writer = writer;
+             this.utils = writer.utils;
+             this.configuration = writer.configuration;
+             this.modifiers = markPreviewModifiers(getModifiers());
+         }
 
         public TypeSignature setModifiers(Content modifiers) {
             this.modifiers = modifiers;
             return this;
         }
 
-        @SuppressWarnings("preview")
         public Content toContent() {
             Content content = new ContentBuilder();
-            Content annotationInfo = classWriter.getAnnotationInfo(typeElement, true);
+            Content annotationInfo = writer.getAnnotationInfo(typeElement, true);
             if (!annotationInfo.isEmpty()) {
                 content.add(HtmlTree.SPAN(HtmlStyle.annotations, annotationInfo));
             }
             content.add(HtmlTree.SPAN(HtmlStyle.modifiers, modifiers));
 
             HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
-            Content className = new StringContent(utils.getSimpleName(typeElement));
-            if (classWriter.options.linkSource()) {
-                classWriter.addSrcLink(typeElement, className, nameSpan);
+            Content className = Text.of(utils.getSimpleName(typeElement));
+            if (configuration.getOptions().linkSource()) {
+                writer.addSrcLink(typeElement, className, nameSpan);
             } else {
                 nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
             }
-            LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);
+            HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
+                    HtmlLinkInfo.Kind.CLASS_SIGNATURE, typeElement);
             //Let's not link to ourselves in the signature.
             linkInfo.linkToSelf = false;
-            nameSpan.add(classWriter.getTypeParameterLinks(linkInfo));
+            nameSpan.add(writer.getTypeParameterLinks(linkInfo));
             content.add(nameSpan);
 
             if (utils.isRecord(typeElement)) {
@@ -115,8 +154,8 @@ public class Signatures {
                     if (superclass != null) {
                         content.add(DocletConstants.NL);
                         extendsImplements.add("extends ");
-                        Content link = classWriter.getLink(new LinkInfoImpl(configuration,
-                                LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                        Content link = writer.getLink(new HtmlLinkInfo(configuration,
+                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
                                 superclass));
                         extendsImplements.add(link);
                     }
@@ -136,8 +175,8 @@ public class Signatures {
                         } else {
                             extendsImplements.add(", ");
                         }
-                        Content link = classWriter.getLink(new LinkInfoImpl(configuration,
-                                LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                        Content link = writer.getLink(new HtmlLinkInfo(configuration,
+                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
                                 type));
                         extendsImplements.add(link);
                     }
@@ -149,7 +188,7 @@ public class Signatures {
             List<? extends TypeMirror> permits = typeElement.getPermittedSubclasses();
             List<? extends TypeMirror> linkablePermits = permits.stream()
                     .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
-                    .collect(Collectors.toList());
+                    .toList();
             if (!linkablePermits.isEmpty()) {
                 Content permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
                 boolean isFirst = true;
@@ -157,22 +196,18 @@ public class Signatures {
                     if (isFirst) {
                         content.add(DocletConstants.NL);
                         permitsSpan.add("permits");
-                        Content link =
-                                classWriter.links.createLink(classWriter.htmlIds.forPreviewSection(typeElement),
-                                                             classWriter.contents.previewMark);
-                        permitsSpan.add(HtmlTree.SUP(link));
                         permitsSpan.add(" ");
                         isFirst = false;
                     } else {
                         permitsSpan.add(", ");
                     }
-                    Content link = classWriter.getLink(new LinkInfoImpl(configuration,
-                            LinkInfoImpl.Kind.PERMITTED_SUBCLASSES,
+                    Content link = writer.getLink(new HtmlLinkInfo(configuration,
+                            HtmlLinkInfo.Kind.PERMITTED_SUBCLASSES,
                             type));
                     permitsSpan.add(link);
                 }
                 if (linkablePermits.size() < permits.size()) {
-                    Content c = new StringContent(classWriter.resources.getText("doclet.not.exhaustive"));
+                    Content c = Text.of(configuration.getDocResources().getText("doclet.not.exhaustive"));
                     permitsSpan.add(" ");
                     permitsSpan.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
                 }
@@ -181,16 +216,15 @@ public class Signatures {
             return HtmlTree.DIV(HtmlStyle.typeSignature, content);
         }
 
-        @SuppressWarnings("preview")
         private Content getRecordComponents() {
             Content content = new ContentBuilder();
             content.add("(");
             String sep = "";
             for (RecordComponentElement e : typeElement.getRecordComponents()) {
                 content.add(sep);
-                classWriter.getAnnotations(e.getAnnotationMirrors(), false)
+                writer.getAnnotations(e.getAnnotationMirrors(), false)
                         .forEach(a -> { content.add(a).add(" "); });
-                Content link = classWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RECORD_COMPONENT,
+                Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
                         e.asType()));
                 content.add(link);
                 content.add(Entity.NO_BREAK_SPACE);
@@ -199,6 +233,112 @@ public class Signatures {
             }
             content.add(")");
             return content;
+        }
+
+        private Content markPreviewModifiers(List<String> modifiers) {
+             Content content = new ContentBuilder();
+             String sep = null;
+             for (String modifier : modifiers) {
+                 if (sep != null) {
+                    content.add(sep);
+                 }
+                 content.add(modifier);
+                 if (previewModifiers.contains(modifier)) {
+                     content.add(HtmlTree.SUP(writer.links.createLink(
+                             configuration.htmlIds.forPreviewSection(typeElement),
+                             configuration.contents.previewMark)));
+                 }
+                 sep = " ";
+             }
+             content.add(" ");
+             return content;
+        }
+
+        private List<String> getModifiers() {
+            SortedSet<Modifier> modifiers = new TreeSet<>(typeElement.getModifiers());
+            modifiers.remove(NATIVE);
+            modifiers.remove(STRICTFP);
+            modifiers.remove(SYNCHRONIZED);
+
+            return new ElementKindVisitor14<List<String>, SortedSet<Modifier>>() {
+                final List<String> list = new ArrayList<>();
+
+                void addVisibilityModifier(Set<Modifier> modifiers) {
+                    if (modifiers.contains(PUBLIC)) {
+                        list.add("public");
+                    } else if (modifiers.contains(PROTECTED)) {
+                        list.add("protected");
+                    } else if (modifiers.contains(PRIVATE)) {
+                        list.add("private");
+                    }
+                }
+
+                void addStatic(Set<Modifier> modifiers) {
+                    if (modifiers.contains(STATIC)) {
+                        list.add("static");
+                    }
+                }
+
+                void addSealed(TypeElement e) {
+                    if (e.getModifiers().contains(Modifier.SEALED)) {
+                        list.add("sealed");
+                    } else if (e.getModifiers().contains(Modifier.NON_SEALED)) {
+                        list.add("non-sealed");
+                    }
+                }
+
+                void addModifiers(Set<Modifier> modifiers) {
+                    modifiers.stream()
+                            .map(Modifier::toString)
+                            .forEachOrdered(list::add);
+                }
+
+                @Override
+                public List<String> visitTypeAsInterface(TypeElement e, SortedSet<Modifier> mods) {
+                    addVisibilityModifier(mods);
+                    addStatic(mods);
+                    addSealed(e);
+                    list.add("interface");
+                    return list;
+                }
+
+                @Override
+                public List<String> visitTypeAsEnum(TypeElement e, SortedSet<Modifier> mods) {
+                    addVisibilityModifier(mods);
+                    addStatic(mods);
+                    list.add("enum");
+                    return list;
+                }
+
+                @Override
+                public List<String> visitTypeAsAnnotationType(TypeElement e, SortedSet<Modifier> mods) {
+                    addVisibilityModifier(mods);
+                    addStatic(mods);
+                    list.add("@interface");
+                    return list;
+                }
+
+                @Override
+                public List<String> visitTypeAsRecord(TypeElement e, SortedSet<Modifier> mods) {
+                    mods.remove(FINAL); // suppress the implicit `final`
+                    return visitTypeAsClass(e, mods);
+                }
+
+                @Override
+                public List<String> visitTypeAsClass(TypeElement e, SortedSet<Modifier> mods) {
+                    addModifiers(mods);
+                    String keyword = e.getKind() == ElementKind.RECORD ? "record" : "class";
+                    list.add(keyword);
+                    return list;
+                }
+
+                @Override
+                protected List<String> defaultAction(Element e, SortedSet<Modifier> mods) {
+                    addModifiers(mods);
+                    return list;
+                }
+
+            }.visit(typeElement, modifiers);
         }
     }
 
@@ -265,7 +405,7 @@ public class Signatures {
          * @return this instance
          */
         MemberSignature setType(TypeMirror type) {
-            this.returnType = memberWriter.writer.getLink(new LinkInfoImpl(memberWriter.configuration, LinkInfoImpl.Kind.MEMBER, type));
+            this.returnType = memberWriter.writer.getLink(new HtmlLinkInfo(memberWriter.configuration, HtmlLinkInfo.Kind.MEMBER, type));
             return this;
         }
 
@@ -335,7 +475,7 @@ public class Signatures {
             // Name
             HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
             if (memberWriter.options.linkSource()) {
-                Content name = new StringContent(memberWriter.name(element));
+                Content name = Text.of(memberWriter.name(element));
                 memberWriter.writer.addSrcLink(element, name, nameSpan);
             } else {
                 nameSpan.add(memberWriter.name(element));
@@ -378,7 +518,7 @@ public class Signatures {
             }
             if (!set.isEmpty()) {
                 String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, new StringContent(mods)))
+                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, Text.of(mods)))
                         .add(Entity.NO_BREAK_SPACE);
             }
         }
@@ -429,7 +569,7 @@ public class Signatures {
                 // empty parameters are added without packing
                 htmlTree.add(parameters);
             } else {
-                htmlTree.add(Entity.ZERO_WIDTH_SPACE)
+                htmlTree.add(new HtmlTree(TagName.WBR))
                         .add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
             }
 

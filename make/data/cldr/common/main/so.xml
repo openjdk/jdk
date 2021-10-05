@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -198,7 +198,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="rn">Rundhi</language>
 			<language type="ro">Romanka</language>
 			<language type="rof">Rombo</language>
-			<language type="root">Xidid</language>
 			<language type="ru">Ruush</language>
 			<language type="rw">Ruwaandha</language>
 			<language type="rwk">Raawa</language>
@@ -2532,11 +2531,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Boroken Hil</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kuriy</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melboon</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Kuriy</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hubaart</exemplarCity>
@@ -5671,7 +5670,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} karaat</unitPattern>
 				<unitPattern count="other">{0} karaat</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>miligaraam disilitirkiiba</displayName>
 				<unitPattern count="one">{0} miligaraam disilitirkiiba</unitPattern>
 				<unitPattern count="other">{0} miligaraam disilitirkiiba</unitPattern>
@@ -6660,7 +6659,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}dm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µmitir</displayName>
+				<displayName>μmitir</displayName>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>bm</displayName>

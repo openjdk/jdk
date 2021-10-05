@@ -58,7 +58,7 @@ import org.testng.annotations.Test;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.ref
  *          java.management
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -verbose:gc CleanerTest

@@ -39,7 +39,7 @@ import javax.management.ObjectName;
 public class HotspotInternal
     implements HotspotInternalMBean, MBeanRegistration {
 
-    private final static String HOTSPOT_INTERNAL_MBEAN_NAME =
+    private static final String HOTSPOT_INTERNAL_MBEAN_NAME =
         "sun.management:type=HotspotInternal";
     private static ObjectName objName = Util.newObjectName(HOTSPOT_INTERNAL_MBEAN_NAME);
     private MBeanServer server = null;

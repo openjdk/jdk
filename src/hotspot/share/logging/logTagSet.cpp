@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,31 +73,42 @@ bool LogTagSet::has_output(const LogOutput* output) {
 }
 
 void LogTagSet::log(LogLevelType level, const char* msg) {
+  // Increasing the atomic reader counter in iterator(level) must
+  // happen before the creation of LogDecorations instance so
+  // wait_until_no_readers() in LogConfiguration::configure_output()
+  // synchronizes _decorations as well. The order is guaranteed by
+  // the implied memory order of Atomic::add().
+  LogOutputList::Iterator it = _output_list.iterator(level);
   LogDecorations decorations(level, *this, _decorators);
-  for (LogOutputList::Iterator it = _output_list.iterator(level); it != _output_list.end(); it++) {
+
+  for (; it != _output_list.end(); it++) {
     (*it)->write(decorations, msg);
   }
 }
 
 void LogTagSet::log(const LogMessageBuffer& msg) {
+  LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level());
   LogDecorations decorations(LogLevel::Invalid, *this, _decorators);
-  for (LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level()); it != _output_list.end(); it++) {
+
+  for (; it != _output_list.end(); it++) {
     (*it)->write(msg.iterator(it.level(), decorations));
   }
 }
 
-int LogTagSet::label(char* buf, size_t len, const char* separator) const {
-  int tot_written = 0;
+void LogTagSet::label(outputStream* st, const char* separator) const {
   for (size_t i = 0; i < _ntags; i++) {
-    int written = jio_snprintf(buf + tot_written, len - tot_written, "%s%s",
-                               (i == 0 ? "" : separator),
-                               LogTag::name(_tag[i]));
-    if (written < 0) {
-      return -1;
-    }
-    tot_written += written;
+    st->print("%s%s", (i == 0 ? "" : separator), LogTag::name(_tag[i]));
   }
-  return tot_written;
+}
+
+int LogTagSet::label(char* buf, size_t len, const char* separator) const {
+  stringStream ss(buf, len);
+  label(&ss, separator);
+  size_t written = ss.size();
+  if (written >= len - 1) {
+    return -1; // truncation
+  }
+  return (int)written;
 }
 
 void LogTagSet::write(LogLevelType level, const char* fmt, ...) {
@@ -172,9 +183,9 @@ static const size_t TagSetBufferSize = 128;
 void LogTagSet::describe_tagsets(outputStream* out) {
   out->print_cr("Described tag sets:");
   for (const LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
-    char buf[TagSetBufferSize];
-    d->tagset->label(buf, sizeof(buf), "+");
-    out->print_cr(" %s: %s", buf, d->descr);
+    out->sp();
+    d->tagset->label(out, "+");
+    out->print_cr(": %s", d->descr);
   }
 }
 
@@ -206,4 +217,3 @@ void LogTagSet::list_all_tagsets(outputStream* out) {
   out->cr();
   FREE_C_HEAP_ARRAY(char*, tagset_labels);
 }
-

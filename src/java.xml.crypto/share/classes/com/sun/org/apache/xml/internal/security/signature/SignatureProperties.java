@@ -64,10 +64,9 @@ public class SignatureProperties extends SignatureElementProxy {
             element.setIdAttributeNode(attr, true);
         }
 
-        int length = getLength();
-        for (int i = 0; i < length; i++) {
-            Element propertyElem =
-                XMLUtils.selectDsNode(getElement(), Constants._TAG_SIGNATUREPROPERTY, i);
+        Element[] propertyElems =
+                XMLUtils.selectDsNodes(getFirstChild(), Constants._TAG_SIGNATUREPROPERTY);
+        for (Element propertyElem : propertyElems) {
             Attr propertyAttr = propertyElem.getAttributeNodeNS(null, "Id");
             if (propertyAttr != null) {
                 propertyElem.setIdAttributeNode(propertyAttr, true);
@@ -82,7 +81,7 @@ public class SignatureProperties extends SignatureElementProxy {
      */
     public int getLength() {
         Element[] propertyElems =
-            XMLUtils.selectDsNodes(getElement(), Constants._TAG_SIGNATUREPROPERTY);
+            XMLUtils.selectDsNodes(getFirstChild(), Constants._TAG_SIGNATUREPROPERTY);
 
         return propertyElems.length;
     }
@@ -98,7 +97,7 @@ public class SignatureProperties extends SignatureElementProxy {
     public SignatureProperty item(int i) throws XMLSignatureException {
         try {
             Element propertyElem =
-                XMLUtils.selectDsNode(getElement(), Constants._TAG_SIGNATUREPROPERTY, i);
+                XMLUtils.selectDsNode(getFirstChild(), Constants._TAG_SIGNATUREPROPERTY, i);
 
             if (propertyElem == null) {
                 return null;

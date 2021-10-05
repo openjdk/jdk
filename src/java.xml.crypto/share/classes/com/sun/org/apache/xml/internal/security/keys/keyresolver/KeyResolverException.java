@@ -58,7 +58,7 @@ public class KeyResolverException extends XMLSecurityException {
      * @param msgID
      * @param exArgs
      */
-    public KeyResolverException(String msgID, Object exArgs[]) {
+    public KeyResolverException(String msgID, Object[] exArgs) {
         super(msgID, exArgs);
     }
 
@@ -84,7 +84,7 @@ public class KeyResolverException extends XMLSecurityException {
      * @param msgID
      * @param exArgs
      */
-    public KeyResolverException(Exception originalException, String msgID, Object exArgs[]) {
+    public KeyResolverException(Exception originalException, String msgID, Object[] exArgs) {
         super(originalException, msgID, exArgs);
     }
 

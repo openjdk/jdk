@@ -21,10 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMURIDereferencer.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -35,6 +32,7 @@ import org.w3c.dom.Node;
 import com.sun.org.apache.xml.internal.security.Init;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver;
+import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 
 import javax.xml.crypto.*;
@@ -121,9 +119,8 @@ public final class DOMURIDereferencer implements URIDereferencer {
         }
 
         try {
-            ResourceResolver apacheResolver =
-                ResourceResolver.getInstance(uriAttr, baseURI, false);
-            XMLSignatureInput in = apacheResolver.resolve(uriAttr, baseURI, false);
+            ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, false);
+            XMLSignatureInput in = ResourceResolver.resolve(resContext);
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);
             } else {

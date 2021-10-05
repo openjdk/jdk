@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
     ResourceMark mark;
     log_trace(nmethod, barrier)("deoptimize(nmethod: %p, return_addr: %p, osr: %d, thread: %p(%s), making rsp: %p) -> %p",
                                nm, (address *) return_address_ptr, nm->is_osr_method(), jth,
-                               jth->get_thread_name(), callers_rsp, nm->verified_entry_point());
+                               jth->name(), callers_rsp, nm->verified_entry_point());
   }
 
   assert(nm->frame_size() >= 3, "invariant");

@@ -26,12 +26,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
- * Reflection interface for reflecting on the internals of HotSpot JVMCI types and objects.
+ * API for reflecting on the internals of HotSpot JVMCI types and objects.
  */
 abstract class HotSpotJVMCIReflection {
 
@@ -51,13 +50,7 @@ abstract class HotSpotJVMCIReflection {
 
     abstract HotSpotResolvedObjectType getEnclosingClass(HotSpotResolvedObjectTypeImpl holder);
 
-    abstract JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl holder, HotSpotResolvedJavaField field, boolean isVolatile);
-
-    abstract JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedJavaField field, boolean isVolatile);
-
     abstract boolean equals(HotSpotObjectConstantImpl hotSpotResolvedJavaType, HotSpotObjectConstantImpl that);
-
-    abstract JavaConstant getJavaMirror(HotSpotResolvedPrimitiveType hotSpotResolvedJavaType);
 
     abstract ResolvedJavaMethod.Parameter[] getParameters(HotSpotResolvedJavaMethodImpl javaMethod);
 
@@ -99,16 +92,6 @@ abstract class HotSpotJVMCIReflection {
     abstract JavaConstant forObject(Object value);
 
     abstract JavaConstant boxPrimitive(JavaConstant source);
-
-    abstract int getInt(HotSpotObjectConstantImpl object, long displacement);
-
-    abstract byte getByte(HotSpotObjectConstantImpl object, long displacement);
-
-    abstract short getShort(HotSpotObjectConstantImpl object, long displacement);
-
-    abstract long getLong(HotSpotObjectConstantImpl object, long displacement);
-
-    abstract void checkRead(HotSpotObjectConstantImpl constant, JavaKind kind, long displacement, HotSpotResolvedObjectType type);
 
     abstract <T extends Annotation> T getFieldAnnotation(HotSpotResolvedJavaFieldImpl javaField, Class<T> annotationClass);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
 
             } else {
                 // use the default JAAS login configuration (file-based)
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     sm.checkPermission(
@@ -116,7 +117,8 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
                 final String pf = passwordFile;
                 final String hashPass = hashPasswords;
                 try {
-                    loginContext = AccessController.doPrivileged(
+                    @SuppressWarnings("removal")
+                    var tmp = AccessController.doPrivileged(
                         new PrivilegedExceptionAction<LoginContext>() {
                             public LoginContext run() throws LoginException {
                                 return new LoginContext(
@@ -126,6 +128,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
                                                 new FileLoginConfig(pf, hashPass));
                             }
                         });
+                    loginContext = tmp;
                 } catch (PrivilegedActionException pae) {
                     throw (LoginException) pae.getException();
                 }
@@ -191,7 +194,8 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
         try {
             loginContext.login();
             final Subject subject = loginContext.getSubject();
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @SuppressWarnings("removal")
+            var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
                     public Void run() {
                         subject.setReadOnly();
                         return null;

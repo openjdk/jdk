@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,6 @@ public class request001 extends JDIBase {
 
             log2("......setting up ThreadStartRequest");
             ThreadStartRequest tsr = eventRManager.createThreadStartRequest();
-            tsr.addCountFilter(1);
             tsr.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr.putProperty("number", "ThreadStartRequest");
             tsr.enable();
@@ -344,7 +343,6 @@ public class request001 extends JDIBase {
 
             log2("......setting up ThreadDeathRequest");
             ThreadDeathRequest tdr = eventRManager.createThreadDeathRequest();
-            tdr.addCountFilter(1);
             tdr.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr.putProperty("number", "ThreadDeathRequest");
             tdr.enable();
@@ -355,7 +353,7 @@ public class request001 extends JDIBase {
             vm.resume();
 
             log2("......waiting for ThreadStartEvent");
-            getEventSet();
+            getEventSetForThreadStartDeath("thread2");
             eventSets[10] = eventSet;
 
             Event receivedEvent = eventIterator.nextEvent();
@@ -370,7 +368,7 @@ public class request001 extends JDIBase {
             vm.resume();
 
             log2("......waiting for ThreadDeathEvent");
-            getEventSet();
+            getEventSetForThreadStartDeath("thread2");
             eventSets[9] = eventSet;
             receivedEvent = eventIterator.nextEvent();
             if ( !(receivedEvent instanceof ThreadDeathEvent) ) {

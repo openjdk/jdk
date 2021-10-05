@@ -333,7 +333,7 @@ public abstract class Signature extends SignatureSpi {
                 // so it is a "real" Spi if it is an
                 // instance of SignatureSpi but not Signature
                 boolean r = (instance instanceof SignatureSpi)
-                                && (instance instanceof Signature == false);
+                                && (!(instance instanceof Signature));
                 if ((debug != null) && (r == false)) {
                     debug.println("Not a SignatureSpi " + className);
                     debug.println("Delayed provider selection may not be "
@@ -541,16 +541,15 @@ public abstract class Signature extends SignatureSpi {
         // we should check whether it has a Key Usage
         // extension marked as critical.
         //if (cert instanceof java.security.cert.X509Certificate) {
-        if (cert instanceof X509Certificate) {
+        if (cert instanceof X509Certificate xcert) {
             // Check whether the cert has a key usage extension
             // marked as a critical extension.
             // The OID for KeyUsage extension is 2.5.29.15.
-            X509Certificate c = (X509Certificate)cert;
-            Set<String> critSet = c.getCriticalExtensionOIDs();
+            Set<String> critSet = xcert.getCriticalExtensionOIDs();
 
             if (critSet != null && !critSet.isEmpty()
                 && critSet.contains(KnownOIDs.KeyUsage.value())) {
-                boolean[] keyUsageInfo = c.getKeyUsage();
+                boolean[] keyUsageInfo = xcert.getKeyUsage();
                 // keyUsageInfo[0] is for digitalSignature.
                 if ((keyUsageInfo != null) && (keyUsageInfo[0] == false))
                     throw new InvalidKeyException("Wrong key usage");
@@ -948,18 +947,12 @@ public abstract class Signature extends SignatureSpi {
      * @return a string representation of this signature object.
      */
     public String toString() {
-        String initState = "";
-        switch (state) {
-        case UNINITIALIZED:
-            initState = "<not initialized>";
-            break;
-        case VERIFY:
-            initState = "<initialized for verifying>";
-            break;
-        case SIGN:
-            initState = "<initialized for signing>";
-            break;
-        }
+        String initState = switch (state) {
+            case UNINITIALIZED -> "<not initialized>";
+            case VERIFY        -> "<initialized for verifying>";
+            case SIGN          -> "<initialized for signing>";
+            default -> "";
+        };
         return "Signature object: " + getAlgorithm() + initState;
     }
 
@@ -1178,7 +1171,7 @@ public abstract class Signature extends SignatureSpi {
                 }
             } else {
                 Object o = s.newInstance(null);
-                if (o instanceof SignatureSpi == false) {
+                if (!(o instanceof SignatureSpi)) {
                     throw new NoSuchAlgorithmException
                         ("Not a SignatureSpi: " + o.getClass().getName());
                 }
@@ -1318,26 +1311,13 @@ public abstract class Signature extends SignatureSpi {
                 AlgorithmParameterSpec params, SecureRandom random)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             switch (type) {
-            case I_PUB:
-                spi.engineInitVerify((PublicKey)key);
-                break;
-            case I_PUB_PARAM:
-                spi.engineInitVerify((PublicKey)key, params);
-                break;
-            case I_PRIV:
-                spi.engineInitSign((PrivateKey)key);
-                break;
-            case I_PRIV_SR:
-                spi.engineInitSign((PrivateKey)key, random);
-                break;
-            case I_PRIV_PARAM_SR:
-                spi.engineInitSign((PrivateKey)key, params, random);
-                break;
-            case S_PARAM:
-                spi.engineSetParameter(params);
-                break;
-            default:
-                throw new AssertionError("Internal error: " + type);
+                case I_PUB           -> spi.engineInitVerify((PublicKey) key);
+                case I_PUB_PARAM     -> spi.engineInitVerify((PublicKey) key, params);
+                case I_PRIV          -> spi.engineInitSign((PrivateKey) key);
+                case I_PRIV_SR       -> spi.engineInitSign((PrivateKey) key, random);
+                case I_PRIV_PARAM_SR -> spi.engineInitSign((PrivateKey) key, params, random);
+                case S_PARAM         -> spi.engineSetParameter(params);
+                default -> throw new AssertionError("Internal error: " + type);
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,11 @@ Matcher::Matcher()
   _end_inst_chain_rule(_END_INST_CHAIN_RULE),
   _must_clone(must_clone),
   _shared_nodes(C->comp_arena()),
-#ifdef ASSERT
+#ifndef PRODUCT
   _old2new_map(C->comp_arena()),
   _new2old_map(C->comp_arena()),
-#endif
+  _reused(C->comp_arena()),
+#endif // !PRODUCT
   _allocation_started(false),
   _ruleName(ruleName),
   _register_save_policy(register_save_policy),
@@ -95,6 +96,7 @@ Matcher::Matcher()
   idealreg2spillmask  [Op_VecY] = NULL;
   idealreg2spillmask  [Op_VecZ] = NULL;
   idealreg2spillmask  [Op_RegFlags] = NULL;
+  idealreg2spillmask  [Op_RegVectMask] = NULL;
 
   idealreg2debugmask  [Op_RegI] = NULL;
   idealreg2debugmask  [Op_RegN] = NULL;
@@ -109,6 +111,7 @@ Matcher::Matcher()
   idealreg2debugmask  [Op_VecY] = NULL;
   idealreg2debugmask  [Op_VecZ] = NULL;
   idealreg2debugmask  [Op_RegFlags] = NULL;
+  idealreg2debugmask  [Op_RegVectMask] = NULL;
 
   idealreg2mhdebugmask[Op_RegI] = NULL;
   idealreg2mhdebugmask[Op_RegN] = NULL;
@@ -123,6 +126,7 @@ Matcher::Matcher()
   idealreg2mhdebugmask[Op_VecY] = NULL;
   idealreg2mhdebugmask[Op_VecZ] = NULL;
   idealreg2mhdebugmask[Op_RegFlags] = NULL;
+  idealreg2mhdebugmask[Op_RegVectMask] = NULL;
 
   debug_only(_mem_node = NULL;)   // Ideal memory node consumed by mach node
 }
@@ -430,7 +434,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
-#define NOF_STACK_MASKS (3*12)
+#define NOF_STACK_MASKS (3*13)
 
 // Create the initial stack mask used by values spilling to the stack.
 // Disallow any debug info in outgoing argument areas by setting the
@@ -438,7 +442,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
 void Matcher::init_first_stack_mask() {
 
   // Allocate storage for spill masks as masks for the appropriate load type.
-  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_D(sizeof(RegMask) * NOF_STACK_MASKS);
+  RegMask *rms = (RegMask*)C->comp_arena()->AmallocWords(sizeof(RegMask) * NOF_STACK_MASKS);
 
   // Initialize empty placeholder masks into the newly allocated arena
   for (int i = 0; i < NOF_STACK_MASKS; i++) {
@@ -487,6 +491,10 @@ void Matcher::init_first_stack_mask() {
   idealreg2mhdebugmask[Op_VecY] = &rms[34];
   idealreg2mhdebugmask[Op_VecZ] = &rms[35];
 
+  idealreg2spillmask  [Op_RegVectMask] = &rms[36];
+  idealreg2debugmask  [Op_RegVectMask] = &rms[37];
+  idealreg2mhdebugmask[Op_RegVectMask] = &rms[38];
+
   OptoReg::Name i;
 
   // At first, start with the empty mask
@@ -530,6 +538,11 @@ void Matcher::init_first_stack_mask() {
    idealreg2spillmask[Op_RegF]->OR(C->FIRST_STACK_mask());
   *idealreg2spillmask[Op_RegD] = *idealreg2regmask[Op_RegD];
    idealreg2spillmask[Op_RegD]->OR(aligned_stack_mask);
+
+  if (Matcher::has_predicated_vectors()) {
+    *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
+     idealreg2spillmask[Op_RegVectMask]->OR(aligned_stack_mask);
+  }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     *idealreg2spillmask[Op_VecS] = *idealreg2regmask[Op_VecS];
@@ -649,6 +662,7 @@ void Matcher::init_first_stack_mask() {
   *idealreg2debugmask  [Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2debugmask  [Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2debugmask  [Op_RegP] = *idealreg2spillmask[Op_RegP];
+  *idealreg2debugmask  [Op_RegVectMask] = *idealreg2spillmask[Op_RegVectMask];
 
   *idealreg2debugmask  [Op_VecA] = *idealreg2spillmask[Op_VecA];
   *idealreg2debugmask  [Op_VecS] = *idealreg2spillmask[Op_VecS];
@@ -663,6 +677,7 @@ void Matcher::init_first_stack_mask() {
   *idealreg2mhdebugmask[Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2mhdebugmask[Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2mhdebugmask[Op_RegP] = *idealreg2spillmask[Op_RegP];
+  *idealreg2mhdebugmask[Op_RegVectMask] = *idealreg2spillmask[Op_RegVectMask];
 
   *idealreg2mhdebugmask[Op_VecA] = *idealreg2spillmask[Op_VecA];
   *idealreg2mhdebugmask[Op_VecS] = *idealreg2spillmask[Op_VecS];
@@ -683,6 +698,7 @@ void Matcher::init_first_stack_mask() {
   idealreg2debugmask[Op_RegF]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegD]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegP]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_RegVectMask]->SUBTRACT(*caller_save_mask);
 
   idealreg2debugmask[Op_VecA]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_VecS]->SUBTRACT(*caller_save_mask);
@@ -697,6 +713,7 @@ void Matcher::init_first_stack_mask() {
   idealreg2mhdebugmask[Op_RegF]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegD]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegP]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_RegVectMask]->SUBTRACT(*mh_caller_save_mask);
 
   idealreg2mhdebugmask[Op_VecA]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_VecS]->SUBTRACT(*mh_caller_save_mask);
@@ -707,12 +724,10 @@ void Matcher::init_first_stack_mask() {
 }
 
 //---------------------------is_save_on_entry----------------------------------
-bool Matcher::is_save_on_entry( int reg ) {
+bool Matcher::is_save_on_entry(int reg) {
   return
     _register_save_policy[reg] == 'E' ||
-    _register_save_policy[reg] == 'A' || // Save-on-entry register?
-    // Also save argument registers in the trampolining stubs
-    (C->save_argument_registers() && is_spillable_arg(reg));
+    _register_save_policy[reg] == 'A'; // Save-on-entry register?
 }
 
 //---------------------------Fixup_Save_On_Entry-------------------------------
@@ -727,12 +742,6 @@ void Matcher::Fixup_Save_On_Entry( ) {
   // Find the procedure Start Node
   StartNode *start = C->start();
   assert( start, "Expect a start node" );
-
-  // Save argument registers in the trampolining stubs
-  if( C->save_argument_registers() )
-    for( i = 0; i < _last_Mach_Reg; i++ )
-      if( is_spillable_arg(i) )
-        soe_cnt++;
 
   // Input RegMask array shared by all Returns.
   // The type for doubles and longs has a count of 2, but
@@ -965,6 +974,7 @@ void Matcher::init_spill_mask( Node *ret ) {
   idealreg2regmask[Op_VecX] = regmask_for_ideal_register(Op_VecX, ret);
   idealreg2regmask[Op_VecY] = regmask_for_ideal_register(Op_VecY, ret);
   idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
+  idealreg2regmask[Op_RegVectMask] = regmask_for_ideal_register(Op_RegVectMask, ret);
 }
 
 #ifdef ASSERT
@@ -1081,16 +1091,12 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             if (n->is_Proj() && n->in(0) != NULL && n->in(0)->is_Multi()) {       // Projections?
               // Convert to machine-dependent projection
               m = n->in(0)->as_Multi()->match( n->as_Proj(), this );
-#ifdef ASSERT
-              _new2old_map.map(m->_idx, n);
-#endif
+              NOT_PRODUCT(record_new2old(m, n);)
               if (m->in(0) != NULL) // m might be top
                 collect_null_checks(m, n);
             } else {                // Else just a regular 'ol guy
               m = n->clone();       // So just clone into new-space
-#ifdef ASSERT
-              _new2old_map.map(m->_idx, n);
-#endif
+              NOT_PRODUCT(record_new2old(m, n);)
               // Def-Use edges will be added incrementally as Uses
               // of this node are matched.
               assert(m->outcnt() == 0, "no Uses of this clone yet");
@@ -1148,9 +1154,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             // || op == Op_BoxLock  // %%%% enable this and remove (+++) in chaitin.cpp
             ) {
           m = m->clone();
-#ifdef ASSERT
-          _new2old_map.map(m->_idx, n);
-#endif
+          NOT_PRODUCT(record_new2old(m, n));
           mstack.push(m, Post_Visit, n, i); // Don't need to visit
           mstack.push(m->in(0), Visit, m, 0);
         } else {
@@ -1361,16 +1365,27 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     for( i = 0; i < argcnt; i++ ) {
       // Address of incoming argument mask to fill in
       RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms];
-      if( !parm_regs[i].first()->is_valid() &&
-          !parm_regs[i].second()->is_valid() ) {
+      VMReg first = parm_regs[i].first();
+      VMReg second = parm_regs[i].second();
+      if(!first->is_valid() &&
+         !second->is_valid()) {
         continue;               // Avoid Halves
       }
+      // Handle case where arguments are in vector registers.
+      if(call->in(TypeFunc::Parms + i)->bottom_type()->isa_vect()) {
+        OptoReg::Name reg_fst = OptoReg::as_OptoReg(first);
+        OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
+        assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
+        for (OptoReg::Name r = reg_fst; r <= reg_snd; r++) {
+          rm->Insert(r);
+        }
+      }
       // Grab first register, adjust stack slots and insert in mask.
-      OptoReg::Name reg1 = warp_outgoing_stk_arg(parm_regs[i].first(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
       // Grab second register (if any), adjust stack slots and insert in mask.
-      OptoReg::Name reg2 = warp_outgoing_stk_arg(parm_regs[i].second(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
@@ -1482,10 +1497,8 @@ MachNode *Matcher::match_tree( const Node *n ) {
   }
   // Reduce input tree based upon the state labels to machine Nodes
   MachNode *m = ReduceInst(s, s->rule(mincost), mem);
-#ifdef ASSERT
-  _old2new_map.map(n->_idx, m);
-  _new2old_map.map(m->_idx, (Node*)n);
-#endif
+  // New-to-old mapping is done in ReduceInst, to cover complex instructions.
+  NOT_PRODUCT(_old2new_map.map(n->_idx, m);)
 
   // Add any Matcher-ignored edges
   uint cnt = n->req();
@@ -1742,6 +1755,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   mach->_opnds[0] = s->MachOperGenerator(_reduceOp[rule]);
   assert( mach->_opnds[0] != NULL, "Missing result operand" );
   Node *leaf = s->_leaf;
+  NOT_PRODUCT(record_new2old(mach, leaf);)
   // Check for instruction or instruction chain rule
   if( rule >= _END_INST_CHAIN_RULE || rule < _BEGIN_INST_CHAIN_RULE ) {
     assert(C->node_arena()->contains(s->_leaf) || !has_new_node(s->_leaf),
@@ -1810,9 +1824,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     for( uint i=0; i<mach->req(); i++ ) {
       mach->set_req(i,NULL);
     }
-#ifdef ASSERT
-    _new2old_map.map(ex->_idx, s->_leaf);
-#endif
+    NOT_PRODUCT(record_new2old(ex, s->_leaf);)
   }
 
   // PhaseChaitin::fixup_spills will sometimes generate spill code
@@ -2016,7 +2028,7 @@ OptoReg::Name Matcher::find_receiver() {
   return OptoReg::as_OptoReg(regs.first());
 }
 
-bool Matcher::is_vshift_con_pattern(Node *n, Node *m) {
+bool Matcher::is_vshift_con_pattern(Node* n, Node* m) {
   if (n != NULL && m != NULL) {
     return VectorNode::is_vector_shift(n) &&
            VectorNode::is_vector_shift_count(m) && m->in(1)->is_Con();
@@ -2215,6 +2227,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVF:
     case Op_MacroLogicV:
     case Op_LoadVectorMasked:
+    case Op_VectorCmpMasked:
       set_shared(n); // Force result into register (it will be anyways)
       break;
     case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2305,6 +2318,12 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);
+      n->del_req(3);
+      break;
+    }
+    case Op_VectorCmpMasked: {
+      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair1);
       n->del_req(3);
       break;
     }
@@ -2410,12 +2429,22 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
   }
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
+void Matcher::record_new2old(Node* newn, Node* old) {
+  _new2old_map.map(newn->_idx, old);
+  if (!_reused.test_set(old->_igv_idx)) {
+    // Reuse the Ideal-level IGV identifier so that the node can be tracked
+    // across matching. If there are multiple machine nodes expanded from the
+    // same Ideal node, only one will reuse its IGV identifier.
+    newn->_igv_idx = old->_igv_idx;
+  }
+}
+
 // machine-independent root to machine-dependent root
 void Matcher::dump_old2new_map() {
   _old2new_map.dump();
 }
-#endif
+#endif // !PRODUCT
 
 //---------------------------collect_null_checks-------------------------------
 // Find null checks in the ideal graph; write a machine-specific node for
@@ -2559,6 +2588,7 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     case Op_VecX: // fall-through
     case Op_VecY: // fall-through
     case Op_VecZ: spill = new LoadVectorNode(NULL, mem, fp, atp, t->is_vect()); break;
+    case Op_RegVectMask: return Matcher::predicate_reg_mask();
 
     default: ShouldNotReachHere();
   }
@@ -2608,7 +2638,7 @@ MachOper* Matcher::specialize_vector_operand(MachNode* m, uint opnd_idx) {
     if (def->is_Mach()) {
       if (def->is_MachTemp() && Matcher::is_generic_vector(def->as_Mach()->_opnds[0])) {
         specialize_temp_node(def->as_MachTemp(), m, base_idx); // MachTemp node use site
-      } else if (is_generic_reg2reg_move(def->as_Mach())) {
+      } else if (is_reg2reg_move(def->as_Mach())) {
         def = def->in(1); // skip over generic reg-to-reg moves
       }
     }
@@ -2634,9 +2664,6 @@ void Matcher::specialize_generic_vector_operands() {
   assert(supports_generic_vector_operands, "sanity");
   ResourceMark rm;
 
-  if (C->max_vector_size() == 0) {
-    return; // no vector instructions or operands
-  }
   // Replace generic vector operands (vec/legVec) with concrete ones (vec[SDXYZ]/legVec[SDXYZ])
   // and remove reg-to-reg vector moves (MoveVec2Leg and MoveLeg2Vec).
   Unique_Node_List live_nodes;
@@ -2645,7 +2672,7 @@ void Matcher::specialize_generic_vector_operands() {
   while (live_nodes.size() > 0) {
     MachNode* m = live_nodes.pop()->isa_Mach();
     if (m != NULL) {
-      if (Matcher::is_generic_reg2reg_move(m)) {
+      if (Matcher::is_reg2reg_move(m)) {
         // Register allocator properly handles vec <=> leg moves using register masks.
         int opnd_idx = m->operand_index(1);
         Node* def = m->in(opnd_idx);
@@ -2659,6 +2686,39 @@ void Matcher::specialize_generic_vector_operands() {
   }
 }
 
+uint Matcher::vector_length(const Node* n) {
+  const TypeVect* vt = n->bottom_type()->is_vect();
+  return vt->length();
+}
+
+uint Matcher::vector_length(const MachNode* use, const MachOper* opnd) {
+  int def_idx = use->operand_index(opnd);
+  Node* def = use->in(def_idx);
+  return def->bottom_type()->is_vect()->length();
+}
+
+uint Matcher::vector_length_in_bytes(const Node* n) {
+  const TypeVect* vt = n->bottom_type()->is_vect();
+  return vt->length_in_bytes();
+}
+
+uint Matcher::vector_length_in_bytes(const MachNode* use, const MachOper* opnd) {
+  uint def_idx = use->operand_index(opnd);
+  Node* def = use->in(def_idx);
+  return def->bottom_type()->is_vect()->length_in_bytes();
+}
+
+BasicType Matcher::vector_element_basic_type(const Node* n) {
+  const TypeVect* vt = n->bottom_type()->is_vect();
+  return vt->element_basic_type();
+}
+
+BasicType Matcher::vector_element_basic_type(const MachNode* use, const MachOper* opnd) {
+  int def_idx = use->operand_index(opnd);
+  Node* def = use->in(def_idx);
+  return def->bottom_type()->is_vect()->element_basic_type();
+}
+
 #ifdef ASSERT
 bool Matcher::verify_after_postselect_cleanup() {
   assert(!C->failing(), "sanity");
@@ -2668,7 +2728,7 @@ bool Matcher::verify_after_postselect_cleanup() {
     for (uint i = 0; i < useful.size(); i++) {
       MachNode* m = useful.at(i)->isa_Mach();
       if (m != NULL) {
-        assert(!Matcher::is_generic_reg2reg_move(m), "no MoveVec nodes allowed");
+        assert(!Matcher::is_reg2reg_move(m), "no MoveVec nodes allowed");
         for (uint j = 0; j < m->num_opnds(); j++) {
           assert(!Matcher::is_generic_vector(m->_opnds[j]), "no generic vector operands allowed");
         }
@@ -2737,9 +2797,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     }
 
     // Op_FastLock previously appeared in the Op_* list above.
-    // With biased locking we're no longer guaranteed that a monitor
-    // enter operation contains a serializing instruction.
-    if ((xop == Op_FastLock) && !UseBiasedLocking) {
+    if (xop == Op_FastLock) {
       return true;
     }
 

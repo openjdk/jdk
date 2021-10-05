@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 // Entry point for "JFR Recorder Thread" message loop.
 // The recorder thread executes service requests collected from the message system.
 //
-void recorderthread_entry(JavaThread* thread, Thread* unused) {
+void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
   assert(thread != NULL, "invariant");
   #define START (msgs & (MSGBIT(MSG_START)))
   #define SHUTDOWN (msgs & MSGBIT(MSG_SHUTDOWN))

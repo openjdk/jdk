@@ -28,9 +28,6 @@
 #include "hb.h"
 #include "hb-jdk.h"
 #include "hb-ot.h"
-#ifdef MACOSX
-#include "hb-coretext.h"
-#endif
 #include "scriptMapping.h"
 
 static jclass gvdClass = 0;
@@ -201,9 +198,7 @@ JDKFontInfo*
                        jobject font2D,
                        jobject fontStrike,
                        jfloat ptSize,
-                       jlong pNativeFont,
-                       jfloatArray matrix,
-                       jboolean aat) {
+                       jfloatArray matrix) {
 
 
     JDKFontInfo *fi = (JDKFontInfo*)malloc(sizeof(JDKFontInfo));
@@ -213,13 +208,11 @@ JDKFontInfo*
     fi->env = env; // this is valid only for the life of this JNI call.
     fi->font2D = font2D;
     fi->fontStrike = fontStrike;
-    fi->nativeFont = pNativeFont;
-    fi->aat = aat;
     (*env)->GetFloatArrayRegion(env, matrix, 0, 4, fi->matrix);
     fi->ptSize = ptSize;
     fi->xPtSize = euclidianDistance(fi->matrix[0], fi->matrix[1]);
     fi->yPtSize = euclidianDistance(fi->matrix[2], fi->matrix[3]);
-    if (!aat && (getenv("HB_NODEVTX") != NULL)) {
+    if (getenv("HB_NODEVTX") != NULL) {
         fi->devScale = fi->xPtSize / fi->ptSize;
     } else {
         fi->devScale = 1.0f;
@@ -238,9 +231,7 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      jobject fontStrike,
      jfloat ptSize,
      jfloatArray matrix,
-     jlong pNativeFont,
      jlong pFace,
-     jboolean aat,
      jcharArray text,
      jobject gvdata,
      jint script,
@@ -268,8 +259,7 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      unsigned int buflen;
 
      JDKFontInfo *jdkFontInfo =
-         createJDKFontInfo(env, font2D, fontStrike, ptSize,
-                           pNativeFont, matrix, aat);
+         createJDKFontInfo(env, font2D, fontStrike, ptSize, matrix);
      if (!jdkFontInfo) {
         return JNI_FALSE;
      }

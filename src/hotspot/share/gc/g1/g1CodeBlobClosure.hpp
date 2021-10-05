@@ -71,10 +71,6 @@ class G1CodeBlobClosure : public CodeBlobClosure {
   MarkingOopClosure _marking_oc;
 
   bool _strong;
-
-  void do_code_blob_weak(CodeBlob* cb);
-  void do_code_blob_strong(CodeBlob* cb);
-
 public:
   G1CodeBlobClosure(uint worker_id, OopClosure* oc, bool strong) :
     _oc(oc), _marking_oc(worker_id), _strong(strong) { }

@@ -41,7 +41,8 @@ import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.InvalidAlgorithmParameterException;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -272,7 +273,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
      */
 
     /** This array maps the characters to their 6 bit values */
-    private final static char[] pem_array = {
+    private static final char[] pem_array = {
         //       0   1   2   3   4   5   6   7
                 'A','B','C','D','E','F','G','H', // 0
                 'I','J','K','L','M','N','O','P', // 1
@@ -807,9 +808,9 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
      */
     class DigestIntegrity implements SecurityCtx {
         /* Used for generating integrity keys - specified in RFC 2831*/
-        static final private String CLIENT_INT_MAGIC = "Digest session key to " +
+        private static final String CLIENT_INT_MAGIC = "Digest session key to " +
             "client-to-server signing key magic constant";
-        static final private String SVR_INT_MAGIC = "Digest session key to " +
+        private static final String SVR_INT_MAGIC = "Digest session key to " +
             "server-to-client signing key magic constant";
 
         /* Key pairs for integrity checking */
@@ -1086,9 +1087,9 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
      */
     final class DigestPrivacy extends DigestIntegrity implements SecurityCtx {
         /* Used for generating privacy keys - specified in RFC 2831 */
-        static final private String CLIENT_CONF_MAGIC =
+        private static final String CLIENT_CONF_MAGIC =
             "Digest H(A1) to client-to-server sealing key magic constant";
-        static final private String SVR_CONF_MAGIC =
+        private static final String SVR_CONF_MAGIC =
             "Digest H(A1) to server-to-client sealing key magic constant";
 
         private Cipher encCipher;

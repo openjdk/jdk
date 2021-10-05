@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,9 +366,6 @@ void LIRGenerator::set_card(LIR_Opr value, LIR_Address* card_addr) {
 void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base) {
   assert(addr->is_register(), "must be a register at this point");
 
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
-
   LIR_Opr tmp = FrameMap::LR_ptr_opr;
 
   bool load_card_table_base_const = VM_Version::supports_movw();
@@ -382,9 +379,6 @@ void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LI
   // byte instruction does not support the addressing mode we need.
   LIR_Address* card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTable::card_shift, 0, T_BOOLEAN);
   if (UseCondCardMark) {
-    if (ct->scanned_concurrently()) {
-      __ membar_storeload();
-    }
     LIR_Opr cur_value = new_register(T_INT);
     __ move(card_addr, cur_value);
 
@@ -394,9 +388,6 @@ void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LI
     set_card(tmp, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
-    if (ct->scanned_concurrently()) {
-      __ membar_storestore();
-    }
     set_card(tmp, card_addr);
   }
 }
@@ -421,21 +412,13 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   LIR_Opr lock = new_pointer_register();
   LIR_Opr hdr  = new_pointer_register();
 
-  // Need a scratch register for biased locking on arm
-  LIR_Opr scratch = LIR_OprFact::illegalOpr;
-  if(UseBiasedLocking) {
-    scratch = new_pointer_register();
-  } else {
-    scratch = atomicLockOpr();
-  }
-
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
     info_for_exception = state_for(x);
   }
 
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, hdr, scratch,
+  monitor_enter(obj.result(), lock, hdr, LIR_OprFact::illegalOpr,
                 x->monitor_no(), info_for_exception, info);
 }
 
@@ -525,7 +508,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
       left.load_item();
       right.load_item();
       rlock_result(x);
-      arithmetic_op_fpu(x->op(), x->operand(), left.result(), right.result(), x->is_strictfp());
+      arithmetic_op_fpu(x->op(), x->operand(), left.result(), right.result());
       return;
     }
 #endif // __SOFTFP__

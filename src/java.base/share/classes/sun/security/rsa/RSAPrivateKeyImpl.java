@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.interfaces.*;
+import java.util.Arrays;
 
 import sun.security.util.*;
 import sun.security.pkcs.PKCS8Key;
@@ -90,19 +91,25 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
 
         try {
             // generate the key encoding
-            DerOutputStream out = new DerOutputStream();
+            byte[] nbytes = n.toByteArray();
+            byte[] dbytes = d.toByteArray();
+            DerOutputStream out = new DerOutputStream(
+                    nbytes.length + dbytes.length + 50);
+                    // Enough for 7 zeroes (21) and 2 tag+length(4)
             out.putInteger(0); // version must be 0
-            out.putInteger(n);
+            out.putInteger(nbytes);
+            Arrays.fill(nbytes, (byte)0);
             out.putInteger(0);
-            out.putInteger(d);
+            out.putInteger(dbytes);
+            Arrays.fill(dbytes, (byte)0);
             out.putInteger(0);
             out.putInteger(0);
             out.putInteger(0);
             out.putInteger(0);
             out.putInteger(0);
-            DerValue val =
-                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
             key = val.toByteArray();
+            val.clear();
         } catch (IOException exc) {
             // should never occur
             throw new InvalidKeyException(exc);

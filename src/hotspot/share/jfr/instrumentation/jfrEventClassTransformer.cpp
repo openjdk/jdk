@@ -1397,7 +1397,7 @@ static bool should_force_instrumentation() {
   return !JfrOptionSet::allow_event_retransforms() || JfrEventClassTransformer::is_force_instrumentation();
 }
 
-static ClassFileStream* create_new_bytes_for_subklass(const InstanceKlass* ik, const ClassFileParser& parser, Thread* t) {
+static ClassFileStream* create_new_bytes_for_subklass(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* t) {
   assert(JdkJfrEvent::is_a(ik), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
   jint size_of_new_bytes = 0;
@@ -1513,7 +1513,7 @@ static bool is_retransforming(const InstanceKlass* ik, TRAPS) {
   assert(name != NULL, "invariant");
   Handle class_loader(THREAD, ik->class_loader());
   Handle protection_domain(THREAD, ik->protection_domain());
-  return SystemDictionary::find(name, class_loader, protection_domain, THREAD) != NULL;
+  return SystemDictionary::find_instance_klass(name, class_loader, protection_domain) != NULL;
 }
 
 // target for JFR_ON_KLASS_CREATION hook

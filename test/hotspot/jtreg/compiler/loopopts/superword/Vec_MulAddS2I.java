@@ -27,6 +27,7 @@
  * @bug 8214751
  * @summary Test operations in C2 MulAddS2I and MulAddVS2VI nodes.
  * @library /test/lib
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ class G1RootProcessor : public StackObj {
   enum G1H_process_roots_tasks {
     G1RP_PS_ClassLoaderDataGraph_oops_do,
     G1RP_PS_CodeCache_oops_do,
-    AOT_ONLY(G1RP_PS_aot_oops_do COMMA)
     G1RP_PS_refProcessor_oops_do,
     // Leave this one last.
     G1RP_PS_NumElements

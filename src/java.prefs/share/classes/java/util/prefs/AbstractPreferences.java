@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1063,6 +1063,7 @@ public abstract class AbstractPreferences extends Preferences {
      *         preference tree, {@code false} if it's in the system
      *         preference tree.
      */
+    @SuppressWarnings("removal")
     public boolean isUserNode() {
         return AccessController.doPrivileged(
             new PrivilegedAction<Boolean>() {

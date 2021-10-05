@@ -117,20 +117,9 @@ void reference_set_discovered<narrowOop>(oop reference, oop discovered) {
 }
 
 template<typename T>
-static bool reference_cas_discovered(oop reference, oop discovered);
-
-template<>
-bool reference_cas_discovered<narrowOop>(oop reference, oop discovered) {
-  volatile narrowOop* addr = reinterpret_cast<volatile narrowOop*>(java_lang_ref_Reference::discovered_addr_raw(reference));
-  narrowOop compare = CompressedOops::encode(NULL);
-  narrowOop exchange = CompressedOops::encode(discovered);
-  return Atomic::cmpxchg(addr, compare, exchange) == compare;
-}
-
-template<>
-bool reference_cas_discovered<oop>(oop reference, oop discovered) {
-  volatile oop* addr = reinterpret_cast<volatile oop*>(java_lang_ref_Reference::discovered_addr_raw(reference));
-  return Atomic::cmpxchg(addr, oop(NULL), discovered) == NULL;
+static bool reference_cas_discovered(oop reference, oop discovered) {
+  T* addr = reinterpret_cast<T *>(java_lang_ref_Reference::discovered_addr_raw(reference));
+  return ShenandoahHeap::atomic_update_oop_check(discovered, addr, NULL);
 }
 
 template <typename T>
@@ -386,8 +375,11 @@ template <typename T>
 oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
-  assert(reference_referent<T>(reference) == NULL ||
-         ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only drop references with alive referents");
+#ifdef ASSERT
+  oop referent = reference_referent<T>(reference);
+  assert(referent == NULL || ShenandoahHeap::heap()->marking_context()->is_marked(referent),
+         "only drop references with alive referents");
+#endif
 
   // Unlink and return next in list
   oop next = reference_discovered<T>(reference);
@@ -537,7 +529,7 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
     enqueue_references_locked();
   } else {
     // Heap_lock protects external pending list
-    MonitorLocker ml(Heap_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(Heap_lock);
 
     enqueue_references_locked();
 

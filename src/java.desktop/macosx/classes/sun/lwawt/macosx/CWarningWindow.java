@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.IconInfo;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
+import sun.java2d.metal.MTLLayer;
 import sun.java2d.opengl.CGLLayer;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.PlatformEventNotifier;
@@ -300,6 +301,23 @@ public final class CWarningWindow extends CPlatformWindow
                     }
                 };
             }
+            public MTLLayer createMTLLayer() {
+                return new MTLLayer(null) {
+                    public Rectangle getBounds() {
+                        return CWarningWindow.this.getBounds();
+                    }
+
+                    public GraphicsConfiguration getGraphicsConfiguration() {
+                        LWWindowPeer peer = ownerPeer.get();
+                        return peer.getGraphicsConfiguration();
+                    }
+
+                    public boolean isOpaque() {
+                        return false;
+                    }
+                };
+            }
+
         };
     }
 

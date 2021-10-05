@@ -269,8 +269,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             String keyStoreAlias = alias.substring(secondDot + 1);
             Builder builder = builders.get(builderIndex);
             KeyStore ks = builder.getKeyStore();
-            Entry newEntry = ks.getEntry
-                    (keyStoreAlias, builder.getProtectionParameter(alias));
+            Entry newEntry = ks.getEntry(keyStoreAlias,
+                    builder.getProtectionParameter(keyStoreAlias));
             if (!(newEntry instanceof PrivateKeyEntry)) {
                 // unexpected type of entry
                 return null;
@@ -838,8 +838,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             AlgorithmConstraints constraints, Certificate[] chain,
             String variant) {
 
-        AlgorithmChecker checker =
-                new AlgorithmChecker(constraints, null, variant);
+        AlgorithmChecker checker = new AlgorithmChecker(constraints, variant);
         try {
             checker.init(false);
         } catch (CertPathValidatorException cpve) {

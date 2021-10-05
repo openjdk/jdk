@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,11 @@
  * @run main LotsOfChannels
  * @run main/othervm -Dsun.nio.ch.maxUpdateArraySize=64 LotsOfChannels
  * @author kladko
+ */
+
+/* @test
+ * @requires (os.family == "windows")
+ * @run main/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider LotsOfChannels
  */
 
 import java.net.*;

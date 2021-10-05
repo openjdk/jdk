@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_TASKQUEUE_INLINE_HPP
 
 #include "gc/shared/taskqueue.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -48,9 +49,10 @@ inline GenericTaskQueueSet<T, F>::~GenericTaskQueueSet() {
 }
 
 template<class E, MEMFLAGS F, unsigned int N>
-inline void GenericTaskQueue<E, F, N>::initialize() {
-  _elems = ArrayAllocator<E>::allocate(N, F);
-}
+inline GenericTaskQueue<E, F, N>::GenericTaskQueue() :
+  _elems(ArrayAllocator<E>::allocate(N, F)),
+  _last_stolen_queue_id(InvalidQueueId),
+  _seed(17 /* random number */) {}
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::~GenericTaskQueue() {

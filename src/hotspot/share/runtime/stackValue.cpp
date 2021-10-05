@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
       return new StackValue(h);
     }
     case Location::addr: {
+      loc.print_on(tty);
       ShouldNotReachHere(); // both C1 and C2 now inline jsrs
     }
     case Location::normal: {
@@ -154,9 +155,11 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
       return new StackValue();
     }
     case Location::vector: {
-      ShouldNotReachHere(); // should be handled by Deoptimization::realloc_objects()
+      loc.print_on(tty);
+      ShouldNotReachHere(); // should be handled by VectorSupport::allocate_vector()
     }
     default:
+      loc.print_on(tty);
       ShouldNotReachHere();
     }
 

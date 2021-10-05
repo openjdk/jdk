@@ -1575,12 +1575,11 @@ public class Container extends Component {
         return false;
     }
 
-    private static final boolean isJavaAwtSmartInvalidate;
-    static {
-        // Don't lazy-read because every app uses invalidate()
-        isJavaAwtSmartInvalidate = AccessController.doPrivileged(
+    // Don't lazy-read because every app uses invalidate()
+    @SuppressWarnings("removal")
+    private static final boolean isJavaAwtSmartInvalidate
+            = AccessController.doPrivileged(
                 new GetBooleanAction("java.awt.smartInvalidate"));
-    }
 
     /**
      * Invalidates the parent of the container unless the container
@@ -2633,6 +2632,7 @@ public class Container extends Component {
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
+        @SuppressWarnings("removal")
         PointerInfo pi = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<PointerInfo>() {
                 public PointerInfo run() {
@@ -4738,6 +4738,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * from other heavyweight containers will generate enter/exit
      * events in this container
      */
+    @SuppressWarnings("removal")
     private void startListeningForOtherDrags() {
         //System.out.println("Adding AWTEventListener");
         java.security.AccessController.doPrivileged(
@@ -4753,6 +4754,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         );
     }
 
+    @SuppressWarnings("removal")
     private void stopListeningForOtherDrags() {
         //System.out.println("Removing AWTEventListener");
         java.security.AccessController.doPrivileged(

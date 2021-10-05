@@ -35,17 +35,17 @@ class CharacterDataPrivateUse extends CharacterData {
     }
 
     int getType(int ch) {
-	return (ch & 0xFFFE) == 0xFFFE
-	    ? Character.UNASSIGNED
-	    : Character.PRIVATE_USE;
+        return (ch & 0xFFFE) == 0xFFFE
+            ? Character.UNASSIGNED
+            : Character.PRIVATE_USE;
     }
 
     boolean isJavaIdentifierStart(int ch) {
-	return false;
+        return false;
     }
 
     boolean isJavaIdentifierPart(int ch) {
-	return false;
+        return false;
     }
 
     boolean isUnicodeIdentifierStart(int ch) {
@@ -85,21 +85,21 @@ class CharacterDataPrivateUse extends CharacterData {
     }
 
     boolean isLowerCase(int ch) {
-	return false;
+        return false;
     }
 
     boolean isUpperCase(int ch) {
-	return false;
+        return false;
     }
 
     boolean isWhitespace(int ch) {
-	return false;
+        return false;
     }
 
     byte getDirectionality(int ch) {
-	return (ch & 0xFFFE) == 0xFFFE
-	    ? Character.DIRECTIONALITY_UNDEFINED
-	    : Character.DIRECTIONALITY_LEFT_TO_RIGHT;
+        return (ch & 0xFFFE) == 0xFFFE
+            ? Character.DIRECTIONALITY_UNDEFINED
+            : Character.DIRECTIONALITY_LEFT_TO_RIGHT;
     }
 
     boolean isMirrored(int ch) {
@@ -109,5 +109,3 @@ class CharacterDataPrivateUse extends CharacterData {
     static final CharacterData instance = new CharacterDataPrivateUse();
     private CharacterDataPrivateUse() {};
 }
-
-	

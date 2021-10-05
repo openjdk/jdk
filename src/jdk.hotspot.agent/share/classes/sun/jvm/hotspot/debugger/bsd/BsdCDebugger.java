@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +31,10 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.amd64.*;
+import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.bsd.x86.*;
 import sun.jvm.hotspot.debugger.bsd.amd64.*;
+import sun.jvm.hotspot.debugger.bsd.aarch64.*;
 import sun.jvm.hotspot.utilities.*;
 
 class BsdCDebugger implements CDebugger {
@@ -97,6 +100,13 @@ class BsdCDebugger implements CDebugger {
        Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
        if (pc == null) return null;
        return new BsdAMD64CFrame(dbg, rbp, pc);
+    } else if (cpu.equals("aarch64")) {
+       AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
+       Address fp = context.getRegisterAsAddress(AARCH64ThreadContext.FP);
+       if (fp == null) return null;
+       Address pc  = context.getRegisterAsAddress(AARCH64ThreadContext.PC);
+       if (pc == null) return null;
+       return new BsdAARCH64CFrame(dbg, fp, pc);
     } else {
        throw new DebuggerException(cpu + " is not yet supported");
     }

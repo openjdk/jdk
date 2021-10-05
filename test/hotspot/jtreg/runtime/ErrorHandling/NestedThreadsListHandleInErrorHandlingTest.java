@@ -98,8 +98,8 @@ public class NestedThreadsListHandleInErrorHandlingTest {
         // a ThreadsListHandle in addition to what the test creates:
         Pattern.compile(".*, _nested_thread_list_max=2"),
         // The current thread (marked with '=>') in the threads list
-        // should show a hazard ptr and a nested hazard ptr:
-        Pattern.compile("=>.* JavaThread \"main\" .* _threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*, _nested_threads_hazard_ptr_cnt=1, _nested_threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*.*"),
+        // should show a nested hazard ptr:
+        Pattern.compile("=>.* JavaThread \"main\" .*, _nested_threads_hazard_ptr_cnt=1, _nested_threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*.*"),
     };
     int currentPattern = 0;
 

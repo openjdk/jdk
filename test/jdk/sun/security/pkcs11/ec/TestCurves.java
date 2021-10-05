@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki/sun.security.pkcs11.wrapper
  * @run main/othervm TestCurves
- * @run main/othervm TestCurves sm
+ * @run main/othervm -Djava.security.manager=allow TestCurves sm
  * @key randomness
  */
 

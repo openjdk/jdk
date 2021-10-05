@@ -23,6 +23,7 @@
 package org.openjdk.bench.jdk.incubator.foreign;
 
 import jdk.incubator.foreign.MemoryLayout;
+import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -36,7 +37,6 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
@@ -72,8 +72,8 @@ public class LoopOverConstant {
 
     //setup native memory segment
 
-    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE);
-    static final VarHandle VH_int = MemoryLayout.ofSequence(JAVA_INT).varHandle(int.class, sequenceElement());
+    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, ResourceScope.newImplicitScope());
+    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(int.class, sequenceElement());
 
     static {
         for (int i = 0; i < ELEM_SIZE; i++) {

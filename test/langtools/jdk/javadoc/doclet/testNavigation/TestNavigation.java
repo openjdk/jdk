@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188 8151743 8196027 8182765
- *           8196200 8196202 8223378 8258659
+ *           8196200 8196202 8223378 8258659 8261976
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
@@ -63,24 +63,24 @@ public class TestNavigation extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 """
-                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     <li><a href="../index.html">Overview</a></li>""");
 
         checkOutput("pkg/C.html", true,
                 """
-                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     <li><a href="../index.html">Overview</a></li>""");
 
         checkOutput("pkg/E.html", true,
                 """
-                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     <li><a href="../index.html">Overview</a></li>""");
 
         checkOutput("pkg/I.html", true,
                 // Test for 4664607
                 """
-                    <div class="skip-nav"><a href="#skip.navbar.top" title="Skip navigation links">Skip navigation links</a></div>
-                    <ul id="navbar.top.firstrow" class="nav-list" title="Navigation">
+                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
                     <li><a href="../index.html">Overview</a></li>""");
@@ -89,7 +89,7 @@ public class TestNavigation extends JavadocTester {
         checkOutput("pkg/A.html", true,
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip.navbar.top"></span></nav>
+                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
                     </header>
                     <div class="flex-content">
                     <main role="main">
@@ -98,7 +98,7 @@ public class TestNavigation extends JavadocTester {
         checkOutput("pkg/package-summary.html", true,
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip.navbar.top"></span></nav>
+                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
                     </header>
                     <div class="flex-content">
                     <main role="main">
@@ -118,7 +118,7 @@ public class TestNavigation extends JavadocTester {
         checkOutput("pkg/A.html", true,
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip.navbar.top"></span></nav>
+                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
                     </header>
                     <div class="flex-content">
                     <main role="main">
@@ -127,7 +127,7 @@ public class TestNavigation extends JavadocTester {
         checkOutput("pkg/package-summary.html", true,
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip.navbar.top"></span></nav>
+                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
                     """);
     }
 
@@ -145,7 +145,7 @@ public class TestNavigation extends JavadocTester {
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
                     </div>
-                    <div class="skip-nav"><a id="skip.navbar.top"></a></div>
+                    <div class="skip-nav"><a id="skip-navbar-top"></a></div>
                     </nav>
                     </header>
                     <!-- ======== START OF CLASS DATA ======== -->""");
@@ -154,7 +154,7 @@ public class TestNavigation extends JavadocTester {
                 """
                     <!-- ========= END OF TOP NAVBAR ========= -->
                     </div>
-                    <div class="skip-nav"><a id="skip.navbar.top"></a></div>
+                    <div class="skip-nav"><a id="skip-navbar-top"></a></div>
                     </nav>""");
     }
 
@@ -212,42 +212,42 @@ public class TestNavigation extends JavadocTester {
         checkOrder("pkg1/A.X.html",
                 "Summary",
                 """
-                    <li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#nested-class-summary">Nested</a>&nbsp;|&nbsp;</li>""",
                 """
-                    <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
                 """
-                    <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
                 """
-                    <li><a href="#method.summary">Method</a></li>""");
+                    <li><a href="#method-summary">Method</a></li>""");
 
         checkOrder("pkg1/A.Y.html",
                 "Summary",
                 """
-                    <li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#nested-class-summary">Nested</a>&nbsp;|&nbsp;</li>""",
                 """
-                    <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
                 """
-                    <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
                 """
-                    <li><a href="#method.summary">Method</a></li>""");
+                    <li><a href="#method-summary">Method</a></li>""");
 
         checkOrder("pkg1/A.X.IC.html",
                 "Summary",
                 "<li>Nested&nbsp;|&nbsp;</li>",
                 "<li>Field&nbsp;|&nbsp;</li>",
                 """
-                    <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
                 """
-                    <li><a href="#method.summary">Method</a></li>""");
+                    <li><a href="#method-summary">Method</a></li>""");
 
         checkOrder("pkg1/C.html",
                 "Summary",
                 "<li>Nested&nbsp;|&nbsp;</li>",
                 "<li>Field&nbsp;|&nbsp;</li>",
                 """
-                    <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
                 """
-                    <li><a href="#method.summary">Method</a></li>""");
+                    <li><a href="#method-summary">Method</a></li>""");
 
         checkOrder("pkg1/InterfaceWithNoMembers.html",
                 "Summary",

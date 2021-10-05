@@ -28,6 +28,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
@@ -163,7 +164,7 @@ StackWatermark::StackWatermark(JavaThread* jt, StackWatermarkKind kind, uint32_t
     _next(NULL),
     _jt(jt),
     _iterator(NULL),
-    _lock(Mutex::tty - 1, "stack_watermark_lock", true, Mutex::_safepoint_check_never),
+    _lock(Mutex::stackwatermark, "StackWatermark_lock", Mutex::_safepoint_check_never),
     _kind(kind),
     _linked_watermark(NULL) {
 }

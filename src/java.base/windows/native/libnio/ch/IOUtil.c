@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,45 +148,36 @@ Java_sun_nio_ch_IOUtil_configureBlocking(JNIEnv *env, jclass clazz,
     }
 }
 
-/* Note: Drain uses the int fd value. It is currently not called
-   on windows.
-*/
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
 {
-    DWORD read = 0;
-    int totalRead = 0;
-    BOOL result = 0;
-    HANDLE h = (HANDLE)_get_osfhandle(fd);
-    char buf[128];
-
-    if (h == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Read failed");
-        return JNI_FALSE;
-    }
-
+    char buf[16];
+    jboolean readBytes = JNI_FALSE;
     for (;;) {
-        result = ReadFile(h,          /* File handle to read */
-                          (LPVOID)&buf,    /* address to put data */
-                          128,        /* number of bytes to read */
-                          &read,      /* number of bytes read */
-                          NULL);      /* no overlapped struct */
-
-        if (result == 0) {
-            int error = GetLastError();
-            if (error == ERROR_NO_DATA) {
-                return (totalRead > 0) ? JNI_TRUE : JNI_FALSE;
+        int n = recv((SOCKET) fd, buf, sizeof(buf), 0);
+        if (n == SOCKET_ERROR) {
+            if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                JNU_ThrowIOExceptionWithLastError(env, "recv failed");
             }
-            JNU_ThrowIOExceptionWithLastError(env, "Drain");
-            return JNI_FALSE;
+            return readBytes;
         }
-        if (read > 0) {
-            totalRead += read;
-        } else {
-            break;
-        }
+        if (n <= 0)
+            return readBytes;
+        if (n < (int)sizeof(buf))
+            return JNI_TRUE;
+        readBytes = JNI_TRUE;
     }
-    return (totalRead > 0) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_IOUtil_write1(JNIEnv *env, jclass cl, jint fd, jbyte b)
+{
+    int n = send((SOCKET) fd, &b, 1, 0);
+    if (n == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) {
+        JNU_ThrowIOExceptionWithLastError(env, "send failed");
+        return IOS_THROWN;
+    }
+    return (n == 1) ? 1 : 0;
 }
 
 /* Note: This function returns the int fd value from file descriptor.

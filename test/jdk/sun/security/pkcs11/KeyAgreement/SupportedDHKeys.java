@@ -28,7 +28,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm SupportedDHKeys
- * @run main/othervm SupportedDHKeys sm
+ * @run main/othervm -Djava.security.manager=allow SupportedDHKeys sm
  */
 
 import java.math.BigInteger;

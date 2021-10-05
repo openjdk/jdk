@@ -24,7 +24,7 @@
 
 /*
  * @test CommandLineFlagCombo
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @comment This test explicitly chooses the type of GC to be used by sub-processes. It may conflict with the GC type set
  * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
  * vm options.
@@ -33,7 +33,7 @@
  *          could likely affect the behaviour of AppCDS
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
  * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. CommandLineFlagCombo
  */
@@ -121,7 +121,7 @@ public class CommandLineFlagCombo {
             }
         }
 
-        if (!WhiteBox.getWhiteBox().isJFRIncludedInVmBuild())
+        if (!WhiteBox.getWhiteBox().isJFRIncluded())
         {
             System.out.println("JFR does not exist");
             return true;

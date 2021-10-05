@@ -518,8 +518,7 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
 
           case JDWP_REQUEST_MODIFIER(SourceNameMatch): {
               char* desiredNamePattern = filter->u.SourceNameOnly.sourceNamePattern;
-              if (searchAllSourceNames(env, clazz,
-                           desiredNamePattern) != 1) {
+              if (searchAllSourceNames(env, clazz, desiredNamePattern) != 1) {
                   /* The name isn't in the SDE; try the sourceName in the ref
                    * type
                    */
@@ -942,7 +941,6 @@ eventFilter_setStepFilter(HandlerNode *node, jint index,
     filter->size = size;
     return JVMTI_ERROR_NONE;
 }
-
 
 jvmtiError
 eventFilter_setSourceNameMatchFilter(HandlerNode *node,

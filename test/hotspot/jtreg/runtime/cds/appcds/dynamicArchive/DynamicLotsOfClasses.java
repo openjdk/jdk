@@ -39,10 +39,12 @@ import jdk.test.lib.cds.CDSTestUtils;
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build LoadClasses
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar loadclasses.jar LoadClasses
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadclasses.jar LoadClasses
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main/othervm/timeout=500 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./whitebox.jar DynamicLotsOfClasses
  */
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
 
@@ -75,12 +77,12 @@ public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
              "ALL-SYSTEM",
              "-Xlog:hashtables",
              "-Xmx500m",
-             "-Xlog:cds,cds+dynamic",
+             "-Xlog:cds=debug", // test detailed metadata info printing
+             "-Xlog:cds+dynamic=info",
              bootClassPath,
              "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
              "-cp", appJar, mainClass, classList)
-             .assertNormalExit(output -> {
-                 output.shouldContain("Written dynamic archive 0x");
-             });
+            .assertNormalExit("Written dynamic archive 0x",
+                              "Detailed metadata info");
     }
 }

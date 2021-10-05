@@ -264,9 +264,9 @@ public class InetSocketAddress
     }
 
     /**
-     * @serialField hostname String
-     * @serialField addr InetAddress
-     * @serialField port int
+     * @serialField hostname String the hostname of the Socket Address
+     * @serialField addr InetAddress the IP address of the Socket Address
+     * @serialField port int the port number of the Socket Address
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
@@ -274,6 +274,12 @@ public class InetSocketAddress
          new ObjectStreamField("addr", InetAddress.class),
          new ObjectStreamField("port", int.class)};
 
+    /**
+     * Writes the state of this object to the stream.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
+     */
     @java.io.Serial
     private void writeObject(ObjectOutputStream out)
         throws IOException
@@ -286,6 +292,13 @@ public class InetSocketAddress
          out.writeFields();
      }
 
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
     @java.io.Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
@@ -308,6 +321,10 @@ public class InetSocketAddress
         UNSAFE.putReference(this, FIELDS_OFFSET, h);
     }
 
+    /**
+     * Throws {@code InvalidObjectException}, always.
+     * @throws ObjectStreamException always
+     */
     @java.io.Serial
     private void readObjectNoData()
         throws ObjectStreamException

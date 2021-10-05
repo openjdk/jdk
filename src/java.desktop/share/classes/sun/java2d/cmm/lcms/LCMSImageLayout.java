@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.java2d.cmm.lcms;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.ComponentSampleModel;
-import java.awt.image.ColorModel;
 import java.awt.image.Raster;
-import java.awt.image.SampleModel;
-import sun.awt.image.ByteComponentRaster;
-import sun.awt.image.ShortComponentRaster;
-import sun.awt.image.IntegerComponentRaster;
 
-class LCMSImageLayout {
+import sun.awt.image.ByteComponentRaster;
+import sun.awt.image.IntegerComponentRaster;
+import sun.awt.image.ShortComponentRaster;
+
+final class LCMSImageLayout {
 
     public static int BYTES_SH(int x) {
         return x;
@@ -195,7 +196,12 @@ class LCMSImageLayout {
                  * has to be supported.
                  */
                 ColorModel cm = image.getColorModel();
-                if (cm instanceof ComponentColorModel) {
+                /* todo
+                 * Our generic code for rasters does not support alpha channels,
+                 * but it would be good to improve it when it is used from here.
+                 * See "createImageLayout(image.getRaster())" below.
+                 */
+                if (!cm.hasAlpha() && cm instanceof ComponentColorModel) {
                     ComponentColorModel ccm = (ComponentColorModel) cm;
 
                     // verify whether the component size is fine

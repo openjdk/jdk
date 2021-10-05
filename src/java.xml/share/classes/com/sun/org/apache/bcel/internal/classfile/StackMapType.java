@@ -39,7 +39,7 @@ public final class StackMapType implements Cloneable {
 
     private byte type;
     private int index = -1; // Index to CONSTANT_Class or offset
-    private ConstantPool constant_pool;
+    private ConstantPool constantPool;
 
 
     /**
@@ -52,7 +52,7 @@ public final class StackMapType implements Cloneable {
         if (hasIndex()) {
             this.index = file.readShort();
         }
-        this.constant_pool = constant_pool;
+        this.constantPool = constant_pool;
     }
 
 
@@ -62,17 +62,17 @@ public final class StackMapType implements Cloneable {
      */
     public StackMapType(final byte type, final int index, final ConstantPool constant_pool) {
         if ((type < Const.ITEM_Bogus) || (type > Const.ITEM_NewObject)) {
-            throw new RuntimeException("Illegal type for StackMapType: " + type);
+            throw new IllegalArgumentException("Illegal type for StackMapType: " + type);
         }
         this.type = type;
         this.index = index;
-        this.constant_pool = constant_pool;
+        this.constantPool = constant_pool;
     }
 
 
     public void setType( final byte t ) {
         if ((t < Const.ITEM_Bogus) || (t > Const.ITEM_NewObject)) {
-            throw new RuntimeException("Illegal type for StackMapType: " + t);
+            throw new IllegalArgumentException("Illegal type for StackMapType: " + t);
         }
         type = t;
     }
@@ -122,7 +122,7 @@ public final class StackMapType implements Cloneable {
             if (index < 0) {
                 return ", class=<unknown>";
             }
-            return ", class=" + constant_pool.constantToString(index, Const.CONSTANT_Class);
+            return ", class=" + constantPool.constantToString(index, Const.CONSTANT_Class);
         } else if (type == Const.ITEM_NewObject) {
             return ", offset=" + index;
         } else {
@@ -157,14 +157,14 @@ public final class StackMapType implements Cloneable {
      * @return Constant pool used by this object.
      */
     public ConstantPool getConstantPool() {
-        return constant_pool;
+        return constantPool;
     }
 
 
     /**
-     * @param constant_pool Constant pool to be used for this object.
+     * @param constantPool Constant pool to be used for this object.
      */
-    public void setConstantPool( final ConstantPool constant_pool ) {
-        this.constant_pool = constant_pool;
+    public void setConstantPool( final ConstantPool constantPool ) {
+        this.constantPool = constantPool;
     }
 }

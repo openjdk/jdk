@@ -100,7 +100,7 @@ public class DocPaths {
     /** The name of the stylesheet file overriding jQuery UI stylesheet. */
     public static final DocPath JQUERY_OVERRIDES_CSS = DocPath.create("jquery-ui.overrides.css");
 
-    /** The name of the directory for the jQuery. */
+    /** The name of the directory for the jQuery files. */
     public static final DocPath JQUERY_FILES = DocPath.create("script-dir");
 
     /** The name of the default jQuery javascript file. */
@@ -111,6 +111,9 @@ public class DocPaths {
 
     /** The name of the default jQuery UI javascript file. */
     public static final DocPath JQUERY_UI_JS = DocPath.create("jquery-ui.min.js");
+
+    /** The name of the directory for legal files. */
+    public static final DocPath LEGAL = DocPath.create("legal");
 
     /** The name of the member search index js file. */
     public static final DocPath MEMBER_SEARCH_INDEX_JS = DocPath.create("member-search-index.js");
@@ -139,8 +142,11 @@ public class DocPaths {
     /** The name of the file for the package usage info. */
     public static final DocPath PACKAGE_USE = DocPath.create("package-use.html");
 
-    /** The name of the fie for preview elements. */
+    /** The name of the file for preview elements. */
     public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
+
+    /** The name of the file for new elements. */
+    public static final DocPath NEW_LIST = DocPath.create("new-list.html");
 
     /** The name of the file for all system properties. */
     public static final DocPath SYSTEM_PROPERTIES = DocPath.create("system-properties.html");

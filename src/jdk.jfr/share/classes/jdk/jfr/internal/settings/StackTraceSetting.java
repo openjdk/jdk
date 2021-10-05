@@ -42,7 +42,7 @@ import jdk.jfr.internal.Type;
 @Description("Record stack traces")
 @BooleanFlag
 public final class StackTraceSetting extends JDKSettingControl {
-    private final static long typeId =  Type.getTypeId(StackTraceSetting.class);
+    private static final long typeId =  Type.getTypeId(StackTraceSetting.class);
     private final BooleanValue booleanValue;
     private final PlatformEventType eventType;
 

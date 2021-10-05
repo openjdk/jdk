@@ -123,13 +123,13 @@ public final class Connection implements Runnable {
     private static final int dump = 0; // > 0 r, > 1 rw
 
 
-    final private Thread worker;    // Initialized in constructor
+    private final Thread worker;    // Initialized in constructor
 
     private boolean v3 = true;       // Set in setV3()
 
-    final public String host;  // used by LdapClient for generating exception messages
+    public final String host;  // used by LdapClient for generating exception messages
                          // used by StartTlsResponse when creating an SSL socket
-    final public int port;     // used by LdapClient for generating exception messages
+    public final int port;     // used by LdapClient for generating exception messages
                          // used by StartTlsResponse when creating an SSL socket
 
     private boolean bound = false;   // Set in setBound()
@@ -153,7 +153,7 @@ public final class Connection implements Runnable {
 
     // For processing "disconnect" unsolicited notification
     // Initialized in constructor
-    final private LdapClient parent;
+    private final LdapClient parent;
 
     // Incremented and returned in sync getMsgId()
     private int outMsgId = 0;
@@ -182,6 +182,7 @@ public final class Connection implements Runnable {
     private static boolean hostnameVerificationDisabledValue() {
         PrivilegedAction<String> act = () -> System.getProperty(
                 "com.sun.jndi.ldap.object.disableEndpointIdentification");
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(act);
         if (prop == null) {
             return false;
@@ -238,7 +239,7 @@ public final class Connection implements Runnable {
             outStream = new BufferedOutputStream(sock.getOutputStream());
 
         } catch (InvocationTargetException e) {
-            Throwable realException = e.getTargetException();
+            Throwable realException = e.getCause();
             // realException.printStackTrace();
 
             CommunicationException ce =
@@ -424,7 +425,7 @@ public final class Connection implements Runnable {
     /**
      * Reads a reply; waits until one is ready.
      */
-    BerDecoder readReply(LdapRequest ldr) throws IOException, NamingException {
+    BerDecoder readReply(LdapRequest ldr) throws NamingException {
         BerDecoder rber;
 
         // If socket closed, don't even try
@@ -435,7 +436,7 @@ public final class Connection implements Runnable {
             }
         }
 
-        NamingException namingException = null;
+        IOException ioException = null;
         try {
             // if no timeout is set so we wait infinitely until
             // a response is received OR until the connection is closed or cancelled
@@ -444,25 +445,29 @@ public final class Connection implements Runnable {
         } catch (InterruptedException ex) {
             throw new InterruptedNamingException(
                 "Interrupted during LDAP operation");
-        } catch (CommunicationException ce) {
-            // Re-throw
-            throw ce;
-        } catch (NamingException ne) {
+        } catch (IOException ioe) {
             // Connection is timed out OR closed/cancelled
-            namingException = ne;
+            // getReplyBer throws IOException when the requests needs to be abandoned
+            ioException = ioe;
             rber = null;
         }
 
         if (rber == null) {
             abandonRequest(ldr, null);
         }
-        // namingException can be not null in the following cases:
+        // ioException can be not null in the following cases:
         //  a) The response is timed-out
-        //  b) LDAP request connection has been closed or cancelled
+        //  b) LDAP request connection has been closed
+        // If the request has been cancelled - CommunicationException is
+        // thrown directly from LdapRequest.getReplyBer, since there is no
+        // need to abandon request.
         // The exception message is initialized in LdapRequest::getReplyBer
-        if (namingException != null) {
-            // Re-throw NamingException after all cleanups are done
-            throw namingException;
+        if (ioException != null) {
+            // Throw CommunicationException after all cleanups are done
+            String message = ioException.getMessage();
+            var ce = new CommunicationException(message);
+            ce.initCause(ioException);
+            throw ce;
         }
         return rber;
     }

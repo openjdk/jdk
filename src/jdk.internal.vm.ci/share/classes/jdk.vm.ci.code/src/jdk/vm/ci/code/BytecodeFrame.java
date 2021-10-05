@@ -23,6 +23,7 @@
 package jdk.vm.ci.code;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
@@ -233,9 +234,7 @@ public final class BytecodeFrame extends BytecodePosition {
      * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
      */
     public JavaKind getLocalValueKind(int i) {
-        if (i < 0 || i >= numLocals) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkIndex(i, numLocals);
         return slotKinds[i];
     }
 
@@ -247,9 +246,7 @@ public final class BytecodeFrame extends BytecodePosition {
      * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
      */
     public JavaKind getStackValueKind(int i) {
-        if (i < 0 || i >= numStack) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkIndex(i, numStack);
         return slotKinds[i + numLocals];
     }
 
@@ -261,9 +258,7 @@ public final class BytecodeFrame extends BytecodePosition {
      * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
      */
     public JavaValue getLocalValue(int i) {
-        if (i < 0 || i >= numLocals) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkIndex(i, numLocals);
         return values[i];
     }
 
@@ -275,9 +270,7 @@ public final class BytecodeFrame extends BytecodePosition {
      * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
      */
     public JavaValue getStackValue(int i) {
-        if (i < 0 || i >= numStack) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkIndex(i, numStack);
         return values[i + numLocals];
     }
 
@@ -289,9 +282,7 @@ public final class BytecodeFrame extends BytecodePosition {
      * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocks}
      */
     public JavaValue getLockValue(int i) {
-        if (i < 0 || i >= numLocks) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkIndex(i, numLocks);
         return values[i + numLocals + numStack];
     }
 

@@ -25,6 +25,8 @@
 #ifndef SHARE_UTILITIES_CONCURRENTHASHTABLETASKS_INLINE_HPP
 #define SHARE_UTILITIES_CONCURRENTHASHTABLETASKS_INLINE_HPP
 
+// No concurrentHashTableTasks.hpp
+
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"

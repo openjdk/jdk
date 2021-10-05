@@ -167,17 +167,16 @@ public class Config {
 
         String osVersion = GetPropertyAction.privilegedGetProperty("os.version");
         String[] fragments = osVersion.split("\\.");
-
-        // sanity check the "10." part of the version
-        if (!fragments[0].equals("10")) return false;
         if (fragments.length < 2) return false;
 
-        // check if Mac OS X 10.7(.y)
+        // check if Mac OS X 10.7(.y) or higher
         try {
+            int majorVers = Integer.parseInt(fragments[0]);
             int minorVers = Integer.parseInt(fragments[1]);
-            if (minorVers >= 7) return true;
+            if (majorVers > 10) return true;
+            if (majorVers == 10 && minorVers >= 7) return true;
         } catch (NumberFormatException e) {
-            // was not an integer
+            // were not integers
         }
 
         return false;
@@ -669,6 +668,7 @@ public class Config {
      * @param fileName the configuration file
      * @return normalized lines
      */
+    @SuppressWarnings("removal")
     private List<String> loadConfigFile(final String fileName)
             throws IOException, KrbException {
 
@@ -980,6 +980,9 @@ public class Config {
     public int[] defaultEtype(String configName) throws KrbException {
         String default_enctypes;
         default_enctypes = get("libdefaults", configName);
+        if (default_enctypes == null && !configName.equals("permitted_enctypes")) {
+            default_enctypes = get("libdefaults", "permitted_enctypes");
+        }
         int[] etype;
         if (default_enctypes == null) {
             if (DEBUG) {
@@ -1171,6 +1174,7 @@ public class Config {
      * @throws KrbException where no realm can be located
      * @return the default realm, always non null
      */
+    @SuppressWarnings("removal")
     public String getDefaultRealm() throws KrbException {
         if (defaultRealm != null) {
             return defaultRealm;
@@ -1215,6 +1219,7 @@ public class Config {
      * @throws KrbException if there's no way to find KDC for the realm
      * @return the list of KDCs separated by a space, always non null
      */
+    @SuppressWarnings("removal")
     public String getKDCList(String realm) throws KrbException {
         if (realm == null) {
             realm = getDefaultRealm();
@@ -1367,6 +1372,7 @@ public class Config {
         return kdcs;
     }
 
+    @SuppressWarnings("removal")
     private boolean fileExists(String name) {
         return java.security.AccessController.doPrivileged(
                                 new FileExistsAction(name));

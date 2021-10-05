@@ -47,7 +47,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4970951
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4970951
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4970951
  * @run testng/othervm validation.Bug4970951
  * @summary Test TypeInfoProvider.isSpecified(...) return true if the attribute was originally present.
  */

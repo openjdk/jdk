@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
 #include "runtime/frame.inline.hpp"
 
@@ -98,12 +97,6 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
     address addr = os::fetch_frame_from_context(uc, &ret_sp, &ret_fp);
     if (addr == NULL || ret_sp == NULL ) {
       // ucontext wasn't useful
-      return false;
-    }
-
-    if (MetaspaceShared::is_in_trampoline_frame(addr)) {
-      // In the middle of a trampoline call. Bail out for safety.
-      // This happens rarely so shouldn't affect profiling.
       return false;
     }
 

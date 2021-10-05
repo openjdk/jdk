@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@ package vm.runtime.defmeth.shared;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeSet;
+import java.lang.reflect.Parameter;
+import java.util.*;
 import java.util.regex.Pattern;
 import nsk.share.TestFailure;
 import nsk.share.log.Log;
@@ -42,17 +41,17 @@ import vm.runtime.defmeth.ObjectMethodOverridesTest;
 import vm.runtime.defmeth.PrivateMethodsTest;
 import vm.runtime.defmeth.StaticMethodsTest;
 import vm.runtime.defmeth.SuperCallTest;
-import vm.runtime.defmeth.shared.annotation.Crash;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
+import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.builder.TestBuilderFactory;
 import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 import static java.lang.String.format;
-import java.util.Collections;
+import static jdk.internal.org.objectweb.asm.Opcodes.V17;
+import static jdk.internal.org.objectweb.asm.Opcodes.V1_5;
+
 import vm.runtime.defmeth.RedefineTest;
-import vm.runtime.defmeth.shared.annotation.NotTest;
 
 /**
  * Parent class for all default method tests.
@@ -98,15 +97,6 @@ public abstract class DefMethTest extends TestBase {
     @Option(name="filter", default_value="", description="filter executed tests")
     String filterString;
 
-    @Option(name="ignoreKnownFailures", default_value="false", description="ignore tests with known failures")
-    boolean ignoreKnownFailures;
-
-    @Option(name="runOnlyFailingTests", default_value="false", description="run only failing tests")
-    boolean runOnlyFailingTests;
-
-    @Option(name="ignoreCrashes", default_value="false", description="don't run tests with crash VM")
-    boolean ignoreCrashes;
-
     @Option(name="silent", default_value="false", description="silent mode - don't print anything")
     boolean isSilent;
 
@@ -117,9 +107,12 @@ public abstract class DefMethTest extends TestBase {
     boolean testAllModes;
 
     @Option(name="mode", description="invocation mode (direct, reflect, invoke)", default_value="direct")
-    private String mode;
+    String mode;
 
     private Pattern filter; // Precompiled pattern for filterString
+
+    public static final int MIN_MAJOR_VER = V1_5;
+    public static final int MAX_MAJOR_VER = V17;
 
     /**
      * Used from individual tests to get TestBuilder instances,
@@ -204,12 +197,8 @@ public abstract class DefMethTest extends TestBase {
         Class<? extends DefMethTest> test = this.getClass();
 
         int acc = m.getModifiers();
-        if (m.isAnnotationPresent(NotTest.class)
-                || (ignoreCrashes && m.isAnnotationPresent(Crash.class))
-                || !Modifier.isPublic(acc) || Modifier.isStatic(acc)
-                //|| m.getReturnType() != Void.class
-                || m.getParameterTypes().length != 0)
-        {
+        if (!Modifier.isPublic(acc) || Modifier.isStatic(acc) ||
+            m.getParameterTypes().length != 0 && !requiresTestBuilder(m)) {
             return false; // not a test
         }
 
@@ -230,20 +219,12 @@ public abstract class DefMethTest extends TestBase {
             }
         }
 
-          if (ignoreKnownFailures &&
-            m.isAnnotationPresent(KnownFailure.class)) {
-            ExecutionMode[] modes = m.getAnnotation(KnownFailure.class).modes();
-
-            if (modes.length == 0)  return false; // by default, matches all modes
-
-            for (ExecutionMode knownFailingMode : modes) {
-                if (mode == knownFailingMode) {
-                    return false; // known failure in current mode
-                }
-            }
-        }
-
         return true;
+    }
+
+    private boolean requiresTestBuilder(Method m) {
+        Parameter[] params = m.getParameters();
+        return params.length == 1 && (params[0].getType() == TestBuilder.class);
     }
 
     /** Information about the test being executed */
@@ -274,22 +255,14 @@ public abstract class DefMethTest extends TestBase {
      *
      * The following execution customization is supported:
      *   - filter tests by name using regex
-     *   - ignore tests marked as @KnownFailure
-     *   - ignore tests marked as @Crash
-     *   - only run tests marked as @KnownFailure
      *
      * @return any failures occurred?
      */
     public final boolean runTest() {
-        if (ignoreKnownFailures && runOnlyFailingTests) {
-            throw new IllegalArgumentException("conflicting parameters");
-        }
-
         ExecutionMode[] invocationModes = getInvocationModes();
 
         try {
             int totalTests = 0;
-            int passedTests = 0;
 
             Class<? extends DefMethTest> test = this.getClass();
 
@@ -321,7 +294,13 @@ public abstract class DefMethTest extends TestBase {
                     try {
                         factory.setExecutionMode(mode.name());
                         getLog().info(format("    %s: ", mode));
-                        m.invoke(this);
+                        if (requiresTestBuilder(m)) {
+                            TestBuilder b = factory.getBuilder();
+                            m.invoke(this, b);
+                            b.run();
+                        } else {
+                            m.invoke(this);
+                        }
                     } catch (IllegalAccessException | IllegalArgumentException e) {
                         throw new TestFailure(e);
                     } catch (InvocationTargetException e) {
@@ -340,7 +319,7 @@ public abstract class DefMethTest extends TestBase {
                 }
             }
 
-            passedTests = totalTests - numFailures;
+            int passedTests = totalTests - numFailures;
             getLog().info(format("%d test run: %d passed, %d failed", totalTests, passedTests, numFailures));
             if (numFailures == 0) {
                 return true;
@@ -349,6 +328,35 @@ public abstract class DefMethTest extends TestBase {
             }
         } catch (Exception | Error e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static void runTest(Class<? extends DefMethTest> testClass,
+                               Set<Integer> majorVerValues,
+                               Set<Integer> flagsValues,
+                               Set<Boolean> redefineValues,
+                               Set<ExecutionMode> execModes) {
+        for (int majorVer : majorVerValues) {
+            for (int flags : flagsValues) {
+                for (boolean redefine : redefineValues) {
+                    for (ExecutionMode mode : execModes) {
+                        try {
+                            DefMethTest test = testClass.getDeclaredConstructor().newInstance();
+
+                            OptionSupport.setup(test, new String[]{
+                                        "-execMode", mode.toString(),
+                                        "-ver", Integer.toString(majorVer),
+                                        "-flags", Integer.toString(flags),
+                                        "-redefine", Boolean.toString(redefine)
+                                });
+
+                            test.run();
+                        } catch (ReflectiveOperationException e) {
+                            throw new TestFailure(e);
+                        }
+                    }
+                }
+            }
         }
     }
 

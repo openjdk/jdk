@@ -26,7 +26,7 @@
  * @test
  * @bug 8193518 8249608
  * @summary C2: Vector registers are sometimes corrupted at safepoint
- * @run main/othervm -XX:-BackgroundCompilation -XX:+UseCountedLoopSafepoints -XX:LoopStripMiningIter=2 -XX:-TieredCompilation TestVectorsNotSavedAtSafepoint test1
+ * @run main/othervm -XX:-BackgroundCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountedLoopSafepoints -XX:LoopStripMiningIter=2 -XX:-TieredCompilation TestVectorsNotSavedAtSafepoint test1
  * @run main/othervm -XX:-BackgroundCompilation TestVectorsNotSavedAtSafepoint test2
  */
 

@@ -63,7 +63,7 @@ final class StackStreamFactory {
 
     // Stack walk implementation classes to be excluded during stack walking
     // lazily add subclasses when they are loaded.
-    private final static Set<Class<?>> stackWalkImplClasses = init();
+    private static final Set<Class<?>> stackWalkImplClasses = init();
 
     private static final int SMALL_BATCH       = 8;
     private static final int BATCH_SIZE        = 32;
@@ -81,7 +81,7 @@ final class StackStreamFactory {
      * Performance work and extensive testing is needed to replace the
      * VM built-in backtrace filled in Throwable with the StackWalker.
      */
-    final static boolean isDebug =
+    static final boolean isDebug =
             "true".equals(GetPropertyAction.privilegedGetProperty("stackwalk.debug"));
 
     static <T> StackFrameTraverser<T>
@@ -620,7 +620,7 @@ final class StackStreamFactory {
             super(walker, FILL_CLASS_REFS_ONLY|GET_CALLER_CLASS);
         }
 
-        final class ClassBuffer extends FrameBuffer<Class<?>> {
+        static final class ClassBuffer extends FrameBuffer<Class<?>> {
             Class<?>[] classes;      // caller class for fast path
             ClassBuffer(int batchSize) {
                 super(batchSize);

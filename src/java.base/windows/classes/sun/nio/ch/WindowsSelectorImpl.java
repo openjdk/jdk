@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import jdk.internal.misc.Unsafe;
 
@@ -320,12 +319,11 @@ class WindowsSelectorImpl extends SelectorImpl {
         private void checkForException() throws IOException {
             if (exception == null)
                 return;
-            StringBuffer message =  new StringBuffer("An exception occurred" +
-                                       " during the execution of select(): \n");
-            message.append(exception);
-            message.append('\n');
+            String message = "An exception occurred" +
+                    " during the execution of select(): \n" +
+                    exception + '\n';
             exception = null;
-            throw new IOException(message.toString());
+            throw new IOException(message);
         }
     }
 
@@ -367,7 +365,9 @@ class WindowsSelectorImpl extends SelectorImpl {
         private native int poll0(long pollAddress, int numfds,
              int[] readFds, int[] writeFds, int[] exceptFds, long timeout, long fdsBuffer);
 
-        private int processSelectedKeys(long updateCount, Consumer<SelectionKey> action) {
+        private int processSelectedKeys(long updateCount, Consumer<SelectionKey> action)
+            throws IOException
+        {
             int numKeysUpdated = 0;
             numKeysUpdated += processFDSet(updateCount, action, readFds,
                                            Net.POLLIN,
@@ -394,6 +394,7 @@ class WindowsSelectorImpl extends SelectorImpl {
                                  Consumer<SelectionKey> action,
                                  int[] fds, int rOps,
                                  boolean isExceptFds)
+            throws IOException
         {
             int numKeysUpdated = 0;
             for (int i = 1; i <= fds[0]; i++) {
@@ -417,7 +418,7 @@ class WindowsSelectorImpl extends SelectorImpl {
                 SelectableChannel sc = ski.channel();
                 if (isExceptFds && (sc instanceof SocketChannelImpl)
                         && ((SocketChannelImpl) sc).isNetSocket()
-                        && discardUrgentData(desc)) {
+                        && Net.discardOOB(ski.getFD())) {
                     continue;
                 }
 
@@ -513,8 +514,6 @@ class WindowsSelectorImpl extends SelectorImpl {
 
     private native void resetWakeupSocket0(int wakeupSourceFd);
 
-    private native boolean discardUrgentData(int fd);
-
     // We increment this counter on each call to updateSelectedKeys()
     // each entry in  SubSelector.fdsMap has a memorized value of
     // updateCount. When we increment numKeysUpdated we set updateCount
@@ -525,7 +524,7 @@ class WindowsSelectorImpl extends SelectorImpl {
 
     // Update ops of the corresponding Channels. Add the ready keys to the
     // ready queue.
-    private int updateSelectedKeys(Consumer<SelectionKey> action) {
+    private int updateSelectedKeys(Consumer<SelectionKey> action) throws IOException {
         updateCount++;
         int numKeysUpdated = 0;
         numKeysUpdated += subSelector.processSelectedKeys(updateCount, action);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
   @key headful
   @bug 6382144
   @summary REGRESSION: InputVerifier and JOptionPane
-  @author oleg.sukhodolsky: area=awt.focus
   @run main EndlessLoopTest
 */
 
@@ -57,81 +56,95 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 public class EndlessLoopTest
 {
 
     //*** test-writer defined static variables go here ***
     static volatile int n_iv_calls;
+    static JFrame frame;
+    static JTextField t1;
+    static JButton button;
 
-
-    private static void init()
+    private static void init() throws Exception
     {
         //*** Create instructions for the user here ***
 
-        JFrame frame = new JFrame();
-        final JDialog dialog = new JDialog(frame, true);
-        JButton button = new JButton("press me");
-        button.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent ae) {
-                    dialog.dispose();
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                frame = new JFrame();
+                final JDialog dialog = new JDialog(frame, true);
+                button = new JButton("press me");
+                button.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent ae) {
+                        dialog.dispose();
+                    }
+                });
+                dialog.getContentPane().add(button);
+                dialog.setLocationRelativeTo(null);
+                dialog.pack();
+
+                t1 = new JTextField();
+                t1.setInputVerifier(new InputVerifier() {
+                    public boolean verify(JComponent input) {
+                        n_iv_calls++;
+                        if (n_iv_calls == 1) {
+                            dialog.setVisible(true);
+                        }
+                        return true;
+                    }
+                });
+                JTextField t2 = new JTextField();
+
+                frame.getContentPane().add(t1, BorderLayout.NORTH);
+                frame.getContentPane().add(t2, BorderLayout.SOUTH);
+                frame.setLocationRelativeTo(null);
+                frame.setSize(200, 200);
+                frame.setVisible(true);
+            });
+
+            Robot r = null;
+            try {
+                r = new Robot();
+            } catch (AWTException e) {
+                EndlessLoopTest.fail(e);
+            }
+
+            try {
+                r.setAutoDelay(100);
+                r.waitForIdle();
+                r.delay(1000);
+
+                mouseClickOnComp(r, t1);
+                r.waitForIdle();
+
+                if (!t1.isFocusOwner()) {
+                    throw new RuntimeException("t1 is not a focus owner");
+                }
+                n_iv_calls = 0;
+                r.keyPress(KeyEvent.VK_TAB);
+                r.keyRelease(KeyEvent.VK_TAB);
+                r.waitForIdle();
+
+                mouseClickOnComp(r, button);
+                r.waitForIdle();
+            } catch (Exception e) {
+                EndlessLoopTest.fail(e);
+            }
+
+            if (n_iv_calls != 1) {
+                EndlessLoopTest.fail(new RuntimeException("InputVerifier was called " + n_iv_calls + " times"));
+            }
+
+            EndlessLoopTest.pass();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
                 }
             });
-        dialog.getContentPane().add(button);
-        dialog.pack();
-
-        JTextField t1 = new JTextField();
-        t1.setInputVerifier(new InputVerifier() {
-            public boolean verify(JComponent input) {
-                n_iv_calls++;
-                if (n_iv_calls == 1) {
-                    dialog.setVisible(true);
-                }
-                return true;
-            }
-        });
-        JTextField t2 = new JTextField();
-
-
-        frame.getContentPane().add(t1, BorderLayout.NORTH);
-        frame.getContentPane().add(t2, BorderLayout.SOUTH);
-        frame.setSize(200, 200);
-        frame.setVisible(true);
-
-        Robot r = null;
-        try {
-            r = new Robot();
-        } catch (AWTException e) {
-            EndlessLoopTest.fail(e);
         }
-
-        try {
-            r.waitForIdle();
-
-            mouseClickOnComp(r, t1);
-            r.waitForIdle();
-
-            if (!t1.isFocusOwner()) {
-                throw new RuntimeException("t1 is not a focus owner");
-            }
-            n_iv_calls = 0;
-            r.keyPress(KeyEvent.VK_TAB);
-            r.delay(10);
-            r.keyRelease(KeyEvent.VK_TAB);
-            r.waitForIdle();
-
-            mouseClickOnComp(r, button);
-            r.waitForIdle();
-        } catch (Exception e) {
-            EndlessLoopTest.fail(e);
-        }
-
-        if (n_iv_calls != 1) {
-            EndlessLoopTest.fail(new RuntimeException("InputVerifier was called " + n_iv_calls + " times"));
-        }
-
-        EndlessLoopTest.pass();
-
     }//End  init()
 
 
@@ -140,10 +153,9 @@ public class EndlessLoopTest
         loc.x += comp.getWidth() / 2;
         loc.y += comp.getHeight() / 2;
         r.mouseMove(loc.x, loc.y);
-        r.delay(10);
-        r.mousePress(InputEvent.BUTTON1_MASK);
-        r.delay(10);
-        r.mouseRelease(InputEvent.BUTTON1_MASK);
+        r.waitForIdle();
+        r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
     /*****************************************************
@@ -170,7 +182,7 @@ public class EndlessLoopTest
     //  instantiated in the same VM.  Being static (and using
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
-    public static void main( String args[] ) throws InterruptedException
+    public static void main( String args[] ) throws Exception
     {
         mainThread = Thread.currentThread();
         try

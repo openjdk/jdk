@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,25 @@
 
 package sun.security.rsa;
 
-import java.math.BigInteger;
-import java.util.*;
-
-import java.security.SecureRandom;
-import java.security.interfaces.*;
+import sun.security.jca.JCAUtil;
 
 import javax.crypto.BadPaddingException;
-
-import sun.security.jca.JCAUtil;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.security.interfaces.RSAKey;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Core of the RSA implementation. Has code to perform public and private key
  * RSA operations (with and without CRT for private key ops). Private CRT ops
- * also support blinding to twart timing attacks.
+ * also support blinding to thwart timing attacks.
  *
  * The code in this class only does the core RSA operation. Padding and
  * unpadding must be done externally.
@@ -53,11 +58,14 @@ public final class RSACore {
     // globally enable/disable use of blinding
     private static final boolean ENABLE_BLINDING = true;
 
-    // cache for blinding parameters. Map<BigInteger, BlindingParameters>
-    // use a weak hashmap so that cached values are automatically cleared
-    // when the modulus is GC'ed
-    private static final Map<BigInteger, BlindingParameters>
+    // cache for blinding parameters. Map<BigInteger,
+    // ConcurrentLinkedQueue<BlindingParameters>> use a weak hashmap so that,
+    // cached values are automatically cleared when the modulus is GC'ed.
+    // Multiple BlindingParameters can be queued during times of heavy load,
+    // like performance testing.
+    private static final Map<BigInteger, ConcurrentLinkedQueue<BlindingParameters>>
                 blindingCache = new WeakHashMap<>();
+    private static final ReentrantLock lock = new ReentrantLock();
 
     private RSACore() {
         // empty
@@ -402,56 +410,68 @@ public final class RSACore {
             if ((this.e != null && this.e.equals(e)) ||
                 (this.d != null && this.d.equals(d))) {
 
-                BlindingRandomPair brp = null;
-                synchronized (this) {
-                    if (!u.equals(BigInteger.ZERO) &&
-                        !v.equals(BigInteger.ZERO)) {
-
-                        brp = new BlindingRandomPair(u, v);
-                        if (u.compareTo(BigInteger.ONE) <= 0 ||
-                            v.compareTo(BigInteger.ONE) <= 0) {
-
-                            // need to reset the random pair next time
-                            u = BigInteger.ZERO;
-                            v = BigInteger.ZERO;
-                        } else {
-                            u = u.modPow(BIG_TWO, n);
-                            v = v.modPow(BIG_TWO, n);
-                        }
-                    } // Otherwise, need to reset the random pair.
+                BlindingRandomPair brp = new BlindingRandomPair(u, v);
+                if (u.compareTo(BigInteger.ONE) <= 0 ||
+                    v.compareTo(BigInteger.ONE) <= 0) {
+                    // Reset so the parameters will be not queued later
+                    u = BigInteger.ZERO;
+                    v = BigInteger.ZERO;
+                } else {
+                    u = u.modPow(BIG_TWO, n);
+                    v = v.modPow(BIG_TWO, n);
                 }
+
                 return brp;
             }
 
             return null;
+        }
+
+        // Check if reusable, return true if both u & v are not zero.
+        boolean isReusable() {
+            return !u.equals(BigInteger.ZERO) && !v.equals(BigInteger.ZERO);
         }
     }
 
     private static BlindingRandomPair getBlindingRandomPair(
             BigInteger e, BigInteger d, BigInteger n) {
 
-        BlindingParameters bps = null;
-        synchronized (blindingCache) {
-            bps = blindingCache.get(n);
+        ConcurrentLinkedQueue<BlindingParameters> queue;
+
+        // Get queue from map, if there is none then create one
+        lock.lock();
+        try {
+            queue = blindingCache.computeIfAbsent(n,
+                ignored -> new ConcurrentLinkedQueue<>());
+        } finally {
+            lock.unlock();
         }
 
+        BlindingParameters bps = queue.poll();
         if (bps == null) {
             bps = new BlindingParameters(e, d, n);
-            synchronized (blindingCache) {
-                blindingCache.putIfAbsent(n, bps);
-            }
         }
 
-        BlindingRandomPair brp = bps.getBlindingRandomPair(e, d, n);
-        if (brp == null) {
-            // need to reset the blinding parameters
-            bps = new BlindingParameters(e, d, n);
-            synchronized (blindingCache) {
-                blindingCache.replace(n, bps);
-            }
+        BlindingRandomPair brp = null;
+
+        // Loops to get a valid pair, going through the queue or create a new
+        // parameters if needed.
+        while (brp == null) {
             brp = bps.getBlindingRandomPair(e, d, n);
+            if (brp == null) {
+                // need to reset the blinding parameters, first check for
+                // another in the queue.
+                bps = queue.poll();
+                if (bps == null) {
+                    bps = new BlindingParameters(e, d, n);
+                }
+            }
         }
 
+        // If this parameters are still usable, put them back into the queue.
+        if (bps.isReusable()) {
+            queue.add(bps);
+        }
         return brp;
     }
 

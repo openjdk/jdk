@@ -25,11 +25,12 @@
 #ifndef SHARE_GC_SHARED_WEAKPROCESSOR_INLINE_HPP
 #define SHARE_GC_SHARED_WEAKPROCESSOR_INLINE_HPP
 
+#include "gc/shared/weakProcessor.hpp"
+
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/weakProcessorTimes.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "prims/resolvedMethodTable.hpp"

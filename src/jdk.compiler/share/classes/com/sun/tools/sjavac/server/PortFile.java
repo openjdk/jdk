@@ -55,7 +55,7 @@ public class PortFile {
     // Port file format:
     // byte ordering: high byte first = big endian
     // Magic nr, 4 byte int, first in file.
-    private final static int magicNr = 0x1174;
+    private static final int magicNr = 0x1174;
     // Followed by a 4 byte int, with the port nr.
     // Followed by a 8 byte long, with cookie nr.
 

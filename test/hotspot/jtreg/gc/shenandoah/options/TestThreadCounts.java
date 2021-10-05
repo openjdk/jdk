@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestThreadCounts
+ * @test
  * @summary Test that Shenandoah GC thread counts are handled well
  * @requires vm.gc.Shenandoah
  * @library /test/lib

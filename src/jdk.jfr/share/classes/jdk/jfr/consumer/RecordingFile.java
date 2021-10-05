@@ -193,6 +193,7 @@ public final class RecordingFile implements Closeable {
      *
      * @throws IOException if an I/O error occurred
      */
+    @Override
     public void close() throws IOException {
         if (input != null) {
             eof = true;

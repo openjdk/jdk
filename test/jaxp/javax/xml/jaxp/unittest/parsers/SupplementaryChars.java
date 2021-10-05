@@ -14,7 +14,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 8072081
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.SupplementaryChars
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.SupplementaryChars
  * @run testng/othervm parsers.SupplementaryChars
  * @summary verifies that supplementary characters are supported as character
  * data in xml 1.0, and also names in xml 1.1.

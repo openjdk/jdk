@@ -86,7 +86,7 @@ static const typeArrayOop invoke(jlong trace_id,
     return NULL;
   }
   // The result should be a [B
-  const oop res = (oop)result.get_jobject();
+  const oop res = result.get_oop();
   assert(res != NULL, "invariant");
   assert(res->is_typeArray(), "invariant");
   assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "invariant");

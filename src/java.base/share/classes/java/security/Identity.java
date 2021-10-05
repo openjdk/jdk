@@ -334,20 +334,12 @@ public abstract class Identity implements Principal, Serializable {
      * @see #identityEquals
      */
     public final boolean equals(Object identity) {
-
         if (identity == this) {
             return true;
         }
 
-        if (identity instanceof Identity) {
-            Identity i = (Identity)identity;
-            if (this.fullName().equals(i.fullName())) {
-                return true;
-            } else {
-                return identityEquals(i);
-            }
-        }
-        return false;
+        return identity instanceof Identity other
+                && (this.fullName().equals(other.fullName()) || identityEquals(other));
     }
 
     /**

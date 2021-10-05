@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,40 +25,40 @@
 
 package com.sun.imageio.plugins.jpeg;
 
+import java.awt.Graphics;
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.IndexColorModel;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.imageio.IIOException;
 import javax.imageio.IIOImage;
-import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.event.IIOReadProgressListener;
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
-import javax.imageio.event.IIOReadProgressListener;
 
-import java.awt.Graphics;
-import java.awt.color.ICC_Profile;
-import java.awt.color.ICC_ColorSpace;
-import java.awt.color.ColorSpace;
-import java.awt.image.ColorModel;
-import java.awt.image.SampleModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.ComponentColorModel;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
-import java.io.IOException;
-import java.io.ByteArrayOutputStream;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A JFIF (JPEG File Interchange Format) APP0 (Application-Specific)
@@ -158,9 +158,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         JFIFMarkerSegment newGuy = (JFIFMarkerSegment) super.clone();
         if (!extSegments.isEmpty()) { // Clone the list with a deep copy
             newGuy.extSegments = new ArrayList<>();
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment jfxx = iter.next();
+            for (JFIFExtensionMarkerSegment jfxx : extSegments) {
                 newGuy.extSegments.add((JFIFExtensionMarkerSegment) jfxx.clone());
             }
         }
@@ -230,9 +228,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         if (!extSegments.isEmpty()) {
             IIOMetadataNode JFXXnode = new IIOMetadataNode("JFXX");
             node.appendChild(JFXXnode);
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment seg = iter.next();
+            for (JFIFExtensionMarkerSegment seg : extSegments) {
                 JFXXnode.appendChild(seg.getNativeNode());
             }
         }
@@ -634,9 +630,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         System.out.print("Thumbnail Height: ");
         System.out.println(thumbHeight);
         if (!extSegments.isEmpty()) {
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment extSegment = iter.next();
+            for (JFIFExtensionMarkerSegment extSegment : extSegments) {
                 extSegment.print();
             }
         }
@@ -1001,7 +995,7 @@ class JFIFMarkerSegment extends MarkerSegment {
                                                3,
                                                new int [] {0, 1, 2},
                                                null);
-            ColorModel cm = new ComponentColorModel(JPEG.JCS.sRGB,
+            ColorModel cm = new ComponentColorModel(JPEG.sRGB,
                                                     false,
                                                     false,
                                                     ColorModel.OPAQUE,
@@ -1353,7 +1347,7 @@ class JFIFMarkerSegment extends MarkerSegment {
             ios.write(0xff);
             ios.write(JPEG.APP2);
             MarkerSegment.write2bytes(ios, segLength);
-            byte [] id = ID.getBytes("US-ASCII");
+            byte[] id = ID.getBytes(US_ASCII);
             ios.write(id);
             ios.write(0); // Null-terminate the string
             ios.write(chunkNum++);

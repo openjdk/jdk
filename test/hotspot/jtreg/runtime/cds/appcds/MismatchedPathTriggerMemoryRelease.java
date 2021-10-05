@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,7 @@ public class MismatchedPathTriggerMemoryRelease {
     private static String ERR_MSGS[] = {
         "UseSharedSpaces: shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)",
         "UseSharedSpaces: Unable to map shared spaces"};
-    private static String RELEASE_SPACE_MATCH =
-        "Released shared space\\s(\\(archive\\s*\\+\\s*class\\) | ?)0(x|X)[0-9a-fA-F]+$";
+    private static String RELEASE_SPACE_MATCH = "Released shared space .* 0(x|X)[0-9a-fA-F]+$";
     private static String OS_RELEASE_MSG = "os::release_memory failed";
 
     public static void main(String[] args) throws Exception {

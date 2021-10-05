@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,42 @@ import java.util.function.Function;
  *
  */
 public class Preconditions {
+
+    /**
+     * Utility exception formatters which can be used in {@code Preconditions}
+     * check functions below.
+     *
+     * These anonymous inner classes can be syntactically replaced by lambda
+     * expression or method reference, but it's not feasible in practices,
+     * because {@code Preconditions} is used in many fundamental classes such
+     * as {@code java.lang.String}, lambda expressions or method references
+     * exercise many other code at VM startup, this could lead a recursive
+     * calls when fundamental classes is used in lambda expressions or method
+     * references.
+     */
+    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException>
+            SIOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public StringIndexOutOfBoundsException apply(String s) {
+            return new StringIndexOutOfBoundsException(s);
+        }
+    });
+
+    public static final BiFunction<String, List<Number>, ArrayIndexOutOfBoundsException>
+            AIOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public ArrayIndexOutOfBoundsException apply(String s) {
+            return new ArrayIndexOutOfBoundsException(s);
+        }
+    });
+
+    public static final BiFunction<String,List<Number>, IndexOutOfBoundsException>
+            IOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public IndexOutOfBoundsException apply(String s) {
+            return new IndexOutOfBoundsException(s);
+        }
+    });
 
     /**
      * Maps out-of-bounds values to a runtime exception.
@@ -203,13 +239,13 @@ public class Preconditions {
         // Switch to default if fewer or more arguments than required are supplied
         switch ((args.size() != argSize) ? "" : checkKind) {
             case "checkIndex":
-                return String.format("Index %d out of bounds for length %d",
+                return String.format("Index %s out of bounds for length %s",
                                      args.get(0), args.get(1));
             case "checkFromToIndex":
-                return String.format("Range [%d, %d) out of bounds for length %d",
+                return String.format("Range [%s, %s) out of bounds for length %s",
                                      args.get(0), args.get(1), args.get(2));
             case "checkFromIndexSize":
-                return String.format("Range [%d, %<d + %d) out of bounds for length %d",
+                return String.format("Range [%s, %<s + %s) out of bounds for length %s",
                                      args.get(0), args.get(1), args.get(2));
             default:
                 return String.format("Range check failed: %s %s", checkKind, args);

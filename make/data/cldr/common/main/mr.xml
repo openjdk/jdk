@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -409,7 +409,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">मोल्डाव्हियन</language>
 			<language type="rof">रोम्बो</language>
 			<language type="rom">रोमानी</language>
-			<language type="root">रूट</language>
 			<language type="ru">रशियन</language>
 			<language type="rup">अरोमानियन</language>
 			<language type="rw">किन्यार्वान्डा</language>
@@ -3220,9 +3219,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>सांता इसाबेल</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>होनोलुलू</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>समन्वित वैश्विक वेळ</standard>
@@ -3342,11 +3338,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>ब्रोकन हिल</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>कुह्री</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>मेलबोर्न</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>कुह्री</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>होबार्ट</exemplarCity>
@@ -4379,6 +4375,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>नोम</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>होनोलुलू</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>जोहान्स्टन</exemplarCity>
@@ -6692,7 +6691,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>पश्चिम आफ्रिकन [CFA] फ्रँक</displayName>
 				<displayName count="one">पश्चिम आफ्रिकन [CFA] फ्रँक</displayName>
 				<displayName count="other">पश्चिम आफ्रिकन [CFA] फ्रँक्स</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>[CFP] फ्रँक</displayName>
@@ -6938,7 +6937,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} कॅरेट</unitPattern>
 				<unitPattern count="other">{0} कॅरेट्स</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>मिलीग्रामस् पर डेसीलिटर</displayName>
 				<unitPattern count="one">{0} मिलीग्राम पर डेसीलिटर</unitPattern>
 				<unitPattern count="other">{0} मिलीग्रामस् पर डेसीलिटर</unitPattern>
@@ -7782,7 +7781,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>मि{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
-				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>नॅ{0}</unitPrefixPattern>
@@ -7940,7 +7939,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="one">{0} mg/dL</unitPattern>
 				<unitPattern count="other">{0} mg/dL</unitPattern>
@@ -8267,8 +8266,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>मायक्रोमीटर</displayName>
-				<unitPattern count="one">{0} µm</unitPattern>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>नॅमी</displayName>
@@ -8386,9 +8385,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} मिग्रॅ</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µg</displayName>
-				<unitPattern count="one">{0} µg</unitPattern>
-				<unitPattern count="other">{0} µg</unitPattern>
+				<displayName>μg</displayName>
+				<unitPattern count="one">{0} μg</unitPattern>
+				<unitPattern count="other">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>टन</displayName>
@@ -8729,7 +8728,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>मि{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
-				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>नॅ{0}</unitPrefixPattern>
@@ -8942,8 +8941,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-micrometer">
 				<displayName draft="contributed">मायक्रोमीटर</displayName>
-				<unitPattern count="one" draft="contributed">{0} µm</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} µm</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} μm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName draft="contributed">नॅमी</displayName>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public final class Integer extends Number
      * <blockquote>
      *  {@code Integer.toHexString(n).toUpperCase()}
      * </blockquote>
-     * <p>
+     *
      * @apiNote
      * The {@link java.util.HexFormat} class provides formatting and parsing
      * of byte arrays and primitives to return a string or adding to an {@link Appendable}.
@@ -627,7 +627,7 @@ public final class Integer extends Number
          */
 
         if (s == null) {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         if (radix < Character.MIN_RADIX) {
@@ -709,10 +709,8 @@ public final class Integer extends Number
     public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException("radix " + radix +
                                             " less than Character.MIN_RADIX");
@@ -832,7 +830,7 @@ public final class Integer extends Number
     public static int parseUnsignedInt(String s, int radix)
                 throws NumberFormatException {
         if (s == null)  {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         int len = s.length();
@@ -892,10 +890,8 @@ public final class Integer extends Number
     public static int parseUnsignedInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         int start = beginIndex, len = endIndex - beginIndex;
 
         if (len > 0) {
@@ -1417,7 +1413,7 @@ public final class Integer extends Number
         int radix = 10;
         int index = 0;
         boolean negative = false;
-        Integer result;
+        int result;
 
         if (nm.isEmpty())
             throw new NumberFormatException("Zero length string");
@@ -1447,15 +1443,15 @@ public final class Integer extends Number
             throw new NumberFormatException("Sign character in wrong position");
 
         try {
-            result = Integer.valueOf(nm.substring(index), radix);
-            result = negative ? Integer.valueOf(-result.intValue()) : result;
+            result = parseInt(nm, index, nm.length(), radix);
+            result = negative ? -result : result;
         } catch (NumberFormatException e) {
             // If number is Integer.MIN_VALUE, we'll end up here. The next line
             // handles this case, and causes any genuine format error to be
             // rethrown.
             String constant = negative ? ("-" + nm.substring(index))
                                        : nm.substring(index);
-            result = Integer.valueOf(constant, radix);
+            result = parseInt(constant, radix);
         }
         return result;
     }

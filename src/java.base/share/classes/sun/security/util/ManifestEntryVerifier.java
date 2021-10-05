@@ -27,13 +27,12 @@ package sun.security.util;
 
 import java.security.*;
 import java.io.*;
-import java.security.CodeSigner;
 import java.util.*;
 import java.util.jar.*;
 
-import java.util.Base64;
-
 import sun.security.jca.Providers;
+import sun.security.util.DisabledAlgorithmConstraints;
+import sun.security.util.JarConstraintsParameters;
 
 /**
  * This class is used to verify each entry in a jar file with its
@@ -202,12 +201,29 @@ public class ManifestEntryVerifier {
             throw new SecurityException("digest missing for " + name);
         }
 
-        if (signers != null)
+        if (signers != null) {
             return signers;
+        }
+
+        JarConstraintsParameters params =
+            getParams(verifiedSigners, sigFileSigners);
 
         for (int i=0; i < digests.size(); i++) {
 
-            MessageDigest digest  = digests.get(i);
+            MessageDigest digest = digests.get(i);
+            if (params != null) {
+                try {
+                    params.setExtendedExceptionMsg(JarFile.MANIFEST_NAME,
+                        name + " entry");
+                    DisabledAlgorithmConstraints.jarConstraints()
+                           .permits(digest.getAlgorithm(), params);
+                } catch (GeneralSecurityException e) {
+                    if (debug != null) {
+                        debug.println("Digest algorithm is restricted: " + e);
+                    }
+                    return null;
+                }
+            }
             byte [] manHash = manifestHashes.get(i);
             byte [] theHash = digest.digest();
 
@@ -231,4 +247,37 @@ public class ManifestEntryVerifier {
         }
         return signers;
     }
+
+    /**
+     * Get constraints parameters for JAR. The constraints should be
+     * checked against all code signers. Returns the parameters,
+     * or null if the signers for this entry have already been checked.
+     */
+    private JarConstraintsParameters getParams(
+            Map<String, CodeSigner[]> verifiedSigners,
+            Map<String, CodeSigner[]> sigFileSigners) {
+
+        // verifiedSigners is usually preloaded with the Manifest's signers.
+        // If verifiedSigners contains the Manifest, then it will have all of
+        // the signers of the JAR. But if it doesn't then we need to fallback
+        // and check verifiedSigners to see if the signers of this entry have
+        // been checked already.
+        if (verifiedSigners.containsKey(JarFile.MANIFEST_NAME)) {
+            if (verifiedSigners.size() > 1) {
+                // this means we already checked it previously
+                return null;
+            } else {
+                return new JarConstraintsParameters(
+                    verifiedSigners.get(JarFile.MANIFEST_NAME));
+            }
+        } else {
+            CodeSigner[] signers = sigFileSigners.get(name);
+            if (verifiedSigners.containsValue(signers)) {
+                return null;
+            } else {
+                return new JarConstraintsParameters(signers);
+            }
+        }
+    }
 }
+

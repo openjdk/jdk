@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,14 +83,14 @@ public class DriverManager {
 
 
     // List of registered JDBC drivers
-    private final static CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<>();
     private static volatile int loginTimeout = 0;
     private static volatile java.io.PrintWriter logWriter = null;
     private static volatile java.io.PrintStream logStream = null;
     // Used in println() to synchronize logWriter
-    private final static Object logSync = new Object();
+    private static final Object logSync = new Object();
     // Used in ensureDriversInitialized() to synchronize driversInitialized
-    private final static Object lockForInitDrivers = new Object();
+    private static final Object lockForInitDrivers = new Object();
     private static volatile boolean driversInitialized;
     private static final String JDBC_DRIVERS_PROPERTY = "jdbc.drivers";
 
@@ -102,7 +102,7 @@ public class DriverManager {
      * setting of the logging stream.
      * @since 1.3
      */
-    final static SQLPermission SET_LOG_PERMISSION =
+    static final SQLPermission SET_LOG_PERMISSION =
         new SQLPermission("setLog");
 
     /**
@@ -110,7 +110,7 @@ public class DriverManager {
      * un-register a registered JDBC driver.
      * @since 1.8
      */
-    final static SQLPermission DEREGISTER_DRIVER_PERMISSION =
+    static final SQLPermission DEREGISTER_DRIVER_PERMISSION =
         new SQLPermission("deregisterDriver");
 
     //--------------------------JDBC 2.0-----------------------------
@@ -147,6 +147,7 @@ public class DriverManager {
      */
     public static void setLogWriter(java.io.PrintWriter out) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_LOG_PERMISSION);
@@ -380,6 +381,7 @@ public class DriverManager {
             return;
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(DEREGISTER_DRIVER_PERMISSION);
@@ -497,6 +499,7 @@ public class DriverManager {
     @Deprecated(since="1.2")
     public static void setLogStream(java.io.PrintStream out) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_LOG_PERMISSION);
@@ -567,6 +570,7 @@ public class DriverManager {
      * Load the initial JDBC drivers by checking the System property
      * jdbc.drivers and then use the {@code ServiceLoader} mechanism
      */
+    @SuppressWarnings("removal")
     private static void ensureDriversInitialized() {
         if (driversInitialized) {
             return;

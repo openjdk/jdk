@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import javax.sound.midi.Instrument;
 import javax.sound.midi.Patch;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.SoundbankResource;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A SoundFont 2.04 soundbank reader.
@@ -539,7 +541,7 @@ public final class SF2Soundbank implements Soundbank {
             return;
         RIFFWriter chunk = writer.writeChunk(name);
         chunk.writeString(value);
-        int len = value.getBytes("ascii").length;
+        int len = value.getBytes(US_ASCII).length;
         chunk.write(0);
         len++;
         if (len % 2 != 0)

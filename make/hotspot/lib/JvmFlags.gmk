@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,4 +98,8 @@ endif
 
 ifneq ($(HOTSPOT_OVERRIDE_LIBPATH), )
   JVM_CFLAGS += -DOVERRIDE_LIBPATH='"$(HOTSPOT_OVERRIDE_LIBPATH)"'
+endif
+
+ifeq ($(ENABLE_COMPATIBLE_CDS_ALIGNMENT), true)
+  JVM_CFLAGS += -DCOMPATIBLE_CDS_ALIGNMENT
 endif

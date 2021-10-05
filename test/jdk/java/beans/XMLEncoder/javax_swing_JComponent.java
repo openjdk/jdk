@@ -28,6 +28,7 @@ import javax.swing.plaf.ComponentUI;
  * @test
  * @bug 8131754
  * @summary Tests JComponent encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_JComponent
  */
 public final class javax_swing_JComponent extends AbstractTest<JComponent> {
 

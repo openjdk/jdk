@@ -56,6 +56,7 @@ import java.net.URL;
  * @see DTDParser
  * @see Parser
  * @author Arthur van Hoff
+ * @author Guy Abossolo Foh
  */
 public
 class DTDBuilder extends DTD {
@@ -282,7 +283,7 @@ class DTDBuilder extends DTD {
 
     public static void main(String argv[]) {
 
-        String dtd_home = System.getProperty("dtd_home") + File.separator;
+        String dtd_home = System.getProperty("dtd_home");
         if (dtd_home == null) {
             System.err.println("Must set property 'dtd_home'");
             return;
@@ -291,12 +292,12 @@ class DTDBuilder extends DTD {
         DTDBuilder dtd = null;
         try {
             dtd = new DTDBuilder(argv[0]);
-            mapping = new PublicMapping(dtd_home, "public.map");
+            mapping = new PublicMapping(dtd_home + File.separator, "public.map");
             String path = mapping.get(argv[0]);
             new DTDParser().parse(new FileInputStream(path), dtd);
 
         } catch (IOException e) {
-            System.err.println("Could not open DTD file "+argv[0]);
+            System.err.println("Could not open DTD file " + argv[0]);
             e.printStackTrace(System.err);
             System.exit(1);
         }

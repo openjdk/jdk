@@ -51,8 +51,8 @@ OopStorage* JNIHandles::_global_handles = NULL;
 OopStorage* JNIHandles::_weak_global_handles = NULL;
 
 void jni_handles_init() {
-  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global");
-  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak");
+  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global", mtInternal);
+  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak", mtInternal);
 }
 
 jobject JNIHandles::make_local(oop obj) {
@@ -207,7 +207,7 @@ jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
       // Not in global storage.  Might be a local handle.
       if (is_local_handle(thread, handle) ||
           (thread->is_Java_thread() &&
-           is_frame_handle(thread->as_Java_thread(), handle))) {
+           is_frame_handle(JavaThread::cast(thread), handle))) {
         result = JNILocalRefType;
       }
       break;
@@ -302,7 +302,7 @@ void JNIHandles::verify() {
 bool JNIHandles::current_thread_in_native() {
   Thread* thread = Thread::current();
   return (thread->is_Java_thread() &&
-          thread->as_Java_thread()->thread_state() == _thread_in_native);
+          JavaThread::cast(thread)->thread_state() == _thread_in_native);
 }
 
 

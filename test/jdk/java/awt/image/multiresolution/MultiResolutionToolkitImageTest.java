@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
-import static java.awt.image.ImageObserver.ALLBITS;
 import java.io.File;
 import javax.imageio.ImageIO;
 import sun.awt.OSInfo;
@@ -37,14 +36,13 @@ import sun.awt.image.MultiResolutionToolkitImage;
 /**
  * @test
  * @key headful
- * @bug 8040291
- * @author Alexander Scherbatiy
+ * @bug 8040291 8257500
+ * @requires os.family == "mac"
  * @summary [macosx] Http-Images are not fully loaded when using ImageIcon
  * @modules java.desktop/sun.awt
  *          java.desktop/sun.awt.image
  * @run main MultiResolutionToolkitImageTest
  */
-
 public class MultiResolutionToolkitImageTest {
 
     private static final int IMAGE_WIDTH = 300;
@@ -140,7 +138,7 @@ public class MultiResolutionToolkitImageTest {
         Exception e = new Exception();
 
         for (StackTraceElement elem : e.getStackTrace()) {
-            if (elem.getClassName().endsWith("MultiResolutionToolkitImage")) {
+            if (elem.getClassName().endsWith("ObserverCache")) {
                 return true;
             }
         }

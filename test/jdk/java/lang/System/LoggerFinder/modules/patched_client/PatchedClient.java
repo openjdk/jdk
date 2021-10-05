@@ -23,6 +23,7 @@
 
 import java.lang.reflect.Method;
 import java.lang.System.Logger;
+import java.time.Instant;
 import java.util.ResourceBundle;
 import java.util.ListResourceBundle;
 
@@ -36,9 +37,14 @@ public class PatchedClient {
         String loggerMode = args[0];
         String loggerClassName = args[1];
         String underlyingLoggerClassName = args.length >= 3 ? args[2] : null;
+        System.err.println("PatchedClient starting at " + Instant.now());
+        try {
+            testLogger(loggerMode, loggerClassName, underlyingLoggerClassName);
+            testLog(underlyingLoggerClassName);
+        } finally {
+            System.err.println("PatchedClient finished at " + Instant.now());
+        }
 
-        testLogger(loggerMode, loggerClassName, underlyingLoggerClassName);
-        testLog(underlyingLoggerClassName);
     }
 
     /*

@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_CLASSLOADERDATAGRAPH_INLINE_HPP
 
 #include "classfile/classLoaderDataGraph.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"

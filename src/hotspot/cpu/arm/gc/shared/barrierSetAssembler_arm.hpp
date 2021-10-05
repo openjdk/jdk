@@ -47,9 +47,6 @@ public:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
 
-  virtual void obj_equals(MacroAssembler* masm,
-                          Register obj1, Register obj2);
-
   virtual void eden_allocate(MacroAssembler* masm,
     Register           obj,              // result: pointer to object after successful allocation
     Register           obj_end,          // result: pointer to end of object after successful allocation
@@ -68,10 +65,6 @@ public:
   );
 
   virtual void barrier_stubs_init() {}
-
-  virtual void resolve(MacroAssembler* masm, DecoratorSet decorators, Register obj) {
-    // Default implementation does not need to do anything.
-  }
 };
 
 #endif // CPU_ARM_GC_SHARED_BARRIERSETASSEMBLER_ARM_HPP

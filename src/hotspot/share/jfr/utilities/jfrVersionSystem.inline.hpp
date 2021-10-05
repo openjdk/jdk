@@ -26,8 +26,9 @@
 #define SHARE_JFR_UTILITIES_JFRVERSIONSYSTEM_INLINE_HPP
 
 #include "jfr/utilities/jfrVersionSystem.hpp"
+
 #include "runtime/atomic.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 inline JfrVersionSystem::JfrVersionSystem() : _tip(), _head(NULL) {
   _tip._value = 1;

@@ -41,7 +41,7 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 4967002
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug4967002
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug4967002
  * @run testng/othervm parsers.Bug4967002
  * @summary Test DocumentBuilderFactory.newDocumentBuilder() throws ParserConfigurationException
  * when it uses the "http://java.sun.com/xml/jaxp/properties/schemaSource" property

@@ -4157,7 +4157,7 @@ public class LineReaderImpl implements LineReader, Flushable
             } else
                 sb.append(ch);
         }
-        if (padToWidth > cols) {
+        if (padToWidth > cols && padToWidth > 0) {
             int padCharCols = WCWidth.wcwidth(padChar);
             int padCount = (padToWidth - cols) / padCharCols;
             sb = padPartString;

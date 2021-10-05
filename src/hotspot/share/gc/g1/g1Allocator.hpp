@@ -30,7 +30,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
 
-class G1EvacuationInfo;
+class G1EvacInfo;
 class G1NUMA;
 
 // Interface to keep track of which regions G1 is currently allocating into. Provides
@@ -68,7 +68,7 @@ private:
   void set_survivor_full();
   void set_old_full();
 
-  void reuse_retained_old_region(G1EvacuationInfo& evacuation_info,
+  void reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                  OldGCAllocRegion* old,
                                  HeapRegion** retained);
 
@@ -105,17 +105,26 @@ public:
   void init_mutator_alloc_regions();
   void release_mutator_alloc_regions();
 
-  void init_gc_alloc_regions(G1EvacuationInfo& evacuation_info);
-  void release_gc_alloc_regions(G1EvacuationInfo& evacuation_info);
+  void init_gc_alloc_regions(G1EvacInfo* evacuation_info);
+  void release_gc_alloc_regions(G1EvacInfo* evacuation_info);
   void abandon_gc_alloc_regions();
   bool is_retained_old_region(HeapRegion* hr);
 
   // Allocate blocks of memory during mutator time.
 
+  // Attempt allocation in the current alloc region.
   inline HeapWord* attempt_allocation(size_t min_word_size,
                                       size_t desired_word_size,
                                       size_t* actual_word_size);
+
+  // Attempt allocation, retiring the current region and allocating a new one. It is
+  // assumed that attempt_allocation() has been tried and failed already first.
+  inline HeapWord* attempt_allocation_using_new_region(size_t word_size);
+
+  // This is to be called when holding an appropriate lock. It first tries in the
+  // current allocation region, and then attempts an allocation using a new region.
   inline HeapWord* attempt_allocation_locked(size_t word_size);
+
   inline HeapWord* attempt_allocation_force(size_t word_size);
 
   size_t unsafe_max_tlab_alloc();

@@ -83,10 +83,10 @@ public class TruncateHMAC {
             throw new Exception("Couldn't find signature Element");
         }
         Element sigElement = (Element) nl.item(0);
+        try {
         XMLSignature signature = new XMLSignature
             (sigElement, file.toURI().toString());
         SecretKey sk = signature.createSecretKey("secret".getBytes("ASCII"));
-        try {
             System.out.println
                 ("Validation status: " + signature.checkSignatureValue(sk));
             if (!pass) {
@@ -110,10 +110,10 @@ public class TruncateHMAC {
         System.out.println("Generating ");
 
         Document doc = dbf.newDocumentBuilder().newDocument();
+        try {
         XMLSignature sig = new XMLSignature
             (doc, null, XMLSignature.ALGO_ID_MAC_HMAC_SHA1, 40,
              Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS);
-        try {
             sig.sign(getSecretKey("secret".getBytes("ASCII")));
             System.out.println("FAILED");
             atLeastOneFailed = true;

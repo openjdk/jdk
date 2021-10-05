@@ -101,9 +101,15 @@ public class KeyTab implements KeyTabConstants {
         } catch (FileNotFoundException e) {
             entries.clear();
             isMissing = true;
+            if (DEBUG) {
+                System.out.println("Cannot load keytab " + tabName + ": " + e);
+            }
         } catch (Exception ioe) {
             entries.clear();
             isValid = false;
+            if (DEBUG) {
+                System.out.println("Cannot load keytab " + tabName + ": " + ioe);
+            }
         }
     }
 

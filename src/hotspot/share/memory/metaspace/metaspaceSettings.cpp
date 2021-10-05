@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -83,11 +84,6 @@ void Settings::ergo_initialize() {
   // Deallocations can be manually switched off to aid error analysis, since this removes one layer of complexity
   //  from allocation.
   _handle_deallocations = MetaspaceHandleDeallocations;
-
-  // We also switch it off automatically if we use allocation guards. This is to keep prefix handling in MetaspaceArena simple.
-  if (_use_allocation_guard) {
-    _handle_deallocations = false;
-  }
 #endif
   LogStream ls(Log(metaspace)::info());
   Settings::print_on(&ls);

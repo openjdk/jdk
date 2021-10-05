@@ -42,6 +42,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
@@ -1421,7 +1422,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJSlider extends AccessibleJComponent
-    implements AccessibleValue, ChangeListener {
+    implements AccessibleValue, ChangeListener, AccessibleAction {
 
 
         private int oldModelValue;
@@ -1536,5 +1537,71 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
             BoundedRangeModel model = JSlider.this.getModel();
             return Integer.valueOf(model.getMaximum() - model.getExtent());
         }
+
+        /**
+         * Gets the AccessibleAction associated with this object that supports
+         * one or more actions.
+         *
+         * @return AccessibleAction if supported by object; else return null
+         * @see AccessibleAction
+         */
+        public AccessibleAction getAccessibleAction() {
+            return this;
+        }
+
+        /* ===== Begin AccessibleAction impl ===== */
+
+        /**
+         * Returns the number of accessible actions available in this object
+         * If there are more than one, the first one is considered the "default"
+         * action of the object.
+         *
+         * Two actions are supported: AccessibleAction.INCREMENT which
+         * increments the slider value and AccessibleAction.DECREMENT
+         * which decrements the slider value
+         *
+         * @return the zero-based number of Actions in this object
+         */
+        public int getAccessibleActionCount() {
+            return 2;
+        }
+
+        /**
+         * Returns a description of the specified action of the object.
+         *
+         * @param i zero-based index of the actions
+         * @return a String description of the action
+         * @see #getAccessibleActionCount
+         */
+        public String getAccessibleActionDescription(int i) {
+            if (i == 0) {
+                return AccessibleAction.INCREMENT;
+            } else if (i == 1) {
+                return AccessibleAction.DECREMENT;
+            }
+            return null;
+        }
+
+        /**
+         * Performs the specified Action on the object
+         *
+         * @param i zero-based index of actions. The first action
+         * (index 0) is AccessibleAction.INCREMENT and the second
+         * action (index 1) is AccessibleAction.DECREMENT.
+         * @return true if the action was performed, otherwise false
+         * @see #getAccessibleActionCount
+         */
+        public boolean doAccessibleAction(int i) {
+            if (i < 0 || i > 1) {
+                return false;
+            }
+            //0 is increment, 1 is decrrement
+            int delta = ((i > 0) ? -1 : 1);
+            JSlider.this.setValue(oldModelValue + delta);
+            return true;
+        }
+
+        /* ===== End AccessibleAction impl ===== */
+
     } // AccessibleJSlider
 }

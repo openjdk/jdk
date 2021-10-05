@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,13 +96,13 @@ import com.sun.jndi.ldap.ext.StartTlsResponseImpl;
  * @author Rosanna Lee
  */
 
-final public class LdapCtx extends ComponentDirContext
+public final class LdapCtx extends ComponentDirContext
     implements EventDirContext, LdapContext {
 
     /*
      * Used to store arguments to the search method.
      */
-    final static class SearchArgs {
+    static final class SearchArgs {
         Name name;
         String filter;
         SearchControls cons;
@@ -2700,6 +2700,7 @@ final public class LdapCtx extends ComponentDirContext
     }
 
     // Load 'mechsAllowedToSendCredentials' system property value
+    @SuppressWarnings("removal")
     private static String getMechsAllowedToSendCredentials() {
         PrivilegedAction<String> pa = () -> System.getProperty(ALLOWED_MECHS_SP);
         return System.getSecurityManager() == null ? pa.run() : AccessController.doPrivileged(pa);

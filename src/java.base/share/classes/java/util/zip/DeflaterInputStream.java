@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws NullPointerException if {@code in} is null
      */
     public DeflaterInputStream(InputStream in) {
-        this(in, new Deflater());
+        this(in, in != null ? new Deflater() : null);
         usesDefaultDeflater = true;
     }
 

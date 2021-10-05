@@ -25,6 +25,7 @@
  * @test
  * @bug 4818598
  * @summary Tests Field value encoding
+ * @run main/othervm -Djava.security.manager=allow java_lang_reflect_Field
  * @author Sergey Malenkov
  */
 

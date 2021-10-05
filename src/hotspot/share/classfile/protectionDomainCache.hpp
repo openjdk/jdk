@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "oops/oop.hpp"
 #include "oops/weakHandle.hpp"
-#include "memory/iterator.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/hashtable.hpp"
 
 // This class caches the approved protection domains that can access loaded classes.
@@ -62,8 +62,6 @@ class ProtectionDomainCacheEntry : public HashtableEntry<WeakHandle, mtClass> {
 // The amount of different protection domains used is typically magnitudes smaller
 // than the number of system dictionary entries (loaded classes).
 class ProtectionDomainCacheTable : public Hashtable<WeakHandle, mtClass> {
-  friend class VMStructs;
-private:
   ProtectionDomainCacheEntry* bucket(int i) const {
     return (ProtectionDomainCacheEntry*) Hashtable<WeakHandle, mtClass>::bucket(i);
   }
@@ -104,20 +102,17 @@ public:
 };
 
 
+// This describes the linked list protection domain for each DictionaryEntry in pd_set.
 class ProtectionDomainEntry :public CHeapObj<mtClass> {
-  friend class VMStructs;
- public:
-  ProtectionDomainEntry* _next;
   ProtectionDomainCacheEntry* _pd_cache;
+  ProtectionDomainEntry* volatile _next;
+ public:
 
-  ProtectionDomainEntry(ProtectionDomainCacheEntry* pd_cache, ProtectionDomainEntry* next) {
-    _pd_cache = pd_cache;
-    _next     = next;
-  }
+  ProtectionDomainEntry(ProtectionDomainCacheEntry* pd_cache,
+                        ProtectionDomainEntry* head) : _pd_cache(pd_cache), _next(head) {}
 
-  ProtectionDomainEntry* next() { return _next; }
-  void set_next(ProtectionDomainEntry* entry) { _next = entry; }
-  oop object();
+  ProtectionDomainEntry* next_acquire() { return Atomic::load_acquire(&_next); }
+  void release_set_next(ProtectionDomainEntry* entry) { Atomic::release_store(&_next, entry); }
   oop object_no_keepalive();
 };
 #endif // SHARE_CLASSFILE_PROTECTIONDOMAINCACHE_HPP

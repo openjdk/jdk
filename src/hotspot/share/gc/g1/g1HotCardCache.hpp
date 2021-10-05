@@ -128,7 +128,6 @@ private:
   // Resets the hot card cache and discards the entries.
   void reset_hot_cache() {
     assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
-    assert(Thread::current()->is_VM_thread(), "Current thread should be the VMthread");
     if (default_use_cache()) {
       reset_hot_cache_internal();
     }

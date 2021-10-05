@@ -223,10 +223,10 @@ class Module extends Archive {
                 descriptor.packages().forEach(pn -> exports.put(pn, Collections.emptySet()));
                 descriptor.packages().forEach(pn -> opens.put(pn, Collections.emptySet()));
             } else {
-                descriptor.exports().stream()
+                descriptor.exports()
                           .forEach(exp -> exports.computeIfAbsent(exp.source(), _k -> new HashSet<>())
                                                  .addAll(exp.targets()));
-                descriptor.opens().stream()
+                descriptor.opens()
                     .forEach(exp -> opens.computeIfAbsent(exp.source(), _k -> new HashSet<>())
                         .addAll(exp.targets()));
             }

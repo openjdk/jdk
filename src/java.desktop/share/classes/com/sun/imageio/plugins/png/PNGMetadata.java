@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1318,7 +1318,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                 IHDR_width = getIntAttribute(node, "width");
                 IHDR_height = getIntAttribute(node, "height");
                 IHDR_bitDepth =
-                        Integer.valueOf(IHDR_bitDepths[
+                        Integer.parseInt(IHDR_bitDepths[
                                 getEnumeratedAttribute(node,
                                                     "bitDepth",
                                                     IHDR_bitDepths)]);

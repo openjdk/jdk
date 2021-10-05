@@ -44,7 +44,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.XMLFilterTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.XMLFilterTest
  * @run testng/othervm org.xml.sax.ptests.XMLFilterTest
  */
 @Listeners({jaxp.library.FilePolicy.class})

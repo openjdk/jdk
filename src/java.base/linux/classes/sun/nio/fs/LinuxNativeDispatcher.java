@@ -69,61 +69,6 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
      */
     static native void endmntent(long stream) throws UnixException;
 
-    /**
-     * ssize_t fgetxattr(int filedes, const char *name, void *value, size_t size);
-     */
-    static int fgetxattr(int filedes, byte[] name, long valueAddress,
-                         int valueLen) throws UnixException
-    {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(name);
-        try {
-            return fgetxattr0(filedes, buffer.address(), valueAddress, valueLen);
-        } finally {
-            buffer.release();
-        }
-    }
-
-    private static native int fgetxattr0(int filedes, long nameAddress,
-        long valueAddress, int valueLen) throws UnixException;
-
-    /**
-     *  fsetxattr(int filedes, const char *name, const void *value, size_t size, int flags);
-     */
-    static void fsetxattr(int filedes, byte[] name, long valueAddress,
-        int valueLen) throws UnixException
-    {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(name);
-        try {
-            fsetxattr0(filedes, buffer.address(), valueAddress, valueLen);
-        } finally {
-            buffer.release();
-        }
-    }
-
-    private static native void fsetxattr0(int filedes, long nameAddress,
-        long valueAddress, int valueLen) throws UnixException;
-
-    /**
-     * fremovexattr(int filedes, const char *name);
-     */
-    static void fremovexattr(int filedes, byte[] name) throws UnixException {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(name);
-        try {
-            fremovexattr0(filedes, buffer.address());
-        } finally {
-            buffer.release();
-        }
-    }
-
-    private static native void fremovexattr0(int filedes, long nameAddress)
-        throws UnixException;
-
-    /**
-     * size_t flistxattr(int filedes, const char *list, size_t size)
-     */
-    static native int flistxattr(int filedes, long listAddress, int size)
-        throws UnixException;
-
     // initialize
     private static native void init();
 

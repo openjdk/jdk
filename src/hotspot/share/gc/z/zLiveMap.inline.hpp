@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZLIVEMAP_INLINE_HPP
 #define SHARE_GC_Z_ZLIVEMAP_INLINE_HPP
 
-#include "gc/z/zBitMap.inline.hpp"
 #include "gc/z/zLiveMap.hpp"
+
+#include "gc/z/zBitMap.inline.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"

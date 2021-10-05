@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,13 +302,6 @@ Java_java_awt_TextField_initIDs
   (JNIEnv *env, jclass cls)
 {
 }
-
-#ifndef STATIC_BUILD
-// The same function exists in libawt.a::awt_LoadLibrary.c
-JNIEXPORT jboolean JNICALL AWTIsHeadless() {
-    return JNI_FALSE;
-}
-#endif
 
 JNIEXPORT void JNICALL Java_java_awt_Dialog_initIDs (JNIEnv *env, jclass cls)
 {
@@ -798,130 +791,6 @@ Window get_xawt_root_shell(JNIEnv *env) {
       }
   }
   return xawt_root_shell;
-}
-
-/*
- * Old, compatibility, backdoor for DT.  This is a different
- * implementation.  It keeps the signature, but acts on
- * awt_root_shell, not the frame passed as an argument.  Note, that
- * the code that uses the old backdoor doesn't work correctly with
- * gnome session proxy that checks for WM_COMMAND when the window is
- * firts mapped, because DT code calls this old backdoor *after* the
- * frame is shown or it would get NPE with old AWT (previous
- * implementation of this backdoor) otherwise.  Old style session
- * managers (e.g. CDE) that check WM_COMMAND only during session
- * checkpoint should work fine, though.
- *
- * NB: The function name looks deceptively like a JNI native method
- * name.  It's not!  It's just a plain function.
- */
-
-JNIEXPORT void JNICALL
-#ifdef STATIC_BUILD
-Java_sun_xawt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
-    jobject frame, jstring jcommand)
-#else
-Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
-        jobject frame, jstring jcommand)
-#endif
-{
-    const char *command;
-    XTextProperty text_prop;
-    char *c[1];
-    int32_t status;
-    Window xawt_root_window;
-
-    AWT_LOCK();
-    xawt_root_window = get_xawt_root_shell(env);
-
-    if ( xawt_root_window == None ) {
-        AWT_UNLOCK();
-        JNU_ThrowNullPointerException(env, "AWT root shell is unrealized");
-        return;
-    }
-
-    command = (char *) JNU_GetStringPlatformChars(env, jcommand, NULL);
-    if (command != NULL) {
-        c[0] = (char *)command;
-        status = XmbTextListToTextProperty(awt_display, c, 1,
-                                           XStdICCTextStyle, &text_prop);
-
-        if (status == Success || status > 0) {
-            XSetTextProperty(awt_display, xawt_root_window,
-                             &text_prop, XA_WM_COMMAND);
-            if (text_prop.value != NULL)
-                XFree(text_prop.value);
-        }
-        JNU_ReleaseStringPlatformChars(env, jcommand, command);
-    }
-    AWT_UNLOCK();
-}
-
-
-/*
- * New DT backdoor to set WM_COMMAND.  New code should use this
- * backdoor and call it *before* the first frame is shown so that
- * gnome session proxy can correctly handle it.
- *
- * NB: The function name looks deceptively like a JNI native method
- * name.  It's not!  It's just a plain function.
- */
-JNIEXPORT void JNICALL
-#ifdef STATIC_BUILD
-Java_sun_xawt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray)
-#else
-Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray)
-#endif
-{
-    jsize length;
-    char ** array;
-    XTextProperty text_prop;
-    int status;
-    Window xawt_root_window;
-
-    AWT_LOCK();
-    xawt_root_window = get_xawt_root_shell(env);
-
-    if (xawt_root_window == None) {
-      AWT_UNLOCK();
-      JNU_ThrowNullPointerException(env, "AWT root shell is unrealized");
-      return;
-    }
-
-    array = stringArrayToNative(env, jarray, &length);
-
-    if (array != NULL) {
-        status = XmbTextListToTextProperty(awt_display, array, length,
-                                           XStdICCTextStyle, &text_prop);
-        if (status < 0) {
-            switch (status) {
-            case XNoMemory:
-                JNU_ThrowOutOfMemoryError(env,
-                    "XmbTextListToTextProperty: XNoMemory");
-                break;
-            case XLocaleNotSupported:
-                JNU_ThrowInternalError(env,
-                    "XmbTextListToTextProperty: XLocaleNotSupported");
-                break;
-            case XConverterNotFound:
-                JNU_ThrowNullPointerException(env,
-                    "XmbTextListToTextProperty: XConverterNotFound");
-                break;
-            default:
-                JNU_ThrowInternalError(env,
-                    "XmbTextListToTextProperty: unknown error");
-            }
-        } else {
-            XSetTextProperty(awt_display, xawt_root_window,
-                                 &text_prop, XA_WM_COMMAND);
-        }
-
-        if (text_prop.value != NULL)
-            XFree(text_prop.value);
-
-        freeNativeStringArray(array, length);
-    }
-    AWT_UNLOCK();
 }
 
 /*

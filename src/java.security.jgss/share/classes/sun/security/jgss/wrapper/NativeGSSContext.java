@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,7 @@ class NativeGSSContext implements GSSContextSpi {
     }
 
     // Perform the Service permission check
+    @SuppressWarnings("removal")
     private void doServicePermCheck() throws GSSException {
         if (System.getSecurityManager() != null) {
             String action = (isInitiator? "initiate" : "accept");
@@ -138,6 +139,7 @@ class NativeGSSContext implements GSSContextSpi {
 
     // Perform the Delegation permission check
     private void doDelegPermCheck() throws GSSException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String targetStr = targetName.getKrbName();

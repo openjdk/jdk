@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Objects;
 import java.math.BigInteger;
 import java.security.KeyRep;
@@ -46,7 +47,7 @@ import sun.security.util.*;
  * @see java.security.KeyAgreement
  */
 final class DHPrivateKey implements PrivateKey,
-javax.crypto.interfaces.DHPrivateKey, Serializable {
+        javax.crypto.interfaces.DHPrivateKey, Serializable {
 
     @java.io.Serial
     static final long serialVersionUID = 7565477590005668886L;
@@ -105,9 +106,12 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
         this.g = g;
         this.l = l;
         try {
-            this.key = new DerValue(DerValue.tag_Integer,
-                                    this.x.toByteArray()).toByteArray();
-            this.encodedKey = getEncoded();
+            byte[] xbytes = x.toByteArray();
+            DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
+            this.key = val.toByteArray();
+            val.clear();
+            Arrays.fill(xbytes, (byte)0);
+            encode();
         } catch (IOException e) {
             throw new ProviderException("Cannot produce ASN.1 encoding", e);
         }
@@ -122,9 +126,9 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
      * a Diffie-Hellman private key
      */
     DHPrivateKey(byte[] encodedKey) throws InvalidKeyException {
-        InputStream inStream = new ByteArrayInputStream(encodedKey);
+        DerValue val = null;
         try {
-            DerValue val = new DerValue(inStream);
+            val = new DerValue(encodedKey);
             if (val.tag != DerValue.tag_Sequence) {
                 throw new InvalidKeyException ("Key not a SEQUENCE");
             }
@@ -182,6 +186,10 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
             this.encodedKey = encodedKey.clone();
         } catch (IOException | NumberFormatException e) {
             throw new InvalidKeyException("Error parsing key encoding", e);
+        } finally {
+            if (val != null) {
+                val.clear();
+            }
         }
     }
 
@@ -203,6 +211,15 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
      * Get the encoding of the key.
      */
     public synchronized byte[] getEncoded() {
+        encode();
+        return encodedKey.clone();
+    }
+
+    /**
+     * Generate the encodedKey field if it has not been calculated.
+     * Could generate null.
+     */
+    private void encode() {
         if (this.encodedKey == null) {
             try {
                 DerOutputStream tmp = new DerOutputStream();
@@ -238,14 +255,13 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
                 tmp.putOctetString(this.key);
 
                 // make it a SEQUENCE
-                DerOutputStream derKey = new DerOutputStream();
-                derKey.write(DerValue.tag_Sequence, tmp);
-                this.encodedKey = derKey.toByteArray();
+                DerValue val = DerValue.wrap(DerValue.tag_Sequence, tmp);
+                this.encodedKey = val.toByteArray();
+                val.clear();
             } catch (IOException e) {
-                return null;
+                throw new AssertionError(e);
             }
         }
-        return this.encodedKey.clone();
     }
 
     /**
@@ -314,9 +330,10 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
      */
     @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
+        encode();
         return new KeyRep(KeyRep.Type.PRIVATE,
-                        getAlgorithm(),
-                        getFormat(),
-                        getEncoded());
+                getAlgorithm(),
+                getFormat(),
+                encodedKey);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ Java_java_io_Console_encoding(JNIEnv *env, jclass cls)
     int cp = GetConsoleCP();
     if (cp >= 874 && cp <= 950)
         sprintf(buf, "ms%d", cp);
+    else if (cp == 65001)
+        sprintf(buf, "UTF-8");
     else
         sprintf(buf, "cp%d", cp);
     return JNU_NewStringPlatform(env, buf);

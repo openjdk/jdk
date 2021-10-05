@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm DESParity
- * @run main/othervm DESParity sm
+ * @run main/othervm -Djava.security.manager=allow DESParity sm
  */
 
 import java.security.Provider;

@@ -34,17 +34,17 @@ import java.util.Map;
  *
  * @author Rosanna Lee
  */
-final public class PolicyUtils {
+public final class PolicyUtils {
     // Can't create one of these
     private PolicyUtils() {
     }
 
-    public final static int NOPLAINTEXT = 0x0001;
-    public final static int NOACTIVE = 0x0002;
-    public final static int NODICTIONARY = 0x0004;
-    public final static int FORWARD_SECRECY = 0x0008;
-    public final static int NOANONYMOUS = 0x0010;
-    public final static int PASS_CREDENTIALS = 0x0200;
+    public static final int NOPLAINTEXT = 0x0001;
+    public static final int NOACTIVE = 0x0002;
+    public static final int NODICTIONARY = 0x0004;
+    public static final int FORWARD_SECRECY = 0x0008;
+    public static final int NOANONYMOUS = 0x0010;
+    public static final int PASS_CREDENTIALS = 0x0200;
 
     /**
      * Determines whether a mechanism's characteristics, as defined in flags,

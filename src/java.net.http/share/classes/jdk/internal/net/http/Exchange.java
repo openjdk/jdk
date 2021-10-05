@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ final class Exchange<T> {
     // used to record possible cancellation raised before the exchImpl
     // has been established.
     private volatile IOException failed;
+    @SuppressWarnings("removal")
     final AccessControlContext acc;
     final MultiExchange<T> multi;
     final Executor parentExecutor;
@@ -104,7 +105,7 @@ final class Exchange<T> {
     /* If different AccessControlContext to be used  */
     Exchange(HttpRequestImpl request,
              MultiExchange<T> multi,
-             AccessControlContext acc)
+             @SuppressWarnings("removal") AccessControlContext acc)
     {
         this.request = request;
         this.acc = acc;
@@ -621,6 +622,7 @@ final class Exchange<T> {
      */
     private SecurityException checkPermissions() {
         String method = request.method();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null || method.equals("CONNECT")) {
             // tunneling will have a null acc, which is fine. The proxy

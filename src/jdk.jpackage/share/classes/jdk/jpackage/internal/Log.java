@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,9 +106,13 @@ public class Log {
         }
 
         public void verbose(List<String> strings,
-                List<String> output, int returnCode) {
+                List<String> output, int returnCode, long pid) {
             if (verbose) {
-                StringBuffer sb = new StringBuffer("Command:\n   ");
+                StringBuffer sb = new StringBuffer();
+                sb.append("Command [PID: ");
+                sb.append(pid);
+                sb.append("]:\n   ");
+
                 for (String s : strings) {
                     sb.append(" " + s);
                 }
@@ -174,7 +178,8 @@ public class Log {
        instance.get().verbose(t);
     }
 
-    public static void verbose(List<String> strings, List<String> out, int ret) {
-       instance.get().verbose(strings, out, ret);
+    public static void verbose(List<String> strings, List<String> out,
+            int ret, long pid) {
+       instance.get().verbose(strings, out, ret, pid);
     }
 }

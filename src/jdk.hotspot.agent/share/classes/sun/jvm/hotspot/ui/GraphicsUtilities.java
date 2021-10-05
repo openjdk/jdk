@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,21 +34,10 @@ import javax.swing.border.*;
 /** Useful utilities for drawing graphics */
 
 public class GraphicsUtilities {
-  /** Returns a plain-styled 12-point version of the given font, or
-      null if the font could not be found */
-  public static Font lookupFont(String fontName) {
-    Font[] allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-    Font font = null;
-    for (int i = 0; i < allFonts.length; i++) {
-      if (allFonts[i].getFontName().indexOf(fontName) != -1) {
-        font = allFonts[i];
-        break;
-      }
-    }
-    if (font == null) {
-      return null;
-    }
-    return font.deriveFont(Font.PLAIN, 12);
+  private static final int FONT_SIZE = 12;
+
+  public static Font getMonospacedFont() {
+    return new Font(Font.MONOSPACED, Font.PLAIN, FONT_SIZE);
   }
 
   /** Compute the width and height of given string given the current

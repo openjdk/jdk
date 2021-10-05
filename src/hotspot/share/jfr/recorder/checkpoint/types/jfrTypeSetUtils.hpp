@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,17 @@ class JfrArtifactClosure {
 template <typename T, typename Callback>
 class JfrArtifactCallbackHost : public JfrArtifactClosure {
  private:
+  JfrArtifactClosure** _subsystem_callback_loc;
   Callback* _callback;
  public:
-  JfrArtifactCallbackHost(Callback* callback) : _callback(callback) {}
+  JfrArtifactCallbackHost(JfrArtifactClosure** subsystem_callback_loc, Callback* callback) :
+          _subsystem_callback_loc(subsystem_callback_loc), _callback(callback) {
+    assert(*_subsystem_callback_loc == NULL, "Subsystem callback should not be set yet");
+    *_subsystem_callback_loc = this;
+  }
+  ~JfrArtifactCallbackHost() {
+    *_subsystem_callback_loc = NULL;
+  }
   void do_artifact(const void* artifact) {
     (*_callback)(reinterpret_cast<T const&>(artifact));
   }
@@ -243,9 +251,9 @@ class JfrSymbolId : public JfrCHeapObj {
     }
   }
 
-  traceid mark_hidden_or_anon_klass_name(const InstanceKlass* k, bool leakp);
-  bool is_hidden_or_anon_klass(const Klass* k);
-  uintptr_t hidden_or_anon_klass_name_hash(const InstanceKlass* ik);
+  traceid mark_hidden_klass_name(const InstanceKlass* k, bool leakp);
+  bool is_hidden_klass(const Klass* k);
+  uintptr_t hidden_klass_name_hash(const InstanceKlass* ik);
 
  public:
   JfrSymbolId();
@@ -307,7 +315,7 @@ class JfrArtifactSet : public JfrCHeapObj {
   traceid mark(const Klass* klass, bool leakp);
   traceid mark(const Symbol* symbol, bool leakp);
   traceid mark(uintptr_t hash, const char* const str, bool leakp);
-  traceid mark_hidden_or_anon_klass_name(const Klass* klass, bool leakp);
+  traceid mark_hidden_klass_name(const Klass* klass, bool leakp);
   traceid bootstrap_name(bool leakp);
 
   const JfrSymbolId::SymbolEntry* map_symbol(const Symbol* symbol) const;

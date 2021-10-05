@@ -463,7 +463,6 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
         this.dataModel = dataModel;
         selectionModel = createSelectionModel();
         setAutoscrolls(true);
-        setOpaque(true);
         updateUI();
     }
 
@@ -2948,7 +2947,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             Object newValue = e.getNewValue();
 
                 // re-set listData listeners
-            if (name.compareTo("model") == 0) {
+            if (name.equals("model")) {
 
                 if (oldValue != null && oldValue instanceof ListModel) {
                     ((ListModel) oldValue).removeListDataListener(this);
@@ -2958,7 +2957,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 }
 
                 // re-set listSelectionModel listeners
-            } else if (name.compareTo("selectionModel") == 0) {
+            } else if (name.equals("selectionModel")) {
 
                 if (oldValue != null && oldValue instanceof ListSelectionModel) {
                     ((ListSelectionModel) oldValue).removeListSelectionListener(this);

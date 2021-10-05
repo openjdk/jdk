@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
  * @requires vm.bits == 64 & !vm.graal.enabled
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -93,7 +94,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             logging_option,
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
@@ -119,15 +119,16 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx31g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             logging_option,
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (testNarrowKlassBase()) {
-            output.shouldContain("Narrow klass base: 0x0000000000000000");
-            if (!Platform.isAArch64() && !Platform.isOSX()) {
-                output.shouldContain("Narrow klass shift: 0");
+            if (!(Platform.isAArch64() && Platform.isOSX())) { // see JDK-8262895
+                output.shouldContain("Narrow klass base: 0x0000000000000000");
+                if (!Platform.isAArch64() && !Platform.isOSX()) {
+                    output.shouldContain("Narrow klass shift: 0");
+                }
             }
         }
         output.shouldHaveExitValue(0);
@@ -237,7 +238,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             "-Xlog:gc+metaspace=trace",
             "-Xshare:off",
             "-Xlog:cds=trace",

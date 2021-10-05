@@ -2136,7 +2136,9 @@ class OutputMachOpcodes : public OutputMap {
 public:
   OutputMachOpcodes(FILE *hpp, FILE *cpp, FormDict &globals, ArchDesc &AD)
     : OutputMap(hpp, cpp, globals, AD, "MachOpcodes"),
-      begin_inst_chain_rule(-1), end_inst_chain_rule(-1), end_instructions(-1)
+      begin_inst_chain_rule(-1), end_inst_chain_rule(-1),
+      begin_rematerialize(-1), end_rematerialize(-1),
+      end_instructions(-1)
   {};
 
   void declaration() { }

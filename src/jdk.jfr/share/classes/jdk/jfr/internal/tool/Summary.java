@@ -64,7 +64,7 @@ final class Summary extends Command {
 
     @Override
     public List<String> getOptionSyntax() {
-        return Collections.singletonList("<file>");
+        return List.of("<file>");
     }
 
     @Override

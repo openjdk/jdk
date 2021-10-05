@@ -142,6 +142,11 @@ class MutableSpace: public CHeapObj<mtGC> {
   virtual HeapWord* cas_allocate(size_t word_size);
   // Optional deallocation. Used in NUMA-allocator.
   bool cas_deallocate(HeapWord *obj, size_t size);
+  // Return true if this space needs to be expanded in order to satisfy an
+  // allocation request of the indicated size.  Concurrent allocations and
+  // resizes may change the result of a later call.  Used by oldgen allocator.
+  // precondition: holding ExpandHeap_lock
+  bool needs_expand(size_t word_size) const;
 
   // Iteration.
   void oop_iterate(OopIterateClosure* cl);

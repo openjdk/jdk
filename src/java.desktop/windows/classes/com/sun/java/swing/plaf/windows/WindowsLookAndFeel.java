@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         // performance and compatibility issues, so allow this feature
         // to be switched off either at runtime or programmatically
         //
+        @SuppressWarnings("removal")
         String systemFonts = java.security.AccessController.doPrivileged(
                new GetPropertyAction("swing.useSystemFontSettings"));
         useSystemFontSettings = (systemFonts == null ||
@@ -592,16 +593,19 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
 
         if (!(this instanceof WindowsClassicLookAndFeel) &&
-            (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-             OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0) &&
-            AccessController.doPrivileged(new GetPropertyAction("swing.noxp")) == null) {
+                (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
+                OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0)) {
+            @SuppressWarnings("removal")
+            String prop = AccessController.doPrivileged(new GetPropertyAction("swing.noxp"));
+            if (prop == null) {
 
-            // These desktop properties are not used directly, but are needed to
-            // trigger realoading of UI's.
-            this.themeActive = new TriggerDesktopProperty("win.xpstyle.themeActive");
-            this.dllName     = new TriggerDesktopProperty("win.xpstyle.dllName");
-            this.colorName   = new TriggerDesktopProperty("win.xpstyle.colorName");
-            this.sizeName    = new TriggerDesktopProperty("win.xpstyle.sizeName");
+                // These desktop properties are not used directly, but are needed to
+                // trigger realoading of UI's.
+                this.themeActive = new TriggerDesktopProperty("win.xpstyle.themeActive");
+                this.dllName = new TriggerDesktopProperty("win.xpstyle.dllName");
+                this.colorName = new TriggerDesktopProperty("win.xpstyle.colorName");
+                this.sizeName = new TriggerDesktopProperty("win.xpstyle.sizeName");
+            }
         }
 
 

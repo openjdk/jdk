@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,7 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
     }
 
     protected void annotateClass(final Class<?> cl) throws IOException {
+        @SuppressWarnings("removal")
         ClassLoader classLoader = AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {
@@ -124,6 +125,7 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
         map.put(s, classLoader);
     }
     protected void annotateProxyClass(final Class<?> cl) throws IOException {
+        @SuppressWarnings("removal")
         ClassLoader classLoader = AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {

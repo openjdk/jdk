@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public final class CertAndKeyGen {
      * @exception NoSuchAlgorithmException on unrecognized algorithms.
      */
     public CertAndKeyGen (String keyType, String sigAlg)
-    throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
     {
         keyGen = KeyPairGenerator.getInstance(keyType);
         this.sigAlg = sigAlg;
@@ -82,20 +82,33 @@ public final class CertAndKeyGen {
     }
 
     /**
+     * @see #CertAndKeyGen(String, String, String, PrivateKey, X500Name)
+     */
+    public CertAndKeyGen (String keyType, String sigAlg, String providerName)
+            throws NoSuchAlgorithmException, NoSuchProviderException
+    {
+        this(keyType, sigAlg, providerName, null, null);
+    }
+
+    /**
      * Creates a CertAndKeyGen object for a particular key type,
-     * signature algorithm, and provider.
+     * signature algorithm, and provider. The newly generated cert will
+     * be signed by the signer's private key when it is provided.
      *
-     * @param keyType type of key, e.g. "RSA", "DSA"
-     * @param sigAlg name of the signature algorithm, e.g. "MD5WithRSA",
-     *          "MD2WithRSA", "SHAwithDSA". If set to null, a default
-     *          algorithm matching the private key will be chosen after
-     *          the first keypair is generated.
+     * @param keyType type of key, e.g. "RSA", "DSA", "X25519", "DH", etc.
+     * @param sigAlg name of the signature algorithm, e.g. "SHA384WithRSA",
+     *          "SHA256withDSA", etc. If set to null, a default
+     *          algorithm matching the private key or signer's private
+     *          key will be chosen after the first keypair is generated.
      * @param providerName name of the provider
+     * @param signerPrivateKey (optional) signer's private key
+     * @param signerSubjectName (optional) signer's subject name
      * @exception NoSuchAlgorithmException on unrecognized algorithms.
      * @exception NoSuchProviderException on unrecognized providers.
      */
-    public CertAndKeyGen (String keyType, String sigAlg, String providerName)
-    throws NoSuchAlgorithmException, NoSuchProviderException
+    public CertAndKeyGen(String keyType, String sigAlg, String providerName,
+            PrivateKey signerPrivateKey, X500Name signerSubjectName)
+        throws NoSuchAlgorithmException, NoSuchProviderException
     {
         if (providerName == null) {
             keyGen = KeyPairGenerator.getInstance(keyType);
@@ -109,6 +122,9 @@ public final class CertAndKeyGen {
         }
         this.sigAlg = sigAlg;
         this.keyType = keyType;
+        this.signerPrivateKey = signerPrivateKey;
+        this.signerSubjectName = signerSubjectName;
+        this.signerFlag = signerPrivateKey != null;
     }
 
     /**
@@ -187,11 +203,20 @@ public final class CertAndKeyGen {
         }
 
         if (sigAlg == null) {
-            sigAlg = SignatureUtil.getDefaultSigAlgForKey(privateKey);
-            if (sigAlg == null) {
-                throw new IllegalArgumentException(
-                        "Cannot derive signature algorithm from "
-                                + privateKey.getAlgorithm());
+            if (signerFlag) {
+                sigAlg = SignatureUtil.getDefaultSigAlgForKey(signerPrivateKey);
+                if (sigAlg == null) {
+                    throw new IllegalArgumentException(
+                            "Cannot derive signature algorithm from "
+                                    + signerPrivateKey.getAlgorithm());
+                }
+            } else {
+                sigAlg = SignatureUtil.getDefaultSigAlgForKey(privateKey);
+                if (sigAlg == null) {
+                    throw new IllegalArgumentException(
+                            "Cannot derive signature algorithm from "
+                                    + privateKey.getAlgorithm());
+                }
             }
         }
     }
@@ -266,6 +291,8 @@ public final class CertAndKeyGen {
     }
 
     // Like above, plus a CertificateExtensions argument, which can be null.
+    // Create a self-signed certificate, or a certificate that is signed by
+    // a signer when the signer's private key is provided.
     public X509Certificate getSelfCertificate (X500Name myname, Date firstDate,
             long validity, CertificateExtensions ext)
     throws CertificateException, InvalidKeyException, SignatureException,
@@ -293,11 +320,21 @@ public final class CertAndKeyGen {
             info.set(X509CertInfo.SUBJECT, myname);
             info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
             info.set(X509CertInfo.VALIDITY, interval);
-            info.set(X509CertInfo.ISSUER, myname);
+            if (signerFlag) {
+                // use signer's subject name to set the issuer name
+                info.set(X509CertInfo.ISSUER, signerSubjectName);
+            } else {
+                info.set(X509CertInfo.ISSUER, myname);
+            }
             if (ext != null) info.set(X509CertInfo.EXTENSIONS, ext);
 
             cert = new X509CertImpl(info);
-            cert.sign(privateKey, sigAlg);
+            if (signerFlag) {
+                // use signer's private key to sign
+                cert.sign(signerPrivateKey, sigAlg);
+            } else {
+                cert.sign(privateKey, sigAlg);
+            }
 
             return cert;
 
@@ -321,4 +358,7 @@ public final class CertAndKeyGen {
     private KeyPairGenerator    keyGen;
     private PublicKey           publicKey;
     private PrivateKey          privateKey;
+    private boolean             signerFlag;
+    private PrivateKey          signerPrivateKey;
+    private X500Name            signerSubjectName;
 }

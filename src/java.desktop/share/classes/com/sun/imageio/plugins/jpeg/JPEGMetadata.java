@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,36 +25,34 @@
 
 package com.sun.imageio.plugins.jpeg;
 
-import javax.imageio.ImageTypeSpecifier;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.IIOException;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
-import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.metadata.IIOMetadataFormat;
-import javax.imageio.metadata.IIOMetadataFormatImpl;
-import javax.imageio.metadata.IIOInvalidTreeException;
-import javax.imageio.plugins.jpeg.JPEGQTable;
-import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
-import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
-
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.ListIterator;
-import java.io.IOException;
-import java.awt.color.ICC_Profile;
-import java.awt.color.ICC_ColorSpace;
+import java.awt.Point;
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-import java.awt.Point;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+
+import javax.imageio.IIOException;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.metadata.IIOInvalidTreeException;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataFormatImpl;
+import javax.imageio.metadata.IIOMetadataNode;
+import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
+import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
+
+import com.sun.imageio.plugins.common.ImageUtil;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Metadata for the JPEG plug-in.
@@ -576,7 +574,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         }
 
         // do we want an ICC profile?
-        if (wantJFIF && JPEG.isNonStandardICC(cs)) {
+        if (wantJFIF && ImageUtil.isNonStandardICCColorSpace(cs)) {
             wantICC = true;
         }
 
@@ -1713,9 +1711,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                 }
                 if (idsDiffer) {
                     // update the ids in each SOS marker segment
-                    for (Iterator<MarkerSegment> iter = markerSequence.iterator();
-                            iter.hasNext();) {
-                        MarkerSegment seg = iter.next();
+                    for (MarkerSegment seg : markerSequence) {
                         if (seg instanceof SOSMarkerSegment) {
                             SOSMarkerSegment target = (SOSMarkerSegment) seg;
                             for (int i = 0; i < target.componentSpecs.length; i++) {
@@ -1768,9 +1764,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
         if (updateQtables) {
             List<DQTMarkerSegment> tableSegments = new ArrayList<>();
-            for (Iterator<MarkerSegment> iter = markerSequence.iterator();
-                    iter.hasNext();) {
-                MarkerSegment seg = iter.next();
+            for (MarkerSegment seg : markerSequence) {
                 if (seg instanceof DQTMarkerSegment) {
                     tableSegments.add((DQTMarkerSegment) seg);
                 }
@@ -1786,12 +1780,8 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
                 // Find the table with selector 1.
                 boolean found = false;
-                for (Iterator<DQTMarkerSegment> iter = tableSegments.iterator();
-                        iter.hasNext();) {
-                    DQTMarkerSegment testdqt = iter.next();
-                    for (Iterator<DQTMarkerSegment.Qtable> tabiter =
-                            testdqt.tables.iterator(); tabiter.hasNext();) {
-                        DQTMarkerSegment.Qtable tab = tabiter.next();
+                for (DQTMarkerSegment testdqt : tableSegments) {
+                    for (DQTMarkerSegment.Qtable tab : testdqt.tables) {
                         if (tab.tableID == 1) {
                             found = true;
                         }
@@ -1800,12 +1790,8 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                 if (!found) {
                     //    find the table with selector 0.  There should be one.
                     DQTMarkerSegment.Qtable table0 = null;
-                    for (Iterator<DQTMarkerSegment> iter =
-                            tableSegments.iterator(); iter.hasNext();) {
-                        DQTMarkerSegment testdqt = iter.next();
-                        for (Iterator<DQTMarkerSegment.Qtable> tabiter =
-                                testdqt.tables.iterator(); tabiter.hasNext();) {
-                            DQTMarkerSegment.Qtable tab = tabiter.next();
+                    for (DQTMarkerSegment testdqt : tableSegments) {
+                        for (DQTMarkerSegment.Qtable tab : testdqt.tables) {
                             if (tab.tableID == 0) {
                                 table0 = tab;
                             }
@@ -1823,9 +1809,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
         if (updateHtables) {
             List<DHTMarkerSegment> tableSegments = new ArrayList<>();
-            for (Iterator<MarkerSegment> iter = markerSequence.iterator();
-                    iter.hasNext();) {
-                MarkerSegment seg = iter.next();
+            for (MarkerSegment seg : markerSequence) {
                 if (seg instanceof DHTMarkerSegment) {
                     tableSegments.add((DHTMarkerSegment) seg);
                 }
@@ -1840,12 +1824,8 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
                 // find a table with selector 1. AC/DC is irrelevant
                 boolean found = false;
-                for (Iterator<DHTMarkerSegment> iter = tableSegments.iterator();
-                        iter.hasNext();) {
-                    DHTMarkerSegment testdht = iter.next();
-                    for (Iterator<DHTMarkerSegment.Htable> tabiter =
-                            testdht.tables.iterator(); tabiter.hasNext();) {
-                        DHTMarkerSegment.Htable tab = tabiter.next();
+                for (DHTMarkerSegment testdht : tableSegments) {
+                    for (DHTMarkerSegment.Htable tab : testdht.tables) {
                         if (tab.tableID == 1) {
                             found = true;
                         }

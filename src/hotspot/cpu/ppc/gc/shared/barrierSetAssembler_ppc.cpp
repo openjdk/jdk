@@ -26,6 +26,7 @@
 #include "nativeInst_ppc.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -177,7 +178,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   __ ld(tmp1_class_loader_data, in_bytes(InstanceKlass::class_loader_data_offset()), tmp1);
 
   // Fast path: If class loader is strong, the holder cannot be unloaded.
-  __ ld(tmp2, in_bytes(ClassLoaderData::keep_alive_offset()), tmp1_class_loader_data);
+  __ lwz(tmp2, in_bytes(ClassLoaderData::keep_alive_offset()), tmp1_class_loader_data);
   __ cmpdi(CCR0, tmp2, 0);
   __ bne(CCR0, skip_barrier);
 

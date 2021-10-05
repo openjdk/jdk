@@ -27,7 +27,7 @@
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
 #include "logging/logTagSet.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"

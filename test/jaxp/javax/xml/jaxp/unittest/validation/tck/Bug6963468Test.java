@@ -49,7 +49,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6963468
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6963468Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug6963468Test
  * @run testng/othervm validation.tck.Bug6963468Test
  * @summary Test Validation allows element a is a union type and element b specifies a as its substitution group and b type is or is derived from one of the member types of the union.
  */

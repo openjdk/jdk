@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
  * questions.
  */
 package java.util;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * {@code StringJoiner} is used to construct a sequence of characters separated
@@ -63,6 +66,8 @@ package java.util;
  * @since  1.8
 */
 public final class StringJoiner {
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     private final String prefix;
     private final String delimiter;
     private final String suffix;
@@ -148,12 +153,6 @@ public final class StringJoiner {
         return this;
     }
 
-    private static int getChars(String s, char[] chars, int start) {
-        int len = s.length();
-        s.getChars(0, len, chars, start);
-        return len;
-    }
-
     /**
      * Returns the current value, consisting of the {@code prefix}, the values
      * added so far separated by the {@code delimiter}, and the {@code suffix},
@@ -164,28 +163,15 @@ public final class StringJoiner {
      */
     @Override
     public String toString() {
-        final String[] elts = this.elts;
-        if (elts == null && emptyValue != null) {
-            return emptyValue;
-        }
         final int size = this.size;
-        final int addLen = prefix.length() + suffix.length();
-        if (addLen == 0) {
-            compactElts();
-            return size == 0 ? "" : elts[0];
-        }
-        final String delimiter = this.delimiter;
-        final char[] chars = new char[len + addLen];
-        int k = getChars(prefix, chars, 0);
-        if (size > 0) {
-            k += getChars(elts[0], chars, k);
-            for (int i = 1; i < size; i++) {
-                k += getChars(delimiter, chars, k);
-                k += getChars(elts[i], chars, k);
+        var elts = this.elts;
+        if (size == 0) {
+            if (emptyValue != null) {
+                return emptyValue;
             }
+            elts = EMPTY_STRING_ARRAY;
         }
-        k += getChars(suffix, chars, k);
-        return new String(chars);
+        return JLA.join(prefix, suffix, delimiter, elts, size);
     }
 
     /**
@@ -240,7 +226,7 @@ public final class StringJoiner {
      */
     public StringJoiner merge(StringJoiner other) {
         Objects.requireNonNull(other);
-        if (other.elts == null) {
+        if (other.size == 0) {
             return this;
         }
         other.compactElts();
@@ -248,16 +234,11 @@ public final class StringJoiner {
     }
 
     private void compactElts() {
-        if (size > 1) {
-            final char[] chars = new char[len];
-            int i = 1, k = getChars(elts[0], chars, 0);
-            do {
-                k += getChars(delimiter, chars, k);
-                k += getChars(elts[i], chars, k);
-                elts[i] = null;
-            } while (++i < size);
+        int sz = size;
+        if (sz > 1) {
+            elts[0] = JLA.join("", "", delimiter, elts, sz);
+            Arrays.fill(elts, 1, sz, null);
             size = 1;
-            elts[0] = new String(chars);
         }
     }
 
@@ -275,4 +256,6 @@ public final class StringJoiner {
         return (size == 0 && emptyValue != null) ? emptyValue.length() :
             len + prefix.length() + suffix.length();
     }
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 }

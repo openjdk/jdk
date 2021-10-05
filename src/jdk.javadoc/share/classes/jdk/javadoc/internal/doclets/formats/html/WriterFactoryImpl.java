@@ -141,7 +141,7 @@ public class WriterFactoryImpl implements WriterFactory {
                 return getFieldWriter(classWriter);
             case PROPERTIES:
                 return getPropertyWriter(classWriter);
-            case INNER_CLASSES:
+            case NESTED_CLASSES:
                 return new NestedClassWriterImpl((SubWriterHolderWriter)
                     classWriter, classWriter.getTypeElement());
             case METHODS:

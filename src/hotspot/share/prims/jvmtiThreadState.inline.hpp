@@ -26,6 +26,7 @@
 #define SHARE_PRIMS_JVMTITHREADSTATE_INLINE_HPP
 
 #include "prims/jvmtiEnvThreadState.hpp"
+
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/thread.inline.hpp"
 

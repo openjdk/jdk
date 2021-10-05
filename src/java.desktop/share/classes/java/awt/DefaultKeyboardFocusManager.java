@@ -83,6 +83,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private static boolean fxAppThreadIsDispatchThread;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AWTAccessor.setDefaultKeyboardFocusManagerAccessor(
             new AWTAccessor.DefaultKeyboardFocusManagerAccessor() {
                 public void consumeNextKeyTyped(DefaultKeyboardFocusManager dkfm, KeyEvent e) {
@@ -1073,8 +1078,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * @since 1.5
      */
     private boolean hasMarker(Component comp) {
-        for (Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator(); iter.hasNext(); ) {
-            if (iter.next().untilFocused == comp) {
+        for (TypeAheadMarker typeAheadMarker : typeAheadMarkers) {
+            if (typeAheadMarker.untilFocused == comp) {
                 return true;
             }
         }
@@ -1132,15 +1137,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
 
         java.util.List<KeyEventDispatcher> dispatchers = getKeyEventDispatchers();
         if (dispatchers != null) {
-            for (java.util.Iterator<KeyEventDispatcher> iter = dispatchers.iterator();
-                 iter.hasNext(); )
-             {
-                 if (iter.next().
-                     dispatchKeyEvent(ke))
-                 {
-                     return true;
-                 }
-             }
+            for (KeyEventDispatcher dispatcher : dispatchers) {
+                if (dispatcher.dispatchKeyEvent(ke)) {
+                    return true;
+                }
+            }
         }
         return dispatchKeyEvent(ke);
     }

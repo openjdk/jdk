@@ -35,7 +35,7 @@
 
 #ifndef COMPILER2 // avoid duplicated definitions, favoring C2 version
 define_pd_global(bool, BackgroundCompilation,        true );
-define_pd_global(bool, InlineIntrinsics,             false); // TODO: ARM
+define_pd_global(bool, InlineIntrinsics,             true );
 define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 false);
 define_pd_global(bool, UseOnStackReplacement,        true );
@@ -53,7 +53,6 @@ define_pd_global(bool, ProfileInterpreter,           false);
 define_pd_global(size_t, CodeCacheExpansionSize,     32*K );
 define_pd_global(uintx, CodeCacheMinBlockLength,     1);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
-define_pd_global(size_t, MetaspaceSize,              12*M );
 define_pd_global(bool, NeverActAsServerClassMachine, true);
 define_pd_global(uint64_t, MaxRAM,                   1ULL*G);
 define_pd_global(bool, CICompileOSR,                 true );

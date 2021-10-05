@@ -41,9 +41,11 @@
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -161,6 +163,17 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 }
 
+void ParallelScavengeHeap::safepoint_synchronize_begin() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::synchronize();
+  }
+}
+
+void ParallelScavengeHeap::safepoint_synchronize_end() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::desynchronize();
+  }
+}
 class PSIsScavengable : public BoolObjectClosure {
   bool do_object_b(oop obj) {
     return ParallelScavengeHeap::heap()->is_in_young(obj);
@@ -183,7 +196,6 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
-  CompressedClassSpaceCounters::update_performance_counters();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -747,7 +759,7 @@ void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
 void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
   // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
   if(log_is_enabled(Info, pagesize)) {
-    const size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
+    const size_t page_size = rs.page_size();
     os::trace_page_sizes("Heap",
                          MinHeapSize,
                          reserved_heap_size,
@@ -782,14 +794,6 @@ void ParallelScavengeHeap::resize_young_gen(size_t eden_size,
 void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   // Delegate the resize to the generation.
   _old_gen->resize(desired_free_space);
-}
-
-ParallelScavengeHeap::ParStrongRootsScope::ParStrongRootsScope() {
-  // nothing particular
-}
-
-ParallelScavengeHeap::ParStrongRootsScope::~ParStrongRootsScope() {
-  // nothing particular
 }
 
 #ifndef PRODUCT

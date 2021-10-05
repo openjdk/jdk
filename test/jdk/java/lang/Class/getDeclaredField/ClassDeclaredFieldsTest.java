@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *          hidden from reflection access.
  * @modules java.base/java.lang:open
  * @run main/othervm ClassDeclaredFieldsTest UNSECURE
- * @run main/othervm ClassDeclaredFieldsTest SECURE
+ * @run main/othervm -Djava.security.manager=allow ClassDeclaredFieldsTest SECURE
  *
  * @author danielfuchs
  */

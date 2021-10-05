@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,7 +34,7 @@ import com.sun.org.apache.bcel.internal.classfile.SimpleElementValue;
 
 /**
  * @since 6.0
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public abstract class ElementValueGen
 {
@@ -141,7 +141,7 @@ public abstract class ElementValueGen
             }
             return new ArrayElementValueGen(ARRAY, evalues, cpGen);
         default:
-            throw new RuntimeException("Unexpected element value kind in annotation: " + type);
+            throw new IllegalArgumentException("Unexpected element value kind in annotation: " + type);
         }
     }
 
@@ -183,7 +183,7 @@ public abstract class ElementValueGen
             return new ClassElementValueGen((ClassElementValue) value, cpool,
                     copyPoolEntries);
         default:
-            throw new RuntimeException("Not implemented yet! (" + value.getElementValueType() + ")");
+            throw new UnsupportedOperationException("Not implemented yet! (" + value.getElementValueType() + ")");
         }
     }
 }

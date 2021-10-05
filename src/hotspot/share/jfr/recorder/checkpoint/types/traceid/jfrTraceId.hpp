@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +83,12 @@ class JfrTraceId : public AllStatic {
   static void assign(const ModuleEntry* module);
   static void assign(const PackageEntry* package);
   static void assign(const ClassLoaderData* cld);
+  static traceid assign_primitive_klass_id();
   static traceid assign_thread_id();
 
   // through load barrier
   static traceid load(const Klass* klass);
-  static traceid load(jclass jc);
+  static traceid load(jclass jc, bool raw = false);
   static traceid load(const Method* method);
   static traceid load(const Klass* klass, const Method* method);
   static traceid load(const ModuleEntry* module);
@@ -100,7 +101,6 @@ class JfrTraceId : public AllStatic {
   static traceid load_raw(jclass jc);
   static traceid load_raw(const Thread* thread);
   static traceid load_raw(const Method* method);
-  static traceid load_raw(const Klass* klass, const Method* method);
   static traceid load_raw(const ModuleEntry* module);
   static traceid load_raw(const PackageEntry* package);
   static traceid load_raw(const ClassLoaderData* cld);
