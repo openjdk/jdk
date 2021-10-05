@@ -770,8 +770,12 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
   if (StressLCM || StressGCM || StressIGVN || StressCCP) {
-    _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
-      static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
+    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && RepeatCompilation)) {
+      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
+      FLAG_SET_ERGO(StressSeed, _stress_seed);
+    } else {
+      _stress_seed = StressSeed;
+    }
     if (_log != NULL) {
       _log->elem("stress_test seed='%u'", _stress_seed);
     }
@@ -1352,7 +1356,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     ciInstanceKlass *k = to->klass()->as_instance_klass();
     if( ptr == TypePtr::Constant ) {
       if (to->klass() != ciEnv::current()->Class_klass() ||
-          offset < k->size_helper() * wordSize) {
+          offset < k->layout_helper_size_in_bytes()) {
         // No constant oop pointers (such as Strings); they alias with
         // unknown strings.
         assert(!is_known_inst, "not scalarizable allocation");
@@ -1376,7 +1380,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (!is_known_inst) { // Do it only for non-instance types
         tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset);
       }
-    } else if (offset < 0 || offset >= k->size_helper() * wordSize) {
+    } else if (offset < 0 || offset >= k->layout_helper_size_in_bytes()) {
       // Static fields are in the space above the normal instance
       // fields in the java.lang.Class instance.
       if (to->klass() != ciEnv::current()->Class_klass()) {
@@ -1386,6 +1390,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       }
     } else {
       ciInstanceKlass *canonical_holder = k->get_canonical_holder(offset);
+      assert(offset < canonical_holder->layout_helper_size_in_bytes(), "");
       if (!k->equals(canonical_holder) || tj->offset() != offset) {
         if( is_known_inst ) {
           tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, true, NULL, offset, to->instance_id());
@@ -1658,7 +1663,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       ciField* field;
       if (tinst->const_oop() != NULL &&
           tinst->klass() == ciEnv::current()->Class_klass() &&
-          tinst->offset() >= (tinst->klass()->as_instance_klass()->size_helper() * wordSize)) {
+          tinst->offset() >= (tinst->klass()->as_instance_klass()->layout_helper_size_in_bytes())) {
         // static field
         ciInstanceKlass* k = tinst->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
         field = k->get_field_by_offset(tinst->offset(), true);
@@ -2108,10 +2113,6 @@ void Compile::Optimize() {
     if (failing())  return;
   }
 
-  // Now that all inlining is over, cut edge from root to loop
-  // safepoints
-  remove_root_to_sfpts_edges(igvn);
-
   // Remove the speculative part of types and clean up the graph from
   // the extra CastPP nodes whose only purpose is to carry them. Do
   // that early so that optimizations are not disrupted by the extra
@@ -2147,6 +2148,10 @@ void Compile::Optimize() {
     igvn.optimize();
     set_for_igvn(save_for_igvn);
   }
+
+  // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
+  // safepoints
+  remove_root_to_sfpts_edges(igvn);
 
   // Perform escape analysis
   if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {

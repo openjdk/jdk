@@ -2561,7 +2561,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * overridden by system properties
      */
     private ForkJoinPool(byte forCommonPoolOnly) {
-        int parallelism = Runtime.getRuntime().availableProcessors() - 1;
+        int parallelism = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
         ForkJoinWorkerThreadFactory fac = null;
         UncaughtExceptionHandler handler = null;
         try {  // ignore exceptions in accessing/parsing properties

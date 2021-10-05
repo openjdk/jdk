@@ -518,7 +518,7 @@ Node* PhaseCFG::select(
   uint score   = 0; // Bigger is better
   int idx = -1;     // Index in worklist
   int cand_cnt = 0; // Candidate count
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -948,7 +948,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     return true;
   }
 
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   // We track the uses of local definitions as input dependences so that
   // we know when a given instruction is avialable to be scheduled.

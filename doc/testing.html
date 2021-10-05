@@ -27,6 +27,7 @@
 <li><a href="#configuration">Configuration</a></li>
 </ul></li>
 <li><a href="#test-selection">Test selection</a><ul>
+<li><a href="#common-test-groups">Common Test Groups</a></li>
 <li><a href="#jtreg">JTReg</a></li>
 <li><a href="#gtest">Gtest</a></li>
 <li><a href="#microbenchmarks">Microbenchmarks</a></li>
@@ -67,6 +68,19 @@ $ make exploded-test TEST=tier2</code></pre>
 <p>All functionality is available using the <code>test</code> make target. In this use case, the test or tests to be executed is controlled using the <code>TEST</code> variable. To speed up subsequent test runs with no source code changes, <code>test-only</code> can be used instead, which do not depend on the source and test image build.</p>
 <p>For some common top-level tests, direct make targets have been generated. This includes all JTReg test groups, the hotspot gtest, and custom tests (if present). This means that <code>make test-tier1</code> is equivalent to <code>make test TEST=&quot;tier1&quot;</code>, but the latter is more tab-completion friendly. For more complex test runs, the <code>test TEST=&quot;x&quot;</code> solution needs to be used.</p>
 <p>The test specifications given in <code>TEST</code> is parsed into fully qualified test descriptors, which clearly and unambigously show which tests will be run. As an example, <code>:tier1</code> will expand to <code>jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1 jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1 jtreg:$(TOPDIR)/test/nashorn:tier1 jtreg:$(TOPDIR)/test/jaxp:tier1</code>. You can always submit a list of fully qualified test descriptors in the <code>TEST</code> variable if you want to shortcut the parser.</p>
+<h3 id="common-test-groups">Common Test Groups</h3>
+<p>Ideally, all tests are run for every change but this may not be practical due to the limited testing resources, the scope of the change, etc.</p>
+<p>The source tree currently defines a few common test groups in the relevant <code>TEST.groups</code> files. There are test groups that cover a specific component, for example <code>hotspot_gc</code>. It is a good idea to look into <code>TEST.groups</code> files to get a sense what tests are relevant to a particular JDK component.</p>
+<p>Component-specific tests may miss some unintended consequences of a change, so other tests should also be run. Again, it might be impractical to run all tests, and therefore <em>tiered</em> test groups exist. Tiered test groups are not component-specific, but rather cover the significant parts of the entire JDK.</p>
+<p>Multiple tiers allow balancing test coverage and testing costs. Lower test tiers are supposed to contain the simpler, quicker and more stable tests. Higher tiers are supposed to contain progressively more thorough, slower, and sometimes less stable tests, or the tests that require special configuration.</p>
+<p>Contributors are expected to run the tests for the areas that are changed, and the first N tiers they can afford to run, but at least tier1.</p>
+<p>A brief description of the tiered test groups:</p>
+<ul>
+<li><p><code>tier1</code>: This is the lowest test tier. Multiple developers run these tests every day. Because of the widespread use, the tests in <code>tier1</code> are carefully selected and optimized to run fast, and to run in the most stable manner. The test failures in <code>tier1</code> are usually followed up on quickly, either with fixes, or adding relevant tests to problem list. GitHub Actions workflows, if enabled, run <code>tier1</code> tests.</p></li>
+<li><p><code>tier2</code>: This test group covers even more ground. These contain, among other things, tests that either run for too long to be at <code>tier1</code>, or may require special configuration, or tests that are less stable, or cover the broader range of non-core JVM and JDK features/components (for example, XML).</p></li>
+<li><p><code>tier3</code>: This test group includes more stressful tests, the tests for corner cases not covered by previous tiers, plus the tests that require GUIs. As such, this suite should either be run with low concurrency (<code>TEST_JOBS=1</code>), or without headful tests (<code>JTREG_KEYWORDS=\!headful</code>), or both.</p></li>
+<li><p><code>tier4</code>: This test group includes every other test not covered by previous tiers. It includes, for example, <code>vmTestbase</code> suites for Hotspot, which run for many hours even on large machines. It also runs GUI tests, so the same <code>TEST_JOBS</code> and <code>JTREG_KEYWORDS</code> caveats apply.</p></li>
+</ul>
 <h3 id="jtreg">JTReg</h3>
 <p>JTReg tests can be selected either by picking a JTReg test group, or a selection of files or directories containing JTReg tests.</p>
 <p>JTReg test groups can be specified either without a test root, e.g. <code>:tier1</code> (or <code>tier1</code>, the initial colon is optional), or with, e.g. <code>hotspot:tier1</code>, <code>test/jdk:jdk_util</code> or <code>$(TOPDIR)/test/hotspot/jtreg:hotspot_all</code>. The test root can be specified either as an absolute path, or a path relative to the JDK top directory, or the <code>test</code> directory. For simplicity, the hotspot JTReg test root, which really is <code>hotspot/jtreg</code> can be abbreviated as just <code>hotspot</code>.</p>

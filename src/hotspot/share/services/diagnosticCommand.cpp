@@ -58,7 +58,9 @@
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-
+#ifdef LINUX
+#include "trimCHeapDCmd.hpp"
+#endif
 
 static void loadAgentModule(TRAPS) {
   ResourceMark rm(THREAD);
@@ -118,6 +120,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export, true, false));
 #ifdef LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TouchedMethodsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));

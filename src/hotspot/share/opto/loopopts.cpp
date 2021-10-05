@@ -1435,12 +1435,16 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
+                            n->in(1)->bottom_type()->isa_rawptr() &&
+                            !n->bottom_type()->isa_rawptr();
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
+      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
       n->Opcode() != Op_Opaque4) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);

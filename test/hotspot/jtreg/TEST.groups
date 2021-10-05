@@ -302,6 +302,8 @@ tier1_runtime = \
  -runtime/memory/ReserveMemory.java \
  -runtime/Metaspace/FragmentMetaspace.java \
  -runtime/Metaspace/FragmentMetaspaceSimple.java \
+ -runtime/Metaspace/elastic/TestMetaspaceAllocationMT1.java \
+ -runtime/Metaspace/elastic/TestMetaspaceAllocationMT2.java \
  -runtime/MirrorFrame/Test8003720.java \
  -runtime/modules/LoadUnloadModuleStress.java \
  -runtime/modules/ModuleStress/ExportModuleStressTest.java \
@@ -449,6 +451,24 @@ tier1 = \
   :tier1_gc \
   :tier1_runtime \
   :tier1_serviceability
+
+tier2 = \
+  :hotspot_tier2_runtime \
+  :hotspot_tier2_runtime_platform_agnostic \
+  :hotspot_tier2_serviceability \
+  :tier2_gc_epsilon \
+  :tier2_gc_shenandoah
+
+tier3 = \
+  :hotspot_tier3_runtime \
+  :tier3_gc_shenandoah
+
+# Everything that is not in other tiers, but not apps
+tier4 = \
+  :hotspot_all_no_apps \
+ -:tier1 \
+ -:tier2 \
+ -:tier3
 
 hotspot_tier2_runtime = \
   runtime/ \

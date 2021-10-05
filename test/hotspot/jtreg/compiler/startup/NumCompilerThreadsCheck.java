@@ -47,11 +47,6 @@ public class NumCompilerThreadsCheck {
 
     String expectedOutput = "outside the allowed range";
     out.shouldContain(expectedOutput);
-
-    if (Platform.isZero()) {
-      String expectedLowWaterMarkText = "must be at least 0";
-      out.shouldContain(expectedLowWaterMarkText);
-    }
   }
 
 }

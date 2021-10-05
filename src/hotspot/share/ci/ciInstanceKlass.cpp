@@ -205,12 +205,12 @@ ciConstantPoolCache* ciInstanceKlass::field_cache() {
 //
 ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
   #ifdef ASSERT
-  if (!(offset >= 0 && offset < layout_helper())) {
+  if (!(offset >= 0 && offset < layout_helper_size_in_bytes())) {
     tty->print("*** get_canonical_holder(%d) on ", offset);
     this->print();
     tty->print_cr(" ***");
   };
-  assert(offset >= 0 && offset < layout_helper(), "offset must be tame");
+  assert(offset >= 0 && offset < layout_helper_size_in_bytes(), "offset must be tame");
   #endif
 
   if (offset < instanceOopDesc::base_offset_in_bytes()) {
@@ -227,7 +227,9 @@ ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
     for (;;) {
       assert(self->is_loaded(), "must be loaded to have size");
       ciInstanceKlass* super = self->super();
-      if (super == NULL || super->nof_nonstatic_fields() == 0) {
+      if (super == NULL ||
+          super->nof_nonstatic_fields() == 0 ||
+          super->layout_helper_size_in_bytes() <= offset) {
         return self;
       } else {
         self = super;  // return super->get_canonical_holder(offset)
