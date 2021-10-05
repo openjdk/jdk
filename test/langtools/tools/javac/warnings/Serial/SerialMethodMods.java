@@ -14,7 +14,7 @@ class SerialMethodMods implements Serializable {
     void writeObject(ObjectOutputStream stream) throws IOException {
         stream.defaultWriteObject();
     }
-    
+
     // Should be private
     public void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException {

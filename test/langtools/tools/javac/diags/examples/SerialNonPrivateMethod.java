@@ -36,7 +36,7 @@ class SerialNonPrivateMethod implements Serializable {
     void writeObject(ObjectOutputStream stream) throws IOException {
         stream.defaultWriteObject();
     }
-    
+
     // Should be private non-static
    private static void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException {

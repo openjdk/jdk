@@ -5878,7 +5878,7 @@ public class Attr extends JCTree.Visitor {
                              TreeInfo.diagnosticPositionFor(svuid, tree),
                              Warnings.LongSVUID((Symbol)e));
              }
-             
+
              if (svuid.getConstValue() == null)
                  log.warning(LintCategory.SERIAL,
                             TreeInfo.diagnosticPositionFor(svuid, tree),
