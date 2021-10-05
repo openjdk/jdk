@@ -72,7 +72,9 @@ class Field extends AccessibleObject implements Member {
     // This is guaranteed to be interned by the VM in the 1.4
     // reflection implementation
     private String              name;
+    @Stable
     private Class<?>            type;
+    @Stable
     private int                 modifiers;
     private boolean             trustedFinal;
     // Generics and annotations support

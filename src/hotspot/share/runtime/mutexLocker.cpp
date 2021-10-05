@@ -225,17 +225,17 @@ void mutex_init() {
   def(StringDedup_lock             , PaddedMonitor, nosafepoint, true,  _safepoint_check_never);
   def(StringDedupIntern_lock       , PaddedMutex  , nosafepoint, true,  _safepoint_check_never);
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf,        true,  _safepoint_check_always);
-  def(CodeCache_lock               , PaddedMonitor, special,     true,  _safepoint_check_never);
-  def(CodeSweeper_lock             , PaddedMonitor, special-2,   true,  _safepoint_check_never);
-  def(RawMonitor_lock              , PaddedMutex  , special,     true,  _safepoint_check_never);
+  def(CodeCache_lock               , PaddedMonitor, nosafepoint-3, true,  _safepoint_check_never);
+  def(CodeSweeper_lock             , PaddedMonitor, nosafepoint-5, true,  _safepoint_check_never);
+  def(RawMonitor_lock              , PaddedMutex  , nosafepoint-1, true,  _safepoint_check_never);
   def(OopMapCacheAlloc_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for oop_map_cache allocation.
 
   def(Metaspace_lock               , PaddedMutex  , nosafepoint-3, true,  _safepoint_check_never);
   def(ClassLoaderDataGraph_lock    , PaddedMutex  , nonleaf,     false, _safepoint_check_always);
 
-  def(Patching_lock                , PaddedMutex  , special,     true,  _safepoint_check_never);      // used for safepointing and code patching.
-  def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  _safepoint_check_never);
-  def(MonitorDeflation_lock        , PaddedMonitor, special,     true,  _safepoint_check_never);      // used for monitor deflation thread operations
+  def(Patching_lock                , PaddedMutex  , nosafepoint,     true,  _safepoint_check_never);      // used for safepointing and code patching.
+  def(CompiledMethod_lock          , PaddedMutex  , nosafepoint-4,   true,  _safepoint_check_never);
+  def(MonitorDeflation_lock        , PaddedMonitor, nosafepoint,     true,  _safepoint_check_never);      // used for monitor deflation thread operations
   def(Service_lock                 , PaddedMonitor, service,     true,  _safepoint_check_never);      // used for service thread operations
 
   if (UseNotificationThread) {
@@ -244,7 +244,7 @@ void mutex_init() {
     Notification_lock = Service_lock;
   }
 
-  def(JmethodIdCreation_lock       , PaddedMutex  , special-2,   true,  _safepoint_check_never); // used for creating jmethodIDs.
+  def(JmethodIdCreation_lock       , PaddedMutex  , nosafepoint-2,   true,  _safepoint_check_never); // used for creating jmethodIDs.
 
   def(SystemDictionary_lock        , PaddedMonitor, leaf,        true,  _safepoint_check_always);
   def(SharedDictionary_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always);
@@ -283,7 +283,7 @@ void mutex_init() {
   def(CompiledIC_lock              , PaddedMutex  , nosafepoint, true,  _safepoint_check_never);      // locks VtableStubs_lock, InlineCacheBuffer_lock
   def(CompileTaskAlloc_lock        , PaddedMutex  , nonleaf+2,   true,  _safepoint_check_always);
   def(CompileStatistics_lock       , PaddedMutex  , nonleaf+2,   false, _safepoint_check_always);
-  def(DirectivesStack_lock         , PaddedMutex  , special,     true,  _safepoint_check_never);
+  def(DirectivesStack_lock         , PaddedMutex  , nosafepoint,     true,  _safepoint_check_never);
   def(MultiArray_lock              , PaddedMutex  , nonleaf+2,   false, _safepoint_check_always);
 
   def(JvmtiThreadState_lock        , PaddedMutex  , nonleaf+2,   false, _safepoint_check_always); // Used by JvmtiThreadState/JvmtiEventController
@@ -314,12 +314,12 @@ void mutex_init() {
 #endif
 
 #ifndef SUPPORTS_NATIVE_CX8
-  def(UnsafeJlong_lock             , PaddedMutex  , special,     true,  _safepoint_check_never);
+  def(UnsafeJlong_lock             , PaddedMutex  , nosafepoint,     true,  _safepoint_check_never);
 #endif
 
   def(CodeHeapStateAnalytics_lock  , PaddedMutex  , nonleaf+6,   false, _safepoint_check_always);
-  def(NMethodSweeperStats_lock     , PaddedMutex  , special,     true,  _safepoint_check_never);
-  def(ThreadsSMRDelete_lock        , PaddedMonitor, special,     true,  _safepoint_check_never);
+  def(NMethodSweeperStats_lock     , PaddedMutex  , nosafepoint,   true,  _safepoint_check_never);
+  def(ThreadsSMRDelete_lock        , PaddedMonitor, nosafepoint-3, true,  _safepoint_check_never); // Holds ConcurrentHashTableResize_lock
   def(ThreadIdTableCreate_lock     , PaddedMutex  , leaf,        false, _safepoint_check_always);
   def(SharedDecoder_lock           , PaddedMutex  , tty-1,       true,  _safepoint_check_never);
   def(DCmdFactory_lock             , PaddedMutex  , nosafepoint, true,  _safepoint_check_never);

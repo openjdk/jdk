@@ -228,13 +228,14 @@ public class ReflectionFactory {
         if (useDirectMethodHandle) {
             return MethodHandleAccessorFactory.newConstructorAccessor(c);
         } else {
+            // Bootstrapping issue: since we use Class.newInstance() in
+            // the ConstructorAccessor generation process, we have to
+            // break the cycle here.
+            if (Reflection.isSubclassOf(declaringClass, ConstructorAccessorImpl.class)) {
+                return new BootstrapConstructorAccessorImpl(c);
+            }
+
             if (noInflation && !c.getDeclaringClass().isHidden()) {
-                // Bootstrapping issue: since we use Class.newInstance() in
-                // the ConstructorAccessor generation process, we have to
-                // break the cycle here.
-                if (Reflection.isSubclassOf(declaringClass, ConstructorAccessorImpl.class)) {
-                    return new BootstrapConstructorAccessorImpl(c);
-                }
                 return new MethodAccessorGenerator().
                         generateConstructor(c.getDeclaringClass(),
                                             c.getParameterTypes(),

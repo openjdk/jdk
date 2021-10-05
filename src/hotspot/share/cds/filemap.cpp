@@ -1597,15 +1597,17 @@ MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* 
   return MAP_ARCHIVE_SUCCESS;
 }
 
-bool FileMapInfo::read_region(int i, char* base, size_t size) {
+bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
   FileMapRegion* si = space_at(i);
-  log_info(cds)("Commit %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)%s",
-                is_static() ? "static " : "dynamic", i, p2i(base), p2i(base + size),
-                shared_region_name[i], si->allow_exec() ? " exec" : "");
-  if (!os::commit_memory(base, size, si->allow_exec())) {
-    log_error(cds)("Failed to commit %s region #%d (%s)", is_static() ? "static " : "dynamic",
-                   i, shared_region_name[i]);
-    return false;
+  if (do_commit) {
+    log_info(cds)("Commit %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)%s",
+                  is_static() ? "static " : "dynamic", i, p2i(base), p2i(base + size),
+                  shared_region_name[i], si->allow_exec() ? " exec" : "");
+    if (!os::commit_memory(base, size, si->allow_exec())) {
+      log_error(cds)("Failed to commit %s region #%d (%s)", is_static() ? "static " : "dynamic",
+                     i, shared_region_name[i]);
+      return false;
+    }
   }
   if (lseek(_fd, (long)si->file_offset(), SEEK_SET) != (int)si->file_offset() ||
       read_bytes(base, size) != size) {
@@ -1646,7 +1648,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // that covers all the FileMapRegions to ensure all regions can be mapped. However, Windows
     // can't mmap into a ReservedSpace, so we just os::read() the data. We're going to patch all the
     // regions anyway, so there's no benefit for mmap anyway.
-    if (!read_region(i, requested_addr, size)) {
+    if (!read_region(i, requested_addr, size, /* do_commit = */ true)) {
       log_info(cds)("Failed to read %s shared space into reserved space at " INTPTR_FORMAT,
                     shared_region_name[i], p2i(requested_addr));
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
@@ -1817,7 +1819,7 @@ void FileMapInfo::map_or_load_heap_regions() {
     } else if (HeapShared::can_load()) {
       success = HeapShared::load_heap_regions(this);
     } else {
-      log_info(cds)("Cannot use CDS heap data. UseG1GC or UseEpsilonGC are required.");
+      log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC or UseSerialGC are required.");
     }
   }
 

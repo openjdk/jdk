@@ -394,13 +394,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    if (input.build_os == 'macosx' && input.build_cpu == 'aarch64') {
-        common.boot_jdk_version = "17";
-        common.boot_jdk_build_number = "24";
-    } else {
-        common.boot_jdk_version = "16";
-        common.boot_jdk_build_number = "36";
-    }
+    common.boot_jdk_version = "17";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -638,7 +633,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     // Bootcycle profiles runs the build with itself as the boot jdk. This can
     // be done in two ways. Either using the builtin bootcycle target in the
     // build system. Or by supplying the main jdk build as bootjdk to configure.
-    [ "linux-x64", "macosx-x64", "windows-x64" ]
+    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64" ]
         .forEach(function (name) {
             var bootcycleName = name + "-bootcycle";
             var bootcyclePrebuiltName = name + "-bootcycle-prebuilt";
@@ -1073,11 +1068,7 @@ var getJibProfilesDependencies = function (input, common) {
     }
     var boot_jdk_os = input.build_os;
     if (input.build_os == "macosx") {
-        if (input.build_cpu == "aarch64") {
-            boot_jdk_os = "macos";
-        } else {
-            boot_jdk_os = "osx";
-        }
+        boot_jdk_os = "macos";
     }
     var boot_jdk_platform = boot_jdk_os + "-" + input.build_cpu;
     var boot_jdk_ext = (input.build_os == "windows" ? ".zip" : ".tar.gz")

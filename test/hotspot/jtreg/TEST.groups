@@ -367,8 +367,9 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/SharedArchiveConsistency.java \
  -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestCombinedCompressedFlags.java \
- -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
+ -runtime/cds/appcds/TestSerialGCWithCDS.java \
+ -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
  -runtime/cds/appcds/VerifierTest_1B.java
 
@@ -398,6 +399,19 @@ hotspot_cds_verify_shared_spaces = \
   runtime/cds/appcds/jigsaw/modulepath/ExportModule.java \
   runtime/cds/appcds/jvmti/dumpingWithAgent/DumpingWithJavaAgent.java \
   runtime/cds/appcds/sharedStrings/SharedStringsBasic.java
+
+# No need to run every test with EpsilonGC. A small subset will provide enough
+# coverage. Also avoid some tests that may OOM.
+hotspot_cds_epsilongc = \
+  runtime/cds/appcds/HelloTest.java \
+  runtime/cds/appcds/MultiProcessSharing.java \
+  runtime/cds/appcds/StaticArchiveWithLambda.java \
+  runtime/cds/appcds/cacheObject \
+  runtime/cds/appcds/customLoader/ParallelTestSingleFP.java \
+  runtime/cds/appcds/dynamicArchive/HelloDynamic.java \
+  runtime/cds/appcds/javaldr \
+  runtime/cds/appcds/jigsaw \
+  runtime/cds/appcds/loaderConstraints
 
 # needs -nativepath:<output>/images/test/hotspot/jtreg/native/
 hotspot_metaspace = \

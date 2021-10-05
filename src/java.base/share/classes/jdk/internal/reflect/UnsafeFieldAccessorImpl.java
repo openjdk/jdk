@@ -28,6 +28,7 @@ package jdk.internal.reflect;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.Stable;
 
 /** Base class for jdk.internal.misc.Unsafe-based FieldAccessors. The
     observation is that there are only nine types of fields from the
@@ -39,8 +40,10 @@ import jdk.internal.misc.Unsafe;
 abstract class UnsafeFieldAccessorImpl extends FieldAccessorImpl {
     static final Unsafe unsafe = Unsafe.getUnsafe();
 
+    @Stable
     protected final long    fieldOffset;
     protected final boolean isFinal;
+
     UnsafeFieldAccessorImpl(Field field) {
         super(field);
         int mods = field.getModifiers();

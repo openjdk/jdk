@@ -317,14 +317,12 @@ class AccessibleHTML implements Accessible {
          */
         public AccessibleStateSet getAccessibleStateSet() {
             AccessibleStateSet states = new AccessibleStateSet();
-            Component comp = getTextComponent();
+            JTextComponent comp = getTextComponent();
 
             if (comp.isEnabled()) {
                 states.add(AccessibleState.ENABLED);
             }
-            if (comp instanceof JTextComponent &&
-                ((JTextComponent)comp).isEditable()) {
-
+            if (comp.isEditable()) {
                 states.add(AccessibleState.EDITABLE);
                 states.add(AccessibleState.FOCUSABLE);
             }
@@ -742,11 +740,9 @@ class AccessibleHTML implements Accessible {
          * @see AccessibleStateSet
          */
         public boolean isFocusTraversable() {
-            Component comp = getTextComponent();
-            if (comp instanceof JTextComponent) {
-                if (((JTextComponent)comp).isEditable()) {
-                    return true;
-                }
+            JTextComponent comp = getTextComponent();
+            if (comp != null && comp.isEditable()) {
+                return true;
             }
             return false;
         }
@@ -763,8 +759,8 @@ class AccessibleHTML implements Accessible {
                 return;
             }
 
-            Component comp = getTextComponent();
-            if (comp instanceof JTextComponent) {
+            JTextComponent comp = getTextComponent();
+            if (comp != null) {
 
                 comp.requestFocusInWindow();
 
@@ -772,7 +768,7 @@ class AccessibleHTML implements Accessible {
                     if (elementInfo.validateIfNecessary()) {
                         // set the caret position to the start of this component
                         Element elem = elementInfo.getElement();
-                        ((JTextComponent)comp).setCaretPosition(elem.getStartOffset());
+                        comp.setCaretPosition(elem.getStartOffset());
 
                         // fire a AccessibleState.FOCUSED property change event
                         AccessibleContext ac = editor.getAccessibleContext();

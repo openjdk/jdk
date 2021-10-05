@@ -64,10 +64,12 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public final class Constructor<T> extends Executable {
+    @Stable
     private Class<T>            clazz;
     private int                 slot;
     private Class<?>[]          parameterTypes;
     private Class<?>[]          exceptionTypes;
+    @Stable
     private int                 modifiers;
     // Generics and annotations support
     private transient String    signature;

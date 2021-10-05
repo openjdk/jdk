@@ -332,14 +332,22 @@ public class CommandCompletionTest extends ReplToolTesting {
     public void testUserHome() throws IOException {
         List<String> completions;
         Path home = Paths.get(System.getProperty("user.home"));
+        String selectedFile;
+        try (Stream<Path> content = Files.list(home)) {
+            selectedFile = content.filter(CLASSPATH_FILTER)
+                                  .findAny()
+                                  .map(file -> file.getFileName().toString())
+                                  .get();
+        }
         try (Stream<Path> content = Files.list(home)) {
             completions = content.filter(CLASSPATH_FILTER)
+                                 .filter(file -> file.getFileName().toString().startsWith(selectedFile))
                                  .map(file -> file.getFileName().toString() + (Files.isDirectory(file) ? "/" : ""))
                                  .sorted()
                                  .collect(Collectors.toList());
         }
         testNoStartUp(
-                a -> assertCompletion(a, "/env --class-path ~/|", false, completions.toArray(new String[completions.size()]))
+                a -> assertCompletion(a, "/env --class-path ~/" + selectedFile + "|", false, completions.toArray(new String[completions.size()]))
         );
     }
 

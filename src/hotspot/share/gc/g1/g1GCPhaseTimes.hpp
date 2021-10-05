@@ -227,14 +227,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double print_merge_heap_roots_time() const;
   double print_evacuate_initial_collection_set() const;
   double print_evacuate_optional_collection_set() const;
-  double print_post_evacuate_collection_set() const;
+  double print_post_evacuate_collection_set(bool evacuation_failed) const;
   void print_other(double accounted_ms) const;
 
  public:
   G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads);
   void record_gc_pause_start();
   void record_gc_pause_end();
-  void print();
+  void print(bool evacuation_failed);
   static const char* phase_name(GCParPhases phase);
 
   // record the time a phase took in seconds

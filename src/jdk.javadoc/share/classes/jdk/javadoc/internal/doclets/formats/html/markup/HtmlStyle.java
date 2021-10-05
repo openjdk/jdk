@@ -104,6 +104,11 @@ public enum HtmlStyle {
     navBarCell1Rev,
 
     /**
+     * The class for the navigation bar toggle button for smaller displays.
+     */
+    navBarToggleIcon,
+
+    /**
      * The class for the primary list of navigation links.
      */
     navList,
@@ -129,6 +134,11 @@ public enum HtmlStyle {
      * The class for the list of subsidiary navigation links.
      */
     subNavList,
+
+    /**
+     * The class for the list of subsidiary navigation links for smaller displays.
+     */
+    subNavListSmall,
 
     //</editor-fold>
 
@@ -375,8 +385,7 @@ public enum HtmlStyle {
     /**
      * The class for a label indicating the element from which a description has been copied.
      */
-    // This should be renamed to something less cryptic
-    descfrmTypeLabel,
+    descriptionFromTypeLabel,
 
     /**
      * The class for a note providing information about the permitted subtypes of a

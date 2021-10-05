@@ -25,6 +25,8 @@
 
 package jdk.internal.reflect;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
@@ -34,9 +36,10 @@ import java.lang.reflect.Modifier;
 
 abstract class FieldAccessorImpl extends MagicAccessorImpl
     implements FieldAccessor {
-    protected final Field   field;
+    @Stable
+    protected final Field field;
 
-    protected FieldAccessorImpl(Field field) {
+    FieldAccessorImpl(Field field) {
         this.field = field;
     }
 

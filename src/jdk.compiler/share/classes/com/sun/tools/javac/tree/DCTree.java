@@ -25,26 +25,57 @@
 
 package com.sun.tools.javac.tree;
 
-import javax.tools.Diagnostic;
-
-import com.sun.source.doctree.*;
-import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.DefinedBy;
-import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.DiagnosticSource;
-import com.sun.tools.javac.util.JCDiagnostic;
-import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
-import com.sun.tools.javac.util.Position;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
 
 import javax.lang.model.element.Name;
+import javax.lang.model.util.Elements;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
+import com.sun.source.doctree.*;
+import com.sun.source.util.DocTreeScanner;
+
+import com.sun.tools.javac.parser.Tokens.Comment;
+import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.Position;
+
+import static com.sun.tools.javac.util.Position.NOPOS;
+
 /**
+ *
+ * Root class for abstract syntax documentation tree nodes. It provides definitions
+ * for specific tree nodes as subclasses nested inside.
+ *
+ * Apart from the top-level {@link DCDocComment} node, generally nodes fall into
+ * three groups:
+ * <ul>
+ * <li>Leaf nodes, such as {@link DCIdentifier}, {@link DCText}
+ * <li>Inline tag nodes, such as {@link DCLink}, {@link DCLiteral}
+ * <li>Block tag nodes, such as {@link DCParam}, {@link DCThrows}
+ * </ul>
+ *
+ * Trees are typically wide and shallow, without a significant amount of nesting.
+ *
+ * Nodes have various associated positions:
+ * <ul>
+ * <li>the {@link #pos position} of the first character that is unique to this node,
+ *      and not part of any child node
+ * <li>the {@link #getStartPosition start} of the range of characters for this node
+ * <li>the "{@link #getPreferredPosition() preferred}" position in the range of characters
+ *      for this node
+ * <li>the {@link #getEndPosition() end} of the range of characters for this node
+ * </ul>
+ *
+ * All values are relative to the beginning of the
+ * {@link Elements#getDocComment comment text} in which they appear.
+ * To convert a value to the position in the enclosing source text,
+ * use {@link DCDocComment#getSourcePosition(int)}.
+ *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
@@ -53,41 +84,150 @@ import javax.tools.JavaFileObject;
 public abstract class DCTree implements DocTree {
 
     /**
-     * The position in the comment string.
-     * Use {@link #getSourcePosition getSourcePosition} to convert
+     * The position of the first character that is unique to this node.
+     * It is normally set by the methods in {@link DocTreeMaker}.
+     *
+     * The value is relative to the beginning of the comment text.
+     * Use {@link DCDocComment#getSourcePosition(int)} to convert
      * it to a position in the source file.
      *
-     * TODO: why not simply translate all these values into
-     * source file positions? Is it useful to have string-offset
-     * positions as well?
+     * @see #getStartPosition()
+     * @see #getPreferredPosition()
+     * @see #getEndPosition()
      */
     public int pos;
 
     /**
-     * {@return the source position for this tree node}
+     * {@return a {@code DiagnosticPosition} for this node}
+     * The method may be used when reporting diagnostics for this node.
      *
-     * @param dc the enclosing doc comment
+     * @param dc the enclosing comment, used to convert comment-based positions
+     *           to file-based positions
      */
-    public long getSourcePosition(DCDocComment dc) {
-        return dc.comment.getSourcePos(pos);
+    public JCDiagnostic.DiagnosticPosition pos(DCDocComment dc) {
+        return createDiagnosticPosition(dc.comment, getStartPosition(), getPreferredPosition(), getEndPosition());
     }
 
     /**
-     * {@return the source position for position relative to this tree node}
-     * This is primarily useful for nodes that wrap a single string child.
+     * {@return the start position of this tree node}
      *
-     * @param dc     the enclosing doc comment
-     * @param offset the offset
+     * For most nodes, this is the position of the first character that is unique to this node.
+     *
+     * The value is relative to the beginning of the comment text.
+     * Use {@link DCDocComment#getSourcePosition(int)} to convert
+     * it to a position in the source file.
      */
-    public long getSourcePosition(DCDocComment dc, int offset) {
-        return dc.comment.getSourcePos(pos + offset);
+    public int getStartPosition() {
+        return pos;
     }
 
-    public JCDiagnostic.DiagnosticPosition pos(DCDocComment dc) {
-        return new SimpleDiagnosticPosition(dc.comment.getSourcePos(pos));
+    /**
+     * {@return the "preferred" position of this tree node}
+     *
+     * It is typically the position of the first character that is unique to this node.
+     * It is the position that is used for the caret in "line and caret" diagnostic messages.
+     *
+     * The value is relative to the beginning of the comment text.
+     * Use {@link DCDocComment#getSourcePosition(int)} to convert
+     * it to a position in the source file.
+     */
+    public int getPreferredPosition() {
+        return pos;
     }
 
-    /** Convert a tree to a pretty-printed string. */
+    /**
+     * {@return the end position of the tree node}
+     *
+     * The value is typically derived in one of three ways:
+     * <ul>
+     * <li>computed from the start and length of "leaf" nodes, such as {@link TextTree},
+     * <li>computed recursively from the end of the last child node, such as for most {@link DCBlockTag block tags}, or
+     * <li>provided explicitly, such as for subtypes of {@link DCEndPosTree}
+     * </ul>
+     *
+     * The value is relative to the beginning of the comment text.
+     * Use {@link DCDocComment#getSourcePosition(int)} to convert
+     * it to a position in the source file.
+     */
+    public int getEndPosition() {
+        if (this instanceof DCEndPosTree<?> dcEndPosTree) {
+            int endPos = dcEndPosTree.getEndPos();
+
+            if (endPos != NOPOS) {
+                return endPos;
+            }
+        }
+
+        switch (getKind()) {
+            case TEXT -> {
+                DCText text = (DCText) this;
+                return text.pos + text.text.length();
+            }
+
+            case ERRONEOUS -> {
+                DCErroneous err = (DCErroneous) this;
+                return err.pos + err.body.length();
+            }
+
+            case IDENTIFIER -> {
+                DCIdentifier ident = (DCIdentifier) this;
+                return ident.pos + ident.name.length();
+            }
+
+            case AUTHOR, DEPRECATED, HIDDEN, PARAM, PROVIDES, RETURN, SEE, SERIAL, SERIAL_DATA, SERIAL_FIELD, SINCE,
+                    THROWS, UNKNOWN_BLOCK_TAG, USES, VERSION -> {
+                DCTree last = getLastChild();
+
+                if (last != null) {
+                    int correction = (this instanceof DCParam p && p.isTypeParameter && p.getDescription().isEmpty()) ? 1 : 0;
+                    return last.getEndPosition() + correction;
+                }
+
+                String name = ((BlockTagTree) this).getTagName();
+                return this.pos + name.length() + 1;
+            }
+
+            case ENTITY -> {
+                DCEntity endEl = (DCEntity) this;
+                return endEl.pos + endEl.name.length() + 2;
+            }
+
+            case COMMENT -> {
+                DCComment endEl = (DCComment) this;
+                return endEl.pos + endEl.body.length();
+            }
+
+            case ATTRIBUTE -> {
+                DCAttribute attr = (DCAttribute) this;
+                if (attr.vkind == AttributeTree.ValueKind.EMPTY) {
+                    return attr.pos + attr.name.length();
+                }
+                DCTree last = getLastChild();
+                if (last != null) {
+                    return last.getEndPosition() + (attr.vkind == AttributeTree.ValueKind.UNQUOTED ? 0 : 1);
+                }
+            }
+
+            case DOC_COMMENT ->  {
+                DCDocComment dc = (DCDocComment) this;
+                DCTree last = getLastChild();
+                return last == null ? dc.pos : last.getEndPosition();
+            }
+
+            default -> {
+                DCTree last = getLastChild();
+                if (last != null) {
+                    return last.getEndPosition();
+                }
+            }
+        }
+
+        return NOPOS;
+    }
+
+    /**
+     * Convert a tree to a pretty-printed string.
+     */
     @Override
     public String toString() {
         StringWriter s = new StringWriter();
@@ -102,12 +242,64 @@ public abstract class DCTree implements DocTree {
         return s.toString();
     }
 
+    /**
+     * {@return the last (right-most) child of this node}
+     */
+    private DCTree getLastChild() {
+        final DCTree[] last = new DCTree[] {null};
+
+        accept(new DocTreeScanner<Void, Void>() {
+            @Override @DefinedBy(Api.COMPILER_TREE)
+            public Void scan(DocTree node, Void p) {
+                if (node instanceof DCTree dcTree) last[0] = dcTree;
+                return null;
+            }
+        }, null);
+
+        return last[0];
+    }
+
+    /**
+     * {@return a diagnostic position based on the positions in a comment}
+     *
+     * The positions are lazily converted to file-based positions, as needed.
+     *
+     * @param comment the enclosing comment
+     * @param start the start position in the comment
+     * @param pref the preferred position in the comment
+     * @param end the end position in the comment
+     */
+    public static JCDiagnostic.DiagnosticPosition createDiagnosticPosition(Comment comment, int start, int pref, int end) {
+        return new JCDiagnostic.DiagnosticPosition() {
+
+            @Override
+            public JCTree getTree() {
+                return null;
+            }
+
+            @Override
+            public int getStartPosition() {
+                return comment.getSourcePos(start);
+            }
+
+            @Override
+            public int getPreferredPosition() {
+                return comment.getSourcePos(pref);
+            }
+
+            @Override
+            public int getEndPosition(EndPosTable endPosTable) {
+                return comment.getSourcePos(end);
+            }
+        };
+    }
+
     public static abstract class DCEndPosTree<T extends DCEndPosTree<T>> extends DCTree {
 
-        private int endPos = Position.NOPOS;
+        private int endPos = NOPOS;
 
-        public int getEndPos(DCDocComment dc) {
-            return dc.comment.getSourcePos(endPos);
+        public int getEndPos() {
+            return endPos;
         }
 
         @SuppressWarnings("unchecked")
@@ -182,6 +374,10 @@ public abstract class DCTree implements DocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getPostamble() {
             return postamble;
+        }
+
+        public int getSourcePosition(int index) {
+            return comment.getSourcePos(index);
         }
     }
 
@@ -388,14 +584,11 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCErroneous extends DCTree implements ErroneousTree, JCDiagnostic.DiagnosticPosition {
+    public static class DCErroneous extends DCTree implements ErroneousTree {
         public final String body;
         public final JCDiagnostic diag;
 
-        DCErroneous(String body, JCDiagnostic.Factory diags, DiagnosticSource diagSource, String code, Object... args) {
-            this.body = body;
-            this.diag = diags.error(null, diagSource, this, code, args);
-        }
+        private int prefPos = NOPOS;
 
         DCErroneous(String body, JCDiagnostic diag) {
             this.body = body;
@@ -423,23 +616,23 @@ public abstract class DCTree implements DocTree {
         }
 
         @Override
-        public JCTree getTree() {
-            return null;
-        }
-
-        @Override
         public int getStartPosition() {
             return pos;
         }
 
         @Override
         public int getPreferredPosition() {
-            return pos + body.length() - 1;
+            return prefPos == NOPOS ? pos + body.length() - 1 : prefPos;
         }
 
         @Override
-        public int getEndPosition(EndPosTable endPosTable) {
+        public int getEndPosition() {
             return pos + body.length();
+        }
+
+        public DCErroneous setPrefPos(int prefPos) {
+            this.prefPos = prefPos;
+            return this;
         }
 
     }

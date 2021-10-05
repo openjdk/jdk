@@ -1203,8 +1203,8 @@ public final class Files {
      * which case the method completes without copying the file. File attributes
      * are not required to be copied to the target file. If symbolic links are
      * supported, and the file is a symbolic link, then the final target of the
-     * link is copied. If the file is a directory then it creates an empty
-     * directory in the target location (entries in the directory are not
+     * link is copied. If the file is a directory then an empty directory is
+     * created in the target location (entries in the directory are not
      * copied). This method can be used with the {@link #walkFileTree
      * walkFileTree} method to copy a directory and all entries in the directory,
      * or an entire <i>file-tree</i> where required.
@@ -3110,7 +3110,7 @@ public final class Files {
      * @throws  DirectoryNotEmptyException
      *          the {@code REPLACE_EXISTING} option is specified but the file
      *          cannot be replaced because it is a non-empty directory
-     *          <i>(optional specific exception)</i>     *
+     *          <i>(optional specific exception)</i>
      * @throws  UnsupportedOperationException
      *          if {@code options} contains a copy option that is not supported
      * @throws  SecurityException

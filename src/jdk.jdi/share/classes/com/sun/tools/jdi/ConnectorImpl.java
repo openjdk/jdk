@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,6 +398,7 @@ abstract class ConnectorImpl implements Connector {
     class SelectedArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.SelectedArgument {
         private static final long serialVersionUID = -5689584530908382517L;
+        @SuppressWarnings("serial") // Type of field is not Serializable
         private final List<String> choices;
 
         SelectedArgumentImpl(String name, String label, String description,
