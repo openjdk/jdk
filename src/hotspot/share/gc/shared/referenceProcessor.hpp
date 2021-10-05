@@ -47,7 +47,8 @@ class RefProcProxyTask;
 // at the point of invocation.
 class EnqueueDiscoveredFieldClosure {
 public:
-  // For the given j.l.ref.Reference reference, set the discovered field to value.
+  // For the given j.l.ref.Reference discovered field address, set the discovered
+  // field to value and apply any barriers to it.
   virtual void enqueue(HeapWord* discovered_field_addr, oop value) = 0;
 };
 

@@ -256,9 +256,9 @@ void DiscoveredListIterator::remove() {
   } else {
     new_next = _next_discovered;
   }
-  // Remove Reference object from discovered list. Note that G1 does not need a
-  // pre-barrier here because we know the Reference has already been found/marked,
-  // that's how it ended up in the discovered list in the first place.
+  // Remove Reference object from discovered list. The first address is in the
+  // C heap, so do not apply the barrier on it but only store the new_next value
+  // directly.
   if (_prev_discovered_addr != _refs_list.adr_head()) {
     _enqueue->enqueue(_prev_discovered_addr, new_next);
   } else {
