@@ -81,8 +81,8 @@ public class Contents {
     public final Content deprecatedLabel;
     public final Content deprecatedPhrase;
     public final Content deprecatedForRemovalPhrase;
-    public final Content descfrmClassLabel;
-    public final Content descfrmInterfaceLabel;
+    public final Content descriptionFromClassLabel;
+    public final Content descriptionFromInterfaceLabel;
     public final Content descriptionLabel;
     public final Content detailLabel;
     public final Content enclosingClassLabel;
@@ -227,8 +227,8 @@ public class Contents {
         deprecatedLabel = getContent("doclet.navDeprecated");
         deprecatedPhrase = getContent("doclet.Deprecated");
         deprecatedForRemovalPhrase = getContent("doclet.DeprecatedForRemoval");
-        descfrmClassLabel = getContent("doclet.Description_From_Class");
-        descfrmInterfaceLabel = getContent("doclet.Description_From_Interface");
+        descriptionFromClassLabel = getContent("doclet.Description_From_Class");
+        descriptionFromInterfaceLabel = getContent("doclet.Description_From_Interface");
         descriptionLabel = getContent("doclet.Description");
         detailLabel = getContent("doclet.Detail");
         enclosingClassLabel = getContent("doclet.Enclosing_Class");
