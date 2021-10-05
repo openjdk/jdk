@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_PRETOUCH_HPP
-#define SHARE_GC_SHARED_PRETOUCH_HPP
 
-#include "gc/shared/workgroup.hpp"
+/*
+ * Child launched by MacOSAppNamePropertyTest.java
+ * If the system property apple.awt.application.name is unset, it should default
+ * to the name of this main program class, less any package name.
+ * If it is set, then it should be used instead of the class name.
+ * The arg. to the test indicates the *expected* name.
+ * The test will fail if the property is not set or does not match
+ */
+public class SystemPropertyTest {
 
-class PretouchTask : public AbstractGangTask {
-  char* volatile _cur_addr;
-  char* const _end_addr;
-  size_t _page_size;
-  size_t _chunk_size;
-
-public:
-  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size);
-
-  virtual void work(uint worker_id);
-
-  static size_t chunk_size();
-
-  static void pretouch(const char* task_name, char* start_address, char* end_address,
-                       size_t page_size, WorkGang* pretouch_gang);
-
-};
-
-#endif // SHARE_GC_SHARED_PRETOUCH_HPP
+    public static void main(String[]args) {
+        String prop = System.getProperty("apple.awt.application.name");
+        if (prop == null) {
+            throw new RuntimeException("Property not set");
+        }
+        if (!prop.equals(args[0])) {
+            throw new RuntimeException("Got " + prop + " expected " + args[0]);
+        }
+    }
+}

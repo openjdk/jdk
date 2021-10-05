@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,24 @@
  *      8235458
  * @summary javac shouldn't fail when an annotation processor report a message about an annotation on a module
  *          javac should process annotated module when imports statement are present
+ * @library /tools/lib
  * @modules jdk.compiler
+ * @build toolbox.ToolBox
+ * @run main ReportOnImportedModuleAnnotation
  */
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.util.List;
 
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+
+import toolbox.ToolBox;
 
 public class ReportOnImportedModuleAnnotation {
 
@@ -53,19 +54,8 @@ public class ReportOnImportedModuleAnnotation {
 
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
-        // Clean any existing class files in output directory
-        Files.walkFileTree(testOutputPath,
-                           new SimpleFileVisitor<Path>() {
-                               @Override
-                               public FileVisitResult visitFile(Path path,
-                                                         BasicFileAttributes attrs) {
-                                   File file = path.toFile();
-                                   if (file.getName().endsWith(".class")) {
-                                       file.delete();
-                                   }
-                                   return FileVisitResult.CONTINUE;
-                               }
-                           });
+        // Clean any existing files in output directory
+        (new ToolBox()).cleanDirectory(testOutputPath);
 
         // Compile annotation and processor modules
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);

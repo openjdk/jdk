@@ -181,10 +181,8 @@ public final class X500Principal implements Principal, java.io.Serializable {
         try {
             thisX500Name = new X500Name(name, keywordMap);
         } catch (Exception e) {
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input name: " + name);
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input name: " + name, e);
         }
     }
 
@@ -226,10 +224,8 @@ public final class X500Principal implements Principal, java.io.Serializable {
         try {
             thisX500Name = new X500Name(name);
         } catch (Exception e) {
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input name");
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input name", e);
         }
     }
 
@@ -266,17 +262,13 @@ public final class X500Principal implements Principal, java.io.Serializable {
                 try {
                     is.reset();
                 } catch (IOException ioe) {
-                    IllegalArgumentException iae = new IllegalArgumentException
+                    throw new IllegalArgumentException
                         ("improperly specified input stream " +
-                        ("and unable to reset input stream"));
-                    iae.initCause(e);
-                    throw iae;
+                        ("and unable to reset input stream"), e);
                 }
             }
-            IllegalArgumentException iae = new IllegalArgumentException
-                        ("improperly specified input stream");
-            iae.initCause(e);
-            throw iae;
+            throw new IllegalArgumentException
+                        ("improperly specified input stream", e);
         }
     }
 

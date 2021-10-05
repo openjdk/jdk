@@ -220,20 +220,27 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_nosafepoint,
   monitor_rank_nosafepoint->unlock();
 }
 
+// NonJavaThreads can't wait while holding tty lock or below.
+class VM_MutexWaitTTY : public VM_GTestExecuteAtSafepoint {
+ public:
+  void doit() {
+    Monitor* monitor_rank_tty = new Monitor(Mutex::tty, "monitor_rank_tty", Mutex::_safepoint_check_never);
+    Monitor* monitor_rank_event = new Monitor(Mutex::event, "monitor_rank_event", Mutex::_safepoint_check_never);
+
+    monitor_rank_tty->lock_without_safepoint_check();
+    monitor_rank_event->lock_without_safepoint_check();
+    monitor_rank_event->wait_without_safepoint_check(1);
+    monitor_rank_event->unlock();
+    monitor_rank_tty->unlock();
+  }
+};
+
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_event_tty,
                    ".* Attempting to wait on monitor monitor_rank_event/0 while holding lock monitor_rank_tty/.*"
-                   "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank nosafepoint or below.") {
-  JavaThread* THREAD = JavaThread::current();
-  ThreadInVMfromNative invm(THREAD);
-
-  Monitor* monitor_rank_tty = new Monitor(Mutex::tty, "monitor_rank_tty", Mutex::_safepoint_check_never);
-  Monitor* monitor_rank_event = new Monitor(Mutex::event, "monitor_rank_event", Mutex::_safepoint_check_never);
-
-  monitor_rank_tty->lock_without_safepoint_check();
-  monitor_rank_event->lock_without_safepoint_check();
-  monitor_rank_event->wait_without_safepoint_check(1);
-  monitor_rank_event->unlock();
-  monitor_rank_tty->unlock();
+                   "-- possible deadlock. Should not block\\(wait\\) while holding a lock of rank tty or below.") {
+  VM_MutexWaitTTY op;
+  ThreadInVMfromNative invm(JavaThread::current());
+  VMThread::execute(&op);
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_tty_nosafepoint,
