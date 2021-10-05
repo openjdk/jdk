@@ -192,8 +192,7 @@ public class SdpProvider extends NetHooks.Provider {
     private static List<Rule> loadRulesFromFile(String file)
         throws IOException
     {
-        Scanner scanner = new Scanner(new File(file));
-        try {
+        try (Scanner scanner = new Scanner(new File(file))) {
             List<Rule> result = new ArrayList<>();
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine().trim();
@@ -279,8 +278,6 @@ public class SdpProvider extends NetHooks.Provider {
                 }
             }
             return result;
-        } finally {
-            scanner.close();
         }
     }
 

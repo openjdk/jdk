@@ -112,9 +112,7 @@ public class HttpTimestamper implements Timestamper {
         connection.connect(); // No HTTP authentication is performed
 
         // Send the request
-        DataOutputStream output = null;
-        try {
-            output = new DataOutputStream(connection.getOutputStream());
+        try (DataOutputStream output = new DataOutputStream(connection.getOutputStream())) {
             byte[] request = tsQuery.encode();
             output.write(request, 0, request.length);
             output.flush();
@@ -122,17 +120,11 @@ public class HttpTimestamper implements Timestamper {
                 debug.println("sent timestamp query (length=" +
                         request.length + ")");
             }
-        } finally {
-            if (output != null) {
-                output.close();
-            }
         }
 
         // Receive the reply
-        BufferedInputStream input = null;
         byte[] replyBuffer = null;
-        try {
-            input = new BufferedInputStream(connection.getInputStream());
+        try (BufferedInputStream input = new BufferedInputStream(connection.getInputStream())) {
             if (debug != null) {
                 String header = connection.getHeaderField(0);
                 debug.println(header);
@@ -156,10 +148,6 @@ public class HttpTimestamper implements Timestamper {
             if (debug != null) {
                 debug.println("received timestamp response (length=" +
                         replyBuffer.length + ")");
-            }
-        } finally {
-            if (input != null) {
-                input.close();
             }
         }
         return new TSResponse(replyBuffer);

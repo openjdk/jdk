@@ -124,14 +124,8 @@ public class PolicyUtil {
                     debug.println("reading password"+passURL);
                 }
 
-                InputStream in = null;
-                try {
-                    in = passURL.openStream();
+                try (InputStream in = passURL.openStream()) {
                     keyStorePassword = Password.readPassword(in);
-                } finally {
-                    if (in != null) {
-                        in.close();
-                    }
                 }
             }
 
@@ -159,13 +153,8 @@ public class PolicyUtil {
                     debug.println("reading keystore"+keyStoreUrl);
                 }
 
-                InputStream inStream = null;
-                try {
-                    inStream =
-                        new BufferedInputStream(getInputStream(keyStoreUrl));
+                try (InputStream inStream = new BufferedInputStream(getInputStream(keyStoreUrl))) {
                     ks.load(inStream, keyStorePassword);
-                } finally {
-                    inStream.close();
                 }
                 return ks;
             }

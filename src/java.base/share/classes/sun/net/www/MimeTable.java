@@ -381,9 +381,7 @@ public class MimeTable implements FileNameMap {
     }
 
     protected boolean saveAsProperties(File file) {
-        FileOutputStream os = null;
-        try {
-            os = new FileOutputStream(file);
+        try (FileOutputStream os = new FileOutputStream(file)) {
             Properties properties = getAsProperties();
             properties.put("temp.file.template", tempFileTemplate);
             String tag;
@@ -405,11 +403,6 @@ public class MimeTable implements FileNameMap {
         catch (IOException e) {
             e.printStackTrace();
             return false;
-        }
-        finally {
-            if (os != null) {
-                try { os.close(); } catch (IOException e) {}
-            }
         }
 
         return true;

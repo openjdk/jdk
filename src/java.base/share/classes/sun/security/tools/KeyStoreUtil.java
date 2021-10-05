@@ -225,7 +225,9 @@ public class KeyStoreUtil {
 
         List<String> result = new ArrayList<>();
         Properties p = new Properties();
-        p.load(new FileInputStream(file));
+        try (FileInputStream is = new FileInputStream(file)) {
+            p.load(is);
+        }
 
         String s = p.getProperty(tool + ".all");
         if (s != null) {
