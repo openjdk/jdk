@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class PageDialogTest {
         String instructions =
                 "1. Click on the 'Show Dialog' button to show a 'Toolkit Modal Dialog' \n" +
                 "2. Click on the 'Open PageDialog' button to show 'Page Dialog'.\n" +
-                "3. Check if page dialog blocks the 'Toolkit modal dialog'.\n"+
-                "If yes, then test Pass else test fail.\n" +
+                "3. The test fails if the page dialog blocks the toolkit\n"+
+                " else test pass.\n" +
                 "4. Close Page dialog and 'Toolkit modal dialog'\n" +
                 "5. Click appropriate button to mark the test case pass or fail.\n" ;
 
