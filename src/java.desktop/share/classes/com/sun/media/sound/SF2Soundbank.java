@@ -92,23 +92,16 @@ public final class SF2Soundbank implements Soundbank {
     }
 
     public SF2Soundbank(URL url) throws IOException {
-
-        InputStream is = url.openStream();
-        try {
+        try (InputStream is = url.openStream()) {
             readSoundbank(is);
-        } finally {
-            is.close();
         }
     }
 
     public SF2Soundbank(File file) throws IOException {
         largeFormat = true;
         sampleFile = file;
-        InputStream is = new FileInputStream(file);
-        try {
+        try (InputStream is = new FileInputStream(file)) {
             readSoundbank(is);
-        } finally {
-            is.close();
         }
     }
 

@@ -191,22 +191,16 @@ public final class DLSSoundbank implements Soundbank {
     }
 
     public DLSSoundbank(URL url) throws IOException {
-        InputStream is = url.openStream();
-        try {
+        try (InputStream is = url.openStream()) {
             readSoundbank(is);
-        } finally {
-            is.close();
         }
     }
 
     public DLSSoundbank(File file) throws IOException {
         largeFormat = true;
         sampleFile = file;
-        InputStream is = new FileInputStream(file);
-        try {
+        try (InputStream is = new FileInputStream(file)) {
             readSoundbank(is);
-        } finally {
-            is.close();
         }
     }
 

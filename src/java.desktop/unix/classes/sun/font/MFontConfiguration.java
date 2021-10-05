@@ -111,7 +111,9 @@ public class MFontConfiguration extends FontConfiguration {
                      * For Ubuntu the ID is "Ubuntu".
                      */
                     Properties props = new Properties();
-                    props.load(new FileInputStream(f));
+                    try (FileInputStream fis = new FileInputStream(f)) {
+                        props.load(fis);
+                    }
                     osName = props.getProperty("DISTRIB_ID");
                     osVersion =  props.getProperty("DISTRIB_RELEASE");
                 }

@@ -1402,7 +1402,7 @@ public final class ImageIO {
             throw new IllegalArgumentException("input == null!");
         }
 
-        InputStream istream = null;
+        InputStream istream;
         try {
             istream = input.openStream();
         } catch (IOException e) {
@@ -1418,13 +1418,11 @@ public final class ImageIO {
             throw new IIOException("Can't create an ImageInputStream!");
         }
         BufferedImage bi;
-        try {
+        try (istream) {
             bi = read(stream);
             if (bi == null) {
                 stream.close();
             }
-        } finally {
-            istream.close();
         }
         return bi;
     }

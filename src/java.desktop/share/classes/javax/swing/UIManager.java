@@ -1301,9 +1301,9 @@ public class UIManager implements Serializable
                         if (file.exists()) {
                             // InputStream has been buffered in Properties
                             // class
-                            FileInputStream ins = new FileInputStream(file);
-                            props.load(ins);
-                            ins.close();
+                            try (FileInputStream ins = new FileInputStream(file)) {
+                                props.load(ins);
+                            }
                         }
                     }
                     catch (Exception e) {

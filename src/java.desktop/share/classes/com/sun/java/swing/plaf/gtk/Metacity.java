@@ -583,26 +583,23 @@ class Metacity implements SynthConstants {
                     URL url = new URL(new File(userHome).toURI().toURL(),
                                       ".gconf/apps/metacity/general/%25gconf.xml");
                     // Pending: verify character encoding spec for gconf
-                    Reader reader = new InputStreamReader(url.openStream(),
-                                                          ISO_8859_1);
-                    char[] buf = new char[1024];
                     StringBuilder sb = new StringBuilder();
-                    int n;
-                    while ((n = reader.read(buf)) >= 0) {
-                        sb.append(buf, 0, n);
+                    try (Reader reader = new InputStreamReader(url.openStream(), ISO_8859_1)) {
+                        char[] buf = new char[1024];
+                        int n;
+                        while ((n = reader.read(buf)) >= 0) {
+                            sb.append(buf, 0, n);
+                        }
                     }
-                    reader.close();
                     String str = sb.toString();
-                    if (str != null) {
-                        String strLowerCase = str.toLowerCase();
-                        int i = strLowerCase.indexOf("<entry name=\"theme\"");
-                        if (i >= 0) {
-                            i = strLowerCase.indexOf("<stringvalue>", i);
-                            if (i > 0) {
-                                i += "<stringvalue>".length();
-                                int i2 = str.indexOf('<', i);
-                                return str.substring(i, i2);
-                            }
+                    String strLowerCase = str.toLowerCase();
+                    int i = strLowerCase.indexOf("<entry name=\"theme\"");
+                    if (i >= 0) {
+                        i = strLowerCase.indexOf("<stringvalue>", i);
+                        if (i > 0) {
+                            i += "<stringvalue>".length();
+                            int i2 = str.indexOf('<', i);
+                            return str.substring(i, i2);
                         }
                     }
                 } catch (MalformedURLException ex) {
