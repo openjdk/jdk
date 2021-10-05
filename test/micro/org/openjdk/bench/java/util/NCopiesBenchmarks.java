@@ -16,18 +16,19 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 public class NCopiesBenchmarks {
-  @Param({"10", "50", "100"})
-  int size;
+    @Param({"10", "50", "100"})
+    int size;
 
-  private List<Object> list;
+    private List<Object> list;
 
-  @Setup
-  public void prepare() {
-    list = Collections.nCopies(size, new Object());
-  }
+    @Setup
+    public void prepare() {
+        list = Collections.nCopies(size, new Object());
+    }
 
-  @Benchmark
-  public void forEach(Blackhole bh) {
-    list.forEach(bh::consume);
-  }
+    @Benchmark
+    public void forEach(Blackhole bh) {
+        list.forEach(bh::consume);
+    }
+
 }
