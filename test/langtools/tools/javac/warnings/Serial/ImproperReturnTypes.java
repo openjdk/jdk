@@ -8,7 +8,7 @@ import java.io.*;
 
 class ImproperReturnTypes implements Serializable {
     private static final long serialVersionUID = 42;
-    
+
     /*
      * Serialization-related methods return either void or Object:
      *
