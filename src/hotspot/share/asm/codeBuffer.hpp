@@ -366,7 +366,7 @@ class Scrubber {
 // Instructions and data in one section can contain relocatable references to
 // addresses in a sibling section.
 
-class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
+class CodeBuffer: public ResourceObj DEBUG_ONLY(COMMA private Scrubber) {
   friend class CodeSection;
   friend class StubCodeGenerator;
 
@@ -374,8 +374,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // CodeBuffers must be allocated on the stack except for a single
   // special case during expansion which is handled internally.  This
   // is done to guarantee proper cleanup of resources.
-  void* operator new(size_t size) throw() { return ResourceObj::operator new(size); }
-  void  operator delete(void* p)          { ShouldNotCallThis(); }
 
  public:
   typedef int csize_t;  // code size type; would be size_t except for history

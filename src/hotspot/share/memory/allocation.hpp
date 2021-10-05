@@ -395,25 +395,62 @@ extern void resource_free_bytes( char *old, size_t size );
 // allocated objects
 class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
-  enum allocation_type : u8 { STACK_OR_EMBEDDED, RESOURCE_AREA, C_HEAP, ARENA };
+  enum allocation_type : uint8_t { STACK_OR_EMBEDDED, RESOURCE_AREA, C_HEAP, ARENA };
 #ifdef ASSERT
  private:
-  // When this object is allocated on stack (or embedded) the new() operator is not
-  // called, use _thread_last_allocated (defaults to STACK_OR_EMBEDDED)
-  // to signal allocation type. _thread_last_allocated will be reset by the constructor
-  // so that STACK_OR_EMBEDDED will always be the value unless we are between a new and
-  // the corresponding constructor invocation.
   allocation_type _type;
-  static THREAD_LOCAL allocation_type _thread_last_allocated;
+  // This debug class is used to record allocation_type when operator new is called.
+  // A few entries are needed (depending on compiler and complexity of expressions).
+  // When the code was written 2 entries was needed on clang.
+  //
+  // With this information we can, given a pointer, know how that pointer was
+  // allocated iff we remove this information directly in the constructor. One
+  // additional unfortunate restriction is that (in general) multiple inheritance
+  // can not be used. This is unfortunate, but this limitation also existed in the
+  // previous solution that failed because it also relied on writing to an
+  // un-initalized object before it was constructed. The code will also fail if the
+  // allocation is done in a recursive step. In that case an assert will trigger.
+  class RecentAllocations {
+    static const unsigned BufferSize = 5;
+    uintptr_t _begin[BufferSize];
+    uintptr_t _past_end[BufferSize];
+    allocation_type _types[BufferSize];
+  public:
+    RecentAllocations() : _begin{},  _past_end{}, _types{} { }
 
-  static void set_type(allocation_type t) {
-    if (t != STACK_OR_EMBEDDED) {
-      assert(_thread_last_allocated == STACK_OR_EMBEDDED, "_thread_last_allocated should always be reset to STACK_OR_EMBEDDED by ResourceOBJ() before being set again");
+    void set_type(void* begin_ptr, size_t size, allocation_type type) {
+      uintptr_t begin = reinterpret_cast<uintptr_t>(begin_ptr);
+      for (unsigned i = 0; i < BufferSize; ++i) {
+        if (_begin[i] == 0) {
+          assert(_past_end[i] == 0, "should have been reset");
+          assert(_types[i] == STACK_OR_EMBEDDED, "should have been reset");
+          _begin[i] = begin;
+          _past_end[i] = begin + size;
+          _types[i] = type;
+          return;
+        }
+      }
+      assert(false, "too small buffer, please adjust BufferSize");
     }
-    _thread_last_allocated = t;
-  }
 
+    allocation_type remove_type(void* p) {
+      uintptr_t ptr = reinterpret_cast<uintptr_t>(p);
+      for (unsigned i = 0; i < BufferSize; ++i) {
+        if (_begin[i] <= ptr && ptr < _past_end[i]) {
+          allocation_type type = _types[i];
+          _begin[i] = 0;
+          _past_end[i] = 0;
+          _types[i] = STACK_OR_EMBEDDED;
+          return type;
+        }
+      }
+
+      // type not found, that is, operator new was not called, and the object is STACK_OR_EMBEDDED
+      return STACK_OR_EMBEDDED;
+   }
+  };
  public:
+  static thread_local RecentAllocations _recent_allocations;
   allocation_type get_allocation_type() const;
   bool allocated_on_stack_or_embedded() const { return get_allocation_type() == STACK_OR_EMBEDDED; }
   bool allocated_on_res_area()          const { return get_allocation_type() == RESOURCE_AREA; }
@@ -437,13 +474,13 @@ protected:
 
   void* operator new(size_t size) throw() {
       address res = (address)resource_allocate_bytes(size);
-      DEBUG_ONLY(set_type(RESOURCE_AREA);)
+      DEBUG_ONLY(_recent_allocations.set_type(res, size, RESOURCE_AREA);)
       return res;
   }
 
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
       address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-      DEBUG_ONLY(if (res != NULL) set_type(RESOURCE_AREA);)
+      DEBUG_ONLY(if (res != NULL) _recent_allocations.set_type(res, size, RESOURCE_AREA);)
       return res;
   }
 

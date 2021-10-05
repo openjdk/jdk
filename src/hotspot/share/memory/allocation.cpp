@@ -106,7 +106,7 @@ void MetaspaceObj::print_address_on(outputStream* st) const {
 
 void* ResourceObj::operator new(size_t size, Arena *arena) throw() {
   address res = (address)arena->Amalloc(size);
-  DEBUG_ONLY(set_type(ARENA);)
+  DEBUG_ONLY(_recent_allocations.set_type(res, size, ARENA);)
   return res;
 }
 
@@ -115,15 +115,14 @@ void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flag
   switch (type) {
    case C_HEAP:
     res = (address)AllocateHeap(size, flags, CALLER_PC);
-    DEBUG_ONLY(set_type(C_HEAP);)
     break;
    case RESOURCE_AREA:
-    // new(size) sets allocation type RESOURCE_AREA.
-    res = (address)operator new(size);
+    res = (address)resource_allocate_bytes(size);
     break;
    default:
     ShouldNotReachHere();
   }
+  DEBUG_ONLY(_recent_allocations.set_type(res, size, type);)
   return res;
 }
 
@@ -134,15 +133,14 @@ void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_cons
   switch (type) {
    case C_HEAP:
     res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
-    DEBUG_ONLY(if (res!= NULL) set_type(C_HEAP);)
     break;
    case RESOURCE_AREA:
-    // new(size) sets allocation type RESOURCE_AREA.
-    res = (address)operator new(size, std::nothrow);
+    res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
     break;
    default:
     ShouldNotReachHere();
   }
+  DEBUG_ONLY(if (res!= NULL) _recent_allocations.set_type(res, size, type);)
   return res;
 }
 
@@ -153,15 +151,11 @@ void ResourceObj::operator delete(void* p) {
 }
 
 #ifdef ASSERT
-THREAD_LOCAL ResourceObj::allocation_type ResourceObj::_thread_last_allocated = STACK_OR_EMBEDDED;
+thread_local ResourceObj::RecentAllocations ResourceObj::_recent_allocations;
 
-ResourceObj::ResourceObj() : _type(_thread_last_allocated) { // _thread_last_allocated will be updated iff an operator new was called, and will default to STACK_OR_EMBEDDED
-  set_type(STACK_OR_EMBEDDED); // reset _thread_last_allocated as the default STACK_OR_EMBEDDED can not be set by an operator new
-}
+ResourceObj::ResourceObj() : _type(_recent_allocations.remove_type(this)) {}
 
-ResourceObj::ResourceObj(const ResourceObj&) : _type(_thread_last_allocated) { // _thread_last_allocated will be updated iff an operator new was called, and will default to STACK_OR_EMBEDDED
-  set_type(STACK_OR_EMBEDDED); // reset _thread_last_allocated as the default STACK_OR_EMBEDDED can not be set by an operator new
-}
+ResourceObj::ResourceObj(const ResourceObj&) : _type(_recent_allocations.remove_type(this)) {}
 
 ResourceObj& ResourceObj::operator=(const ResourceObj& r) {
   return *this; // allocation type should *not* be updated on assignment, only on allocation
