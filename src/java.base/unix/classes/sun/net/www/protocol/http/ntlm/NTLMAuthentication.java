@@ -119,10 +119,10 @@ public class NTLMAuthentication extends AuthenticationInfo {
         });
     };
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings("serial") // Type of field is not Serializable
     PasswordAuthentication pw;
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings("serial") // Type of field is not Serializable
     Client client;
     /**
      * Create a NTLMAuthentication:
