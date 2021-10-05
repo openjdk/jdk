@@ -140,6 +140,7 @@ public class Collections {
      *         found to violate the {@link Comparable} contract
      * @see List#sort(Comparator)
      */
+    @SuppressWarnings("unchecked")
     public static <T extends Comparable<? super T>> void sort(List<T> list) {
         list.sort(null);
     }
@@ -173,6 +174,7 @@ public class Collections {
      *         found to violate the {@link Comparator} contract
      * @see List#sort(Comparator)
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static <T> void sort(List<T> list, Comparator<? super T> c) {
         list.sort(c);
     }
@@ -1859,7 +1861,7 @@ public class Collections {
         private static final long serialVersionUID = -4858195264774772197L;
 
         /**
-         * A class for the {@link #EMPTY_NAVIGABLE_MAP} which needs readResolve
+         * A class for the {@link EMPTY_NAVIGABLE_MAP} which needs readResolve
          * to preserve singleton property.
          *
          * @param <K> type of keys, if there were any, and of bounds
@@ -1882,7 +1884,7 @@ public class Collections {
         }
 
         /**
-         * Singleton for {@link #emptyNavigableMap()} which is also immutable.
+         * Singleton for {@link emptyNavigableMap()} which is also immutable.
          */
         private static final EmptyNavigableMap<?,?> EMPTY_NAVIGABLE_MAP =
             new EmptyNavigableMap<>();
@@ -5152,8 +5154,8 @@ public class Collections {
         @Override
         public void forEach(Consumer<? super E> action) {
             Objects.requireNonNull(action);
-            var n = this.n;
-            var element = this.element;
+            int n = this.n;
+            E element = this.element;
             for (int i = 0; i < n; i++) {
                 action.accept(element);
             }
@@ -5405,7 +5407,7 @@ public class Collections {
      * @see Enumeration
      */
     public static <T> Enumeration<T> enumeration(final Collection<T> c) {
-        return new Enumeration<>() {
+        return new Enumeration<T>() {
             private final Iterator<T> i = c.iterator();
 
             public boolean hasMoreElements() {
