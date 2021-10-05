@@ -102,11 +102,6 @@ button {
 /*
  * Styles for document title and copyright.
  */
-.clear {
-    clear:both;
-    height:0;
-    overflow:hidden;
-}
 .about-language {
     float:right;
     padding:0 21px 8px 8px;
@@ -116,13 +111,6 @@ button {
 }
 .legal-copy {
     margin-left:.5em;
-}
-.tab {
-    background-color:#0066FF;
-    color:#ffffff;
-    padding:8px;
-    width:5em;
-    font-weight:bold;
 }
 /*
  * Styles for navigation bar.
@@ -233,7 +221,7 @@ ul.sub-nav-list li {
     }
 }
 /*
- * Styles for page header and footer.
+ * Styles for page header.
  */
 .title {
     color:#2c4557;
@@ -246,7 +234,7 @@ ul.sub-nav-list li {
     margin:0 0 15px 0;
     padding:0;
 }
-.header ul li, .footer ul li {
+.header ul li {
     list-style:none;
     font-size:13px;
 }
@@ -476,14 +464,8 @@ div.table-tabs > button.table-tab {
 .col-first a:link, .col-first a:visited,
 .col-second a:link, .col-second a:visited,
 .col-constructor-name a:link, .col-constructor-name a:visited,
-.col-summary-item-name a:link, .col-summary-item-name a:visited,
-.constant-values-container a:link, .constant-values-container a:visited,
-.all-classes-container a:link, .all-classes-container a:visited,
-.all-packages-container a:link, .all-packages-container a:visited {
+.col-summary-item-name a:link, .col-summary-item-name a:visited {
     font-weight:bold;
-}
-.table-sub-heading-color {
-    background-color:#EEEEFF;
 }
 .even-row-color, .even-row-color .table-header {
     background-color:#FFFFFF;
@@ -494,10 +476,6 @@ div.table-tabs > button.table-tab {
 /*
  * Styles for contents.
  */
-.deprecated-content {
-    margin:0;
-    padding:10px 0;
-}
 div.block {
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
@@ -539,18 +517,13 @@ div.block {
     color:green;
     padding:0 30px 0 0;
 }
-h1.hidden {
-    visibility:hidden;
-    overflow:hidden;
-    font-size:10px;
-}
 .block {
     display:block;
     margin:0 10px 5px 0;
     color:#474747;
 }
 .deprecated-label, .description-from-type-label, .implementation-label, .member-name-label, .member-name-link,
-.module-label-in-package, .module-label-in-type, .override-specify-label, .package-label-in-type,
+.module-label-in-package, .module-label-in-type, .package-label-in-type,
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label {
     font-weight:bold;
 }
