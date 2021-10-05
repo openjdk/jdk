@@ -27,6 +27,8 @@
 #
 # javadoc
 
+jdk/javadoc/doclet/testSnippetTag/TestSnippetTag.java                           8274744   generic-all
+
 ###########################################################################
 #
 # jshell
@@ -71,4 +73,3 @@ tools/sjavac/ClasspathDependencies.java                                         
 ###########################################################################
 #
 # jdeps
-

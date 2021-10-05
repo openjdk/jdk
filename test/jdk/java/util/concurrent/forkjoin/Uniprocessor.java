@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,24 @@
 
 /*
  * @test
- * @bug 7021614 8273244
- * @summary extend com.sun.source API to support parsing javadoc comments
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
- *          jdk.compiler/com.sun.tools.javac.tree
- *          jdk.compiler/com.sun.tools.javac.util
- * @build DocCommentTester
- * @run main DocCommentTester AuthorTest.java
+ * @bug 8274349
+ * @run main/othervm -XX:ActiveProcessorCount=1 Uniprocessor
+ * @summary Check the default FJ pool has a reasonable default parallelism
+ *          level in a uniprocessor environment.
  */
 
-class AuthorTest {
-    /** abc @author jjg &amp; others */
-    void standard() { }
-/*
-DocComment[DOC_COMMENT, pos:0
-  firstSentence: 3
-    Text[TEXT, pos:0, abc_@author_jjg_]
-    Entity[ENTITY, pos:16, amp]
-    Text[TEXT, pos:21, _others]
-  body: empty
-  block tags: empty
-]
-*/
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 
+public class Uniprocessor {
+
+    static volatile boolean done = false;
+
+    public static void main(String[] args) throws InterruptedException {
+        // If the default parallelism were zero then this task would not
+        // complete and the test will timeout.
+        CountDownLatch ran = new CountDownLatch(1);
+        ForkJoinPool.commonPool().submit(() -> ran.countDown());
+        ran.await();
+    }
 }

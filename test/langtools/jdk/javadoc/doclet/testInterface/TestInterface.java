@@ -150,7 +150,7 @@ public class TestInterface extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
                     >()</div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="InterfaceWithStaticMembers.html#staticMethod()">Inter\
                     faceWithStaticMembers</a></code></span></div>
                     <div class="block">A static method</div>

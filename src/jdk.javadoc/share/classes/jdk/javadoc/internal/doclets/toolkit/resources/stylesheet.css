@@ -549,7 +549,7 @@ h1.hidden {
     margin:0 10px 5px 0;
     color:#474747;
 }
-.deprecated-label, .descfrm-type-label, .implementation-label, .member-name-label, .member-name-link,
+.deprecated-label, .description-from-type-label, .implementation-label, .member-name-label, .member-name-link,
 .module-label-in-package, .module-label-in-type, .override-specify-label, .package-label-in-type,
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label {
     font-weight:bold;
