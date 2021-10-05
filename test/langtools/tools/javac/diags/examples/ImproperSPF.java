@@ -22,6 +22,7 @@
  */
 
 // key: compiler.warn.improper.SPF
+// key: compiler.warn.OSF.array.SPF
 
 // options: -Xlint:serial
 

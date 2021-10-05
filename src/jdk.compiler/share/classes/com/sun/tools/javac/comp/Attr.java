@@ -5662,7 +5662,7 @@ public class Attr extends JCTree.Visitor {
         private final Type LONG_TYPE = syms.longType;
 
         // Type of serialPersistentFields
-        private final TypeMirror OSF_TYPE = new Type.ArrayType(syms.objectStreamFieldType, syms.arrayClass);
+        private final Type OSF_TYPE = new Type.ArrayType(syms.objectStreamFieldType, syms.arrayClass);
 
         private final Type OIS_TYPE = syms.objectInputStreamType;
         private final Type OOS_TYPE = syms.objectOutputStreamType;
@@ -5872,16 +5872,17 @@ public class Attr extends JCTree.Visitor {
                              TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ImproperSVUID((Symbol)e));
              }
 
-//             // check that it is long
-//             else if (!svuid.type.hasTag(LONG))
-//                 log.warning(LintCategory.SERIAL,
-//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.LongSVUID(c));
-            checkTypeOfField(tree, e, svuid, LONG_TYPE, Warnings.LongSVUID((Symbol) e));
-
-            if (svuid.getConstValue() == null)
-                log.warning(LintCategory.SERIAL,
+             // check svuid has type long
+             if (!svuid.type.hasTag(LONG)) {
+                 log.warning(LintCategory.SERIAL,
+                             TreeInfo.diagnosticPositionFor(svuid, tree),
+                             Warnings.LongSVUID((Symbol)e));
+             }
+             
+             if (svuid.getConstValue() == null)
+                 log.warning(LintCategory.SERIAL,
                             TreeInfo.diagnosticPositionFor(svuid, tree),
-                            Warnings.ConstantSVUID((Symbol)e));
+                             Warnings.ConstantSVUID((Symbol)e));
         }
 
         private void checkSerialPersistentFields(JCClassDecl tree, Element e, VarSymbol spf) {
@@ -5892,7 +5893,11 @@ public class Attr extends JCTree.Visitor {
                              TreeInfo.diagnosticPositionFor(spf, tree), Warnings.ImproperSPF);
              }
 
-             // TOOD: checkTypeOfField(tree, e, spf, OSF_TYPE);
+             if (!types.isSameType(spf.type, OSF_TYPE)) {
+                 log.warning(LintCategory.SERIAL,
+                             TreeInfo.diagnosticPositionFor(spf, tree), Warnings.OSFArraySPF);
+             }
+
             if (isExternalizable((Type)(e.asType()))) {
                 log.warning(LintCategory.SERIAL, tree.pos(),
                             Warnings.IneffectualSerialFieldExternalizable);
@@ -6241,34 +6246,6 @@ public class Attr extends JCTree.Visitor {
                                     warningKey);
                     }
                 }
-            }
-        }
-
-        void checkTypeOfField(JCClassDecl tree,
-                              Element enclosing,
-                              Element element,
-                              TypeMirror expected) {
-            checkTypeOfField(tree, enclosing, element, expected, null);
-        }
-
-        void checkTypeOfField(JCClassDecl tree,
-                              Element enclosing,
-                              Element element,
-                              TypeMirror expected,
-                              Warning warningKey) {
-            String name = element.getSimpleName().toString();
-            TypeMirror tm = element.asType();
-            if (!types.isSameType((Type)expected, /* fixme*/ (Type)tm)) {
-                    if (warningKey == null) {
-                        System.out.println("Serialization-related field " + name + " in "
-                                           + enclosing.getKind() + " " + enclosing.toString() +
-                                           " has unexpected type " + tm + " rather than " +
-                                           expected.toString());
-                    } else {
-                        log.warning(LintCategory.SERIAL,
-                                    TreeInfo.diagnosticPositionFor((Symbol)element, tree),
-                                    warningKey);
-                    }
             }
         }
 
