@@ -73,6 +73,7 @@ typedef struct ThreadNode {
     unsigned int popFrameEvent : 1;
     unsigned int popFrameProceed : 1;
     unsigned int popFrameThread : 1;
+    unsigned int pendingAppResumeBreakpoint : 1;
     EventIndex current_ei; /* Used to determine if we are currently handling an event on this thread. */
     jobject pendingStop;   /* Object we are throwing to stop the thread (ThreadReferenceImpl.stop). */
     jint suspendCount;
@@ -738,6 +739,15 @@ handleAppResumeCompletion(JNIEnv *env, EventInfo *evinfo,
     debugMonitorExit(threadLock);
 }
 
+/*
+ * The caller must own handlerLock and threadLock.
+ * The current thread waits on threadLock if the suspendCount of the given
+ * thread is greather than 0 but before it releases the handlerLock. This is
+ * necessary because threadControl_resumeThread() and threadControl_resumeAll()
+ * need it.
+ * handlerLock and threadLock are owned when returning and the suspendCount of
+ * the given thread is 0.
+ */
 static void
 blockOnDebuggerSuspend(jthread thread)
 {
@@ -746,7 +756,13 @@ blockOnDebuggerSuspend(jthread thread)
     node = findThread(NULL, thread);
     if (node != NULL) {
         while (node && node->suspendCount > 0) {
+            /* handlerLock is needed for resume */
+            eventHandler_unlock();
             debugMonitorWait(threadLock);
+
+            debugMonitorExit(threadLock);
+            eventHandler_lock(); /* for proper lock order */
+            debugMonitorEnter(threadLock);
             node = findThread(NULL, thread);
         }
     }
@@ -800,28 +816,21 @@ handleAppResumeBreakpoint(JNIEnv *env, EventInfo *evinfo,
                           struct bag *eventBag)
 {
     jthread resumer = evinfo->thread;
-    jthread resumee = getResumee(resumer);
+    ThreadNode *node;
 
     debugMonitorEnter(threadLock);
-    if (resumee != NULL) {
-        /*
-         * Hold up any attempt to resume as long as the debugger
-         * has suspended the resumee.
-         */
-        blockOnDebuggerSuspend(resumee);
-    }
 
+    /*
+     * We cannot call blockOnDebuggerSuspend() here because an event handler
+     * must not release the handlerLock because the caller function is iterating
+     * the handler chain which is protected by handlerLock. Instead handling is
+     * deferred and done in doPendingTasks() where we do not hold handlerLock.
+     */
     if (resumer != NULL) {
-        /*
-         * Track the resuming thread by marking it as being within
-         * a resume and by setting up for notification on
-         * a frame pop or exception. We won't allow the debugger
-         * to suspend threads while any thread is within a
-         * call to resume. This (along with the block above)
-         * ensures that when the debugger
-         * suspends a thread it will remain suspended.
-         */
-        trackAppResume(resumer);
+        node = findThread(&runningThreads, resumer);
+        if (node != NULL) {
+            node->pendingAppResumeBreakpoint = JNI_TRUE;
+        }
     }
 
     debugMonitorExit(threadLock);
@@ -2179,6 +2188,40 @@ threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject cu
 static void
 doPendingTasks(JNIEnv *env, ThreadNode *node)
 {
+    /* Deferred breakpoint handling for Thread.resume() */
+    if (node->pendingAppResumeBreakpoint) {
+        jthread resumer = node->thread;
+        jthread resumee = getResumee(resumer);
+
+        node->pendingAppResumeBreakpoint = JNI_FALSE;
+
+        /* trackAppResume() needs handlerLock */
+        debugMonitorExit(threadLock);
+        eventHandler_lock(); /* for proper lock order */
+        debugMonitorEnter(threadLock);
+        if (resumee != NULL) {
+            /*
+             * Hold up any attempt to resume as long as the debugger
+             * has suspended the resumee.
+             */
+            blockOnDebuggerSuspend(resumee);
+        }
+
+        if (resumer != NULL) {
+            /*
+             * Track the resuming thread by marking it as being within
+             * a resume and by setting up for notification on
+             * a frame pop or exception. We won't allow the debugger
+             * to suspend threads while any thread is within a
+             * call to resume. This (along with the block above)
+             * ensures that when the debugger
+             * suspends a thread it will remain suspended.
+             */
+            trackAppResume(resumer);
+        }
+        eventHandler_unlock();
+    }
+
     /*
      * Take care of any pending interrupts/stops, and clear out
      * info on pending interrupts/stops.
@@ -2479,6 +2522,8 @@ threadControl_reset(void)
     /* Everything should have been resumed */
     JDI_ASSERT(otherThreads.first == NULL);
 
+    /* Threads could be waiting in blockOnDebuggerSuspend */
+    debugMonitorNotifyAll(threadLock);
     debugMonitorExit(threadLock);
     eventHandler_unlock();
 }
