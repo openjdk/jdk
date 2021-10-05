@@ -421,8 +421,8 @@ public class TestSearch extends JavadocTester {
                 "<div class=\"nav-list-search\">",
                 """
                     <label for="search-input">SEARCH:</label>
-                    <input type="text" id="search-input" value="search" disabled="disabled" placeholder="Search">
-                    <input type="reset" id="reset-button" value="reset" disabled="disabled">
+                    <input type="text" id="search-input" disabled placeholder="Search">
+                    <input type="reset" id="reset-button" disabled value="reset">
                     """);
         checkOutput(fileName, true,
                 "<div class=\"flex-box\">");

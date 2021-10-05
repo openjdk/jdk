@@ -597,11 +597,11 @@ public class Navigation {
     }
 
     private void addSearch(Content tree) {
-        String search = "search";
         String reset = "reset";
-        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT, search)
+        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT)
                 .put(HtmlAttr.PLACEHOLDER, searchPlaceholder);
-        HtmlTree inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON, reset);
+        HtmlTree inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON)
+                .put(HtmlAttr.VALUE, reset);
         HtmlTree searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch,
                 HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(), searchLabel));
         searchDiv.add(inputText);
