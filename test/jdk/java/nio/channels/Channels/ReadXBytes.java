@@ -29,7 +29,7 @@
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @modules java.base/jdk.internal.util
- * @run testng/othervm/timeout=3600 -Xmx8G ReadXBytes
+ * @run testng/othervm/timeout=900 -Xmx8G ReadXBytes
  * @key randomness
  */
 import java.io.File;
