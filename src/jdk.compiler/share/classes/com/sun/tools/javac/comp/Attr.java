@@ -5914,63 +5914,68 @@ public class Attr extends JCTree.Visitor {
          * abstract, static, final, synchronized, native, strictfp
          */
 
-        private void checkWriteObject(JCClassDecl tree, Element e, ExecutableElement method) {
+        private void checkWriteObject(JCClassDecl tree, Element e, ExecutableElement executable) {
             // The "synchronized" modifier is seen in the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
             // private void writeObject(ObjectOutputStream stream) throws IOException
-            checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
-            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE, /* fixme */ null);
+            MethodSymbol method = (MethodSymbol)executable;
+            checkPrivateNonStaticMethod(tree, method);
+            checkReturnType(tree, e, method, VOID_TYPE);
             checkOneArg(tree, e, method, OOS_TYPE);
             checkExceptions(tree, e, method, IOE_TYPE);
             checkExternalizable(tree, e, method);
         }
 
-        private void checkWriteReplace(JCClassDecl tree, Element e, ExecutableElement method) {
+        private void checkWriteReplace(JCClassDecl tree, Element e, ExecutableElement executable) {
             // ANY-ACCESS-MODIFIER Object writeReplace() throws
             // ObjectStreamException
 
             // Excluding abstract, could have a more complicated
             // rule based on abstract-ness of the class?
+            MethodSymbol method = (MethodSymbol)executable;
             checkExcludedModifiers(tree, e, method, ABSTRACT_STATIC_MODS);
-            checkReturnTypeOfMethod(tree, e, method, OBJECT_TYPE, /* fixme */ null);
+            checkReturnType(tree, e, method, OBJECT_TYPE);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
         }
 
-        private void checkReadObject(JCClassDecl tree, Element e, ExecutableElement method) {
-            MethodSymbol methodSym = (MethodSymbol)method;
+        private void checkReadObject(JCClassDecl tree, Element e, ExecutableElement executable) {
+            MethodSymbol methodSym = (MethodSymbol)executable;
             // The "synchronized" modifier is seen in the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
             // private void readObject(ObjectInputStream stream)
             //   throws IOException, ClassNotFoundException
-            checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
-            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE, /* fixme */ null);
+            MethodSymbol method = (MethodSymbol)executable;
+            checkPrivateNonStaticMethod(tree, method);
+            checkReturnType(tree, e, method, VOID_TYPE);
             checkOneArg(tree, e, method, OIS_TYPE);
             checkExceptions(tree, e, method, IOE_TYPE, CNFE_TYPE);
             checkExternalizable(tree, e, method);
         }
 
-        private void checkReadObjectNoData(JCClassDecl tree, Element e, ExecutableElement method) {
+        private void checkReadObjectNoData(JCClassDecl tree, Element e, ExecutableElement executable) {
             // private void readObjectNoData() throws ObjectStreamException
-            checkPrivateNonStaticMethod(tree, (MethodSymbol)method);
-            checkReturnTypeOfMethod(tree, e, method, VOID_TYPE, /* fixme */ null);
+            MethodSymbol method = (MethodSymbol)executable;
+            checkPrivateNonStaticMethod(tree, method);
+            checkReturnType(tree, e, method, VOID_TYPE);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
             checkExternalizable(tree, e, method);
         }
 
-        private void checkReadResolve(JCClassDecl tree, Element e, ExecutableElement method) {
+        private void checkReadResolve(JCClassDecl tree, Element e, ExecutableElement executable) {
             // ANY-ACCESS-MODIFIER Object readResolve()
             // throws ObjectStreamException
 
             // Excluding abstract, could have a more complicated
             // rule based on abstract-ness of the class?
+            MethodSymbol method = (MethodSymbol)executable;
             checkExcludedModifiers(tree, e, method, ABSTRACT_STATIC_MODS);
-            checkReturnTypeOfMethod(tree,e, method, OBJECT_TYPE, /* fixme */ null);
+            checkReturnType(tree,e, method, OBJECT_TYPE);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, OSE_TYPE);
         }
@@ -6249,21 +6254,21 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private void checkReturnTypeOfMethod(JCClassDecl tree,
-                                             Element enclosing,
-                                             ExecutableElement method,
-                                             TypeMirror expectedReturnType,
-                                             Warning warningKey) {
+        private void checkReturnType(JCClassDecl tree,
+                                     Element enclosing,
+                                     MethodSymbol method,
+                                     Type expectedReturnType) {
             // Note: there may be complications checking writeReplace
             // and readResolve since they return Object and could, in
             // principle, have covariant overrides and any synthetic
             // bridge method would not be represented here for
             // checking.
-            String name = method.getSimpleName().toString();
-            TypeMirror tm = method.getReturnType();
-            if (!types.isSameType((Type)expectedReturnType, /* fixme*/ (Type)tm)) {
-                System.out.println("Unexpected return type " + tm + " on " + name +
-                                   " in " + enclosing.getKind() + " " + enclosing.toString());
+            Type rtype = method.getReturnType();
+            if (!types.isSameType(expectedReturnType, rtype)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodUnexpectedReturnType(method.getSimpleName(),
+                                                                      rtype, expectedReturnType));
             }
         }
 

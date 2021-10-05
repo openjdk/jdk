@@ -23,6 +23,7 @@
 
 // key: compiler.warn.serial.method.not.private
 // key: compiler.warn.serial.method.static
+// key: compiler.warn.serial.method.unexpected.return.type
 
 // options: -Xlint:serial
 
@@ -43,8 +44,10 @@ class SerialNonPrivateMethod implements Serializable {
         stream.defaultReadObject();
     }
 
-    // Make static once additional warning in place
-    // private void readObjectNoData() throws ObjectStreamException
+    // Should return void
+    private int readObjectNoData() throws ObjectStreamException {
+        return 42;
+    }
 
     /*
      * ANY-ACCESS-MODIFIER Object writeReplace() throws ObjectStreamException
