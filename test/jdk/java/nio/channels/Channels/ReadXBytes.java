@@ -42,9 +42,11 @@ import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.READ;
+import java.util.List;
 import java.util.Random;
 import jdk.internal.util.ArraysSupport;
 
@@ -54,6 +56,7 @@ import org.testng.Assert;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -131,34 +134,23 @@ public class ReadXBytes {
     // Construct for testing correctness of content
     public void dataTest(long length, FileCreator c, DataTest f)
         throws IOException {
-        dataTestFileChannel(length, c, f);
-        dataTestWrappedInputStream(length, c,f);
-    }
-
-    // Runs test against an InputStream based on a FileChannel.
-    public void dataTestFileChannel(long length, FileCreator c, DataTest f)
-        throws IOException {
         Path file = c.create(length);
-        try (FileInputStream fis = new FileInputStream(file.toFile());
-             FileChannel fc = FileChannel.open(file, READ);
-             InputStream cis = Channels.newInputStream(fc)) {
-            f.test(length, cis, fis);
-        } finally {
-            Files.delete(file);
-        }
-    }
-
-    // Runs test against an InputStream where the FileChannel
-    // relationship is obscured.
-    public void dataTestWrappedInputStream(long length, FileCreator c,
-        DataTest f) throws IOException {
-        Path file = c.create(length);
-        try (FileInputStream fis = new FileInputStream(file.toFile());
-             FileInputStream fis2 = new FileInputStream(file.toFile());
-             ReadableByteChannel ch = Channels.newChannel(
-                 new FilterInputStream(fis2) {});
-             InputStream cis = Channels.newInputStream(ch)) {
-            f.test(length, cis, fis);
+        try {
+            for (boolean hideSeek : List.of(false, true)) {
+                try (FileInputStream fis = new FileInputStream(file.toFile())) {
+                    ReadableByteChannel ch;
+                    if (hideSeek) {
+                        InputStream fis2 = new FileInputStream(file.toFile());
+                        ch = Channels.newChannel(new FilterInputStream(fis2) {});
+                        assertFalse(ch instanceof SeekableByteChannel);
+                    } else {
+                        ch = FileChannel.open(file, READ);
+                    }
+                    try (InputStream cis = Channels.newInputStream(ch)) {
+                        f.test(length, cis, fis);
+                    }
+                }
+            }
         } finally {
             Files.delete(file);
         }
