@@ -593,7 +593,9 @@ public final class Matcher implements MatchResult {
      * successfully matches the empty string in the input.  </p>
      *
      * @return The (possibly empty) subsequence matched by the previous match,
-     *         in string form
+     *         in string form or {@code null} if a matcher with a previous
+     *         match has been changed to a new {@link java.util.regex.Pattern},
+     *         but no new match has yet been attempted
      *
      * @throws  IllegalStateException
      *          If no match has yet been attempted,
@@ -629,7 +631,9 @@ public final class Matcher implements MatchResult {
      *
      * @return  The (possibly empty) subsequence captured by the group
      *          during the previous match, or {@code null} if the group
-     *          failed to match part of the input
+     *          failed to match part of the input or if the matcher's
+     *          {@link java.util.regex.Pattern} has changed but a new match has
+     *          not been attempted
      *
      * @throws  IllegalStateException
      *          If no match has yet been attempted,
