@@ -830,7 +830,7 @@ class JavaThread: public Thread {
   }
   void check_and_handle_async_exceptions();
   // Installs a pending exception to be inserted later
-  static void send_async_exception(oop thread_oop, oop java_throwable);
+  static void send_async_exception(JavaThread* jt, oop java_throwable);
   void send_thread_stop(oop throwable);
 
   // Safepoint support

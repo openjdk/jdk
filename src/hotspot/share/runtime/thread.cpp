@@ -1599,19 +1599,12 @@ void JavaThread::check_and_handle_async_exceptions() {
 
   AsyncExceptionCondition condition = clear_async_exception_condition();
   if (condition == _no_async_condition) {
-    // Conditions have changed since has_special_runtime_exit_condition()
-    // was called:
-    // - if we were here only because of an external suspend request,
-    //   then that was taken care of above (or cancelled) so we are done
-    // - if we were here because of another async request, then it has
-    //   been cleared between the has_special_runtime_exit_condition()
-    //   and now so again we are done
     return;
   }
 
   // Check for pending async. exception
   if (_pending_async_exception != NULL) {
-    // Only overwrite an already pending exception, if it is not a threadDeath.
+    // Only overwrite an already pending exception if it is not a threadDeath.
     if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
 
       // We cannot call Exceptions::_throw(...) here because we cannot block
@@ -1628,10 +1621,12 @@ void JavaThread::check_and_handle_async_exceptions() {
           }
         ls.print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
       }
-      _pending_async_exception = NULL;
-      // Clear condition from _suspend_flags since we have finished processing it.
-      clear_suspend_flag(_has_async_exception);
     }
+    // Always null out the _pending_async_exception oop here since the async condition was
+    // already cleared above and thus considered handled.
+    _pending_async_exception = NULL;
+    // Clear condition from _suspend_flags since we have finished processing it.
+    clear_suspend_flag(_has_async_exception);
   }
 
   if (condition == _async_unsafe_access_error && !has_pending_exception()) {
@@ -1644,19 +1639,13 @@ void JavaThread::check_and_handle_async_exceptions() {
       // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
       // suspend requests and object reallocation operations if any since we might be going to Java after this.
       SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
-      return;
-    }
-    case _thread_in_native: {
-      ThreadInVMfromNative tiv(this);
-      JavaThread* THREAD = this;
-      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
-      return;
+      break;
     }
     case _thread_in_Java: {
       ThreadInVMfromJava tiv(this);
       JavaThread* THREAD = this;
       Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation in compiled Java code");
-      return;
+      break;
     }
     default:
       ShouldNotReachHere();
@@ -1696,9 +1685,8 @@ public:
   }
 };
 
-void JavaThread::send_async_exception(oop java_thread, oop java_throwable) {
+void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   Handle throwable(Thread::current(), java_throwable);
-  JavaThread* target = java_lang_Thread::thread(java_thread);
   InstallAsyncExceptionClosure vm_stop(throwable);
   Handshake::execute(&vm_stop, target);
 }
