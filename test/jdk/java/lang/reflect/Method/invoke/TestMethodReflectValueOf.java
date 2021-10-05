@@ -32,12 +32,6 @@
  * @run main/othervm -Dsun.reflect.noInflation=false -Dsun.reflect.inflationThreshold=500 TestMethodReflectValueOf
  */
 
-/*
- * @test
- * @run main/othervm -Xverify:all -Dsun.reflect.noInflation=true TestMethodReflectValueOf
- * @summary verify the bytecode generated for Method::invoke for each method
- */
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 

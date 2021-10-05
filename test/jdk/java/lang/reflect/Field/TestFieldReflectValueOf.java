@@ -30,12 +30,6 @@
  * @author Andrej Golovnin
  */
 
-/*
- * @test
- * @run main/othervm -Xverify:all -Dsun.reflect.noInflation=true TestFieldReflectValueOf
- * @summary verify the bytecode generated for Field::get and Field::set for each field
- */
-
 import java.lang.reflect.Field;
 
 public class TestFieldReflectValueOf {

@@ -138,6 +138,11 @@ final class MethodHandleAccessorFactory {
                     " cannot be accessed reflectively before java.lang.invoke is initialized");
         }
 
+        // ExceptionInInitializerError may be thrown during class initialization
+        // Ensure class initialized outside the invocation of method handle
+        // so that EIIE is propagated (not wrapped with ITE)
+        ensureClassInitialized(field.getDeclaringClass());
+
         try {
             // the declaring class of the field has been initialized
             var getter = JLIA.unreflectField(field, false);

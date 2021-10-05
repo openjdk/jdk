@@ -39,7 +39,7 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
 
