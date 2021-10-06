@@ -464,7 +464,6 @@ public:
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
   void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
-  static RegSet save_all_registers();
   static RegSet call_clobbered_registers();
 
   // Push and pop everything that might be clobbered by a native
@@ -1106,10 +1105,6 @@ public:
   // Stack push and pop individual 64 bit registers
   void push(Register src);
   void pop(Register dst);
-
-  // push all registers onto the stack
-  void pusha();
-  void popa();
 
   void repne_scan(Register addr, Register value, Register count,
                   Register scratch);

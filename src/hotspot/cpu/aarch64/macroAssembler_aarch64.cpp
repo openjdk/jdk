@@ -1855,22 +1855,6 @@ void MacroAssembler::increment(Address dst, int value)
   str(rscratch1, dst);
 }
 
-RegSet MacroAssembler::save_all_registers() {
-  RegSet regs = RegSet::range(r0, r30);
-#ifdef R18_RESERVED
-  regs -= r18_tls;
-#endif
-  return regs;
-}
-
-void MacroAssembler::pusha() {
-  push(save_all_registers(), sp);
-}
-
-void MacroAssembler::popa() {
-  pop(save_all_registers(), sp);
-}
-
 // Push lots of registers in the bit set supplied.  Don't push sp.
 // Return the number of words pushed
 int MacroAssembler::push(unsigned int bitset, Register stack) {

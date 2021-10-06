@@ -1397,11 +1397,19 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ cmp(rscratch1, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
     __ br(Assembler::NE, no_reguard);
 
-    __ pusha(); // XXX only save smashed registers
+    __ push(RegSet::range(r0, r30), sp);
     __ mov(c_rarg0, rthread);
     __ mov(rscratch2, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ blr(rscratch2);
-    __ popa(); // XXX only restore smashed registers
+
+    __ pop(RegSet::range(r0, r17), sp);
+#ifdef R18_RESERVED
+    __ ldp(zr, r19, Address(__ post(sp, 2 * wordSize)));
+    __ pop(RegSet::range(r20, r30), sp);
+#else
+    __ pop(RegSet::range(r18, r30), sp);
+#endif
+
     __ bind(no_reguard);
   }
 
