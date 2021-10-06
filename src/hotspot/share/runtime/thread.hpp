@@ -99,7 +99,6 @@ class JavaThread;
 //       - VMThread
 //       - ConcurrentGCThread
 //       - WorkerThread
-//         - GangWorker
 //     - WatcherThread
 //     - JfrThreadSampler
 //     - LogAsyncWriter

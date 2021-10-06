@@ -42,13 +42,13 @@
 // Semaphores don't require the worker threads to re-claim the lock when they wake up.
 // This helps lowering the latency when starting and stopping the worker threads.
 class GangTaskDispatcher : public CHeapObj<mtGC> {
-  // The task currently being dispatched to the GangWorkers.
+  // The task currently being dispatched to the WorkerThreads.
   AbstractGangTask* _task;
 
   volatile uint _started;
   volatile uint _not_finished;
 
-  // Semaphore used to start the GangWorkers.
+  // Semaphore used to start the WorkerThreads.
   Semaphore* _start_semaphore;
   // Semaphore used to notify the coordinator that all workers are done.
   Semaphore* _end_semaphore;
@@ -136,7 +136,7 @@ WorkGang::~WorkGang() {
 // of any worker fails.
 void WorkGang::initialize_workers() {
   log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
-  _workers = NEW_C_HEAP_ARRAY(GangWorker*, total_workers(), mtInternal);
+  _workers = NEW_C_HEAP_ARRAY(WorkerThread*, total_workers(), mtInternal);
 
   const uint initial_active_workers = UseDynamicNumberOfGCThreads ? 1 : _total_workers;
   if (update_active_workers(initial_active_workers) != initial_active_workers) {
@@ -144,12 +144,12 @@ void WorkGang::initialize_workers() {
   }
 }
 
-GangWorker* WorkGang::create_worker(uint id) {
+WorkerThread* WorkGang::create_worker(uint id) {
   if (is_init_completed() && InjectGCWorkerCreationFailure) {
     return NULL;
   }
 
-  GangWorker* const worker = new GangWorker(this, id);
+  WorkerThread* const worker = new WorkerThread(this, id);
 
   if (!os::create_thread(worker, os::gc_thread)) {
     delete worker;
@@ -167,7 +167,7 @@ uint WorkGang::update_active_workers(uint num_workers) {
          num_workers, _total_workers);
 
   while (_created_workers < num_workers) {
-    GangWorker* const worker = create_worker(_created_workers);
+    WorkerThread* const worker = create_worker(_created_workers);
     if (worker == NULL) {
       log_error(gc, task)("Failed to create worker thread");
       break;
@@ -184,9 +184,9 @@ uint WorkGang::update_active_workers(uint num_workers) {
   return _active_workers;
 }
 
-GangWorker* WorkGang::worker(uint i) const {
+WorkerThread* WorkGang::worker(uint i) const {
   // Array index bounds checking.
-  GangWorker* result = NULL;
+  WorkerThread* result = NULL;
   assert(_workers != NULL, "No workers for indexing");
   assert(i < total_workers(), "Worker index out of bounds");
   result = _workers[i];
@@ -217,18 +217,18 @@ void WorkGang::run_task(AbstractGangTask* task, uint num_workers) {
   update_active_workers(old_num_workers);
 }
 
-GangWorker::GangWorker(WorkGang* gang, uint id) {
+WorkerThread::WorkerThread(WorkGang* gang, uint id) {
   _gang = gang;
   set_id(id);
   set_name("%s#%d", gang->name(), id);
 }
 
-void GangWorker::run() {
+void WorkerThread::run() {
   initialize();
   loop();
 }
 
-void GangWorker::initialize() {
+void WorkerThread::initialize() {
   assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
   log_develop_trace(gc, workgang)("Running gang worker for gang %s id %u", gang()->name(), id());
@@ -236,15 +236,15 @@ void GangWorker::initialize() {
          " of a work gang");
 }
 
-WorkData GangWorker::wait_for_task() {
+WorkData WorkerThread::wait_for_task() {
   return gang()->dispatcher()->worker_wait_for_task();
 }
 
-void GangWorker::signal_task_done() {
+void WorkerThread::signal_task_done() {
   gang()->dispatcher()->worker_done_with_task();
 }
 
-void GangWorker::run_task(WorkData data) {
+void WorkerThread::run_task(WorkData data) {
   GCIdMark gc_id_mark(data._task->gc_id());
   log_develop_trace(gc, workgang)("Running work gang: %s task: %s worker: %u", name(), data._task->name(), data._worker_id);
 
@@ -254,7 +254,7 @@ void GangWorker::run_task(WorkData data) {
                                   name(), data._task->name(), data._worker_id, p2i(Thread::current()));
 }
 
-void GangWorker::loop() {
+void WorkerThread::loop() {
   while (true) {
     WorkData data = wait_for_task();
 

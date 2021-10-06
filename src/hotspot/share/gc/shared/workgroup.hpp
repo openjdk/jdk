@@ -40,13 +40,10 @@
 //
 // Gang/Group class hierarchy:
 //   WorkGang
-//
-// Worker class hierarchy:
-//   GangWorker (subclass of WorkerThread)
 
 // Forward declarations of classes defined here
 
-class GangWorker;
+class WorkerThread;
 class Semaphore;
 class ThreadClosure;
 class GangTaskDispatcher;
@@ -83,7 +80,7 @@ struct WorkData {
 // while "_total_workers" is the number of available workers.
 class WorkGang : public CHeapObj<mtInternal> {
   // The array of worker threads for this gang.
-  GangWorker** _workers;
+  WorkerThread** _workers;
   // The count of the number of workers in the gang.
   uint _total_workers;
   // The currently active workers in this gang.
@@ -94,7 +91,7 @@ class WorkGang : public CHeapObj<mtInternal> {
   const char* _name;
 
   // To get access to the GangTaskDispatcher instance.
-  friend class GangWorker;
+  friend class WorkerThread;
   GangTaskDispatcher* const _dispatcher;
 
   GangTaskDispatcher* dispatcher() const { return _dispatcher; }
@@ -123,14 +120,14 @@ class WorkGang : public CHeapObj<mtInternal> {
   uint update_active_workers(uint num_workers);
 
   // Return the Ith worker.
-  GangWorker* worker(uint i) const;
+  WorkerThread* worker(uint i) const;
 
   // Base name (without worker id #) of threads.
   const char* group_name() { return name(); }
 
   void threads_do(ThreadClosure* tc) const;
 
-  virtual GangWorker* create_worker(uint id);
+  virtual WorkerThread* create_worker(uint id);
 
   // Debugging.
   const char* name() const { return _name; }
@@ -166,34 +163,9 @@ public:
   }
 };
 
-// Worker threads are named and have an id of an assigned work.
-class WorkerThread: public NamedThread {
- private:
-  uint _id;
- public:
-  static WorkerThread* current() {
-    return WorkerThread::cast(Thread::current());
-  }
-
-  static WorkerThread* cast(Thread* t) {
-    assert(t->is_Worker_thread(), "incorrect cast to WorkerThread");
-    return static_cast<WorkerThread*>(t);
-  }
-
-  WorkerThread() : _id(0)               { }
-  virtual bool is_Worker_thread() const { return true; }
-
-  void set_id(uint work_id)             { _id = work_id; }
-  uint id() const                       { return _id; }
-
-  // Printing
-  virtual const char* type_name() const { return "WorkerThread"; }
-
-};
-
-// Several instances of this class run in parallel as workers for a gang.
-class GangWorker: public WorkerThread {
+class WorkerThread : public NamedThread {
 private:
+  uint _id;
   WorkGang* _gang;
 
   void initialize();
@@ -205,15 +177,25 @@ private:
   void run_task(WorkData work);
   void signal_task_done();
 
-protected:
-  // The only real method: run a task for the gang.
-  void run() override;
-
 public:
-  GangWorker(WorkGang* gang, uint id);
+  static WorkerThread* current() {
+    return WorkerThread::cast(Thread::current());
+  }
 
-  // Printing
-  const char* type_name() const override { return "GCTaskThread"; }
+  static WorkerThread* cast(Thread* t) {
+    assert(t->is_Worker_thread(), "incorrect cast to WorkerThread");
+    return static_cast<WorkerThread*>(t);
+  }
+
+  WorkerThread(WorkGang* gang, uint id);
+  virtual bool is_Worker_thread() const { return true; }
+
+  void set_id(uint work_id)             { _id = work_id; }
+  uint id() const                       { return _id; }
+
+  virtual const char* type_name() const { return "WorkerThread"; }
+
+  void run() override;
 };
 
 #endif // SHARE_GC_SHARED_WORKGROUP_HPP
