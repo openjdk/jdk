@@ -128,7 +128,7 @@ public abstract class SunToolkit extends Toolkit
         if (AccessController.doPrivileged(new GetBooleanAction("sun.awt.nativedebug"))) {
             DebugSettings.init();
         }
-        touchKeyboardAutoShowIsEnabled = Boolean.parseBoolean(
+        touchKeyboardAutoShowIsEnabled = Boolean.valueOf(
             GetPropertyAction.privilegedGetProperty(
                 "awt.touchKeyboardAutoShowIsEnabled", "true"));
     };
@@ -1769,7 +1769,8 @@ public abstract class SunToolkit extends Toolkit
                          new GetPropertyAction("awt.useSystemAAFontSettings"));
             }
             if (systemAAFonts != null) {
-                useSystemAAFontSettings = Boolean.parseBoolean(systemAAFonts);
+                useSystemAAFontSettings =
+                    Boolean.valueOf(systemAAFonts).booleanValue();
                 /* If it is anything other than "true", then it may be
                  * a hint name , or it may be "off, "default", etc.
                  */

@@ -78,7 +78,7 @@ public class SwingUtilities implements SwingConstants
     @SuppressWarnings("removal")
     private static boolean getSuppressDropTarget() {
         if (!checkedSuppressDropSupport) {
-            suppressDropSupport = Boolean.parseBoolean(
+            suppressDropSupport = Boolean.valueOf(
                 AccessController.doPrivileged(
                     new GetPropertyAction("suppressSwingDropSupport")));
             checkedSuppressDropSupport = true;
