@@ -24,6 +24,7 @@
  */
 
 package sun.net.www;
+
 import jdk.internal.util.StaticProperty;
 
 import java.io.*;
