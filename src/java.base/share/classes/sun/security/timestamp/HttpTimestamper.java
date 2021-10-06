@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.net.HttpURLConnection;
 import java.util.*;
 
@@ -112,7 +111,7 @@ public class HttpTimestamper implements Timestamper {
         connection.connect(); // No HTTP authentication is performed
 
         // Send the request
-        try (DataOutputStream output = new DataOutputStream(connection.getOutputStream())) {
+        try (var output = new DataOutputStream(connection.getOutputStream())) {
             byte[] request = tsQuery.encode();
             output.write(request, 0, request.length);
             output.flush();
@@ -124,7 +123,7 @@ public class HttpTimestamper implements Timestamper {
 
         // Receive the reply
         byte[] replyBuffer = null;
-        try (BufferedInputStream input = new BufferedInputStream(connection.getInputStream())) {
+        try (var input = new BufferedInputStream(connection.getInputStream())) {
             if (debug != null) {
                 String header = connection.getHeaderField(0);
                 debug.println(header);
