@@ -52,7 +52,7 @@ abstract class ConnectorImpl implements Connector {
         Collection<Argument> values = defaultArguments.values();
 
         for (Argument a : values) {
-            ArgumentImpl argument = (ArgumentImpl) a;
+            ArgumentImpl argument = (ArgumentImpl)a;
             defaults.put(argument.name(), (Argument)argument.clone());
         }
         return defaults;

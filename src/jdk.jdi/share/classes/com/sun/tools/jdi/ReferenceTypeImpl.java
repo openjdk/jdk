@@ -119,7 +119,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         // Needs no synchronization now, since methods() returns
         // unmodifiable local data
         for (Method m : methods()) {
-            MethodImpl method = (MethodImpl) m;
+            MethodImpl method = (MethodImpl)m;
             if (method.ref() == ref) {
                 return method;
             }
@@ -132,7 +132,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         // Needs no synchronization now, since fields() returns
         // unmodifiable local data
         for (Field f : fields()) {
-            FieldImpl field = (FieldImpl) f;
+            FieldImpl field = (FieldImpl)f;
             if (field.ref() == ref) {
                 return field;
             }
@@ -422,7 +422,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
             /*
              * TO DO: Be defensive and check for cyclic interface inheritance
              */
-            ReferenceTypeImpl type = (ReferenceTypeImpl) referenceType;
+            ReferenceTypeImpl type = (ReferenceTypeImpl)referenceType;
             type.addVisibleFields(visibleList, visibleTable, ambiguousNames);
         }
 
@@ -452,7 +452,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
             /* Add inherited fields */
             List<? extends ReferenceType> types = inheritedTypes();
             for (ReferenceType referenceType : types) {
-                ReferenceTypeImpl type = (ReferenceTypeImpl) referenceType;
+                ReferenceTypeImpl type = (ReferenceTypeImpl)referenceType;
                 type.addAllFields(fieldList, typeSet);
             }
         }
@@ -913,7 +913,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         List<Location> list = new ArrayList<Location>();
 
         for (Method m : methods) {
-            MethodImpl method = (MethodImpl) m;
+            MethodImpl method = (MethodImpl)m;
             // eliminate native and abstract to eliminate
             // false positives
             if (!method.isAbstract() &&

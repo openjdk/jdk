@@ -878,7 +878,7 @@ class EventRequestManagerImpl extends MirrorImpl
         validateMirrors(eventRequests);
         // copy the eventRequests to avoid ConcurrentModificationException
         for (EventRequest eventRequest : new ArrayList<>(eventRequests)) {
-            ((EventRequestImpl) eventRequest).delete();
+            ((EventRequestImpl)eventRequest).delete();
         }
     }
 
@@ -966,7 +966,7 @@ class EventRequestManagerImpl extends MirrorImpl
         List<? extends EventRequest> rl = requestList(eventCmd);
         synchronized(rl) {   // Refer Collections.synchronizedList javadoc.
             for (EventRequest eventRequest : rl) {
-                EventRequestImpl er = (EventRequestImpl) eventRequest;
+                EventRequestImpl er = (EventRequestImpl)eventRequest;
                 if (er.id == requestId)
                     return er;
             }

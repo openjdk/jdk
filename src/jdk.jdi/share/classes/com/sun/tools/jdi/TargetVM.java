@@ -187,7 +187,7 @@ public class TargetVM implements Runnable {
         // be put onto the queue.
         synchronized(eventQueues) {
             for (EventQueue eventQueue : eventQueues) {
-                ((EventQueueImpl) eventQueue).close();
+                ((EventQueueImpl)eventQueue).close();
             }
         }
 
@@ -255,7 +255,7 @@ public class TargetVM implements Runnable {
         int maxQueueSize = 0;
         synchronized(eventQueues) {
             for (EventQueue eventQueue : eventQueues) {
-                EventQueueImpl queue = (EventQueueImpl) eventQueue;
+                EventQueueImpl queue = (EventQueueImpl)eventQueue;
                 maxQueueSize = Math.max(maxQueueSize, queue.size());
             }
         }
@@ -267,7 +267,7 @@ public class TargetVM implements Runnable {
 
         synchronized(eventQueues) {
             for (EventQueue eventQueue : eventQueues) {
-                EventQueueImpl queue = (EventQueueImpl) eventQueue;
+                EventQueueImpl queue = (EventQueueImpl)eventQueue;
                 queue.enqueue(eventSet);
                 maxQueueSize = Math.max(maxQueueSize, queue.size());
             }
