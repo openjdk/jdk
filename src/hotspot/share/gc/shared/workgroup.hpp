@@ -46,7 +46,7 @@
 class WorkerThread;
 class Semaphore;
 class ThreadClosure;
-class GangTaskDispatcher;
+class WorkerTaskDispatcher;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
@@ -90,11 +90,11 @@ class WorkerThreads : public CHeapObj<mtInternal> {
   // Printing support.
   const char* _name;
 
-  // To get access to the GangTaskDispatcher instance.
+  // To get access to the WorkerTaskDispatcher instance.
   friend class WorkerThread;
-  GangTaskDispatcher* const _dispatcher;
+  WorkerTaskDispatcher* const _dispatcher;
 
-  GangTaskDispatcher* dispatcher() const { return _dispatcher; }
+  WorkerTaskDispatcher* dispatcher() const { return _dispatcher; }
 
  public:
   WorkerThreads(const char* name, uint workers);

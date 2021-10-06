@@ -41,7 +41,7 @@
 //
 // Semaphores don't require the worker threads to re-claim the lock when they wake up.
 // This helps lowering the latency when starting and stopping the worker threads.
-class GangTaskDispatcher : public CHeapObj<mtGC> {
+class WorkerTaskDispatcher : public CHeapObj<mtGC> {
   // The task currently being dispatched to the WorkerThreads.
   WorkerTask* _task;
 
@@ -54,7 +54,7 @@ class GangTaskDispatcher : public CHeapObj<mtGC> {
   Semaphore* _end_semaphore;
 
 public:
-  GangTaskDispatcher() :
+  WorkerTaskDispatcher() :
       _task(NULL),
       _started(0),
       _not_finished(0),
@@ -62,7 +62,7 @@ public:
       _end_semaphore(new Semaphore())
 { }
 
-  ~GangTaskDispatcher() {
+  ~WorkerTaskDispatcher() {
     delete _start_semaphore;
     delete _end_semaphore;
   }
@@ -125,7 +125,7 @@ WorkerThreads::WorkerThreads(const char* name, uint workers) :
     _active_workers(0),
     _created_workers(0),
     _name(name),
-    _dispatcher(new GangTaskDispatcher())
+    _dispatcher(new WorkerTaskDispatcher())
   { }
 
 WorkerThreads::~WorkerThreads() {
