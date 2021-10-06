@@ -53,14 +53,16 @@ TEST_VM(MutexName, mutex_name) {
 
 #ifdef ASSERT
 
-const int rankA = 50;
+const int rankA = Mutex::nonleaf-5;
+const int rankAplusOne = Mutex::nonleaf-4;
+const int rankAplusTwo = Mutex::nonleaf-3;
 
 TEST_OTHER_VM(MutexRank, mutex_lock_rank_in_order) {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
   Mutex* mutex_rankA = new Mutex(rankA, "mutex_rankA", Mutex::_safepoint_check_always);
-  Mutex* mutex_rankA_plus_one = new Mutex(rankA + 1, "mutex_rankA_plus_one", Mutex::_safepoint_check_always);
+  Mutex* mutex_rankA_plus_one = new Mutex(rankAplusOne, "mutex_rankA_plus_one", Mutex::_safepoint_check_always);
 
   mutex_rankA_plus_one->lock();
   mutex_rankA->lock();
@@ -69,12 +71,12 @@ TEST_OTHER_VM(MutexRank, mutex_lock_rank_in_order) {
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_rank_out_of_orderA,
-                   ".* Attempting to acquire lock mutex_rankA_plus_one/51 out of order with lock mutex_rankA/50 -- possible deadlock") {
+                   ".* Attempting to acquire lock mutex_rankA_plus_one/.* out of order with lock mutex_rankA/.* -- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
   Mutex* mutex_rankA = new Mutex(rankA, "mutex_rankA", Mutex::_safepoint_check_always);
-  Mutex* mutex_rankA_plus_one = new Mutex(rankA + 1, "mutex_rankA_plus_one", Mutex::_safepoint_check_always);
+  Mutex* mutex_rankA_plus_one = new Mutex(rankAplusOne, "mutex_rankA_plus_one", Mutex::_safepoint_check_always);
 
   mutex_rankA->lock();
   mutex_rankA_plus_one->lock();
@@ -83,7 +85,7 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_rank_out_of_orderA,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_rank_out_of_orderB,
-                   ".* Attempting to acquire lock mutex_rankB/50 out of order with lock mutex_rankA/50 -- possible deadlock") {
+                   ".* Attempting to acquire lock mutex_rankB/.* out of order with lock mutex_rankA/.* -- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -101,8 +103,8 @@ TEST_OTHER_VM(MutexRank, mutex_trylock_rank_out_of_orderA) {
   ThreadInVMfromNative invm(THREAD);
 
   Mutex* mutex_rankA = new Mutex(rankA, "mutex_rankA", Mutex::_safepoint_check_always);
-  Mutex* mutex_rankA_plus_one = new Mutex(rankA + 1, "mutex_rankA_plus_one", Mutex::_safepoint_check_always);
-  Mutex* mutex_rankA_plus_two = new Mutex(rankA + 2, "mutex_rankA_plus_two", Mutex::_safepoint_check_always);
+  Mutex* mutex_rankA_plus_one = new Mutex(rankAplusOne, "mutex_rankA_plus_one", Mutex::_safepoint_check_always);
+  Mutex* mutex_rankA_plus_two = new Mutex(rankAplusTwo, "mutex_rankA_plus_two", Mutex::_safepoint_check_always);
 
   mutex_rankA_plus_one->lock();
   mutex_rankA_plus_two->try_lock_without_rank_check();
@@ -113,12 +115,12 @@ TEST_OTHER_VM(MutexRank, mutex_trylock_rank_out_of_orderA) {
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, mutex_trylock_rank_out_of_orderB,
-                   ".* Attempting to acquire lock mutex_rankA_plus_one/51 out of order with lock mutex_rankA/50 -- possible deadlock") {
+                   ".* Attempting to acquire lock mutex_rankA_plus_one/.* out of order with lock mutex_rankA/.* -- possible deadlock") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
   Mutex* mutex_rankA = new Mutex(rankA, "mutex_rankA", Mutex::_safepoint_check_always);
-  Mutex* mutex_rankA_plus_one = new Mutex(rankA + 1, "mutex_rankA_plus_one", Mutex::_safepoint_check_always);
+  Mutex* mutex_rankA_plus_one = new Mutex(rankAplusOne, "mutex_rankA_plus_one", Mutex::_safepoint_check_always);
 
   mutex_rankA->lock();
   mutex_rankA_plus_one->try_lock_without_rank_check();
@@ -163,7 +165,7 @@ TEST_OTHER_VM(MutexRank, monitor_wait_rank_in_order) {
   ThreadInVMfromNative invm(THREAD);
 
   Monitor* monitor_rankA = new Monitor(rankA, "monitor_rankA", Mutex::_safepoint_check_always);
-  Monitor* monitor_rankA_plus_one = new Monitor(rankA + 1, "monitor_rankA_plus_one", Mutex::_safepoint_check_always);
+  Monitor* monitor_rankA_plus_one = new Monitor(rankAplusOne, "monitor_rankA_plus_one", Mutex::_safepoint_check_always);
 
   monitor_rankA_plus_one->lock();
   monitor_rankA->lock();
@@ -173,13 +175,13 @@ TEST_OTHER_VM(MutexRank, monitor_wait_rank_in_order) {
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order,
-                   ".* Attempting to wait on monitor monitor_rankA_plus_one/51 while holding lock monitor_rankA/50 "
+                   ".* Attempting to wait on monitor monitor_rankA_plus_one/.* while holding lock monitor_rankA/.* "
                    "-- possible deadlock. Should wait on the least ranked monitor from all owned locks.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
   Monitor* monitor_rankA = new Monitor(rankA, "monitor_rankA", Mutex::_safepoint_check_always);
-  Monitor* monitor_rankA_plus_one = new Monitor(rankA + 1, "monitor_rankA_plus_one", Mutex::_safepoint_check_always);
+  Monitor* monitor_rankA_plus_one = new Monitor(rankAplusOne, "monitor_rankA_plus_one", Mutex::_safepoint_check_always);
 
   monitor_rankA_plus_one->lock();
   monitor_rankA->lock();
@@ -189,13 +191,13 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_wait_rank_out_of_order_trylock,
-                   ".* Attempting to wait on monitor monitor_rankA_plus_one/51 while holding lock monitor_rankA/50 "
+                   ".* Attempting to wait on monitor monitor_rankA_plus_one/.* while holding lock monitor_rankA/.* "
                    "-- possible deadlock. Should wait on the least ranked monitor from all owned locks.") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
   Monitor* monitor_rankA = new Monitor(rankA, "monitor_rankA", Mutex::_safepoint_check_always);
-  Monitor* monitor_rankA_plus_one = new Monitor(rankA + 1, "monitor_rankA_plus_one", Mutex::_safepoint_check_always);
+  Monitor* monitor_rankA_plus_one = new Monitor(rankAplusOne, "monitor_rankA_plus_one", Mutex::_safepoint_check_always);
 
   monitor_rankA->lock();
   monitor_rankA_plus_one->try_lock_without_rank_check();
@@ -280,12 +282,12 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_negative_rank,
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_nosafepoint_rank,
-                   ".*failed: Locks above nosafepoint rank should safepoint: monitor_rank_leaf") {
+                   ".*failed: Locks above nosafepoint rank should safepoint: monitor_rank_nonleaf") {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_leaf = new Monitor(Mutex::leaf, "monitor_rank_leaf", Mutex::_safepoint_check_never);
-  monitor_rank_leaf->lock_without_safepoint_check();
-  monitor_rank_leaf->unlock();
+  Monitor* monitor_rank_nonleaf = new Monitor(Mutex::nonleaf, "monitor_rank_nonleaf", Mutex::_safepoint_check_never);
+  monitor_rank_nonleaf->lock_without_safepoint_check();
+  monitor_rank_nonleaf->unlock();
 }
 #endif // ASSERT
