@@ -617,8 +617,9 @@ ul.ui-autocomplete  li {
     top:10px;
     font-size:0;
 }
-.watermark {
-    color:#545454;
+::placeholder {
+    color:#909090;
+    opacity: 1;
 }
 .search-tag-desc-result {
     font-style:italic;

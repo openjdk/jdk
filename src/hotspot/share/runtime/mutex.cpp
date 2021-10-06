@@ -285,6 +285,8 @@ Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check
   _safepoint_check_required = safepoint_check_required;
   _skip_rank_check = false;
 
+  assert(_rank >= 0 && _rank <= nonleaf, "Bad lock rank %d: %s", _rank, name);
+
   assert(_rank > nosafepoint || _safepoint_check_required == _safepoint_check_never,
          "Locks below nosafepoint rank should never safepoint: %s", name);
 
@@ -295,8 +297,6 @@ Mutex::Mutex(int Rank, const char * name, SafepointCheckRequired safepoint_check
   // allowing Java threads to block in native.
   assert(_safepoint_check_required == _safepoint_check_always || _allow_vm_block,
          "Safepoint check never locks should always allow the vm to block: %s", name);
-
-  assert(_rank >= 0, "Bad lock rank: %s", name);
 #endif
 }
 
