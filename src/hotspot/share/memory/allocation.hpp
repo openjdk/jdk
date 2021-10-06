@@ -416,7 +416,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
     uintptr_t _past_end[BufferSize];
     allocation_type _types[BufferSize];
   public:
-    RecentAllocations() : _begin{},  _past_end{}, _types{} { }
+    constexpr RecentAllocations() : _begin{},  _past_end{}, _types{} { }
 
     void set_type(void* begin_ptr, size_t size, allocation_type type) {
       uintptr_t begin = reinterpret_cast<uintptr_t>(begin_ptr);
@@ -450,7 +450,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
    }
   };
  public:
-  static thread_local RecentAllocations _recent_allocations;
+  static THREAD_LOCAL RecentAllocations _recent_allocations;
   allocation_type get_allocation_type() const;
   bool allocated_on_stack_or_embedded() const { return get_allocation_type() == STACK_OR_EMBEDDED; }
   bool allocated_on_res_area()          const { return get_allocation_type() == RESOURCE_AREA; }

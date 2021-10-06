@@ -151,7 +151,7 @@ void ResourceObj::operator delete(void* p) {
 }
 
 #ifdef ASSERT
-thread_local ResourceObj::RecentAllocations ResourceObj::_recent_allocations;
+THREAD_LOCAL ResourceObj::RecentAllocations ResourceObj::_recent_allocations;
 
 ResourceObj::ResourceObj() : _type(_recent_allocations.remove_type(this)) {}
 

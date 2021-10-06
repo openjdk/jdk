@@ -105,11 +105,4 @@ public:
   virtual void do_MemRegion(MemRegion mr) = 0;
 };
 
-// A ResourceObj version of MemRegionClosure
-
-class MemRegionClosureRO: public ResourceObj {
-public:
-  virtual void do_MemRegion(MemRegion mr) = 0;
-};
-
 #endif // SHARE_MEMORY_MEMREGION_HPP

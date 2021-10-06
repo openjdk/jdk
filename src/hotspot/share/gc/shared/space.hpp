@@ -238,7 +238,7 @@ class Space: public CHeapObj<mtGC> {
 // to support other space types. See ContiguousDCTOC for a sub-class
 // that works with ContiguousSpaces.
 
-class DirtyCardToOopClosure: public MemRegionClosureRO {
+class DirtyCardToOopClosure : public ResourceObj {
 protected:
   OopIterateClosure* _cl;
   Space* _sp;
