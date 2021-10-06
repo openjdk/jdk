@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +22,21 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zBarrierSetAssembler.hpp"
-#include "gc/z/zThreadLocalData.hpp"
-#include "runtime/thread.hpp"
+#ifndef OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP
+#define OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP
 
-Address ZBarrierSetAssemblerBase::address_bad_mask_from_thread(Register thread) {
-  return Address(thread, (intptr_t) ZThreadLocalData::address_bad_mask_offset());
-}
+#include <sys/syscall.h>
 
-Address ZBarrierSetAssemblerBase::address_bad_mask_from_jni_env(Register env) {
-  return Address(env, (intptr_t) (ZThreadLocalData::address_bad_mask_offset() - JavaThread::jni_environment_offset()));
-}
+//
+// Support for building on older Linux systems
+//
+
+
+#ifndef SYS_memfd_create
+#define SYS_memfd_create     360
+#endif
+#ifndef SYS_fallocate
+#define SYS_fallocate        309
+#endif
+
+#endif // OS_CPU_LINUX_PPC_GC_Z_ZSYSCALL_LINUX_PPC_HPP

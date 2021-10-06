@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +22,15 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zBarrierSetAssembler.hpp"
-#include "gc/z/zThreadLocalData.hpp"
-#include "runtime/thread.hpp"
+#ifndef CPU_PPC_GC_Z_ZGLOBALS_PPC_HPP
+#define CPU_PPC_GC_Z_ZGLOBALS_PPC_HPP
 
-Address ZBarrierSetAssemblerBase::address_bad_mask_from_thread(Register thread) {
-  return Address(thread, (intptr_t) ZThreadLocalData::address_bad_mask_offset());
-}
+#include "globalDefinitions_ppc.hpp"
+const size_t ZPlatformGranuleSizeShift = 21; // 2MB
+const size_t ZPlatformHeapViews        = 3;
+const size_t ZPlatformCacheLineSize    = DEFAULT_CACHE_LINE_SIZE;
 
-Address ZBarrierSetAssemblerBase::address_bad_mask_from_jni_env(Register env) {
-  return Address(env, (intptr_t) (ZThreadLocalData::address_bad_mask_offset() - JavaThread::jni_environment_offset()));
-}
+size_t ZPlatformAddressOffsetBits();
+size_t ZPlatformAddressMetadataShift();
+
+#endif // CPU_PPC_GC_Z_ZGLOBALS_PPC_HPP

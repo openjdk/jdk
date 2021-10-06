@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021 SAP SE. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -355,6 +356,13 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
         AC_MSG_RESULT([yes])
       else
         AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
+        AVAILABLE=false
+      fi
+    elif test "x$OPENJDK_TARGET_CPU" = "xppc64le"; then
+      if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+        AC_MSG_RESULT([yes])
+      else
+        AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
         AVAILABLE=false
       fi
     else
