@@ -6239,7 +6239,7 @@ public class Attr extends JCTree.Visitor {
         private void checkOneArg(JCClassDecl tree,
                                  Element enclosing,
                                  MethodSymbol method,
-                                 TypeMirror expected) {
+                                 Type expectedType) {
             String name = method.getSimpleName().toString();
 
             var parameters= method.getParameters();
@@ -6251,12 +6251,14 @@ public class Attr extends JCTree.Visitor {
                 return;
             }
 
-            TypeMirror parameterType = parameters.get(0).asType();
-            if (!types.isSameType(/* fixme*/ (Type)parameterType, (Type)expected)) {
-                System.out.println("Unexpected parameter type " + parameterType + " on " + name +
-                                   " in " + enclosing.getKind() + " " + enclosing.toString());
+            Type parameterType = parameters.get(0).asType();
+            if (!types.isSameType(parameterType, expectedType)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodParameterType(method.getSimpleName(),
+                                                               expectedType,
+                                                               parameterType));
             }
-            return;
         }
 
         private void checkNoArgs(JCClassDecl tree, Element enclosing, ExecutableElement method) {

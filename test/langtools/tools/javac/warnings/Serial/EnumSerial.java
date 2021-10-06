@@ -9,7 +9,7 @@ import java.io.*;
 enum EnumSerial implements Serializable {
     INSTANCE;
 
-    // Verify a warning is generated in an enum for each of the
+    // Verify a warning is generated in an enum class for each of the
     // distinguished serial fields and methods.
 
     private static final long serialVersionUID = 42;

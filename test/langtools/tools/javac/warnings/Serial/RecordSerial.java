@@ -7,7 +7,7 @@
 import java.io.*;
 
 record RecordSerial(int foo) implements Serializable {
-    // Verify a warning is generated in an enum for each of the
+    // Verify a warning is generated in a record class for each of the
     // ineffectual serial fields and methods.
 
     // partially effective

@@ -26,6 +26,7 @@
 // key: compiler.warn.serial.method.unexpected.return.type
 // key: compiler.warn.serial.concrete.instance.method
 // key: compiler.warn.serial.method.one.arg
+// key: compiler.warn.serial.method.parameter.type
 
 // options: -Xlint:serial
 
@@ -35,8 +36,14 @@ import java.io.*;
 abstract class SerialNonPrivateMethod implements Serializable {
     private static final long serialVersionUID = 42;
 
-    // Should be private
-    void writeObject(ObjectOutputStream stream) throws IOException {
+    private static class CustomObjectOutputStream extends ObjectOutputStream {
+        public CustomObjectOutputStream() throws IOException,
+                                                 SecurityException {}
+    }
+
+    // Should be private and have a single argument of type
+    // ObjectOutputStream
+    void writeObject(CustomObjectOutputStream stream) throws IOException {
         stream.defaultWriteObject();
     }
 
