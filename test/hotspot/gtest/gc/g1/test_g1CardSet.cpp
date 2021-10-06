@@ -52,7 +52,7 @@ class G1CardSetTest : public ::testing::Test {
       _max_workers = os::processor_count();
       _workers = new WorkerThreads("G1CardSetTest Work Gang", _max_workers);
       _workers->initialize_workers();
-      _workers->update_active_workers(_max_workers);
+      _workers->set_active_workers(_max_workers);
     }
     return _workers;
   }

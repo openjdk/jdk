@@ -73,7 +73,7 @@ ZWorkers::ZWorkers() :
 
   // Initialize worker threads
   _workers.initialize_workers();
-  _workers.update_active_workers(_workers.total_workers());
+  _workers.set_active_workers(_workers.total_workers());
   if (_workers.active_workers() != _workers.total_workers()) {
     vm_exit_during_initialization("Failed to create ZWorkers");
   }
@@ -89,7 +89,7 @@ uint ZWorkers::active_workers() const {
 
 void ZWorkers::set_active_workers(uint nworkers) {
   log_info(gc, task)("Using %u workers", nworkers);
-  _workers.update_active_workers(nworkers);
+  _workers.set_active_workers(nworkers);
 }
 
 void ZWorkers::run(ZTask* task) {
@@ -104,12 +104,12 @@ void ZWorkers::run_all(ZTask* task) {
   const uint prev_active_workers = _workers.active_workers();
 
   // Execute task using all workers
-  _workers.update_active_workers(_workers.total_workers());
+  _workers.set_active_workers(_workers.total_workers());
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
   _workers.run_task(task->gang_task());
 
   // Restore number of active workers
-  _workers.update_active_workers(prev_active_workers);
+  _workers.set_active_workers(prev_active_workers);
 }
 
 void ZWorkers::threads_do(ThreadClosure* tc) const {

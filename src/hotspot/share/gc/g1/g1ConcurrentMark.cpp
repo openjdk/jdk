@@ -1046,7 +1046,7 @@ void G1ConcurrentMark::mark_from_roots() {
   // Setting active workers is not guaranteed since fewer
   // worker threads may currently exist and more may not be
   // available.
-  active_workers = _concurrent_workers->update_active_workers(active_workers);
+  active_workers = _concurrent_workers->set_active_workers(active_workers);
   log_info(gc, task)("Using %u workers of %u for marking", active_workers, _concurrent_workers->total_workers());
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"

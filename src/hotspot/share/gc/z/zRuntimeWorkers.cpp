@@ -65,7 +65,7 @@ ZRuntimeWorkers::ZRuntimeWorkers() :
 
   // Initialize worker threads
   _workers.initialize_workers();
-  _workers.update_active_workers(_workers.total_workers());
+  _workers.set_active_workers(_workers.total_workers());
   if (_workers.active_workers() != _workers.total_workers()) {
     vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
   }

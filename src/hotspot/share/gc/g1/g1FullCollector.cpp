@@ -102,7 +102,7 @@ uint G1FullCollector::calc_active_workers() {
   log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, "
                       "adaptive workers: %u, used limited workers: %u)",
                       worker_count, heap_waste_worker_limit, active_worker_limit, used_worker_limit);
-  worker_count = heap->workers()->update_active_workers(worker_count);
+  worker_count = heap->workers()->set_active_workers(worker_count);
   log_info(gc, task)("Using %u workers of %u for full compaction", worker_count, max_worker_count);
 
   return worker_count;

@@ -37,7 +37,7 @@ class G1MapperWorkers : AllStatic {
     if (_work_gang == NULL) {
       _work_gang = new WorkerThreads("G1 Small Workers", MaxWorkers);
       _work_gang->initialize_workers();
-      _work_gang->update_active_workers(MaxWorkers);
+      _work_gang->set_active_workers(MaxWorkers);
     }
     return _work_gang;
   }

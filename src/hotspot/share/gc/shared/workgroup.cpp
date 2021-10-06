@@ -139,7 +139,7 @@ void WorkerThreads::initialize_workers() {
   _workers = NEW_C_HEAP_ARRAY(WorkerThread*, total_workers(), mtInternal);
 
   const uint initial_active_workers = UseDynamicNumberOfGCThreads ? 1 : _total_workers;
-  if (update_active_workers(initial_active_workers) != initial_active_workers) {
+  if (set_active_workers(initial_active_workers) != initial_active_workers) {
     vm_exit_during_initialization();
   }
 }
@@ -161,7 +161,7 @@ WorkerThread* WorkerThreads::create_worker(uint id) {
   return worker;
 }
 
-uint WorkerThreads::update_active_workers(uint num_workers) {
+uint WorkerThreads::set_active_workers(uint num_workers) {
   assert(num_workers > 0 && num_workers <= _total_workers,
          "Invalid number of active workers %u (should be 1-%u)",
          num_workers, _total_workers);
@@ -212,9 +212,9 @@ void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {
             task->name(), num_workers, total_workers());
   guarantee(num_workers > 0, "Trying to execute task %s with zero workers", task->name());
   uint old_num_workers = _active_workers;
-  update_active_workers(num_workers);
+  set_active_workers(num_workers);
   _dispatcher->coordinator_execute_on_workers(task, num_workers);
-  update_active_workers(old_num_workers);
+  set_active_workers(old_num_workers);
 }
 
 WorkerThread::WorkerThread(WorkerThreads* gang, uint id) {

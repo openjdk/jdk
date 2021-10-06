@@ -117,7 +117,7 @@ class WorkerThreads : public CHeapObj<mtInternal> {
     return _active_workers;
   }
 
-  uint update_active_workers(uint num_workers);
+  uint set_active_workers(uint num_workers);
 
   // Return the Ith worker.
   WorkerThread* worker(uint i) const;
@@ -155,11 +155,11 @@ public:
       _gang(gang),
       _old_active_workers(gang->active_workers()) {
     uint capped_num_workers = MIN2(requested_num_workers, gang->total_workers());
-    gang->update_active_workers(capped_num_workers);
+    gang->set_active_workers(capped_num_workers);
   }
 
   ~WithActiveWorkers() {
-    _gang->update_active_workers(_old_active_workers);
+    _gang->set_active_workers(_old_active_workers);
   }
 };
 

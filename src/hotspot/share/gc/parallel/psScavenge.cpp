@@ -467,7 +467,7 @@ bool PSScavenge::invoke_no_policy() {
       WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
                                         ParallelScavengeHeap::heap()->workers().active_workers(),
                                         Threads::number_of_non_daemon_threads());
-    ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
+    ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);
 
     PSPromotionManager::pre_scavenge();
 
