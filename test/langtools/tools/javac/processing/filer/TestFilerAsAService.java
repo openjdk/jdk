@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 9999999
- * @summary XXX
+ * @bug 8274817
+ * @summary Verify JavacFiler is subclassable, and can be registered as a service into Context.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
