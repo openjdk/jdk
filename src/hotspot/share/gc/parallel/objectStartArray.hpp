@@ -52,11 +52,12 @@ class ObjectStartArray : public CHeapObj<mtGC> {
     clean_block                  = -1
   };
 
-  enum BlockSizeConstants {
-    block_shift                  = 9,
-    block_size                   = 1 << block_shift,
-    block_size_in_words          = block_size / sizeof(HeapWord)
-  };
+  static uint block_shift;
+  static uint block_size;
+  static uint block_size_in_words;
+
+  // Initialize block size based on card size
+  static void initialize_block_size(uint card_shift);
 
  protected:
 

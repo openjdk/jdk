@@ -228,16 +228,24 @@ public:
   MemRegion dirty_card_range_after_reset(MemRegion mr, bool reset,
                                          int reset_val);
 
-  // Constants
-  enum SomePublicConstants {
-    card_shift                  = 9,
-    card_size                   = 1 << card_shift,
-    card_size_in_words          = card_size / sizeof(HeapWord)
-  };
+  // CardTable entry size
+  static uintx card_shift;
+  static uintx card_size;
+  static uintx card_size_in_words;
+
+  // min and max permissible card sizes
+  static const uintx card_size_min = 128;
+  static const uintx card_size_max = 1024;
 
   static constexpr CardValue clean_card_val()          { return clean_card; }
   static constexpr CardValue dirty_card_val()          { return dirty_card; }
   static intptr_t clean_card_row_val()   { return clean_card_row; }
+
+  // Initialize card size based on the min_card_size value
+  static void initialize_card_size(uintx min_card_size);
+
+  //Initialize card size based on CardTable::card_size_min
+  static void initialize_card_size();
 
   // Card marking array base (adjusted for heap low boundary)
   // This would be the 0th element of _byte_map, if the heap started at 0x0.

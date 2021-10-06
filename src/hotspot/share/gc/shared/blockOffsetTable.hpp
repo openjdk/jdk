@@ -49,15 +49,19 @@ class ContiguousSpace;
 
 class BOTConstants : public AllStatic {
 public:
-  static const uint LogN = 9;
-  static const uint LogN_words = LogN - LogHeapWordSize;
-  static const uint N_bytes = 1 << LogN;
-  static const uint N_words = 1 << LogN_words;
+  static uint LogN;
+  static uint LogN_words;
+  static uint N_bytes;
+  static uint N_words;
+
   // entries "e" of at least N_words mean "go back by Base^(e-N_words)."
   // All entries are less than "N_words + N_powers".
   static const uint LogBase = 4;
   static const uint Base = (1 << LogBase);
   static const uint N_powers = 14;
+
+  // Initialize bot size based on card size
+  static void initialize_bot_size(uint card_shift);
 
   static size_t power_to_cards_back(uint i) {
     return (size_t)1 << (LogBase * i);

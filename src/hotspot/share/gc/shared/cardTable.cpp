@@ -24,14 +24,50 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/parallel/objectStartArray.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "runtime/globals_extension.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+
+uintx CardTable::card_shift = 0;
+uintx CardTable::card_size = 0;
+uintx CardTable::card_size_in_words = 0;
+
+void CardTable::initialize_card_size(uintx min_card_size) {
+  assert(UseG1GC || UseParallelGC || UseSerialGC,
+         "Initialize card size should only be called by card based collectors.");
+
+  // GCCardSizeInBytes is rounded off to the nearest power of 2, and clamped
+  // between min and max card sizes
+  card_size = GCCardSizeInBytes;
+  card_size = round_up_power_of_2(card_size);
+  card_size = clamp(card_size, MAX2(min_card_size,card_size_min), card_size_max);
+  card_shift = log2i_exact(card_size);
+  card_size = 1 << card_shift;
+  card_size_in_words = card_size / sizeof(HeapWord);
+
+  // Set blockOffsetTable size based on card table entry size
+  BOTConstants::initialize_bot_size(card_shift);
+
+  // Set ObjectStartArray block size based on card table entry size
+  ObjectStartArray::initialize_block_size(card_shift);
+
+  if (GCCardSizeInBytes != card_size) {
+    FLAG_SET_ERGO(GCCardSizeInBytes, card_size);
+  }
+
+  log_info(gc, barrier)("CardTable entry size: " UINTX_FORMAT,  card_size);
+}
+
+void CardTable::initialize_card_size() {
+  initialize_card_size(card_size_min);
+}
 
 size_t CardTable::compute_byte_map_size() {
   assert(_guard_index == cards_required(_whole_heap.word_size()) - 1,
@@ -40,6 +76,7 @@ size_t CardTable::compute_byte_map_size() {
   const size_t granularity = os::vm_allocation_granularity();
   return align_up(_guard_index + 1, MAX2(_page_size, granularity));
 }
+
 
 CardTable::CardTable(MemRegion whole_heap) :
   _whole_heap(whole_heap),
@@ -56,8 +93,7 @@ CardTable::CardTable(MemRegion whole_heap) :
 {
   assert((uintptr_t(_whole_heap.start())  & (card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (card_size - 1))  == 0, "heap must end at card boundary");
-
-  assert(card_size <= 512, "card_size must be less than 512"); // why?
+  assert(card_size >= card_size_min && card_size <= card_size_max, "card_size must be between min and max");
 }
 
 CardTable::~CardTable() {
@@ -428,7 +464,8 @@ MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
 }
 
 uintx CardTable::ct_max_alignment_constraint() {
-  return card_size * os::vm_page_size();
+  // CardTable max alignment is computed with card_size_max
+  return card_size_max * os::vm_page_size();
 }
 
 void CardTable::verify_guard() {
