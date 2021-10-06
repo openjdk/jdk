@@ -337,7 +337,6 @@ void G1BlockOffsetTablePart::verify() const {
   assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
   size_t start_card = _bot->index_for(_hr->bottom());
   // Do not verify beyond the BOT allocation threshold.
-  assert(_hr->top() <= _next_offset_threshold, "invariant");
   size_t end_card = _bot->index_for(_hr->top() - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {

@@ -292,15 +292,30 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
   return result;
 }
 
+G1PLAB::G1PLAB(size_t word_sz) : PLAB(word_sz) { }
+
+bool G1PLAB::is_allocated() {
+  return _top != nullptr;
+}
+HeapWord* G1PLAB::get_filler() {
+  return _top;
+}
+
+size_t G1PLAB::get_filler_size() {
+  return pointer_delta(_hard_end, _top);
+}
+
 G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   _g1h(G1CollectedHeap::heap()),
-  _allocator(allocator) {
+  _allocator(allocator),
+  _bot_plab_region(nullptr),
+  _bot_plab_threshold(nullptr) {
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
     _direct_allocated[state] = 0;
     uint length = alloc_buffers_length(state);
-    _alloc_buffers[state] = NEW_C_HEAP_ARRAY(PLAB*, length, mtGC);
+    _alloc_buffers[state] = NEW_C_HEAP_ARRAY(G1PLAB*, length, mtGC);
     for (uint node_index = 0; node_index < length; node_index++) {
-      _alloc_buffers[state][node_index] = new PLAB(_g1h->desired_plab_sz(state));
+      _alloc_buffers[state][node_index] = new G1PLAB(_g1h->desired_plab_sz(state));
     }
   }
 }
@@ -331,7 +346,8 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   if ((required_in_plab <= plab_word_size) &&
     may_throw_away_buffer(required_in_plab, plab_word_size)) {
 
-    PLAB* alloc_buf = alloc_buffer(dest, node_index);
+    G1PLAB* alloc_buf = alloc_buffer(dest, node_index);
+    update_bot_for_plab_waste(dest, alloc_buf);
     alloc_buf->retire();
 
     size_t actual_plab_size = 0;
@@ -346,6 +362,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
            required_in_plab, plab_word_size, actual_plab_size, p2i(buf));
 
     if (buf != NULL) {
+      calculate_new_bot_threshold(dest, buf);
       alloc_buf->set_buf(buf, actual_plab_size);
 
       HeapWord* const obj = alloc_buf->allocate(word_sz);
@@ -360,6 +377,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   // Try direct allocation.
   HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz, node_index);
   if (result != NULL) {
+    update_bot_for_direct_allocation(dest, result, word_sz);
     _direct_allocated[dest.type()] += word_sz;
   }
   return result;
@@ -373,8 +391,9 @@ void G1PLABAllocator::flush_and_retire_stats() {
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
     G1EvacStats* stats = _g1h->alloc_buffer_stats(state);
     for (uint node_index = 0; node_index < alloc_buffers_length(state); node_index++) {
-      PLAB* const buf = alloc_buffer(state, node_index);
+      G1PLAB* const buf = alloc_buffer(state, node_index);
       if (buf != NULL) {
+        update_bot_for_plab_waste(state, buf);
         buf->flush_and_retire_stats(stats);
       }
     }

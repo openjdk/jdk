@@ -108,6 +108,7 @@ public:
 
 class G1BlockOffsetTablePart {
   friend class G1BlockOffsetTable;
+  friend class HeapRegion;
   friend class VMStructs;
 private:
   // allocation boundary at which offset array must be updated
@@ -180,6 +181,8 @@ public:
   void update();
 
   void verify() const;
+
+  inline HeapWord* threshold_for_addr(const void* addr);
 
   // Returns the address of the start of the block containing "addr", or
   // else "null" if it is covered by no block.  (May have side effects,

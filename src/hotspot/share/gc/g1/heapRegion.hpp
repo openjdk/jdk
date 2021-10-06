@@ -77,7 +77,7 @@ class HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _compaction_top;
 
   G1BlockOffsetTablePart _bot_part;
-  Mutex _par_alloc_lock;
+
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
   // allocate a dummy object at the end of the region to ensure that
@@ -152,18 +152,20 @@ public:
 
   void object_iterate(ObjectClosure* blk);
 
-  // Allocation (return NULL if full).  Assumes the caller has established
-  // mutually exclusive access to the HeapRegion.
-  HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-  // Allocation (return NULL if full).  Enforces mutual exclusion internally.
-  HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-
-  HeapWord* allocate(size_t word_size);
-  HeapWord* par_allocate(size_t word_size);
-
+  // All allocations are done without updating the BOT. The BOT
+  // needs to be kept in sync for old generation regions and
+  // this is done by explicit updates when crossing thresholds.
   inline HeapWord* par_allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* word_size);
   inline HeapWord* allocate_no_bot_updates(size_t word_size);
   inline HeapWord* allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
+
+  // Update the BOT for the given address if it crosses the next
+  // BOT threshold at or after obj_start.
+  inline void update_bot_at(HeapWord* obj_start, size_t obj_size);
+  // Update BOT at the given threshold for the given object. The
+  // given object must cross the threshold.
+  inline void update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end);
+  inline HeapWord* bot_threshold_for_addr(const void* addr);
 
   // Full GC support methods.
 

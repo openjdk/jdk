@@ -86,7 +86,7 @@ inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
   return mutator_alloc_region(node_index)->attempt_allocation_force(word_size);
 }
 
-inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_index) const {
+inline G1PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_index) const {
   assert(dest.is_valid(),
          "Allocation buffer index out of bounds: %s", dest.get_type_str());
   assert(_alloc_buffers[dest.type()] != NULL,
@@ -94,7 +94,7 @@ inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_inde
   return alloc_buffer(dest.type(), node_index);
 }
 
-inline PLAB* G1PLABAllocator::alloc_buffer(region_type_t dest, uint node_index) const {
+inline G1PLAB* G1PLABAllocator::alloc_buffer(region_type_t dest, uint node_index) const {
   assert(dest < G1HeapRegionAttr::Num,
          "Allocation buffer index out of bounds: %u", dest);
 
@@ -131,6 +131,62 @@ inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
     return obj;
   }
   return allocate_direct_or_new_plab(dest, word_sz, refill_failed, node_index);
+}
+
+inline void G1PLABAllocator::update_bot_for_plab_waste(G1HeapRegionAttr attr, G1PLAB* plab) {
+  if (!attr.is_old()) {
+    // BOT updates are only done for old generation.
+    return;
+  }
+
+  if (!plab->is_allocated()) {
+    return;
+  }
+  update_bot_for_object(plab->get_filler(), plab->get_filler_size());
+}
+
+inline void G1PLABAllocator::calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr) {
+  if (!attr.is_old()) {
+    // BOT updates are only done for old generation.
+    return;
+  }
+
+  _bot_plab_region = _g1h->heap_region_containing(addr);
+  _bot_plab_threshold = _bot_plab_region->bot_threshold_for_addr(addr);
+
+  assert(_bot_plab_threshold >= addr,
+         "threshold must be at or after PLAB start. " PTR_FORMAT " >= " PTR_FORMAT,
+         p2i(_bot_plab_threshold), p2i(addr));
+  assert(_bot_plab_region->is_old(),
+         "Updating BOT threshold for non-old region. addr: " PTR_FORMAT " region:" HR_FORMAT,
+         p2i(addr), HR_FORMAT_PARAMS(_bot_plab_region));
+}
+
+inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size) {
+  if (!attr.is_old()) {
+    // BOT updates are only done for old generation.
+    return;
+  }
+
+  // Out of PLAB allocations in OLD, might need to updated BOT.
+  HeapRegion* region = _g1h->heap_region_containing(addr);
+  region->update_bot_at(addr, size);
+}
+inline void G1PLABAllocator::update_bot_for_object(HeapWord* obj_start, size_t obj_size) {
+  HeapWord* obj_end = obj_start + obj_size;
+  if (obj_end <= _bot_plab_threshold) {
+    // Not crossing the threshold.
+    return;
+  }
+
+  if (!alloc_buffer(G1HeapRegionAttr::Old, 0)->contains(obj_start)) {
+    // Out-of-PLAB allocation, BOT already updated.
+    return;
+  }
+
+  // Update the BOT. The threshold will also get updated with
+  // the next threshold by this call.
+  _bot_plab_region->update_bot_crossing_threshold(&_bot_plab_threshold, obj_start, obj_end);
 }
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP

@@ -145,6 +145,15 @@ public:
                                    uint node_index);
 };
 
+// Helper to make sure
+class G1PLAB : public PLAB {
+public:
+  G1PLAB(size_t word_sz);
+  bool is_allocated();
+  HeapWord* get_filler();
+  size_t get_filler_size();
+};
+
 // Manages the PLABs used during garbage collection. Interface for allocation from PLABs.
 // Needs to handle multiple contexts, extra alignment in any "survivor" area and some
 // statistics.
@@ -156,14 +165,20 @@ private:
   G1CollectedHeap* _g1h;
   G1Allocator* _allocator;
 
-  PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
+  // Region where the current old generation PLAB is allocated.
+  // Used to do BOT updates.
+  HeapRegion* _bot_plab_region;
+  // Current threshold at which the BOT should be updated.
+  HeapWord* _bot_plab_threshold;
+
+  G1PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
 
   // Number of words allocated directly (not counting PLAB allocation).
   size_t _direct_allocated[G1HeapRegionAttr::Num];
 
   void flush_and_retire_stats();
-  inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
-  inline PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
+  inline G1PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
+  inline G1PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
 
   // Returns the number of allocation buffers for the given dest.
   // There is only 1 buffer for Old while Young may have multiple buffers depending on
@@ -199,6 +214,12 @@ public:
                             uint node_index);
 
   void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
+
+  // Update the BOT for a PLAB allocation in old.
+  void update_bot_for_object(HeapWord* obj_start, size_t obj_size);
+  void update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size);
+  void update_bot_for_plab_waste(G1HeapRegionAttr dest, G1PLAB* plab);
+  void calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr);
 };
 
 // G1ArchiveAllocator is used to allocate memory in archive
