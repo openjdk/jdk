@@ -60,7 +60,7 @@ public class CheckManPageOptions {
 
     static final PrintStream out = System.err;
 
-    // FIXME: JDK-8274295
+    // FIXME: JDK-8274295, JDK-8266666
     List<String> MISSING_IN_MAN_PAGE = List.of(
             "--legal-notices",
             "--link-platform-properties",
@@ -92,7 +92,7 @@ public class CheckManPageOptions {
         toolDocletOnly.removeAll(manPageOptions);
         toolDocletOnly.removeAll(MISSING_IN_MAN_PAGE);
         if (!toolDocletOnly.isEmpty()) {
-            error(" The following options are defined by the tool or doclet, but not defined in the man page:\n"
+            error("The following options are defined by the tool or doclet, but not defined in the man page:\n"
                     + toSimpleList(toolDocletOnly));
         }
 
