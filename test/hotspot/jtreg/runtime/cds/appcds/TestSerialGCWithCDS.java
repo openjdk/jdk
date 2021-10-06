@@ -118,7 +118,7 @@ public class TestSerialGCWithCDS {
                     String exp1 = "Too small maximum heap";
                     String exp2 = "GC triggered before VM initialization completed";
                     if (!output.contains(exp1) && !output.contains(exp2)) {
-                        throw new RuntimeException("'" + exp1 + "' or '" + exp2 + "' missing from stdout/stderr \n");
+                        throw new RuntimeException("Either '" + exp1 + "' or '" + exp2 + "' must be in stdout/stderr \n");
                     }
                 }
                 n++;
