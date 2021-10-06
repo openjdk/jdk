@@ -119,7 +119,6 @@ public class MachCodeFramesInErrorFile {
             throw new RuntimeException("hs_err_pid file missing at " + f + ".\n");
         }
         String hsErr = Files.readString(Paths.get(hs_err_file));
-        System.out.println(hsErr);
         Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
         Set<String> expect = Stream.of(Crasher.class.getDeclaredMethods()).map(method -> method.getName()).collect(Collectors.toSet());
         Set<String> actual = new HashSet<>();
