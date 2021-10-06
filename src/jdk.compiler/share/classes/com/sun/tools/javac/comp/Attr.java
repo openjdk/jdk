@@ -5647,21 +5647,8 @@ public class Attr extends JCTree.Visitor {
         private static final Set<String> serialFieldNames =
             Set.of("serialVersionUID", "serialPersistentFields");
 
-        // todo: convert to flags
-        private static final Set<Modifier> ABSTRACT_STATIC_MODS = Set.of(Modifier.ABSTRACT, Modifier.STATIC);
-
         // Type of serialPersistentFields
         private final Type OSF_TYPE = new Type.ArrayType(syms.objectStreamFieldType, syms.arrayClass);
-
-        // Exception types used in serialization-related methods' throws clauses
-        private final Type IOE_TYPE = syms.ioExceptionType;
-        private final Type OSE_TYPE = syms.objectStreamExceptionType;
-        private final Type CNFE_TYPE = syms.classNotFoundExceptionType;
-        private final Type J_L_ERROR_TYPE = syms.errorType;
-        private final Type RUNTIME_EXCEPTION_TYPE = syms.runtimeExceptionType;
-
-        //             final TypeMirror SERIAL_ANNOTATION =
-        //                 Objects.requireNonNull(elementUtils.getTypeElement("java.io.Serial").asType());
 
         @Override
         public Void defaultAction(Element e, JCClassDecl p) {
@@ -5908,7 +5895,7 @@ public class Attr extends JCTree.Visitor {
             checkPrivateNonStaticMethod(tree, method);
             checkReturnType(tree, e, method, syms.voidType);
             checkOneArg(tree, e, method, syms.objectOutputStreamType);
-            checkExceptions(tree, e, method, IOE_TYPE);
+            checkExceptions(tree, e, method, syms.ioExceptionType);
             checkExternalizable(tree, e, method);
         }
 
@@ -5922,7 +5909,7 @@ public class Attr extends JCTree.Visitor {
             checkConcreteInstanceMethod(tree, e, method);
             checkReturnType(tree, e, method, syms.objectType);
             checkNoArgs(tree, e, method);
-            checkExceptions(tree, e, method, OSE_TYPE);
+            checkExceptions(tree, e, method, syms.objectStreamExceptionType);
         }
 
         private void checkReadObject(JCClassDecl tree, Element e, ExecutableElement executable) {
@@ -5937,7 +5924,7 @@ public class Attr extends JCTree.Visitor {
             checkPrivateNonStaticMethod(tree, method);
             checkReturnType(tree, e, method, syms.voidType);
             checkOneArg(tree, e, method, syms.objectInputStreamType);
-            checkExceptions(tree, e, method, IOE_TYPE, CNFE_TYPE);
+            checkExceptions(tree, e, method, syms.ioExceptionType, syms.classNotFoundExceptionType);
             checkExternalizable(tree, e, method);
         }
 
@@ -5947,7 +5934,7 @@ public class Attr extends JCTree.Visitor {
             checkPrivateNonStaticMethod(tree, method);
             checkReturnType(tree, e, method, syms.voidType);
             checkNoArgs(tree, e, method);
-            checkExceptions(tree, e, method, OSE_TYPE);
+            checkExceptions(tree, e, method, syms.objectStreamExceptionType);
             checkExternalizable(tree, e, method);
         }
 
@@ -5961,7 +5948,7 @@ public class Attr extends JCTree.Visitor {
             checkConcreteInstanceMethod(tree, e, method);
             checkReturnType(tree,e, method, syms.objectType);
             checkNoArgs(tree, e, method);
-            checkExceptions(tree, e, method, OSE_TYPE);
+            checkExceptions(tree, e, method, syms.objectStreamExceptionType);
         }
 
         void checkPrivateNonStaticMethod(JCClassDecl tree, MethodSymbol method) {
@@ -6281,26 +6268,30 @@ public class Attr extends JCTree.Visitor {
 
         private void checkExceptions(JCClassDecl tree,
                                      Element enclosing,
-                                     ExecutableElement method,
-                                     TypeMirror... declaredExceptions) {
-            for (TypeMirror thrownType: method.getThrownTypes()) {
-                // If not an Error and not a RuntimeException, check if a subtype of a blessed exception
-                if (types.isSubtype(/*fixme*/(Type)thrownType, RUNTIME_EXCEPTION_TYPE) ||
-                    types.isSubtype(/*fixme*/(Type)thrownType, J_L_ERROR_TYPE) ) {
+                                     MethodSymbol method,
+                                     Type... declaredExceptions) {
+            for (Type thrownType: method.getThrownTypes()) {
+                // For each exception in the throws clause of the
+                // method, if not an Error and not a RuntimeException,
+                // check if the exception is a subtype of a declared
+                // exception from the throws clause of the
+                // serialization method in question.
+                if (types.isSubtype(thrownType, syms.runtimeExceptionType) ||
+                    types.isSubtype(thrownType, syms.errorType) ) {
                     continue;
                 } else {
                     boolean declared = false;
-                    for (TypeMirror declaredException : declaredExceptions) {
-                        if (types.isSubtype(/*fixme*/(Type)thrownType, /*fixme*/(Type)declaredException)) {
+                    for (Type declaredException : declaredExceptions) {
+                        if (types.isSubtype(thrownType, declaredException)) {
                             declared = true;
                             continue;
                         }
                     }
                     if (!declared) {
-                        System.out.println("Serialization-related method " + method +
-                                           " in " + enclosing.getKind() + " " + enclosing.toString() +
-                                           " has unexpected throws clause including " + thrownType);
-
+                        log.warning(LintCategory.SERIAL,
+                                    TreeInfo.diagnosticPositionFor(method, tree),
+                                    Warnings.SerialMethodUnexpectedException(method.getSimpleName(),
+                                                                             thrownType));
                     }
                 }
             }
