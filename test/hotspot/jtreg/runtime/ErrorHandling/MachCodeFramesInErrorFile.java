@@ -36,8 +36,7 @@
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
@@ -65,38 +64,38 @@ public class MachCodeFramesInErrorFile {
         }
         static void method3(long address) {
             System.out.println("in method3");
-            method4(address);
-        }
-        static void method4(long address) {
-            System.out.println("in method4");
-            method5(address);
-        }
-        static void method5(long address) {
-            System.out.println("in method5");
-            method6(address);
-        }
-        static void method6(long address) {
-            System.out.println("in method6");
-            method7(address);
-        }
-        static void method7(long address) {
-            System.out.println("in method7");
-            method8(address);
-        }
-        static void method8(long address) {
-            System.out.println("in method8");
-            method9(address);
-        }
-        static void method9(long address) {
-            System.out.println("in method9");
             Unsafe.getUnsafe().getInt(address);
         }
     }
 
+    private static String extractNativeFrames(String hsErr) {
+        int start = hsErr.indexOf("Native frames: ");
+        if (start != -1) {
+            // "Native frames:" section is delimited by a blank line
+            int end = hsErr.indexOf(System.lineSeparator() + System.lineSeparator(), start);
+            if (end != -1) {
+                return hsErr.substring(start, end);
+            }
+        }
+        return null;
+    }
+
+    private static String extractMachCode(String hsErr) {
+        int start = hsErr.indexOf("[MachCode]");
+        if (start != -1) {
+            int end = hsErr.lastIndexOf("[/MachCode]");
+            if (end != -1) {
+                return hsErr.substring(start, end + "[/MachCode]".length());
+            }
+            return hsErr.substring(start);
+        }
+        return null;
+    }
+
     /**
-     * Runs Crasher and forces each method in Crasher to be compiled. The inner
-     * most method (i.e. method9) crashes the VM by reading from 0. The resulting
-     * hs-err log is expected to have a MachCode section for each method in Crasher.
+     * Runs Crasher and tries to force each method in Crasher to be compiled. The inner
+     * most method crashes the VM by reading from 0. The resulting
+     * hs-err log is expected to have at least 2 MachCode sections.
      */
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -120,13 +119,10 @@ public class MachCodeFramesInErrorFile {
         }
         String hsErr = Files.readString(Paths.get(hs_err_file));
         Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
-        Set<String> expect = Stream.of(Crasher.class.getDeclaredMethods()).map(method -> method.getName()).collect(Collectors.toSet());
-        Set<String> actual = new HashSet<>();
-        matcher.results().forEach(mr -> {
-            if (mr.group(3).equals(Crasher.class.getName())) {
-                actual.add(mr.group(1));
-            }
-        });
-        Asserts.assertEquals(expect, actual);
+        List<String> machCodeHeaders = matcher.results().map(mr -> String.format("'%s' '%s' in '%s'", mr.group(1), mr.group(2), mr.group(3))).collect(Collectors.toList());
+        String message = "Mach code headers: " + machCodeHeaders +
+                         "\n\nExtracted MachCode:\n" + extractMachCode(hsErr) +
+                         "\n\nExtracted native frames:\n" + extractNativeFrames(hsErr);
+        Asserts.assertTrue(machCodeHeaders.size() > 1, message);
     }
 }
