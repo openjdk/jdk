@@ -27,6 +27,7 @@
 // key: compiler.warn.serial.concrete.instance.method
 // key: compiler.warn.serial.method.one.arg
 // key: compiler.warn.serial.method.parameter.type
+// key: compiler.warn.serial.method.no.args
 
 // options: -Xlint:serial
 
@@ -61,8 +62,8 @@ abstract class SerialNonPrivateMethod implements Serializable {
     // Should be concrete instance method
     public abstract Object writeReplace() throws ObjectStreamException;
 
-    /*
-     * ANY-ACCESS-MODIFIER Object readResolve() throws ObjectStreamException
-     *
-     */
+    // Should have no arguments
+    /*package*/ Object readResolve(int foo) throws ObjectStreamException {
+        return null;
+    }
 }

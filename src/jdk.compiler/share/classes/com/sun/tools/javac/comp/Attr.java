@@ -6261,12 +6261,12 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private void checkNoArgs(JCClassDecl tree, Element enclosing, ExecutableElement method) {
-            String name = method.getSimpleName().toString();
+        private void checkNoArgs(JCClassDecl tree, Element enclosing, MethodSymbol method) {
             var parameters= method.getParameters();
             if (!parameters.isEmpty()) {
-                System.out.println("Unexpected parameters " + parameters + " on " + name +
-                                   " in " + enclosing.getKind() + " " + enclosing.toString());
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(parameters.get(0), tree),
+                            Warnings.SerialMethodNoArgs(method.getSimpleName()));
             }
         }
 

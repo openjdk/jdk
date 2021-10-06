@@ -25,13 +25,16 @@ class SerialMethodMods implements Serializable {
         stream.defaultReadObject();
     }
 
-    private void readObjectNoData() throws ObjectStreamException {}
+    // Should have no arguments
+    private void readObjectNoData(int retries) throws ObjectStreamException {}
 
-    public Object writeReplace() throws ObjectStreamException {
+    // Should have no arguments
+    public Object writeReplace(int arg0, int arg1) throws ObjectStreamException {
         return null;
     }
 
-    public Object readResolve() throws ObjectStreamException {
+    // Should have no arguments
+    public Object readResolve(double foo, float bar) throws ObjectStreamException {
         return null;
     }
 }
