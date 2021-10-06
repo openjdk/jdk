@@ -141,7 +141,7 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
         } else {
             List<InterfaceType> interfaces = interfaces();
             for (InterfaceType interfaceType : interfaces) {
-                InterfaceTypeImpl interfaze = (InterfaceTypeImpl) interfaceType;
+                InterfaceTypeImpl interfaze = (InterfaceTypeImpl)interfaceType;
                 if (interfaze.isAssignableTo(type)) {
                     return true;
                 }
@@ -158,7 +158,7 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
          * overwrite them in the hash table
          */
         for (InterfaceType interfaceType : interfaces()) {
-            InterfaceTypeImpl interfaze = (InterfaceTypeImpl) interfaceType;
+            InterfaceTypeImpl interfaze = (InterfaceTypeImpl)interfaceType;
             if (!seenInterfaces.contains(interfaze)) {
                 interfaze.addVisibleMethods(methodMap, seenInterfaces);
                 seenInterfaces.add(interfaze);
@@ -175,7 +175,7 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
         List<InterfaceType> immediate = interfaces();
         list.addAll(interfaces());
         for (InterfaceType interfaceType : immediate) {
-            InterfaceTypeImpl interfaze = (InterfaceTypeImpl) interfaceType;
+            InterfaceTypeImpl interfaze = (InterfaceTypeImpl)interfaceType;
             interfaze.addInterfaces(list);
         }
         ClassTypeImpl superclass = (ClassTypeImpl) superclass();
