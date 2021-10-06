@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

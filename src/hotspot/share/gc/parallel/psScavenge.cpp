@@ -54,6 +54,7 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"

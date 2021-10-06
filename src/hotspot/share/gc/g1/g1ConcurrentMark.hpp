@@ -34,6 +34,7 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/verifyOption.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/compilerWarnings.hpp"

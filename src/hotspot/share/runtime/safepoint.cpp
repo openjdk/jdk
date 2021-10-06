@@ -37,6 +37,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
