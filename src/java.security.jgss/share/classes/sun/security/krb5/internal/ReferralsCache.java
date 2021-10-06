@@ -28,6 +28,7 @@ package sun.security.krb5.internal;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -174,10 +175,11 @@ final class ReferralsCache {
         Date now = new Date();
         Map<String, ReferralCacheEntry> entries = referralsMap.get(k);
         if (entries != null) {
-            for (Entry<String, ReferralCacheEntry> mapEntry :
-                    entries.entrySet()) {
+            Iterator<Entry<String, ReferralCacheEntry>> it = entries.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, ReferralCacheEntry> mapEntry = it.next();
                 if (mapEntry.getValue().getCreds().getEndTime().before(now)) {
-                    entries.remove(mapEntry.getKey());
+                    it.remove();
                 }
             }
         }

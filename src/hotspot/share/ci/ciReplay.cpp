@@ -370,6 +370,9 @@ class CompileReplay : public StackObj {
     char* ref = parse_string();
     if (strcmp(ref, "bci") == 0) {
       Method* m = parse_method(CHECK_NULL);
+      if (m == NULL) {
+        return NULL;
+      }
 
       InstanceKlass* ik = m->method_holder();
       const constantPoolHandle cp(Thread::current(), ik->constants());
@@ -437,6 +440,9 @@ class CompileReplay : public StackObj {
       }
 
       Klass* k = parse_klass(CHECK_NULL);
+      if (k == NULL) {
+        return NULL;
+      }
       InstanceKlass* ik = InstanceKlass::cast(k);
       const constantPoolHandle cp(Thread::current(), ik->constants());
 

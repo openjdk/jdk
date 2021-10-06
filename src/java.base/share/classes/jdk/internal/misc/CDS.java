@@ -254,8 +254,9 @@ public class CDS {
     * called from jcmd VM.cds to dump static or dynamic shared archive
     * @param isStatic true for dump static archive or false for dynnamic archive.
     * @param fileName user input archive name, can be null.
+    * @return The archive name if successfully dumped.
     */
-    private static void dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
+    private static String dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
         String cwd = new File("").getAbsolutePath(); // current dir used for printing message.
         String currentPid = String.valueOf(ProcessHandle.current().pid());
         String archiveFileName =  fileName != null ? fileName :
@@ -333,6 +334,8 @@ public class CDS {
             throw new RuntimeException("Cannot rename temp file " + tempArchiveFileName + " to archive file" + archiveFileName);
         }
         // Everyting goes well, print out the file name.
-        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + cwd + File.separator + archiveFileName);
+        String archiveFilePath = new File(archiveFileName).getAbsolutePath();
+        System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
+        return archiveFilePath;
     }
 }

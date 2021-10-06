@@ -92,7 +92,7 @@ MetaspaceTestContext::~MetaspaceTestContext() {
 // Create an arena, feeding off this area.
 MetaspaceTestArena* MetaspaceTestContext::create_arena(Metaspace::MetaspaceType type) {
   const ArenaGrowthPolicy* growth_policy = ArenaGrowthPolicy::policy_for_space_type(type, false);
-  Mutex* lock = new Mutex(Monitor::leaf, "MetaspaceTestArea-lock", Monitor::_safepoint_check_never);
+  Mutex* lock = new Mutex(Monitor::nosafepoint, "MetaspaceTestArea_lock", Monitor::_safepoint_check_never);
   MetaspaceArena* arena = NULL;
   {
     MutexLocker ml(lock,  Mutex::_no_safepoint_check_flag);

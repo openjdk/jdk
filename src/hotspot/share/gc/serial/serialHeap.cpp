@@ -30,6 +30,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/universe.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/memoryManager.hpp"
 
 SerialHeap* SerialHeap::heap() {
@@ -111,4 +112,14 @@ void SerialHeap::safepoint_synchronize_end() {
   if (UseStringDeduplication) {
     SuspendibleThreadSet::desynchronize();
   }
+}
+
+HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
+  MutexLocker ml(Heap_lock);
+  return old_gen()->allocate(word_size, false /* is_tlab */);
+}
+
+void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  assert(old_gen()->used_region().contains(archive_space), "Archive space not contained in old gen");
+  old_gen()->complete_loaded_archive_space(archive_space);
 }

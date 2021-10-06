@@ -1752,8 +1752,6 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_reserved_regions());
 
-  _evac_failure_regions.initialize(max_reserved_regions());
-
   evac_failure_injector()->reset();
 
   G1InitLogger::print();
@@ -2754,6 +2752,7 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
     return;
   }
   Ticks start = Ticks::now();
+  _verifier->prepare_for_verify();
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
   if (VerifyRememberedSets) {
@@ -2772,10 +2771,6 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
     return;
   }
   Ticks start = Ticks::now();
-  // Inject evacuation failure tag into type if needed.
-  if (evacuation_failed()) {
-    type = (G1HeapVerifier::G1VerifyType)(type | G1HeapVerifier::G1VerifyYoungEvacFail);
-  }
   if (VerifyRememberedSets) {
     log_info(gc, verify)("[Verifying RemSets after GC]");
     VerifyRegionRemSetClosure v_cl;
@@ -2884,7 +2879,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
 
   // Perform the collection.
-  G1YoungCollector collector(gc_cause(), target_pause_time_ms, &_evac_failure_regions);
+  G1YoungCollector collector(gc_cause(), target_pause_time_ms);
   collector.collect();
 
   // It should now be safe to tell the concurrent mark thread to start
@@ -3391,8 +3386,8 @@ void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
   nm->oops_do(&reg_cl, true);
 }
 
-void G1CollectedHeap::update_used_after_gc() {
-  if (evacuation_failed()) {
+void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
+  if (evacuation_failed) {
     // Reset the G1EvacuationFailureALot counters and flags
     evac_failure_injector()->reset();
 
