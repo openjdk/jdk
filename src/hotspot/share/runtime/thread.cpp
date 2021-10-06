@@ -1638,19 +1638,18 @@ void JavaThread::check_and_handle_async_exceptions() {
       // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
       // suspend requests and object reallocation operations if any since we might be going to Java after this.
       SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
-      break;
+      return;
     }
     case _thread_in_Java: {
       ThreadInVMfromJava tiv(this);
       JavaThread* THREAD = this;
       Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation in compiled Java code");
-      break;
+      return;
     }
     default:
       ShouldNotReachHere();
     }
   }
-  assert(has_pending_exception(), "must have handled the async condition if no exception");
 }
 
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
@@ -1718,8 +1717,7 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
       }
 
       // Set async. pending exception in thread.
-      _pending_async_exception = java_throwable;
-      set_suspend_flag(_has_async_exception);
+      set_pending_async_exception(java_throwable);
 
       if (log_is_enabled(Info, exceptions)) {
          ResourceMark rm;

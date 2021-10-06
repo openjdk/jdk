@@ -128,6 +128,11 @@ inline bool JavaThread::clear_async_exception_condition() {
   return ret;
 }
 
+inline void JavaThread::set_pending_async_exception(oop e) {
+  _pending_async_exception = e;
+  set_suspend_flag(_has_async_exception);
+}
+
 inline void JavaThread::set_pending_unsafe_access_error() {
   set_suspend_flag(_has_async_exception);
   DEBUG_ONLY(_is_unsafe_access_error = true);

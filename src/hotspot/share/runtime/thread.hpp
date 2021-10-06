@@ -812,6 +812,7 @@ class JavaThread: public Thread {
   bool has_async_exception_condition() {
     return (_suspend_flags & _has_async_exception) != 0;
   }
+  inline void set_pending_async_exception(oop e);
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
   void send_thread_stop(oop throwable);
