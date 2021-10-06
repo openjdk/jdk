@@ -24,13 +24,15 @@
 // key: compiler.warn.serial.method.not.private
 // key: compiler.warn.serial.method.static
 // key: compiler.warn.serial.method.unexpected.return.type
+// key: compiler.warn.serial.concrete.instance.method
+// key: compiler.warn.serial.method.one.arg
 
 // options: -Xlint:serial
 
 import java.io.*;
 
 
-class SerialNonPrivateMethod implements Serializable {
+abstract class SerialNonPrivateMethod implements Serializable {
     private static final long serialVersionUID = 42;
 
     // Should be private
@@ -38,8 +40,8 @@ class SerialNonPrivateMethod implements Serializable {
         stream.defaultWriteObject();
     }
 
-    // Should be private non-static
-   private static void readObject(ObjectInputStream stream)
+    // Should be private non-static and have one argument
+    private static void readObject(ObjectInputStream stream, int retries)
         throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
     }
@@ -49,9 +51,10 @@ class SerialNonPrivateMethod implements Serializable {
         return 42;
     }
 
+    // Should be concrete instance method
+    public abstract Object writeReplace() throws ObjectStreamException;
+
     /*
-     * ANY-ACCESS-MODIFIER Object writeReplace() throws ObjectStreamException
-     *
      * ANY-ACCESS-MODIFIER Object readResolve() throws ObjectStreamException
      *
      */

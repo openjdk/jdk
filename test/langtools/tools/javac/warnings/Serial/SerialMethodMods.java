@@ -7,7 +7,7 @@
 
 import java.io.*;
 
-class SerialMethodMods implements Serializable {
+abstract class SerialMethodMods implements Serializable {
     private static final long serialVersionUID = 42;
 
     // Should be private
@@ -22,12 +22,14 @@ class SerialMethodMods implements Serializable {
     }
 
     // Make static once additional warning in place
-    // private void readObjectNoData() throws ObjectStreamException
+    private static void readObjectNoData() throws ObjectStreamException {}
 
-    /*
-     * ANY-ACCESS-MODIFIER Object writeReplace() throws ObjectStreamException
-     *
-     * ANY-ACCESS-MODIFIER Object readResolve() throws ObjectStreamException
-     *
-     */
+
+    // Should be concrete instance method
+    public abstract Object writeReplace() throws ObjectStreamException;
+
+    // Should be concrete instance method
+    public static Object readResolve() throws ObjectStreamException {
+        return null;
+    }
 }

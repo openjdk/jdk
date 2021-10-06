@@ -1,3 +1,6 @@
 SerialMethodMods.java:14:10: compiler.warn.serial.method.not.private: writeObject(java.io.ObjectOutputStream)
 SerialMethodMods.java:19:17: compiler.warn.serial.method.not.private: readObject(java.io.ObjectInputStream)
-2 warnings
+SerialMethodMods.java:25:25: compiler.warn.serial.method.static: readObjectNoData()
+SerialMethodMods.java:29:28: compiler.warn.serial.concrete.instance.method: writeReplace()
+SerialMethodMods.java:32:26: compiler.warn.serial.concrete.instance.method: readResolve()
+5 warnings
