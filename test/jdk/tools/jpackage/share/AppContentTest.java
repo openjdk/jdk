@@ -94,8 +94,7 @@ public class AppContentTest {
                     List<String> paths = Arrays.asList(arg.split(","));
                     for (String p : paths) {
                         Path name = Path.of(p).getFileName();
-                        TKit.assertTrue(Files.exists(contentDir.resolve(name)),
-                            "We should find " + name + " in " + contentDir);
+                        TKit.assertPathExists(contentDir.resolve(name), true);
                     }
                 }
 
