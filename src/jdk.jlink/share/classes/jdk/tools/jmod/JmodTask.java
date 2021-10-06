@@ -122,7 +122,7 @@ public class JmodTask {
     private Options options;
     private final static Charset nativeCharset;
     static {
-        Charset cs = Charset.defaultCharset();
+        Charset cs;
         Console cons;
         if ((cons = System.console()) != null) {
             cs = cons.charset();
@@ -130,6 +130,7 @@ public class JmodTask {
             try {
                 cs = Charset.forName(System.getProperty("native.encoding"));
             } catch (Exception e) {
+                cs = Charset.defaultCharset();
             }
         }
         nativeCharset = cs;

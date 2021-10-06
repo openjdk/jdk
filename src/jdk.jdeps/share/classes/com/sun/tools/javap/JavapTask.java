@@ -400,7 +400,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     private final static Charset nativeCharset;
     static {
-        Charset cs = Charset.defaultCharset();
+        Charset cs;
         Console cons;
         if ((cons = System.console()) != null) {
             cs = cons.charset();
@@ -408,6 +408,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             try {
                 cs = Charset.forName(System.getProperty("native.encoding"));
             } catch (Exception e) {
+                cs = Charset.defaultCharset();
             }
         }
         nativeCharset = cs;
@@ -417,7 +418,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         if (s == null) {
             return new PrintWriter(System.err, true, nativeCharset);
         } else {
-            if (s.equals((OutputStream)System.err) || s.equals((OutputStream)System.out)) {
+            if (s == System.err || s == System.out) {
                 return new PrintWriter(s, true, nativeCharset);
             } else {
                 return new PrintWriter(s, true);

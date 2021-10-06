@@ -41,15 +41,9 @@ public class Main {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.MainResources");
 
-    /**
-     * main(String... args)
-     * This is the entry point for the jpackage tool.
-     *
-     * @param args command line arguments
-     */
     private final static Charset nativeCharset;
     static {
-        Charset cs = Charset.defaultCharset();
+        Charset cs;
         Console cons;
         if ((cons = System.console()) != null) {
             cs = cons.charset();
@@ -57,11 +51,18 @@ public class Main {
             try {
                 cs = Charset.forName(System.getProperty("native.encoding"));
             } catch (Exception e) {
+                cs = Charset.defaultCharset();
             }
         }
         nativeCharset = cs;
     }
 
+    /**
+     * main(String... args)
+     * This is the entry point for the jpackage tool.
+     *
+     * @param args command line arguments
+     */
     public static void main(String... args) throws Exception {
 
         PrintWriter out = new PrintWriter(System.out, true, nativeCharset);

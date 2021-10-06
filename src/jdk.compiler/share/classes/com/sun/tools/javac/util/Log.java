@@ -230,6 +230,25 @@ public class Log extends AbstractLog {
      */
     private DiagnosticHandler diagnosticHandler;
 
+    /**
+     * Set charset for System.out and System.err
+     */
+    private final static Charset nativeCharset;
+    static {
+        Charset cs;
+        Console cons;
+        if ((cons = System.console()) != null) {
+            cs = cons.charset();
+        } else {
+            try {
+                cs = Charset.forName(System.getProperty("native.encoding"));
+            } catch (Exception e) {
+                cs = Charset.defaultCharset();
+            }
+        }
+        nativeCharset = cs;
+    }
+
     /** Get the Log instance for this context. */
     public static Log instance(Context context) {
         Log instance = context.get(logKey);
@@ -262,21 +281,6 @@ public class Log extends AbstractLog {
      * @param context the context in which to find writers to use
      * @return a map of writers
      */
-    private final static Charset nativeCharset;
-    static {
-        Charset cs = Charset.defaultCharset();
-        Console cons;
-        if ((cons = System.console()) != null) {
-            cs = cons.charset();
-        } else {
-            try {
-                cs = Charset.forName(System.getProperty("native.encoding"));
-            } catch (Exception e) {
-            }
-        }
-        nativeCharset = cs;
-    }
-
     private static Map<WriterKind, PrintWriter> initWriters(Context context) {
         PrintWriter out = context.get(outKey);
         PrintWriter err = context.get(errKey);
