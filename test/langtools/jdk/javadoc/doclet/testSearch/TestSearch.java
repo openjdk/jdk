@@ -421,8 +421,8 @@ public class TestSearch extends JavadocTester {
                 "<div class=\"nav-list-search\">",
                 """
                     <label for="search-input">SEARCH:</label>
-                    <input type="text" id="search-input" value="search" disabled="disabled">
-                    <input type="reset" id="reset-button" value="reset" disabled="disabled">
+                    <input type="text" id="search-input" disabled placeholder="Search">
+                    <input type="reset" id="reset-button" disabled value="reset">
                     """);
         checkOutput(fileName, true,
                 "<div class=\"flex-box\">");
@@ -710,12 +710,6 @@ public class TestSearch extends JavadocTester {
 
         checkOutput("search.js", true,
                 "function searchIndexWithMatcher(indexArray, matcher, category, nameFunc) {",
-                """
-                    search.on('click keydown paste', function() {
-                            if ($(this).val() === watermark) {
-                                $(this).val('').removeClass('watermark');
-                            }
-                        });""",
                 """
                     function getURLPrefix(ui) {
                         var urlPrefix="";

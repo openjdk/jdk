@@ -191,8 +191,9 @@ public class TestStylesheet extends JavadocTester {
                         font-size:0;
                     }""",
                 """
-                    .watermark {
-                        color:#545454;
+                    ::placeholder {
+                        color:#909090;
+                        opacity: 1;
                     }""");
 
         checkOutput("pkg/A.html", true,
