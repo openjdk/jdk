@@ -222,6 +222,9 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
 void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
                              size_t header_size, size_t base_archive_name_size,
                              size_t base_archive_path_offset) {
+  // 1. We require _generic_header._magic to be at the beginning of the file
+  // 2. FileMapHeader also assumes that _generic_header is at the beginning of the file
+  assert(offset_of(FileMapHeader, _generic_header) == 0, "must be");
   set_header_size((unsigned int)header_size);
   set_base_archive_path_offset((unsigned int)base_archive_path_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
