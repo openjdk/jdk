@@ -119,7 +119,7 @@ public:
 // 4) T::do_work()  // potentially in parallel with any other registered G1AbstractSubTask
 // 5) ~T()
 //
-class G1BatchedGangTask : public AbstractGangTask {
+class G1BatchedGangTask : public WorkerTask {
   volatile int _num_serial_tasks_done;
   G1GCPhaseTimes* _phase_times;
 

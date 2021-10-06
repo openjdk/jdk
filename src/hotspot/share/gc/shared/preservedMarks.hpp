@@ -30,7 +30,7 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class AbstractGangTask;
+class WorkerTask;
 class PreservedMarksSet;
 class WorkGang;
 
@@ -114,7 +114,7 @@ public:
   // is NULL, perform the work serially in the current thread.
   void restore(WorkGang* workers);
 
-  AbstractGangTask* create_task();
+  WorkerTask* create_task();
 
   // Reclaim stack array.
   void reclaim();

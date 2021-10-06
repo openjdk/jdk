@@ -43,7 +43,7 @@
 // This helps lowering the latency when starting and stopping the worker threads.
 class GangTaskDispatcher : public CHeapObj<mtGC> {
   // The task currently being dispatched to the WorkerThreads.
-  AbstractGangTask* _task;
+  WorkerTask* _task;
 
   volatile uint _started;
   volatile uint _not_finished;
@@ -71,7 +71,7 @@ public:
 
   // Distributes the task out to num_workers workers.
   // Returns when the task has been completed by all workers.
-  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) {
+  void coordinator_execute_on_workers(WorkerTask* task, uint num_workers) {
     // No workers are allowed to read the state variables until they have been signaled.
     _task         = task;
     _not_finished = num_workers;
@@ -202,11 +202,11 @@ void WorkGang::threads_do(ThreadClosure* tc) const {
   }
 }
 
-void WorkGang::run_task(AbstractGangTask* task) {
+void WorkGang::run_task(WorkerTask* task) {
   run_task(task, active_workers());
 }
 
-void WorkGang::run_task(AbstractGangTask* task, uint num_workers) {
+void WorkGang::run_task(WorkerTask* task, uint num_workers) {
   guarantee(num_workers <= total_workers(),
             "Trying to execute task %s with %u workers which is more than the amount of total workers %u.",
             task->name(), num_workers, total_workers());

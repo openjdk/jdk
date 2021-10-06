@@ -44,18 +44,18 @@ class G1MapperWorkers : AllStatic {
 
 public:
   static const uint MaxWorkers = 4;
-  static void run_task(AbstractGangTask* task) {
+  static void run_task(WorkerTask* task) {
     work_gang()->run_task(task);
   }
 };
 WorkGang* G1MapperWorkers::_work_gang = NULL;
 
-class G1TestCommitUncommit : public AbstractGangTask {
+class G1TestCommitUncommit : public WorkerTask {
   G1RegionToSpaceMapper* _mapper;
   uint _claim_id;
 public:
   G1TestCommitUncommit(G1RegionToSpaceMapper* mapper) :
-      AbstractGangTask("Stress mapper"),
+      WorkerTask("Stress mapper"),
       _mapper(mapper),
       _claim_id(0) { }
 

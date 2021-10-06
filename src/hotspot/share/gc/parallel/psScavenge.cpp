@@ -278,7 +278,7 @@ public:
   }
 };
 
-class ScavengeRootsTask : public AbstractGangTask {
+class ScavengeRootsTask : public WorkerTask {
   StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_strong_par_state;
   SequentialSubTasksDone _subtasks;
@@ -293,7 +293,7 @@ public:
                     HeapWord* gen_top,
                     uint active_workers,
                     bool is_empty) :
-      AbstractGangTask("ScavengeRootsTask"),
+      WorkerTask("ScavengeRootsTask"),
       _strong_roots_scope(active_workers),
       _subtasks(ParallelRootType::sentinel),
       _old_gen(old_gen),

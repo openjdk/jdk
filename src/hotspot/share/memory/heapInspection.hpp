@@ -226,7 +226,7 @@ class HeapInspection : public StackObj {
 // Parallel heap inspection task. Parallel inspection can fail due to
 // a native OOM when allocating memory for TL-KlassInfoTable.
 // _success will be set false on an OOM, and serial inspection tried.
-class ParHeapInspectTask : public AbstractGangTask {
+class ParHeapInspectTask : public WorkerTask {
  private:
   ParallelObjectIterator* _poi;
   KlassInfoTable* _shared_cit;
@@ -239,7 +239,7 @@ class ParHeapInspectTask : public AbstractGangTask {
   ParHeapInspectTask(ParallelObjectIterator* poi,
                      KlassInfoTable* shared_cit,
                      BoolObjectClosure* filter) :
-      AbstractGangTask("Iterating heap"),
+      WorkerTask("Iterating heap"),
       _poi(poi),
       _shared_cit(shared_cit),
       _filter(filter),

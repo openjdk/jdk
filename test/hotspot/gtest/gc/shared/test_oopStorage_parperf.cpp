@@ -99,7 +99,7 @@ OopStorageParIterPerf::~OopStorageParIterPerf() {
 
 class OopStorageParIterPerf::VM_ParStateTime : public VM_GTestExecuteAtSafepoint {
 public:
-  VM_ParStateTime(WorkGang* workers, AbstractGangTask* task, uint nthreads) :
+  VM_ParStateTime(WorkGang* workers, WorkerTask* task, uint nthreads) :
     _workers(workers), _task(task), _nthreads(nthreads)
   {}
 
@@ -109,11 +109,11 @@ public:
 
 private:
   WorkGang* _workers;
-  AbstractGangTask* _task;
+  WorkerTask* _task;
   uint _nthreads;
 };
 
-class OopStorageParIterPerf::Task : public AbstractGangTask {
+class OopStorageParIterPerf::Task : public WorkerTask {
   typedef OopStorage::ParState<false, false> StateType;
 
   Tickspan* _worker_times;
@@ -122,7 +122,7 @@ class OopStorageParIterPerf::Task : public AbstractGangTask {
 
 public:
   Task(OopStorage* storage, OopClosure* closure, uint nthreads) :
-    AbstractGangTask("OopStorageParIterPerf::Task"),
+    WorkerTask("OopStorageParIterPerf::Task"),
     _worker_times(NULL),
     _state(storage, nthreads),
     _closure(closure)

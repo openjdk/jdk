@@ -36,7 +36,7 @@ class G1RedirtyCardsQueueSet;
 
 // Task to fixup self-forwarding pointers
 // installed as a result of an evacuation failure.
-class G1ParRemoveSelfForwardPtrsTask: public AbstractGangTask {
+class G1ParRemoveSelfForwardPtrsTask: public WorkerTask {
 protected:
   G1CollectedHeap* _g1h;
   G1RedirtyCardsQueueSet* _rdcqs;

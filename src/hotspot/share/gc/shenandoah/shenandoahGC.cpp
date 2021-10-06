@@ -51,13 +51,13 @@ const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
    }
 }
 
-class ShenandoahUpdateRootsTask : public AbstractGangTask {
+class ShenandoahUpdateRootsTask : public WorkerTask {
 private:
   ShenandoahRootUpdater*  _root_updater;
   bool                    _check_alive;
 public:
   ShenandoahUpdateRootsTask(ShenandoahRootUpdater* root_updater, bool check_alive) :
-    AbstractGangTask("Shenandoah Update Roots"),
+    WorkerTask("Shenandoah Update Roots"),
     _root_updater(root_updater),
     _check_alive(check_alive){
   }

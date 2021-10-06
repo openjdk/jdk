@@ -1853,7 +1853,7 @@ class DumperController : public CHeapObj<mtInternal> {
 };
 
 // The VM operation that performs the heap dump
-class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
+class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
  private:
   static VM_HeapDumper*   _global_dumper;
   static DumpWriter*      _global_writer;
@@ -1973,7 +1973,7 @@ class VM_HeapDumper : public VM_GC_Operation, public AbstractGangTask {
                     GCCause::_heap_dump /* GC Cause */,
                     0 /* total full collections, dummy, ignored */,
                     gc_before_heap_dump),
-    AbstractGangTask("dump heap") {
+    WorkerTask("dump heap") {
     _local_writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
     _klass_map = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);

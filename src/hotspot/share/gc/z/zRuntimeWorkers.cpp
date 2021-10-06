@@ -30,7 +30,7 @@
 #include "gc/z/zThread.hpp"
 #include "runtime/java.hpp"
 
-class ZRuntimeWorkersInitializeTask : public AbstractGangTask {
+class ZRuntimeWorkersInitializeTask : public WorkerTask {
 private:
   const uint     _nworkers;
   uint           _started;
@@ -38,7 +38,7 @@ private:
 
 public:
   ZRuntimeWorkersInitializeTask(uint nworkers) :
-      AbstractGangTask("ZRuntimeWorkersInitializeTask"),
+      WorkerTask("ZRuntimeWorkersInitializeTask"),
       _nworkers(nworkers),
       _started(0),
       _lock() {}

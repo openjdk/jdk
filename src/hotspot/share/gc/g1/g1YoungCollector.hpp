@@ -30,7 +30,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskqueue.hpp"
 
-class AbstractGangTask;
+class WorkerTask;
 class G1Allocator;
 class G1BatchedGangTask;
 class G1CardSetMemoryStats;
@@ -89,9 +89,9 @@ class G1YoungCollector {
   // Evacuation failure tracking.
   G1EvacFailureRegions _evac_failure_regions;
 
-  // Runs the given AbstractGangTask with the current active workers,
+  // Runs the given WorkerTask with the current active workers,
   // returning the total time taken.
-  Tickspan run_task_timed(AbstractGangTask* task);
+  Tickspan run_task_timed(WorkerTask* task);
 
   void wait_for_root_region_scanning();
 

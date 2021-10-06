@@ -588,7 +588,7 @@ public:
  * of RefProcTask that will handle reference processing in a generic way for Serial,
  * Parallel and G1. This proxy will add the relevant closures, task terminators etc.
  */
-class RefProcProxyTask : public AbstractGangTask {
+class RefProcProxyTask : public WorkerTask {
 protected:
   const uint _max_workers;
   RefProcTask* _rp_task;
@@ -597,7 +597,7 @@ protected:
   bool _marks_oops_alive;
 
 public:
-  RefProcProxyTask(const char* name, uint max_workers) : AbstractGangTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
+  RefProcProxyTask(const char* name, uint max_workers) : WorkerTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
 
   void prepare_run_task(RefProcTask& rp_task, uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
     _rp_task = &rp_task;

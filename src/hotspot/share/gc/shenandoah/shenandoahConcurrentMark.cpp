@@ -42,14 +42,14 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 
-class ShenandoahConcurrentMarkingTask : public AbstractGangTask {
+class ShenandoahConcurrentMarkingTask : public WorkerTask {
 private:
   ShenandoahConcurrentMark* const _cm;
   TaskTerminator* const           _terminator;
 
 public:
   ShenandoahConcurrentMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator) :
-    AbstractGangTask("Shenandoah Concurrent Mark"), _cm(cm), _terminator(terminator) {
+    WorkerTask("Shenandoah Concurrent Mark"), _cm(cm), _terminator(terminator) {
   }
 
   void work(uint worker_id) {
@@ -93,7 +93,7 @@ public:
   }
 };
 
-class ShenandoahFinalMarkingTask : public AbstractGangTask {
+class ShenandoahFinalMarkingTask : public WorkerTask {
 private:
   ShenandoahConcurrentMark* _cm;
   TaskTerminator*           _terminator;
@@ -101,7 +101,7 @@ private:
 
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
-    AbstractGangTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
+    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
   }
 
   void work(uint worker_id) {
@@ -137,7 +137,7 @@ ShenandoahConcurrentMark::ShenandoahConcurrentMark() :
   ShenandoahMark() {}
 
 // Mark concurrent roots during concurrent phases
-class ShenandoahMarkConcurrentRootsTask : public AbstractGangTask {
+class ShenandoahMarkConcurrentRootsTask : public WorkerTask {
 private:
   SuspendibleThreadSetJoiner          _sts_joiner;
   ShenandoahConcurrentRootScanner     _root_scanner;
@@ -156,7 +156,7 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
                                                                      ShenandoahReferenceProcessor* rp,
                                                                      ShenandoahPhaseTimings::Phase phase,
                                                                      uint nworkers) :
-  AbstractGangTask("Shenandoah Concurrent Mark Roots"),
+  WorkerTask("Shenandoah Concurrent Mark Roots"),
   _root_scanner(nworkers, phase),
   _queue_set(qs),
   _rp(rp) {

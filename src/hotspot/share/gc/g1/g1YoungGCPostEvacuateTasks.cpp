@@ -306,7 +306,7 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
   PreservedMarksSet* _preserved_marks;
-  AbstractGangTask* _task;
+  WorkerTask* _task;
 
 public:
   RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :

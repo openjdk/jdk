@@ -56,7 +56,7 @@ void G1BatchedGangTask::add_parallel_task(G1AbstractSubTask* task) {
 }
 
 G1BatchedGangTask::G1BatchedGangTask(const char* name, G1GCPhaseTimes* phase_times) :
-  AbstractGangTask(name),
+  WorkerTask(name),
   _num_serial_tasks_done(0),
   _phase_times(phase_times),
   _serial_tasks(),

@@ -580,7 +580,7 @@ G1ConcurrentMark::~G1ConcurrentMark() {
   ShouldNotReachHere();
 }
 
-class G1ClearBitMapTask : public AbstractGangTask {
+class G1ClearBitMapTask : public WorkerTask {
 public:
   static size_t chunk_size() { return M; }
 
@@ -674,7 +674,7 @@ private:
 
 public:
   G1ClearBitMapTask(G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
-    AbstractGangTask("G1 Clear Bitmap"),
+    WorkerTask("G1 Clear Bitmap"),
     _cl(cm, suspendible),
     _hr_claimer(n_workers),
     _suspendible(suspendible)
@@ -889,7 +889,7 @@ void G1ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
   // at this point everything should be re-initialized and ready to go
 }
 
-class G1CMConcurrentMarkingTask : public AbstractGangTask {
+class G1CMConcurrentMarkingTask : public WorkerTask {
   G1ConcurrentMark*     _cm;
 
 public:
@@ -923,7 +923,7 @@ public:
   }
 
   G1CMConcurrentMarkingTask(G1ConcurrentMark* cm) :
-      AbstractGangTask("Concurrent Mark"), _cm(cm) { }
+      WorkerTask("Concurrent Mark"), _cm(cm) { }
 
   ~G1CMConcurrentMarkingTask() { }
 };
@@ -971,11 +971,11 @@ void G1ConcurrentMark::scan_root_region(const MemRegion* region, uint worker_id)
   }
 }
 
-class G1CMRootRegionScanTask : public AbstractGangTask {
+class G1CMRootRegionScanTask : public WorkerTask {
   G1ConcurrentMark* _cm;
 public:
   G1CMRootRegionScanTask(G1ConcurrentMark* cm) :
-    AbstractGangTask("G1 Root Region Scan"), _cm(cm) { }
+    WorkerTask("G1 Root Region Scan"), _cm(cm) { }
 
   void work(uint worker_id) {
     G1CMRootMemRegions* root_regions = _cm->root_regions();
@@ -1075,7 +1075,7 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type, Ve
   verifier->check_bitmaps(caller);
 }
 
-class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
+class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegionClaimer _hrclaimer;
@@ -1176,7 +1176,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
 public:
   G1UpdateRemSetTrackingBeforeRebuildTask(G1CollectedHeap* g1h, G1ConcurrentMark* cm, uint num_workers) :
-    AbstractGangTask("G1 Update RemSet Tracking Before Rebuild"),
+    WorkerTask("G1 Update RemSet Tracking Before Rebuild"),
     _g1h(g1h), _cm(cm), _hrclaimer(num_workers), _total_selected_for_rebuild(0), _cl("Post-Marking") { }
 
   virtual void work(uint worker_id) {
@@ -1307,7 +1307,7 @@ void G1ConcurrentMark::remark() {
   policy->record_concurrent_mark_remark_end();
 }
 
-class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
+class G1ReclaimEmptyRegionsTask : public WorkerTask {
   // Per-region work during the Cleanup pause.
   class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
@@ -1362,7 +1362,7 @@ class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
 
 public:
   G1ReclaimEmptyRegionsTask(G1CollectedHeap* g1h, FreeRegionList* cleanup_list, uint n_workers) :
-    AbstractGangTask("G1 Cleanup"),
+    WorkerTask("G1 Cleanup"),
     _g1h(g1h),
     _cleanup_list(cleanup_list),
     _hrclaimer(n_workers) {
@@ -1802,7 +1802,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
   }
 };
 
-class G1CMRemarkTask : public AbstractGangTask {
+class G1CMRemarkTask : public WorkerTask {
   G1ConcurrentMark* _cm;
 public:
   void work(uint worker_id) {
@@ -1826,7 +1826,7 @@ public:
   }
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
-    AbstractGangTask("Par Remark"), _cm(cm) {
+    WorkerTask("Par Remark"), _cm(cm) {
     _cm->terminator()->reset_for_reuse(active_workers);
   }
 };

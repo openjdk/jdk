@@ -26,7 +26,7 @@
 #include "gc/z/zThread.hpp"
 
 ZTask::GangTask::GangTask(ZTask* ztask, const char* name) :
-    AbstractGangTask(name),
+    WorkerTask(name),
     _ztask(ztask) {}
 
 void ZTask::GangTask::work(uint worker_id) {
@@ -42,6 +42,6 @@ const char* ZTask::name() const {
   return _gang_task.name();
 }
 
-AbstractGangTask* ZTask::gang_task() {
+WorkerTask* ZTask::gang_task() {
   return &_gang_task;
 }

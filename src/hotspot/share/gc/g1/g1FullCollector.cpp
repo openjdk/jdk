@@ -332,7 +332,7 @@ void G1FullCollector::restore_marks() {
   _preserved_marks_set.reclaim();
 }
 
-void G1FullCollector::run_task(AbstractGangTask* task) {
+void G1FullCollector::run_task(WorkerTask* task) {
   _heap->workers()->run_task(task, _num_workers);
 }
 

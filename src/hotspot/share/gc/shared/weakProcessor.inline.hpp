@@ -96,7 +96,7 @@ void WeakProcessor::Task::work(uint worker_id,
   }
 }
 
-class WeakProcessor::GangTask : public AbstractGangTask {
+class WeakProcessor::GangTask : public WorkerTask {
   Task _task;
   BoolObjectClosure* _is_alive;
   OopClosure* _keep_alive;
@@ -116,7 +116,7 @@ public:
            KeepAlive* keep_alive,
            WeakProcessorTimes* times,
            uint nworkers) :
-    AbstractGangTask(name),
+    WorkerTask(name),
     _task(times, nworkers),
     _is_alive(is_alive),
     _keep_alive(keep_alive),

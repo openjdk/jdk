@@ -31,7 +31,7 @@
 #include "gc/z/zWorkers.hpp"
 #include "runtime/java.hpp"
 
-class ZWorkersInitializeTask : public AbstractGangTask {
+class ZWorkersInitializeTask : public WorkerTask {
 private:
   const uint     _nworkers;
   uint           _started;
@@ -39,7 +39,7 @@ private:
 
 public:
   ZWorkersInitializeTask(uint nworkers) :
-      AbstractGangTask("ZWorkersInitializeTask"),
+      WorkerTask("ZWorkersInitializeTask"),
       _nworkers(nworkers),
       _started(0),
       _lock() {}

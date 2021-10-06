@@ -376,7 +376,7 @@ void G1CardSetTest::cardset_basic_test() {
   }
 }
 
-class G1CardSetMtTestTask : public AbstractGangTask {
+class G1CardSetMtTestTask : public WorkerTask {
   G1CardSet* _card_set;
 
   size_t _added;
@@ -384,7 +384,7 @@ class G1CardSetMtTestTask : public AbstractGangTask {
 
 public:
   G1CardSetMtTestTask(G1CardSet* card_set) :
-    AbstractGangTask(""),
+    WorkerTask(""),
     _card_set(card_set),
     _added(0),
     _found(0) { }

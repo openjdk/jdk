@@ -270,7 +270,7 @@ public:
 
 G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs,
                                                                G1EvacFailureRegions* evac_failure_regions) :
-  AbstractGangTask("G1 Remove Self-forwarding Pointers"),
+  WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _rdcqs(rdcqs),
   _hrclaimer(_g1h->workers()->active_workers()),

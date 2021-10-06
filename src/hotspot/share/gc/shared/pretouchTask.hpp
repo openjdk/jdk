@@ -27,7 +27,7 @@
 
 #include "gc/shared/workgroup.hpp"
 
-class PretouchTask : public AbstractGangTask {
+class PretouchTask : public WorkerTask {
   char* volatile _cur_addr;
   char* const _end_addr;
   size_t _page_size;

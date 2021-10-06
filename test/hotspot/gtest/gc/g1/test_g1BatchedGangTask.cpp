@@ -42,7 +42,7 @@ class G1BatchedGangTaskWorkers : AllStatic {
 
 public:
   static const uint MaxWorkers = 4;
-  static void run_task(AbstractGangTask* task) {
+  static void run_task(WorkerTask* task) {
     work_gang()->run_task(task);
   }
 };

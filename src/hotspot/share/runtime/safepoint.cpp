@@ -516,7 +516,7 @@ public:
   }
 };
 
-class ParallelSPCleanupTask : public AbstractGangTask {
+class ParallelSPCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
   uint _num_workers;
@@ -540,7 +540,7 @@ private:
 
 public:
   ParallelSPCleanupTask(uint num_workers) :
-    AbstractGangTask("Parallel Safepoint Cleanup"),
+    WorkerTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
     _num_workers(num_workers),
     _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&

@@ -1102,7 +1102,7 @@ public:
   }
 };
 
-class G1MergeHeapRootsTask : public AbstractGangTask {
+class G1MergeHeapRootsTask : public WorkerTask {
 
   class G1MergeCardSetStats {
     size_t _merged[G1GCPhaseTimes::MergeRSContainersSentinel];
@@ -1371,7 +1371,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
 
 public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
-    AbstractGangTask("G1 Merge Heap Roots"),
+    WorkerTask("G1 Merge Heap Roots"),
     _hr_claimer(num_workers),
     _scan_state(scan_state),
     _dirty_card_buffers(),
@@ -1738,7 +1738,7 @@ void G1RemSet::print_summary_info() {
   }
 }
 
-class G1RebuildRemSetTask: public AbstractGangTask {
+class G1RebuildRemSetTask: public WorkerTask {
   // Aggregate the counting data that was constructed concurrently
   // with marking.
   class G1RebuildRemSetHeapRegionClosure : public HeapRegionClosure {
@@ -1974,7 +1974,7 @@ public:
   G1RebuildRemSetTask(G1ConcurrentMark* cm,
                       uint n_workers,
                       uint worker_id_offset) :
-      AbstractGangTask("G1 Rebuild Remembered Set"),
+      WorkerTask("G1 Rebuild Remembered Set"),
       _hr_claimer(n_workers),
       _cm(cm),
       _worker_id_offset(worker_id_offset) {

@@ -29,7 +29,7 @@
 
 class ZTask : public StackObj {
 private:
-  class GangTask : public AbstractGangTask {
+  class GangTask : public WorkerTask {
   private:
     ZTask* const _ztask;
 
@@ -45,7 +45,7 @@ public:
   ZTask(const char* name);
 
   const char* name() const;
-  AbstractGangTask* gang_task();
+  WorkerTask* gang_task();
 
   virtual void work() = 0;
 };

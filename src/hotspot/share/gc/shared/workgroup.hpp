@@ -36,7 +36,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 // Task class hierarchy:
-//   AbstractGangTask
+//   WorkerTask
 //
 // Gang/Group class hierarchy:
 //   WorkGang
@@ -50,12 +50,12 @@ class GangTaskDispatcher;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
-class AbstractGangTask : public CHeapObj<mtInternal> {
+class WorkerTask : public CHeapObj<mtInternal> {
   const char* _name;
   const uint _gc_id;
 
  public:
-  explicit AbstractGangTask(const char* name) :
+  explicit WorkerTask(const char* name) :
     _name(name),
     _gc_id(GCId::current_or_undefined())
   {}
@@ -70,9 +70,9 @@ class AbstractGangTask : public CHeapObj<mtInternal> {
 };
 
 struct WorkData {
-  AbstractGangTask* _task;
+  WorkerTask* _task;
   uint              _worker_id;
-  WorkData(AbstractGangTask* task, uint worker_id) : _task(task), _worker_id(worker_id) {}
+  WorkData(WorkerTask* task, uint worker_id) : _task(task), _worker_id(worker_id) {}
 };
 
 // The work gang is the collection of workers to execute tasks.
@@ -133,13 +133,13 @@ class WorkGang : public CHeapObj<mtInternal> {
   const char* name() const { return _name; }
 
   // Run a task using the current active number of workers, returns when the task is done.
-  void run_task(AbstractGangTask* task);
+  void run_task(WorkerTask* task);
 
   // Run a task with the given number of workers, returns
   // when the task is done. The number of workers must be at most the number of
   // active workers.  Additional workers may be created if an insufficient
   // number currently exists.
-  void run_task(AbstractGangTask* task, uint num_workers);
+  void run_task(WorkerTask* task, uint num_workers);
 };
 
 // Temporarily try to set the number of active workers.

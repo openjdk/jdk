@@ -760,7 +760,7 @@ bool HeapRegionClaimer::claim_region(uint region_index) {
   return old_val == Unclaimed;
 }
 
-class G1RebuildFreeListTask : public AbstractGangTask {
+class G1RebuildFreeListTask : public WorkerTask {
   HeapRegionManager* _hrm;
   FreeRegionList*    _worker_freelists;
   uint               _worker_chunk_size;
@@ -768,7 +768,7 @@ class G1RebuildFreeListTask : public AbstractGangTask {
 
 public:
   G1RebuildFreeListTask(HeapRegionManager* hrm, uint num_workers) :
-      AbstractGangTask("G1 Rebuild Free List Task"),
+      WorkerTask("G1 Rebuild Free List Task"),
       _hrm(hrm),
       _worker_freelists(NEW_C_HEAP_ARRAY(FreeRegionList, num_workers, mtGC)),
       _worker_chunk_size((_hrm->reserved_length() + num_workers - 1) / num_workers),

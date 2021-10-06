@@ -322,7 +322,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   }
 }
 
-class G1PrepareEvacuationTask : public AbstractGangTask {
+class G1PrepareEvacuationTask : public WorkerTask {
   class G1PrepareRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1PrepareEvacuationTask* _parent_task;
@@ -459,7 +459,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
-    AbstractGangTask("Prepare Evacuation"),
+    WorkerTask("Prepare Evacuation"),
     _g1h(g1h),
     _claimer(_g1h->workers()->active_workers()),
     _humongous_total(0),
@@ -494,7 +494,7 @@ public:
   }
 };
 
-Tickspan G1YoungCollector::run_task_timed(AbstractGangTask* task) {
+Tickspan G1YoungCollector::run_task_timed(WorkerTask* task) {
   Ticks start = Ticks::now();
   workers()->run_task(task);
   return Ticks::now() - start;
@@ -624,7 +624,7 @@ public:
   size_t term_attempts() const { return _term_attempts; }
 };
 
-class G1EvacuateRegionsBaseTask : public AbstractGangTask {
+class G1EvacuateRegionsBaseTask : public WorkerTask {
 protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _per_thread_states;
@@ -672,7 +672,7 @@ public:
                             G1ParScanThreadStateSet* per_thread_states,
                             G1ScannerTasksQueueSet* task_queues,
                             uint num_workers) :
-    AbstractGangTask(name),
+    WorkerTask(name),
     _g1h(G1CollectedHeap::heap()),
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
