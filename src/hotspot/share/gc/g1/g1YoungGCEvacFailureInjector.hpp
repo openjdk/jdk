@@ -29,19 +29,23 @@
 #include "utilities/globalDefinitions.hpp"
 
 // Enable evacuation failure injector by default in non-product builds.
+// Do not forget to also enable relevant options if you use this to build in this
+// functionality in product builds too.
 
 #if !defined(EVAC_FAILURE_INJECTOR) && !defined(PRODUCT)
 #define EVAC_FAILURE_INJECTOR 1
 #elif !defined(EVAC_FAILURE_INJECTOR)
-#define EVAC_FAILURE_INJECTOR 1
+#define EVAC_FAILURE_INJECTOR 0
 #endif
 
 #if EVAC_FAILURE_INJECTOR
 #define EVAC_FAILURE_INJECTOR_RETURN
 #define EVAC_FAILURE_INJECTOR_RETURN_(code)
+#define EVAC_FAILURE_INJECTOR_ONLY(code) code
 #else
 #define EVAC_FAILURE_INJECTOR_RETURN { return; }
 #define EVAC_FAILURE_INJECTOR_RETURN_(code) { code }
+#define EVAC_FAILURE_INJECTOR_ONLY(code)
 #endif // EVAC_FAILURE_INJECTOR
 
 // Support for injecting evacuation failures based on the G1EvacuationFailureALot*
@@ -51,7 +55,7 @@
 // inbetween we "arm" the injector to induce evacuation failures after
 // G1EvacuationFailureALotCount successful evacuations.
 //
-// Available only in non-product builds.
+// Available only when EVAC_FAILURE_INJECTOR is defined.
 class G1YoungGCEvacFailureInjector {
 #if EVAC_FAILURE_INJECTOR
   // Should we inject evacuation failures in the current GC.
