@@ -143,7 +143,7 @@ public final class PluginRepository {
             while (providers.hasNext()) {
                 factories.add(providers.next());
             }
-            registeredPlugins.values().stream().forEach((fact) -> {
+            registeredPlugins.values().forEach((fact) -> {
                 if (clazz.isInstance(fact)) {
                     @SuppressWarnings("unchecked")
                     T trans = (T) fact;
