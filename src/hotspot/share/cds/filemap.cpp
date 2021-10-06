@@ -225,13 +225,13 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   set_header_size((unsigned int)header_size);
   set_base_archive_path_offset((unsigned int)base_archive_path_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
+  set_magic(DynamicDumpSharedSpaces ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
+  set_version(CURRENT_CDS_ARCHIVE_VERSION);
+
   if (!info->is_static() && base_archive_name_size != 0) {
     // copy base archive name
     copy_base_archive_name(Arguments::GetSharedArchivePath());
   }
-  set_magic(DynamicDumpSharedSpaces ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
-  set_version(CURRENT_CDS_ARCHIVE_VERSION);
-
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
@@ -275,7 +275,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
 }
 
-// Do not check _magic, it's not been set yet.
 void FileMapHeader::copy_base_archive_name(const char* archive) {
   assert(base_archive_name_size() != 0, "_base_archive_name_size not set");
   assert(base_archive_path_offset() != 0, "_base_archive_path_offset not set");
@@ -1258,7 +1257,7 @@ bool FileMapInfo::init_from_file(int fd) {
     }
   }
 
-  _file_offset = n + header()->base_archive_name_size(); // accounts for the size of _base_archive_name
+  _file_offset = header()->header_size(); // accounts for the size of _base_archive_name
 
   if (is_static()) {
     // just checking the last region is sufficient since the archive is written
