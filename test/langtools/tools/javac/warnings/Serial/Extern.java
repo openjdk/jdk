@@ -4,7 +4,6 @@
  * @compile/ref=Extern.out -XDrawDiagnostics -Xlint:serial Extern.java
  */
 
-
 import java.io.*;
 
 class Extern implements Externalizable {
@@ -49,5 +48,4 @@ class Extern implements Externalizable {
     private Object readResolve() throws ObjectStreamException {
         return null;
     }
-
 }

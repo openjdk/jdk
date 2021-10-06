@@ -4,7 +4,6 @@
  * @compile/ref=SerialMethodMods.out -XDrawDiagnostics -Xlint:serial SerialMethodMods.java
  */
 
-
 import java.io.*;
 
 abstract class SerialMethodMods implements Serializable {
@@ -21,9 +20,8 @@ abstract class SerialMethodMods implements Serializable {
         stream.defaultReadObject();
     }
 
-    // Make static once additional warning in place
+    // Should be concrete instance method
     private static void readObjectNoData() throws ObjectStreamException {}
-
 
     // Should be concrete instance method
     public abstract Object writeReplace() throws ObjectStreamException;

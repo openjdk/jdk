@@ -4,7 +4,6 @@
  * @compile/ref=CtorAccess.out -XDrawDiagnostics -Xlint:serial CtorAccess.java
  */
 
-
 import java.io.*;
 
 class CtorAccess {

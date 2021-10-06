@@ -6,7 +6,6 @@
 
 import java.io.Serializable;
 
-
 /*
  * Verify suppressing serial warnings works through several levels of
  * nested types.

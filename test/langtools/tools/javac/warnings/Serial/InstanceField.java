@@ -4,7 +4,6 @@
  * @compile/ref=InstanceField.out -XDrawDiagnostics -Xlint:serial InstanceField.java
  */
 
-
 import java.io.*;
 
 class IntanceField implements Serializable {

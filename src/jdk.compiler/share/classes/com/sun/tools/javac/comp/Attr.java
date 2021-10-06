@@ -5824,7 +5824,7 @@ public class Attr extends JCTree.Visitor {
                 }
                 // Non-Serializable super class
                 try {
-                    TypeElement supertype = ((TypeElement)(((DeclaredType)superClass).asElement()));
+                    ClassSymbol supertype = ((ClassSymbol)(((DeclaredType)superClass).asElement()));
                     for (var ctor:
                              ElementFilter.constructorsIn(supertype.getEnclosedElements()) ) {
                         if (ctor.getParameters().isEmpty()) {
@@ -5833,7 +5833,7 @@ public class Attr extends JCTree.Visitor {
                                 (supertype.getNestingKind() == NestingKind.MEMBER &&
                                  !supertype.getModifiers().contains(Modifier.STATIC)))
                                 log.warning(LintCategory.SERIAL, tree.pos(),
-                                            Warnings.SerializableMissingAccessNoArgCtor((Symbol)supertype));
+                                            Warnings.SerializableMissingAccessNoArgCtor(supertype.getQualifiedName()));
                         }
                     }
                 } catch (ClassCastException cce) {
@@ -5969,13 +5969,13 @@ public class Attr extends JCTree.Visitor {
             if ((flags & PRIVATE) == 0) {
                 log.warning(LintCategory.SERIAL,
                             TreeInfo.diagnosticPositionFor(method, tree),
-                            Warnings.SerialMethodNotPrivate(method));
+                            Warnings.SerialMethodNotPrivate(method.getSimpleName()));
             }
 
             if ((flags & STATIC) != 0) {
                 log.warning(LintCategory.SERIAL,
                             TreeInfo.diagnosticPositionFor(method, tree),
-                            Warnings.SerialMethodStatic(method));
+                            Warnings.SerialMethodStatic(method.getSimpleName()));
             }
         }
 
@@ -6004,14 +6004,14 @@ public class Attr extends JCTree.Visitor {
                 case FIELD -> {
                     if (serialFieldNames.contains(name)) {
                         log.warning(LintCategory.SERIAL, tree.pos(),
-                                    Warnings.IneffectualSerialFieldEnum((Symbol)enclosed));
+                                    Warnings.IneffectualSerialFieldEnum(name));
                     }
                 }
 
                 case METHOD -> {
                     if (serialMethodNames.contains(name)) {
                         log.warning(LintCategory.SERIAL, tree.pos(),
-                                    Warnings.IneffectualSerialMethodEnum((Symbol)enclosed));
+                                    Warnings.IneffectualSerialMethodEnum(name));
                     }
                 }
                 }
@@ -6157,7 +6157,7 @@ public class Attr extends JCTree.Visitor {
                     default -> {
                         if (serialMethodNames.contains(name)) {
                             log.warning(LintCategory.SERIAL, tree.pos(),
-                                        Warnings.IneffectualSerialMethodRecord((Symbol)enclosed));
+                                        Warnings.IneffectualSerialMethodRecord(name));
                         }
                     }
                     }
@@ -6214,7 +6214,7 @@ public class Attr extends JCTree.Visitor {
             if ((method.flags() & (STATIC | ABSTRACT)) != 0) {
                     log.warning(LintCategory.SERIAL,
                                 TreeInfo.diagnosticPositionFor(method, tree),
-                                Warnings.SerialConcreteInstanceMethod(method));
+                                Warnings.SerialConcreteInstanceMethod(method.getSimpleName()));
             }
         }
 
@@ -6270,11 +6270,11 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private void checkExternalizable(JCClassDecl tree, Element enclosing, ExecutableElement method) {
+        private void checkExternalizable(JCClassDecl tree, Element enclosing, MethodSymbol method) {
             //if the enclosing class is externalizable, warn for the method
             if (isExternalizable((Type)enclosing.asType())) {
                 log.warning(LintCategory.SERIAL, tree.pos(),
-                            Warnings.IneffectualSerialMethodExternalizable((Symbol)method));
+                            Warnings.IneffectualSerialMethodExternalizable(method.getSimpleName()));
             }
             return;
         }
