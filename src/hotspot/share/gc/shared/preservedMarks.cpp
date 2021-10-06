@@ -130,7 +130,7 @@ public:
   }
 };
 
-void PreservedMarksSet::restore(WorkGang* workers) {
+void PreservedMarksSet::restore(WorkerThreads* workers) {
   {
     RestorePreservedMarksTask cl(this);
     if (workers == nullptr) {

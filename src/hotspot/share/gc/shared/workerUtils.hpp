@@ -36,7 +36,7 @@
 // the barrier and must wait until all other workers have entered
 // before any of them may leave.
 
-class WorkGangBarrierSync : public StackObj {
+class WorkerThreadsBarrierSync : public StackObj {
 protected:
   Monitor _monitor;
   uint    _n_workers;
@@ -56,7 +56,7 @@ protected:
   void     set_should_reset(bool v) { _should_reset = v; }
 
 public:
-  WorkGangBarrierSync();
+  WorkerThreadsBarrierSync();
 
   // Set the number of workers that will use the barrier.
   // Must be called before any of the workers start running.

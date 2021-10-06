@@ -2248,7 +2248,7 @@ void VM_HeapDumper::doit() {
   set_global_dumper();
   set_global_writer();
 
-  WorkGang* gang = ch->safepoint_workers();
+  WorkerThreads* gang = ch->safepoint_workers();
 
   if (gang == NULL) {
     // Use serial dump, set dumper threads and writer threads number to 1.

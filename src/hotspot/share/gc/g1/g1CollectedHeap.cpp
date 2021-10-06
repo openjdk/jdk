@@ -1274,7 +1274,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   return NULL;
 }
 
-bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, double* expand_time_ms) {
+bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
@@ -1683,7 +1683,7 @@ jint G1CollectedHeap::initialize() {
     _humongous_reclaim_candidates.initialize(reserved(), granularity);
   }
 
-  _workers = new WorkGang("GC Thread", ParallelGCThreads);
+  _workers = new WorkerThreads("GC Thread", ParallelGCThreads);
   if (_workers == NULL) {
     return JNI_ENOMEM;
   }

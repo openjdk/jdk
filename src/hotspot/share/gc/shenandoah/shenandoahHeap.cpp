@@ -495,7 +495,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
   _max_workers = MAX2(_max_workers, 1U);
-  _workers = new ShenandoahWorkGang("Shenandoah GC Threads", _max_workers);
+  _workers = new ShenandoahWorkerThreads("Shenandoah GC Threads", _max_workers);
   if (_workers == NULL) {
     vm_exit_during_initialization("Failed necessary allocation.");
   } else {
@@ -503,7 +503,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   }
 
   if (ParallelGCThreads > 1) {
-    _safepoint_workers = new ShenandoahWorkGang("Safepoint Cleanup Thread",
+    _safepoint_workers = new ShenandoahWorkerThreads("Safepoint Cleanup Thread",
                                                 ParallelGCThreads);
     _safepoint_workers->initialize_workers();
   }
@@ -612,7 +612,7 @@ void ShenandoahHeap::post_initialize() {
   _workers->threads_do(&init_gclabs);
 
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
-  // Now, we will let WorkGang to initialize gclab when new worker is created.
+  // Now, we will let WorkerThreads to initialize gclab when new worker is created.
   _workers->set_initialize_gclab();
   if (_safepoint_workers != NULL) {
     _safepoint_workers->threads_do(&init_gclabs);

@@ -289,7 +289,7 @@ public:
   }
 };
 
-void ShenandoahCodeRoots::unlink(WorkGang* workers, bool unloading_occurred) {
+void ShenandoahCodeRoots::unlink(WorkerThreads* workers, bool unloading_occurred) {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
   for (;;) {
@@ -344,7 +344,7 @@ public:
   }
 };
 
-void ShenandoahCodeRoots::purge(WorkGang* workers) {
+void ShenandoahCodeRoots::purge(WorkerThreads* workers) {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
   ShenandoahNMethodPurgeTask task;

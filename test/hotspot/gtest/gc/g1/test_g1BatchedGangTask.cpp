@@ -30,10 +30,10 @@
 #include "unittest.hpp"
 
 class G1BatchedGangTaskWorkers : AllStatic {
-  static WorkGang* _work_gang;
-  static WorkGang* work_gang() {
+  static WorkerThreads* _work_gang;
+  static WorkerThreads* work_gang() {
     if (_work_gang == nullptr) {
-      _work_gang = new WorkGang("G1 Small Workers", MaxWorkers);
+      _work_gang = new WorkerThreads("G1 Small Workers", MaxWorkers);
       _work_gang->initialize_workers();
       _work_gang->update_active_workers(MaxWorkers);
     }
@@ -47,7 +47,7 @@ public:
   }
 };
 
-WorkGang* G1BatchedGangTaskWorkers::_work_gang = nullptr;
+WorkerThreads* G1BatchedGangTaskWorkers::_work_gang = nullptr;
 
 class G1TestSubTask : public G1AbstractSubTask {
   mutable uint _phase;

@@ -128,7 +128,7 @@ public:
 };
 
 template<typename IsAlive, typename KeepAlive>
-void WeakProcessor::weak_oops_do(WorkGang* workers,
+void WeakProcessor::weak_oops_do(WorkerThreads* workers,
                                  IsAlive* is_alive,
                                  KeepAlive* keep_alive,
                                  WeakProcessorTimes* times) {
@@ -143,7 +143,7 @@ void WeakProcessor::weak_oops_do(WorkGang* workers,
 }
 
 template<typename IsAlive, typename KeepAlive>
-void WeakProcessor::weak_oops_do(WorkGang* workers,
+void WeakProcessor::weak_oops_do(WorkerThreads* workers,
                                  IsAlive* is_alive,
                                  KeepAlive* keep_alive,
                                  uint indent_log) {

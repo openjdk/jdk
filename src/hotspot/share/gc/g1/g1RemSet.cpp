@@ -406,7 +406,7 @@ public:
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    WorkGang* workers = g1h->workers();
+    WorkerThreads* workers = g1h->workers();
     uint const max_workers = workers->active_workers();
 
     uint const start_pos = num_regions * worker_id / max_workers;
@@ -1490,7 +1490,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     }
   }
 
-  WorkGang* workers = g1h->workers();
+  WorkerThreads* workers = g1h->workers();
   size_t const increment_length = g1h->collection_set()->increment_length();
 
   uint const num_workers = initial_evacuation ? workers->active_workers() :
@@ -1991,7 +1991,7 @@ public:
 };
 
 void G1RemSet::rebuild_rem_set(G1ConcurrentMark* cm,
-                               WorkGang* workers,
+                               WorkerThreads* workers,
                                uint worker_id_offset) {
   uint num_workers = workers->active_workers();
 

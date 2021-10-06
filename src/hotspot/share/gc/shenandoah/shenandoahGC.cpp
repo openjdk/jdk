@@ -95,7 +95,7 @@ void ShenandoahGC::update_roots(bool full_gc) {
 #endif
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  WorkGang* workers = heap->workers();
+  WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
 
   ShenandoahRootUpdater root_updater(nworkers, p);

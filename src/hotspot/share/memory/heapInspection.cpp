@@ -577,11 +577,11 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   if (parallel_thread_num > 1) {
     ResourceMark rm;
 
-    WorkGang* gang = Universe::heap()->safepoint_workers();
+    WorkerThreads* gang = Universe::heap()->safepoint_workers();
     if (gang != NULL) {
-      // The GC provided a WorkGang to be used during a safepoint.
+      // The GC provided a WorkerThreads to be used during a safepoint.
 
-      // Can't run with more threads than provided by the WorkGang.
+      // Can't run with more threads than provided by the WorkerThreads.
       WithUpdatedActiveWorkers update_and_restore(gang, parallel_thread_num);
 
       ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(gang->active_workers());

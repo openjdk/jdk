@@ -805,7 +805,7 @@ void ShenandoahFullGC::phase3_update_references() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  WorkGang* workers = heap->workers();
+  WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
   {
 #if COMPILER2_OR_JVMCI

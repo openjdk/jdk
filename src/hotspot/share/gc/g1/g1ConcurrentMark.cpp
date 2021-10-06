@@ -432,7 +432,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers = ConcGCThreads;
   _max_concurrent_workers = _num_concurrent_workers;
 
-  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers);
+  _concurrent_workers = new WorkerThreads("G1 Conc", _max_concurrent_workers);
   _concurrent_workers->initialize_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
@@ -690,7 +690,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers, bool may_yield) {
+void G1ConcurrentMark::clear_next_bitmap(WorkerThreads* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
   size_t const num_bytes_to_clear = (HeapRegion::GrainBytes * _g1h->num_regions()) / G1CMBitMap::heap_map_factor();
@@ -723,7 +723,7 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 }
 
-void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers) {
+void G1ConcurrentMark::clear_next_bitmap(WorkerThreads* workers) {
   assert_at_safepoint_on_vm_thread();
   // To avoid fragmentation the full collection requesting to clear the bitmap
   // might use fewer workers than available. To ensure the bitmap is cleared
@@ -1389,7 +1389,7 @@ public:
 };
 
 void G1ConcurrentMark::reclaim_empty_regions() {
-  WorkGang* workers = _g1h->workers();
+  WorkerThreads* workers = _g1h->workers();
   FreeRegionList empty_regions_list("Empty Regions After Mark List");
 
   G1ReclaimEmptyRegionsTask cl(_g1h, &empty_regions_list, workers->active_workers());

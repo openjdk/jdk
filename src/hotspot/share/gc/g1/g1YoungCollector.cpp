@@ -269,7 +269,7 @@ ReferenceProcessor* G1YoungCollector::ref_processor_stw() const {
   return _g1h->ref_processor_stw();
 }
 
-WorkGang* G1YoungCollector::workers() const {
+WorkerThreads* G1YoungCollector::workers() const {
   return _g1h->workers();
 }
 
@@ -756,7 +756,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
                                       has_optional_evacuation_work);
     task_time = run_task_timed(&g1_par_task);
     // Closing the inner scope will execute the destructor for the
-    // G1RootProcessor object. By subtracting the WorkGang task from the total
+    // G1RootProcessor object. By subtracting the WorkerThreads task from the total
     // time of this scope, we get the "NMethod List Cleanup" time. This list is
     // constructed during "STW two-phase nmethod root processing", see more in
     // nmethod.hpp

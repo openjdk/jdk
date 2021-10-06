@@ -52,7 +52,7 @@ class G1RemSet;
 class G1SurvivorRegions;
 class G1YoungGCEvacFailureInjector;
 class STWGCTimer;
-class WorkGang;
+class WorkerThreads;
 
 class outputStream;
 
@@ -78,7 +78,7 @@ class G1YoungCollector {
   G1ScannerTasksQueueSet* task_queues() const;
   G1SurvivorRegions* survivor_regions() const;
   ReferenceProcessor* ref_processor_stw() const;
-  WorkGang* workers() const;
+  WorkerThreads* workers() const;
   G1YoungGCEvacFailureInjector* evac_failure_injector() const;
 
   GCCause::Cause _gc_cause;

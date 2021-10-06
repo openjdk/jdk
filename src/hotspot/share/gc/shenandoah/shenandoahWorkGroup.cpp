@@ -31,7 +31,7 @@
 
 #include "logging/log.hpp"
 
-ShenandoahWorkerScope::ShenandoahWorkerScope(WorkGang* workers, uint nworkers, const char* msg, bool check) :
+ShenandoahWorkerScope::ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool check) :
   _workers(workers) {
   assert(msg != NULL, "Missing message");
 
@@ -51,7 +51,7 @@ ShenandoahWorkerScope::~ShenandoahWorkerScope() {
     "Active workers can not be changed within this scope");
 }
 
-ShenandoahPushWorkerScope::ShenandoahPushWorkerScope(WorkGang* workers, uint nworkers, bool check) :
+ShenandoahPushWorkerScope::ShenandoahPushWorkerScope(WorkerThreads* workers, uint nworkers, bool check) :
   _old_workers(workers->active_workers()),
   _workers(workers) {
   _n_workers = _workers->update_active_workers(nworkers);
@@ -71,8 +71,8 @@ ShenandoahPushWorkerScope::~ShenandoahPushWorkerScope() {
   assert(nworkers == _old_workers, "Must be able to restore");
 }
 
-WorkerThread* ShenandoahWorkGang::create_worker(uint id) {
-  WorkerThread* worker = WorkGang::create_worker(id);
+WorkerThread* ShenandoahWorkerThreads::create_worker(uint id) {
+  WorkerThread* worker = WorkerThreads::create_worker(id);
   ShenandoahThreadLocalData::create(worker);
   if (_initialize_gclab) {
     ShenandoahThreadLocalData::initialize_gclab(worker);

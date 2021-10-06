@@ -89,7 +89,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     return _region_commit_map.get_next_one_offset(start_idx, end) == end;
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+  virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_gang) {
     guarantee(is_range_uncommitted(start_idx, num_regions),
               "Range not uncommitted, start: %u, num_regions: " SIZE_FORMAT,
               start_idx, num_regions);
@@ -172,7 +172,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+  virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_gang) {
     uint region_limit = (uint)(start_idx + num_regions);
     assert(num_regions > 0, "Must commit at least one region");
     assert(_region_commit_map.get_next_one_offset(start_idx, region_limit) == region_limit,

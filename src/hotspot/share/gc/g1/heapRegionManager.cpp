@@ -166,7 +166,7 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
   return g1h->new_heap_region(hrm_index, mr);
 }
 
-void HeapRegionManager::expand(uint start, uint num_regions, WorkGang* pretouch_gang) {
+void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pretouch_gang) {
   commit_regions(start, num_regions, pretouch_gang);
   for (uint i = start; i < start + num_regions; i++) {
     HeapRegion* hr = _regions.get_by_index(i);
@@ -181,7 +181,7 @@ void HeapRegionManager::expand(uint start, uint num_regions, WorkGang* pretouch_
   activate_regions(start, num_regions);
 }
 
-void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkGang* pretouch_gang) {
+void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkerThreads* pretouch_gang) {
   guarantee(num_regions > 0, "Must commit more than zero regions");
   guarantee(num_regions <= available(),
             "Cannot commit more than the maximum amount of regions");
@@ -346,7 +346,7 @@ uint HeapRegionManager::expand_inactive(uint num_regions) {
   return expanded;
 }
 
-uint HeapRegionManager::expand_any(uint num_regions, WorkGang* pretouch_workers) {
+uint HeapRegionManager::expand_any(uint num_regions, WorkerThreads* pretouch_workers) {
   assert(num_regions > 0, "Must expand at least 1 region");
 
   uint offset = 0;
@@ -368,7 +368,7 @@ uint HeapRegionManager::expand_any(uint num_regions, WorkGang* pretouch_workers)
   return expanded;
 }
 
-uint HeapRegionManager::expand_by(uint num_regions, WorkGang* pretouch_workers) {
+uint HeapRegionManager::expand_by(uint num_regions, WorkerThreads* pretouch_workers) {
   assert(num_regions > 0, "Must expand at least 1 region");
 
   // First "undo" any requests to uncommit memory concurrently by
@@ -384,7 +384,7 @@ uint HeapRegionManager::expand_by(uint num_regions, WorkGang* pretouch_workers) 
   return expanded;
 }
 
-void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkGang* pretouch_workers) {
+void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThreads* pretouch_workers) {
   assert(num_regions != 0, "Need to request at least one region");
   uint end = start + num_regions;
 
@@ -555,7 +555,7 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   return G1_NO_HRM_INDEX;
 }
 
-bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkGang* pretouch_workers) {
+bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers) {
   size_t commits = 0;
   uint start_index = (uint)_regions.get_index_by_address(range.start());
   uint last_index = (uint)_regions.get_index_by_address(range.last());
@@ -818,7 +818,7 @@ public:
   }
 };
 
-void HeapRegionManager::rebuild_free_list(WorkGang* workers) {
+void HeapRegionManager::rebuild_free_list(WorkerThreads* workers) {
   // Abandon current free list to allow a rebuild.
   _free_list.abandon();
 

@@ -44,13 +44,13 @@ class G1CardSetTest : public ::testing::Test {
     }
   };
 
-  static WorkGang* _workers;
+  static WorkerThreads* _workers;
   static uint _max_workers;
 
-  static WorkGang* workers() {
+  static WorkerThreads* workers() {
     if (_workers == NULL) {
       _max_workers = os::processor_count();
-      _workers = new WorkGang("G1CardSetTest Work Gang", _max_workers);
+      _workers = new WorkerThreads("G1CardSetTest Work Gang", _max_workers);
       _workers->initialize_workers();
       _workers->update_active_workers(_max_workers);
     }
@@ -85,7 +85,7 @@ public:
   static void iterate_cards(G1CardSet* card_set, G1CardSet::G1CardSetCardIterator* cl);
 };
 
-WorkGang* G1CardSetTest::_workers = NULL;
+WorkerThreads* G1CardSetTest::_workers = NULL;
 uint G1CardSetTest::_max_workers = 0;
 
 void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards, G1AddCardResult* results) {

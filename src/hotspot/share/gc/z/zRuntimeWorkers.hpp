@@ -30,12 +30,12 @@ class ThreadClosure;
 
 class ZRuntimeWorkers {
 private:
-  WorkGang _workers;
+  WorkerThreads _workers;
 
 public:
   ZRuntimeWorkers();
 
-  WorkGang* workers();
+  WorkerThreads* workers();
 
   void threads_do(ThreadClosure* tc) const;
 };

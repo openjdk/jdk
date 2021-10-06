@@ -27,21 +27,21 @@
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
-// *** WorkGangBarrierSync
+// *** WorkerThreadsBarrierSync
 
-WorkGangBarrierSync::WorkGangBarrierSync()
-  : _monitor(Mutex::nosafepoint, "WorkGangBarrierSync_lock"),
+WorkerThreadsBarrierSync::WorkerThreadsBarrierSync()
+  : _monitor(Mutex::nosafepoint, "WorkerThreadsBarrierSync_lock"),
     _n_workers(0), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 
-void WorkGangBarrierSync::set_n_workers(uint n_workers) {
+void WorkerThreadsBarrierSync::set_n_workers(uint n_workers) {
   _n_workers    = n_workers;
   _n_completed  = 0;
   _should_reset = false;
   _aborted      = false;
 }
 
-bool WorkGangBarrierSync::enter() {
+bool WorkerThreadsBarrierSync::enter() {
   MonitorLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   if (should_reset()) {
     // The should_reset() was set and we are the first worker to enter
@@ -71,7 +71,7 @@ bool WorkGangBarrierSync::enter() {
   return !aborted();
 }
 
-void WorkGangBarrierSync::abort() {
+void WorkerThreadsBarrierSync::abort() {
   MutexLocker x(monitor(), Mutex::_no_safepoint_check_flag);
   set_aborted();
   monitor()->notify_all();

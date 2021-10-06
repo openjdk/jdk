@@ -31,7 +31,7 @@ class ZTask;
 
 class ZWorkers {
 private:
-  WorkGang _workers;
+  WorkerThreads _workers;
 
 public:
   ZWorkers();

@@ -150,7 +150,7 @@ public:
 
   // Rebuilds the remembered set by scanning from bottom to TARS for all regions
   // using the given work gang.
-  void rebuild_rem_set(G1ConcurrentMark* cm, WorkGang* workers, uint worker_id_offset);
+  void rebuild_rem_set(G1ConcurrentMark* cm, WorkerThreads* workers, uint worker_id_offset);
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

@@ -32,10 +32,10 @@
 #include "unittest.hpp"
 
 class G1MapperWorkers : AllStatic {
-  static WorkGang* _work_gang;
-  static WorkGang* work_gang() {
+  static WorkerThreads* _work_gang;
+  static WorkerThreads* work_gang() {
     if (_work_gang == NULL) {
-      _work_gang = new WorkGang("G1 Small Workers", MaxWorkers);
+      _work_gang = new WorkerThreads("G1 Small Workers", MaxWorkers);
       _work_gang->initialize_workers();
       _work_gang->update_active_workers(MaxWorkers);
     }
@@ -48,7 +48,7 @@ public:
     work_gang()->run_task(task);
   }
 };
-WorkGang* G1MapperWorkers::_work_gang = NULL;
+WorkerThreads* G1MapperWorkers::_work_gang = NULL;
 
 class G1TestCommitUncommit : public WorkerTask {
   G1RegionToSpaceMapper* _mapper;

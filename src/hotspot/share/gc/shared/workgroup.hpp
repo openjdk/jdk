@@ -39,7 +39,7 @@
 //   WorkerTask
 //
 // Gang/Group class hierarchy:
-//   WorkGang
+//   WorkerThreads
 
 // Forward declarations of classes defined here
 
@@ -78,7 +78,7 @@ struct WorkData {
 // The work gang is the collection of workers to execute tasks.
 // The number of workers run for a task is "_active_workers"
 // while "_total_workers" is the number of available workers.
-class WorkGang : public CHeapObj<mtInternal> {
+class WorkerThreads : public CHeapObj<mtInternal> {
   // The array of worker threads for this gang.
   WorkerThread** _workers;
   // The count of the number of workers in the gang.
@@ -97,9 +97,9 @@ class WorkGang : public CHeapObj<mtInternal> {
   GangTaskDispatcher* dispatcher() const { return _dispatcher; }
 
  public:
-  WorkGang(const char* name, uint workers);
+  WorkerThreads(const char* name, uint workers);
 
-  ~WorkGang();
+  ~WorkerThreads();
 
   // Initialize workers in the gang.  Return true if initialization succeeded.
   void initialize_workers();
@@ -147,11 +147,11 @@ class WorkGang : public CHeapObj<mtInternal> {
 // query the number of active workers.
 class WithUpdatedActiveWorkers : public StackObj {
 private:
-  WorkGang* const _gang;
+  WorkerThreads* const _gang;
   const uint              _old_active_workers;
 
 public:
-  WithUpdatedActiveWorkers(WorkGang* gang, uint requested_num_workers) :
+  WithUpdatedActiveWorkers(WorkerThreads* gang, uint requested_num_workers) :
       _gang(gang),
       _old_active_workers(gang->active_workers()) {
     uint capped_num_workers = MIN2(requested_num_workers, gang->total_workers());
@@ -166,12 +166,12 @@ public:
 class WorkerThread : public NamedThread {
 private:
   uint _id;
-  WorkGang* _gang;
+  WorkerThreads* _gang;
 
   void initialize();
   void loop();
 
-  WorkGang* gang() const { return _gang; }
+  WorkerThreads* gang() const { return _gang; }
 
   WorkData wait_for_task();
   void run_task(WorkData work);
@@ -187,7 +187,7 @@ public:
     return static_cast<WorkerThread*>(t);
   }
 
-  WorkerThread(WorkGang* gang, uint id);
+  WorkerThread(WorkerThreads* gang, uint id);
   virtual bool is_Worker_thread() const { return true; }
 
   void set_id(uint work_id)             { _id = work_id; }

@@ -76,7 +76,7 @@ ZRuntimeWorkers::ZRuntimeWorkers() :
   _workers.run_task(&task);
 }
 
-WorkGang* ZRuntimeWorkers::workers() {
+WorkerThreads* ZRuntimeWorkers::workers() {
   return &_workers;
 }
 

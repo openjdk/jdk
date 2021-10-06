@@ -34,9 +34,9 @@ class ShenandoahObjToScanQueueSet;
 class ShenandoahWorkerScope : public StackObj {
 private:
   uint      _n_workers;
-  WorkGang* _workers;
+  WorkerThreads* _workers;
 public:
-  ShenandoahWorkerScope(WorkGang* workers, uint nworkers, const char* msg, bool do_check = true);
+  ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool do_check = true);
   ~ShenandoahWorkerScope();
 };
 
@@ -44,20 +44,20 @@ class ShenandoahPushWorkerScope : StackObj {
 protected:
   uint      _n_workers;
   uint      _old_workers;
-  WorkGang* _workers;
+  WorkerThreads* _workers;
 
 public:
-  ShenandoahPushWorkerScope(WorkGang* workers, uint nworkers, bool do_check = true);
+  ShenandoahPushWorkerScope(WorkerThreads* workers, uint nworkers, bool do_check = true);
   ~ShenandoahPushWorkerScope();
 };
 
-class ShenandoahWorkGang : public WorkGang {
+class ShenandoahWorkerThreads : public WorkerThreads {
 private:
   bool     _initialize_gclab;
 public:
-  ShenandoahWorkGang(const char* name,
+  ShenandoahWorkerThreads(const char* name,
            uint workers) :
-    WorkGang(name, workers), _initialize_gclab(false) {
+    WorkerThreads(name, workers), _initialize_gclab(false) {
     }
 
   // Create a GC worker and install it into the work gang.

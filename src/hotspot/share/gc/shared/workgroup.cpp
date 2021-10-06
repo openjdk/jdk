@@ -37,7 +37,7 @@
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
 
-// WorkGang dispatcher implemented with semaphores.
+// WorkerThreads dispatcher implemented with semaphores.
 //
 // Semaphores don't require the worker threads to re-claim the lock when they wake up.
 // This helps lowering the latency when starting and stopping the worker threads.
@@ -117,9 +117,9 @@ public:
     }
   }
 };
-// Definitions of WorkGang methods.
+// Definitions of WorkerThreads methods.
 
-WorkGang::WorkGang(const char* name, uint workers) :
+WorkerThreads::WorkerThreads(const char* name, uint workers) :
     _workers(NULL),
     _total_workers(workers),
     _active_workers(0),
@@ -128,13 +128,13 @@ WorkGang::WorkGang(const char* name, uint workers) :
     _dispatcher(new GangTaskDispatcher())
   { }
 
-WorkGang::~WorkGang() {
+WorkerThreads::~WorkerThreads() {
   delete _dispatcher;
 }
 
 // The current implementation will exit if the allocation
 // of any worker fails.
-void WorkGang::initialize_workers() {
+void WorkerThreads::initialize_workers() {
   log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
   _workers = NEW_C_HEAP_ARRAY(WorkerThread*, total_workers(), mtInternal);
 
@@ -144,7 +144,7 @@ void WorkGang::initialize_workers() {
   }
 }
 
-WorkerThread* WorkGang::create_worker(uint id) {
+WorkerThread* WorkerThreads::create_worker(uint id) {
   if (is_init_completed() && InjectGCWorkerCreationFailure) {
     return NULL;
   }
@@ -161,7 +161,7 @@ WorkerThread* WorkGang::create_worker(uint id) {
   return worker;
 }
 
-uint WorkGang::update_active_workers(uint num_workers) {
+uint WorkerThreads::update_active_workers(uint num_workers) {
   assert(num_workers > 0 && num_workers <= _total_workers,
          "Invalid number of active workers %u (should be 1-%u)",
          num_workers, _total_workers);
@@ -184,7 +184,7 @@ uint WorkGang::update_active_workers(uint num_workers) {
   return _active_workers;
 }
 
-WorkerThread* WorkGang::worker(uint i) const {
+WorkerThread* WorkerThreads::worker(uint i) const {
   // Array index bounds checking.
   WorkerThread* result = NULL;
   assert(_workers != NULL, "No workers for indexing");
@@ -194,7 +194,7 @@ WorkerThread* WorkGang::worker(uint i) const {
   return result;
 }
 
-void WorkGang::threads_do(ThreadClosure* tc) const {
+void WorkerThreads::threads_do(ThreadClosure* tc) const {
   assert(tc != NULL, "Null ThreadClosure");
   uint workers = created_workers();
   for (uint i = 0; i < workers; i++) {
@@ -202,11 +202,11 @@ void WorkGang::threads_do(ThreadClosure* tc) const {
   }
 }
 
-void WorkGang::run_task(WorkerTask* task) {
+void WorkerThreads::run_task(WorkerTask* task) {
   run_task(task, active_workers());
 }
 
-void WorkGang::run_task(WorkerTask* task, uint num_workers) {
+void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {
   guarantee(num_workers <= total_workers(),
             "Trying to execute task %s with %u workers which is more than the amount of total workers %u.",
             task->name(), num_workers, total_workers());
@@ -217,7 +217,7 @@ void WorkGang::run_task(WorkerTask* task, uint num_workers) {
   update_active_workers(old_num_workers);
 }
 
-WorkerThread::WorkerThread(WorkGang* gang, uint id) {
+WorkerThread::WorkerThread(WorkerThreads* gang, uint id) {
   _gang = gang;
   set_id(id);
   set_name("%s#%d", gang->name(), id);

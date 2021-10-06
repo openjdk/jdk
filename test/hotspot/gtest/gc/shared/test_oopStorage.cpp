@@ -863,7 +863,7 @@ TEST_VM_F(OopStorageTestIteration, oops_do) {
 
 class OopStorageTestParIteration : public OopStorageTestIteration {
 public:
-  WorkGang* workers();
+  WorkerThreads* workers();
 
   class VM_ParStateVerify;
 
@@ -871,14 +871,14 @@ public:
   template<bool concurrent, bool is_const> class TaskUsingOopsDo;
 
 private:
-  static WorkGang* _workers;
+  static WorkerThreads* _workers;
 };
 
-WorkGang* OopStorageTestParIteration::_workers = NULL;
+WorkerThreads* OopStorageTestParIteration::_workers = NULL;
 
-WorkGang* OopStorageTestParIteration::workers() {
+WorkerThreads* OopStorageTestParIteration::workers() {
   if (_workers == NULL) {
-    _workers = new WorkGang("OopStorageTestParIteration workers", _max_workers);
+    _workers = new WorkerThreads("OopStorageTestParIteration workers", _max_workers);
     _workers->initialize_workers();
     _workers->update_active_workers(_max_workers);
   }
@@ -931,7 +931,7 @@ private:
 
 class OopStorageTestParIteration::VM_ParStateVerify : public VM_GTestExecuteAtSafepoint {
 public:
-  VM_ParStateVerify(WorkGang* workers, WorkerTask* task) :
+  VM_ParStateVerify(WorkerThreads* workers, WorkerTask* task) :
     _workers(workers), _task(task)
   {}
 
@@ -940,7 +940,7 @@ public:
   }
 
 private:
-  WorkGang* _workers;
+  WorkerThreads* _workers;
   WorkerTask* _task;
 };
 

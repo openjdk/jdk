@@ -311,7 +311,7 @@ void G1CollectionSetChooser::prune(G1CollectionSetCandidates* candidates) {
   }
 }
 
-G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkGang* workers, uint max_num_regions) {
+G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkerThreads* workers, uint max_num_regions) {
   uint num_workers = workers->active_workers();
   uint chunk_size = calculate_work_chunk_size(num_workers, max_num_regions);
 

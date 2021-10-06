@@ -72,7 +72,7 @@ void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
                               bool mangle_space,
                               bool setup_pages,
-                              WorkGang* pretouch_gang) {
+                              WorkerThreads* pretouch_gang) {
 
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");

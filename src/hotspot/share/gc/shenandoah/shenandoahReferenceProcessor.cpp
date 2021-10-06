@@ -491,7 +491,7 @@ public:
   }
 };
 
-void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkGang* workers, bool concurrent) {
+void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
 
   Atomic::release_store_fence(&_iterate_discovered_list_id, 0U);
 
