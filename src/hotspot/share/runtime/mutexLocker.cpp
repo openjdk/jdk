@@ -373,10 +373,11 @@ void print_owned_locks_on_error(outputStream* st) {
   if (none) st->print_cr("None");
 }
 
-void unlock_locks_on_error(JavaThread* thread) {
+void unlock_locks_on_error(Thread* thread) {
   assert(thread != NULL, "can't be owned by NULL");
 
 #ifdef ASSERT
+  // The debug code tracks all owned mutex/monitors.
   Mutex* owned_lock = thread->owned_locks();
   while (owned_lock != NULL) {
     Mutex* next = owned_lock->next();
@@ -384,6 +385,7 @@ void unlock_locks_on_error(JavaThread* thread) {
     owned_lock = next;
   }
 #else
+  // The _mutex_array is only a subset of mutex/monitors that may exist.
   for (int i = 0; i < _num_mutex; i++) {
      if (_mutex_array[i]->owner() == thread) {
        _mutex_array[i]->unlock();
