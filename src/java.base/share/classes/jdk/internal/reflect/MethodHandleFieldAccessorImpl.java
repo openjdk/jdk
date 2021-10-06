@@ -25,8 +25,6 @@
 
 package jdk.internal.reflect;
 
-import jdk.internal.vm.annotation.Stable;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 
@@ -35,10 +33,9 @@ abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
     private static final int IS_STATIC_BIT = 0x0002;
     private static final int NONZERO_BIT = 0x8000;
 
-    private @Stable final int fieldFlags;
-    // protected @Stable final MethodHandle varHandle;
-    protected @Stable final MethodHandle getter;
-    protected @Stable final MethodHandle setter;
+    private final int fieldFlags;
+    protected final MethodHandle getter;
+    protected final MethodHandle setter;
 
     protected MethodHandleFieldAccessorImpl(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly, boolean isStatic) {
         super(field);

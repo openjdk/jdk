@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.internal.reflect;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.Stable;
 
 /** Base class for jdk.internal.misc.Unsafe-based FieldAccessors. The
     observation is that there are only nine types of fields from the
@@ -40,7 +39,6 @@ import jdk.internal.vm.annotation.Stable;
 abstract class UnsafeFieldAccessorImpl extends FieldAccessorImpl {
     static final Unsafe unsafe = Unsafe.getUnsafe();
 
-    @Stable
     protected final long    fieldOffset;
     protected final boolean isFinal;
 

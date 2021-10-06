@@ -27,7 +27,6 @@ package jdk.internal.reflect;
 
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.WrongMethodTypeException;
@@ -48,8 +47,8 @@ class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
     private static final int PARAM_COUNT_MASK = 0x00FF;
     private static final int NONZERO_BIT = 0x8000_0000;
 
-    @Stable private final int paramFlags;
-    @Stable private final MethodHandle target;
+    private final int paramFlags;
+    private final MethodHandle target;
 
     DirectConstructorHandleAccessor(Constructor<?> ctor, MethodHandle target) {
         this.paramFlags = (ctor.getParameterCount() & PARAM_COUNT_MASK) | NONZERO_BIT;

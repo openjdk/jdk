@@ -30,7 +30,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -89,12 +88,12 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
     private static final int IS_STATIC_BIT = 0x0200;
     private static final int NONZERO_BIT = 0x8000_0000;
 
-    @Stable private final Class<?> methodDeclaringClass;
-    @Stable private final int paramFlags;
-    @Stable private final MethodHandle target;
+    private final Class<?> declaringClass;
+    private final int paramFlags;
+    private final MethodHandle target;
 
     DirectMethodHandleAccessor(Method method, MethodHandle target, boolean hasCallerParameter) {
-        this.methodDeclaringClass = method.getDeclaringClass();
+        this.declaringClass = method.getDeclaringClass();
         this.paramFlags = (method.getParameterCount() & PARAM_COUNT_MASK) |
                           (hasCallerParameter ? HAS_CALLER_PARAM_BIT : 0) |
                           (Modifier.isStatic(method.getModifiers()) ? IS_STATIC_BIT : 0) |
@@ -199,7 +198,7 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
 
     private void checkReceiver(Object o) {
         // NOTE: will throw NullPointerException, as specified, if o is null
-        if (!methodDeclaringClass.isAssignableFrom(o.getClass())) {
+        if (!declaringClass.isAssignableFrom(o.getClass())) {
             throw new IllegalArgumentException("object is not an instance of declaring class");
         }
     }
