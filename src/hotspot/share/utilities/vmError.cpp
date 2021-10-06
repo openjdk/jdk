@@ -321,7 +321,7 @@ static frame next_frame(frame fr, Thread* t) {
   // Compiled code may use EBP register on x86 so it looks like
   // non-walkable C frame. Use frame.sender() for java frames.
   frame invalid;
-  if (t && t->is_Java_thread()) {
+  if (t != nullptr && t->is_Java_thread()) {
     // Catch very first native frame by using stack address.
     // For JavaThread stack_base and stack_size should be set.
     if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
@@ -360,7 +360,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
       }
       st->cr();
       fr = next_frame(fr, t);
-      if (!fr.pc()) {
+      if (fr.pc() == nullptr) {
         break;
       }
     }
@@ -915,7 +915,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        memset(printed, 0, sizeof(address) * printed_len);
 
        frame fr = os::fetch_frame_from_context(_context);
-       for (int count = 0; count < printed_len && fr.pc(); ) {
+       for (int count = 0; count < printed_len && fr.pc() != nullptr; ) {
          if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_len)) {
            count++;
          }
