@@ -136,15 +136,15 @@ public class ReadXBytes {
         throws IOException {
         Path file = c.create(length);
         try {
-            for (boolean hideSeek : List.of(false, true)) {
+            for (boolean seekable : List.of(false, true)) {
                 try (FileInputStream fis = new FileInputStream(file.toFile())) {
                     ReadableByteChannel ch;
-                    if (hideSeek) {
+                    if (seekable) {
+                        ch = FileChannel.open(file, READ);
+                    } else {
                         InputStream fis2 = new FileInputStream(file.toFile());
                         ch = Channels.newChannel(new FilterInputStream(fis2) {});
                         assertFalse(ch instanceof SeekableByteChannel);
-                    } else {
-                        ch = FileChannel.open(file, READ);
                     }
                     try (InputStream cis = Channels.newInputStream(ch)) {
                         f.test(length, cis, fis);
