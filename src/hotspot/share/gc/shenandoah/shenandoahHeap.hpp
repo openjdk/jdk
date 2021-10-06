@@ -351,6 +351,7 @@ public:
   void set_has_forwarded_objects(bool cond);
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
+  void set_aging_cycle(bool cond);
 
   inline bool is_stable() const;
   inline bool is_idle() const;
@@ -367,6 +368,7 @@ public:
   inline bool is_stw_gc_in_progress() const;
   inline bool is_concurrent_strong_root_in_progress() const;
   inline bool is_concurrent_weak_root_in_progress() const;
+  inline bool is_aging_cycle() const;
 
 private:
   void manage_satb_barrier(bool active);
@@ -493,6 +495,7 @@ public:
 // ---------- Class Unloading
 //
 private:
+  ShenandoahSharedFlag  _is_aging_cycle;
   ShenandoahSharedFlag _unload_classes;
   ShenandoahUnload     _unloader;
 

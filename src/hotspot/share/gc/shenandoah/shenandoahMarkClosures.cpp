@@ -71,7 +71,7 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
         // There have been allocations in this region since the start of the cycle.
         // Any objects new to this region must not assimilate elevated age.
         r->reset_age();
-      } else {
+      } else if (ShenandoahHeap::heap()->is_aging_cycle()) {
         r->increment_age();
       }
     }

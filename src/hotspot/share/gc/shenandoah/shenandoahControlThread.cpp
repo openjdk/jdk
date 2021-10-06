@@ -92,6 +92,7 @@ void ShenandoahControlThread::run_service() {
   GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
 
   double last_shrink_time = os::elapsedTime();
+  uint age_period = 0;
 
   // Shrink period avoids constantly polling regions for shrinking.
   // Having a period 10x lower than the delay would mean we hit the
@@ -249,9 +250,14 @@ void ShenandoahControlThread::run_service() {
         heap->free_set()->log_status();
       }
 
+      heap->set_aging_cycle(false);
       {
         switch (_mode) {
           case concurrent_normal: {
+            if ((generation == YOUNG) && (age_period-- == 0)) {
+              heap->set_aging_cycle(true);
+              age_period = ShenandoahAgingCyclePeriod - 1;
+            }
             service_concurrent_normal_cycle(heap, generation, cause);
             break;
           }

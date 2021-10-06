@@ -134,7 +134,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   }
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
-  // the space. This would be the last action if there is nothing to evacuate.
+  // the space. This would be the last action if there is nothing to evacuate.  Note that
+  // we will not age young-gen objects in the case that we skip evacuation.
   entry_cleanup_early();
 
   {
@@ -1033,6 +1034,10 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);
+
+  // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
+  // entire regions.  Both of these relevant operations occur before final update refs.
+  heap->set_aging_cycle(false);
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_updaterefs();

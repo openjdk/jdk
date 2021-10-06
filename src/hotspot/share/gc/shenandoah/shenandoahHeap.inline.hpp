@@ -421,7 +421,9 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
     if (target_gen == OLD_GENERATION) {
       handle_old_evacuation(copy, size, from_region->is_young());
     } else if (target_gen == YOUNG_GENERATION) {
-      ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
+      if (is_aging_cycle()) {
+        ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
+      }
     } else {
       ShouldNotReachHere();
     }
@@ -552,6 +554,10 @@ inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
 
 inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
   return _gc_state.is_set(WEAK_ROOTS);
+}
+
+inline bool ShenandoahHeap::is_aging_cycle() const {
+  return _is_aging_cycle.is_set();
 }
 
 template<class T>
