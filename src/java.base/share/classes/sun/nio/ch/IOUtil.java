@@ -213,7 +213,6 @@ public class IOUtil {
                         shadow.position(shadowPos + rem);
                         shadow.flip();
                         vec.setShadow(iov_len, shadow);
-                        buf.position(pos);  // temporarily restore position in user buffer
                         buf = shadow;
                         pos = shadow.position();
                     }
