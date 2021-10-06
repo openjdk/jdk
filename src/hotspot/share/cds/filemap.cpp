@@ -1042,20 +1042,16 @@ void FileMapInfo::validate_non_existent_class_paths() {
 // a utility class for checking file header
 class FileHeaderHelper {
   int _fd;
-  GenericCDSFileMapHeader* _header;
+  GenericCDSFileMapHeader _header;
 
 public:
   FileHeaderHelper() {
     _fd = -1;
-    _header = NULL;
   }
 
   ~FileHeaderHelper() {
     if (_fd != -1) {
       os::close(_fd);
-    }
-    if (_header != NULL) {
-      os::free((void*)_header);
     }
   }
 
@@ -1070,12 +1066,9 @@ public:
   // for an already opened file, do not set _fd
   bool initialize(int fd) {
     assert(fd != -1, "Archive should be opened");
-    assert(_header == NULL, "_header alredy inited?");
     size_t size = sizeof(GenericCDSFileMapHeader);
-    _header = (GenericCDSFileMapHeader*)os::malloc(size, mtInternal);
-    memset(_header, 0, size);
     lseek(fd, 0, SEEK_SET);
-    size_t n = os::read(fd, (void*)_header, (unsigned int)size);
+    size_t n = os::read(fd, (void*)&_header, (unsigned int)size);
     if (n != size) {
       vm_exit_during_initialization("Unable to read generic CDS file map header from shared archive");
       return false;
@@ -1084,16 +1077,15 @@ public:
   }
 
   GenericCDSFileMapHeader* get_generic_file_header() {
-    return _header;
+    return &_header;
   }
 
   bool read_base_archive_name(char** target) {
     assert(_fd != -1, "Archive should be open");
-    assert(_header != NULL, "Sanity check");
-    size_t name_size = (size_t)_header->_base_archive_name_size;
+    size_t name_size = (size_t)_header._base_archive_name_size;
     assert(name_size != 0, "For non-default base archive, name size should be non-zero!");
     *target = NEW_C_HEAP_ARRAY(char, name_size, mtInternal);
-    lseek(_fd, _header->_base_archive_path_offset, SEEK_SET); // position to correct offset.
+    lseek(_fd, _header._base_archive_path_offset, SEEK_SET); // position to correct offset.
     size_t n = os::read(_fd, *target, (unsigned int)name_size);
     if (n != name_size) {
       log_info(cds)("Unable to read base archive name from archive");
