@@ -729,7 +729,7 @@ void G1ConcurrentMark::clear_next_bitmap(WorkerThreads* workers) {
   // might use fewer workers than available. To ensure the bitmap is cleared
   // as efficiently as possible the number of active workers are temporarily
   // increased to include all currently created workers.
-  WithUpdatedActiveWorkers update(workers, workers->created_workers());
+  WithActiveWorkers update(workers, workers->created_workers());
   clear_next_bitmap(workers, false);
 }
 

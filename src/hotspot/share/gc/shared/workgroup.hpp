@@ -145,20 +145,20 @@ class WorkerThreads : public CHeapObj<mtInternal> {
 // Temporarily try to set the number of active workers.
 // It's not guaranteed that it succeeds, and users need to
 // query the number of active workers.
-class WithUpdatedActiveWorkers : public StackObj {
+class WithActiveWorkers : public StackObj {
 private:
   WorkerThreads* const _gang;
   const uint              _old_active_workers;
 
 public:
-  WithUpdatedActiveWorkers(WorkerThreads* gang, uint requested_num_workers) :
+  WithActiveWorkers(WorkerThreads* gang, uint requested_num_workers) :
       _gang(gang),
       _old_active_workers(gang->active_workers()) {
     uint capped_num_workers = MIN2(requested_num_workers, gang->total_workers());
     gang->update_active_workers(capped_num_workers);
   }
 
-  ~WithUpdatedActiveWorkers() {
+  ~WithActiveWorkers() {
     _gang->update_active_workers(_old_active_workers);
   }
 };
