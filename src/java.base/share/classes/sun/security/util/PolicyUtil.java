@@ -153,7 +153,8 @@ public class PolicyUtil {
                     debug.println("reading keystore"+keyStoreUrl);
                 }
 
-                try (InputStream inStream = new BufferedInputStream(getInputStream(keyStoreUrl))) {
+                try (InputStream inStream =
+                        new BufferedInputStream(getInputStream(keyStoreUrl))) {
                     ks.load(inStream, keyStorePassword);
                 }
                 return ks;

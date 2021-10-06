@@ -68,8 +68,9 @@ public class NetProperties {
             File f = new File(fname, "conf");
             f = new File(f, "net.properties");
             fname = f.getCanonicalPath();
-            try (FileInputStream in = new FileInputStream(fname)) {
-                BufferedInputStream bin = new BufferedInputStream(in);
+            try (FileInputStream in = new FileInputStream(fname);
+                 BufferedInputStream bin = new BufferedInputStream(in))
+            {
                 props.load(bin);
             }
         } catch (Exception e) {
