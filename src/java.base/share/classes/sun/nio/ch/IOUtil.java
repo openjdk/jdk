@@ -44,6 +44,11 @@ public class IOUtil {
      */
     static final int IOV_MAX;
 
+    /**
+     * Max sum of iov_len fields over all iovec structures that writev supports
+     */
+    static final int IOV_MAX_LEN_SUM = Integer.MAX_VALUE;
+
     private IOUtil() { }                // No instantiation
 
     static int write(FileDescriptor fd, ByteBuffer src, long position,
@@ -173,8 +178,8 @@ public class IOUtil {
         try {
             // Iterate over buffers to populate native iovec array.
             int count = offset + length;
-            int i = offset;
-            while (i < count && iov_len < IOV_MAX) {
+            int iovLenSum = 0;
+            for (int i = offset; i < count && iov_len < IOV_MAX; i++) {
                 ByteBuffer buf = bufs[i];
                 var h = acquireScope(buf, async);
                 if (h != null) {
@@ -188,6 +193,12 @@ public class IOUtil {
                     Util.checkRemainingBufferSizeAligned(rem, alignment);
 
                 if (rem > 0) {
+                    if (iovLenSum <= IOV_MAX_LEN_SUM - rem) {
+                        iovLenSum += rem;
+                    } else {
+                        rem = IOV_MAX_LEN_SUM - iovLenSum;
+                        iovLenSum = IOV_MAX_LEN_SUM;
+                    }
                     vec.setBuffer(iov_len, buf, pos, rem);
 
                     // allocate shadow buffer to ensure I/O is done with direct buffer
@@ -197,7 +208,9 @@ public class IOUtil {
                             shadow = Util.getTemporaryAlignedDirectBuffer(rem, alignment);
                         else
                             shadow = Util.getTemporaryDirectBuffer(rem);
-                        shadow.put(buf);
+                        int shadowPos = shadow.position();
+                        shadow.put(shadowPos, buf, pos, rem);
+                        shadow.position(shadowPos + rem);
                         shadow.flip();
                         vec.setShadow(iov_len, shadow);
                         buf.position(pos);  // temporarily restore position in user buffer
@@ -208,8 +221,10 @@ public class IOUtil {
                     vec.putBase(iov_len, bufferAddress(buf) + pos);
                     vec.putLen(iov_len, rem);
                     iov_len++;
+
+                    if (iovLenSum == IOV_MAX_LEN_SUM)
+                        break;
                 }
-                i++;
             }
             if (iov_len == 0)
                 return 0L;
@@ -218,7 +233,7 @@ public class IOUtil {
 
             // Notify the buffers how many bytes were taken
             long left = bytesWritten;
-            for (int j=0; j<iov_len; j++) {
+            for (int j = 0; j < iov_len; j++) {
                 if (left > 0) {
                     ByteBuffer buf = vec.getBuffer(j);
                     int pos = vec.getPosition(j);
@@ -242,7 +257,7 @@ public class IOUtil {
             // if an error occurred then clear refs to buffers and return any shadow
             // buffers to cache
             if (!completed) {
-                for (int j=0; j<iov_len; j++) {
+                for (int j = 0; j < iov_len; j++) {
                     ByteBuffer shadow = vec.getShadow(j);
                     if (shadow != null)
                         Util.offerLastTemporaryDirectBuffer(shadow);

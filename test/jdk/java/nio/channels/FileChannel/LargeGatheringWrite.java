@@ -25,7 +25,10 @@
  * @test
  * @bug 8274548
  * @summary Test gathering write of more than INT_MAX bytes
- * @run main/othervm -Xmx8G LargeGatheringWrite
+ * @library ..
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main/othervm -Xmx4G LargeGatheringWrite
  * @key randomness
  */
 import java.io.IOException;
@@ -36,6 +39,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Random;
 
+import jdk.test.lib.RandomFactory;
+
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -43,7 +48,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 public class LargeGatheringWrite {
     private static final int GB = 1024*1024*1024;
 
-    private static final Random RND = new Random(System.nanoTime());
+    private static final Random RND = RandomFactory.getRandom();
 
     public static void main(String[] args) throws IOException {
         // Create direct and heap buffers
@@ -93,7 +98,7 @@ public class LargeGatheringWrite {
                 byte[] bytes = null;
                 for (ByteBuffer buf : bigBuffers) {
                     // For each buffer read the corresponding number of bytes
-                    buf.clear();
+                    buf.rewind();
                     int length = buf.remaining();
                     System.out.printf("Checking length %d%n", length);
                     if (bytes == null || bytes.length < length)
@@ -103,7 +108,7 @@ public class LargeGatheringWrite {
                         throw new RuntimeException("remaining");
                     if (fcr.read(dst) != length)
                         throw new RuntimeException("length");
-                    dst.clear();
+                    dst.rewind();
 
                     // Verify that the bytes read from the file match the buffer
                     int mismatch;

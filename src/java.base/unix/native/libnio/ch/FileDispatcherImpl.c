@@ -29,7 +29,6 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #ifdef MACOSX
-#include <limits.h>
 #include <sys/mount.h>
 #include <sys/param.h>
 #endif
@@ -135,46 +134,7 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz,
 {
     jint fd = fdval(env, fdo);
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
-    ssize_t result = writev(fd, iov, len);
-#ifdef MACOSX
-    if (result < 0 && errno == EINVAL) {
-        //
-        // Calculate sum of iov_len values
-        //
-        size_t total_len = 0;
-        for (int i = 0; i < len; i++)
-            total_len += iov[i].iov_len;
-
-        //
-        // [EINVAL] The sum of the iov_len values in the iov array
-        //          overflows a 32-bit integer.
-        //
-        size_t overflow = total_len - INT_MAX;
-        if (overflow > 0) {
-            do {
-                int index = len - 1;
-                if (iov[index].iov_len <= overflow) {
-                    //
-                    // Clear size of and remove the last iovec element
-                    //
-                    overflow -= iov[index].iov_len;
-                    iov[index].iov_len = 0;
-                    len--;
-                } else {
-                    //
-                    // Adjust the last iovec element
-                    //
-                    iov[index].iov_len -= overflow;
-                    overflow = 0; // loop will exit
-                }
-            } while (overflow > 0);
-
-            // Retry the gathering write
-            result = writev(fd, iov, len);
-        }
-    }
-#endif
-    return convertLongReturnVal(env, result, JNI_FALSE);
+    return convertLongReturnVal(env, writev(fd, iov, len), JNI_FALSE);
 }
 
 static jlong
