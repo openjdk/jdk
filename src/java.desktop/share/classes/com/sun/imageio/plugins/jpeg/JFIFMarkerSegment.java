@@ -617,8 +617,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         printTag("JFIF");
         System.out.print("Version ");
         System.out.print(majorVersion);
-        System.out.println(".0"
-                           + Integer.toString(minorVersion));
+        System.out.println(".0" + minorVersion);
         System.out.print("Resolution units: ");
         System.out.println(resUnits);
         System.out.print("X density: ");

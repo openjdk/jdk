@@ -25,12 +25,23 @@
 
 package jdk.internal.reflect;
 
+import jdk.internal.vm.annotation.Stable;
+
+import java.lang.reflect.Field;
+
 /** Package-private implementation of the FieldAccessor interface
     which has access to all classes and all fields, regardless of
     language restrictions. See MagicAccessorImpl. */
 
 abstract class FieldAccessorImpl extends MagicAccessorImpl
     implements FieldAccessor {
+    @Stable
+    protected final Field field;
+
+    FieldAccessorImpl(Field field) {
+        this.field = field;
+    }
+
     /** Matches specification in {@link java.lang.reflect.Field} */
     public abstract Object get(Object obj)
         throws IllegalArgumentException;

@@ -100,6 +100,12 @@ public class TestIRMatching {
                  BadCountsConstraint.create(BadCount.class, "bad3()", 2,  1, "Store")
         );
 
+        runCheck(GoodRuleConstraint.create(Calls.class, "calls()", 1),
+                 BadFailOnConstraint.create(Calls.class, "calls()", 2, 1, "CallStaticJava", "dontInline"),
+                 BadFailOnConstraint.create(Calls.class, "calls()", 2, 2, "CallStaticJava", "dontInline"),
+                 GoodRuleConstraint.create(Calls.class, "calls()", 3)
+        );
+
         String[] allocArrayMatches = { "MyClass", "wrapper for: _new_array_Java"};
         runCheck(BadFailOnConstraint.create(AllocArray.class, "allocArray()", 1, allocArrayMatches),
                  BadFailOnConstraint.create(AllocArray.class, "allocArray()", 2,  allocArrayMatches),
@@ -185,8 +191,9 @@ public class TestIRMatching {
                  WhiteBox.getWhiteBox().isJVMCISupportedByGC() ?
                     BadFailOnConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining()", 2, "CallStaticJava", "uncommon_trap", "intrinsic_or_type_checked_inlining")
                     : GoodRuleConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining()", 2),
-                 BadFailOnConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining()", 3, "CallStaticJava", "uncommon_trap", "null_check"),
-                 GoodRuleConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining()", 4)
+                 BadFailOnConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining()", 3, "CallStaticJava", "uncommon_trap", "intrinsic"),
+                 BadFailOnConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining()", 4, "CallStaticJava", "uncommon_trap", "null_check"),
+                 GoodRuleConstraint.create(Traps.class, "instrinsicOrTypeCheckedInlining()", 5)
         );
 
 
@@ -867,6 +874,29 @@ class RunTests {
     }
 }
 
+class Calls {
+
+    @Test
+    @IR(counts = {IRNode.CALL, "1"})
+    @IR(failOn = {IRNode.CALL_OF_METHOD, "dontInline",  // Fails
+                  IRNode.STATIC_CALL_OF_METHOD, "dontInline"}) // Fails
+    @IR(failOn = {IRNode.CALL_OF_METHOD, "forceInline",
+                  IRNode.STATIC_CALL_OF_METHOD, "forceInline",
+                  IRNode.CALL_OF_METHOD, "dontInlines",
+                  IRNode.STATIC_CALL_OF_METHOD, "dontInlines",
+                  IRNode.CALL_OF_METHOD, "dont",
+                  IRNode.STATIC_CALL_OF_METHOD, "dont"})
+    public void calls() {
+        dontInline();
+        forceInline();
+    }
+
+    @DontInline
+    public void dontInline() {}
+
+    @ForceInline
+    public void forceInline() {}
+}
 
 class AllocArray {
     MyClass[] myClassArray;
@@ -994,6 +1024,7 @@ class Traps {
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
+                  IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void noTraps() {
@@ -1014,6 +1045,7 @@ class Traps {
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
+                  IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void predicateTrap() {
@@ -1033,6 +1065,7 @@ class Traps {
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
+                  IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void nullCheck() {
@@ -1049,6 +1082,7 @@ class Traps {
                   IRNode.UNSTABLE_IF_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
+                  IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public Object nullAssert() {
@@ -1064,6 +1098,7 @@ class Traps {
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
+                  IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void unstableIf(boolean flag) {
@@ -1082,6 +1117,7 @@ class Traps {
                   IRNode.UNSTABLE_IF_TRAP,
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
+                  IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void classCheck() {
@@ -1100,6 +1136,7 @@ class Traps {
                   IRNode.UNSTABLE_IF_TRAP,
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.CLASS_CHECK_TRAP,
+                  IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
     public void rangeCheck() {
@@ -1110,6 +1147,7 @@ class Traps {
     @Test
     @IR(failOn = IRNode.TRAP) // fails
     @IR(failOn = IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP) // fails
+    @IR(failOn = IRNode.INTRINSIC_TRAP) // fails
     @IR(failOn = IRNode.NULL_CHECK_TRAP) // fails
     @IR(failOn = {IRNode.PREDICATE_TRAP,
                   IRNode.UNSTABLE_IF_TRAP,

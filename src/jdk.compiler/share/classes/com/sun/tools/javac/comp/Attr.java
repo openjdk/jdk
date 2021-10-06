@@ -2590,7 +2590,7 @@ public class Attr extends JCTree.Visitor {
     //where
         Type adjustMethodReturnType(Symbol msym, Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
             if (msym != null &&
-                    msym.owner == syms.objectType.tsym &&
+                    (msym.owner == syms.objectType.tsym || msym.owner.isInterface()) &&
                     methodName == names.getClass &&
                     argtypes.isEmpty()) {
                 // as a special case, x.getClass() has type Class<? extends |X|>

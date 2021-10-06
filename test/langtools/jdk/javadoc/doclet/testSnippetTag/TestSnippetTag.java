@@ -288,7 +288,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unexpected content
                 {@snippet :}
-                ^
+                          ^
                 """),
             new Capture.TestCase(
                 """
@@ -297,7 +297,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unexpected content
                 {@snippet : }
-                ^
+                          ^
                 """),
             new Capture.TestCase(
                 """
@@ -306,7 +306,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unexpected content
                 {@snippet :a}
-                ^
+                          ^
                 """),
             new Capture.TestCase(
                 """
@@ -315,7 +315,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
+                :}
                 ^
                 """),
             new Capture.TestCase(
@@ -325,7 +325,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
+                : }
                 ^
                 """),
             new Capture.TestCase(
@@ -335,7 +335,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
+                :a}
                 ^
                 """),
             new Capture.TestCase(
@@ -345,8 +345,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
-                ^
+                 :}
+                 ^
                 """),
             new Capture.TestCase(
                 """
@@ -355,8 +355,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
-                ^
+                 : }
+                 ^
                 """),
             new Capture.TestCase(
                 """
@@ -365,8 +365,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: unexpected content
-                {@snippet
-                ^
+                 :a}
+                 ^
                 """),
             // </editor-fold>
             // <editor-fold desc="unexpected end of attribute">
@@ -381,7 +381,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file="}
-                ^
+                                ^
                 """),
             new Capture.TestCase(
                 """
@@ -390,7 +390,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet file="
+                }
                 ^
                 """),
             new Capture.TestCase(
@@ -400,7 +400,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file='}
-                ^
+                                ^
                 """),
             new Capture.TestCase(
                 """
@@ -409,7 +409,7 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet file='
+                }
                 ^
                 """),
             new Capture.TestCase(
@@ -419,8 +419,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet file='
-                ^
+                    }
+                    ^
                 """),
             new Capture.TestCase(
                 """
@@ -430,8 +430,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet
-                ^
+                    }
+                    ^
                 """),
             new Capture.TestCase(
                 """
@@ -440,8 +440,8 @@ public class TestSnippetTag extends JavadocTester {
                 """,
                 """
                 error: no content
-                {@snippet
-                ^
+                file='}
+                      ^
                 """),
             // </editor-fold>
             // <editor-fold desc="missing attribute value">
@@ -484,7 +484,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unexpected content
                 {@snippet file=:}
-                ^
+                               ^
                 """),
             new Capture.TestCase(
                 """
@@ -493,7 +493,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet
-                ^
+                        ^
                 """),
             new Capture.TestCase(
                 """
@@ -502,7 +502,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file
-                ^
+                             ^
                 """),
             new Capture.TestCase(
                 """
@@ -511,7 +511,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file=
-                ^
+                              ^
                 """),
             new Capture.TestCase(
                 """
@@ -520,7 +520,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file="
-                ^
+                               ^
                 """),
             new Capture.TestCase(
                 """
@@ -529,7 +529,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file='
-                ^
+                               ^
                 """),
             new Capture.TestCase(
                 """
@@ -537,7 +537,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet :*/
-                ^
+                          ^
                 """),
             new Capture.TestCase(
                 """
@@ -545,8 +545,8 @@ public class TestSnippetTag extends JavadocTester {
                     Hello, World!""",
                 """
                 error: unterminated inline tag
-                {@snippet :
-                ^
+                    Hello, World!*/
+                                ^
                 """),
             new Capture.TestCase(
                 """
@@ -555,7 +555,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: no content
                 {@snippet file="gibberish" :*/
-                ^
+                                           ^
                 """),
             new Capture.TestCase(
                 """
@@ -564,7 +564,7 @@ public class TestSnippetTag extends JavadocTester {
                 """
                 error: unterminated inline tag
                 {@snippet file="gibberish" :
-                ^
+                                           ^
                 """)
             // </editor-fold>
         ));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,7 +456,7 @@ class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionMod
 
     public String toString() {
         String s =  ((getValueIsAdjusting()) ? "~" : "=") + value.toString();
-        return getClass().getName() + " " + Integer.toString(hashCode()) + " " + s;
+        return getClass().getName() + " " + hashCode() + " " + s;
     }
 
     /**
@@ -499,7 +499,7 @@ class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionMod
      * anchor and the new lead are either all selected or all deselected.
      * If the value at the anchor index is selected, first clear all the
      * values in the range [anchor, oldLeadIndex], then select all the values
-     * values in the range [anchor, newLeadIndex], where oldLeadIndex is the old
+     * in the range [anchor, newLeadIndex], where oldLeadIndex is the old
      * leadIndex and newLeadIndex is the new one.
      * <p>
      * If the value at the anchor index is not selected, do the same thing in reverse,
