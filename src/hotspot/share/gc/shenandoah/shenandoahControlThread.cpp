@@ -142,8 +142,10 @@ void ShenandoahControlThread::run_service() {
 
       ShenandoahHeuristics* heuristics = _degen_generation->heuristics();
       generation = _degen_generation->generation_mode();
+      bool old_gen_evacuation_failed = heap->clear_old_evacuation_failure();
 
-      if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle()) {
+      // Do not bother with degenerated cycle if old generation evacuation failed.
+      if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() && !old_gen_evacuation_failed) {
         heuristics->record_allocation_failure_gc();
         policy->record_alloc_failure_to_degenerated(degen_point);
         set_gc_mode(stw_degenerated);
@@ -370,7 +372,8 @@ void ShenandoahControlThread::run_service() {
       last_shrink_time = current;
     }
 
-    {
+    // Don't wait around if there was an allocation failure - start the next cycle immediately.
+    if (!is_alloc_failure_gc()) {
       // The timed wait is necessary because this thread has a responsibility to send
       // 'alloc_words' to the pacer when it does not perform a GC.
       MonitorLocker lock(&_control_lock, Mutex::_no_safepoint_check_flag);

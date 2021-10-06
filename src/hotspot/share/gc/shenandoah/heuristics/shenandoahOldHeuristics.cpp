@@ -294,18 +294,6 @@ void ShenandoahOldHeuristics::get_coalesce_and_fill_candidates(ShenandoahHeapReg
   }
 }
 
-bool ShenandoahOldHeuristics::should_defer_gc() {
-  if (unprocessed_old_collection_candidates() > 0) {
-    // Cannot start a new old-gen GC until previous one has finished.
-    //
-    // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
-    // For example, we could choose to abandon the previous old collection before it has completed evacuations,
-    // but this would require that we coalesce and fill all garbage within unevacuated collection-set regions.
-    return true;
-  }
-  return false;
-}
-
 void ShenandoahOldHeuristics::abandon_collection_candidates() {
   _old_collection_candidates = 0;
   _next_old_collection_candidate = 0;
@@ -315,7 +303,12 @@ void ShenandoahOldHeuristics::abandon_collection_candidates() {
   _first_coalesce_and_fill_candidate = 0;
 }
 
+void ShenandoahOldHeuristics::handle_promotion_failure() {
+  _promotion_failed = true;
+}
+
 void ShenandoahOldHeuristics::record_cycle_start() {
+  _promotion_failed = false;
   _trigger_heuristic->record_cycle_start();
 }
 
@@ -324,9 +317,23 @@ void ShenandoahOldHeuristics::record_cycle_end() {
 }
 
 bool ShenandoahOldHeuristics::should_start_gc() {
-  if (should_defer_gc()) {
+  // Cannot start a new old-gen GC until previous one has finished.
+  //
+  // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
+  // For example, we could choose to abandon the previous old collection before it has completed evacuations,
+  // but this would require that we coalesce and fill all garbage within unevacuated collection-set regions.
+  if (unprocessed_old_collection_candidates() > 0) {
     return false;
   }
+
+  // If there's been a promotion failure (and we don't have regions already scheduled for evacuation),
+  // start a new old generation collection.
+  if (_promotion_failed) {
+    log_info(gc)("Trigger: Promotion Failure");
+    return true;
+  }
+
+  // Otherwise, defer to configured heuristic for gc trigger.
   return _trigger_heuristic->should_start_gc();
 }
 

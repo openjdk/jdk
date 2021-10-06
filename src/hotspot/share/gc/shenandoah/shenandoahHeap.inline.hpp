@@ -315,7 +315,8 @@ inline HeapWord* ShenandoahHeap::allocate_from_plab(Thread* thread, size_t size)
 }
 
 inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
-  if (ShenandoahThreadLocalData::is_oom_during_evac(Thread::current())) {
+  assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
+  if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
     // This thread went through the OOM during evac protocol and it is safe to return
     // the forward pointer. It must not attempt to evacuate any more.
     return ShenandoahBarrierSet::resolve_forwarded(p);
@@ -388,9 +389,17 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
 #endif
 
   if (copy == NULL) {
-    if (target_gen == OLD_GENERATION && from_region->affiliation() == YOUNG_GENERATION) {
-      // TODO: Inform old generation heuristic of promotion failure
-      return NULL;
+    if (target_gen == OLD_GENERATION) {
+      assert(mode()->is_generational(), "Should only be here in generational mode.");
+      if (from_region->is_young()) {
+        // Signal that promotion failed. Will evacuate this old object somewhere in young gen.
+        handle_promotion_failure();
+        return NULL;
+      } else {
+        // Remember that evacuation to old gen failed. We'll want to trigger a full gc to recover from this
+        // after the evacuation threads have finished.
+        handle_old_evacuation_failure();
+      }
     }
 
     control_thread()->handle_alloc_failure_evac(size);
@@ -464,6 +473,10 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
   } else {
     obj->set_mark(w);
   }
+}
+
+inline bool ShenandoahHeap::clear_old_evacuation_failure() {
+  return _old_gen_oom_evac.try_unset();
 }
 
 inline bool ShenandoahHeap::is_old(oop obj) const {
