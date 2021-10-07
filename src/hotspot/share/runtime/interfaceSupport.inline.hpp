@@ -212,6 +212,36 @@ class ThreadToNativeFromVM : public ThreadStateTransition {
   }
 };
 
+class JavaThreadInVMAndNative : public StackObj {
+ private:
+  JavaThread* const _jt;
+  JavaThreadState _original_state;
+ public:
+
+  JavaThreadInVMAndNative(Thread* t) : _jt(t != NULL && t->is_Java_thread() ? JavaThread::cast(t) : NULL),
+                                       _original_state(_thread_max_state) {
+    if (_jt != NULL) {
+      _original_state = _jt->thread_state();
+      if (_original_state != _thread_in_vm) {
+        _jt->set_thread_state(_thread_in_vm);
+      }
+    }
+  }
+
+  ~JavaThreadInVMAndNative() {
+    if (_original_state != _thread_max_state) {
+      _jt->set_thread_state(_original_state);
+    }
+  }
+
+  void transition_to_native() {
+    if (_jt != NULL && _jt->thread_state() != _thread_in_native) {
+      assert(_jt->thread_state() == _thread_in_vm, "invariant");
+      _jt->set_thread_state(_thread_in_native);
+    }
+  }
+};
+
 // Perform a transition to _thread_blocked and take a call-back to be executed before
 // SafepointMechanism::process_if_requested when returning to the VM. This allows us
 // to perform an "undo" action if we might block processing a safepoint/handshake operation
