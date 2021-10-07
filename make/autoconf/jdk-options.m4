@@ -712,6 +712,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 AC_DEFUN([JDKOPT_BUILD_BINUTILS],
 [
   BINUTILS_SRC="$with_binutils_src"
+  UTIL_FIXUP_PATH(BINUTILS_SRC)
 
   if ! test -d $BINUTILS_SRC; then
     AC_MSG_ERROR([--with-binutils-src is not pointing to a directory])
@@ -744,16 +745,17 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
     binutils_cflags="$MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
 
     AC_MSG_NOTICE([Running binutils configure])
+    AC_MSG_NOTICE([configure command line: ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc $SYSROOT_CFLAGS" $binutils_target])
     saved_dir=`pwd`
     cd "$BINUTILS_SRC"
-    ./configure --disable-nls CC="$binutils_cc" CFLAGS="$binutils_cflags" $binutils_target
+    ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc $SYSROOT_CFLAGS" $binutils_target
     if test $? -ne 0 || ! test -e $BINUTILS_SRC/Makefile; then
       AC_MSG_NOTICE([Automatic building of binutils failed on configure. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
     fi
     AC_MSG_NOTICE([Running binutils make])
     $MAKE all-opcodes
-    if test $? -ne 0;  then
+    if test $? -ne 0; then
       AC_MSG_NOTICE([Automatic building of binutils failed on make. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
     fi
