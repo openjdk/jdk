@@ -256,7 +256,8 @@ public final class Channels {
     // -- Channels from streams --
 
     /**
-     * Constructs a channel that reads bytes from the given stream.
+     * Constructs a channel that reads bytes from the given stream into one
+     * buffer or a sequence of buffers.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
      * its I/O operations to the given stream.  Closing the channel will in
@@ -267,26 +268,26 @@ public final class Channels {
      *
      * @return  A new readable byte channel
      */
-    public static ReadableByteChannel newChannel(InputStream in) {
+    public static ScatteringByteChannel newChannel(InputStream in) {
         Objects.requireNonNull(in, "in");
 
         if (in.getClass() == FileInputStream.class) {
             return ((FileInputStream) in).getChannel();
         }
 
-        return new ReadableByteChannelImpl(in);
+        return new ScatteringByteChannelImpl(in);
     }
 
-    private static class ReadableByteChannelImpl
+    private static class ScatteringByteChannelImpl
         extends AbstractInterruptibleChannel    // Not really interruptible
-        implements ReadableByteChannel
+        implements ScatteringByteChannel
     {
         private final InputStream in;
         private static final int TRANSFER_SIZE = 8192;
         private byte[] buf = new byte[0];
         private final Object readLock = new Object();
 
-        ReadableByteChannelImpl(InputStream in) {
+        ScatteringByteChannelImpl(InputStream in) {
             this.in = in;
         }
 
@@ -326,6 +327,49 @@ public final class Channels {
             }
         }
 
+        public long read(ByteBuffer[] dsts, int offset, int length)
+            throws IOException {
+            if (!isOpen()) {
+                throw new ClosedChannelException();
+            }
+
+            Objects.checkFromIndexSize(offset, length, dsts.length);
+
+            long totalBytesRead = 0L;
+            int maxIndex = offset + length;
+            for (int i = offset; i < maxIndex; i++) {
+                if (dsts[i].isReadOnly()) {
+                    throw new IllegalArgumentException();
+                }
+
+                int rem = dsts[i].remaining();
+
+                if (rem == 0) continue;
+
+                int n;
+                long nfree = Long.MAX_VALUE - totalBytesRead;
+                if (nfree >= rem) {
+                    n = read(dsts[i]);
+                } else {
+                    int lim = dsts[i].limit();
+                    // Cast of nfree safe as condition nfree < rem obtains
+                    dsts[i].limit(dsts[i].position() + (int)nfree);
+                    n = read(dsts[i]);
+                    dsts[i].limit(lim);
+                }
+
+                if (n < 0) return totalBytesRead;
+
+                totalBytesRead += n;
+            }
+
+            return totalBytesRead;
+        }
+
+        public final long read(ByteBuffer[] dsts) throws IOException {
+            return read(dsts, 0, dsts.length);
+        }
+
         @Override
         protected void implCloseChannel() throws IOException {
             in.close();
@@ -334,7 +378,8 @@ public final class Channels {
 
 
     /**
-     * Constructs a channel that writes bytes to the given stream.
+     * Constructs a channel that writes bytes to the given stream from one
+     * buffer or a sequence of buffers.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
      * its I/O operations to the given stream.  Closing the channel will in
@@ -345,26 +390,26 @@ public final class Channels {
      *
      * @return  A new writable byte channel
      */
-    public static WritableByteChannel newChannel(OutputStream out) {
+    public static GatheringByteChannel newChannel(OutputStream out) {
         Objects.requireNonNull(out, "out");
 
         if (out.getClass() == FileOutputStream.class) {
             return ((FileOutputStream) out).getChannel();
         }
 
-        return new WritableByteChannelImpl(out);
+        return new GatheringByteChannelImpl(out);
     }
 
-    private static class WritableByteChannelImpl
+    private static class GatheringByteChannelImpl
         extends AbstractInterruptibleChannel    // Not really interruptible
-        implements WritableByteChannel
+        implements GatheringByteChannel
     {
         private final OutputStream out;
         private static final int TRANSFER_SIZE = 8192;
         private byte[] buf = new byte[0];
         private final Object writeLock = new Object();
 
-        WritableByteChannelImpl(OutputStream out) {
+        GatheringByteChannelImpl(OutputStream out) {
             this.out = out;
         }
 
@@ -393,6 +438,43 @@ public final class Channels {
                 }
                 return totalWritten;
             }
+        }
+
+        public long write(ByteBuffer[] srcs, int offset, int length)
+            throws IOException {
+            if (!isOpen()) {
+                throw new ClosedChannelException();
+            }
+
+            Objects.checkFromIndexSize(offset, length, srcs.length);
+
+            long totalBytesWritten = 0L;
+            final int maxIndex = offset + length;
+            for (int i = offset; i < maxIndex; i++) {
+                int rem = srcs[i].remaining();
+
+                if (rem == 0) continue;
+
+                int n;
+                long nfree = Long.MAX_VALUE - totalBytesWritten;
+                if (nfree >= rem) {
+                    n = write(srcs[i]);
+                } else {
+                    int lim = srcs[i].limit();
+                    // Cast of nfree safe as condition nfree < rem obtains
+                    srcs[i].limit(srcs[i].position() + (int)nfree);
+                    n = write(srcs[i]);
+                    srcs[i].limit(lim);
+                }
+
+                totalBytesWritten += n;
+            }
+
+            return totalBytesWritten;
+        }
+
+        public final long write(ByteBuffer[] srcs) throws IOException {
+            return write(srcs, 0, srcs.length);
         }
 
         @Override
