@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,9 +118,8 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         // Fetch all methods for the class, check performance impact
         // Needs no synchronization now, since methods() returns
         // unmodifiable local data
-        Iterator<Method> it = methods().iterator();
-        while (it.hasNext()) {
-            MethodImpl method = (MethodImpl)it.next();
+        for (Method m : methods()) {
+            MethodImpl method = (MethodImpl)m;
             if (method.ref() == ref) {
                 return method;
             }
@@ -132,9 +131,8 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         // Fetch all fields for the class, check performance impact
         // Needs no synchronization now, since fields() returns
         // unmodifiable local data
-        Iterator<Field>it = fields().iterator();
-        while (it.hasNext()) {
-            FieldImpl field = (FieldImpl)it.next();
+        for (Field f : fields()) {
+            FieldImpl field = (FieldImpl)f;
             if (field.ref() == ref) {
                 return field;
             }
@@ -420,12 +418,11 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
 
         /* Add inherited, visible fields */
         List<? extends ReferenceType> types = inheritedTypes();
-        Iterator<? extends ReferenceType> iter = types.iterator();
-        while (iter.hasNext()) {
+        for (ReferenceType referenceType : types) {
             /*
              * TO DO: Be defensive and check for cyclic interface inheritance
              */
-            ReferenceTypeImpl type = (ReferenceTypeImpl)iter.next();
+            ReferenceTypeImpl type = (ReferenceTypeImpl)referenceType;
             type.addVisibleFields(visibleList, visibleTable, ambiguousNames);
         }
 
@@ -454,9 +451,8 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
 
             /* Add inherited fields */
             List<? extends ReferenceType> types = inheritedTypes();
-            Iterator<? extends ReferenceType> iter = types.iterator();
-            while (iter.hasNext()) {
-                ReferenceTypeImpl type = (ReferenceTypeImpl)iter.next();
+            for (ReferenceType referenceType : types) {
+                ReferenceTypeImpl type = (ReferenceTypeImpl)referenceType;
                 type.addAllFields(fieldList, typeSet);
             }
         }
@@ -916,9 +912,8 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
 
         List<Location> list = new ArrayList<Location>();
 
-        Iterator<Method> iter = methods.iterator();
-        while(iter.hasNext()) {
-            MethodImpl method = (MethodImpl)iter.next();
+        for (Method m : methods) {
+            MethodImpl method = (MethodImpl)m;
             // eliminate native and abstract to eliminate
             // false positives
             if (!method.isAbstract() &&
