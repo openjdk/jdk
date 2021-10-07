@@ -1407,7 +1407,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ldp(zr, r19, Address(__ post(sp, 2 * wordSize)));
     __ pop(RegSet::range(r20, r30), sp);
 #else
-    __ pop(RegSet::range(r18, r30), sp);
+    __ pop(RegSet::range(r18_tls, r30), sp);
 #endif
 
     __ bind(no_reguard);
