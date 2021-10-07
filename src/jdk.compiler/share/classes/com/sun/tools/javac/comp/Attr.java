@@ -5826,10 +5826,17 @@ public class Attr extends JCTree.Visitor {
                             Warnings.IneffectualSerialFieldExternalizable);
             }
 
-            // TOOD: If additional compile-time information is
-            // available, should check for a "constant null"
-            // assignment to this field. A null value makes having the
-            // field a no-op.
+            // Warn if serialPersistentFields is initialized to a
+            // literal null.
+            JCTree spfDecl = TreeInfo.declarationFor(spf, tree);
+            if (spfDecl != null && spfDecl.getTag() == VARDEF) {
+                JCVariableDecl variableDef = (JCVariableDecl) spfDecl;
+                JCExpression initExpr = variableDef.init;
+                 if (initExpr != null && TreeInfo.isNull(initExpr)) {
+                     log.warning(LintCategory.SERIAL, initExpr.pos(),
+                                 Warnings.SPFNullInit);
+                 }
+            }
         }
 
         /*
