@@ -574,7 +574,7 @@ public final class ZoneInfoFile {
                     // ZoneRulesBuilder adjusts < 0 case (-1, for last, don't have
                     // "<=" case yet) to positive value if not February (it appears
                     // we don't have February cutoff in tzdata table yet)
-                    // Ideally, if JSR310 can just pass in the nagative and
+                    // Ideally, if JSR310 can just pass in the negative and
                     // we can then pass in the dom = -1, dow > 0 into ZoneInfo
                     //
                     // hacking, assume the >=24 is the result of ZRB optimization for
@@ -894,12 +894,12 @@ public final class ZoneInfoFile {
     }
 
     // A simple/raw version of j.t.ZoneOffsetTransitionRule
+    // timeEndOfDay is included in secondOfDay as "86,400" secs.
     private static class ZoneOffsetTransitionRule {
         private final int month;
         private final byte dom;
         private final int dow;
         private final int secondOfDay;
-        private final boolean timeEndOfDay;
         private final int timeDefinition;
         private final int standardOffset;
         private final int offsetBefore;
@@ -917,7 +917,6 @@ public final class ZoneInfoFile {
             this.dom = (byte)(((data & (63 << 22)) >>> 22) - 32);
             this.dow = dowByte == 0 ? -1 : dowByte;
             this.secondOfDay = timeByte == 31 ? in.readInt() : timeByte * 3600;
-            this.timeEndOfDay = timeByte == 24;
             this.timeDefinition = (data & (3 << 12)) >>> 12;
 
             this.standardOffset = stdByte == 255 ? in.readInt() : (stdByte - 128) * 900;
@@ -937,9 +936,6 @@ public final class ZoneInfoFile {
                 if (dow != -1) {
                     epochDay = nextOrSame(epochDay, dow);
                 }
-            }
-            if (timeEndOfDay) {
-                epochDay += 1;
             }
             int difference = 0;
             switch (timeDefinition) {
