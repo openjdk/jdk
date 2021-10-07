@@ -143,25 +143,6 @@ public abstract class StringConcat {
     }
 
     /**
-     * If the type is not accessible from current context, try to figure out the
-     * sharpest accessible supertype.
-     *
-     * @param originalType type to sharpen
-     * @return sharped type
-     */
-    Type sharpestAccessible(Type originalType) {
-        if (originalType.hasTag(ARRAY)) {
-            return types.makeArrayType(sharpestAccessible(types.elemtype(originalType)));
-        }
-
-        Type type = originalType;
-        while (!rs.isAccessible(gen.getAttrEnv(), type.asElement())) {
-            type = types.supertype(type);
-        }
-        return type;
-    }
-
-    /**
      * "Legacy" bytecode flavor: emit the StringBuilder.append chains for string
      * concatenation.
      */
@@ -341,11 +322,9 @@ public abstract class StringConcat {
                 for (JCTree arg : t) {
                     Object constVal = arg.type.constValue();
                     if ("".equals(constVal)) continue;
-                    Type argType;
-                    if (arg.type == syms.botType) {
+                    Type argType = arg.type;
+                    if (argType == syms.botType) {
                         argType = types.boxedClass(syms.voidType).type;
-                    } else {
-                        argType = sharpestAccessible(arg.type);
                     }
                     if (!first || generateFirstArg) {
                         gen.genExpr(arg, arg.type).load();
@@ -453,7 +432,7 @@ public abstract class StringConcat {
                     } else {
                         // Ordinary arguments come through the dynamic arguments.
                         recipe.append(TAG_ARG);
-                        Type argType = sharpestAccessible(arg.type);
+                        Type argType = arg.type;
                         if (!first || generateFirstArg) {
                             gen.genExpr(arg, arg.type).load();
                             if (shouldConvertToStringEagerly(argType)) {
