@@ -33,6 +33,10 @@
  * @clean *
  * @compile -XDstringConcat=indyWithConstants StringAppendEvaluatesInOrder.java
  * @run main StringAppendEvaluatesInOrder
+ *
+ * @clean *
+ * @compile -XDstringConcat=inline            StringAppendEvaluatesInOrder.java
+ * @run main StringAppendEvaluatesInOrder
  */
 
 public class StringAppendEvaluatesInOrder {
