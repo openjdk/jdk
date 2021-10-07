@@ -310,13 +310,15 @@ static Mutex::Rank _ranks[] = { Mutex::event, Mutex::service, Mutex::stackwaterm
 static const char* _rank_names[] = { "event", "service", "stackwatermark", "tty", "oopstorage",
                                      "nosafepoint", "safepoint" };
 
+static const int _num_ranks = 7;
+
 static const char* rank_name_internal(Mutex::Rank r) {
   // Find closest rank and print out the name
   stringStream st;
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < _num_ranks; i++) {
     if (r == _ranks[i]) {
       return _rank_names[i];
-    } else if (r  > _ranks[i] && (i < 6 && r < _ranks[i+1])) {
+    } else if (r  > _ranks[i] && (i < _num_ranks-1 && r < _ranks[i+1])) {
       int delta = static_cast<int>(_ranks[i+1]) - static_cast<int>(r);
       st.print("%s-%d", _rank_names[i+1], delta);
       return st.as_string();
@@ -338,7 +340,7 @@ void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
     ResourceMark rm;
     assert(adjusted > _ranks[i-1],
            "Rank %s-%d overlaps with %s",
-           _rank_names[i], adjust, rank_name_internal(adjusted));
+           rank_name_internal(orig), adjust, rank_name_internal(adjusted));
   }
 }
 #endif // ASSERT

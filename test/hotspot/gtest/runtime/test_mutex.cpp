@@ -302,6 +302,17 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_safepoint_rank,
   monitor_rank_broken->unlock();
 }
 
+TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_safepoint_rank2,
+                   ".*Rank safepoint-1-39 overlaps with service-5") {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  Monitor* monitor_rank_broken = new Monitor(Mutex::safepoint-1, "monitor_rank_broken");
+  Monitor* monitor_rank_also_broken = new Monitor(monitor_rank_broken->rank()-39, "monitor_rank_also_broken");
+  monitor_rank_also_broken->lock_without_safepoint_check();
+  monitor_rank_also_broken->unlock();
+}
+
 // Test mismatched safepoint check flag on lock declaration vs. lock acquisition.
 TEST_VM_ASSERT_MSG(MutexSafepoint, always_check,
     ".*This lock should always have a safepoint check for Java threads: SFPT_Test_lock") {
