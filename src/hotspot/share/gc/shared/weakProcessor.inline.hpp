@@ -96,14 +96,14 @@ void WeakProcessor::Task::work(uint worker_id,
   }
 }
 
-class WeakProcessor::GangTask : public WorkerTask {
+class WeakProcessor::WeakOopsDoTask : public WorkerTask {
   Task _task;
   BoolObjectClosure* _is_alive;
   OopClosure* _keep_alive;
-  void (*_erased_do_work)(GangTask* task, uint worker_id);
+  void (*_erased_do_work)(WeakOopsDoTask* task, uint worker_id);
 
   template<typename IsAlive, typename KeepAlive>
-  static void erased_do_work(GangTask* task, uint worker_id) {
+  static void erased_do_work(WeakOopsDoTask* task, uint worker_id) {
     task->_task.work(worker_id,
                      static_cast<IsAlive*>(task->_is_alive),
                      static_cast<KeepAlive*>(task->_keep_alive));
@@ -111,11 +111,11 @@ class WeakProcessor::GangTask : public WorkerTask {
 
 public:
   template<typename IsAlive, typename KeepAlive>
-  GangTask(const char* name,
-           IsAlive* is_alive,
-           KeepAlive* keep_alive,
-           WeakProcessorTimes* times,
-           uint nworkers) :
+  WeakOopsDoTask(const char* name,
+                 IsAlive* is_alive,
+                 KeepAlive* keep_alive,
+                 WeakProcessorTimes* times,
+                 uint nworkers) :
     WorkerTask(name),
     _task(times, nworkers),
     _is_alive(is_alive),
@@ -137,7 +137,7 @@ void WeakProcessor::weak_oops_do(WorkerThreads* workers,
   uint nworkers = ergo_workers(MIN2(workers->max_workers(),
                                     times->max_threads()));
 
-  GangTask task("Weak Processor", is_alive, keep_alive, times, nworkers);
+  WeakOopsDoTask task("Weak Processor", is_alive, keep_alive, times, nworkers);
   workers->run_task(&task, nworkers);
   task.report_num_dead();
 }

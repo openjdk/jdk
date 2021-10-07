@@ -79,7 +79,7 @@ private:
   template<typename IsAlive, typename KeepAlive>
   class CountingClosure;
 
-  class GangTask;
+  class WeakOopsDoTask;
 };
 
 class WeakProcessor::Task {
