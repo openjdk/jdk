@@ -38,3 +38,6 @@ vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 82456
 vmTestbase/vm/mlvm/hiddenloader/stress/oome/heap/Test.java 8273095 generic-all
 
 serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
+
+compiler/vectorapi/VectorCastShape64Test.java 8274855 generic-x64
+compiler/vectorapi/VectorCastShape128Test.java 8274855 generic-x64

@@ -23,25 +23,30 @@
 
 /*
  * @test
- * @bug 8268435
+ * @bug 8268435 8274780
  * @summary Verify ChannelInputStream methods readAllBytes and readNBytes
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @modules java.base/jdk.internal.util
- * @run testng/othervm -Xmx8G ReadXBytes
+ * @run testng/othervm/timeout=900 -Xmx8G ReadXBytes
  * @key randomness
  */
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.READ;
+import java.util.List;
 import java.util.Random;
 import jdk.internal.util.ArraysSupport;
 
@@ -51,6 +56,7 @@ import org.testng.Assert;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -129,10 +135,22 @@ public class ReadXBytes {
     public void dataTest(long length, FileCreator c, DataTest f)
         throws IOException {
         Path file = c.create(length);
-        try (FileInputStream fis = new FileInputStream(file.toFile());
-             FileChannel fc = FileChannel.open(file, READ);
-             InputStream cis = Channels.newInputStream(fc)) {
-            f.test(length, cis, fis);
+        try {
+            for (boolean seekable : List.of(false, true)) {
+                try (FileInputStream fis = new FileInputStream(file.toFile())) {
+                    ReadableByteChannel ch;
+                    if (seekable) {
+                        ch = FileChannel.open(file, READ);
+                    } else {
+                        InputStream fis2 = new FileInputStream(file.toFile());
+                        ch = Channels.newChannel(new FilterInputStream(fis2) {});
+                        assertFalse(ch instanceof SeekableByteChannel);
+                    }
+                    try (InputStream cis = Channels.newInputStream(ch)) {
+                        f.test(length, cis, fis);
+                    }
+                }
+            }
         } finally {
             Files.delete(file);
         }
