@@ -5514,9 +5514,7 @@ public class Attr extends JCTree.Visitor {
         // serialization-related fields and methods
         if (env.info.lint.isEnabled(LintCategory.SERIAL)
                 && isSerializable(c.type)
-            /* && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0 */
                 && !c.isAnonymous()) {
-            // checkSerialVersionUID(tree, c, env);
             checkSerialStructure(tree, c, env);
         }
         if (allowTypeAnnos) {
@@ -5538,76 +5536,34 @@ public class Attr extends JCTree.Visitor {
             return null;
         }
 
-        /** check if a type is a subtype of Serializable, if that is available. */
-        boolean isSerializable(Type t) {
-            try {
-                syms.serializableType.complete();
-            }
-            catch (CompletionFailure e) {
-                return false;
-            }
-            return types.isSubtype(t, syms.serializableType);
+    /** check if a type is a subtype of Serializable, if that is available. */
+    boolean isSerializable(Type t) {
+        try {
+            syms.serializableType.complete();
         }
-
-        /** check if a type is a subtype of Externalizable, if that is available. */
-        boolean isExternalizable(Type t) {
-            try {
-                syms.externalizableType.complete();
-            }
-            catch (CompletionFailure e) {
-                return false;
-            }
-            return types.isSubtype(t, syms.externalizableType);
+        catch (CompletionFailure e) {
+            return false;
         }
+        return types.isSubtype(t, syms.serializableType);
+    }
 
-//         /** Check that an appropriate serialVersionUID member is defined. */
-//         private void checkSerialVersionUID(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
-
-//             // check for presence of serialVersionUID
-//             VarSymbol svuid = null;
-//             for (Symbol sym : c.members().getSymbolsByName(names.serialVersionUID)) {
-//                 if (sym.kind == VAR) {
-//                     svuid = (VarSymbol)sym;
-//                     break;
-//                 }
-//             }
-
-//             if (svuid == null) {
-//                 if (!c.isRecord())
-//                     log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
-//                 return;
-//             }
-
-//             // Check if @SuppressWarnings("serial") is an annotation of serialVersionUID.
-//             // See JDK-8231622 for more information.
-//             Lint lint = env.info.lint.augment(svuid);
-//             if (lint.isSuppressed(LintCategory.SERIAL)) {
-//                 return;
-//             }
-
-//             // check that it is static final
-//             if ((svuid.flags() & (STATIC | FINAL)) !=
-//                 (STATIC | FINAL))
-//                 log.warning(LintCategory.SERIAL,
-//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ImproperSVUID(c));
-
-//             // check that it is long
-//             else if (!svuid.type.hasTag(LONG))
-//                 log.warning(LintCategory.SERIAL,
-//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.LongSVUID(c));
-
-//             // check constant
-//             else if (svuid.getConstValue() == null)
-//                 log.warning(LintCategory.SERIAL,
-//                         TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ConstantSVUID(c));
-//         }
-
-        /**
-         * Check structure of serialization declarations.
-         */
-        private void checkSerialStructure(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
-            (new SerialTypeVisitor()).visit(c, tree);
+    /** check if a type is a subtype of Externalizable, if that is available. */
+    boolean isExternalizable(Type t) {
+        try {
+            syms.externalizableType.complete();
         }
+        catch (CompletionFailure e) {
+            return false;
+        }
+        return types.isSubtype(t, syms.externalizableType);
+    }
+
+    /**
+     * Check structure of serialization declarations.
+     */
+    private void checkSerialStructure(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
+        (new SerialTypeVisitor()).visit(c, tree);
+    }
 
     /**
      * This visitor will warn if a serialization-related field or
@@ -5658,10 +5614,9 @@ public class Attr extends JCTree.Visitor {
         @Override
         public Void visitTypeAsClass(TypeElement e,
                                      JCClassDecl tree) {
-            ClassSymbol c = (ClassSymbol)e;
+            // Anonymous classes filtered out by caller.
 
-//          if (c.isAnonymous())
-//              return null;
+            ClassSymbol c = (ClassSymbol)e;
 
             if (checkSuppressSerialWarningNested(e))
                 return null;
@@ -5754,7 +5709,7 @@ public class Attr extends JCTree.Visitor {
                 // a non-serializable superclass and thus not checked
                 // even if compiled with a serializable child class.
                 case METHOD -> {
-                    var method = toMethod(enclosed);
+                    var method = (MethodSymbol)enclosed;
                     name = enclosed.getSimpleName().toString();
                     if (serialMethodNames.contains(name)) {
                         switch (name) {
@@ -5781,9 +5736,7 @@ public class Attr extends JCTree.Visitor {
          * Check that a Serializable class has access to the no-arg
          * constructor of its first nonserializable superclass.
          */
-        private void checkCtorAccess(JCClassDecl tree, Element e) {
-            ClassSymbol c = (ClassSymbol) e;
-
+        private void checkCtorAccess(JCClassDecl tree, ClassSymbol c) {
             if (isExternalizable(c.type)) {
                 for(var ctor : ElementFilter.constructorsIn(c.getEnclosedElements())) {
                     if (ctor.getParameters().isEmpty() &&
@@ -5832,15 +5785,14 @@ public class Attr extends JCTree.Visitor {
 
         private void checkSerialVersionUID(JCClassDecl tree, Element e, VarSymbol svuid) {
             // To be effective, serialVersionUID must be marked static
-            // and final, but private is recommended.
-
-            // But alas, in practice there are many non-private
-            // serialVersionUID fields
-
+            // and final, but private is recommended. But alas, in
+            // practice there are many non-private serialVersionUID
+            // fields.
              if ((svuid.flags() & (STATIC | FINAL)) !=
                  (STATIC | FINAL)) {
                  log.warning(LintCategory.SERIAL,
-                             TreeInfo.diagnosticPositionFor(svuid, tree), Warnings.ImproperSVUID((Symbol)e));
+                             TreeInfo.diagnosticPositionFor(svuid, tree),
+                             Warnings.ImproperSVUID((Symbol)e));
              }
 
              // check svuid has type long
@@ -5874,10 +5826,10 @@ public class Attr extends JCTree.Visitor {
                             Warnings.IneffectualSerialFieldExternalizable);
             }
 
-            // If additional compile-time information is
+            // TOOD: If additional compile-time information is
             // available, should check for a "constant null"
-            // assignment to this field. A null value makes having
-            // the field a no-op.
+            // assignment to this field. A null value makes having the
+            // field a no-op.
         }
 
         /*
@@ -5966,7 +5918,6 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-
         /**
          * Per section 1.12 "Serialization of Enum Constants" of
          * the serialization specification, due to the special
@@ -6025,14 +5976,14 @@ public class Attr extends JCTree.Visitor {
                 case FIELD -> {
                     name = enclosed.getSimpleName().toString();
                     if (serialFieldNames.contains(name)) {
-                        // System.out.println("Serial field name " + name +
-                        //                   " in " + e.getKind() + " " + e.toString());
-                        int i = 2 + 2;
+                        log.warning(LintCategory.SERIAL,
+                                    TreeInfo.diagnosticPositionFor((Symbol)enclosed, tree),
+                                    Warnings.IneffectualSerialFieldInterface(name));
                     }
                 }
 
                 case METHOD -> {
-                    var method = toMethod(enclosed);
+                    var method = (MethodSymbol)enclosed;
                     name = enclosed.getSimpleName().toString();
                     if (serialMethodNames.contains(name)) {
                         switch (name) {
@@ -6091,22 +6042,21 @@ public class Attr extends JCTree.Visitor {
          *
          * "The process by which record objects are serialized or
          * externalized cannot be customized; any class-specific
-         * writeObject, readObject, readObjectNoData,
-         * writeExternal, and readExternal methods defined by
-         * record classes are ignored during serialization and
-         * deserialization. However, a substitute object to be
-         * serialized or a designate replacement may be specified,
-         * by the writeReplace and readResolve methods,
-         * respectively. Any serialPersistentFields field
-         * declaration is ignored. Documenting serializable fields
-         * and data for record classes is unnecessary, since there
-         * is no variation in the serial form, other than whether
-         * a substitute or replacement object is used. The
-         * serialVersionUID of a record class is 0L unless
-         * explicitly declared. The requirement for matching
-         * serialVersionUID values is waived for record classes."
+         * writeObject, readObject, readObjectNoData, writeExternal,
+         * and readExternal methods defined by record classes are
+         * ignored during serialization and deserialization. However,
+         * a substitute object to be serialized or a designate
+         * replacement may be specified, by the writeReplace and
+         * readResolve methods, respectively. Any
+         * serialPersistentFields field declaration is
+         * ignored. Documenting serializable fields and data for
+         * record classes is unnecessary, since there is no variation
+         * in the serial form, other than whether a substitute or
+         * replacement object is used. The serialVersionUID of a
+         * record class is 0L unless explicitly declared. The
+         * requirement for matching serialVersionUID values is waived
+         * for record classes."
          */
-
         @Override
         public Void visitTypeAsRecord(TypeElement e,
                                       JCClassDecl tree) {
@@ -6128,7 +6078,7 @@ public class Attr extends JCTree.Visitor {
                     }
 
                     case "serialVersionUID" -> {
-                        // TODO Extra warning that svuid value not
+                        // TODO: Extra warning that svuid value not
                         // checked to match for records?
                         checkSerialVersionUID(tree, e, (VarSymbol)enclosed);
                     }
@@ -6137,7 +6087,7 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 case METHOD -> {
-                    var method = toMethod(enclosed);
+                    var method = (MethodSymbol)enclosed;
                     switch(name) {
                     case "writeReplace" -> checkWriteReplace(tree, e, method);
                     case "readResolve"  -> checkReadResolve(tree, e, method);
@@ -6297,13 +6247,7 @@ public class Attr extends JCTree.Visitor {
             }
             return;
         }
-
-        // Implicit cast to ExecutableElement; could also use a kind visitor.
-        ExecutableElement toMethod(Element element) {
-            return ElementFilter.methodsIn(List.of(element)).get(0);
-        }
     }
-
 
     private Type capture(Type type) {
         return types.capture(type);

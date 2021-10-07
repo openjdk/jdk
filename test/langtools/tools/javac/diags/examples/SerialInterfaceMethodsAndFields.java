@@ -23,12 +23,14 @@
 
 // key: compiler.warn.non.private.method.weaker.access
 // key: compiler.warn.default.ineffective
+// key: compiler.warn.ineffectual.serial.field.interface
 
 // options: -Xlint:serial
 
 import java.io.*;
 
-interface SerialInterfaceNonPrivateMethods extends Serializable {
+interface SerialInterfaceMethodsAndFields extends Serializable {
+    public static final long serialVersionUID = 1234;
     public void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException;
     public void readObjectNoData() throws ObjectStreamException;
