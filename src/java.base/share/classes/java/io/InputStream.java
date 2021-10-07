@@ -49,11 +49,9 @@ import java.util.Objects;
  */
 public abstract class InputStream implements Closeable {
 
-    // MAX_SKIP_BUFFER_SIZE is used to determine the maximum buffer size to
-    // use when skipping.
-    private static final int MAX_SKIP_BUFFER_SIZE = 2048;
-
     private static final int DEFAULT_BUFFER_SIZE = 8192;
+
+    private static final byte[] SKIP_BUFFER = new byte[DEFAULT_BUFFER_SIZE];
 
     /**
      * Constructor for subclasses to call.
@@ -534,17 +532,15 @@ public abstract class InputStream implements Closeable {
      * @see        java.io.InputStream#skipNBytes(long)
      */
     public long skip(long n) throws IOException {
-        long remaining = n;
-        int nr;
-
         if (n <= 0) {
             return 0;
         }
 
-        int size = (int)Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
-        byte[] skipBuffer = new byte[size];
+        long remaining = n;
+        int nr;
+
         while (remaining > 0) {
-            nr = read(skipBuffer, 0, (int)Math.min(size, remaining));
+            nr = read(SKIP_BUFFER, 0, (int)Math.min(DEFAULT_BUFFER_SIZE, remaining));
             if (nr < 0) {
                 break;
             }

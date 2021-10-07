@@ -278,8 +278,8 @@ public abstract class Reader implements Readable, Closeable {
     /** Maximum skip-buffer size */
     private static final int maxSkipBufferSize = 8192;
 
-    /** Skip buffer, null until allocated */
-    private char[] skipBuffer = null;
+    /** Skip buffer */
+    private static final char[] skipBuffer = new char[maxSkipBufferSize];
 
     /**
      * Skips characters.  This method will block until some characters are
@@ -299,8 +299,6 @@ public abstract class Reader implements Readable, Closeable {
             throw new IllegalArgumentException("skip value is negative");
         int nn = (int) Math.min(n, maxSkipBufferSize);
         synchronized (lock) {
-            if ((skipBuffer == null) || (skipBuffer.length < nn))
-                skipBuffer = new char[nn];
             long r = n;
             while (r > 0) {
                 int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
