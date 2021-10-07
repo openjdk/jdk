@@ -29,12 +29,14 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
+#include "gc/shenandoah/shenandoahLogFileOutput.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/perfData.inline.hpp"
+#include "utilities/defaultStream.hpp"
 
 ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
-  _last_sample_millis(0)
+  _last_sample_millis(0), _log_file(nullptr)
 {
   if (UsePerfData && ShenandoahRegionSampling) {
     EXCEPTION_MARK;
@@ -43,7 +45,7 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
     size_t num_regions = heap->num_regions();
     const char* cns = PerfDataManager::name_space("shenandoah", "regions");
     _name_space = NEW_C_HEAP_ARRAY(char, strlen(cns)+1, mtGC);
-    strcpy(_name_space, cns);
+    strcpy(_name_space, cns); // copy cns into _name_space
 
     const char* cname = PerfDataManager::counter_name(_name_space, "timestamp");
     _timestamp = PerfDataManager::create_long_variable(SUN_GC, cname, PerfData::U_None, CHECK);
@@ -59,6 +61,7 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
                                                     PerfData::U_None, CHECK);
 
     _regions_data = NEW_C_HEAP_ARRAY(PerfVariable*, num_regions, mtGC);
+    // Initializing performance data resources for each region
     for (uint i = 0; i < num_regions; i++) {
       const char* reg_name = PerfDataManager::name_space(_name_space, "region", i);
       const char* data_name = PerfDataManager::counter_name(reg_name, "data");
@@ -68,31 +71,33 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
       _regions_data[i] = PerfDataManager::create_long_variable(SUN_GC, data_name,
                                                                PerfData::U_None, CHECK);
     }
+
+    if (ShenandoahLogRegionSampling) {
+      _log_file = new ShenandoahLogFileOutput(ShenandoahRegionSamplingFile, _timestamp->get_value());
+      _log_file->initialize(tty);
+    }
   }
 }
 
 ShenandoahHeapRegionCounters::~ShenandoahHeapRegionCounters() {
   if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
+  if (_log_file != NULL) FREE_C_HEAP_OBJ(_log_file);
 }
 
 void ShenandoahHeapRegionCounters::update() {
   if (ShenandoahRegionSampling) {
     jlong current = nanos_to_millis(os::javaTimeNanos());
     jlong last = _last_sample_millis;
-    if (current - last > ShenandoahRegionSamplingRate &&
-            Atomic::cmpxchg(&_last_sample_millis, last, current) == last) {
+    if (current - last > ShenandoahRegionSamplingRate && Atomic::cmpxchg(&_last_sample_millis, last, current) == last) {
 
       ShenandoahHeap* heap = ShenandoahHeap::heap();
-
       _status->set_value(encode_heap_status(heap));
-
       _timestamp->set_value(os::elapsed_counter());
-
-      size_t num_regions = heap->num_regions();
 
       {
         ShenandoahHeapLocker locker(heap->lock());
         size_t rs = ShenandoahHeapRegion::region_size_bytes();
+        size_t num_regions = heap->num_regions();
         for (uint i = 0; i < num_regions; i++) {
           ShenandoahHeapRegion* r = heap->get_region(i);
           jlong data = 0;
@@ -107,6 +112,11 @@ void ShenandoahHeapRegionCounters::update() {
           data |= (r->affiliation() & AFFILIATION_MASK) << AFFILIATION_SHIFT;
           data |= (r->state_ordinal() & STATUS_MASK) << STATUS_SHIFT;
           _regions_data[i]->set_value(data);
+        }
+
+        // If logging enabled, dump current region snapshot to log file
+        if (ShenandoahLogRegionSampling && _log_file != NULL) {
+          _log_file->write_snapshot(_regions_data, _timestamp, _status, num_regions, rs >> 10);
         }
       }
     }
@@ -157,7 +167,7 @@ jlong ShenandoahHeapRegionCounters::encode_heap_status(ShenandoahHeap* heap) {
       status |= (1 << 2);
     }
     log_develop_trace(gc)("%s, phase=%u, old_mark=%s, status=" JLONG_FORMAT,
-      generation->name(), phase, BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()), status);
+                          generation->name(), phase, BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()), status);
   }
 
   if (heap->is_degenerated_gc_in_progress()) {

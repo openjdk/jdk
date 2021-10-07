@@ -207,6 +207,15 @@
           "the samples. Higher values provide more fidelity, at expense "   \
           "of more sampling overhead.")                                     \
                                                                             \
+  product(bool, ShenandoahLogRegionSampling, false,                         \
+          "Save region sampling stream to ShenandoahRegionSamplingFile")    \
+                                                                            \
+  product(ccstr, ShenandoahRegionSamplingFile,                              \
+          "./shenandoahSnapshots_pid%p.log",                                \
+          "If ShenandoahLogRegionSampling is on, save sampling data stream "\
+          "to this file [default: ./shenandoahSnapshots_pid%p.log] "        \
+          "(%p replaced with pid)")                                         \
+                                                                            \
   product(uintx, ShenandoahControlIntervalMin, 1, EXPERIMENTAL,             \
           "The minimum sleep interval for the control loop that drives "    \
           "the cycles. Lower values would increase GC responsiveness "      \
@@ -432,8 +441,7 @@
   product(uintx, ShenandoahAgingCyclePeriod, 1, EXPERIMENTAL,               \
           "With generational mode, increment the age of objects and"        \
           "regions each time this many young-gen GC cycles are completed.")
-
-// end of GC_SHENANDOAH_FLAGS
+ // end of GC_SHENANDOAH_FLAGS
 
 // 2^ShenandoahTenuredRegionUsageBiasLogBase2 is 128
 #define ShenandoahTenuredRegionUsageBiasLogBase2 7
