@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
@@ -51,6 +52,8 @@ import jdk.internal.misc.Unsafe;
 
 public class MachCodeFramesInErrorFile {
     private static class Crasher {
+        // Need to make unsafe a compile-time constant so that
+        // C2 intrinsifies the call to Unsafe.getLong in method3.
         private static final Unsafe unsafe = Unsafe.getUnsafe();
         public static void main(String[] args) {
             method1(10);
@@ -73,16 +76,88 @@ public class MachCodeFramesInErrorFile {
         }
     }
 
-    private static String extractNativeFrames(String hsErr) {
-        int start = hsErr.indexOf("Native frames: ");
-        if (start != -1) {
-            // "Native frames:" section is delimited by a blank line
-            int end = hsErr.indexOf(System.lineSeparator() + System.lineSeparator(), start);
-            if (end != -1) {
-                return hsErr.substring(start, end);
+    /**
+     * Runs Crasher and tries to force compile the methods in Crasher. The inner
+     * most method crashes the VM with Unsafe. The resulting hs-err log is
+     * expected to have a min number of MachCode sections.
+     */
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xmx64m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+            "-XX:-CreateCoredumpOnCrash",
+            "-Xcomp",
+            "-XX:-TieredCompilation", // ensure C2 compiles Crasher.method3
+            "-XX:CompileCommand=compileonly,MachCodeFramesInErrorFile$Crasher.m*",
+            "-XX:CompileCommand=dontinline,MachCodeFramesInErrorFile$Crasher.m*",
+            Crasher.class.getName());
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        // Extract hs_err_pid file.
+        String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
+        if (hs_err_file == null) {
+            throw new RuntimeException("Did not find hs_err_pid file in output.\n" +
+                                       "stderr:\n" + output.getStderr() + "\n" +
+                                       "stdout:\n" + output.getStdout());
+        }
+        Path hsErrPath = Paths.get(hs_err_file);
+        if (!Files.exists(hsErrPath)) {
+            throw new RuntimeException("hs_err_pid file missing at " + hsErrPath + ".\n");
+        }
+        String hsErr = Files.readString(hsErrPath);
+        if (!crashedInCrasherMethod(hsErr)) {
+            return;
+        }
+        List<String> nativeFrames = extractNativeFrames(hsErr);
+        int compiledJavaFrames = (int) nativeFrames.stream().filter(f -> f.startsWith("J ")).count();
+
+        Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
+        List<String> machCodeHeaders = matcher.results().map(mr -> String.format("'%s' '%s' in '%s'", mr.group(1), mr.group(2), mr.group(3))).collect(Collectors.toList());
+        String message = "Mach code headers: " + machCodeHeaders +
+                         "\n\nExtracted MachCode:\n" + extractMachCode(hsErr) +
+                         "\n\nExtracted native frames:\n" + String.join("\n", nativeFrames);
+        int minExpectedMachCodeSections = Math.max(1, compiledJavaFrames);
+        Asserts.assertTrue(machCodeHeaders.size() >= minExpectedMachCodeSections, message);
+    }
+
+    /**
+     * Checks whether the crashing frame is in {@code Crasher.method3}.
+     */
+    private static boolean crashedInCrasherMethod(String hsErr) {
+        boolean checkProblematicFrame = false;
+        for (String line : hsErr.split(System.lineSeparator())) {
+            if (line.startsWith("# Problematic frame:")) {
+                checkProblematicFrame = true;
+            } else if (checkProblematicFrame) {
+                String crasherMethod = Crasher.class.getSimpleName() + ".method3";
+                if (!line.contains(crasherMethod)) {
+                    // There's any number of things that can subvert the attempt
+                    // to crash in the expected method.
+                    System.out.println("Crashed in method other than " + crasherMethod + "\n\n" + line + "\n\nSkipping rest of test.");
+                    return false;
+                }
+                return true;
             }
         }
-        return null;
+        throw new RuntimeException("\"# Problematic frame:\" line missing in hs_err_pid file:\n" + hsErr);
+    }
+
+    /**
+     * Gets the lines in {@code hsErr} below the line starting with "Native frames:" up to the next blank line.
+     */
+    private static List<String> extractNativeFrames(String hsErr) {
+        List<String> res = new ArrayList<>();
+        boolean inNativeFrames = false;
+        for (String line : hsErr.split(System.lineSeparator())) {
+            if (line.startsWith("Native frames: ")) {
+                inNativeFrames = true;
+            } else if (inNativeFrames) {
+                if (line.trim().isEmpty()) {
+                    return res;
+                }
+                res.add(line);
+            }
+        }
+        throw new RuntimeException("\"Native frames:\" line missing in hs_err_pid file:\n" + hsErr);
     }
 
     private static String extractMachCode(String hsErr) {
@@ -95,41 +170,5 @@ public class MachCodeFramesInErrorFile {
             return hsErr.substring(start);
         }
         return null;
-    }
-
-    /**
-     * Runs Crasher and tries to force each method in Crasher to be compiled. The inner
-     * most method crashes the VM by reading from 0. The resulting
-     * hs-err log is expected to have at least 2 MachCode sections.
-     */
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xmx64m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-            "-XX:-CreateCoredumpOnCrash",
-            "-Xcomp",
-            "-XX:-TieredCompilation",
-            "-XX:CompileCommand=compileonly,MachCodeFramesInErrorFile$Crasher.m*",
-            "-XX:CompileCommand=dontinline,MachCodeFramesInErrorFile$Crasher.*",
-            Crasher.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
-        // Extract hs_err_pid file.
-        String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-        if (hs_err_file == null) {
-            throw new RuntimeException("Did not find hs_err_pid file in output.\n" +
-                                       "stderr:\n" + output.getStderr() + "\n" +
-                                       "stdout:\n" + output.getStdout());
-        }
-        Path f = Paths.get(hs_err_file);
-        if (!Files.exists(f)) {
-            throw new RuntimeException("hs_err_pid file missing at " + f + ".\n");
-        }
-        String hsErr = Files.readString(Paths.get(hs_err_file));
-        Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
-        List<String> machCodeHeaders = matcher.results().map(mr -> String.format("'%s' '%s' in '%s'", mr.group(1), mr.group(2), mr.group(3))).collect(Collectors.toList());
-        String message = "Mach code headers: " + machCodeHeaders +
-                         "\n\nExtracted MachCode:\n" + extractMachCode(hsErr) +
-                         "\n\nExtracted native frames:\n" + extractNativeFrames(hsErr);
-        Asserts.assertTrue(machCodeHeaders.size() > 1, message);
     }
 }
