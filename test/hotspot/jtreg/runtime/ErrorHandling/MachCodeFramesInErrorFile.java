@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8272586
+ * @requires vm.compiler2.enabled
  * @summary Test that abstract machine code is dumped for the top frames in a hs-err log
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -50,8 +51,9 @@ import jdk.internal.misc.Unsafe;
 
 public class MachCodeFramesInErrorFile {
     private static class Crasher {
+        private static final Unsafe unsafe = Unsafe.getUnsafe();
         public static void main(String[] args) {
-            method1(0);
+            method1(10);
         }
 
         static void method1(long address) {
@@ -64,7 +66,10 @@ public class MachCodeFramesInErrorFile {
         }
         static void method3(long address) {
             System.out.println("in method3");
-            Unsafe.getUnsafe().getInt(address);
+            // Keep chasing pointers until we crash
+            while (true) {
+                address = unsafe.getLong(address);
+            }
         }
     }
 
@@ -102,7 +107,8 @@ public class MachCodeFramesInErrorFile {
             "-Xmx64m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
             "-XX:-CreateCoredumpOnCrash",
             "-Xcomp",
-            "-XX:CompileCommand=compileonly,MachCodeFramesInErrorFile$Crasher.*",
+            "-XX:-TieredCompilation",
+            "-XX:CompileCommand=compileonly,MachCodeFramesInErrorFile$Crasher.m*",
             "-XX:CompileCommand=dontinline,MachCodeFramesInErrorFile$Crasher.*",
             Crasher.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -110,9 +116,10 @@ public class MachCodeFramesInErrorFile {
         // Extract hs_err_pid file.
         String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
         if (hs_err_file == null) {
-            throw new RuntimeException("Did not find hs_err_pid file in output.\n");
+            throw new RuntimeException("Did not find hs_err_pid file in output.\n" +
+                                       "stderr:\n" + output.getStderr() + "\n" +
+                                       "stdout:\n" + output.getStdout());
         }
-
         Path f = Paths.get(hs_err_file);
         if (!Files.exists(f)) {
             throw new RuntimeException("hs_err_pid file missing at " + f + ".\n");

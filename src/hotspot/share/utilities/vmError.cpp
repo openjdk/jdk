@@ -87,6 +87,7 @@ Thread*           VMError::_thread;
 address           VMError::_pc;
 void*             VMError::_siginfo;
 void*             VMError::_context;
+bool              VMError::_print_native_stack_used = false;
 const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
@@ -242,26 +243,25 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 }
 
 /**
- * Determines if the code unit denoted by `owner` should be printed.
- * If this method returns true, then `owner` has been added to `printed`.
- * If `owner` was already in `printed`, this methods returns false.
-
+ * Adds `value` to `list` iff it's not already present and there is sufficient
+ * capacity (i.e. length(list) < `list_capacity`). The length of the list
+ * is the index of the first nullptr entry.
  *
- * @param owner a CodeBlob*, InterpreterCodelet* or StubCodeDesc* value
- * @param printed array of owners that have already been printed (delimited by NULL entry)
- * @param printed_len the length of `printed`
+ * @ return true if the value was added, false otherwise
  */
-static bool should_print_code(address owner, address* printed, int printed_len) {
-  for (int i = 0; i < printed_len; i++) {
-    if (printed[i] == owner) {
+static bool add_if_absent(address value, address* list, int list_capacity) {
+  for (int i = 0; i < list_capacity; i++) {
+    if (list[i] == value) {
       return false;
     }
-    if (printed[i] == 0) {
-      printed[i] = owner;
+    if (list[i] == nullptr) {
+      list[i] = value;
+      if (i + 1 < list_capacity) {
+        list[i + 1] = nullptr;
+      }
       return true;
     }
   }
-  // Beyond limit of code units to be printed
   return false;
 }
 
@@ -271,16 +271,17 @@ static bool should_print_code(address owner, address* printed, int printed_len) 
  * only printed if `is_crash_pc` is true.
  *
  * @param printed array of code units that have already been printed (delimited by NULL entry)
- * @param printed_len the length of `printed`
+ * @param printed_capacity the capacity of `printed`
+ * @return true if the code unit was printed, false otherwise
  */
 static bool print_code(outputStream* st, Thread* thread, address pc, bool is_crash_pc,
-                            address* printed, int printed_len) {
+                       address* printed, int printed_capacity) {
   if (Interpreter::contains(pc)) {
     if (is_crash_pc) {
       // The interpreter CodeBlob is very large so try to print the codelet instead.
       InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
-      if (codelet != NULL) {
-        if (should_print_code((address) codelet, printed, printed_len)) {
+      if (codelet != nullptr) {
+        if (add_if_absent((address) codelet, printed, printed_capacity)) {
           codelet->print_on(st);
           Disassembler::decode(codelet->code_begin(), codelet->code_end(), st);
           return true;
@@ -289,17 +290,17 @@ static bool print_code(outputStream* st, Thread* thread, address pc, bool is_cra
     }
   } else {
     StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
-    if (desc != NULL) {
+    if (desc != nullptr) {
       if (is_crash_pc) {
-        if (should_print_code((address) desc, printed, printed_len)) {
+        if (add_if_absent((address) desc, printed, printed_capacity)) {
           desc->print_on(st);
           Disassembler::decode(desc->begin(), desc->end(), st);
           return true;
         }
       }
-    } else if (thread != NULL) {
+    } else if (thread != nullptr) {
       CodeBlob* cb = CodeCache::find_blob(pc);
-      if (cb != NULL && should_print_code((address) cb, printed, printed_len)) {
+      if (cb != nullptr && add_if_absent((address) cb, printed, printed_capacity)) {
         // Disassembling nmethod will incur resource memory allocation,
         // only do so when thread is valid.
         ResourceMark rm(thread);
@@ -831,6 +832,7 @@ void VMError::report(outputStream* st, bool _verbose) {
                            : os::current_frame();
 
        print_native_stack(st, fr, _thread, buf, sizeof(buf));
+       _print_native_stack_used = true;
      }
    }
 
@@ -908,18 +910,26 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing code blobs if possible")
 
      if (_verbose && _context) {
-       // The first 10 unique code units on the stack should be sufficient
-       // for investigating crashes.
-       int printed_len = 10;
-       address printed[printed_len];
-       memset(printed, 0, sizeof(address) * printed_len);
+       if (!_print_native_stack_used) {
+         // Only try print code of the crashing frame since
+         // we cannot walk the native stack using next_frame.
+         const int printed_capacity = 1;
+         address printed_singleton = nullptr;
+         address* printed = &printed_singleton;
+         print_code(st, _thread, _pc, true, printed, 1);
+       } else {
+         // Print up to the first 5 unique code units on the stack
+         const int printed_capacity = 5;
+         address printed[printed_capacity];
+         printed[0] = nullptr; // length(list) == index of first nullptr
 
-       frame fr = os::fetch_frame_from_context(_context);
-       for (int count = 0; count < printed_len && fr.pc() != nullptr; ) {
-         if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_len)) {
-           count++;
+         frame fr = os::fetch_frame_from_context(_context);
+         for (int count = 0; count < printed_capacity && fr.pc() != nullptr; ) {
+           if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
+             count++;
+           }
+           fr = next_frame(fr, _thread);
          }
-         fr = next_frame(fr, _thread);
        }
      }
 
