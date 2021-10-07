@@ -582,7 +582,8 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
       // The GC provided a WorkerThreads to be used during a safepoint.
 
       // Can't run with more threads than provided by the WorkerThreads.
-      WithActiveWorkers update_and_restore(gang, parallel_thread_num);
+      const uint capped_parallel_thread_num = MIN2(parallel_thread_num, gang->max_workers());
+      WithActiveWorkers with_active_workers(gang, capped_parallel_thread_num);
 
       ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(gang->active_workers());
       if (poi != NULL) {

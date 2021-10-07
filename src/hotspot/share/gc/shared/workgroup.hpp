@@ -25,157 +25,101 @@
 #ifndef SHARE_GC_SHARED_WORKGROUP_HPP
 #define SHARE_GC_SHARED_WORKGROUP_HPP
 
-#include "memory/allocation.hpp"
-#include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/logical.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.hpp"
 #include "gc/shared/gcId.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// Task class hierarchy:
-//   WorkerTask
-//
-// Gang/Group class hierarchy:
-//   WorkerThreads
-
-// Forward declarations of classes defined here
-
-class WorkerThread;
-class Semaphore;
 class ThreadClosure;
 class WorkerTaskDispatcher;
+class WorkerThread;
 
-// An abstract task to be worked on by a gang.
-// You subclass this to supply your own work() method
+// An task to be worked on by worker threads
 class WorkerTask : public CHeapObj<mtInternal> {
+private:
   const char* _name;
   const uint _gc_id;
 
  public:
   explicit WorkerTask(const char* name) :
     _name(name),
-    _gc_id(GCId::current_or_undefined())
-  {}
+    _gc_id(GCId::current_or_undefined()) {}
 
-  // The abstract work method.
-  // The argument tells you which member of the gang you are.
-  virtual void work(uint worker_id) = 0;
-
-  // Debugging accessor for the name.
   const char* name() const { return _name; }
   const uint gc_id() const { return _gc_id; }
+
+  virtual void work(uint worker_id) = 0;
 };
 
-struct WorkData {
+// WorkerThreads dispatcher implemented with semaphores
+class WorkerTaskDispatcher {
+  // The task currently being dispatched to the WorkerThreads.
   WorkerTask* _task;
-  uint              _worker_id;
-  WorkData(WorkerTask* task, uint worker_id) : _task(task), _worker_id(worker_id) {}
+
+  volatile uint _started;
+  volatile uint _not_finished;
+
+  // Semaphore used to start the WorkerThreads.
+  Semaphore _start_semaphore;
+  // Semaphore used to notify the coordinator that all workers are done.
+  Semaphore _end_semaphore;
+
+public:
+  WorkerTaskDispatcher();
+
+  // Coordinator API.
+
+  // Distributes the task out to num_workers workers.
+  // Returns when the task has been completed by all workers.
+  void coordinator_distribute_task(WorkerTask* task, uint num_workers);
+
+  // Worker API.
+
+  // Waits for a task to become available to the worker and runs it.
+  void worker_run_task();
 };
 
-// The work gang is the collection of workers to execute tasks.
-// The number of workers run for a task is "_active_workers"
-// while "_max_workers" is the number of available workers.
+// A set of worker threads to execute tasks
 class WorkerThreads : public CHeapObj<mtInternal> {
-  // The array of worker threads for this gang.
-  WorkerThread** _workers;
-  // The count of the number of workers in the gang.
-  uint _max_workers;
-  // The currently active workers in this gang.
-  uint _active_workers;
-  // The count of created workers in the gang.
-  uint _created_workers;
-  // Printing support.
-  const char* _name;
+private:
+  const char* const    _name;
+  WorkerThread**       _workers;
+  const uint           _max_workers;
+  uint                 _created_workers;
+  uint                 _active_workers;
+  WorkerTaskDispatcher _dispatcher;
 
-  // To get access to the WorkerTaskDispatcher instance.
-  friend class WorkerThread;
-  WorkerTaskDispatcher* const _dispatcher;
+protected:
+  virtual WorkerThread* create_worker(uint id);
 
-  WorkerTaskDispatcher* dispatcher() const { return _dispatcher; }
-
- public:
+public:
   WorkerThreads(const char* name, uint max_workers);
 
-  ~WorkerThreads();
-
-  // Initialize workers in the gang.  Return true if initialization succeeded.
   void initialize_workers();
 
-  uint max_workers() const { return _max_workers; }
-
-  uint created_workers() const {
-    return _created_workers;
-  }
-
-  uint active_workers() const {
-    assert(_active_workers != 0, "zero active workers");
-    assert(_active_workers <= _max_workers,
-           "_active_workers: %u > _max_workers: %u", _active_workers, _max_workers);
-    return _active_workers;
-  }
+  uint max_workers() const     { return _max_workers; }
+  uint created_workers() const { return _created_workers; }
+  uint active_workers() const  { return _active_workers; }
 
   uint set_active_workers(uint num_workers);
 
-  // Return the Ith worker.
-  WorkerThread* worker(uint i) const;
-
-  // Base name (without worker id #) of threads.
-  const char* group_name() { return name(); }
-
   void threads_do(ThreadClosure* tc) const;
 
-  virtual WorkerThread* create_worker(uint id);
-
-  // Debugging.
   const char* name() const { return _name; }
 
   // Run a task using the current active number of workers, returns when the task is done.
   void run_task(WorkerTask* task);
 
-  // Run a task with the given number of workers, returns
-  // when the task is done. The number of workers must be at most the number of
-  // active workers.  Additional workers may be created if an insufficient
-  // number currently exists.
+  // Run a task with the given number of workers, returns when the task is done.
   void run_task(WorkerTask* task, uint num_workers);
-};
-
-// Temporarily try to set the number of active workers.
-// It's not guaranteed that it succeeds, and users need to
-// query the number of active workers.
-class WithActiveWorkers : public StackObj {
-private:
-  WorkerThreads* const _gang;
-  const uint              _old_active_workers;
-
-public:
-  WithActiveWorkers(WorkerThreads* gang, uint requested_num_workers) :
-      _gang(gang),
-      _old_active_workers(gang->active_workers()) {
-    uint capped_num_workers = MIN2(requested_num_workers, gang->max_workers());
-    gang->set_active_workers(capped_num_workers);
-  }
-
-  ~WithActiveWorkers() {
-    _gang->set_active_workers(_old_active_workers);
-  }
 };
 
 class WorkerThread : public NamedThread {
 private:
-  uint _id;
-  WorkerThreads* _gang;
-
-  void initialize();
-  void loop();
-
-  WorkerThreads* gang() const { return _gang; }
-
-  WorkData wait_for_task();
-  void run_task(WorkData work);
-  void signal_task_done();
+  WorkerTaskDispatcher* const _dispatcher;
+  const uint                  _id;
 
 public:
   static WorkerThread* current() {
@@ -187,15 +131,34 @@ public:
     return static_cast<WorkerThread*>(t);
   }
 
-  WorkerThread(WorkerThreads* gang, uint id);
-  virtual bool is_Worker_thread() const { return true; }
+  WorkerThread(const char* name_prefix, uint id, WorkerTaskDispatcher* dispatcher);
 
-  void set_id(uint work_id)             { _id = work_id; }
-  uint id() const                       { return _id; }
+  uint id() const                        { return _id; }
 
-  virtual const char* type_name() const { return "WorkerThread"; }
+  bool is_Worker_thread() const override { return true; }
+  const char* type_name() const override { return "WorkerThread"; }
 
   void run() override;
+};
+
+// Temporarily try to set the number of active workers.
+// It's not guaranteed that it succeeds, and users need to
+// query the number of active workers.
+class WithActiveWorkers : public StackObj {
+private:
+  WorkerThreads* const _workers;
+  const uint           _prev_active_workers;
+
+public:
+  WithActiveWorkers(WorkerThreads* workers, uint num_workers) :
+      _workers(workers),
+      _prev_active_workers(workers->active_workers()) {
+    _workers->set_active_workers(num_workers);
+  }
+
+  ~WithActiveWorkers() {
+    _workers->set_active_workers(_prev_active_workers);
+  }
 };
 
 #endif // SHARE_GC_SHARED_WORKGROUP_HPP

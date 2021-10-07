@@ -23,121 +23,68 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcId.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
-#include "memory/iterator.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "runtime/semaphore.hpp"
-#include "runtime/thread.inline.hpp"
 
-// WorkerThreads dispatcher implemented with semaphores.
-//
-// Semaphores don't require the worker threads to re-claim the lock when they wake up.
-// This helps lowering the latency when starting and stopping the worker threads.
-class WorkerTaskDispatcher : public CHeapObj<mtGC> {
-  // The task currently being dispatched to the WorkerThreads.
-  WorkerTask* _task;
+WorkerTaskDispatcher::WorkerTaskDispatcher() :
+    _task(NULL),
+    _started(0),
+    _not_finished(0),
+    _start_semaphore(),
+    _end_semaphore() {}
 
-  volatile uint _started;
-  volatile uint _not_finished;
+void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
+  // No workers are allowed to read the state variables until they have been signaled.
+  _task = task;
+  _not_finished = num_workers;
 
-  // Semaphore used to start the WorkerThreads.
-  Semaphore* _start_semaphore;
-  // Semaphore used to notify the coordinator that all workers are done.
-  Semaphore* _end_semaphore;
+  // Dispatch 'num_workers' number of tasks.
+  _start_semaphore.signal(num_workers);
 
-public:
-  WorkerTaskDispatcher() :
-      _task(NULL),
-      _started(0),
-      _not_finished(0),
-      _start_semaphore(new Semaphore()),
-      _end_semaphore(new Semaphore())
-{ }
+  // Wait for the last worker to signal the coordinator.
+  _end_semaphore.wait();
 
-  ~WorkerTaskDispatcher() {
-    delete _start_semaphore;
-    delete _end_semaphore;
-  }
-
-  // Coordinator API.
-
-  // Distributes the task out to num_workers workers.
-  // Returns when the task has been completed by all workers.
-  void coordinator_execute_on_workers(WorkerTask* task, uint num_workers) {
-    // No workers are allowed to read the state variables until they have been signaled.
-    _task         = task;
-    _not_finished = num_workers;
-
-    // Dispatch 'num_workers' number of tasks.
-    _start_semaphore->signal(num_workers);
-
-    // Wait for the last worker to signal the coordinator.
-    _end_semaphore->wait();
-
-    // No workers are allowed to read the state variables after the coordinator has been signaled.
-    assert(_not_finished == 0, "%d not finished workers?", _not_finished);
-    _task    = NULL;
-    _started = 0;
-
-  }
-
-  // Worker API.
-
-  // Waits for a task to become available to the worker.
-  // Returns when the worker has been assigned a task.
-  WorkData worker_wait_for_task() {
-    // Wait for the coordinator to dispatch a task.
-    _start_semaphore->wait();
-
-    uint num_started = Atomic::add(&_started, 1u);
-
-    // Subtract one to get a zero-indexed worker id.
-    uint worker_id = num_started - 1;
-
-    return WorkData(_task, worker_id);
-  }
-
-  // Signal to the coordinator that the worker is done with the assigned task.
-  void worker_done_with_task() {
-    // Mark that the worker is done with the task.
-    // The worker is not allowed to read the state variables after this line.
-    uint not_finished = Atomic::sub(&_not_finished, 1u);
-
-    // The last worker signals to the coordinator that all work is completed.
-    if (not_finished == 0) {
-      _end_semaphore->signal();
-    }
-  }
-};
-// Definitions of WorkerThreads methods.
-
-WorkerThreads::WorkerThreads(const char* name, uint max_workers) :
-    _workers(NULL),
-    _max_workers(max_workers),
-    _active_workers(0),
-    _created_workers(0),
-    _name(name),
-    _dispatcher(new WorkerTaskDispatcher())
-  { }
-
-WorkerThreads::~WorkerThreads() {
-  delete _dispatcher;
+  // No workers are allowed to read the state variables after the coordinator has been signaled.
+  assert(_not_finished == 0, "%d not finished workers?", _not_finished);
+  _task = NULL;
+  _started = 0;
 }
 
-// The current implementation will exit if the allocation
-// of any worker fails.
-void WorkerThreads::initialize_workers() {
-  log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), max_workers());
-  _workers = NEW_C_HEAP_ARRAY(WorkerThread*, max_workers(), mtInternal);
+void WorkerTaskDispatcher::worker_run_task() {
+  // Wait for the coordinator to dispatch a task.
+  _start_semaphore.wait();
 
+  // Get worker id.
+  const uint worker_id = Atomic::fetch_and_add(&_started, 1u);
+
+  // Run task.
+  GCIdMark gc_id_mark(_task->gc_id());
+  _task->work(worker_id);
+
+  // Mark that the worker is done with the task.
+  // The worker is not allowed to read the state variables after this line.
+  const uint not_finished = Atomic::sub(&_not_finished, 1u);
+
+  // The last worker signals to the coordinator that all work is completed.
+  if (not_finished == 0) {
+    _end_semaphore.signal();
+  }
+}
+
+WorkerThreads::WorkerThreads(const char* name, uint max_workers) :
+    _name(name),
+    _workers(NEW_C_HEAP_ARRAY(WorkerThread*, max_workers, mtInternal)),
+    _max_workers(max_workers),
+    _created_workers(0),
+    _active_workers(0),
+    _dispatcher() {}
+
+void WorkerThreads::initialize_workers() {
   const uint initial_active_workers = UseDynamicNumberOfGCThreads ? 1 : _max_workers;
   if (set_active_workers(initial_active_workers) != initial_active_workers) {
     vm_exit_during_initialization();
@@ -149,7 +96,7 @@ WorkerThread* WorkerThreads::create_worker(uint id) {
     return NULL;
   }
 
-  WorkerThread* const worker = new WorkerThread(this, id);
+  WorkerThread* const worker = new WorkerThread(_name, id, &_dispatcher);
 
   if (!os::create_thread(worker, os::gc_thread)) {
     delete worker;
@@ -184,82 +131,31 @@ uint WorkerThreads::set_active_workers(uint num_workers) {
   return _active_workers;
 }
 
-WorkerThread* WorkerThreads::worker(uint i) const {
-  // Array index bounds checking.
-  WorkerThread* result = NULL;
-  assert(_workers != NULL, "No workers for indexing");
-  assert(i < max_workers(), "Worker index out of bounds");
-  result = _workers[i];
-  assert(result != NULL, "Indexing to null worker");
-  return result;
-}
-
 void WorkerThreads::threads_do(ThreadClosure* tc) const {
-  assert(tc != NULL, "Null ThreadClosure");
-  uint workers = created_workers();
-  for (uint i = 0; i < workers; i++) {
-    tc->do_thread(worker(i));
+  for (uint i = 0; i < _created_workers; i++) {
+    tc->do_thread(_workers[i]);
   }
 }
 
 void WorkerThreads::run_task(WorkerTask* task) {
-  run_task(task, active_workers());
+  _dispatcher.coordinator_distribute_task(task, _active_workers);
 }
 
 void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {
-  guarantee(num_workers <= max_workers(),
-            "Trying to execute task %s with %u workers which is more than the amount of total workers %u.",
-            task->name(), num_workers, max_workers());
-  guarantee(num_workers > 0, "Trying to execute task %s with zero workers", task->name());
-  uint old_num_workers = _active_workers;
-  set_active_workers(num_workers);
-  _dispatcher->coordinator_execute_on_workers(task, num_workers);
-  set_active_workers(old_num_workers);
+  WithActiveWorkers with_active_workers(this, num_workers);
+  run_task(task);
 }
 
-WorkerThread::WorkerThread(WorkerThreads* gang, uint id) {
-  _gang = gang;
-  set_id(id);
-  set_name("%s#%d", gang->name(), id);
+WorkerThread::WorkerThread(const char* name_prefix, uint id, WorkerTaskDispatcher* dispatcher) :
+    _dispatcher(dispatcher),
+    _id(id) {
+  set_name("%s#%d", name_prefix, id);
 }
 
 void WorkerThread::run() {
-  initialize();
-  loop();
-}
-
-void WorkerThread::initialize() {
-  assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
-  log_develop_trace(gc, workgang)("Running gang worker for gang %s id %u", gang()->name(), id());
-  assert(!Thread::current()->is_VM_thread(), "VM thread should not be part"
-         " of a work gang");
-}
 
-WorkData WorkerThread::wait_for_task() {
-  return gang()->dispatcher()->worker_wait_for_task();
-}
-
-void WorkerThread::signal_task_done() {
-  gang()->dispatcher()->worker_done_with_task();
-}
-
-void WorkerThread::run_task(WorkData data) {
-  GCIdMark gc_id_mark(data._task->gc_id());
-  log_develop_trace(gc, workgang)("Running work gang: %s task: %s worker: %u", name(), data._task->name(), data._worker_id);
-
-  data._task->work(data._worker_id);
-
-  log_develop_trace(gc, workgang)("Finished work gang: %s task: %s worker: %u thread: " PTR_FORMAT,
-                                  name(), data._task->name(), data._worker_id, p2i(Thread::current()));
-}
-
-void WorkerThread::loop() {
   while (true) {
-    WorkData data = wait_for_task();
-
-    run_task(data);
-
-    signal_task_done();
+    _dispatcher->worker_run_task();
   }
 }
