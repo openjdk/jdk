@@ -119,9 +119,9 @@ public:
 };
 // Definitions of WorkerThreads methods.
 
-WorkerThreads::WorkerThreads(const char* name, uint workers) :
+WorkerThreads::WorkerThreads(const char* name, uint max_workers) :
     _workers(NULL),
-    _total_workers(workers),
+    _max_workers(max_workers),
     _active_workers(0),
     _created_workers(0),
     _name(name),
@@ -135,10 +135,10 @@ WorkerThreads::~WorkerThreads() {
 // The current implementation will exit if the allocation
 // of any worker fails.
 void WorkerThreads::initialize_workers() {
-  log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
-  _workers = NEW_C_HEAP_ARRAY(WorkerThread*, total_workers(), mtInternal);
+  log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), max_workers());
+  _workers = NEW_C_HEAP_ARRAY(WorkerThread*, max_workers(), mtInternal);
 
-  const uint initial_active_workers = UseDynamicNumberOfGCThreads ? 1 : _total_workers;
+  const uint initial_active_workers = UseDynamicNumberOfGCThreads ? 1 : _max_workers;
   if (set_active_workers(initial_active_workers) != initial_active_workers) {
     vm_exit_during_initialization();
   }
@@ -162,9 +162,9 @@ WorkerThread* WorkerThreads::create_worker(uint id) {
 }
 
 uint WorkerThreads::set_active_workers(uint num_workers) {
-  assert(num_workers > 0 && num_workers <= _total_workers,
+  assert(num_workers > 0 && num_workers <= _max_workers,
          "Invalid number of active workers %u (should be 1-%u)",
-         num_workers, _total_workers);
+         num_workers, _max_workers);
 
   while (_created_workers < num_workers) {
     WorkerThread* const worker = create_worker(_created_workers);
@@ -179,7 +179,7 @@ uint WorkerThreads::set_active_workers(uint num_workers) {
 
   _active_workers = MIN2(_created_workers, num_workers);
 
-  log_trace(gc, task)("%s: using %d out of %d workers", _name, _active_workers, _total_workers);
+  log_trace(gc, task)("%s: using %d out of %d workers", _name, _active_workers, _max_workers);
 
   return _active_workers;
 }
@@ -188,7 +188,7 @@ WorkerThread* WorkerThreads::worker(uint i) const {
   // Array index bounds checking.
   WorkerThread* result = NULL;
   assert(_workers != NULL, "No workers for indexing");
-  assert(i < total_workers(), "Worker index out of bounds");
+  assert(i < max_workers(), "Worker index out of bounds");
   result = _workers[i];
   assert(result != NULL, "Indexing to null worker");
   return result;
@@ -207,9 +207,9 @@ void WorkerThreads::run_task(WorkerTask* task) {
 }
 
 void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {
-  guarantee(num_workers <= total_workers(),
+  guarantee(num_workers <= max_workers(),
             "Trying to execute task %s with %u workers which is more than the amount of total workers %u.",
-            task->name(), num_workers, total_workers());
+            task->name(), num_workers, max_workers());
   guarantee(num_workers > 0, "Trying to execute task %s with zero workers", task->name());
   uint old_num_workers = _active_workers;
   set_active_workers(num_workers);

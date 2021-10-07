@@ -1766,7 +1766,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   {
     const uint active_workers =
-      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().max_workers(),
                                         ParallelScavengeHeap::heap()->workers().active_workers(),
                                         Threads::number_of_non_daemon_threads());
     ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);

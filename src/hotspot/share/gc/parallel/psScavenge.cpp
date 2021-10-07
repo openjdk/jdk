@@ -464,7 +464,7 @@ bool PSScavenge::invoke_no_policy() {
     HeapWord* old_top = old_gen->object_space()->top();
 
     const uint active_workers =
-      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().max_workers(),
                                         ParallelScavengeHeap::heap()->workers().active_workers(),
                                         Threads::number_of_non_daemon_threads());
     ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);

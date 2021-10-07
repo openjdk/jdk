@@ -75,7 +75,7 @@ ReferenceProcessor* G1FullCollector::reference_processor() {
 
 uint G1FullCollector::calc_active_workers() {
   G1CollectedHeap* heap = G1CollectedHeap::heap();
-  uint max_worker_count = heap->workers()->total_workers();
+  uint max_worker_count = heap->workers()->max_workers();
   // Only calculate number of workers if UseDynamicNumberOfGCThreads
   // is enabled, otherwise use max.
   if (!UseDynamicNumberOfGCThreads) {

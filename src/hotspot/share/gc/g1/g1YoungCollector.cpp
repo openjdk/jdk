@@ -501,11 +501,11 @@ Tickspan G1YoungCollector::run_task_timed(WorkerTask* task) {
 }
 
 void G1YoungCollector::set_young_collection_default_active_worker_threads(){
-  uint active_workers = WorkerPolicy::calc_active_workers(workers()->total_workers(),
+  uint active_workers = WorkerPolicy::calc_active_workers(workers()->max_workers(),
                                                           workers()->active_workers(),
                                                           Threads::number_of_non_daemon_threads());
   active_workers = workers()->set_active_workers(active_workers);
-  log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
+  log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {

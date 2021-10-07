@@ -77,12 +77,12 @@ struct WorkData {
 
 // The work gang is the collection of workers to execute tasks.
 // The number of workers run for a task is "_active_workers"
-// while "_total_workers" is the number of available workers.
+// while "_max_workers" is the number of available workers.
 class WorkerThreads : public CHeapObj<mtInternal> {
   // The array of worker threads for this gang.
   WorkerThread** _workers;
   // The count of the number of workers in the gang.
-  uint _total_workers;
+  uint _max_workers;
   // The currently active workers in this gang.
   uint _active_workers;
   // The count of created workers in the gang.
@@ -97,14 +97,14 @@ class WorkerThreads : public CHeapObj<mtInternal> {
   WorkerTaskDispatcher* dispatcher() const { return _dispatcher; }
 
  public:
-  WorkerThreads(const char* name, uint workers);
+  WorkerThreads(const char* name, uint max_workers);
 
   ~WorkerThreads();
 
   // Initialize workers in the gang.  Return true if initialization succeeded.
   void initialize_workers();
 
-  uint total_workers() const { return _total_workers; }
+  uint max_workers() const { return _max_workers; }
 
   uint created_workers() const {
     return _created_workers;
@@ -112,8 +112,8 @@ class WorkerThreads : public CHeapObj<mtInternal> {
 
   uint active_workers() const {
     assert(_active_workers != 0, "zero active workers");
-    assert(_active_workers <= _total_workers,
-           "_active_workers: %u > _total_workers: %u", _active_workers, _total_workers);
+    assert(_active_workers <= _max_workers,
+           "_active_workers: %u > _max_workers: %u", _active_workers, _max_workers);
     return _active_workers;
   }
 
@@ -154,7 +154,7 @@ public:
   WithActiveWorkers(WorkerThreads* gang, uint requested_num_workers) :
       _gang(gang),
       _old_active_workers(gang->active_workers()) {
-    uint capped_num_workers = MIN2(requested_num_workers, gang->total_workers());
+    uint capped_num_workers = MIN2(requested_num_workers, gang->max_workers());
     gang->set_active_workers(capped_num_workers);
   }
 
