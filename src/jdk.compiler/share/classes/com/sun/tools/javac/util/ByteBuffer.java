@@ -150,7 +150,7 @@ public class ByteBuffer {
      /** Append the content of a given input stream.
      */
     public void appendStream(InputStream is) throws IOException {
-        try {
+        try (is) {
             int start = length;
             int initialSize = is.available();
             elems = ArrayUtils.ensureCapacity(elems, length + initialSize);
@@ -160,15 +160,6 @@ public class ByteBuffer {
                 bp += r;
                 elems = ArrayUtils.ensureCapacity(elems, bp);
                 r = is.read(elems, bp, elems.length - bp);
-            }
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                /* Ignore any errors, as this stream may have already
-                 * thrown a related exception which is the one that
-                 * should be reported.
-                 */
             }
         }
     }

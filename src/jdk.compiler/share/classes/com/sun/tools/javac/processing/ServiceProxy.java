@@ -84,11 +84,9 @@ class ServiceProxy {
      *         if a configuration-file format error is detected
      */
     private static boolean parse(Class<?> service, URL u) throws ServiceConfigurationError {
-        InputStream in = null;
-        BufferedReader r = null;
-        try {
-            in = u.openStream();
-            r = new BufferedReader(new InputStreamReader(in, UTF_8));
+        try (InputStream in = u.openStream();
+             BufferedReader r = new BufferedReader(new InputStreamReader(in, UTF_8)))
+        {
             int lc = 1;
             String ln;
             while ((ln = r.readLine()) != null) {
@@ -114,17 +112,6 @@ class ServiceProxy {
             return false;
         } catch (IOException x) {
             fail(service, ": " + x);
-        } finally {
-            try {
-                if (r != null) r.close();
-            } catch (IOException y) {
-                fail(service, ": " + y);
-            }
-            try {
-                if (in != null) in.close();
-            } catch (IOException y) {
-                fail(service, ": " + y);
-            }
         }
         return false;
     }
