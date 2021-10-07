@@ -3252,8 +3252,8 @@ public class HTMLDocument extends DefaultStyledDocument {
                     }
                     if (rel != null) {
                         rel = rel.toLowerCase();
-                        if ((media.indexOf("all") != -1 ||
-                             media.indexOf("screen") != -1) &&
+                        if ((media.contains("all") ||
+                             media.contains("screen")) &&
                             (rel.equals("stylesheet") ||
                              (rel.equals("alternate stylesheet") &&
                               title.equals(defaultStyle)))) {

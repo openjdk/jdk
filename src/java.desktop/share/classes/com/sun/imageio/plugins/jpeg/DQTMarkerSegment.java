@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.imageio.plugins.jpeg.JPEGQTable;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -112,8 +111,7 @@ class DQTMarkerSegment extends MarkerSegment {
 
     void print() {
         printTag("DQT");
-        System.out.println("Num tables: "
-                           + Integer.toString(tables.size()));
+        System.out.println("Num tables: " + tables.size());
         for (int i= 0; i<tables.size(); i++) {
             Qtable table = tables.get(i);
             table.print();
@@ -288,9 +286,8 @@ class DQTMarkerSegment extends MarkerSegment {
         }
 
         void print() {
-            System.out.println("Table id: " + Integer.toString(tableID));
-            System.out.println("Element precision: "
-                               + Integer.toString(elementPrecision));
+            System.out.println("Table id: " + tableID);
+            System.out.println("Element precision: " + elementPrecision);
 
             (new JPEGQTable(data)).toString();
             /*

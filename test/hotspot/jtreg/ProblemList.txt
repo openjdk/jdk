@@ -120,6 +120,8 @@ serviceability/sa/ClhsdbFindPC.java#xcomp-core 8269982 macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8269982 macosx-aarch64
 serviceability/sa/ClhsdbPstack.java#core 8269982 macosx-aarch64
 
+resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8274620 macosx-x64
+
 #############################################################################
 
 # :hotspot_misc
