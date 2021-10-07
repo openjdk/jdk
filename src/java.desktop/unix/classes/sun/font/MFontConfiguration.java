@@ -27,8 +27,6 @@ package sun.font;
 
 import sun.awt.FontConfiguration;
 import sun.awt.X11FontManager;
-import sun.font.FontUtilities;
-import sun.font.SunFontManager;
 import sun.util.logging.PlatformLogger;
 
 import java.io.File;

@@ -510,22 +510,27 @@ public final class SF2Soundbank implements Soundbank {
     }
 
     public void save(String name) throws IOException {
-        writeSoundbank(new RIFFWriter(name, "sfbk"));
+        try (RIFFWriter writer = new RIFFWriter(name, "sfbk")) {
+            writeSoundbank(writer);
+        }
     }
 
     public void save(File file) throws IOException {
-        writeSoundbank(new RIFFWriter(file, "sfbk"));
+        try (RIFFWriter writer = new RIFFWriter(file, "sfbk")) {
+            writeSoundbank(writer);
+        }
     }
 
     public void save(OutputStream out) throws IOException {
-        writeSoundbank(new RIFFWriter(out, "sfbk"));
+        try (RIFFWriter writer = new RIFFWriter(out, "sfbk")) {
+            writeSoundbank(writer);
+        }
     }
 
     private void writeSoundbank(RIFFWriter writer) throws IOException {
         writeInfo(writer.writeList("INFO"));
         writeSdtaChunk(writer.writeList("sdta"));
         writePdtaChunk(writer.writeList("pdta"));
-        writer.close();
     }
 
     private void writeInfoStringChunk(RIFFWriter writer, String name,

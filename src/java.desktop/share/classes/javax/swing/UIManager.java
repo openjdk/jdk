@@ -57,7 +57,6 @@ import sun.awt.SunToolkit;
 import sun.awt.OSInfo;
 import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Objects;
 import sun.awt.AppContext;

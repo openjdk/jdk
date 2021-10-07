@@ -852,16 +852,10 @@ public class JEditorPane extends JTextComponent {
     private void handlePostData(HttpURLConnection conn, Object postData)
                                                             throws IOException {
         conn.setDoOutput(true);
-        DataOutputStream os = null;
-        try {
-            conn.setRequestProperty("Content-Type",
-                    "application/x-www-form-urlencoded");
-            os = new DataOutputStream(conn.getOutputStream());
-            os.writeBytes((String) postData);
-        } finally {
-            if (os != null) {
-                os.close();
-            }
+        conn.setRequestProperty("Content-Type",
+                "application/x-www-form-urlencoded");
+        try (DataOutputStream os = new DataOutputStream(conn.getOutputStream())) {
+            os.writeBytes((String)postData);
         }
     }
 

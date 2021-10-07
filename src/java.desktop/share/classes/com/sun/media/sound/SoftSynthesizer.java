@@ -800,9 +800,8 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                             return null;
                         });
                 if (out != null) {
-                    try {
+                    try (out) {
                         ((SF2Soundbank) defaultSoundBank).save(out);
-                        out.close();
                     } catch (final IOException ignored) {
                     }
                 }
