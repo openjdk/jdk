@@ -121,9 +121,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             this.key = deriveKey(prf, passwdBytes, salt, iterCount, keyLength);
         } catch (NoSuchAlgorithmException nsae) {
             // not gonna happen; re-throw just in case
-            InvalidKeySpecException ike = new InvalidKeySpecException();
-            ike.initCause(nsae);
-            throw ike;
+            throw new InvalidKeySpecException(nsae);
         } finally {
             Arrays.fill(passwdBytes, (byte) 0x00);
 

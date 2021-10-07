@@ -56,7 +56,7 @@
   static const bool supports_generic_vector_operands = false;
 
   // No support for 48 extra htbl entries in aes-gcm intrinsic
-  static const int htbl_entries = -1;
+  static const int htbl_entries = 0;
 
   static constexpr bool isSimpleConstant64(jlong value) {
     // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.

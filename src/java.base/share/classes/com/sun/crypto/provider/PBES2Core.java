@@ -162,10 +162,7 @@ abstract class PBES2Core extends CipherSpi {
         try {
             engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
         } catch (InvalidAlgorithmParameterException ie) {
-            InvalidKeyException ike =
-                new InvalidKeyException("requires PBE parameters");
-            ike.initCause(ie);
-            throw ike;
+            throw new InvalidKeyException("requires PBE parameters", ie);
         }
     }
 
@@ -279,10 +276,7 @@ abstract class PBES2Core extends CipherSpi {
         try {
             s = (PBKDF2KeyImpl)kdf.engineGenerateSecret(pbeSpec);
         } catch (InvalidKeySpecException ikse) {
-            InvalidKeyException ike =
-                new InvalidKeyException("Cannot construct PBE key");
-            ike.initCause(ikse);
-            throw ike;
+            throw new InvalidKeyException("Cannot construct PBE key", ikse);
         } finally {
             pbeSpec.clearPassword();
         }
