@@ -361,7 +361,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
       if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
         AC_MSG_RESULT([yes])
       else
-        AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
+        AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
         AVAILABLE=false
       fi
     else
