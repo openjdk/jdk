@@ -510,8 +510,6 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
 
     if (cause != GCCause::_wb_breakpoint) {
       ml.wait();
-    } else {
-      ml.wait(10);
     }
     current_gc_id = get_gc_id();
   }
