@@ -25,18 +25,9 @@
 #ifndef SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP
 #define SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP
 
+#include "gc/g1/g1_globals.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-// Enable evacuation failure injector by default in non-product builds.
-// Do not forget to also enable relevant options if you use this to build in this
-// functionality in product builds too.
-
-#if !defined(EVAC_FAILURE_INJECTOR) && !defined(PRODUCT)
-#define EVAC_FAILURE_INJECTOR 1
-#elif !defined(EVAC_FAILURE_INJECTOR)
-#define EVAC_FAILURE_INJECTOR 0
-#endif
 
 #if EVAC_FAILURE_INJECTOR
 #define EVAC_FAILURE_INJECTOR_RETURN
