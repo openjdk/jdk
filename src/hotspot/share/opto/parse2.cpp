@@ -410,8 +410,8 @@ static void merge_ranges(SwitchRange* ranges, int& rp) {
 void Parse::do_tableswitch() {
   // Get information about tableswitch
   int default_dest = iter().get_dest_table(0);
-  jint lo_index     = iter().get_int_table(1);
-  jint hi_index     = iter().get_int_table(2);
+  jint lo_index    = iter().get_int_table(1);
+  jint hi_index    = iter().get_int_table(2);
   int len          = hi_index - lo_index + 1;
 
   if (len < 1) {

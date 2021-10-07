@@ -204,10 +204,12 @@ public:
 
   // For a lookup or switch table, return target destination
   jint get_int_table( int index ) const {
-    return (jint)Bytes::get_Java_u4((address)&_table_base[index]); }
+    return (jint)Bytes::get_Java_u4((address)&_table_base[index]);
+  }
 
   int get_dest_table( int index ) const {
-    return cur_bci() + get_int_table(index); }
+    return cur_bci() + get_int_table(index);
+  }
 
   // --- Constant pool access ---
   int get_constant_raw_index() const;
