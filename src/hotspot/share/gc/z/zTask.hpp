@@ -29,23 +29,23 @@
 
 class ZTask : public StackObj {
 private:
-  class GangTask : public WorkerTask {
+  class Task : public WorkerTask {
   private:
-    ZTask* const _ztask;
+    ZTask* const _task;
 
   public:
-    GangTask(ZTask* ztask, const char* name);
+    Task(ZTask* task, const char* name);
 
     virtual void work(uint worker_id);
   };
 
-  GangTask _gang_task;
+  Task _worker_task;
 
 public:
   ZTask(const char* name);
 
   const char* name() const;
-  WorkerTask* gang_task();
+  WorkerTask* worker_task();
 
   virtual void work() = 0;
 };

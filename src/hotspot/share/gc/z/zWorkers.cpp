@@ -95,7 +95,7 @@ void ZWorkers::set_active_workers(uint nworkers) {
 void ZWorkers::run(ZTask* task) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
   ZStatWorkers::at_start();
-  _workers.run_task(task->gang_task());
+  _workers.run_task(task->worker_task());
   ZStatWorkers::at_end();
 }
 
@@ -106,7 +106,7 @@ void ZWorkers::run_all(ZTask* task) {
   // Execute task using all workers
   _workers.set_active_workers(_workers.max_workers());
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
-  _workers.run_task(task->gang_task());
+  _workers.run_task(task->worker_task());
 
   // Restore number of active workers
   _workers.set_active_workers(prev_active_workers);
