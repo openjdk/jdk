@@ -67,6 +67,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -2878,6 +2879,9 @@ void nmethod::decode2(outputStream* ost) const {
   const bool compressed_with_comments = use_compressed_format && (AbstractDisassembler::show_comment() ||
                                                                   AbstractDisassembler::show_block_comment());
 #endif
+
+  // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
 
   st->cr();
   this->print(st);
