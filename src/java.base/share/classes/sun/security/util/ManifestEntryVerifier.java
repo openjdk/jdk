@@ -63,8 +63,9 @@ public class ManifestEntryVerifier {
     ArrayList<byte[]> manifestHashes;
 
     private String name = null;
-    private String manifestFileName;
-    private Manifest man;
+
+    private final String manifestFileName; // never null
+    private final Manifest man;
 
     private boolean skip = true;
 
