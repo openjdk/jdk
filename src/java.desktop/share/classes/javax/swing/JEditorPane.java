@@ -855,7 +855,7 @@ public class JEditorPane extends JTextComponent {
         conn.setRequestProperty("Content-Type",
                 "application/x-www-form-urlencoded");
         try (DataOutputStream os = new DataOutputStream(conn.getOutputStream())) {
-            os.writeBytes((String)postData);
+            os.writeBytes((String) postData);
         }
     }
 
