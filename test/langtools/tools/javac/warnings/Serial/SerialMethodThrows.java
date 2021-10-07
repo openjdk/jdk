@@ -39,11 +39,11 @@ class SerialMethodThrows {
                 ;
             }
         }
- 
+
         private Object writeReplace() {
             return null;
         }
- 
+
         private void readObject(ObjectInputStream stream) {
             try {
                 stream.defaultReadObject();
@@ -53,7 +53,7 @@ class SerialMethodThrows {
         }
 
         private void readObjectNoData() {}
- 
+
         private Object readResolve() {
             return null;
         }
@@ -72,12 +72,12 @@ class SerialMethodThrows {
                 ;
             }
         }
- 
+
         private Object writeReplace()
             throws Error {
             return null;
         }
- 
+
         private void readObject(ObjectInputStream stream)
             throws Error {
             try {
@@ -89,7 +89,7 @@ class SerialMethodThrows {
 
         private void readObjectNoData()
         throws Error {}
- 
+
         private Object readResolve()
             throws Error {
             return null;
@@ -105,12 +105,12 @@ class SerialMethodThrows {
             throws IOException {
             stream.defaultWriteObject();
         }
- 
+
         private Object writeReplace()
             throws ObjectStreamException {
             return null;
         }
- 
+
         private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
             stream.defaultReadObject();
@@ -118,7 +118,7 @@ class SerialMethodThrows {
 
         private void readObjectNoData()
         throws ObjectStreamException {}
- 
+
         private Object readResolve()
             throws ObjectStreamException {
             return null;
@@ -138,12 +138,12 @@ class SerialMethodThrows {
                 ;
             }
         }
- 
+
         private Object writeReplace()
             throws CustomObjectStreamException {
             return null;
         }
- 
+
         private void readObject(ObjectInputStream stream)
             throws CustomIOException, CustomClassNotFoundException {
             try {
@@ -155,7 +155,7 @@ class SerialMethodThrows {
 
         private void readObjectNoData()
         throws CustomObjectStreamException {}
- 
+
         private Object readResolve()
             throws CustomObjectStreamException {
             return null;
@@ -192,12 +192,12 @@ class SerialMethodThrows {
                 ;
             }
         }
- 
+
         private Object writeReplace()
             throws CustomException {
             return null;
         }
- 
+
         private void readObject(ObjectInputStream stream)
             throws CustomException {
             try {
@@ -209,7 +209,7 @@ class SerialMethodThrows {
 
         private void readObjectNoData()
         throws CustomException {}
- 
+
         private Object readResolve()
             throws CustomException {
             return null;
