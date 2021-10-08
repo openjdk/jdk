@@ -288,8 +288,6 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_oopstorage_rank,
   ThreadInVMfromNative invm(THREAD);
 
   Monitor* monitor_rank_broken = new Monitor(Mutex::oopstorage-4, "monitor_rank_broken");
-  monitor_rank_broken->lock_without_safepoint_check();
-  monitor_rank_broken->unlock();
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_safepoint_rank,
@@ -298,8 +296,6 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_safepoint_rank,
   ThreadInVMfromNative invm(THREAD);
 
   Monitor* monitor_rank_broken = new Monitor(Mutex::safepoint-40, "monitor_rank_broken");
-  monitor_rank_broken->lock_without_safepoint_check();
-  monitor_rank_broken->unlock();
 }
 
 TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_safepoint_rank2,
@@ -307,10 +303,8 @@ TEST_VM_ASSERT_MSG(MutexRank, monitor_overlapping_safepoint_rank2,
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
-  Monitor* monitor_rank_broken = new Monitor(Mutex::safepoint-1, "monitor_rank_broken");
-  Monitor* monitor_rank_also_broken = new Monitor(monitor_rank_broken->rank()-39, "monitor_rank_also_broken");
-  monitor_rank_also_broken->lock_without_safepoint_check();
-  monitor_rank_also_broken->unlock();
+  Monitor* monitor_rank_ok = new Monitor(Mutex::safepoint-1, "monitor_rank_ok");
+  Monitor* monitor_rank_broken = new Monitor(monitor_rank_ok->rank()-39, "monitor_rank_broken");
 }
 
 // Test mismatched safepoint check flag on lock declaration vs. lock acquisition.
