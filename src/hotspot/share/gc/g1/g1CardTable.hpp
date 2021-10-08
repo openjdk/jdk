@@ -87,6 +87,7 @@ public:
 
   static CardValue g1_young_card_val() { return g1_young_gen; }
   static CardValue g1_scanned_card_val() { return g1_card_already_scanned; }
+
   static uint min_card_size(size_t region_size);
 
   void verify_g1_young_region(MemRegion mr) PRODUCT_RETURN;
