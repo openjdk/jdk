@@ -505,8 +505,8 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t current_gc_id = get_gc_id();
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id) {
-    _gc_requested.set();
     _requested_gc_cause = cause;
+    _gc_requested.set();
 
     if (cause != GCCause::_wb_breakpoint) {
       ml.wait();
