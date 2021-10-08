@@ -455,12 +455,13 @@ bool Mutex::contains(Mutex* locks, Mutex* lock) {
   }
   return false;
 }
+#endif // ASSERT
 
 // Called immediately after lock acquisition or release as a diagnostic
 // to track the lock-set of the thread.
 // Rather like an EventListener for _owner (:>).
 
-void Mutex::set_owner_implementation(Thread *new_owner) {
+void Mutex::set_owner(Thread *new_owner) {
   // This function is solely responsible for maintaining
   // and checking the invariant that threads and locks
   // are in a 1/N relation, with some some locks unowned.
@@ -482,19 +483,21 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     this->_next = new_owner->_owned_locks;
     new_owner->_owned_locks = this;
 
+#ifdef ASSERT
     // NSV implied with locking allow_vm_block flag.
     // The tty_lock is special because it is released for the safepoint by
     // the safepoint mechanism.
     if (new_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
       JavaThread::cast(new_owner)->inc_no_safepoint_count();
     }
+#endif
 
   } else {
     // the thread is releasing this lock
 
     Thread* old_owner = owner();
-    _last_owner = old_owner;
-    _skip_rank_check = false;
+    DEBUG_ONLY(_last_owner = old_owner;)
+    DEBUG_ONLY(_skip_rank_check = false;)
 
     assert(old_owner != NULL, "removing the owner thread of an unowned mutex");
     assert(old_owner == Thread::current(), "removing the owner thread of an unowned mutex");
@@ -521,10 +524,11 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     }
     _next = NULL;
 
+#ifdef ASSERT
     // ~NSV implied with locking allow_vm_block flag.
     if (old_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
       JavaThread::cast(old_owner)->dec_no_safepoint_count();
     }
+#endif // ASSERT
   }
 }
-#endif // ASSERT

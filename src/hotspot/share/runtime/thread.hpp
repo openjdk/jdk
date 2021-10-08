@@ -574,23 +574,21 @@ protected:
   // Basic, non-virtual, printing support that is simple and always safe.
   void print_value_on(outputStream* st) const;
 
-  // Debug-only code
-#ifdef ASSERT
  private:
-  // Deadlock detection support for Mutex locks. List of locks own by thread.
-  Mutex* _owned_locks;
-  // Mutex::set_owner_implementation is the only place where _owned_locks is modified,
-  // thus the friendship
+  // Deadlock detection support for Mutex locks, and help with crash handling.
+  // List of locks own by thread.
   friend class Mutex;
-  friend class Monitor;
+  Mutex* _owned_locks;
 
  public:
+  void print_owned_locks() const { print_owned_locks_on(tty); }
   void print_owned_locks_on(outputStream* st) const;
-  void print_owned_locks() const                 { print_owned_locks_on(tty);    }
-  Mutex* owned_locks() const                     { return _owned_locks;          }
-  bool owns_locks() const                        { return owned_locks() != NULL; }
 
-  // Deadlock detection
+  // Debug-only code
+  Mutex* owned_locks() const                     { return _owned_locks; }
+  bool owns_locks() const                        { return _owned_locks != NULL; }
+
+#ifdef ASSERT
   ResourceMark* current_resource_mark()          { return _current_resource_mark; }
   void set_current_resource_mark(ResourceMark* rm) { _current_resource_mark = rm; }
 #endif // ASSERT
@@ -1726,6 +1724,8 @@ class Threads: AllStatic {
   static void print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,
                              int buflen, bool* found_current);
   static void print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
+
+  static void print_owned_locks_on_error(outputStream* st);
 
   // Get Java threads that are waiting to enter a monitor.
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,

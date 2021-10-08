@@ -87,20 +87,19 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // than the lock owner are inherently racy.
   Thread* volatile _owner;
   void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
+  void link_locks(Thread* new_owner);
 
  protected:                              // Monitor-Mutex metadata
   os::PlatformMonitor _lock;             // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
+  Mutex*  _next;                 // Used by a Thread to link up owned locks
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
-#ifndef PRODUCT
-  bool    _allow_vm_block;
-#endif
 #ifdef ASSERT
   Rank    _rank;                 // rank (to avoid/detect potential deadlocks)
-  Mutex*  _next;                 // Used by a Thread to link up owned locks
   Thread* _last_owner;           // the last thread to own the lock
-  bool _skip_rank_check;         // read only by owner when doing rank checks
+  bool    _skip_rank_check;      // read only by owner when doing rank checks
+  bool    _allow_vm_block;
 
   static bool contains(Mutex* locks, Mutex* lock);
   static Mutex* get_least_ranked_lock(Mutex* locks);
@@ -113,12 +112,11 @@ class Mutex : public CHeapObj<mtSynchronizer> {
  public:
   Rank   rank() const          { return _rank; }
   const char*  rank_name() const;
-  Mutex* next()  const         { return _next; }
-  void   set_next(Mutex *next) { _next = next; }
 #endif // ASSERT
 
  protected:
-  void set_owner_implementation(Thread* owner)                        NOT_DEBUG({ raw_set_owner(owner);});
+  void set_next(Mutex *next)   { _next = next; }
+
   void check_block_state       (Thread* thread)                       NOT_DEBUG_RETURN;
   void check_safepoint_state   (Thread* thread)                       NOT_DEBUG_RETURN;
   void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
@@ -184,10 +182,11 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // Current owner - note not MT-safe. Can only be used to guarantee that
   // the current running thread owns the lock
   Thread* owner() const         { return Atomic::load(&_owner); }
-  void set_owner(Thread* owner) { set_owner_implementation(owner); }
+  void set_owner(Thread* owner);
   bool owned_by_self() const;
 
-  const char *name() const                  { return _name; }
+  const char *name() const      { return _name; }
+  Mutex* next()  const          { return _next; }
 
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT

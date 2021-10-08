@@ -995,7 +995,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
      // mutexes/monitors that currently have an owner
      if (_verbose) {
-       print_owned_locks_on_error(st);
+       Threads::print_owned_locks_on_error(st);
        st->cr();
      }
 

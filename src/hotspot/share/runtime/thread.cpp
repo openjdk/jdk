@@ -236,7 +236,7 @@ Thread::Thread() {
   new HandleMark(this);
 
   // plain initialization
-  debug_only(_owned_locks = NULL;)
+  _owned_locks = NULL;
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
@@ -604,8 +604,6 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
     osthread()->print_on(st);
   }
   ThreadsSMRSupport::print_info_on(this, st);
-  st->print(" ");
-  debug_only(if (WizardMode) print_owned_locks_on(st);)
 }
 
 void Thread::print() const { print_on(tty); }
@@ -639,20 +637,18 @@ void Thread::print_value_on(outputStream* st) const {
   st->print(INTPTR_FORMAT, p2i(this));   // print address
 }
 
-#ifdef ASSERT
 void Thread::print_owned_locks_on(outputStream* st) const {
   Mutex* cur = _owned_locks;
   if (cur == NULL) {
-    st->print(" (no locks) ");
+    st->print_cr(" (no locks) ");
   } else {
-    st->print_cr(" Locks owned:");
     while (cur) {
-      cur->print_on(st);
+      cur->print_on_error(st);
+      st->cr();
       cur = cur->next();
     }
   }
 }
-#endif // ASSERT
 
 // We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
 // However, there is a note in JavaThread::is_lock_owned() about the VM threads not being
@@ -3847,6 +3843,34 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, b
   }
 }
 
+// Print all mutexes/monitors that are currently owned by a thread; called
+// by fatal error handler.
+void Threads::print_owned_locks_on_error(outputStream* st) {
+  class PrintLocksClosure : public ThreadClosure {
+    outputStream* _st;
+    bool* _printed;
+   public:
+    PrintLocksClosure(outputStream* st, bool* none) : _st(st), _printed(none) {}
+    void do_thread(Thread* t) {
+      if (t->owns_locks()) {
+        t->print_owned_locks_on(_st);
+      }
+    }
+  };
+
+  st->print_cr("VM Mutex/Monitor currently owned by a thread: ");
+  bool none = true;
+  ALL_JAVA_THREADS(jt) {
+    if (jt->owns_locks()) {
+      jt->print_owned_locks_on(st);
+      none = false;
+    }
+  }
+
+  PrintLocksClosure tc(st, &none);
+  non_java_threads_do(&tc);
+  if (none) st->print_cr("None");
+}
 
 // Ad-hoc mutual exclusion primitives: SpinLock
 //
