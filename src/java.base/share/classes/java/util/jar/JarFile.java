@@ -749,7 +749,7 @@ public class JarFile extends ZipFile {
                 }
                 if (mev == null) {
                     mev = new ManifestEntryVerifier
-                        (getManifestFromReference());
+                        (getManifestFromReference(), jv.manifestName);
                 }
                 if (name.equalsIgnoreCase(MANIFEST_NAME)) {
                     b = jv.manifestRawBytes;
