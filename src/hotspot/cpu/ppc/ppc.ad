@@ -8139,7 +8139,7 @@ instruct compareAndExchangeL_acq_regP_regL_regL(iRegLdst res, iRegPdst mem_ptr, 
 instruct compareAndExchangeP_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeP mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst)
-            && n->as_Load()->barrier_data() == 0);
+            && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
   ins_encode %{
@@ -8154,7 +8154,7 @@ instruct compareAndExchangeP_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iReg
 instruct compareAndExchangeP_acq_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src1, iRegPsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeP mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst)
-            && n->as_Load()->barrier_data() == 0);
+            && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
   ins_encode %{
@@ -8376,7 +8376,7 @@ instruct getAndSetL(iRegLdst res, iRegPdst mem_ptr, iRegLsrc src, flagsRegCR0 cr
 
 instruct getAndSetP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetP mem_ptr src));
-  predicate(n->as_Load()->barrier_data() == 0);
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndSetP $res, $mem_ptr, $src" %}
   ins_encode %{
