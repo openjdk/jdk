@@ -27,9 +27,9 @@
 #include "runtime/thread.hpp"
 
 Address ZBarrierSetAssemblerBase::address_bad_mask_from_thread(Register thread) {
-  return Address(thread, (intptr_t) ZThreadLocalData::address_bad_mask_offset());
+  return Address(thread, ZThreadLocalData::address_bad_mask_offset());
 }
 
 Address ZBarrierSetAssemblerBase::address_bad_mask_from_jni_env(Register env) {
-  return Address(env, (intptr_t) (ZThreadLocalData::address_bad_mask_offset() - JavaThread::jni_environment_offset()));
+  return Address(env, ZThreadLocalData::address_bad_mask_offset() - JavaThread::jni_environment_offset());
 }
