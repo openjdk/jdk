@@ -134,27 +134,7 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz,
 {
     jint fd = fdval(env, fdo);
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
-    ssize_t result = writev(fd, iov, len);
-#ifdef MACOSX
-    if (result < 0 && errno == EINVAL) {
-        //
-        // Calculate sum of iov_len values each of which satisfies
-        // the constraint 0 < iov_len <= INT_MAX
-        //
-        size_t total_len = 0;
-        for (int i = 0; i < len && total_len < INT_MAX; i++)
-            total_len += iov[i].iov_len;
-
-        //
-        // [EINVAL] The sum of the iov_len values in the iov array
-        //          overflows a 32-bit integer.
-        //
-        if (total_len > INT_MAX)
-            // Retry the gathering write with only the first buffer
-            result = writev(fd, iov, 1);
-    }
-#endif
-    return convertLongReturnVal(env, result, JNI_FALSE);
+    return convertLongReturnVal(env, writev(fd, iov, len), JNI_FALSE);
 }
 
 static jlong

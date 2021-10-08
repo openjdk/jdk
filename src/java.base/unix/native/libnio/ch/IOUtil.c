@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 #include <sys/types.h>
 #include <string.h>
 #include <sys/resource.h>
+#ifdef MACOSX
+#include <stdlib.h>
+#include <sys/utsname.h>
+#endif
 
 #include "jni.h"
 #include "jni_util.h"
@@ -33,6 +37,7 @@
 #include "jlong.h"
 #include "sun_nio_ch_IOUtil.h"
 #include "java_lang_Integer.h"
+#include "java_lang_Long.h"
 #include "nio.h"
 #include "nio_util.h"
 
@@ -171,6 +176,51 @@ Java_sun_nio_ch_IOUtil_iovMax(JNIEnv *env, jclass this)
     if (iov_max == -1)
         iov_max = 16;
     return (jint)iov_max;
+}
+
+#ifdef MACOSX
+static int get_darwin_version() {
+    struct utsname name;
+    if (uname(&name) < 0)
+        return -1;
+
+    int version_number = -1;
+    char major_version[_SYS_NAMELEN];
+    char *dot = strchr(name.release, '.');
+    if (dot != NULL) {
+        size_t len = dot - name.release;
+        strncpy(major_version, name.release, len);
+        major_version[len]= '\0';
+        version_number = atoi(major_version);
+    }
+
+    return version_number;
+}
+#endif
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_IOUtil_writevMax(JNIEnv *env, jclass this)
+{
+#ifdef MACOSX
+    //
+    // As of macOS 11 Big Sur, Darwin version 20, writev() started to
+    // enforce the constraint
+    //
+    // [EINVAL] The sum of the iov_len values in the iov array
+    //          overflows a 32-bit integer.
+    //
+    if (get_darwin_version() >= 20)
+        return java_lang_Integer_MAX_VALUE;
+#elif defined(__linux__)
+    //
+    // The Linux specification of writev() has the same constraint on
+    // the sum of the iov_len values in the iov array as above, but in
+    // practice on Linux writev() has been observed not to write more
+    // than 0x7fff0000 (aarch64) or 0x7ffff000 (x64) bytes in one call.
+    //
+    return java_lang_Integer_MAX_VALUE;
+#endif
+    return java_lang_Long_MAX_VALUE;
 }
 
 /* Declared in nio_util.h for use elsewhere in NIO */
