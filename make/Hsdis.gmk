@@ -76,7 +76,6 @@ $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
     SRC := $(TOPDIR)/src/utils/hsdis, \
     TOOLCHAIN := $(HSDIS_TOOLCHAIN), \
-    EXCLUDE_FILES := hsdis-demo.c, \
     OUTPUT_DIR := $(HSDIS_OUTPUT_DIR), \
     OBJECT_DIR := $(HSDIS_OUTPUT_DIR), \
     DISABLED_WARNINGS_gcc := undef format-nonliteral sign-compare, \
@@ -100,7 +99,9 @@ endif
 INSTALLED_HSDIS := $(INSTALLED_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
 
 $(INSTALLED_HSDIS): $(BUILD_HSDIS_TARGET)
+	$(call LogWarn, NOTE: The resulting build might not be redistributable. Seek legal advice before distibuting.)
 	$(install-file)
+
 
 install: $(INSTALLED_HSDIS)
 
