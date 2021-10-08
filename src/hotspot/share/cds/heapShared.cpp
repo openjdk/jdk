@@ -674,7 +674,7 @@ void HeapShared::serialize_subgraph_info_table_header(SerializeClosure* soc) {
 }
 
 static void verify_the_heap(Klass* k, const char* which) {
-  if (VerifyArchivedFields) {
+  if (VerifyArchivedFields > 0) {
     ResourceMark rm;
     log_info(cds, heap)("Verify heap %s initializing static field(s) in %s",
                         which, k->external_name());
@@ -682,15 +682,20 @@ static void verify_the_heap(Klass* k, const char* which) {
     VM_Verify verify_op;
     VMThread::execute(&verify_op);
 
-    if (!FLAG_IS_DEFAULT(VerifyArchivedFields)) {
-      // If VerifyArchivedFields has a non-default value (e.g., specified on the command-line), do
-      // more expensive checks.
-      if (is_init_completed()) {
-        FlagSetting fs1(VerifyBeforeGC, true);
-        FlagSetting fs2(VerifyDuringGC, true);
-        FlagSetting fs3(VerifyAfterGC,  true);
-        Universe::heap()->collect(GCCause::_java_lang_system_gc);
-      }
+    if (VerifyArchivedFields > 1 && is_init_completed()) {
+      // At this time, the oop->klass() of some archived objects in the heap may not
+      // have been loaded into the system dictionary yet. Nevertheless, oop->klass() should
+      // have enough information (object size, oop maps, etc) so that a GC can be safely
+      // performed.
+      //
+      // -XX:VerifyArchivedFields=2 force a GC to happen in such an early stage
+      // to check for GC safety.
+      log_info(cds, heap)("Trigger GC %s initializing static field(s) in %s",
+                          which, k->external_name());
+      FlagSetting fs1(VerifyBeforeGC, true);
+      FlagSetting fs2(VerifyDuringGC, true);
+      FlagSetting fs3(VerifyAfterGC,  true);
+      Universe::heap()->collect(GCCause::_java_lang_system_gc);
     }
   }
 }
@@ -1581,7 +1586,7 @@ class PatchLoadedRegionPointers: public BitMapClosure {
 };
 
 int HeapShared::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_regions,
-                                    uintptr_t* buffer_ret) {
+                                    MemRegion& archive_space) {
   size_t total_bytes = 0;
   int num_loaded_regions = 0;
   for (int i = MetaspaceShared::first_archive_heap_region;
@@ -1599,12 +1604,16 @@ int HeapShared::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegio
   }
 
   assert(is_aligned(total_bytes, HeapWordSize), "must be");
-  uintptr_t buffer = (uintptr_t)
-    Universe::heap()->allocate_loaded_archive_space(total_bytes / HeapWordSize);
-  _loaded_heap_bottom = buffer;
-  _loaded_heap_top    = buffer + total_bytes;
+  size_t word_size = total_bytes / HeapWordSize;
+  HeapWord* buffer = Universe::heap()->allocate_loaded_archive_space(word_size);
+  if (buffer == nullptr) {
+    return 0;
+  }
 
-  *buffer_ret = buffer;
+  archive_space = MemRegion(buffer, word_size);
+  _loaded_heap_bottom = (uintptr_t)archive_space.start();
+  _loaded_heap_top    = _loaded_heap_bottom + total_bytes;
+
   return num_loaded_regions;
 }
 
@@ -1633,15 +1642,17 @@ bool HeapShared::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loa
     LoadedArchiveHeapRegion* ri = &loaded_regions[i];
     FileMapRegion* r = mapinfo->space_at(ri->_region_index);
 
-    if (!mapinfo->read_region(ri->_region_index, (char*)load_address, r->used())) {
+    if (!mapinfo->read_region(ri->_region_index, (char*)load_address, r->used(), /* do_commit = */ false)) {
       // There's no easy way to free the buffer, so we will fill it with zero later
       // in fill_failed_loaded_region(), and it will eventually be GC'ed.
       log_warning(cds)("Loading of heap region %d has failed. Archived objects are disabled", i);
       _loading_failed = true;
       return false;
     }
-    log_info(cds)("Loaded heap    region #%d at base " INTPTR_FORMAT " size = " SIZE_FORMAT_W(8) " bytes, delta = " INTX_FORMAT,
-                  ri->_region_index, load_address, ri->_region_size, ri->_runtime_offset);
+    log_info(cds)("Loaded heap    region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT
+                  " size " SIZE_FORMAT_W(6) " delta " INTX_FORMAT,
+                  ri->_region_index, load_address, load_address + ri->_region_size,
+                  ri->_region_size, ri->_runtime_offset);
 
     uintptr_t oopmap = bitmap_base + r->oopmap_offset();
     BitMapView bm((BitMap::bm_word_t*)oopmap, r->oopmap_size_in_bits());
@@ -1670,10 +1681,14 @@ bool HeapShared::load_heap_regions(FileMapInfo* mapinfo) {
   LoadedArchiveHeapRegion loaded_regions[MetaspaceShared::max_num_heap_regions];
   memset(loaded_regions, 0, sizeof(loaded_regions));
 
-  uintptr_t buffer;
-  int num_loaded_regions = init_loaded_regions(mapinfo, loaded_regions, &buffer);
-  sort_loaded_regions(loaded_regions, num_loaded_regions, buffer);
-  if (!load_regions(mapinfo, loaded_regions, num_loaded_regions, buffer)) {
+  MemRegion archive_space;
+  int num_loaded_regions = init_loaded_regions(mapinfo, loaded_regions, archive_space);
+  if (num_loaded_regions <= 0) {
+    return false;
+  }
+  sort_loaded_regions(loaded_regions, num_loaded_regions, (uintptr_t)archive_space.start());
+  if (!load_regions(mapinfo, loaded_regions, num_loaded_regions, (uintptr_t)archive_space.start())) {
+    assert(_loading_failed, "must be");
     return false;
   }
 
@@ -1706,10 +1721,20 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
   }
 };
 
-void HeapShared::verify_loaded_heap() {
-  if (!VerifyArchivedFields || !is_loaded()) {
+void HeapShared::finish_initialization() {
+  if (is_loaded()) {
+    HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
+    HeapWord* top    = (HeapWord*)_loaded_heap_top;
+
+    MemRegion archive_space = MemRegion(bottom, top);
+    Universe::heap()->complete_loaded_archive_space(archive_space);
+  }
+
+  if (VerifyArchivedFields <= 0 || !is_loaded()) {
     return;
   }
+
+  log_info(cds, heap)("Verify all oops and pointers in loaded heap");
 
   ResourceMark rm;
   ResourceHashtable<uintptr_t, bool> table;
@@ -1732,9 +1757,12 @@ void HeapShared::verify_loaded_heap() {
 
 void HeapShared::fill_failed_loaded_region() {
   assert(_loading_failed, "must be");
-  HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
-  HeapWord* top = (HeapWord*)_loaded_heap_top;
-  Universe::heap()->fill_with_objects(bottom, top - bottom);
+  if (_loaded_heap_bottom != 0) {
+    assert(_loaded_heap_top != 0, "must be");
+    HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
+    HeapWord* top = (HeapWord*)_loaded_heap_top;
+    Universe::heap()->fill_with_objects(bottom, top - bottom);
+  }
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

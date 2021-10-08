@@ -1749,7 +1749,7 @@ public class Window extends Container implements Accessible {
     }
 
     void updateChildrenBlocking() {
-        Vector<Window> childHierarchy = new Vector<Window>();
+        ArrayList<Window> childHierarchy = new ArrayList<>();
         Window[] ownedWindows = getOwnedWindows();
         for (int i = 0; i < ownedWindows.length; i++) {
             childHierarchy.add(ownedWindows[i]);

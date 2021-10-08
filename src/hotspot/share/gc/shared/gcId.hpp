@@ -47,9 +47,6 @@ public:
 };
 
 class GCIdMark : public StackObj {
-private:
-  const uint _previous_gc_id;
-
 public:
   GCIdMark();
   GCIdMark(uint gc_id);

@@ -258,11 +258,6 @@ static BOOL unmapViewOfFile(LPCVOID lpBaseAddress) {
   return result;
 }
 
-bool os::unsetenv(const char* name) {
-  assert(name != NULL, "Null pointer");
-  return (SetEnvironmentVariable(name, NULL) == TRUE);
-}
-
 char** os::get_environ() { return _environ; }
 
 // No setuid programs under Windows.
@@ -712,8 +707,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       } // else fall through:
         // use VMThreadStackSize if CompilerThreadStackSize is not defined
     case os::vm_thread:
-    case os::pgc_thread:
-    case os::cgc_thread:
+    case os::gc_thread:
     case os::asynclog_thread:
     case os::watcher_thread:
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
@@ -1864,7 +1858,11 @@ void os::win32::print_windows_version(outputStream* st) {
 
   case 10000:
     if (is_workstation) {
-      st->print("10");
+      if (build_number >= 22000) {
+        st->print("11");
+      } else {
+        st->print("10");
+      }
     } else {
       // distinguish Windows Server by build number
       // - 2016 GA 10/2016 build: 14393
@@ -4165,8 +4163,8 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
     ::exit(exit_code);
-  } else {
-    _exit(exit_code);
+  } else { // EPT_PROCESS_DIE
+    ::_exit(exit_code);
   }
 
   // Should not reach here
@@ -4767,6 +4765,10 @@ int os::close(int fd) {
 
 void os::exit(int num) {
   win32::exit_process_or_thread(win32::EPT_PROCESS, num);
+}
+
+void os::_exit(int num) {
+  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, num);
 }
 
 // Is a (classpath) directory empty?

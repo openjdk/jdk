@@ -2586,6 +2586,17 @@ threadControl_dumpAllThreads()
     dumpThreadList(&otherThreads);
 }
 
+void
+threadControl_dumpThread(jthread thread)
+{
+    ThreadNode* node = findThread(NULL, thread);
+    if (node == NULL) {
+        tty_message("Thread not found");
+    } else {
+        dumpThread(node);
+    }
+}
+
 static void
 dumpThreadList(ThreadList *list)
 {

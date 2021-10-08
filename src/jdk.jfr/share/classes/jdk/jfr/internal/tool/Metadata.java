@@ -69,7 +69,7 @@ final class Metadata extends Command {
                 } else {
                     // Ensure that jdk.* are printed first
                     // This makes it easier to find user defined events at the end.
-                    if (Type.SUPER_TYPE_EVENT.equals(t1.getSuperType()) && !package1.equals(package2)) {
+                    if (Type.SUPER_TYPE_EVENT.equals(t1.getSuperType())) {
                         if (package1.equals("jdk.jfr")) {
                             return -1;
                         }

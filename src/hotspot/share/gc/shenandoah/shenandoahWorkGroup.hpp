@@ -56,10 +56,8 @@ private:
   bool     _initialize_gclab;
 public:
   ShenandoahWorkGang(const char* name,
-           uint workers,
-           bool are_GC_task_threads,
-           bool are_ConcurrentGC_threads) :
-    WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads), _initialize_gclab(false) {
+           uint workers) :
+    WorkGang(name, workers), _initialize_gclab(false) {
     }
 
   // Create a GC worker and install it into the work gang.

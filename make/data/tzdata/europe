@@ -91,7 +91,6 @@
 #        0:00       GMT  BST  BDST  Greenwich, British Summer
 #        0:00       GMT  IST        Greenwich, Irish Summer
 #        0:00       WET  WEST WEMT  Western Europe
-#        0:19:32.13 AMT* NST*       Amsterdam, Netherlands Summer (1835-1937)
 #        1:00       BST             British Standard (1968-1971)
 #        1:00       IST  GMT        Irish Standard (1968-) with winter DST
 #        1:00       CET  CEST CEMT  Central Europe
@@ -1823,6 +1822,10 @@ Zone	Europe/Rome	0:49:56 -	LMT	1866 Dec 12
 			1:00	Italy	CE%sT	1980
 			1:00	EU	CE%sT
 
+# Kosovo
+# See Europe/Belgrade.
+
+
 Link	Europe/Rome	Europe/Vatican
 Link	Europe/Rome	Europe/San_Marino
 
@@ -2173,6 +2176,10 @@ Zone	Europe/Monaco	0:29:32 -	LMT	1892 Jun  1
 # The data entries before 1945 are taken from
 # https://www.staff.science.uu.nl/~gent0113/wettijd/wettijd.htm
 
+# From Paul Eggert (2021-05-09):
+# I invented the abbreviations AMT for Amsterdam Mean Time and NST for
+# Netherlands Summer Time, used in the Netherlands from 1835 to 1937.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Neth	1916	only	-	May	 1	0:00	1:00	NST	# Netherlands Summer Time
 Rule	Neth	1916	only	-	Oct	 1	0:00	0	AMT	# Amsterdam Mean Time
@@ -2399,12 +2406,10 @@ Rule	Port	1943	1945	-	Aug	Sat>=25	22:00s	1:00	S
 Rule	Port	1944	1945	-	Apr	Sat>=21	22:00s	2:00	M
 Rule	Port	1946	only	-	Apr	Sat>=1	23:00s	1:00	S
 Rule	Port	1946	only	-	Oct	Sat>=1	23:00s	0	-
-Rule	Port	1947	1949	-	Apr	Sun>=1	 2:00s	1:00	S
-Rule	Port	1947	1949	-	Oct	Sun>=1	 2:00s	0	-
-# Shanks & Pottenger say DST was observed in 1950; go with Whitman.
+# Whitman says DST was not observed in 1950; go with Shanks & Pottenger.
 # Whitman gives Oct lastSun for 1952 on; go with Shanks & Pottenger.
-Rule	Port	1951	1965	-	Apr	Sun>=1	 2:00s	1:00	S
-Rule	Port	1951	1965	-	Oct	Sun>=1	 2:00s	0	-
+Rule	Port	1947	1965	-	Apr	Sun>=1	 2:00s	1:00	S
+Rule	Port	1947	1965	-	Oct	Sun>=1	 2:00s	0	-
 Rule	Port	1977	only	-	Mar	27	 0:00s	1:00	S
 Rule	Port	1977	only	-	Sep	25	 0:00s	0	-
 Rule	Port	1978	1979	-	Apr	Sun>=1	 0:00s	1:00	S
@@ -3705,6 +3710,9 @@ Zone	Atlantic/Canary	-1:01:36 -	LMT	1922 Mar # Las Palmas de Gran C.
 # hour before the event took place.
 #
 # Source: The newspaper "Dagens Nyheter", 1916-10-01, page 7 upper left.
+
+# An extra-special abbreviation style is SET for Swedish Time (svensk
+# normaltid) 1879-1899, 3° west of the Stockholm Observatory.
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1

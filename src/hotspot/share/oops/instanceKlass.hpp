@@ -349,10 +349,6 @@ class InstanceKlass: public Klass {
   // Check if the class can be shared in CDS
   bool is_shareable() const;
 
-  void clear_shared_class_loader_type() {
-    _misc_flags &= ~shared_loader_type_bits();
-  }
-
   bool shared_loading_failed() const {
     return (_misc_flags & _misc_shared_loading_failed) != 0;
   }

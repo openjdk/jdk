@@ -334,10 +334,6 @@ class Thread: public ThreadShadow {
   virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
-  // True iff the thread can perform GC operations at a safepoint.
-  // Generally will be true only of VM thread and parallel GC WorkGang
-  // threads.
-  virtual bool is_GC_task_thread() const             { return false; }
   virtual bool is_Watcher_thread() const             { return false; }
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }

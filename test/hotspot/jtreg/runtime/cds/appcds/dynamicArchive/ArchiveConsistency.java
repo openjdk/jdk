@@ -35,23 +35,11 @@
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.WRITE;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import sun.hotspot.WhiteBox;
+import jdk.test.lib.cds.CDSArchiveUtils;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ArchiveConsistency extends DynamicArchiveTestBase {
-    public static WhiteBox wb;
-    public static int int_size;        // size of int
-    public static String[] shared_region_name = {"ReadWrite", "ReadOnly", "BitMap"};
-    public static int num_regions = shared_region_name.length;
 
     public static void main(String[] args) throws Exception {
         runTest(ArchiveConsistency::testCustomBase);
@@ -65,70 +53,28 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         doTest(baseArchiveName, topArchiveName);
     }
 
-    public static void setReadWritePermission(File file) throws Exception {
-        if (!file.canRead()) {
-            if (!file.setReadable(true)) {
-                throw new IOException("Cannot modify file " + file + " as readable");
-            }
-        }
-        if (!file.canWrite()) {
-            if (!file.setWritable(true)) {
-                throw new IOException("Cannot modify file " + file + " as writable");
-            }
-        }
-    }
-
-    public static long readInt(FileChannel fc, long offset, int nbytes) throws Exception {
-        ByteBuffer bb = ByteBuffer.allocate(nbytes);
-        bb.order(ByteOrder.nativeOrder());
-        fc.position(offset);
-        fc.read(bb);
-        return  (nbytes > 4 ? bb.getLong(0) : bb.getInt(0));
-    }
-
-    public static long align_up_page(long l) throws Exception {
-        // wb is obtained in getFileOffsetInfo() which is called first in main() else we should call
-        // WhiteBox.getWhiteBox() here first.
-        int pageSize = wb.getVMPageSize();
-        return (l + pageSize -1) & (~ (pageSize - 1));
-    }
-
-    public static void writeData(FileChannel fc, long offset, ByteBuffer bb) throws Exception {
-        fc.position(offset);
-        fc.write(bb);
-        fc.force(true);
-    }
-
-    public static FileChannel getFileChannel(File jsa) throws Exception {
-        List<StandardOpenOption> arry = new ArrayList<StandardOpenOption>();
-        arry.add(READ);
-        arry.add(WRITE);
-        return FileChannel.open(jsa.toPath(), new HashSet<StandardOpenOption>(arry));
-    }
-
-   public static void modifyJsaHeaderCRC(File jsa) throws Exception {
-        FileChannel fc = getFileChannel(jsa);
-        int_size = wb.getOffsetForName("int_size");
-        System.out.println("    int_size " + int_size);
-        ByteBuffer bbuf = ByteBuffer.allocateDirect(int_size);
-        for (int i = 0; i < int_size; i++) {
-            bbuf.put((byte)0);
-        }
-
-        int baseArchiveCRCOffset = wb.getOffsetForName("DynamicArchiveHeader::_base_region_crc");
-        int crc = 0;
-        System.out.printf("%-12s%-12s\n", "Space name", "CRC");
-        for (int i = 0; i < num_regions; i++) {
-            baseArchiveCRCOffset += int_size * i;
-            System.out.println("    baseArchiveCRCOffset " + baseArchiveCRCOffset);
-            crc = (int)readInt(fc, baseArchiveCRCOffset, int_size );
-            System.out.printf("%-11s%-12d\n", shared_region_name[i], crc);
-            bbuf.rewind();
-            writeData(fc, baseArchiveCRCOffset, bbuf);
-        }
-        fc.force(true);
-        if (fc.isOpen()) {
-            fc.close();
+    static void runTwo(String base, String top,
+                       String jarName, String mainClassName, int exitValue,
+                       String ... checkMessages) throws Exception {
+        CDSTestUtils.Result result = run2(base, top,
+                "-Xlog:cds",
+                "-Xlog:cds+dynamic=debug",
+                "-XX:+VerifySharedSpaces",
+                "-cp",
+                jarName,
+                mainClassName);
+        if (exitValue == 0) {
+            result.assertNormalExit( output -> {
+                for (String s : checkMessages) {
+                    output.shouldContain(s);
+                }
+            });
+        } else {
+            result.assertAbnormalExit( output -> {
+                for (String s : checkMessages) {
+                    output.shouldContain(s);
+                }
+            });
         }
     }
 
@@ -148,20 +94,66 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
             throw new IOException(jsa + " does not exist!");
         }
 
-        // Modify the CRC values in the header of the top archive.
-        wb = WhiteBox.getWhiteBox();
-        setReadWritePermission(jsa);
-        modifyJsaHeaderCRC(jsa);
+        // 1. Modify the CRC values in the header of the top archive.
+        System.out.println("\n1. Modify the CRC values in the header of the top archive");
+        String modTop = getNewArchiveName("modTopRegionsCrc");
+        File copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, modTop);
+        CDSArchiveUtils.modifyAllRegionsCrc(copiedJsa);
 
-        run2(baseArchiveName, topArchiveName,
-            "-Xlog:class+load",
-            "-Xlog:cds+dynamic=debug,cds=debug",
-            "-XX:+VerifySharedSpaces",
-            "-cp", appJar, mainClass)
-            .assertAbnormalExit(output -> {
-                    output.shouldContain("Header checksum verification failed")
-                          .shouldContain("Unable to use shared archive")
-                          .shouldHaveExitValue(1);
-                });
+        runTwo(baseArchiveName, modTop,
+               appJar, mainClass, 1,
+               new String[] {"Header checksum verification failed",
+                             "Unable to use shared archive"});
+
+        // 2. Make header size larger than the archive size
+        System.out.println("\n2. Make header size larger than the archive size");
+        String largerHeaderSize = getNewArchiveName("largerHeaderSize");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, largerHeaderSize);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetHeaderSize(),  (int)copiedJsa.length() + 1024);
+        runTwo(baseArchiveName, largerHeaderSize,
+               appJar, mainClass, 1,
+               new String[] {"_header_size should be equal to _base_archive_path_offset plus _base_archive_name_size",
+                             "Unable to use shared archive"});
+
+        // 3. Make base archive path offset beyond of header size
+        System.out.println("\n3. Make base archive path offset beyond of header size.");
+        String wrongBaseArchivePathOffset = getNewArchiveName("wrongBaseArchivePathOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseArchivePathOffset);
+        int fileHeaderSize = (int)CDSArchiveUtils.fileHeaderSize(copiedJsa);
+        int baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetBaseArchivePathOffset(), baseArchivePathOffset + 1024);
+        runTwo(baseArchiveName, wrongBaseArchivePathOffset,
+               appJar, mainClass, 1,
+               new String[] {"_header_size should be equal to _base_archive_path_offset plus _base_archive_name_size",
+                             "The shared archive file has an incorrect header size",
+                             "Unable to use shared archive"});
+
+        // 4. Make base archive path offset points to middle of name size
+        System.out.println("\n4. Make base archive path offset points to middle of name size");
+        String wrongBasePathOffset = getNewArchiveName("wrongBasePathOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBasePathOffset);
+        int baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
+        baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, baseArchivePathOffset,
+                                             baseArchivePathOffset + baseArchiveNameSize/2);
+        runTwo(baseArchiveName, wrongBasePathOffset,
+               appJar, mainClass, 1,
+               new String[] {"An error has occurred while processing the shared archive file.",
+                             "Header checksum verification failed",
+                             "Unable to use shared archive"});
+        // 5. Make base archive name not terminated with '\0'
+        System.out.println("\n5. Make base archive name not terminated with '\0'");
+        String wrongBaseName = getNewArchiveName("wrongBaseName");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName);
+        baseArchivePathOffset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        baseArchiveNameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
+        long offset = baseArchivePathOffset + baseArchiveNameSize - 1;  // end of line
+        CDSArchiveUtils.writeData(copiedJsa, offset, new byte[] {(byte)'X'});
+
+        runTwo(baseArchiveName, wrongBaseName,
+               appJar, mainClass, 1,
+               new String[] {"Base archive " + baseArchiveName,
+                             " does not exist",
+                             "Header checksum verification failed"});
     }
 }

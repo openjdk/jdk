@@ -332,13 +332,13 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     monitor = (BasicObjectLock*) istate->stack_base();
     oop lockee = monitor->obj();
     markWord disp = lockee->mark().set_unlocked();
-
     monitor->lock()->set_displaced_header(disp);
-    if (lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
-      if (thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
+    bool call_vm = UseHeavyMonitors;
+    if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
+      // Is it simple recursive case?
+      if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
         monitor->lock()->set_displaced_header(markWord::from_pointer(NULL));
-      }
-      else {
+      } else {
         CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
         if (HAS_PENDING_EXCEPTION)
           goto unwind_and_return;
@@ -560,6 +560,12 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     default:
       ShouldNotReachHere();
     }
+  }
+
+  // Already did every pending exception check here.
+  // If HAS_PENDING_EXCEPTION is true, the interpreter would handle the rest.
+  if (CheckJNICalls) {
+    THREAD->clear_pending_jni_exception_check();
   }
 
   // No deoptimized frames on the stack

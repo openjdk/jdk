@@ -72,14 +72,14 @@ public class TestJavaFX extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="element-name">setRate</span><wbr>\
                     <span class="parameters">(double&nbsp;value)</span></div>
-                    <div class="block">Sets the value of the property <code>rate</code>.</div>
+                    <div class="block">Sets the value of the <code>rate</code> property.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>""",
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">getRate</span>()<\
                     /div>
-                    <div class="block">Gets the value of the property <code>rate</code>.</div>
+                    <div class="block">Gets the value of the <code>rate</code> property.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>""",
                 """
@@ -117,14 +117,14 @@ public class TestJavaFX extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">isPaused<\
                     /span>()</div>
-                    <div class="block">Gets the value of the property <code>paused</code>.</div>""",
+                    <div class="block">Gets the value of the <code>paused</code> property.</div>""",
                 """
                     <section class="detail" id="setPaused(boolean)">
                     <h3>setPaused</h3>
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="element-name">setPaused</\
                     span><wbr><span class="parameters">(boolean&nbsp;value)</span></div>
-                    <div class="block">Sets the value of the property <code>paused</code>.</div>
+                    <div class="block">Sets the value of the <code>paused</code> property.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>Defines if paused. The second line.</dd>
@@ -136,7 +136,7 @@ public class TestJavaFX extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">double</span>&nbsp;<span class="element-name">isPaused<\
                     /span>()</div>
-                    <div class="block">Gets the value of the property <code>paused</code>.</div>
+                    <div class="block">Gets the value of the <code>paused</code> property.</div>
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>Defines if paused. The second line.</dd>
@@ -151,39 +151,39 @@ public class TestJavaFX extends JavadocTester {
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
                      be played. This is the second line.</div>""",
                 """
-                        <section class="detail" id="setRate(double)">
-                        <h3>setRate</h3>
-                        <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                        span class="return-type">void</span>&nbsp;<span class="element-name">setRate</sp\
-                        an><wbr><span class="parameters">(double&nbsp;value)</span></div>
-                        <div class="block">Sets the value of the property <code>rate</code>.</div>
-                        <dl class="notes">
-                        <dt>Property description:</dt>
-                        <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
-                         be played. This is the second line.</dd>
-                        <dt>Default value:</dt>
-                        <dd>11</dd>
-                        <dt>Parameters:</dt>
-                        <dd><code>value</code> - the value for the property <code>rate</code></dd>
-                        <dt>Since:</dt>
-                        <dd>JavaFX 8.0</dd>""",
+                    <section class="detail" id="setRate(double)">
+                    <h3>setRate</h3>
+                    <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
+                    span class="return-type">void</span>&nbsp;<span class="element-name">setRate</sp\
+                    an><wbr><span class="parameters">(double&nbsp;value)</span></div>
+                    <div class="block">Sets the value of the <code>rate</code> property.</div>
+                    <dl class="notes">
+                    <dt>Property description:</dt>
+                    <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
+                     be played. This is the second line.</dd>
+                    <dt>Default value:</dt>
+                    <dd>11</dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>value</code> - the value for the <code>rate</code> property</dd>
+                    <dt>Since:</dt>
+                    <dd>JavaFX 8.0</dd>""",
                 """
-                        <section class="detail" id="getRate()">
-                        <h3>getRate</h3>
-                        <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                        span class="return-type">double</span>&nbsp;<span class="element-name">getRate</span>()<\
-                        /div>
-                        <div class="block">Gets the value of the property <code>rate</code>.</div>
-                        <dl class="notes">
-                        <dt>Property description:</dt>
-                        <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
-                         be played. This is the second line.</dd>
-                        <dt>Default value:</dt>
-                        <dd>11</dd>
-                        <dt>Returns:</dt>
-                        <dd>the value of the property <code>rate</code></dd>
-                        <dt>Since:</dt>
-                        <dd>JavaFX 8.0</dd>""",
+                    <section class="detail" id="getRate()">
+                    <h3>getRate</h3>
+                    <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
+                    span class="return-type">double</span>&nbsp;<span class="element-name">getRate</span>()<\
+                    /div>
+                    <div class="block">Gets the value of the <code>rate</code> property.</div>
+                    <dl class="notes">
+                    <dt>Property description:</dt>
+                    <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
+                     be played. This is the second line.</dd>
+                    <dt>Default value:</dt>
+                    <dd>11</dd>
+                    <dt>Returns:</dt>
+                    <dd>the value of the <code>rate</code> property</dd>
+                    <dt>Since:</dt>
+                    <dd>JavaFX 8.0</dd>""",
                 """
                     <section class="property-summary" id="property-summary">
                     <h2>Property Summary</h2>
@@ -226,7 +226,7 @@ public class TestJavaFX extends JavadocTester {
 
         checkOutput("index-all.html", true,
                 """
-                    <div class="block">Gets the value of the property <code>paused</code>.</div>""",
+                    <div class="block">Gets the value of the <code>paused</code> property.</div>""",
                 """
                     <div class="block">Defines if paused.</div>""");
 

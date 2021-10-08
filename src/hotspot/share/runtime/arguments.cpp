@@ -3531,9 +3531,8 @@ bool Arguments::init_shared_archive_paths() {
       }
       if (archives == 1) {
         char* temp_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
-        int name_size;
         bool success =
-          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &name_size, &SharedArchivePath);
+          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &SharedArchivePath);
         if (!success) {
           SharedArchivePath = temp_archive_path;
         } else {
@@ -4025,6 +4024,11 @@ jint Arguments::apply_ergo() {
 #ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
+
+  if (LogTouchedMethods) {
+    warning("LogTouchedMethods is not supported for Zero");
+    FLAG_SET_DEFAULT(LogTouchedMethods, false);
+  }
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {

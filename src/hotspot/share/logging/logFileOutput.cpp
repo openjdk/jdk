@@ -165,71 +165,33 @@ static uint next_file_number(const char* filename,
   return next_num;
 }
 
-bool LogFileOutput::parse_options(const char* options, outputStream* errstream) {
-  if (options == NULL || strlen(options) == 0) {
-    return true;
-  }
-  bool success = true;
-  char* opts = os::strdup_check_oom(options, mtLogging);
-
-  char* comma_pos;
-  char* pos = opts;
-  do {
-    comma_pos = strchr(pos, ',');
-    if (comma_pos != NULL) {
-      *comma_pos = '\0';
-    }
-
-    char* equals_pos = strchr(pos, '=');
-    if (equals_pos == NULL) {
-      errstream->print_cr("Invalid option '%s' for log file output.", pos);
-      success = false;
-      break;
-    }
-    char* key = pos;
-    char* value_str = equals_pos + 1;
-    *equals_pos = '\0';
-
-    if (strcmp(FoldMultilinesOptionKey, key) == 0) {
-      if (strcmp(value_str, "true") == 0) {
-        _fold_multilines = true;
-      } else if (strcmp(value_str, "false") == 0) {
-        _fold_multilines = false;
-      } else {
-        errstream->print_cr("Invalid option '%s' for %s.", value_str, FoldMultilinesOptionKey);
-        success = false;
-        break;
-      }
-    } else if (strcmp(FileCountOptionKey, key) == 0) {
-      size_t value = parse_value(value_str);
-      if (value > MaxRotationFileCount) {
+bool LogFileOutput::set_option(const char* key, const char* value, outputStream* errstream) {
+  bool success = LogFileStreamOutput::set_option(key, value, errstream);
+  if (!success) {
+    if (strcmp(FileCountOptionKey, key) == 0) {
+      size_t sizeval = parse_value(value);
+      if (sizeval > MaxRotationFileCount) {
         errstream->print_cr("Invalid option: %s must be in range [0, %u]",
                             FileCountOptionKey,
                             MaxRotationFileCount);
-        success = false;
-        break;
+      } else {
+        _file_count = static_cast<uint>(sizeval);
+        _is_default_file_count = false;
+        success = true;
       }
-      _file_count = static_cast<uint>(value);
-      _is_default_file_count = false;
     } else if (strcmp(FileSizeOptionKey, key) == 0) {
-      julong value;
-      success = Arguments::atojulong(value_str, &value);
-      if (!success || (value > SIZE_MAX)) {
+      julong longval;
+      success = Arguments::atojulong(value, &longval);
+      if (!success || (longval > SIZE_MAX)) {
         errstream->print_cr("Invalid option: %s must be in range [0, "
                             SIZE_FORMAT "]", FileSizeOptionKey, (size_t)SIZE_MAX);
         success = false;
-        break;
+      } else {
+        _rotate_size = static_cast<size_t>(longval);
+        success = true;
       }
-      _rotate_size = static_cast<size_t>(value);
-    } else {
-      errstream->print_cr("Invalid option '%s' for log file output.", key);
-      success = false;
-      break;
     }
-    pos = comma_pos + 1;
-  } while (comma_pos != NULL);
-
-  os::free(opts);
+  }
   return success;
 }
 
@@ -495,10 +457,8 @@ char* LogFileOutput::make_file_name(const char* file_name,
 }
 
 void LogFileOutput::describe(outputStream *out) {
-  LogOutput::describe(out);
-  out->print(" ");
-
-  out->print("filecount=%u,filesize=" SIZE_FORMAT "%s,async=%s", _file_count,
+  LogFileStreamOutput::describe(out);
+  out->print(",filecount=%u,filesize=" SIZE_FORMAT "%s,async=%s", _file_count,
              byte_size_in_proper_unit(_rotate_size),
              proper_unit_for_byte_size(_rotate_size),
              LogConfiguration::is_async_mode() ? "true" : "false");

@@ -404,7 +404,40 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   char* output_options = substrings[3];
   char errbuf[512];
   stringStream ss(errbuf, sizeof(errbuf));
-  bool success = parse_log_arguments(output, what, decorators, output_options, &ss);
+  bool success = true;
+
+  // output options for stdout/err should be applied just once.
+  static bool stdout_configured = false;
+  static bool stderr_configured = false;
+
+  // Normally options can't be used to change an existing output
+  // (parse_log_arguments() will report an error), and
+  // both StdoutLog and StderrLog are created by static initializers,
+  // so we have to process their options (e.g. foldmultilines) directly first.
+  if (output == NULL || strlen(output) == 0 ||
+      strcmp("stdout", output) == 0 || strcmp("#0", output) == 0) {
+    if (!stdout_configured) {
+      success = StdoutLog.parse_options(output_options, &ss);
+      stdout_configured = true;
+      // We no longer need to pass output options to parse_log_arguments().
+      output_options = NULL;
+    }
+    // else - fall-through to normal option processing which will be rejected
+    // with a warning
+  } else if (strcmp("stderr", output) == 0 || strcmp("#1", output) == 0) {
+    if (!stderr_configured) {
+      success = StderrLog.parse_options(output_options, &ss);
+      stderr_configured = true;
+      // We no longer need to pass output options to parse_log_arguments().
+      output_options = NULL;
+    }
+    // else - fall-through to normal option processing which will be rejected
+    // with a warning
+  }
+
+  if (success) {
+    success = parse_log_arguments(output, what, decorators, output_options, &ss);
+  }
 
   if (ss.size() > 0) {
     // If it failed, log the error. If it didn't fail, but something was written
@@ -558,28 +591,34 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->cr();
 
   LogTagSet::describe_tagsets(out);
+  out->cr();
 
-  out->print_cr("\nAvailable log outputs:");
+  out->print_cr("Available log outputs:");
   out->print_cr(" stdout/stderr");
   out->print_cr(" file=<filename>");
   out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively.");
-  out->print_cr("  Additional output-options for file outputs:");
-  out->print_cr("   filesize=..       - Target byte size for log rotation (supports K/M/G suffix)."
-                                         " If set to 0, log rotation will not trigger automatically,"
-                                         " but can be performed manually (see the VM.log DCMD).");
-  out->print_cr("   filecount=..      - Number of files to keep in rotation (not counting the active file)."
-                                         " If set to 0, log rotation is disabled."
-                                         " This will cause existing log files to be overwritten.");
-  out->print_cr("   foldmultilines=.. - If set to true, a log event that consists of multiple lines"
-                                         " will be folded into a single line by replacing newline characters"
-                                         " with the sequence '\\' and 'n' in the output."
-                                         " Existing single backslash characters will also be replaced"
-                                         " with a sequence of two backslashes so that the conversion can be reversed."
-                                         " This option is safe to use with UTF-8 character encodings,"
-                                         " but other encodings may not work.");
-
   out->cr();
-  out->print_cr("\nAsynchronous logging (off by default):");
+
+  out->print_cr("Available log output options:");
+  out->print_cr(" foldmultilines=.. - If set to true, a log event that consists of multiple lines"
+                                       " will be folded into a single line by replacing newline characters"
+                                       " with the sequence '\\' and 'n' in the output."
+                                       " Existing single backslash characters will also be replaced"
+                                       " with a sequence of two backslashes so that the conversion can be reversed."
+                                       " This option is safe to use with UTF-8 character encodings,"
+                                       " but other encodings may not work.");
+  out->cr();
+
+  out->print_cr("Additional file output options:");
+  out->print_cr(" filesize=..       - Target byte size for log rotation (supports K/M/G suffix)."
+                                       " If set to 0, log rotation will not trigger automatically,"
+                                       " but can be performed manually (see the VM.log DCMD).");
+  out->print_cr(" filecount=..      - Number of files to keep in rotation (not counting the active file)."
+                                       " If set to 0, log rotation is disabled."
+                                       " This will cause existing log files to be overwritten.");
+  out->cr();
+
+  out->print_cr("Asynchronous logging (off by default):");
   out->print_cr(" -Xlog:async");
   out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
                 " to the corresponding log outputs by a standalone thread. Write operations at logsites are"

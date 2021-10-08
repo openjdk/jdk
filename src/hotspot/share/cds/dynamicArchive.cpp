@@ -180,14 +180,15 @@ public:
 void DynamicArchiveBuilder::init_header() {
   FileMapInfo* mapinfo = new FileMapInfo(false);
   assert(FileMapInfo::dynamic_info() == mapinfo, "must be");
+  FileMapInfo* base_info = FileMapInfo::current_info();
+  // header only be available after populate_header
+  mapinfo->populate_header(base_info->core_region_alignment());
   _header = mapinfo->dynamic_header();
 
-  FileMapInfo* base_info = FileMapInfo::current_info();
   _header->set_base_header_crc(base_info->crc());
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     _header->set_base_region_crc(i, base_info->space_crc(i));
   }
-  _header->populate(base_info, base_info->core_region_alignment());
 }
 
 void DynamicArchiveBuilder::release_header() {
@@ -325,7 +326,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   size_t file_size = pointer_delta(top, base, sizeof(char));
 
   log_info(cds, dynamic)("Written dynamic archive " PTR_FORMAT " - " PTR_FORMAT
-                         " [" SIZE_FORMAT " bytes header, " SIZE_FORMAT " bytes total]",
+                         " [" UINT32_FORMAT " bytes header, " SIZE_FORMAT " bytes total]",
                          p2i(base), p2i(top), _header->header_size(), file_size);
 
   log_info(cds, dynamic)("%d klasses; %d symbols", klasses()->length(), symbols()->length());

@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @test
- * @bug 8271718
+ * @bug 8271718 8273135
  * @summary Verifies MT safety of color transformation while profile is changed
  */
 public final class MTTransformReplacedProfile {
@@ -110,7 +110,7 @@ public final class MTTransformReplacedProfile {
         float[] colorvalue = new float[3];
         Thread transform = new Thread(() -> {
             boolean rgb = true;
-            while (!stop.get()) {
+            while (!stop.get() && !isComplete()) {
                 try {
                     if (rgb) {
                         cs.toRGB(colorvalue);

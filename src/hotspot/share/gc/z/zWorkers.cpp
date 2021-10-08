@@ -63,9 +63,7 @@ public:
 
 ZWorkers::ZWorkers() :
     _workers("ZWorker",
-             UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads),
-             true /* are_GC_task_threads */,
-             true /* are_ConcurrentGC_threads */) {
+             UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads)) {
 
   if (UseDynamicNumberOfGCThreads) {
     log_info_p(gc, init)("GC Workers: %u (dynamic)", _workers.total_workers());

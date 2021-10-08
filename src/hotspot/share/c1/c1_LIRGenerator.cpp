@@ -647,7 +647,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
 
     assert(klass->is_loaded(), "must be loaded");
     // allocate space for instance
-    assert(klass->size_helper() >= 0, "illegal instance size");
+    assert(klass->size_helper() > 0, "illegal instance size");
     const int instance_size = align_object_size(klass->size_helper());
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
                        oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);

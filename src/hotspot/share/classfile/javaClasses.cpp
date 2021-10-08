@@ -4438,6 +4438,7 @@ bool java_lang_System::allow_security_manager() {
     oop base = vmClasses::System_klass()->static_field_base_raw();
     int never = base->int_field(_static_never_offset);
     allowed = (base->int_field(_static_allow_security_offset) != never);
+    initialized = true;
   }
   return allowed;
 }

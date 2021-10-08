@@ -106,7 +106,7 @@ final class WDesktopProperties {
     private synchronized void setBooleanProperty(String key, boolean value) {
         assert( key != null );
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
-            log.fine(key + "=" + String.valueOf(value));
+            log.fine(key + "=" + value);
         }
         map.put(key, Boolean.valueOf(value));
     }
@@ -117,7 +117,7 @@ final class WDesktopProperties {
     private synchronized void setIntegerProperty(String key, int value) {
         assert( key != null );
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
-            log.fine(key + "=" + String.valueOf(value));
+            log.fine(key + "=" + value);
         }
         map.put(key, Integer.valueOf(value));
     }

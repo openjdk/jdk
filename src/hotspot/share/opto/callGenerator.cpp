@@ -459,7 +459,9 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
  public:
   LateInlineVirtualCallGenerator(ciMethod* method, int vtable_index, float prof_factor)
   : VirtualCallGenerator(method, vtable_index, true /*separate_io_projs*/),
-    _unique_id(0), _inline_cg(NULL), _callee(NULL), _is_pure_call(false), _prof_factor(prof_factor) {}
+    _unique_id(0), _inline_cg(NULL), _callee(NULL), _is_pure_call(false), _prof_factor(prof_factor) {
+    assert(IncrementalInlineVirtual, "required");
+  }
 
   virtual bool is_late_inline() const { return true; }
 
