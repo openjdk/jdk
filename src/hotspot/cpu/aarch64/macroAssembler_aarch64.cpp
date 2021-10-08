@@ -2046,6 +2046,82 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
   return count * 2;
 }
 
+// Return the number of dwords pushed
+int MacroAssembler::push_p(unsigned int bitset, Register stack) {
+  bool use_sve = false;
+  int sve_predicate_size_in_slots = 0;
+
+#ifdef COMPILER2
+  use_sve = Matcher::supports_scalable_vector();
+  if (use_sve) {
+    sve_predicate_size_in_slots = Matcher::scalable_predicate_reg_slots();
+  }
+#endif
+
+  if (!use_sve) {
+    return 0;
+  }
+
+  const int num_of_regs = PRegisterImpl::number_of_saved_registers;
+  unsigned char regs[num_of_regs];
+  int count = 0;
+  for (int reg = 0; reg < num_of_regs; reg++) {
+    if (1 & bitset)
+      regs[count++] = reg;
+    bitset >>= 1;
+  }
+
+  if (count == 0) {
+    return 0;
+  }
+
+  int total_push_bytes = align_up(sve_predicate_size_in_slots *
+                                  VMRegImpl::stack_slot_size * count, 16);
+  sub(stack, stack, total_push_bytes);
+  for (int i = 0; i < count; i++) {
+    sve_str(as_PRegister(regs[i]), Address(stack, i));
+  }
+  return total_push_bytes / 8;
+}
+
+// Return the number of dwords poped
+int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
+  bool use_sve = false;
+  int sve_predicate_size_in_slots = 0;
+
+#ifdef COMPILER2
+  use_sve = Matcher::supports_scalable_vector();
+  if (use_sve) {
+    sve_predicate_size_in_slots = Matcher::scalable_predicate_reg_slots();
+  }
+#endif
+
+  if (!use_sve) {
+    return 0;
+  }
+
+  const int num_of_regs = PRegisterImpl::number_of_saved_registers;
+  unsigned char regs[num_of_regs];
+  int count = 0;
+  for (int reg = 0; reg < num_of_regs; reg++) {
+    if (1 & bitset)
+      regs[count++] = reg;
+    bitset >>= 1;
+  }
+
+  if (count == 0) {
+    return 0;
+  }
+
+  int total_pop_bytes = align_up(sve_predicate_size_in_slots *
+                                 VMRegImpl::stack_slot_size * count, 16);
+  for (int i = count - 1; i >= 0; i--) {
+    sve_ldr(as_PRegister(regs[i]), Address(stack, i));
+  }
+  add(stack, stack, total_pop_bytes);
+  return total_pop_bytes / 8;
+}
+
 #ifdef ASSERT
 void MacroAssembler::verify_heapbase(const char* msg) {
 #if 0
@@ -2504,7 +2580,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
-                                    int sve_vector_size_in_bytes) {
+                                    int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   push(0x3fffffff, sp);         // integer registers except lr & sp
   if (save_vectors && use_sve && sve_vector_size_in_bytes > 16) {
     sub(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
@@ -2521,10 +2597,22 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
     }
     st1(v0, v1, v2, v3, save_vectors ? T2D : T1D, sp);
   }
+  if (save_vectors && use_sve && total_predicate_in_bytes > 0) {
+    sub(sp, sp, total_predicate_in_bytes);
+    for (int i = 0; i < PRegisterImpl::number_of_saved_registers; i++) {
+      sve_str(as_PRegister(i), Address(sp, i));
+    }
+  }
 }
 
 void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
-                                   int sve_vector_size_in_bytes) {
+                                   int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
+  if (restore_vectors && use_sve && total_predicate_in_bytes > 0) {
+    for (int i = PRegisterImpl::number_of_saved_registers - 1; i >= 0; i--) {
+      sve_ldr(as_PRegister(i), Address(sp, i));
+    }
+    add(sp, sp, total_predicate_in_bytes);
+  }
   if (restore_vectors && use_sve && sve_vector_size_in_bytes > 16) {
     for (int i = FloatRegisterImpl::number_of_registers - 1; i >= 0; i--) {
       sve_ldr(as_FloatRegister(i), Address(sp, i));

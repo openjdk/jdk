@@ -2281,6 +2281,7 @@ bool OperandForm::is_bound_register() const {
   if (strcmp(name, "RegD") == 0) size = 2;
   if (strcmp(name, "RegL") == 0) size = 2;
   if (strcmp(name, "RegN") == 0) size = 1;
+  if (strcmp(name, "RegVectMask") == 0) size = globalAD->get_preproc_def("AARCH64") ? 1 : 2;
   if (strcmp(name, "VecX") == 0) size = 4;
   if (strcmp(name, "VecY") == 0) size = 8;
   if (strcmp(name, "VecZ") == 0) size = 16;
@@ -3514,7 +3515,8 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
-    "StoreVector", "LoadVector", "LoadVectorGather", "StoreVectorScatter", "LoadVectorMasked", "StoreVectorMasked",
+    "StoreVector", "LoadVector", "LoadVectorMasked", "StoreVectorMasked",
+    "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked",
     "StorePConditional", "StoreIConditional", "StoreLConditional",
@@ -3818,51 +3820,77 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
   return true;
 }
 
-//-------------------------- has_commutative_op -------------------------------
+//-------------------------- count_commutative_op -------------------------------
 // Recursively check for commutative operations with subtree operands
 // which could be swapped.
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
     "AddI","AddL","AddF","AddD",
-    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
     "AndI","AndL",
-    "AndV",
     "MaxI","MinI","MaxF","MinF","MaxD","MinD",
-    "MaxV", "MinV",
     "MulI","MulL","MulF","MulD",
-    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
     "OrI","OrL",
-    "OrV",
-    "XorI","XorL",
-    "XorV"
+    "XorI","XorL"
   };
-  int cnt = sizeof(commut_op_list)/sizeof(char*);
 
-  if( _lChild && _rChild && (_lChild->_lChild || _rChild->_lChild) ) {
+  static const char *commut_vector_op_list[] = {
+    "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
+    "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
+    "AndV", "OrV", "XorV",
+    "MaxV", "MinV"
+  };
+
+  if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
     // Don't swap if right operand is an immediate constant.
     bool is_const = false;
-    if( _rChild->_lChild == NULL && _rChild->_rChild == NULL ) {
+    if (_rChild->_lChild == NULL && _rChild->_rChild == NULL) {
       FormDict &globals = _AD.globalNames();
       const Form *form = globals[_rChild->_opType];
-      if ( form ) {
-        OperandForm  *oper = form->is_operand();
-        if( oper && oper->interface_type(globals) == Form::constant_interface )
+      if (form) {
+        OperandForm *oper = form->is_operand();
+        if (oper && oper->interface_type(globals) == Form::constant_interface)
           is_const = true;
       }
     }
-    if( !is_const ) {
-      for( int i=0; i<cnt; i++ ) {
-        if( strcmp(_opType, commut_op_list[i]) == 0 ) {
-          count++;
-          _commutative_id = count; // id should be > 0
+
+    if (!is_const) {
+      int scalar_cnt = sizeof(commut_op_list)/sizeof(char*);
+      int vector_cnt = sizeof(commut_vector_op_list)/sizeof(char*);
+      bool matched = false;
+
+      // Check the commutative vector op first. It's noncommutative if
+      // the current node is a masked vector op, since a mask value
+      // is added to the original vector node's input list and the original
+      // first two inputs are packed into one BinaryNode. So don't swap
+      // if one of the operands is a BinaryNode.
+      for (int i = 0; i < vector_cnt; i++) {
+        if (strcmp(_opType, commut_vector_op_list[i]) == 0) {
+          if (strcmp(_lChild->_opType, "Binary") != 0 &&
+              strcmp(_rChild->_opType, "Binary") != 0) {
+            count++;
+            _commutative_id = count; // id should be > 0
+          }
+          matched = true;
           break;
+        }
+      }
+
+      // Then check the scalar op if the current op is not in
+      // the commut_vector_op_list.
+      if (!matched) {
+        for (int i = 0; i < scalar_cnt; i++) {
+          if (strcmp(_opType, commut_op_list[i]) == 0) {
+            count++;
+            _commutative_id = count; // id should be > 0
+            break;
+          }
         }
       }
     }
   }
-  if( _lChild )
+  if (_lChild)
     _lChild->count_commutative_op(count);
-  if( _rChild )
+  if (_rChild)
     _rChild->count_commutative_op(count);
 }
 
@@ -4088,6 +4116,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"AndReductionV")==0 ||
         strcmp(opType,"OrReductionV")==0 ||
         strcmp(opType,"XorReductionV")==0 ||
+        strcmp(opType,"MaskAll")==0 ||
         0 /* 0 to line up columns nicely */ )
       return 1;
   }
@@ -4199,17 +4228,18 @@ bool MatchRule::is_vector() const {
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
     "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
-    "LoadVectorGather", "StoreVectorScatter",
+    "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
     "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
     "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD", "FmaVF","PopCountVI",
+    // Next are vector mask ops.
+    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
-    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD",
-    "VectorMaskCast"
+    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"
   };
   int cnt = sizeof(vector_list)/sizeof(char*);
   if (_rChild) {

@@ -2059,7 +2059,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->isa_vectmask()) {
     assert((src_lo&1)==0 && src_lo+1==src_hi &&
            (dst_lo&1)==0 && dst_lo+1==dst_hi,
            "expected aligned-adjacent pairs");
@@ -2074,7 +2074,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
   int src_offset = ra_->reg2offset(src_lo);
   int dst_offset = ra_->reg2offset(dst_lo);
 
-  if (bottom_type()->isa_vect() != NULL) {
+  if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
     uint ireg = ideal_reg();
     if (ireg == Op_VecA && cbuf) {
       C2_MacroAssembler _masm(cbuf);
@@ -2180,10 +2180,29 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       } else if (dst_lo_rc == rc_float) { // stack --> fpr load
         __ unspill(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                    is64 ? __ D : __ S, src_offset);
+      } else if (dst_lo_rc == rc_predicate) {
+        __ unspill_sve_predicate(as_PRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo),
+                                 Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
       } else {                    // stack --> stack copy
         assert(dst_lo_rc == rc_stack, "spill to bad register class");
-        __ unspill(rscratch1, is64, src_offset);
-        __ spill(rscratch1, is64, dst_offset);
+        if (ideal_reg() == Op_RegVectMask) {
+          __ spill_copy_sve_predicate_stack_to_stack(src_offset, dst_offset,
+                                                     Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
+        } else {
+          __ unspill(rscratch1, is64, src_offset);
+          __ spill(rscratch1, is64, dst_offset);
+        }
+      }
+      break;
+    case rc_predicate:
+      if (dst_lo_rc == rc_predicate) {
+        __ sve_mov(as_PRegister(Matcher::_regEncode[dst_lo]), as_PRegister(Matcher::_regEncode[src_lo]));
+      } else if (dst_lo_rc == rc_stack) {
+        __ spill_sve_predicate(as_PRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo),
+                               Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
+      } else {
+        assert(false, "bad src and dst rc_class combination.");
+        ShouldNotReachHere();
       }
       break;
     default:
@@ -2204,7 +2223,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() != NULL) {
+    if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
       int vsize = 0;
       switch (ideal_reg()) {
       case Op_VecD:
@@ -2221,6 +2240,10 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         ShouldNotReachHere();
       }
       st->print("\t# vector spill size = %d", vsize);
+    } else if (ideal_reg() == Op_RegVectMask) {
+      assert(Matcher::supports_scalable_vector(), "bad register type for spill");
+      int vsize = Matcher::scalable_predicate_reg_slots() * 32;
+      st->print("\t# predicate spill size = %d", vsize);
     } else {
       st->print("\t# spill size = %d", is64 ? 64 : 32);
     }
@@ -2380,6 +2403,18 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       }
       break;
+    case Op_LoadVectorMasked:
+    case Op_StoreVectorMasked:
+    case Op_LoadVectorGatherMasked:
+    case Op_StoreVectorScatterMasked:
+    case Op_MaskAll:
+    case Op_AndVMask:
+    case Op_OrVMask:
+    case Op_XorVMask:
+      if (UseSVE == 0) {
+        ret_value = false;
+      }
+      break;
   }
 
   return ret_value; // Per default match rules are supported.
@@ -2446,6 +2481,15 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     }
   }
   return vector_size_supported(bt, vlen);
+}
+
+const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  // Only SVE supports masked operations.
+  if (UseSVE == 0) {
+    return false;
+  }
+  return match_rule_supported(opcode) &&
+         masked_op_sve_supported(opcode, vlen, bt);
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -2661,10 +2705,14 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
-  if (is_vshift_con_pattern(n, m)) { // ShiftV src (ShiftCntV con)
-    mstack.push(m, Visit);           // m = ShiftCntV
+  // ShiftV src (ShiftCntV con)
+  // StoreVector (VectorStoreMask src)
+  if (is_vshift_con_pattern(n, m) ||
+      (UseSVE > 0 && m->Opcode() == Op_VectorStoreMask && n->Opcode() == Op_StoreVector)) {
+    mstack.push(m, Visit);
     return true;
   }
+
   return false;
 }
 
@@ -5523,6 +5571,7 @@ operand pReg()
 %{
   constraint(ALLOC_IN_RC(pr_reg));
   match(RegVectMask);
+  match(pRegGov);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -8861,6 +8910,17 @@ instruct castVVX(vecX dst)
 %}
 
 instruct castVV(vReg dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVVMask(pRegGov dst)
 %{
   match(Set dst (CastVV dst));
 

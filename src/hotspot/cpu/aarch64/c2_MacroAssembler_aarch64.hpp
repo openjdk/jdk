@@ -61,8 +61,22 @@
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
                    FloatRegister zn, FloatRegister zm, int cond);
 
-  void sve_vmask_reduction(int opc, Register dst, SIMD_RegVariant size, FloatRegister src,
-                           PRegister pg, PRegister pn, int length = MaxVectorSize);
+  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
+
+  void sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
+                         FloatRegister src, SIMD_RegVariant src_size);
+
+  void sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst_size,
+                         FloatRegister src, SIMD_RegVariant src_size, FloatRegister tmp);
+
+  void sve_vmaskcast_extend(PRegister dst, PRegister src,
+                            uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
+
+  void sve_vmaskcast_narrow(PRegister dst, PRegister src,
+                            uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
+
+  void sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
+                           FloatRegister src2, PRegister pg, FloatRegister tmp);
 
   // Generate predicate through whilelo, by comparing ZR with an unsigned
   // immediate. rscratch1 will be clobbered.

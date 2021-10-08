@@ -171,7 +171,9 @@ class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
 class VectorMaskCmpNode;
+class VectorUnboxNode;
 class VectorSet;
+class VectorReinterpretNode;
 
 // The type of all node counts and indexes.
 // It must hold at least 16 bits, but must also be fast to load and store.
@@ -706,6 +708,8 @@ public:
         DEFINE_CLASS_ID(EncodePKlass, EncodeNarrowPtr, 1)
       DEFINE_CLASS_ID(Vector, Type, 7)
         DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
+        DEFINE_CLASS_ID(VectorUnbox, Vector, 1)
+        DEFINE_CLASS_ID(VectorReinterpret, Vector, 2)
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -776,7 +780,8 @@ public:
     Flag_is_scheduled                = 1 << 12,
     Flag_has_vector_mask_set         = 1 << 13,
     Flag_is_expensive                = 1 << 14,
-    Flag_for_post_loop_opts_igvn     = 1 << 15,
+    Flag_is_predicated_vector        = 1 << 15,
+    Flag_for_post_loop_opts_igvn     = 1 << 16,
     _last_flag                       = Flag_for_post_loop_opts_igvn
   };
 
@@ -930,11 +935,13 @@ public:
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
   DEFINE_CLASS_QUERY(Vector)
+  DEFINE_CLASS_QUERY(VectorMaskCmp)
+  DEFINE_CLASS_QUERY(VectorUnbox)
+  DEFINE_CLASS_QUERY(VectorReinterpret);
   DEFINE_CLASS_QUERY(LoadVector)
   DEFINE_CLASS_QUERY(LoadVectorGather)
   DEFINE_CLASS_QUERY(StoreVector)
   DEFINE_CLASS_QUERY(StoreVectorScatter)
-  DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(Unlock)
 
   #undef DEFINE_CLASS_QUERY
@@ -984,6 +991,8 @@ public:
   // An arithmetic node which accumulates a data in a loop.
   // It must have the loop's phi as input and provide a def to the phi.
   bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
+
+  bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 
   // The node is a CountedLoopEnd with a mask annotation so as to emit a restore context
   bool has_vector_mask_set() const { return (_flags & Flag_has_vector_mask_set) != 0; }

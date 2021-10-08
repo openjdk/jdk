@@ -583,7 +583,7 @@ class Address {
 
   static bool offset_ok_for_immed(int64_t offset, uint shift);
 
-  static bool offset_ok_for_sve_immed(long offset, int shift, int vl /* sve vector length */) {
+  static bool offset_ok_for_sve_immed(int64_t offset, int shift, int vl /* sve vector length */) {
     if (offset % vl == 0) {
       // Convert address offset into sve imm offset (MUL VL).
       int sve_offset = offset / vl;
@@ -2965,6 +2965,32 @@ private:
     pgrf(Pg, 10), rf(Zn_or_Vn, 5), rf(Zd_or_Vd, 0);
   }
 
+  void sve_shift_imm_encoding(SIMD_RegVariant T, int shift, bool isSHR,
+                              int& tszh, int& tszl_imm) {
+    /* The encodings for the tszh:tszl:imm3 fields
+     * for shift right is calculated as:
+     *   0001 xxx       B, shift = 16  - UInt(tszh:tszl:imm3)
+     *   001x xxx       H, shift = 32  - UInt(tszh:tszl:imm3)
+     *   01xx xxx       S, shift = 64  - UInt(tszh:tszl:imm3)
+     *   1xxx xxx       D, shift = 128 - UInt(tszh:tszl:imm3)
+     * for shift left is calculated as:
+     *   0001 xxx       B, shift = UInt(tszh:tszl:imm3) - 8
+     *   001x xxx       H, shift = UInt(tszh:tszl:imm3) - 16
+     *   01xx xxx       S, shift = UInt(tszh:tszl:imm3) - 32
+     *   1xxx xxx       D, shift = UInt(tszh:tszl:imm3) - 64
+     */
+    assert(T != Q, "Invalid register variant");
+    if (isSHR) {
+      assert(((1 << (T + 3)) >= shift) && (shift > 0) , "Invalid shift value");
+    } else {
+      assert(((1 << (T + 3)) > shift) && (shift >= 0) , "Invalid shift value");
+    }
+    int cVal = (1 << ((T + 3) + (isSHR ? 1 : 0)));
+    int encodedShift = isSHR ? cVal - shift : cVal + shift;
+    tszh = encodedShift >> 5;
+    tszl_imm = encodedShift & 0x1f;
+  }
+
 public:
 
 // SVE integer arithmetic - predicate
@@ -2976,16 +3002,19 @@ public:
 
   INSN(sve_abs,  0b00000100, 0b010110101); // vector abs, unary
   INSN(sve_add,  0b00000100, 0b000000000); // vector add
+  INSN(sve_and,  0b00000100, 0b011010000); // vector and
   INSN(sve_andv, 0b00000100, 0b011010001); // bitwise and reduction to scalar
   INSN(sve_asr,  0b00000100, 0b010000100); // vector arithmetic shift right
-  INSN(sve_cnt,  0b00000100, 0b011010101)  // count non-zero bits
+  INSN(sve_cnt,  0b00000100, 0b011010101); // count non-zero bits
   INSN(sve_cpy,  0b00000101, 0b100000100); // copy scalar to each active vector element
+  INSN(sve_eor,  0b00000100, 0b011001000); // vector eor
   INSN(sve_eorv, 0b00000100, 0b011001001); // bitwise xor reduction to scalar
   INSN(sve_lsl,  0b00000100, 0b010011100); // vector logical shift left
   INSN(sve_lsr,  0b00000100, 0b010001100); // vector logical shift right
   INSN(sve_mul,  0b00000100, 0b010000000); // vector mul
   INSN(sve_neg,  0b00000100, 0b010111101); // vector neg, unary
   INSN(sve_not,  0b00000100, 0b011110101); // bitwise invert vector, unary
+  INSN(sve_orr,  0b00000100, 0b011000000); // vector or
   INSN(sve_orv,  0b00000100, 0b011000001); // bitwise or reduction to scalar
   INSN(sve_smax, 0b00000100, 0b001000000); // signed maximum vectors
   INSN(sve_smaxv, 0b00000100, 0b001000001); // signed maximum reduction to scalar
@@ -3028,10 +3057,11 @@ public:
     f(op2, 15, 13), pgrf(Pg, 10), rf(Zn, 5), rf(Zda, 0);                                              \
   }
 
-  INSN(sve_fmla,  0b01100101, 1, 0b000); // floating-point fused multiply-add: Zda = Zda + Zn * Zm
+  INSN(sve_fmla,  0b01100101, 1, 0b000); // floating-point fused multiply-add, writing addend: Zda = Zda + Zn * Zm
   INSN(sve_fmls,  0b01100101, 1, 0b001); // floating-point fused multiply-subtract: Zda = Zda + -Zn * Zm
   INSN(sve_fnmla, 0b01100101, 1, 0b010); // floating-point negated fused multiply-add: Zda = -Zda + -Zn * Zm
   INSN(sve_fnmls, 0b01100101, 1, 0b011); // floating-point negated fused multiply-subtract: Zda = -Zda + Zn * Zm
+  INSN(sve_fmad,  0b01100101, 1, 0b100); // floating-point fused multiply-add, writing multiplicand: Zda = Zm + Zda * Zn
   INSN(sve_mla,   0b00000100, 0, 0b010); // multiply-add: Zda = Zda + Zn*Zm
   INSN(sve_mls,   0b00000100, 0, 0b011); // multiply-subtract: Zda = Zda + -Zn*Zm
 #undef INSN
@@ -3053,28 +3083,8 @@ public:
 #define INSN(NAME, opc, isSHR)                                                  \
   void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, int shift) { \
     starti;                                                                     \
-    /* The encodings for the tszh:tszl:imm3 fields (bits 23:22 20:19 18:16)     \
-     * for shift right is calculated as:                                        \
-     *   0001 xxx       B, shift = 16  - UInt(tszh:tszl:imm3)                   \
-     *   001x xxx       H, shift = 32  - UInt(tszh:tszl:imm3)                   \
-     *   01xx xxx       S, shift = 64  - UInt(tszh:tszl:imm3)                   \
-     *   1xxx xxx       D, shift = 128 - UInt(tszh:tszl:imm3)                   \
-     * for shift left is calculated as:                                         \
-     *   0001 xxx       B, shift = UInt(tszh:tszl:imm3) - 8                     \
-     *   001x xxx       H, shift = UInt(tszh:tszl:imm3) - 16                    \
-     *   01xx xxx       S, shift = UInt(tszh:tszl:imm3) - 32                    \
-     *   1xxx xxx       D, shift = UInt(tszh:tszl:imm3) - 64                    \
-     */                                                                         \
-    assert(T != Q, "Invalid register variant");                                 \
-    if (isSHR) {                                                                \
-      assert(((1 << (T + 3)) >= shift) && (shift > 0) , "Invalid shift value"); \
-    } else {                                                                    \
-      assert(((1 << (T + 3)) > shift) && (shift >= 0) , "Invalid shift value"); \
-    }                                                                           \
-    int cVal = (1 << ((T + 3) + (isSHR ? 1 : 0)));                              \
-    int encodedShift = isSHR ? cVal - shift : cVal + shift;                     \
-    int tszh = encodedShift >> 5;                                               \
-    int tszl_imm = encodedShift & 0x1f;                                         \
+    int tszh, tszl_imm;                                                         \
+    sve_shift_imm_encoding(T, shift, isSHR, tszh, tszl_imm);                    \
     f(0b00000100, 31, 24);                                                      \
     f(tszh, 23, 22), f(1,21), f(tszl_imm, 20, 16);                              \
     f(0b100, 15, 13), f(opc, 12, 10), rf(Zn, 5), rf(Zd, 0);                     \
@@ -3083,6 +3093,21 @@ public:
   INSN(sve_asr, 0b100, /* isSHR = */ true);
   INSN(sve_lsl, 0b111, /* isSHR = */ false);
   INSN(sve_lsr, 0b101, /* isSHR = */ true);
+#undef INSN
+
+// SVE bitwise shift by immediate (predicated)
+#define INSN(NAME, opc, isSHR)                                                  \
+  void NAME(FloatRegister Zdn, SIMD_RegVariant T, PRegister Pg, int shift) {    \
+    starti;                                                                     \
+    int tszh, tszl_imm;                                                         \
+    sve_shift_imm_encoding(T, shift, isSHR, tszh, tszl_imm);                    \
+    f(0b00000100, 31, 24), f(tszh, 23, 22), f(0b00, 21, 20), f(opc, 19, 16);    \
+    f(0b100, 15, 13), pgrf(Pg, 10), f(tszl_imm, 9, 5), rf(Zdn, 0);              \
+  }
+
+  INSN(sve_asr, 0b0000, /* isSHR = */ true);
+  INSN(sve_lsl, 0b0011, /* isSHR = */ false);
+  INSN(sve_lsr, 0b0001, /* isSHR = */ true);
 #undef INSN
 
 private:
@@ -3196,6 +3221,24 @@ public:
   INSN(sve_dec, 1);
 #undef INSN
 
+// SVE predicate logical operations
+#define INSN(NAME, op1, op2, op3) \
+  void NAME(PRegister Pd, PRegister Pg, PRegister Pn, PRegister Pm) { \
+    starti;                                                           \
+    f(0b00100101, 31, 24), f(op1, 23, 22), f(0b00, 21, 20);           \
+    prf(Pm, 16), f(0b01, 15, 14), prf(Pg, 10), f(op2, 9);             \
+    prf(Pn, 5), f(op3, 4), prf(Pd, 0);                                \
+  }
+
+  INSN(sve_and,  0b00, 0b0, 0b0);
+  INSN(sve_ands, 0b01, 0b0, 0b0);
+  INSN(sve_eor,  0b00, 0b1, 0b0);
+  INSN(sve_eors, 0b01, 0b1, 0b0);
+  INSN(sve_orr,  0b10, 0b0, 0b0);
+  INSN(sve_orrs, 0b11, 0b0, 0b0);
+  INSN(sve_bic,  0b00, 0b0, 0b1);
+#undef INSN
+
   // SVE increment register by predicate count
   void sve_incp(const Register rd, SIMD_RegVariant T, PRegister pg) {
     starti;
@@ -3229,10 +3272,45 @@ public:
     f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
   }
 
+  // SVE predicate test
+  void sve_ptest(PRegister Pg, PRegister Pn) {
+    starti;
+    f(0b001001010101000011, 31, 14), prf(Pg, 10), f(0, 9), prf(Pn, 5), f(0, 4, 0);
+  }
+
+  // SVE predicate initialize
   void sve_ptrue(PRegister pd, SIMD_RegVariant esize, int pattern = 0b11111) {
     starti;
     f(0b00100101, 31, 24), f(esize, 23, 22), f(0b011000111000, 21, 10);
     f(pattern, 9, 5), f(0b0, 4), prf(pd, 0);
+  }
+
+  // SVE predicate zero
+  void sve_pfalse(PRegister pd) {
+    starti;
+    f(0b00100101, 31, 24), f(0b00, 23, 22), f(0b011000111001, 21, 10);
+    f(0b000000, 9, 4), prf(pd, 0);
+  }
+
+// SVE load/store predicate register
+#define INSN(NAME, op1)                                                  \
+  void NAME(PRegister Pt, const Address &a)  {                           \
+    starti;                                                              \
+    assert(a.index() == noreg, "invalid address variant");               \
+    f(op1, 31, 29), f(0b0010110, 28, 22), sf(a.offset() >> 3, 21, 16),   \
+    f(0b000, 15, 13), f(a.offset() & 0x7, 12, 10), srf(a.base(), 5),     \
+    f(0, 4), prf(Pt, 0);                                                 \
+  }
+
+  INSN(sve_ldr, 0b100); // LDR (predicate)
+  INSN(sve_str, 0b111); // STR (predicate)
+#undef INSN
+
+  // SVE move predicate register
+  void sve_mov(PRegister Pd, PRegister Pn) {
+    starti;
+    f(0b001001011000, 31, 20), prf(Pn, 16), f(0b01, 15, 14), prf(Pn, 10);
+    f(0, 9), prf(Pn, 5), f(0, 4), prf(Pd, 0);
   }
 
   // SVE copy general-purpose register to vector elements (predicated)
@@ -3337,6 +3415,18 @@ void sve_cmp(Condition cond, PRegister Pd, SIMD_RegVariant T,
   INSN(sve_sunpklo, 0b00); // Unsigned unpack and extend half of vector - low half
 #undef INSN
 
+// SVE unpack predicate elements
+#define INSN(NAME, op) \
+  void NAME(PRegister Pd, PRegister Pn) { \
+    starti;                                                          \
+    f(0b000001010011000, 31, 17), f(op, 16), f(0b0100000, 15, 9);    \
+    prf(Pn, 5), f(0b0, 4), prf(Pd, 0);                               \
+  }
+
+  INSN(sve_punpkhi, 0b1); // Unpack and widen high half of predicate
+  INSN(sve_punpklo, 0b0); // Unpack and widen low half of predicate
+#undef INSN
+
 // SVE permute vector elements
 #define INSN(NAME, op) \
   void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) { \
@@ -3348,6 +3438,19 @@ void sve_cmp(Condition cond, PRegister Pd, SIMD_RegVariant T,
 
   INSN(sve_uzp1, 0b0); // Concatenate even elements from two vectors
   INSN(sve_uzp2, 0b1); // Concatenate odd elements from two vectors
+#undef INSN
+
+// SVE permute predicate elements
+#define INSN(NAME, op) \
+  void NAME(PRegister Pd, SIMD_RegVariant T, PRegister Pn, PRegister Pm) {             \
+    starti;                                                                            \
+    assert(T != Q, "invalid size");                                                    \
+    f(0b00000101, 31, 24), f(T, 23, 22), f(0b10, 21, 20), prf(Pm, 16);                 \
+    f(0b01001, 15, 11), f(op, 10), f(0b0, 9), prf(Pn, 5), f(0b0, 4), prf(Pd, 0);       \
+  }
+
+  INSN(sve_uzp1, 0b0); // Concatenate even elements from two predicates
+  INSN(sve_uzp2, 0b1); // Concatenate odd elements from two predicates
 #undef INSN
 
 // Predicate counted loop (SVE) (32-bit variants are not included)

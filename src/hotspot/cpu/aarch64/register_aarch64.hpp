@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,10 @@ class PRegisterImpl: public AbstractRegisterImpl {
   enum {
     number_of_registers = 16,
     number_of_governing_registers = 8,
+    // AArch64 has 8 governing predicate registers, but p7 is used as an
+    // all-1s register so the predicates to save are from p0 to p6 if we
+    // don't have non-governing predicate registers support.
+    number_of_saved_registers = number_of_governing_registers - 1,
     max_slots_per_register = 1
   };
 
@@ -377,6 +381,7 @@ public:
 
 typedef AbstractRegSet<Register> RegSet;
 typedef AbstractRegSet<FloatRegister> FloatRegSet;
+typedef AbstractRegSet<PRegister> PRegSet;
 
 template <class RegImpl>
 class RegSetIterator {

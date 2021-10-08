@@ -2395,47 +2395,103 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #endif
 
   // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
-  if (EnableVectorReboxing && can_reshape && progress == NULL) {
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-
-    bool all_inputs_are_equiv_vboxes = true;
-    for (uint i = 1; i < req(); ++i) {
-      Node* n = in(i);
-      if (in(i)->Opcode() != Op_VectorBox) {
-        all_inputs_are_equiv_vboxes = false;
-        break;
-      }
-      // Check that vector type of vboxes is equivalent
-      if (i != 1) {
-        if (Type::cmp(in(i-0)->in(VectorBoxNode::Value)->bottom_type(),
-                      in(i-1)->in(VectorBoxNode::Value)->bottom_type()) != 0) {
-          all_inputs_are_equiv_vboxes = false;
-          break;
-        }
-        if (Type::cmp(in(i-0)->in(VectorBoxNode::Box)->bottom_type(),
-                      in(i-1)->in(VectorBoxNode::Box)->bottom_type()) != 0) {
-          all_inputs_are_equiv_vboxes = false;
-          break;
-        }
-      }
-    }
-
-    if (all_inputs_are_equiv_vboxes) {
-      VectorBoxNode* vbox = static_cast<VectorBoxNode*>(in(1));
-      PhiNode* new_vbox_phi = new PhiNode(r, vbox->box_type());
-      PhiNode* new_vect_phi = new PhiNode(r, vbox->vec_type());
-      for (uint i = 1; i < req(); ++i) {
-        VectorBoxNode* old_vbox = static_cast<VectorBoxNode*>(in(i));
-        new_vbox_phi->set_req(i, old_vbox->in(VectorBoxNode::Box));
-        new_vect_phi->set_req(i, old_vbox->in(VectorBoxNode::Value));
-      }
-      igvn->register_new_node_with_optimizer(new_vbox_phi, this);
-      igvn->register_new_node_with_optimizer(new_vect_phi, this);
-      progress = new VectorBoxNode(igvn->C, new_vbox_phi, new_vect_phi, vbox->box_type(), vbox->vec_type());
-    }
+  if (EnableVectorReboxing && can_reshape && progress == NULL && type()->isa_oopptr()) {
+    progress = merge_through_phi(this, phase->is_IterGVN());
   }
 
   return progress;              // Return any progress
+}
+
+Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
+  Node_Stack stack(1);
+  VectorSet  visited;
+  Node_List  node_map;
+
+  stack.push(root_phi, 1); // ignore control
+  visited.set(root_phi->_idx);
+
+  Node* new_phi = new PhiNode(root_phi->in(0), t);
+  node_map.map(root_phi->_idx, new_phi);
+
+  while (stack.is_nonempty()) {
+    Node* n   = stack.node();
+    uint  idx = stack.index();
+    assert(n->is_Phi(), "not a phi");
+    if (idx < n->req()) {
+      stack.set_index(idx + 1);
+      Node* def = n->in(idx);
+      if (def == NULL) {
+        continue; // ignore dead path
+      } else if (def->is_Phi()) { // inner node
+        Node* new_phi = node_map[n->_idx];
+        if (!visited.test_set(def->_idx)) { // not visited yet
+          node_map.map(def->_idx, new PhiNode(def->in(0), t));
+          stack.push(def, 1); // ignore control
+        }
+        Node* new_in = node_map[def->_idx];
+        new_phi->set_req(idx, new_in);
+      } else if (def->Opcode() == Op_VectorBox) { // leaf
+        assert(n->is_Phi(), "not a phi");
+        Node* new_phi = node_map[n->_idx];
+        new_phi->set_req(idx, def->in(c));
+      } else {
+        assert(false, "not optimizeable");
+        return NULL;
+      }
+    } else {
+      Node* new_phi = node_map[n->_idx];
+      igvn->register_new_node_with_optimizer(new_phi, n);
+      stack.pop();
+    }
+  }
+  return new_phi;
+}
+
+Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
+  Node_Stack stack(1);
+  VectorSet  visited;
+
+  stack.push(root_phi, 1); // ignore control
+  visited.set(root_phi->_idx);
+
+  VectorBoxNode* cached_vbox = NULL;
+  while (stack.is_nonempty()) {
+    Node* n   = stack.node();
+    uint  idx = stack.index();
+    if (idx < n->req()) {
+      stack.set_index(idx + 1);
+      Node* in = n->in(idx);
+      if (in == NULL) {
+        continue; // ignore dead path
+      } else if (in->isa_Phi()) {
+        if (!visited.test_set(in->_idx)) {
+          stack.push(in, 1); // ignore control
+        }
+      } else if (in->Opcode() == Op_VectorBox) {
+        VectorBoxNode* vbox = static_cast<VectorBoxNode*>(in);
+        if (cached_vbox == NULL) {
+          cached_vbox = vbox;
+        } else if (vbox->vec_type() != cached_vbox->vec_type()) {
+          // TODO: vector type mismatch can be handled with additional reinterpret casts
+          assert(Type::cmp(vbox->vec_type(), cached_vbox->vec_type()) != 0, "inconsistent");
+          return NULL; // not optimizable: vector type mismatch
+        } else if (vbox->box_type() != cached_vbox->box_type()) {
+          assert(Type::cmp(vbox->box_type(), cached_vbox->box_type()) != 0, "inconsistent");
+          return NULL; // not optimizable: box type mismatch
+        }
+      } else {
+        return NULL; // not optimizable: neither Phi nor VectorBox
+      }
+    } else {
+      stack.pop();
+    }
+  }
+  assert(cached_vbox != NULL, "sanity");
+  const TypeInstPtr* btype = cached_vbox->box_type();
+  const TypeVect*    vtype = cached_vbox->vec_type();
+  Node* new_vbox_phi = clone_through_phi(root_phi, btype, VectorBoxNode::Box,   igvn);
+  Node* new_vect_phi = clone_through_phi(root_phi, vtype, VectorBoxNode::Value, igvn);
+  return new VectorBoxNode(igvn->C, new_vbox_phi, new_vect_phi, btype, vtype);
 }
 
 bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {

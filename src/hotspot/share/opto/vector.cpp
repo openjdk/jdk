@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,7 +338,10 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   int num_elem = vect_type->length();
 
   bool is_mask = is_vector_mask(box_klass);
-  if (is_mask && bt != T_BOOLEAN) {
+  // If boxed mask value is present in a predicate register, it must be
+  // spilled to a vector though a VectorStoreMaskOperation before actual StoreVector
+  // operation to vector payload field.
+  if (is_mask && (value->bottom_type()->isa_vectmask() || bt != T_BOOLEAN)) {
     value = gvn.transform(VectorStoreMaskNode::make(gvn, value, bt, num_elem));
     // Although type of mask depends on its definition, in terms of storage everything is stored in boolean array.
     bt = T_BOOLEAN;
@@ -454,7 +457,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     C->set_max_vector_size(MAX2(C->max_vector_size(), vt->length_in_bytes()));
 
     if (is_vector_mask(from_kls)) {
-      vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::make(masktype, num_elem)));
+      vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::makemask(masktype, num_elem)));
     } else if (is_vector_shuffle(from_kls) && !vec_unbox->is_shuffle_to_vector()) {
       assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
       vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));

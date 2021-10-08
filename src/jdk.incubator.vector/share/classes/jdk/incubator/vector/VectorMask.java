@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,6 +516,8 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @param i the lane index
      *
      * @return true if the lane at index {@code i} is set, otherwise false
+     * @throws IndexOutOfBoundsException if the index is is out of range
+     * ({@code < 0 || >= length()})
      */
     public abstract boolean laneIsSet(int i);
 
@@ -552,6 +554,24 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @see Vector#check(VectorSpecies)
      */
     public abstract <F> VectorMask<F> check(VectorSpecies<F> species);
+
+    /**
+     * Checks that this mask has the same class with the given mask class,
+     * and it has the same species with given vector's species,
+     * and returns this mask unchanged.
+     * The effect is similar to this pseudocode:
+     * {@code getClass() == maskClass &&
+     *        vectorSpecies() == vector.species()
+     *        ? this
+     *        : throw new ClassCastException()}.
+     *
+     * @param maskClass the class required for this mask
+     * @param vector its species required for this mask
+     * @param <F> the boxed element type of the required species
+     * @return the same mask
+     * @throws ClassCastException if the species is wrong
+     */
+    public abstract <F> VectorMask<F> check(Class<? extends VectorMask<F>> maskClass, Vector<F> vector);
 
     /**
      * Returns a string representation of this mask, of the form

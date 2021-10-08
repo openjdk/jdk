@@ -165,6 +165,7 @@ class x86 {
   static address _vector_double_sign_flip;
   static address _vector_long_sign_mask;
   static address _vector_all_bits_set;
+  static address _vector_int_mask_cmp_bits;
   static address _vector_byte_perm_mask;
   static address _vector_int_to_byte_mask;
   static address _vector_int_to_short_mask;
@@ -287,6 +288,10 @@ class x86 {
 
   static address vector_all_bits_set() {
     return _vector_all_bits_set;
+  }
+
+  static address vector_int_mask_cmp_bits() {
+    return _vector_int_mask_cmp_bits;
   }
 
   static address vector_byte_perm_mask() {
