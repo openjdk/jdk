@@ -116,10 +116,8 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   }
 
  public:
-  Rank   rank() const          { return _rank; }
   const char*  rank_name() const;
   Mutex* next()  const         { return _next; }
-  void   set_next(Mutex *next) { _next = next; }
 #endif // ASSERT
 
  protected:
@@ -192,7 +190,8 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void set_owner(Thread* owner) { set_owner_implementation(owner); }
   bool owned_by_self() const;
 
-  const char *name() const                  { return _name; }
+  const char *name() const     { return _name; }
+  Rank   rank() const          { DEBUG_ONLY(return _rank) NOT_DEBUG(return safepoint); }
 
   // Print all mutexes/monitors that are currently owned by a thread; called
   // by fatal error handler.
