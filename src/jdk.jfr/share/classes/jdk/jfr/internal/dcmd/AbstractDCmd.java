@@ -169,7 +169,7 @@ abstract class AbstractDCmd {
 
     protected final List<Recording> getRecordings() {
         List<Recording> list = new ArrayList<>(getFlightRecorder().getRecordings());
-        list.sort(Comparator.comparing(Recording::getId));
+        list.sort(Comparator.comparingLong(Recording::getId));
         return list;
     }
 

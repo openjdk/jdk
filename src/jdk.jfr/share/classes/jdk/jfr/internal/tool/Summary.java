@@ -32,7 +32,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -143,7 +142,7 @@ final class Summary extends Command {
             println(" Start: " + DATE_FORMAT.format(Instant.ofEpochSecond(epochSeconds, adjustNanos)) + " (UTC)");
             println(" Duration: " + (totalDuration + 500_000_000) / 1_000_000_000 + " s");
             List<Statistics> statsList = new ArrayList<>(stats.values());
-            statsList.sort(Comparator.comparingLong(v -> v.count));
+            statsList.sort((u, v) -> Long.compare(v.count, u.count));
             println();
             String header = "      Count  Size (bytes) ";
             String typeHeader = " Event Type";
