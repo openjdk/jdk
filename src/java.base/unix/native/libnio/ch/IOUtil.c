@@ -179,22 +179,26 @@ Java_sun_nio_ch_IOUtil_iovMax(JNIEnv *env, jclass this)
 }
 
 #ifdef MACOSX
+//
+// Returns the Darwin version or -1 if it is indeterminate
+//
 static int get_darwin_version() {
     struct utsname name;
     if (uname(&name) < 0)
         return -1;
 
-    int version_number = -1;
-    char major_version[_SYS_NAMELEN];
-    char *dot = strchr(name.release, '.');
-    if (dot != NULL) {
-        size_t len = dot - name.release;
-        strncpy(major_version, name.release, len);
-        major_version[len]= '\0';
-        version_number = atoi(major_version);
+    char *dotp = strchr(name.release, '.');
+    if (dotp != NULL) {
+        size_t len = dotp - name.release;
+        if (len > 0) {
+            char major_version[_SYS_NAMELEN];
+            strncpy(major_version, name.release, len);
+            major_version[len]= '\0';
+            return atoi(major_version);
+        }
     }
 
-    return version_number;
+    return -1;
 }
 #endif
 
@@ -209,7 +213,11 @@ Java_sun_nio_ch_IOUtil_writevMax(JNIEnv *env, jclass this)
     // [EINVAL] The sum of the iov_len values in the iov array
     //          overflows a 32-bit integer.
     //
-    if (get_darwin_version() >= 20)
+    int darwin_version = get_darwin_version();
+
+    // Return a conservative value if the Darwin version is either
+    // indeterminate or at least 20.
+    if (darwin_version < 0 || darwin_version >= 20)
         return java_lang_Integer_MAX_VALUE;
 #elif defined(__linux__)
     //
