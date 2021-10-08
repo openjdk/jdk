@@ -60,7 +60,7 @@ public:
     WorkerThreads(name, workers), _initialize_gclab(false) {
     }
 
-  // Create a GC worker and install it into the work gang.
+  // Create a GC worker.
   // We need to initialize gclab for dynamic allocated workers
   WorkerThread* create_worker(uint id);
 
