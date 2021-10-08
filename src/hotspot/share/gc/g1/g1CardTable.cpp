@@ -28,6 +28,11 @@
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
 
+uint G1CardTable::min_card_size(size_t region_size) {
+  int region_size_log = exact_log2_long((jlong)region_size);
+  return 1 << (region_size_log - LogOfMaxCardsPerRegion);
+}
+
 void G1CardTable::g1_mark_as_young(const MemRegion& mr) {
   CardValue *const first = byte_for(mr.start());
   CardValue *const last = byte_after(mr.last());

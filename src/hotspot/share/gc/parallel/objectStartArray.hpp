@@ -56,6 +56,10 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   static uint block_size;
   static uint block_size_in_words;
 
+  // This maximum is derived from that we need an extra bit for possible
+  // offsets in the byte for backskip values (this is a hard limit)
+  static const uint MaxBlockSize = 1024;
+
   // Initialize block size based on card size
   static void initialize_block_size(uint card_shift);
 

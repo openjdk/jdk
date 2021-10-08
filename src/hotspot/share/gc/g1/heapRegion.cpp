@@ -93,14 +93,12 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 
   // Initialize card size based on the region size.
   // Maximum no. of cards per region is 2^16.
-  CardTable::initialize_card_size(1 << (region_size_log - 16));
+  CardTable::initialize_card_size(G1CardTable::min_card_size(region_size));
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
 
   LogCardsPerRegion = log2i(CardsPerRegion);
-
-  assert(LogCardsPerRegion <= 16, "Total cards per region should be less than or equal to 2^16");
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(G1HeapRegionSize, GrainBytes);

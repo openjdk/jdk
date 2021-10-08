@@ -27,6 +27,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
@@ -97,6 +98,7 @@ public:
   BlockOffsetTable(HeapWord* bottom, HeapWord* end):
     _bottom(bottom), _end(end) {
     assert(_bottom <= _end, "arguments out of order");
+    assert(BOTConstants::N_bytes == CardTable::card_size, "sanity");
   }
 
   // Note that the committed size of the covered space may have changed,
