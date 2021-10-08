@@ -726,6 +726,8 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
       test -e $BINUTILS_SRC/libiberty/libiberty.a; then
     AC_MSG_NOTICE([Found binutils binaries in binutils source directory -- not building])
   else
+    # On Windows, we cannot build with the normal Microsoft CL, but must instead use
+    # a separate mingw toolchain.
     if test "x$OPENJDK_BUILD_OS" = xwindows; then
       if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
         target_base="i686-w64-mingw32"
@@ -743,16 +745,16 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
         AC_MSG_NOTICE([Using compiler $binutils_cc with version $compiler_version])
       fi
     else
-      binutils_cc="$CC"
+      binutils_cc="$CC $SYSROOT_CFLAGS"
       binutils_target=""
     fi
     binutils_cflags="$MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
 
     AC_MSG_NOTICE([Running binutils configure])
-    AC_MSG_NOTICE([configure command line: ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc $SYSROOT_CFLAGS" $binutils_target])
+    AC_MSG_NOTICE([configure command line: ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target])
     saved_dir=`pwd`
     cd "$BINUTILS_SRC"
-    ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc $SYSROOT_CFLAGS" $binutils_target
+    ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target
     if test $? -ne 0 || ! test -e $BINUTILS_SRC/Makefile; then
       AC_MSG_NOTICE([Automatic building of binutils failed on configure. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
