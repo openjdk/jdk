@@ -723,7 +723,8 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
 
   if test -e $BINUTILS_SRC/bfd/libbfd.a && \
       test -e $BINUTILS_SRC/opcodes/libopcodes.a && \
-      test -e $BINUTILS_SRC/libiberty/libiberty.a; then
+      test -e $BINUTILS_SRC/libiberty/libiberty.a && \
+      test -e $BINUTILS_SRC/zlib/libz.a; then
     AC_MSG_NOTICE([Found binutils binaries in binutils source directory -- not building])
   else
     # On Windows, we cannot build with the normal Microsoft CL, but must instead use
@@ -745,6 +746,12 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
         AC_MSG_ERROR([Cannot continue. $HELP_MSG])
       else
         AC_MSG_NOTICE([Using compiler $binutils_cc with version $compiler_version])
+      fi
+    elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
+      if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+        binutils_target="--enable-targets=aarch64-darwin"
+      else
+        binutils_target=""
       fi
     else
       binutils_cc="$CC $SYSROOT_CFLAGS"
