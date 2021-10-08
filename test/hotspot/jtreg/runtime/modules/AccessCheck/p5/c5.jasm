@@ -21,6 +21,22 @@
  * questions.
  */
 
+/*
+ * Test input for the fix for JDK-8174954, which checks for an expected
+ * IllegalAccessError when the parameter type of an invokedynamic is
+ * inaccessible.
+ *
+ * The test assumes that given the string concatenation expression "" + param,
+ * javac generates an invokedynamic that uses the specific type of param. The
+ * fix for JDK-8273914 make javac eagerly convert param to a String before
+ * passing it to the invokedynamic call, which avoids the accessibility issue
+ * the test is trying to exercise.
+ *
+ * This jasm file contains the bytecode javac generated before the fix for
+ * JDK-8273914, to continue to exercise the invokedynamic behaviour that
+ * JDK-8174954 is testing.
+ */
+
 package  p5;
 
 super public class c5
