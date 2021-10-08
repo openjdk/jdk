@@ -285,7 +285,6 @@ public class ReflectionSpeedBenchmark {
     public void setup() {
         a = nextRnd();
         b = nextRnd();
-        c = nextRnd();
         o = new Object();
         instance = new NestedInstance();
 
