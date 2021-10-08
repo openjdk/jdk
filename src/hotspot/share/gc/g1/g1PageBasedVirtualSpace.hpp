@@ -117,7 +117,7 @@ class G1PageBasedVirtualSpace {
   // Uncommit the given area of pages starting at start being size_in_pages large.
   void uncommit(size_t start_page, size_t size_in_pages);
 
-  void pretouch(size_t start_page, size_t size_in_pages, WorkerThreads* pretouch_gang = NULL);
+  void pretouch(size_t start_page, size_t size_in_pages, WorkerThreads* pretouch_workers = NULL);
 
   // Initialize the given reserved space with the given base address and the size
   // actually used.

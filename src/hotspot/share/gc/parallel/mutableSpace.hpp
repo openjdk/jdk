@@ -102,7 +102,7 @@ class MutableSpace: public CHeapObj<mtGC> {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkerThreads* pretouch_gang = NULL);
+                          WorkerThreads* pretouch_workers = NULL);
 
   virtual void clear(bool mangle_space);
   virtual void update() { }

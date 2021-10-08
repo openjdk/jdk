@@ -63,7 +63,7 @@ void PretouchTask::work(uint worker_id) {
 }
 
 void PretouchTask::pretouch(const char* task_name, char* start_address, char* end_address,
-                            size_t page_size, WorkerThreads* pretouch_gang) {
+                            size_t page_size, WorkerThreads* pretouch_workers) {
   // Chunk size should be at least (unmodified) page size as using multiple threads
   // pretouch on a single page can decrease performance.
   size_t chunk_size = MAX2(PretouchTask::chunk_size(), page_size);
@@ -80,14 +80,14 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
     return;
   }
 
-  if (pretouch_gang != NULL) {
+  if (pretouch_workers != NULL) {
     size_t num_chunks = (total_bytes + chunk_size - 1) / chunk_size;
 
-    uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_gang->max_workers());
+    uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_workers->max_workers());
     log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
                         task.name(), num_workers, num_chunks, total_bytes);
 
-    pretouch_gang->run_task(&task, num_workers);
+    pretouch_workers->run_task(&task, num_workers);
   } else {
     log_debug(gc, heap)("Running %s pre-touching " SIZE_FORMAT "B.",
                         task.name(), total_bytes);

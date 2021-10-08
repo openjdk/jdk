@@ -233,10 +233,10 @@ void G1PageBasedVirtualSpace::uncommit(size_t start_page, size_t size_in_pages) 
   _committed.par_clear_range(start_page, end_page, BitMap::unknown_range);
 }
 
-void G1PageBasedVirtualSpace::pretouch(size_t start_page, size_t size_in_pages, WorkerThreads* pretouch_gang) {
+void G1PageBasedVirtualSpace::pretouch(size_t start_page, size_t size_in_pages, WorkerThreads* pretouch_workers) {
 
   PretouchTask::pretouch("G1 PreTouch", page_start(start_page), bounded_end_addr(start_page + size_in_pages),
-                         _page_size, pretouch_gang);
+                         _page_size, pretouch_workers);
 }
 
 bool G1PageBasedVirtualSpace::contains(const void* p) const {

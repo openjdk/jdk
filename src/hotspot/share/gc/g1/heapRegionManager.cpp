@@ -166,8 +166,8 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
   return g1h->new_heap_region(hrm_index, mr);
 }
 
-void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pretouch_gang) {
-  commit_regions(start, num_regions, pretouch_gang);
+void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pretouch_workers) {
+  commit_regions(start, num_regions, pretouch_workers);
   for (uint i = start; i < start + num_regions; i++) {
     HeapRegion* hr = _regions.get_by_index(i);
     if (hr == NULL) {
@@ -181,21 +181,21 @@ void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pret
   activate_regions(start, num_regions);
 }
 
-void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkerThreads* pretouch_gang) {
+void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkerThreads* pretouch_workers) {
   guarantee(num_regions > 0, "Must commit more than zero regions");
   guarantee(num_regions <= available(),
             "Cannot commit more than the maximum amount of regions");
 
-  _heap_mapper->commit_regions(index, num_regions, pretouch_gang);
+  _heap_mapper->commit_regions(index, num_regions, pretouch_workers);
 
   // Also commit auxiliary data
-  _prev_bitmap_mapper->commit_regions(index, num_regions, pretouch_gang);
-  _next_bitmap_mapper->commit_regions(index, num_regions, pretouch_gang);
+  _prev_bitmap_mapper->commit_regions(index, num_regions, pretouch_workers);
+  _next_bitmap_mapper->commit_regions(index, num_regions, pretouch_workers);
 
-  _bot_mapper->commit_regions(index, num_regions, pretouch_gang);
-  _cardtable_mapper->commit_regions(index, num_regions, pretouch_gang);
+  _bot_mapper->commit_regions(index, num_regions, pretouch_workers);
+  _cardtable_mapper->commit_regions(index, num_regions, pretouch_workers);
 
-  _card_counts_mapper->commit_regions(index, num_regions, pretouch_gang);
+  _card_counts_mapper->commit_regions(index, num_regions, pretouch_workers);
 }
 
 void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {

@@ -577,7 +577,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
                                   bool clear_space,
                                   bool mangle_space,
                                   bool setup_pages,
-                                  WorkerThreads* pretouch_gang) {
+                                  WorkerThreads* pretouch_workers) {
   assert(clear_space, "Reallocation will destroy data!");
   assert(lgrp_spaces()->length() > 0, "There should be at least one space");
 

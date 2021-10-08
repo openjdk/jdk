@@ -89,7 +89,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   HeapWord* heap_end() const {return _regions.end_address_mapped(); }
 
   // Pass down commit calls to the VirtualSpace.
-  void commit_regions(uint index, size_t num_regions = 1, WorkerThreads* pretouch_gang = NULL);
+  void commit_regions(uint index, size_t num_regions = 1, WorkerThreads* pretouch_workers = NULL);
 
   // Initialize the HeapRegions in the range and put them on the free list.
   void initialize_regions(uint start, uint num_regions);
@@ -127,7 +127,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   G1RegionToSpaceMapper* _next_bitmap_mapper;
   FreeRegionList _free_list;
 
-  void expand(uint index, uint num_regions, WorkerThreads* pretouch_gang = NULL);
+  void expand(uint index, uint num_regions, WorkerThreads* pretouch_workers = NULL);
 
   // G1RegionCommittedMap helpers. These functions do the work that comes with
   // the state changes tracked by G1CommittedRegionMap. To make sure this is
