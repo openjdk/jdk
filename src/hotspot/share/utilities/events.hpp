@@ -100,7 +100,7 @@ template <class T> class EventLogBase : public EventLog {
 
  public:
   EventLogBase<T>(const char* name, const char* handle, int length = LogEventsBufferEntries):
-    _mutex(Mutex::event, name, Mutex::_safepoint_check_never),
+    _mutex(Mutex::event, name),
     _name(name),
     _handle(handle),
     _length(length),
