@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,20 +34,56 @@ include JdkNativeCompilation.gmk
 #
 ################################################################################
 
+ifeq ($(call isTargetOs, windows), true)
+  # On windows, we need to "fake" a completely different toolchain using gcc
+  # instead of the normal microsoft toolchain. This is quite hacky...
+
+  MINGW_BASE := x86_64-w64-mingw32
+
+  $(eval $(call DefineNativeToolchain, TOOLCHAIN_MINGW, \
+      CC := $(MINGW_BASE)-gcc, \
+      LD := $(MINGW_BASE)-ld, \
+      OBJCOPY := $(MINGW_BASE)-objcopy, \
+      RC := $(RC), \
+      SYSROOT_CFLAGS := --sysroot=/usr/$(MINGW_BASE)/sys-root, \
+      SYSROOT_LDFLAGS := --sysroot=/usr/$(MINGW_BASE)/sys-root, \
+  ))
+
+  TOOLCHAIN_TYPE := gcc
+  OPENJDK_TARGET_OS := linux
+  CC_OUT_OPTION := -o$(SPACE)
+  LD_OUT_OPTION := -o$(SPACE)
+  GENDEPS_FLAGS := -MMD -MF
+  CFLAGS_DEBUG_SYMBOLS := -g
+  DISABLED_WARNINGS :=
+  DISABLE_WARNING_PREFIX := -Wno-
+  CFLAGS_WARNINGS_ARE_ERRORS := -Werror
+
+  HSDIS_TOOLCHAIN := TOOLCHAIN_MINGW
+  HSDIS_TOOLCHAIN_CFLAGS :=
+  HSDIS_TOOLCHAIN_LDFLAGS := -L/usr/lib/gcc/$(MINGW_BASE)/9.2.0  -L/usr/$(MINGW_BASE)/sys-root/mingw/lib
+  HSDIS_TOOLCHAIN_LIBS := -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmsvcrt
+else
+  HSDIS_TOOLCHAIN := TOOLCHAIN_DEFAULT
+  HSDIS_TOOLCHAIN_CFLAGS := $(CFLAGS_JDKLIB)
+  HSDIS_TOOLCHAIN_LDFLAGS := $(LDFLAGS_JDKLIB)
+  HSDIS_TOOLCHAIN_LIBS := -ldl
+endif
+
 HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
 
 $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
     SRC := $(TOPDIR)/src/utils/hsdis, \
+    TOOLCHAIN := $(HSDIS_TOOLCHAIN), \
     EXCLUDE_FILES := hsdis-demo.c, \
     OUTPUT_DIR := $(HSDIS_OUTPUT_DIR), \
     OBJECT_DIR := $(HSDIS_OUTPUT_DIR), \
     DISABLED_WARNINGS_gcc := undef format-nonliteral sign-compare, \
     DISABLED_WARNINGS_clang := undef format-nonliteral, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(HSDIS_CFLAGS), \
-    LDFLAGS := $(LDFLAGS_JDKLIB), \
-    LIBS := $(HSDIS_LIBS), \
-    LIBS_linux := -ldl, \
+    CFLAGS := $(HSDIS_TOOLCHAIN_CFLAGS) $(HSDIS_CFLAGS), \
+    LDFLAGS := $(HSDIS_TOOLCHAIN_LDFLAGS), \
+    LIBS := $(HSDIS_LIBS) $(HSDIS_TOOLCHAIN_LIBS), \
 ))
 
 build: $(BUILD_HSDIS)
