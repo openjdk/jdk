@@ -121,9 +121,9 @@ public abstract class AbstractManualTest {
         try {
             if (System.getProperty("os.name").startsWith("Windows")) {
                 Runtime.getRuntime()
-                    .exec("wmic Path win32_process Where \"CommandLine Like '%SwingSet2.jar%'\" Call Terminate");
-            else {
-            Runtime.getRuntime()
+                        .exec("wmic Path win32_process Where \"CommandLine Like '%SwingSet2.jar%'\" Call Terminate");
+            } else {
+                Runtime.getRuntime()
                         .exec("ps -ef | grep -v grep | grep  SwingSet2.jar | cut -d' ' -f4 | xargs kill -9");
             }
 
