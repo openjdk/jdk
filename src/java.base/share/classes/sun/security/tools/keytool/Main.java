@@ -4676,7 +4676,7 @@ public final class Main {
                             }
                             data = Arrays.copyOf(data, pos/2);
                         } else {
-                            data = new byte[0];
+                            data = Arrays.EMPTY_ARRAY_BYTE;
                         }
                         setExt(result, new Extension(oid, isCritical,
                                 new DerValue(DerValue.tag_OctetString, data)

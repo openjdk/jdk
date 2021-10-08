@@ -77,7 +77,7 @@ final class SignatureAlgorithmsExtension {
                     signatureSchemes[i++] = scheme.id;
                 }
             } else {
-                this.signatureSchemes = new int[0];
+                this.signatureSchemes = Arrays.EMPTY_ARRAY_INT;
             }
         }
 

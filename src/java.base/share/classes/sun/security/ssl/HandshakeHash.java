@@ -634,7 +634,7 @@ final class HandshakeHash {
                 return ((MessageDigest)md.clone()).digest();
             } catch (CloneNotSupportedException ex) {
                 // unlikely
-                return new byte[0];
+                return Arrays.EMPTY_ARRAY_BYTE;
             }
         }
 

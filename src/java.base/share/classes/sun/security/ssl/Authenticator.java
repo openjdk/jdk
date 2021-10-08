@@ -500,7 +500,7 @@ abstract class Authenticator {
                 byte[] sequence, boolean isSimulated) {
 
             if (macAlg.size == 0) {
-                return new byte[0];
+                return Arrays.EMPTY_ARRAY_BYTE;
             }
 
             if (!isSimulated) {

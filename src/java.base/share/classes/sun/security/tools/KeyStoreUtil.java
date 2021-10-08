@@ -161,7 +161,7 @@ public class KeyStoreUtil {
                     String value = br.readLine();
 
                     if (value == null) {
-                        return new char[0];
+                        return Arrays.EMPTY_ARRAY_CHAR;
                     }
 
                     return value.toCharArray();

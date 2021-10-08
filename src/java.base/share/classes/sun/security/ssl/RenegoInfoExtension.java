@@ -65,7 +65,7 @@ final class RenegoInfoExtension {
     static final class RenegotiationInfoSpec implements SSLExtensionSpec {
         // A nominal object that does not holding any real renegotiation info.
         static final RenegotiationInfoSpec NOMINAL =
-                new RenegotiationInfoSpec(new byte[0]);
+                new RenegotiationInfoSpec(Arrays.EMPTY_ARRAY_BYTE);
 
         private final byte[] renegotiatedConnection;
 

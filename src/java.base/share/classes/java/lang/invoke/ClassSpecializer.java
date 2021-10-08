@@ -40,6 +40,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -608,7 +609,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 tts.add(tt);
                 tms.add(tm.getModifiers());
             }
-            TRANSFORM_NAMES = List.of(tns.toArray(new String[0]));
+            TRANSFORM_NAMES = List.of(tns.toArray(Arrays.EMPTY_ARRAY_STRING));
             TRANSFORM_TYPES = List.of(tts.toArray(new MethodType[0]));
             TRANSFORM_MODS = List.of(tms.toArray(new Integer[0]));
         }

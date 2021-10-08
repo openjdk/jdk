@@ -52,8 +52,6 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
     // magic constants and utility functions, also used by other files
     // in this package
 
-    private static final byte[] B0 = new byte[0];
-
     static final byte[] LABEL_MASTER_SECRET = // "master secret"
         { 109, 97, 115, 116, 101, 114, 32, 115, 101, 99, 114, 101, 116 };
 
@@ -194,7 +192,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
             throws DigestException {
 
         if (secret == null) {
-            secret = B0;
+            secret = Arrays.EMPTY_ARRAY_BYTE;
         }
 
         // If we have a long secret, digest it first.
@@ -251,7 +249,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
          */
 
         if (secret == null) {
-            secret = B0;
+            secret = Arrays.EMPTY_ARRAY_BYTE;
         }
         int off = secret.length >> 1;
         int seclen = off + (secret.length & 1);

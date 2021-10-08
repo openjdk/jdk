@@ -68,9 +68,6 @@ import sun.security.util.KeyUtil;
  */
 public final class RSACipher extends CipherSpi {
 
-    // constant for an empty byte array
-    private static final byte[] B0 = new byte[0];
-
     // mode constant for public key encryption
     private static final int MODE_ENCRYPT = 1;
     // mode constant for private key decryption
@@ -383,7 +380,7 @@ public final class RSACipher extends CipherSpi {
     // see JCE spec
     protected byte[] engineUpdate(byte[] in, int inOfs, int inLen) {
         update(in, inOfs, inLen);
-        return B0;
+        return Arrays.EMPTY_ARRAY_BYTE;
     }
 
     // see JCE spec

@@ -35,6 +35,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -81,7 +82,7 @@ final class ECDHClientKeyExchange {
             if (m.remaining() != 0) {       // explicit PublicValueEncoding
                 this.encodedPoint = Record.getBytes8(m);
             } else {
-                this.encodedPoint = new byte[0];
+                this.encodedPoint = Arrays.EMPTY_ARRAY_BYTE;
             }
         }
 

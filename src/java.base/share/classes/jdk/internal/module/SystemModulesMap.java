@@ -25,6 +25,8 @@
 
 package jdk.internal.module;
 
+import java.util.Arrays;
+
 /**
  * This class is generated/overridden at link time to return the names of the
  * SystemModules classes generated at link time.
@@ -55,7 +57,7 @@ class SystemModulesMap {
      * Returns the array of initial module names identified at link time.
      */
     static String[] moduleNames() {
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 
     /**
@@ -63,6 +65,6 @@ class SystemModulesMap {
      * correspond to the elements in the array returned by moduleNames().
      */
     static String[] classNames() {
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 }

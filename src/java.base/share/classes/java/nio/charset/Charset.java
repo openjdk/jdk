@@ -309,8 +309,6 @@ public abstract class Charset
     private static final CharsetProvider standardProvider
         = new sun.nio.cs.StandardCharsets();
 
-    private static final String[] zeroAliases = new String[0];
-
     // Cache of the most-recently-returned charsets,
     // along with the names that were used to find them
     //
@@ -642,7 +640,7 @@ public abstract class Charset
      *         If the canonical name or any of the aliases are illegal
      */
     protected Charset(String canonicalName, String[] aliases) {
-        String[] as = Objects.requireNonNullElse(aliases, zeroAliases);
+        String[] as = Objects.requireNonNullElse(aliases, Arrays.EMPTY_ARRAY_STRING);
 
         // Skip checks for the standard, built-in Charsets we always load
         // during initialization.

@@ -598,7 +598,7 @@ class Inet6Address extends InetAddress {
         }
 
         ObjectInputStream.GetField gf = s.readFields();
-        byte[] ipaddress = (byte[])gf.get("ipaddress", new byte[0]);
+        byte[] ipaddress = (byte[])gf.get("ipaddress", Arrays.EMPTY_ARRAY_BYTE);
         int scope_id = gf.get("scope_id", -1);
         boolean scope_id_set = gf.get("scope_id_set", false);
         boolean scope_ifname_set = gf.get("scope_ifname_set", false);

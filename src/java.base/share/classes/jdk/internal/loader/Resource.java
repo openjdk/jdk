@@ -106,7 +106,7 @@ public abstract class Resource {
         }
 
         try {
-            b = new byte[0];
+            b = Arrays.EMPTY_ARRAY_BYTE;
             if (len == -1) len = Integer.MAX_VALUE;
             int pos = 0;
             while (pos < len) {

@@ -31,6 +31,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -148,7 +149,7 @@ final class HKDF {
         }
         hmacObj.init(pseudoRandKey);
         if (info == null) {
-            info = new byte[0];
+            info = Arrays.EMPTY_ARRAY_BYTE;
         }
         int rounds = (outLen + hmacLen - 1) / hmacLen;
         kdfOutput = new byte[rounds * hmacLen];

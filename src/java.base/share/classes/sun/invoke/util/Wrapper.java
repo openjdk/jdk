@@ -25,19 +25,21 @@
 
 package sun.invoke.util;
 
+import java.util.Arrays;
+
 public enum Wrapper {
     //        wrapperType      simple     primitiveType  simple     char  emptyArray     format
-    BOOLEAN(  Boolean.class,   "Boolean", boolean.class, "boolean", 'Z', new boolean[0], Format.unsigned( 1)),
+    BOOLEAN(  Boolean.class,   "Boolean", boolean.class, "boolean", 'Z', Arrays.EMPTY_ARRAY_BOOLEAN, Format.unsigned( 1)),
     // These must be in the order defined for widening primitive conversions in JLS 5.1.2
     // Avoid boxing integral types here to defer initialization of internal caches
-    BYTE   (     Byte.class,      "Byte",    byte.class,    "byte", 'B', new    byte[0], Format.signed(   8)),
-    SHORT  (    Short.class,     "Short",   short.class,   "short", 'S', new   short[0], Format.signed(  16)),
-    CHAR   (Character.class, "Character",    char.class,    "char", 'C', new    char[0], Format.unsigned(16)),
-    INT    (  Integer.class,   "Integer",     int.class,     "int", 'I', new     int[0], Format.signed(  32)),
-    LONG   (     Long.class,      "Long",    long.class,    "long", 'J', new    long[0], Format.signed(  64)),
-    FLOAT  (    Float.class,     "Float",   float.class,   "float", 'F', new   float[0], Format.floating(32)),
-    DOUBLE (   Double.class,    "Double",  double.class,  "double", 'D', new  double[0], Format.floating(64)),
-    OBJECT (   Object.class,    "Object",  Object.class,  "Object", 'L', new  Object[0], Format.other(    1)),
+    BYTE   (     Byte.class,      "Byte",    byte.class,    "byte", 'B', Arrays.EMPTY_ARRAY_BYTE, Format.signed(   8)),
+    SHORT  (    Short.class,     "Short",   short.class,   "short", 'S', Arrays.EMPTY_ARRAY_SHORT, Format.signed(  16)),
+    CHAR   (Character.class, "Character",    char.class,    "char", 'C', Arrays.EMPTY_ARRAY_CHAR, Format.unsigned(16)),
+    INT    (  Integer.class,   "Integer",     int.class,     "int", 'I', Arrays.EMPTY_ARRAY_INT, Format.signed(  32)),
+    LONG   (     Long.class,      "Long",    long.class,    "long", 'J', Arrays.EMPTY_ARRAY_LONG, Format.signed(  64)),
+    FLOAT  (    Float.class,     "Float",   float.class,   "float", 'F', Arrays.EMPTY_ARRAY_FLOAT, Format.floating(32)),
+    DOUBLE (   Double.class,    "Double",  double.class,  "double", 'D', Arrays.EMPTY_ARRAY_DOUBLE, Format.floating(64)),
+    OBJECT (   Object.class,    "Object",  Object.class,  "Object", 'L', Arrays.EMPTY_ARRAY_OBJECT, Format.other(    1)),
     // VOID must be the last type, since it is "assignable" from any other type:
     VOID   (     Void.class,      "Void",    void.class,    "void", 'V',           null, Format.other(    0)),
     ;

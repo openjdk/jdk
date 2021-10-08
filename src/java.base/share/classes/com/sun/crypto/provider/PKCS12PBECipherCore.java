@@ -77,7 +77,7 @@ final class PKCS12PBECipherCore {
         // no terminator if password is "\0".
         int length = chars.length*2;
         if (length == 2 && chars[0] == 0) {
-            chars = new char[0];
+            chars = Arrays.EMPTY_ARRAY_CHAR;
             length = 0;
         } else {
             length += 2;

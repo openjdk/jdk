@@ -100,7 +100,7 @@ final class BootstrapMethodInvoker {
                 if (isStringConcatFactoryBSM(bootstrapMethod.type())) {
                     result = (CallSite)bootstrapMethod
                             .invokeExact(caller, name, (MethodType)type,
-                                         (String)info, new Object[0]);
+                                         (String)info, Arrays.EMPTY_ARRAY_OBJECT);
                 } else {
                     info = maybeReBox(info);
                     if (type instanceof Class<?> c) {

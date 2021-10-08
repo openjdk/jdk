@@ -27,6 +27,7 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Enumeration;
 
 import sun.security.util.*;
@@ -179,7 +180,7 @@ implements CertAttrSet<String> {
     public KeyUsageExtension() {
         extensionId = PKIXExtensions.KeyUsage_Id;
         critical = true;
-        bitString = new boolean[0];
+        bitString = Arrays.EMPTY_ARRAY_BOOLEAN;
     }
 
     /**

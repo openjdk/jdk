@@ -90,7 +90,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     // max data size for x86-64 intrinsic
     private static final int SPLIT_LEN = 1048576;  // 1MB
 
-    static final byte[] EMPTY_BUF = new byte[0];
+    static final byte[] EMPTY_BUF = Arrays.EMPTY_ARRAY_BYTE;
 
     private boolean initialized = false;
 
@@ -1401,7 +1401,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             } catch (ShortBufferException e) {
                 // update decryption has no output
             }
-            return new byte[0];
+            return Arrays.EMPTY_ARRAY_BYTE;
         }
 
         // Put the input data into the ibuffer

@@ -59,6 +59,7 @@
 package jdk.internal.org.objectweb.asm.tree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
@@ -673,7 +674,7 @@ public class MethodNode extends MethodVisitor {
       * @param classVisitor a class visitor.
       */
     public void accept(final ClassVisitor classVisitor) {
-        String[] exceptionsArray = exceptions == null ? null : exceptions.toArray(new String[0]);
+        String[] exceptionsArray = exceptions == null ? null : exceptions.toArray(Arrays.EMPTY_ARRAY_STRING);
         MethodVisitor methodVisitor =
                 classVisitor.visitMethod(access, name, desc, signature, exceptionsArray);
         if (methodVisitor != null) {

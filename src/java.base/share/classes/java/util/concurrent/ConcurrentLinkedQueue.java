@@ -646,7 +646,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
                     continue restartFromHead;
             }
             if (x == null)
-                return new Object[0];
+                return Arrays.EMPTY_ARRAY_OBJECT;
             else if (a != null && size <= a.length) {
                 if (a != x)
                     System.arraycopy(x, 0, a, 0, size);

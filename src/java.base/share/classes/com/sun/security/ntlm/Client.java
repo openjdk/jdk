@@ -157,7 +157,7 @@ public final class Client extends NTLM {
                 // Some client create a alist even if server does not send
                 // one: (i16)2 (i16)len target_in_unicode (i16)0 (i16) 0
                 byte[] alist = ((inputFlags & 0x800000) != 0) ?
-                    r.readSecurityBuffer(40) : new byte[0];
+                    r.readSecurityBuffer(40) : Arrays.EMPTY_ARRAY_BYTE;
                 byte[] blob = new byte[32+alist.length];
                 System.arraycopy(new byte[]{1,1,0,0,0,0,0,0}, 0, blob, 0, 8);
                 // TS
@@ -179,7 +179,7 @@ public final class Client extends NTLM {
         }
         p.writeSecurityBuffer(12, lm);
         p.writeSecurityBuffer(20, ntlm);
-        p.writeSecurityBuffer(52, new byte[0]);
+        p.writeSecurityBuffer(52, Arrays.EMPTY_ARRAY_BYTE);
 
         p.writeInt(60, flags);
         debug("NTLM Client: Type 3 created\n");

@@ -26,6 +26,7 @@
 package javax.net.ssl;
 
 import java.security.AlgorithmConstraints;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
@@ -87,7 +88,7 @@ public class SSLParameters {
     private boolean preferLocalCipherSuites;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
-    private String[] applicationProtocols = new String[0];
+    private String[] applicationProtocols = Arrays.EMPTY_ARRAY_STRING;
 
     /**
      * Constructs SSLParameters.

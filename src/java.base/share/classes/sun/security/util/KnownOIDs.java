@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -494,7 +495,7 @@ public enum KnownOIDs {
     private KnownOIDs(String oid) {
         this.oid = oid;
         this.stdName = name(); // defaults to enum name
-        this.aliases = new String[0];
+        this.aliases = Arrays.EMPTY_ARRAY_STRING;
     }
 
     private KnownOIDs(String oid, String stdName, String ... aliases) {

@@ -25,8 +25,10 @@
 
 package sun.security.ssl;
 
+import java.util.Arrays;
+
 interface SSLPossession {
     default byte[] encode() {
-        return new byte[0];
+        return Arrays.EMPTY_ARRAY_BYTE;
     }
 }

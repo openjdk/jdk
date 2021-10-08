@@ -1321,7 +1321,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
         }
 
-        return v.toArray(new String[0]);
+        return v.toArray(Arrays.EMPTY_ARRAY_STRING);
     }
 
     /**

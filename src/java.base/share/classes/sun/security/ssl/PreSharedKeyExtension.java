@@ -789,7 +789,7 @@ final class PreSharedKeyExtension {
             HKDF hkdf = new HKDF(hashAlg.name);
             byte[] label = ("tls13 finished").getBytes();
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
-                    label, new byte[0], hashAlg.hashLength);
+                    label, Arrays.EMPTY_ARRAY_BYTE, hashAlg.hashLength);
             SecretKey finishedKey = hkdf.expand(
                     binderKey, hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
 
@@ -818,7 +818,7 @@ final class PreSharedKeyExtension {
             byte[] label = ("tls13 res binder").getBytes();
             MessageDigest md = MessageDigest.getInstance(hashAlg.name);
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
-                    label, md.digest(new byte[0]), hashAlg.hashLength);
+                    label, md.digest(Arrays.EMPTY_ARRAY_BYTE), hashAlg.hashLength);
             return hkdf.expand(earlySecret,
                     hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
         } catch (GeneralSecurityException ex) {

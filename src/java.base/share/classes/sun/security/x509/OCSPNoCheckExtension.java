@@ -27,6 +27,7 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Enumeration;
 
 import sun.security.util.*;
@@ -71,7 +72,7 @@ public class OCSPNoCheckExtension extends Extension
     public OCSPNoCheckExtension() throws IOException {
         this.extensionId = PKIXExtensions.OCSPNoCheck_Id;
         this.critical = false;
-        this.extensionValue = new byte[0];
+        this.extensionValue = Arrays.EMPTY_ARRAY_BYTE;
     }
 
     /**
@@ -88,7 +89,7 @@ public class OCSPNoCheckExtension extends Extension
         this.critical = critical.booleanValue();
 
         // the value should be null, just ignore it here.
-        this.extensionValue = new byte[0];
+        this.extensionValue = Arrays.EMPTY_ARRAY_BYTE;
     }
 
     /**

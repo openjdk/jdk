@@ -1011,7 +1011,7 @@ public class IdentityHashMap<K,V>
             return result;
         }
         public Object[] toArray() {
-            return toArray(new Object[0]);
+            return toArray(Arrays.EMPTY_ARRAY_OBJECT);
         }
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
@@ -1099,7 +1099,7 @@ public class IdentityHashMap<K,V>
             IdentityHashMap.this.clear();
         }
         public Object[] toArray() {
-            return toArray(new Object[0]);
+            return toArray(Arrays.EMPTY_ARRAY_OBJECT);
         }
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
@@ -1216,7 +1216,7 @@ public class IdentityHashMap<K,V>
         }
 
         public Object[] toArray() {
-            return toArray(new Object[0]);
+            return toArray(Arrays.EMPTY_ARRAY_OBJECT);
         }
 
         @SuppressWarnings("unchecked")

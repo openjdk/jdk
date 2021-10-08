@@ -32,6 +32,7 @@ import java.net.ServerSocket;
 import java.net.SocketException;
 import javax.net.ServerSocketFactory;
 import java.security.*;
+import java.util.Arrays;
 
 /**
  * <code>SSLServerSocketFactory</code>s create
@@ -207,11 +208,11 @@ class DefaultSSLServerSocketFactory extends SSLServerSocketFactory {
 
     @Override
     public String [] getDefaultCipherSuites() {
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 
     @Override
     public String [] getSupportedCipherSuites() {
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 }

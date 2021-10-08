@@ -2084,7 +2084,7 @@ public final class Locale implements Cloneable, Serializable {
         // Others are qualifiers
         int numNames = names.size();
         qualifierNames = (numNames > 1) ?
-                names.subList(1, numNames).toArray(new String[numNames - 1]) : new String[0];
+                names.subList(1, numNames).toArray(new String[numNames - 1]) : Arrays.EMPTY_ARRAY_STRING;
 
         // Create an array whose first element is the number of remaining
         // elements.  This serves as a selector into a ChoiceFormat pattern from

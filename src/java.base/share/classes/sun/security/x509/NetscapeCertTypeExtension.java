@@ -194,7 +194,7 @@ implements CertAttrSet<String> {
     public NetscapeCertTypeExtension() {
         extensionId = NetscapeCertType_Id;
         critical = true;
-        bitString = new boolean[0];
+        bitString = Arrays.EMPTY_ARRAY_BOOLEAN;
     }
 
     /**

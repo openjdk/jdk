@@ -31,6 +31,7 @@ import javax.net.SocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
+import java.util.Arrays;
 import java.util.Locale;
 
 import sun.security.action.GetPropertyAction;
@@ -314,11 +315,11 @@ class DefaultSSLSocketFactory extends SSLSocketFactory
 
     @Override
     public String [] getDefaultCipherSuites() {
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 
     @Override
     public String [] getSupportedCipherSuites() {
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 }

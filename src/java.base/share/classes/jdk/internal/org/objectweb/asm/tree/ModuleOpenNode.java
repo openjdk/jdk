@@ -58,6 +58,7 @@
  */
 package jdk.internal.org.objectweb.asm.tree;
 
+import java.util.Arrays;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.ModuleVisitor;
 
@@ -105,6 +106,6 @@ public class ModuleOpenNode {
       */
     public void accept(final ModuleVisitor moduleVisitor) {
         moduleVisitor.visitOpen(
-                packaze, access, modules == null ? null : modules.toArray(new String[0]));
+                packaze, access, modules == null ? null : modules.toArray(Arrays.EMPTY_ARRAY_STRING));
     }
 }

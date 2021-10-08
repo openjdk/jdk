@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -98,7 +99,6 @@ final class TransportContext implements ConnectionContext {
     List<NamedGroup>                serverRequestedNamedGroups;
 
     CipherSuite cipherSuite;
-    private static final byte[] emptyByteArray = new byte[0];
 
     // Please never use the transport parameter other than storing a
     // reference to this object.
@@ -150,8 +150,8 @@ final class TransportContext implements ConnectionContext {
         // initial security parameters
         this.conSession = new SSLSessionImpl();
         this.protocolVersion = this.sslConfig.maximumProtocolVersion;
-        this.clientVerifyData = emptyByteArray;
-        this.serverVerifyData = emptyByteArray;
+        this.clientVerifyData = Arrays.EMPTY_ARRAY_BYTE;
+        this.serverVerifyData = Arrays.EMPTY_ARRAY_BYTE;
 
         this.acc = AccessController.getContext();
         this.consumers = new HashMap<>();

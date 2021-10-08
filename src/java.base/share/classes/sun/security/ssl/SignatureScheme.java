@@ -557,10 +557,10 @@ enum SignatureScheme {
                 names.add(scheme.algorithm);
             }
 
-            return names.toArray(new String[0]);
+            return names.toArray(Arrays.EMPTY_ARRAY_STRING);
         }
 
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 
     // This method is used to get the signature instance of this signature

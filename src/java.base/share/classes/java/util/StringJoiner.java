@@ -66,7 +66,6 @@ import jdk.internal.access.SharedSecrets;
  * @since  1.8
 */
 public final class StringJoiner {
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private final String prefix;
     private final String delimiter;
@@ -169,7 +168,7 @@ public final class StringJoiner {
             if (emptyValue != null) {
                 return emptyValue;
             }
-            elts = EMPTY_STRING_ARRAY;
+            elts = Arrays.EMPTY_ARRAY_STRING;
         }
         return JLA.join(prefix, suffix, delimiter, elts, size);
     }

@@ -29,6 +29,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -282,7 +283,7 @@ public interface InvocationHandler {
         try {
             // the args array can be null if the number of formal parameters required by
             // the method is zero (consistent with Method::invoke)
-            Object[] params = args != null ? args : Proxy.EMPTY_ARGS;
+            Object[] params = args != null ? args : Arrays.EMPTY_ARRAY_OBJECT;
             return mh.invokeExact(proxy, params);
         } catch (ClassCastException | NullPointerException e) {
             throw new IllegalArgumentException(e.getMessage(), e);

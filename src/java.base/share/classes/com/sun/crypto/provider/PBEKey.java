@@ -61,7 +61,7 @@ final class PBEKey implements SecretKey {
         char[] passwd = keySpec.getPassword();
         if (passwd == null) {
             // Should allow an empty password.
-            passwd = new char[0];
+            passwd = Arrays.EMPTY_ARRAY_CHAR;
         }
         // Accept "\0" to signify "zero-length password with no terminator".
         if (!(passwd.length == 1 && passwd[0] == 0)) {

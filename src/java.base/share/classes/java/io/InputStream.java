@@ -117,7 +117,7 @@ public abstract class InputStream implements Closeable {
             @Override
             public byte[] readAllBytes() throws IOException {
                 ensureOpen();
-                return new byte[0];
+                return Arrays.EMPTY_ARRAY_BYTE;
             }
 
             @Override
@@ -134,7 +134,7 @@ public abstract class InputStream implements Closeable {
                     throw new IllegalArgumentException("len < 0");
                 }
                 ensureOpen();
-                return new byte[0];
+                return Arrays.EMPTY_ARRAY_BYTE;
             }
 
             @Override
@@ -436,7 +436,7 @@ public abstract class InputStream implements Closeable {
 
         if (bufs == null) {
             if (result == null) {
-                return new byte[0];
+                return Arrays.EMPTY_ARRAY_BYTE;
             }
             return result.length == total ?
                 result : Arrays.copyOf(result, total);

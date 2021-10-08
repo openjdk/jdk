@@ -1284,7 +1284,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @since   1.2
      */
-    public static final BigInteger ZERO = new BigInteger(new int[0], 0);
+    public static final BigInteger ZERO = new BigInteger(Arrays.EMPTY_ARRAY_INT, 0);
 
     /**
      * The BigInteger constant one.

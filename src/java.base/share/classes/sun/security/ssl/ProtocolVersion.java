@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.security.CryptoPrimitive;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -256,7 +257,7 @@ enum ProtocolVersion {
             return protocolNames;
         }
 
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 
     /**
@@ -273,7 +274,7 @@ enum ProtocolVersion {
             return protocolNames;
         }
 
-        return new String[0];
+        return Arrays.EMPTY_ARRAY_STRING;
     }
 
     /**

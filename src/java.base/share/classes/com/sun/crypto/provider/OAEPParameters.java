@@ -34,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
+import java.util.Arrays;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.OAEPParameterSpec;
 
@@ -131,7 +132,7 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             }
             p = DerValue.wrap(val.getEncodedParams()).getOctetString();
         } else {
-            p = new byte[0];
+            p = Arrays.EMPTY_ARRAY_BYTE;
         }
         der.atEnd();
     }

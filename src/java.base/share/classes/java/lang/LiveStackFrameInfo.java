@@ -24,8 +24,9 @@
  */
 package java.lang;
 
+import java.util.Arrays;
+
 final class LiveStackFrameInfo extends StackFrameInfo implements LiveStackFrame {
-    private static Object[] EMPTY_ARRAY = new Object[0];
 
     // These flags must match the values maintained in the VM
     private static final int MODE_INTERPRETED = 0x01;
@@ -36,9 +37,9 @@ final class LiveStackFrameInfo extends StackFrameInfo implements LiveStackFrame 
     }
 
     // These fields are initialized by the VM if ExtendedOption.LOCALS_AND_OPERANDS is set
-    private Object[] monitors = EMPTY_ARRAY;
-    private Object[] locals = EMPTY_ARRAY;
-    private Object[] operands = EMPTY_ARRAY;
+    private Object[] monitors = Arrays.EMPTY_ARRAY_OBJECT;
+    private Object[] locals = Arrays.EMPTY_ARRAY_OBJECT;
+    private Object[] operands = Arrays.EMPTY_ARRAY_OBJECT;
     private int mode = 0;
 
     @Override

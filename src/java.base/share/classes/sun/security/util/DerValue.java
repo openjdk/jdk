@@ -568,7 +568,7 @@ public class DerValue {
         // Note: do not attempt to call buffer.read(bytes) at all. There's a
         // known bug that it returns -1 instead of 0.
         if (end - start == 0) {
-            return new byte[0];
+            return Arrays.EMPTY_ARRAY_BYTE;
         }
 
         data.pos = data.end; // Compatibility. Reach end.

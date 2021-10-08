@@ -34,6 +34,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import javax.net.ssl.SSLProtocolException;
@@ -671,7 +672,7 @@ final class CertStatusExtension {
 
             // The "extension_data" in the extended ServerHello handshake
             // message MUST be empty.
-            byte[] extData = new byte[0];
+            byte[] extData = Arrays.EMPTY_ARRAY_BYTE;
 
             // Update the context.
             shc.handshakeExtensions.put(SSLExtension.SH_STATUS_REQUEST,
@@ -1031,7 +1032,7 @@ final class CertStatusExtension {
 
             // The "extension_data" in the extended ServerHello handshake
             // message MUST be empty.
-            byte[] extData = new byte[0];
+            byte[] extData = Arrays.EMPTY_ARRAY_BYTE;
 
             // Update the context.
             shc.handshakeExtensions.put(SSLExtension.SH_STATUS_REQUEST_V2,

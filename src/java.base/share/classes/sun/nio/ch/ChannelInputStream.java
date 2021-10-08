@@ -165,7 +165,7 @@ public class ChannelInputStream
         if (len < 0)
             throw new IllegalArgumentException("len < 0");
         if (len == 0)
-            return new byte[0];
+            return Arrays.EMPTY_ARRAY_BYTE;
 
         if (!(ch instanceof SeekableByteChannel sbc))
             return super.readNBytes(len);

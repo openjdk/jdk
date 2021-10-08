@@ -299,7 +299,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     public byte[] toByteArray() {
         int n = wordsInUse;
         if (n == 0)
-            return new byte[0];
+            return Arrays.EMPTY_ARRAY_BYTE;
         int len = 8 * (n-1);
         for (long x = words[n - 1]; x != 0; x >>>= 8)
             len++;

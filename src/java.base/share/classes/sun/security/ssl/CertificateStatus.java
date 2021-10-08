@@ -28,6 +28,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -122,7 +123,7 @@ final class CertificateStatus {
                     // A not-found return status means we should include
                     // a zero-length response in CertificateStatus.
                     // This is highly unlikely to happen in practice.
-                    resp = new byte[0];
+                    resp = Arrays.EMPTY_ARRAY_BYTE;
                 }
                 encodedResponses.add(resp);
                 encodedLen += resp.length + 3;
@@ -130,7 +131,7 @@ final class CertificateStatus {
                 for (X509Certificate cert : certChain) {
                     byte[] resp = stapleParams.responseMap.get(cert);
                     if (resp == null) {
-                        resp = new byte[0];
+                        resp = Arrays.EMPTY_ARRAY_BYTE;
                     }
                     encodedResponses.add(resp);
                     encodedLen += resp.length + 3;

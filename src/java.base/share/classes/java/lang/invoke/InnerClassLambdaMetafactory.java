@@ -41,6 +41,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.PropertyPermission;
@@ -83,8 +84,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     private static final String DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION = "(Ljava/lang/String;)V";
     private static final String[] SER_HOSTILE_EXCEPTIONS = new String[] {NAME_NOT_SERIALIZABLE_EXCEPTION};
-
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     // Used to ensure that each spun class name is unique
     private static final AtomicInteger counter = new AtomicInteger();
@@ -200,7 +199,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 argDescs[i] = BytecodeDescriptor.unparse(factoryType.parameterType(i));
             }
         } else {
-            argNames = argDescs = EMPTY_STRING_ARRAY;
+            argNames = argDescs = Arrays.EMPTY_ARRAY_STRING;
         }
     }
 

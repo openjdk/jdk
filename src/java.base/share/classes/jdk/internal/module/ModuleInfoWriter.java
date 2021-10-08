@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.module.ModuleDescriptor;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -71,8 +72,6 @@ public final class ModuleInfoWriter {
             ModuleDescriptor.Opens.Modifier.MANDATED, ACC_MANDATED
         );
 
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
-
     private ModuleInfoWriter() { }
 
     /**
@@ -105,7 +104,7 @@ public final class ModuleInfoWriter {
             int flags = e.modifiers().stream()
                     .map(EXPORTS_MODS_TO_FLAGS::get)
                     .reduce(0, (x, y) -> (x | y));
-            String[] targets = e.targets().toArray(EMPTY_STRING_ARRAY);
+            String[] targets = e.targets().toArray(Arrays.EMPTY_ARRAY_STRING);
             mv.visitExport(e.source().replace('.', '/'), flags, targets);
         }
 
@@ -114,7 +113,7 @@ public final class ModuleInfoWriter {
             int flags = opens.modifiers().stream()
                     .map(OPENS_MODS_TO_FLAGS::get)
                     .reduce(0, (x, y) -> (x | y));
-            String[] targets = opens.targets().toArray(EMPTY_STRING_ARRAY);
+            String[] targets = opens.targets().toArray(Arrays.EMPTY_ARRAY_STRING);
             mv.visitOpen(opens.source().replace('.', '/'), flags, targets);
         }
 

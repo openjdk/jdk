@@ -25,6 +25,8 @@
 
 package javax.crypto.spec;
 
+import java.util.Arrays;
+
 /**
  * This class specifies the source for encoding input P in OAEP Padding,
  * as defined in the
@@ -82,12 +84,12 @@ public class PSource {
      */
     public static final class PSpecified extends PSource {
 
-        private byte[] p = new byte[0];
+        private byte[] p = Arrays.EMPTY_ARRAY_BYTE;
 
         /**
          * The encoding input P whose value equals byte[0].
          */
-        public static final PSpecified DEFAULT = new PSpecified(new byte[0]);
+        public static final PSpecified DEFAULT = new PSpecified(Arrays.EMPTY_ARRAY_BYTE);
 
         /**
          * Constructs the source explicitly with the specified

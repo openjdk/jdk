@@ -4443,7 +4443,7 @@ public class Collections {
         public boolean contains(Object obj) {return false;}
         public boolean containsAll(Collection<?> c) { return c.isEmpty(); }
 
-        public Object[] toArray() { return new Object[0]; }
+        public Object[] toArray() { return Arrays.EMPTY_ARRAY_OBJECT; }
 
         public <T> T[] toArray(T[] a) {
             if (a.length > 0)
@@ -4574,7 +4574,7 @@ public class Collections {
         public boolean contains(Object obj) {return false;}
         public boolean containsAll(Collection<?> c) { return c.isEmpty(); }
 
-        public Object[] toArray() { return new Object[0]; }
+        public Object[] toArray() { return Arrays.EMPTY_ARRAY_OBJECT; }
 
         public <T> T[] toArray(T[] a) {
             if (a.length > 0)

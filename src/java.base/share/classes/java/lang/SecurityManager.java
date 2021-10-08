@@ -40,6 +40,7 @@ import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.security.Security;
 import java.security.SecurityPermission;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -1224,7 +1225,7 @@ public class SecurityManager {
         }
 
         if (packages == null) {
-            packages = new String[0];
+            packages = Arrays.EMPTY_ARRAY_STRING;
         }
         return packages;
     }

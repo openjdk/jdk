@@ -1135,7 +1135,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final JavaUtilJarAccess JUJA = SharedSecrets.javaUtilJarAccess();
         // "META-INF/".length()
         private static final int META_INF_LEN = 9;
-        private static final int[] EMPTY_META_VERSIONS = new int[0];
+        private static final int[] EMPTY_META_VERSIONS = Arrays.EMPTY_ARRAY_INT;
 
         private final Key key;               // the key in files
         private final @Stable ZipCoder zc;   // zip coder used to decode/encode
@@ -1483,7 +1483,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (end.endpos == 0) {
                     locpos = 0;
                     total = 0;
-                    entries = new int[0];
+                    entries = Arrays.EMPTY_ARRAY_INT;
                     this.cen = null;
                     return;         // only END header present
                 }

@@ -32,6 +32,7 @@ import java.lang.StackWalker.StackFrame;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -441,7 +442,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
         static {
             String additionalPkgs =
                     GetPropertyAction.privilegedGetProperty("jdk.logger.packages");
-            skips = additionalPkgs == null ? new String[0] : additionalPkgs.split(",");
+            skips = additionalPkgs == null ? Arrays.EMPTY_ARRAY_STRING : additionalPkgs.split(",");
         }
 
         static boolean isFilteredFrame(StackFrame st) {

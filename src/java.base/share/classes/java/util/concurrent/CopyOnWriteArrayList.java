@@ -123,7 +123,7 @@ public class CopyOnWriteArrayList<E>
      * Creates an empty list.
      */
     public CopyOnWriteArrayList() {
-        setArray(new Object[0]);
+        setArray(Arrays.EMPTY_ARRAY_OBJECT);
     }
 
     /**
@@ -720,7 +720,7 @@ public class CopyOnWriteArrayList<E>
      */
     public void clear() {
         synchronized (lock) {
-            setArray(new Object[0]);
+            setArray(Arrays.EMPTY_ARRAY_OBJECT);
         }
     }
 

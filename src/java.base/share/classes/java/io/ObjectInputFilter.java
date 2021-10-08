@@ -34,6 +34,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -658,7 +659,7 @@ public interface ObjectInputFilter {
                     @SuppressWarnings("unchecked")
                     BinaryOperator<ObjectInputFilter> factory =
                             (BinaryOperator<ObjectInputFilter>)
-                            factoryClass.getConstructor().newInstance(new Object[0]);
+                            factoryClass.getConstructor().newInstance(Arrays.EMPTY_ARRAY_OBJECT);
                     configLog.log(DEBUG,
                             "Creating deserialization filter factory for {0}", factoryClassName);
                     serialFilterFactory = factory;

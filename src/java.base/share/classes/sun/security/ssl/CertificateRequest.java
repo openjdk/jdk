@@ -31,6 +31,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -143,7 +144,7 @@ final class CertificateRequest {
                 }
             }
 
-            return keyTypes.toArray(new String[0]);
+            return keyTypes.toArray(Arrays.EMPTY_ARRAY_STRING);
         }
     }
 
@@ -790,7 +791,7 @@ final class CertificateRequest {
                 HandshakeContext handshakeContext) throws IOException {
             super(handshakeContext);
 
-            this.requestContext = new byte[0];
+            this.requestContext = Arrays.EMPTY_ARRAY_BYTE;
             this.extensions = new SSLExtensions(this);
         }
 

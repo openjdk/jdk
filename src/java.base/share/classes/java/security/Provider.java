@@ -147,8 +147,6 @@ public abstract class Provider extends Properties {
 
     private transient boolean initialized;
 
-    private static final Object[] EMPTY = new Object[0];
-
     private static double parseVersionStr(String s) {
         try {
             int firstDotIdx = s.indexOf('.');
@@ -1876,7 +1874,7 @@ public abstract class Provider extends Properties {
 
         private Object newInstanceOf() throws Exception {
             Constructor<?> con = getDefaultConstructor();
-            return con.newInstance(EMPTY);
+            return con.newInstance(Arrays.EMPTY_ARRAY_OBJECT);
         }
 
         private Object newInstanceUtil(Class<?> ctrParamClz, Object ctorParamObj)

@@ -46,6 +46,7 @@ import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
 
 /**
@@ -231,7 +232,7 @@ final class SessionTicketExtension {
     static final class SessionTicketSpec implements SSLExtensionSpec {
         private static final int GCM_TAG_LEN = 128;
         ByteBuffer data;
-        static final ByteBuffer zero = ByteBuffer.wrap(new byte[0]);
+        static final ByteBuffer zero = ByteBuffer.wrap(Arrays.EMPTY_ARRAY_BYTE);
 
         SessionTicketSpec() {
             data = zero;
@@ -262,7 +263,7 @@ final class SessionTicketExtension {
 
             if (!hc.statelessResumption ||
                     !hc.handshakeSession.isStatelessable()) {
-                return new byte[0];
+                return Arrays.EMPTY_ARRAY_BYTE;
             }
 
             try {
@@ -299,7 +300,7 @@ final class SessionTicketExtension {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Encryption failed." + e);
                 }
-                return new byte[0];
+                return Arrays.EMPTY_ARRAY_BYTE;
             }
         }
 
@@ -498,7 +499,7 @@ final class SessionTicketExtension {
             SSLSessionContextImpl cache = (SSLSessionContextImpl)shc.sslContext
                     .engineGetServerSessionContext();
             if (cache.statelessEnabled()) {
-                return new byte[0];
+                return Arrays.EMPTY_ARRAY_BYTE;
             }
 
             shc.statelessResumption = false;

@@ -3442,7 +3442,7 @@ public class BidiBase {
     void setPara(String text, byte paraLevel, byte[] embeddingLevels)
     {
         if (text == null) {
-            setPara(new char[0], paraLevel, embeddingLevels);
+            setPara(Arrays.EMPTY_ARRAY_CHAR, paraLevel, embeddingLevels);
         } else {
             setPara(text.toCharArray(), paraLevel, embeddingLevels);
         }
@@ -3530,7 +3530,7 @@ public class BidiBase {
             verifyRange(paraLevel, 0, MAX_EXPLICIT_LEVEL + 1);
         }
         if (chars == null) {
-            chars = new char[0];
+            chars = Arrays.EMPTY_ARRAY_CHAR;
         }
 
         /* special treatment for RUNS_ONLY mode */
@@ -3550,8 +3550,8 @@ public class BidiBase {
         /* Allocate zero-length arrays instead of setting to null here; then
          * checks for null in various places can be eliminated.
          */
-        dirProps = new byte[0];
-        levels = new byte[0];
+        dirProps = Arrays.EMPTY_ARRAY_BYTE;
+        levels = Arrays.EMPTY_ARRAY_BYTE;
         runs = new BidiRun[0];
         isGoodLogicalToVisualRunsMap = false;
         insertPoints.size = 0;          /* clean up from last call */
@@ -4069,7 +4069,7 @@ public class BidiBase {
     {
         verifyValidParaOrLine();
         if (length <= 0) {
-            return new byte[0];
+            return Arrays.EMPTY_ARRAY_BYTE;
         }
         return BidiLine.getLevels(this);
     }
@@ -4204,7 +4204,7 @@ public class BidiBase {
         /* countRuns() checks successful call to setPara/setLine */
         countRuns();
         if (resultLength <= 0) {
-            return new int[0];
+            return Arrays.EMPTY_ARRAY_INT;
         }
         return BidiLine.getVisualMap(this);
     }

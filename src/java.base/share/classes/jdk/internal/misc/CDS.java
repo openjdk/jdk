@@ -298,7 +298,7 @@ public class CDS {
                 }
             }
 
-            Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]));
+            Process proc = Runtime.getRuntime().exec(cmds.toArray(Arrays.EMPTY_ARRAY_STRING));
 
             // Drain stdout/stderr to files in new threads.
             String stdOutFileName = drainOutput(proc.getInputStream(), proc.pid(), "stdout", cmds);

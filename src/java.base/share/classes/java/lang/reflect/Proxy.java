@@ -1169,8 +1169,6 @@ public class Proxy implements java.io.Serializable {
         return DEFAULT_METHODS_MAP.get(proxyClass);
     }
 
-    static final Object[] EMPTY_ARGS = new Object[0];
-
     static MethodHandle defaultMethodHandle(Class<? extends Proxy> proxyClass, Method method) {
         // lookup the cached method handle
         ConcurrentHashMap<Method, MethodHandle> methods = defaultMethodMap(proxyClass);

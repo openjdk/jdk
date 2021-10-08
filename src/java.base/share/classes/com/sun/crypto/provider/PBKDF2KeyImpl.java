@@ -91,7 +91,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
         char[] passwd = keySpec.getPassword();
         if (passwd == null) {
             // Should allow an empty password.
-            this.passwd = new char[0];
+            this.passwd = Arrays.EMPTY_ARRAY_CHAR;
         } else {
             this.passwd = passwd.clone();
         }

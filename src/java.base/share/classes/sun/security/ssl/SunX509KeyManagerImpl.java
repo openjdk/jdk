@@ -36,6 +36,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -80,8 +81,6 @@ import javax.security.auth.x500.X500Principal;
  *
  */
 final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
-
-    private static final String[] STRING0 = new String[0];
 
     /*
      * The credentials from the KeyStore as
@@ -269,7 +268,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
                 aliases = getServerAliases(keyType, issuers);
                 // Cache the result (positive and negative lookups)
                 if (aliases == null) {
-                    aliases = STRING0;
+                    aliases = Arrays.EMPTY_ARRAY_STRING;
                 }
                 serverAliasCache.put(keyType, aliases);
             }
@@ -402,7 +401,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
             }
         }
 
-        String[] aliasStrings = aliases.toArray(STRING0);
+        String[] aliasStrings = aliases.toArray(Arrays.EMPTY_ARRAY_STRING);
         return ((aliasStrings.length == 0) ? null : aliasStrings);
     }
 

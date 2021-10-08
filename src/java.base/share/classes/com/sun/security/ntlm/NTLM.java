@@ -169,7 +169,7 @@ class NTLM {
 
         byte[] readSecurityBuffer(int offset) throws NTLMException {
             int pos = readInt(offset+4);
-            if (pos == 0) return new byte[0];
+            if (pos == 0) return Arrays.EMPTY_ARRAY_BYTE;
             try {
                 return Arrays.copyOfRange(
                         internal, pos, pos + readShort(offset));

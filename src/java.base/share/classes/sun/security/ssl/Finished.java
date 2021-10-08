@@ -34,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -327,7 +328,7 @@ final class Finished {
     private static final
             class T13VerifyDataGenerator implements VerifyDataGenerator {
         private static final byte[] hkdfLabel = "tls13 finished".getBytes();
-        private static final byte[] hkdfContext = new byte[0];
+        private static final byte[] hkdfContext = Arrays.EMPTY_ARRAY_BYTE;
 
         @Override
         public byte[] createVerifyData(HandshakeContext context,

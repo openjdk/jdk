@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -459,7 +460,7 @@ final class ServerNameExtension {
             shc.handshakeExtensions.put(
                     SH_SERVER_NAME, SHServerNamesSpec.DEFAULT);
 
-            return (new byte[0]);   // the empty extension_data
+            return Arrays.EMPTY_ARRAY_BYTE;   // the empty extension_data
         }
     }
 
@@ -546,7 +547,7 @@ final class ServerNameExtension {
             shc.handshakeExtensions.put(
                     EE_SERVER_NAME, SHServerNamesSpec.DEFAULT);
 
-            return (new byte[0]);   // the empty extension_data
+            return Arrays.EMPTY_ARRAY_BYTE;   // the empty extension_data
         }
     }
 

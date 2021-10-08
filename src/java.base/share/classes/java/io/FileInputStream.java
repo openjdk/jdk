@@ -322,7 +322,7 @@ public class FileInputStream extends InputStream
         if (len < 0)
             throw new IllegalArgumentException("len < 0");
         if (len == 0)
-            return new byte[0];
+            return Arrays.EMPTY_ARRAY_BYTE;
 
         long length = length();
         long position = position();

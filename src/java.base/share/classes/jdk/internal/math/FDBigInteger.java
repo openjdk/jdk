@@ -146,7 +146,7 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
                 prev.makeImmutable();
                 i++;
             }
-            FDBigInteger zero = new FDBigInteger(new int[0], 0);
+            FDBigInteger zero = new FDBigInteger(Arrays.EMPTY_ARRAY_INT, 0);
             zero.makeImmutable();
             archivedCaches = caches = new Object[] {small5pow, long5pow, pow5cache, zero};
         }

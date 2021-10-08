@@ -201,7 +201,7 @@ public class StringSharingDecompressor implements ResourceDecompressor {
         byte[] content = resultStream.toByteArray();
         // first 2 items are length;
         if (content.length <= 2) {
-            return new byte[0];
+            return Arrays.EMPTY_ARRAY_BYTE;
         }
         return Arrays.copyOfRange(content, 2, content.length);
     }

@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
@@ -60,7 +61,7 @@ final class NewSessionTicket {
      */
     abstract static class NewSessionTicketMessage extends HandshakeMessage {
         int ticketLifetime;
-        byte[] ticket = new byte[0];
+        byte[] ticket = Arrays.EMPTY_ARRAY_BYTE;
 
         NewSessionTicketMessage(HandshakeContext context) {
             super(context);

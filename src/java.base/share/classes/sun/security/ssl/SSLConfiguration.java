@@ -30,6 +30,7 @@ import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -143,7 +144,7 @@ final class SSLConfiguration implements Cloneable {
         this.sniMatchers = Collections.emptyList();
         this.preferLocalCipherSuites = true;
 
-        this.applicationProtocols = new String[0];
+        this.applicationProtocols = Arrays.EMPTY_ARRAY_STRING;
         this.enableRetransmissions = sslContext.isDTLS();
         this.maximumPacketSize = 0;         // please reset it explicitly later
 

@@ -58,6 +58,7 @@
  */
 package jdk.internal.org.objectweb.asm.tree;
 
+import java.util.Arrays;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.ModuleVisitor;
 
@@ -92,6 +93,6 @@ public class ModuleProvideNode {
       * @param moduleVisitor a module visitor.
       */
     public void accept(final ModuleVisitor moduleVisitor) {
-        moduleVisitor.visitProvide(service, providers.toArray(new String[0]));
+        moduleVisitor.visitProvide(service, providers.toArray(Arrays.EMPTY_ARRAY_STRING));
     }
 }

@@ -28,6 +28,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_EXTENDED_MASTER_SECRET;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -129,7 +130,7 @@ final class ExtendedMasterSecretExtension {
 
             if (chc.handshakeSession == null ||
                     chc.handshakeSession.useExtendedMasterSecret) {
-                byte[] extData = new byte[0];
+                byte[] extData = Arrays.EMPTY_ARRAY_BYTE;
                 chc.handshakeExtensions.put(CH_EXTENDED_MASTER_SECRET,
                         ExtendedMasterSecretSpec.NOMINAL);
 
@@ -281,7 +282,7 @@ final class ExtendedMasterSecretExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             if (shc.handshakeSession.useExtendedMasterSecret) {
-                byte[] extData = new byte[0];
+                byte[] extData = Arrays.EMPTY_ARRAY_BYTE;
                 shc.handshakeExtensions.put(SH_EXTENDED_MASTER_SECRET,
                         ExtendedMasterSecretSpec.NOMINAL);
 
