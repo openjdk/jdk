@@ -1078,12 +1078,12 @@ void G1YoungCollector::collect() {
   // Young GC internal pause timing
   G1YoungGCNotifyPauseMark npm(this);
 
-  // Verification may use the gang workers, so they must be set up before.
+  // Verification may use the workers, so they must be set up before.
   // Individual parallel phases may override this.
   set_young_collection_default_active_worker_threads();
 
   // Wait for root region scan here to make sure that it is done before any
-  // use of the STW work gang to maximize cpu use (i.e. all cores are available
+  // use of the STW workers to maximize cpu use (i.e. all cores are available
   // just to do that).
   wait_for_root_region_scanning();
 

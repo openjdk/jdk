@@ -32,7 +32,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetFreeMemoryTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -138,7 +138,7 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
-void G1CollectedHeap::run_batch_task(G1BatchedGangTask* cl) {
+void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   uint num_workers = MAX2(1u, MIN2(cl->num_workers_estimate(), workers()->active_workers()));
   cl->set_max_workers(num_workers);
   workers()->run_task(cl, num_workers);

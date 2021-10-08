@@ -64,7 +64,7 @@
 // Forward declarations
 class G1Allocator;
 class G1ArchiveAllocator;
-class G1BatchedGangTask;
+class G1BatchedTask;
 class G1CardTableEntryClosure;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
@@ -540,8 +540,8 @@ public:
 
   WorkerThreads* workers() const { return _workers; }
 
-  // Run the given batch task using the work gang.
-  void run_batch_task(G1BatchedGangTask* cl);
+  // Run the given batch task using the workers.
+  void run_batch_task(G1BatchedTask* cl);
 
   G1Allocator* allocator() {
     return _allocator;

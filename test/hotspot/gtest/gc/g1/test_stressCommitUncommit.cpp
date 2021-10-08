@@ -32,23 +32,23 @@
 #include "unittest.hpp"
 
 class G1MapperWorkers : AllStatic {
-  static WorkerThreads* _work_gang;
-  static WorkerThreads* work_gang() {
-    if (_work_gang == NULL) {
-      _work_gang = new WorkerThreads("G1 Small Workers", MaxWorkers);
-      _work_gang->initialize_workers();
-      _work_gang->set_active_workers(MaxWorkers);
+  static WorkerThreads* _workers;
+  static WorkerThreads* workers() {
+    if (_workers == NULL) {
+      _workers = new WorkerThreads("G1 Small Workers", MaxWorkers);
+      _workers->initialize_workers();
+      _workers->set_active_workers(MaxWorkers);
     }
-    return _work_gang;
+    return _workers;
   }
 
 public:
   static const uint MaxWorkers = 4;
   static void run_task(WorkerTask* task) {
-    work_gang()->run_task(task);
+    workers()->run_task(task);
   }
 };
-WorkerThreads* G1MapperWorkers::_work_gang = NULL;
+WorkerThreads* G1MapperWorkers::_workers = NULL;
 
 class G1TestCommitUncommit : public WorkerTask {
   G1RegionToSpaceMapper* _mapper;

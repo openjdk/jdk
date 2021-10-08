@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 #define SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 
 class FreeCSetStats;
@@ -42,7 +42,7 @@ class G1RedirtyCardsQueueSet;
 // - Sample Collection Set Candidates (s)
 // - Remove Self Forwards (on evacuation failure)
 // - Clear Card Table
-class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedGangTask {
+class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
   class MergePssTask;
   class RecalculateUsedTask;
   class SampleCollectionSetCandidatesTask;
@@ -61,7 +61,7 @@ public:
 // - Redirty Logged Cards
 // - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
-class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedGangTask {
+class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
   class PurgeCodeRootsTask;
   class ResetHotCardCacheTask;

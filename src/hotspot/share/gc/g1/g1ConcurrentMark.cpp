@@ -27,7 +27,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -733,7 +733,7 @@ void G1ConcurrentMark::clear_next_bitmap(WorkerThreads* workers) {
   clear_next_bitmap(workers, false);
 }
 
-class G1PreConcurrentStartTask : public G1BatchedGangTask {
+class G1PreConcurrentStartTask : public G1BatchedTask {
   // Concurrent start needs claim bits to keep track of the marked-through CLDs.
   class CLDClearClaimedMarksTask;
   // Reset marking state.
@@ -805,7 +805,7 @@ void G1PreConcurrentStartTask::NoteStartOfMarkTask::set_max_workers(uint max_wor
 }
 
 G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1ConcurrentMark* cm) :
-  G1BatchedGangTask("Pre Concurrent Start", G1CollectedHeap::heap()->phase_times()) {
+  G1BatchedTask("Pre Concurrent Start", G1CollectedHeap::heap()->phase_times()) {
   add_serial_task(new CLDClearClaimedMarksTask());
   add_serial_task(new ResetMarkingStateTask(cm));
   add_parallel_task(new NoteStartOfMarkTask());
@@ -1613,7 +1613,7 @@ void G1ConcurrentMark::weak_refs_work() {
 
     // We need at least one active thread. If reference processing
     // is not multi-threaded we use the current (VMThread) thread,
-    // otherwise we use the work gang from the G1CollectedHeap and
+    // otherwise we use the workers from the G1CollectedHeap and
     // we utilize all the worker threads we can.
     uint active_workers = (ParallelRefProcEnabled ? _g1h->workers()->active_workers() : 1U);
     active_workers = clamp(active_workers, 1u, _max_num_tasks);
@@ -1842,7 +1842,7 @@ void G1ConcurrentMark::finalize_marking() {
   // Leave _parallel_marking_threads at it's
   // value originally calculated in the G1ConcurrentMark
   // constructor and pass values of the active workers
-  // through the gang in the task.
+  // through the task.
 
   {
     StrongRootsScope srs(active_workers);
@@ -2561,7 +2561,7 @@ bool G1ConcurrentMark::try_stealing(uint worker_id, G1TaskQueueEntry& task_entry
     processing closures.
 
     The value of is_serial must be false when do_marking_step is
-    being called by any of the worker threads in a work gang.
+    being called by any of the worker threads.
     Examples include the concurrent marking code (CMMarkingTask),
     the MT remark code, and the MT reference processing closures.
 
