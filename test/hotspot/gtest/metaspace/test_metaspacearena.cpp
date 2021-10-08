@@ -66,7 +66,7 @@ class MetaspaceArenaTestHelper {
 
   void initialize(const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
     _growth_policy = growth_policy;
-    _lock = new Mutex(Monitor::nosafepoint, "gtest-MetaspaceArenaTest_lock", Monitor::_safepoint_check_never);
+    _lock = new Mutex(Monitor::nosafepoint, "gtest-MetaspaceArenaTest_lock");
     // Lock during space creation, since this is what happens in the VM too
     //  (see ClassLoaderData::metaspace_non_null(), which we mimick here).
     {
