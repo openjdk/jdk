@@ -32,7 +32,6 @@
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "gc/shared/gcId.hpp"
-#include "logging/log.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -100,17 +99,6 @@ class WorkGang : public CHeapObj<mtInternal> {
 
   GangTaskDispatcher* dispatcher() const { return _dispatcher; }
 
-  void set_thread(uint worker_id, GangWorker* worker) {
-    _workers[worker_id] = worker;
-  }
-
-  // Add GC workers when _created_workers < _active_workers; otherwise, no-op.
-  // If there's no memory/thread allocation failure, _created_worker is
-  // adjusted to match _active_workers (_created_worker == _active_workers).
-  void add_workers(bool initializing);
-
-  GangWorker* allocate_worker(uint which);
-
  public:
   WorkGang(const char* name, uint workers);
 
@@ -132,15 +120,7 @@ class WorkGang : public CHeapObj<mtInternal> {
     return _active_workers;
   }
 
-  uint update_active_workers(uint v) {
-    assert(v <= _total_workers,
-           "Trying to set more workers active than there are");
-    assert(v != 0, "Trying to set active workers to 0");
-    _active_workers = v;
-    add_workers(false /* initializing */);
-    log_trace(gc, task)("%s: using %d out of %d workers", name(), _active_workers, _total_workers);
-    return _active_workers;
-  }
+  uint update_active_workers(uint num_workers);
 
   // Return the Ith worker.
   GangWorker* worker(uint i) const;
@@ -150,8 +130,7 @@ class WorkGang : public CHeapObj<mtInternal> {
 
   void threads_do(ThreadClosure* tc) const;
 
-  // Create a GC worker and install it into the work gang.
-  virtual GangWorker* install_worker(uint which);
+  virtual GangWorker* create_worker(uint id);
 
   // Debugging.
   const char* name() const { return _name; }

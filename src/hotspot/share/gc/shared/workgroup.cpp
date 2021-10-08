@@ -24,12 +24,15 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workgroup.hpp"
-#include "gc/shared/workerManager.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/init.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
@@ -119,7 +122,7 @@ public:
 WorkGang::WorkGang(const char* name, uint workers) :
     _workers(NULL),
     _total_workers(workers),
-    _active_workers(UseDynamicNumberOfGCThreads ? 1U : workers),
+    _active_workers(0),
     _created_workers(0),
     _name(name),
     _dispatcher(new GangTaskDispatcher())
@@ -134,28 +137,51 @@ WorkGang::~WorkGang() {
 void WorkGang::initialize_workers() {
   log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
   _workers = NEW_C_HEAP_ARRAY(GangWorker*, total_workers(), mtInternal);
-  add_workers(true);
+
+  const uint initial_active_workers = UseDynamicNumberOfGCThreads ? 1 : _total_workers;
+  if (update_active_workers(initial_active_workers) != initial_active_workers) {
+    vm_exit_during_initialization();
+  }
 }
 
+GangWorker* WorkGang::create_worker(uint id) {
+  if (is_init_completed() && InjectGCWorkerCreationFailure) {
+    return NULL;
+  }
 
-GangWorker* WorkGang::install_worker(uint worker_id) {
-  GangWorker* new_worker = allocate_worker(worker_id);
-  set_thread(worker_id, new_worker);
-  return new_worker;
+  GangWorker* const worker = new GangWorker(this, id);
+
+  if (!os::create_thread(worker, os::gc_thread)) {
+    delete worker;
+    return NULL;
+  }
+
+  os::start_thread(worker);
+
+  return worker;
 }
 
-void WorkGang::add_workers(bool initializing) {
-  uint previous_created_workers = _created_workers;
+uint WorkGang::update_active_workers(uint num_workers) {
+  assert(num_workers > 0 && num_workers <= _total_workers,
+         "Invalid number of active workers %u (should be 1-%u)",
+         num_workers, _total_workers);
 
-  _created_workers = WorkerManager::add_workers(this,
-                                                _active_workers,
-                                                _total_workers,
-                                                _created_workers,
-                                                os::gc_thread,
-                                                initializing);
-  _active_workers = MIN2(_created_workers, _active_workers);
+  while (_created_workers < num_workers) {
+    GangWorker* const worker = create_worker(_created_workers);
+    if (worker == NULL) {
+      log_error(gc, task)("Failed to create worker thread");
+      break;
+    }
 
-  WorkerManager::log_worker_creation(this, previous_created_workers, _active_workers, _created_workers, initializing);
+    _workers[_created_workers] = worker;
+    _created_workers++;
+  }
+
+  _active_workers = MIN2(_created_workers, num_workers);
+
+  log_trace(gc, task)("%s: using %d out of %d workers", _name, _active_workers, _total_workers);
+
+  return _active_workers;
 }
 
 GangWorker* WorkGang::worker(uint i) const {
@@ -174,10 +200,6 @@ void WorkGang::threads_do(ThreadClosure* tc) const {
   for (uint i = 0; i < workers; i++) {
     tc->do_thread(worker(i));
   }
-}
-
-GangWorker* WorkGang::allocate_worker(uint worker_id) {
-  return new GangWorker(this, worker_id);
 }
 
 void WorkGang::run_task(AbstractGangTask* task) {
