@@ -922,19 +922,15 @@ class G1STWRefProcProxyTask : public RefProcProxyTask {
   class G1EnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
     G1CollectedHeap* _g1h;
     G1ParScanThreadState* _pss;
-    G1STWIsAliveClosure _is_alive;
 
   public:
-    G1EnqueueDiscoveredFieldClosure(G1CollectedHeap* g1h, G1ParScanThreadState* pss) : _g1h(g1h), _pss(pss), _is_alive(g1h) { }
+    G1EnqueueDiscoveredFieldClosure(G1CollectedHeap* g1h, G1ParScanThreadState* pss) : _g1h(g1h), _pss(pss) { }
 
     void enqueue(HeapWord* discovered_field_addr, oop value) override {
-      // Store the value first, whatever it is.
       assert(_g1h->is_in(discovered_field_addr), PTR_FORMAT " is not in heap ", p2i(discovered_field_addr));
+      // Store the value first, whatever it is.
       RawAccess<>::oop_store(discovered_field_addr, value);
       if (value == nullptr) {
-        return;
-      }
-      if (!_is_alive.do_object_b(value)) {
         return;
       }
       _pss->write_ref_field_post(discovered_field_addr, value);
