@@ -727,14 +727,18 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
     AC_MSG_NOTICE([Found binutils binaries in binutils source directory -- not building])
   else
     if test "x$OPENJDK_BUILD_OS" = xwindows; then
-      target_base="x86_64-w64-mingw32"
+      if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
+        target_base="i686-w64-mingw32"
+      else
+        target_base="$OPENJDK_TARGET_CPU-w64-mingw32"
+      fi
       binutils_cc="$target_base-gcc"
       binutils_target="--host=$target_base --target=$target_base"
-      compiler_version=`$binutils_cc --version`
-      if ! [[[$compiler_version =~ GCC]]]; then
+      compiler_version=`$binutils_cc --version 2>&1`
+      if ! [ [[ "$compiler_version" =~ GCC ]] ]; then
         AC_MSG_NOTICE([Could not find correct mingw compiler $binutils_cc.])
-        AC_MSG_NOTICE([Please install 'mingw64-x86_64-gcc-core' and 'gcc-core' and try again.])
-        AC_MSG_ERROR([Cannot continue])
+        HELP_MSG_MISSING_DEPENDENCY([$binutils_cc])
+        AC_MSG_ERROR([Cannot continue. $HELP_MSG])
       else
         AC_MSG_NOTICE([Using compiler $binutils_cc with version $compiler_version])
       fi
