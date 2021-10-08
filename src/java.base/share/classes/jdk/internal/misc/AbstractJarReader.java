@@ -22,14 +22,28 @@
  *
  */
 
-#ifndef SHARE_CDS_UNREGISTEREDCLASSES_HPP
-#define SHARE_CDS_UNREGISTEREDCLASSES_HPP
+package jdk.internal.misc;
 
-#include "oops/instanceKlass.hpp"
+import java.io.IOException;
+import java.security.ProtectionDomain;
 
-class UnregisteredClasses: AllStatic {
-public:
-  static InstanceKlass* load_class(Symbol* name, const char* path, TRAPS);
-};
+/**
+ * This abstract class is a super class of EmbeddedJarReader and SimpleJarReader.
+ */
+abstract class AbstractJarReader extends ClassLoader {
+    Class<?> loadClass(String name, ProtectionDomain pd) throws ClassNotFoundException {
+        Class<?> clazz = findLoadedClass(name);
+        if (clazz == null) {
+            try {
+                String entryName = name.replace('.', '/') + ".class";
+                byte[] bytes = getEntry(entryName);
+                clazz = super.defineClass(name, bytes, 0, bytes.length, pd);
+            } catch (Exception e) {
+                clazz = super.loadClass(name, false);
+            }
+        }
+        return clazz;
+    }
 
-#endif // SHARE_CDS_UNREGISTEREDCLASSES_HPP
+    abstract byte[] getEntry(String name) throws IOException, ClassNotFoundException;
+}

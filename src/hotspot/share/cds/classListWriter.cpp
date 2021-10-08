@@ -105,7 +105,8 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   ClassLoaderData* loader_data = k->class_loader_data();
 
   if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
-    if (cfs == NULL || strncmp(cfs->source(), "file:", 5) != 0) {
+    if (cfs == NULL || (strncmp(cfs->source(), "file:", 5) != 0 &&
+                        strncmp(cfs->source(), "jar:", 4) != 0)) {
       return;
     }
     if (!SystemDictionaryShared::add_unregistered_class(Thread::current(), (InstanceKlass*)k)) {
@@ -155,13 +156,17 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
       }
     }
 
+    if (strncmp(cfs->source(), "file:", 5) == 0) {
 #ifdef _WINDOWS
-    // "file:/C:/dir/foo.jar" -> "C:/dir/foo.jar"
-    stream->print(" source: %s", cfs->source() + 6);
+      // "file:/C:/dir/foo.jar" -> "C:/dir/foo.jar"
+      stream->print(" source: %s", cfs->source() + 6);
 #else
-    // "file:/dir/foo.jar" -> "/dir/foo.jar"
-    stream->print(" source: %s", cfs->source() + 5);
+      // "file:/dir/foo.jar" -> "/dir/foo.jar"
+      stream->print(" source: %s", cfs->source() + 5);
 #endif
+    } else {
+      stream->print(" source: %s", cfs->source());
+    }
   }
 
   stream->cr();

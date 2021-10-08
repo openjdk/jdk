@@ -21,15 +21,8 @@
  * questions.
  *
  */
-
-#ifndef SHARE_CDS_UNREGISTEREDCLASSES_HPP
-#define SHARE_CDS_UNREGISTEREDCLASSES_HPP
-
-#include "oops/instanceKlass.hpp"
-
-class UnregisteredClasses: AllStatic {
-public:
-  static InstanceKlass* load_class(Symbol* name, const char* path, TRAPS);
-};
-
-#endif // SHARE_CDS_UNREGISTEREDCLASSES_HPP
+public class C2 {
+    public static void main(String args[]) throws Throwable {
+        System.out.println("C2: here I am");
+    }
+}

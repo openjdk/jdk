@@ -224,8 +224,7 @@ public class ClassLoaders {
      *
      * @apiNote This is called by the VM
      */
-    @Deprecated
-    private static URL toFileURL(String s) {
+    public static URL toFileURL(String s) {
         try {
             // Use an intermediate File object to construct a URI/URL without
             // authority component as URLClassPath can't handle URLs with a UNC

@@ -99,21 +99,27 @@ public class JarBuilder {
         }
     }
 
-
     public static String buildWithManifest(String jarName, String manifest,
         String jarClassesDir, String ...classNames) throws Exception {
+        return buildWithManifest(jarName, manifest, null, jarClassesDir, classNames);
+    }
+
+    public static String buildWithManifest(String jarName, String manifest,
+        String embeddedJar, String jarClassesDir, String ...classNames) throws Exception {
         String jarPath = getJarFilePath(jarName);
         ArrayList<String> args = new ArrayList<String>();
         args.add("cvfm");
         args.add(jarPath);
         args.add(System.getProperty("test.src") + File.separator + "test-classes"
             + File.separator + manifest);
+        if (embeddedJar != null) {
+            args.add(embeddedJar);
+        }
         addClassArgs(args, jarClassesDir, classNames);
         createJar(args);
 
         return jarPath;
     }
-
 
     // Execute: jar uvf $jarFile -C $dir .
     static void update(String jarFile, String dir) throws Exception {

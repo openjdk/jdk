@@ -553,6 +553,7 @@
   template(threadgroup_string_void_signature,         "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V")             \
   template(string_class_signature,                    "(Ljava/lang/String;)Ljava/lang/Class;")                    \
   template(string_boolean_class_signature,            "(Ljava/lang/String;Z)Ljava/lang/Class;")                   \
+  template(string_string_class_signature,             "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Class;")  \
   template(object_object_object_signature,            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
   template(string_string_string_signature,            "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;") \
   template(string_string_signature,                   "(Ljava/lang/String;)Ljava/lang/String;")                   \
@@ -706,12 +707,12 @@
   template(java_lang_invoke_DelegatingMethodHandle_Holder,  "java/lang/invoke/DelegatingMethodHandle$Holder")     \
   template(jdk_internal_loader_ClassLoaders,                "jdk/internal/loader/ClassLoaders")                   \
   template(jdk_internal_misc_CDS,                           "jdk/internal/misc/CDS")                              \
+  template(jdk_internal_misc_UberJarUtils,                  "jdk/internal/misc/UberJarUtils")                     \
   template(java_util_concurrent_ConcurrentHashMap,          "java/util/concurrent/ConcurrentHashMap")             \
   template(java_util_ArrayList,                             "java/util/ArrayList")                                \
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
   template(url_void_signature,                              "(Ljava/net/URL;)V")                                  \
-  template(url_array_classloader_void_signature,            "([Ljava/net/URL;Ljava/lang/ClassLoader;)V")          \
                                                                                                                   \
   /*end*/
 
