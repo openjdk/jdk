@@ -736,6 +736,8 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
       fi
       binutils_cc="$target_base-gcc"
       binutils_target="--host=$target_base --target=$target_base"
+      # Somehow the uint typedef is not included when building with mingw
+      binutils_cflags="-Duint=unsigned"
       compiler_version=`$binutils_cc --version 2>&1`
       if ! [ [[ "$compiler_version" =~ GCC ]] ]; then
         AC_MSG_NOTICE([Could not find correct mingw compiler $binutils_cc.])
@@ -748,7 +750,7 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
       binutils_cc="$CC $SYSROOT_CFLAGS"
       binutils_target=""
     fi
-    binutils_cflags="$MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
+    binutils_cflags="$binutils_cflags $MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
 
     AC_MSG_NOTICE([Running binutils configure])
     AC_MSG_NOTICE([configure command line: ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target])
