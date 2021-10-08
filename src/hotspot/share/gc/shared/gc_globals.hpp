@@ -694,9 +694,10 @@
           "during parallel gc")                                             \
           range(0, max_juint)                                               \
                                                                             \
-  product(uintx, GCCardSizeInBytes, 512,                                    \
+  product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
-          range(128, 1024)                                                  \
+          range(512, 1024)                                                  \
+          constraint(GCCardSizeInBytesConstraintFunc, AfterErgo)            \
   // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)

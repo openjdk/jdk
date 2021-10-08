@@ -45,7 +45,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   // We're based on the assumption that we use the same
   // size blocks as the card table.
   assert((int)block_size == (int)CardTable::card_size, "Sanity");
-  assert((int)block_size <= 1024, "block_size must be less than or equal to 1024");
+  assert(block_size <= MaxBlockSize, "block_size must be less than or equal to " UINT32_FORMAT, MaxBlockSize);
 
   // Calculate how much space must be reserved
   _reserved_region = reserved_region;
