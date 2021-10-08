@@ -495,7 +495,7 @@ public class IRMatcher {
             // Do not throw an exception in this case (i.e. bailout).
             String compilations = compilationsBuilder.toString();
             if (!compilations.contains(SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-                throw new IRViolationException(failuresBuilder.toString(), compilationsBuilder.toString());
+                throw new IRViolationException(failuresBuilder.toString(), compilations);
             } else {
                 System.out.println("Found " + SAFEPOINT_WHILE_PRINTING_MESSAGE + ", bail out of IR matching");
             }
