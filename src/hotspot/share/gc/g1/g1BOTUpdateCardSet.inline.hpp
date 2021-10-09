@@ -44,7 +44,7 @@ inline G1BOTUpdateCardSet::CardIndex G1BOTUpdateCardSetArray::try_clear_entry(si
     ((CardIndex*)(&new_val))[offset] = 0;
     old_val = Atomic::cmpxchg(word_entry, expect, new_val, memory_order_relaxed);
   } while (old_val != expect);
-  return old_val;
+  return ((CardIndex*)(&expect))[offset];
 }
 
 inline void G1BOTUpdateCardSetArray::add_card(size_t position, CardIndex card_index) {

@@ -43,7 +43,6 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1SharedDirtyCardQueue.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
