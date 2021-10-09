@@ -24,7 +24,7 @@ class G1ConcurrentBOTUpdate: public CHeapObj<mtGC> {
   // Two counters to know when all workers have finished.
   uint _inactive_count; // Number of workers waiting for jobs
   uint _stopped_count; // Number of workers terminated
-  G1ConcurrentBOTUpdateThread** _fixer_threads;
+  G1ConcurrentBOTUpdateThread** _updater_threads;
 
   // The plab size recorded before evacuation.
   size_t _plab_word_size;
@@ -32,7 +32,7 @@ class G1ConcurrentBOTUpdate: public CHeapObj<mtGC> {
   // A flag to turn recording on/off. Mainly to disable recording for full gcs.
   bool _plab_recording_in_progress;
 
-  // A list of card sets, each recording the cards (of plabs) that need to be fixed.
+  // A list of card sets, each recording the cards (of plabs) that need to be updated.
   G1BOTUpdateCardSet* _card_sets;
   // A pointer into the list for job dispatching.
   G1BOTUpdateCardSet* _current;
@@ -41,7 +41,7 @@ class G1ConcurrentBOTUpdate: public CHeapObj<mtGC> {
 
   void enlist_card_set(G1BOTUpdateCardSet* card_set);
 
-  void fix_bot_for_card_set(G1BOTUpdateCardSet* card_set);
+  void update_bot_for_card_set(G1BOTUpdateCardSet* card_set);
 
 public:
   G1ConcurrentBOTUpdate(G1CollectedHeap* g1h);
@@ -66,7 +66,7 @@ public:
   // Clear the card sets from previous gcs.
   void clear_card_sets();
 
-  // Prepare BOT fixing with necessary information, e.g., plab size. Called before recording plabs.
+  // Prepare BOT update with necessary information, e.g., plab size. Called before recording plabs.
   void pre_record_plab_allocation();
 
   // Record each plab allocation.
@@ -75,13 +75,13 @@ public:
   // Setup for the concurrent phase after plab recording.
   void post_record_plab_allocation();
 
-  // Entry point for the fixer threads. Claim and process one of the card sets from the list.
+  // Entry point for the updater threads. Claim and process one of the card sets from the list.
   // Return whether there are possibly more. Return false if someone asked us to abort.
-  bool fix_bot_step();
+  bool update_bot_step();
 
   // Entry point for concurrent refinement threads or mutators that tries to do conc refinement.
   // These threads always have a specific card in mind, that is, the dirty card to refine.
-  void fix_bot_before_refine(HeapRegion* r, HeapWord* card_boundary);
+  void update_bot_before_refine(HeapRegion* r, HeapWord* card_boundary);
 
   void threads_do(ThreadClosure* tc);
   void print_summary_info();

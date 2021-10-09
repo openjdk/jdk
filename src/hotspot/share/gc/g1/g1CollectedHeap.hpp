@@ -194,7 +194,7 @@ private:
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
 
-  G1ConcurrentBOTUpdate* _concurrent_bot_fixing;
+  G1ConcurrentBOTUpdate* _concurrent_bot_update;
 
 public:
   void prepare_region_for_full_compaction(HeapRegion* hr);
@@ -795,7 +795,7 @@ private:
 
   void wait_for_root_region_scanning();
 
-  void finalize_concurrent_bot_fixing();
+  void finalize_concurrent_bot_update();
 
   // Perform an incremental collection at a safepoint, possibly
   // followed by a by-policy upgrade to a full collection.  Returns
@@ -1063,7 +1063,7 @@ public:
   G1BlockOffsetTable* bot() const { return _bot; }
 
   // Concurrently refine block offset table entries.
-  G1ConcurrentBOTUpdate* concurrent_bot_fixing() const { return _concurrent_bot_fixing; }
+  G1ConcurrentBOTUpdate* concurrent_bot_update() const { return _concurrent_bot_update; }
 
   // Reference Processing accessors
 

@@ -108,8 +108,8 @@ inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
   return allocate(min_word_size, desired_word_size, actual_size);
 }
 
-inline HeapWord* HeapRegion::need_fixing(HeapWord* addr) const {
-  return _bot_part.need_fixing(addr);
+inline HeapWord* HeapRegion::need_update(HeapWord* addr) const {
+  return _bot_part.need_update(addr);
 }
 
 inline void HeapRegion::update_bot(HeapWord* addr) {
@@ -232,7 +232,7 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 inline void HeapRegion::reset_after_full_gc_common() {
   if (is_empty()) {
     reset_bot();
-    _bot_fixing_card_set.clear();
+    _bot_update_card_set.clear();
   }
 
   // Clear unused heap memory in debug builds.

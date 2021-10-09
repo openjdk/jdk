@@ -78,7 +78,7 @@ class HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _compaction_top;
 
   G1BlockOffsetTablePart _bot_part;
-  G1BOTUpdateCardSet _bot_fixing_card_set;
+  G1BOTUpdateCardSet _bot_update_card_set;
   Mutex _par_alloc_lock;
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
@@ -202,16 +202,16 @@ public:
     _bot_part.update();
   }
 
-  HeapWord* need_fixing(HeapWord* addr) const;
+  HeapWord* need_update(HeapWord* addr) const;
   void update_bot(HeapWord* addr);
 
-  // BOT fixing starts from here onwards.
-  void set_bot_fixing_start() {
-    _bot_fixing_card_set.set_bot_fixing_start();
+  // BOT update starts from here onwards.
+  void set_bot_update_start() {
+    _bot_update_card_set.set_bot_update_start();
   }
 
-  G1BOTUpdateCardSet* bot_fixing_card_set() {
-    return &_bot_fixing_card_set;
+  G1BOTUpdateCardSet* bot_update_card_set() {
+    return &_bot_update_card_set;
   }
 
 private:

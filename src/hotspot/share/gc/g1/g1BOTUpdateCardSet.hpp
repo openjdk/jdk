@@ -8,18 +8,18 @@ class HeapRegion;
 class G1BOTUpdateCardSetArray;
 class G1BOTUpdateCardSetBitMap;
 
-// This card set contains the BOT entries (cards) that need to be fixed in a region.
+// This card set contains the BOT entries (cards) that need to be updated in a region.
 // Each member uniquely identifies a plab by being the last card covered by the plab.
-// Every card covered by a plab (except for the first one) need to be fixed.
+// Every card covered by a plab (except for the first one) need to be updated.
 // Knowing the last card of a plab is the same as knowing the cards it covers,
 // because BOT can return the start of the plab given its last card, then we know
 // what's in between. If BOT cannot precisely return the start of the plab (this happens when
-// it gets fixed, probably by concurrent refinement), it will still return up to which point
-// it has been fixed. Then we can fixed from there.
+// it gets updated, probably by concurrent refinement), it will still return up to which point
+// it has been updated. Then we can update from there.
 //
 // We chose to use the last card of a plab instead of the first card, because otherwise we cannot
-// take advantage of this partially fixed case. However, if there is no partial fixing, i.e.,
-// every plab gets fixed before we visit BOT for the area it covers, then there is not much
+// take advantage of this partially updated case. However, if there is no partial update, i.e.,
+// every plab gets updated before we visit BOT for the area it covers, then there is not much
 // difference.
 //
 // This card set uses three types of containers. There could be either an array or a bitmap,
@@ -57,7 +57,7 @@ private:
   };
   ContainerType _type;
 
-  // CardIndex 0 is considered an invalid card, because we never need to fix the first BOT entry.
+  // CardIndex 0 is considered an invalid card, because we never need to update the first BOT entry.
   static const CardIndex _first_card_index = 1;
   // Update starts from this card. This should be set to the first card
   // after region top (not including region top) before gc.
@@ -128,7 +128,7 @@ public:
 
   HeapWord* card_boundary_for(CardIndex card_index) const;
 
-  void set_bot_fixing_start();
+  void set_bot_update_start();
   bool is_below_start(HeapWord* addr) const;
 
   // Add the card of this address to the set. Return whether the container was empty.
@@ -139,7 +139,7 @@ public:
 
   // Find the last card of the plab that covers the given card boundary.
   // latest_plab_start specifies the latest point where the plab starts (say, given by
-  // _hr->need_fixing(card_boundary)).
+  // _hr->need_update(card_boundary)).
   // Return the card index. Note that this is not always accurate. The caller
   // might need to check whether this plab really covers the card boundary.
   CardIndex find_plab_covering(HeapWord* card_boundary, HeapWord* latest_plab_start);

@@ -15,9 +15,9 @@ class G1ConcurrentBOTUpdateThread: public ConcurrentGCThread {
   friend class G1ConcurrentBOTUpdate;
 
   double _vtime_accum;
-  G1ConcurrentBOTUpdate* _fixer;
+  G1ConcurrentBOTUpdate* _updater;
 
-  G1ConcurrentBOTUpdateThread(G1ConcurrentBOTUpdate* fixer, uint i);
+  G1ConcurrentBOTUpdateThread(G1ConcurrentBOTUpdate* updater, uint i);
 
   void wait_for_work(bool more_work);
 
@@ -34,13 +34,13 @@ G1ConcurrentBOTUpdate::G1ConcurrentBOTUpdate(G1CollectedHeap* g1h) :
   _n_workers(ConcGCThreads),
   _inactive_count(0),
   _stopped_count(0),
-  _fixer_threads(NULL),
+  _updater_threads(NULL),
   _plab_word_size(0),
   _plab_recording_in_progress(false),
   _card_sets(NULL),
   _current(NULL),
   _stats() {
-  _fixer_threads = NEW_C_HEAP_ARRAY(G1ConcurrentBOTUpdateThread*, _n_workers, mtGC);
+  _updater_threads = NEW_C_HEAP_ARRAY(G1ConcurrentBOTUpdateThread*, _n_workers, mtGC);
   for (uint i = 0; i < _n_workers; i++) {
     G1ConcurrentBOTUpdateThread* t = NULL;
     if (!InjectGCWorkerCreationFailure) {
@@ -54,40 +54,40 @@ G1ConcurrentBOTUpdate::G1ConcurrentBOTUpdate(G1CollectedHeap* g1h) :
       _n_workers = i; // Actual number of threads created
       break;
     }
-    _fixer_threads[i] = t;
+    _updater_threads[i] = t;
   }
 }
 
-void G1ConcurrentBOTUpdate::fix_bot_for_card_set(G1BOTUpdateCardSet* card_set) {
+void G1ConcurrentBOTUpdate::update_bot_for_card_set(G1BOTUpdateCardSet* card_set) {
   assert(!card_set->is_empty(), "We should be the only one emptying it");
   card_set->print_stats();
   class BOTUpdateCardSetClosure: public G1BOTUpdateCardSet::CardIterator {
-    G1ConcurrentBOTUpdate* _fixer;
+    G1ConcurrentBOTUpdate* _updater;
     HeapRegion* _hr;
 
   public:
     uint _num_plabs;
 
-    BOTUpdateCardSetClosure(G1ConcurrentBOTUpdate* fixer, HeapRegion* hr) :
-      _fixer(fixer), _hr(hr), _num_plabs(0) {}
+    BOTUpdateCardSetClosure(G1ConcurrentBOTUpdate* updater, HeapRegion* hr) :
+      _updater(updater), _hr(hr), _num_plabs(0) {}
     bool do_card(CardIndex card_index) {
-      HeapWord* card_boundary = _hr->bot_fixing_card_set()->card_boundary_for(card_index);
-      // We have the last card boundary cover by a plab.
-      // We will fix the block (normally the block will be the plab) that covers this card boundary.
+      HeapWord* card_boundary = _hr->bot_update_card_set()->card_boundary_for(card_index);
+      // We have the last card boundary cover by a plab. We will update
+      // the block (normally the block will be the plab) that covers this card boundary.
       _hr->update_bot(card_boundary);
       _num_plabs++;
-      return (_fixer->should_abort() == false); // Stop iteration if it aborts
+      return (_updater->should_abort() == false); // Stop iteration if it aborts
     }
   } cl(this, card_set->hr());
 
   Ticks start = Ticks::now();
   card_set->iterate_cards(cl);
   card_set->mark_as_done();
-  log_info(gc, bot)("Concurrent BOT Update: fixed %d plabs, took %8.2lf ms",
+  log_info(gc, bot)("Concurrent BOT Update: updated %d plabs, took %8.2lf ms",
                     cl._num_plabs, (Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
-bool G1ConcurrentBOTUpdate::fix_bot_step() {
+bool G1ConcurrentBOTUpdate::update_bot_step() {
   G1BOTUpdateCardSet* old_val = _current;
   G1BOTUpdateCardSet* expect = NULL;
   G1BOTUpdateCardSet* new_val = NULL;
@@ -99,34 +99,34 @@ bool G1ConcurrentBOTUpdate::fix_bot_step() {
     old_val = Atomic::cmpxchg(&_current, expect, new_val, memory_order_relaxed);
   } while (old_val != expect);
 
-  fix_bot_for_card_set(old_val);
+  update_bot_for_card_set(old_val);
 
   return (new_val != NULL) && !_should_abort;
 }
 
-void G1ConcurrentBOTUpdate::fix_bot_before_refine(HeapRegion* r, HeapWord* card_boundary) {
+void G1ConcurrentBOTUpdate::update_bot_before_refine(HeapRegion* r, HeapWord* card_boundary) {
   assert(r->is_old(), "Only do this for heap regions with BOT");
   assert(_g1h->card_table()->is_card_aligned(card_boundary), "Only do this for cards to refine");
 
   Ticks start = Ticks::now();
   // If the region doesn't have plabs or if the card is below where plabs are allocated.
-  G1BOTUpdateCardSet* card_set = r->bot_fixing_card_set();
+  G1BOTUpdateCardSet* card_set = r->bot_update_card_set();
   if (card_set->is_empty() || card_set->is_below_start(card_boundary)) return;
 
   // If the card points into an object instead of a plab.
-  HeapWord* latest_plab_start = r->need_fixing(card_boundary);
+  HeapWord* latest_plab_start = r->need_update(card_boundary);
   if (latest_plab_start == NULL) return;
 
   // If the plab has been claimed.
   CardIndex c = card_set->find_plab_covering(card_boundary, latest_plab_start);
   if (c == 0) return;
   // In some rare cases, the plab have been claimed and we get the plab after that plab.
-  // Since it's rare, we do not check this case and let this thread fix the wrong plab.
-  // This will (nicely) leave more time for the fix result of first plab to be visible to us.
+  // Since it's rare, we do not check this case and let this thread update the wrong plab.
+  // This will (nicely) leave more time for the update result of first plab to be visible to us.
   if (!card_set->claim_card(c)) return;
 
   r->update_bot(card_set->card_boundary_for(c));
-  log_info(gc, bot)("Concurrent BOT Update: fixed 1 plab before refine, took %8.2lf ms",
+  log_info(gc, bot)("Concurrent BOT Update: updated 1 plab before refine, took %8.2lf ms",
                     (Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
@@ -163,11 +163,11 @@ void G1ConcurrentBOTUpdate::record_plab_allocation(HeapWord* plab_allocation, si
   HeapWord* first_card_boundary = align_down(plab_allocation, BOTConstants::N_bytes);
   HeapWord* last_card_boundary = align_down(plab_allocation + word_size - 1, BOTConstants::N_bytes);
   if (first_card_boundary == last_card_boundary) {
-    // PLABs not crossing boundary could not have changed BOT. No need to fix them.
+    // PLABs not crossing boundary could not have changed BOT. No need to update them.
     return;
   }
 
-  G1BOTUpdateCardSet* card_set = r->bot_fixing_card_set();
+  G1BOTUpdateCardSet* card_set = r->bot_update_card_set();
   bool should_enlist = card_set->add_card(last_card_boundary);
 
   if (should_enlist) {
@@ -196,21 +196,21 @@ void G1ConcurrentBOTUpdate::clear_card_sets() {
 
 void G1ConcurrentBOTUpdate::threads_do(ThreadClosure* tc) {
   for (uint i = 0; i < _n_workers; i++) {
-    tc->do_thread(_fixer_threads[i]);
+    tc->do_thread(_updater_threads[i]);
   }
 }
 
 void G1ConcurrentBOTUpdate::print_summary_info() {
   Log(gc, bot) log;
   if (log.is_trace()) {
-    log.trace(" Concurrent BOT fixing:");
+    log.trace(" Concurrent BOT Update:");
     for (uint i = 0; i < _n_workers; i++) {
-      log.trace("  Worker #%d concurrent time = %8.2f s.", i, _fixer_threads[i]->vtime_accum());
+      log.trace("  Worker #%d concurrent time = %8.2f s.", i, _updater_threads[i]->vtime_accum());
     }
   }
 }
 
-// Synchronization between the BOT fixing threads and the activating/aborting VM thread.
+// Synchronization between the BOT update threads and the activating/aborting VM thread.
 
 // Called by VM thread.
 void G1ConcurrentBOTUpdate::activate() {
@@ -244,7 +244,7 @@ void G1ConcurrentBOTUpdate::deactivate() {
     _in_progress = false;
     _should_abort = false;
     ConcurrentBOTUpdate_lock->notify_all(); // Notify that all workers are now inactive/stopped
-    log_trace(gc, bot)("Concurrent BOT fixing: took %8.2lf ms",
+    log_trace(gc, bot)("Concurrent BOT Update: took %8.2lf ms",
                        (Ticks::now() - _stats.concurrent_phase_start_time).seconds() * MILLIUNITS);
   }
 }
@@ -268,24 +268,24 @@ void G1ConcurrentBOTUpdate::note_stopped() {
 
 void G1ConcurrentBOTUpdate::stop() {
   for (uint i = 0; i < _n_workers; i++) {
-    _fixer_threads[i]->stop();
+    _updater_threads[i]->stop();
   }
 }
 
-G1ConcurrentBOTUpdateThread::G1ConcurrentBOTUpdateThread(G1ConcurrentBOTUpdate* fixer, uint i) :
-  ConcurrentGCThread(), _vtime_accum(0.0), _fixer(fixer) {
+G1ConcurrentBOTUpdateThread::G1ConcurrentBOTUpdateThread(G1ConcurrentBOTUpdate* updater, uint i) :
+  ConcurrentGCThread(), _vtime_accum(0.0), _updater(updater) {
   set_name("G1 BOT Update #%d", i);
   create_and_start();
 }
 
 void G1ConcurrentBOTUpdateThread::wait_for_work(bool more_work) {
   MonitorLocker ml(ConcurrentBOTUpdate_lock, Mutex::_no_safepoint_check_flag);
-  _fixer->note_inactive();
-  while ((!more_work || _fixer->should_abort()) && !should_terminate()) {
+  _updater->note_inactive();
+  while ((!more_work || _updater->should_abort()) && !should_terminate()) {
     ml.wait();
-    more_work = _fixer->in_progress();
+    more_work = _updater->in_progress();
   }
-  _fixer->note_active();
+  _updater->note_active();
 }
 
 void G1ConcurrentBOTUpdateThread::run_service() {
@@ -298,7 +298,7 @@ void G1ConcurrentBOTUpdateThread::run_service() {
       break;
     }
 
-    more_work = _fixer->fix_bot_step();
+    more_work = _updater->update_bot_step();
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - vtime_start);
@@ -308,7 +308,7 @@ void G1ConcurrentBOTUpdateThread::run_service() {
   }
 
   MutexLocker ml(ConcurrentBOTUpdate_lock, Mutex::_no_safepoint_check_flag);
-  _fixer->note_stopped();
+  _updater->note_stopped();
 }
 
 void G1ConcurrentBOTUpdateThread::stop_service() {
@@ -316,4 +316,4 @@ void G1ConcurrentBOTUpdateThread::stop_service() {
   ConcurrentBOTUpdate_lock->notify_all();
 }
 
-// End of synchronization between the BOT fixing threads and the activating/aborting VM thread.
+// End of synchronization between the BOT update threads and the activating/aborting VM thread.

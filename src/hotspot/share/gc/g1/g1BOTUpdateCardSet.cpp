@@ -41,16 +41,16 @@ void G1BOTUpdateCardSet::prepare(size_t plab_word_size) {
   }
 }
 
-// New plabs are allocated above the current top. So BOT fixing starts at the current top.
-// Anything below is considered fixed.
-void G1BOTUpdateCardSet::set_bot_fixing_start() {
+// New plabs are allocated above the current top. So BOT update starts at the current top.
+// Anything below is considered updated.
+void G1BOTUpdateCardSet::set_bot_update_start() {
   assert(_hr->is_old(), "Only set for old regions");
   if (_hr->top() == _hr->end()) {
     // Nothing to do.
     return;
   }
   CardIndex card_index_for_top = card_index_for(_hr->top());
-  // The card of top() does not need to be fixed. Move to the next one.
+  // The card of top() does not need to be updated. Move to the next one.
   if (card_index_for_top == _last_card_index) {
     return;
   }
@@ -59,22 +59,22 @@ void G1BOTUpdateCardSet::set_bot_fixing_start() {
 
 void G1BOTUpdateCardSet::transition_to_dynamic() {
   void* container_mem = NULL;
-  // Size of the area in the region that needs fixing. We don't need to reserve space for
-  // cards that don't need fixing in the container.
-  size_t fix_size = HeapRegion::GrainWords -
-                    (((size_t)_start_card_index) << BOTConstants::LogN_words);
+  // Size of the area in the region that needs update. We don't need to reserve space for
+  // cards that don't need update in the container.
+  size_t update_size = HeapRegion::GrainWords -
+                       (((size_t)_start_card_index) << BOTConstants::LogN_words);
   if (_dynamic_container_type == Array) {
     // +1 is because when the region is nearly full, there could be some space
     // smaller than _plab_word_size. A plab can still be allocated
     // into that space. We have to take that into account.
-    size_t array_size = fix_size / _plab_word_size + (fix_size % _plab_word_size != 0) + 1;
+    size_t array_size = update_size / _plab_word_size + (update_size % _plab_word_size != 0) + 1;
     size_t container_size = G1BOTUpdateCardSetArray::size_in_bytes(array_size);
     container_mem = NEW_C_HEAP_ARRAY(jbyte, container_size, mtGC);
     memset(container_mem, 0, container_size);
     new (container_mem) G1BOTUpdateCardSetArray(array_size);
   } else {
     assert(_dynamic_container_type == BitMap, "Sanity");
-    size_t max_num_cards = (fix_size >> BOTConstants::LogN_words);
+    size_t max_num_cards = (update_size >> BOTConstants::LogN_words);
     size_t container_size = G1BOTUpdateCardSetBitMap::size_in_bytes(max_num_cards);
     container_mem = NEW_C_HEAP_ARRAY(jbyte, container_size, mtGC);
     memset(container_mem, 0, container_size);
@@ -117,7 +117,7 @@ void G1BOTUpdateCardSet::add_card_to_dynamic(CardIndex card_index) {
 
 bool G1BOTUpdateCardSet::add_card(HeapWord* addr) {
   CardIndex card_index = card_index_for(addr);
-  assert(card_index >= _start_card_index, "No need to fix");
+  assert(card_index >= _start_card_index, "No need to update");
   // Try to add to the static array first.
   if (Atomic::load_acquire(&_type) == Static) {
     uint i = Atomic::fetch_and_add(&_num_plabs, (uint)1, memory_order_relaxed);
@@ -145,7 +145,7 @@ bool G1BOTUpdateCardSet::claim_card_from_dynamic(CardIndex card_index) {
 }
 
 bool G1BOTUpdateCardSet::claim_card(CardIndex card_index) {
-  assert(card_index >= _start_card_index, "No need to fix this card");
+  assert(card_index >= _start_card_index, "No need to update this card");
   if (_type == Static) {
     for (uint i = 0; i < static_container_size; i++) {
       if ((CardIndex)_static_container[i] == card_index) {

@@ -136,7 +136,7 @@ inline bool G1BOTUpdateCardSet::is_below_start(HeapWord* addr) const {
 // -_start_card_index. Then we will check whether we need to handle the special case of
 // _last_card_index.
 inline size_t G1BOTUpdateCardSet::array_index_for(CardIndex card_index) const {
-  assert(card_index >= _start_card_index, "No need to fix");
+  assert(card_index >= _start_card_index, "No need to update");
   card_index -= _start_card_index;
   size_t index_in_array = (((size_t)card_index) << BOTConstants::LogN_words) / _plab_word_size;
   assert(_last_card_index >= _start_card_index, "One of these is not correctly set");
@@ -154,7 +154,7 @@ inline size_t G1BOTUpdateCardSet::array_index_for(CardIndex card_index) const {
 // Effective card index is used for bitmap storage.
 inline G1BOTUpdateCardSet::CardIndex
 G1BOTUpdateCardSet::bitmap_effect_card_index_for(CardIndex card_index) const {
-  assert(card_index >= _start_card_index, "No need to fix");
+  assert(card_index >= _start_card_index, "No need to update");
   return card_index - _start_card_index;
 }
 inline G1BOTUpdateCardSet::CardIndex

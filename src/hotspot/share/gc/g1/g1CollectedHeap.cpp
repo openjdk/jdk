@@ -1447,7 +1447,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(NULL),
-  _concurrent_bot_fixing(NULL),
+  _concurrent_bot_update(NULL),
   _listener(),
   _numa(G1NUMA::create()),
   _hrm(),
@@ -1698,7 +1698,7 @@ jint G1CollectedHeap::initialize() {
 
   _bot = new G1BlockOffsetTable(reserved(), bot_storage);
   if (G1UseConcurrentBOTUpdate) {
-    _concurrent_bot_fixing = new G1ConcurrentBOTUpdate(this);
+    _concurrent_bot_update = new G1ConcurrentBOTUpdate(this);
   }
 
   {
@@ -1798,7 +1798,7 @@ void G1CollectedHeap::stop() {
   // that are destroyed during shutdown.
   _cr->stop();
   if (G1UseConcurrentBOTUpdate) {
-    _concurrent_bot_fixing->stop();
+    _concurrent_bot_update->stop();
   }
   _service_thread->stop();
   _cm_thread->stop();
@@ -2490,7 +2490,7 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   _cm->threads_do(tc);
   _cr->threads_do(tc);
   if (G1UseConcurrentBOTUpdate) {
-    _concurrent_bot_fixing->threads_do(tc);
+    _concurrent_bot_update->threads_do(tc);
   }
   tc->do_thread(_service_thread);
 }
@@ -2498,7 +2498,7 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 void G1CollectedHeap::print_tracing_info() const {
   rem_set()->print_summary_info();
   if (G1UseConcurrentBOTUpdate) {
-    _concurrent_bot_fixing->print_summary_info();
+    _concurrent_bot_update->print_summary_info();
   }
   concurrent_mark()->print_summary_info();
 }
@@ -2769,14 +2769,14 @@ void G1CollectedHeap::wait_for_root_region_scanning() {
   phase_times()->record_root_region_scan_wait_time(wait_time_ms);
 }
 
-void G1CollectedHeap::finalize_concurrent_bot_fixing() {
+void G1CollectedHeap::finalize_concurrent_bot_update() {
   if (G1UseConcurrentBOTUpdate) {
     double start_t = os::elapsedTime();
-    _concurrent_bot_fixing->abort_and_wait();
-    _concurrent_bot_fixing->clear_card_sets();
+    _concurrent_bot_update->abort_and_wait();
+    _concurrent_bot_update->clear_card_sets();
     double end_t = os::elapsedTime();
     double time_ms = (end_t - start_t) * 1000.0;
-    phase_times()->record_concurrent_bot_fixing_finalize_time(time_ms);
+    phase_times()->record_concurrent_bot_update_finalize_time(time_ms);
   }
 }
 
@@ -3096,7 +3096,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 
     G1HeapPrinterMark hpm(this);
 
-    finalize_concurrent_bot_fixing();
+    finalize_concurrent_bot_update();
 
     // Wait for root region scan here to make sure that it is done before any
     // use of the STW work gang to maximize cpu use (i.e. all cores are available
@@ -3157,7 +3157,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     ConcurrentGCBreakpoints::notify_idle_to_active();
   }
   if (G1UseConcurrentBOTUpdate) {
-    _concurrent_bot_fixing->activate();
+    _concurrent_bot_update->activate();
   }
 }
 
@@ -3386,11 +3386,11 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
       }
     }
 
-    void prepare_bot_fixing_card_set(HeapRegion* hr) {
+    void prepare_bot_update_card_set(HeapRegion* hr) {
       if (G1UseConcurrentBOTUpdate) {
-        DEBUG_ONLY(hr->bot_fixing_card_set()->verify();)
+        DEBUG_ONLY(hr->bot_update_card_set()->verify();)
         if (hr->is_old()) {
-          hr->set_bot_fixing_start();
+          hr->set_bot_update_start();
         }
       }
     }
@@ -3469,7 +3469,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
 
       sample_card_set_size(hr);
 
-      prepare_bot_fixing_card_set(hr);
+      prepare_bot_update_card_set(hr);
 
       // Now check if region is a humongous candidate
       if (!hr->is_starts_humongous()) {
@@ -3596,7 +3596,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo* evacuation_i
 
   {
     if (G1UseConcurrentBOTUpdate) {
-      _concurrent_bot_fixing->pre_record_plab_allocation();
+      _concurrent_bot_update->pre_record_plab_allocation();
     }
 
     G1PrepareEvacuationTask g1_prep_task(this);
@@ -3863,7 +3863,7 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo* evacuation_
   WeakProcessor::weak_oops_do(workers(), &is_alive, &keep_alive, p->weak_phase_times());
 
   if (G1UseConcurrentBOTUpdate) {
-    _concurrent_bot_fixing->post_record_plab_allocation();
+    _concurrent_bot_update->post_record_plab_allocation();
   }
 
   _allocator->release_gc_alloc_regions(evacuation_info);

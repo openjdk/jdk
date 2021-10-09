@@ -411,7 +411,7 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
     if (actual_plab_size != 0) {
       // A new plab has been allocated to accomodate the allocation. Record it.
       if (G1UseConcurrentBOTUpdate && dest_attr->is_old()) {
-        _g1h->concurrent_bot_fixing()->record_plab_allocation(obj_ptr, actual_plab_size);
+        _g1h->concurrent_bot_update()->record_plab_allocation(obj_ptr, actual_plab_size);
       }
     }
     update_numa_stats(node_index);
