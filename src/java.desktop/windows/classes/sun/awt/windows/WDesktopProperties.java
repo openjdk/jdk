@@ -268,7 +268,7 @@ final class WDesktopProperties {
 
         Boolean smoothingOn = (Boolean)map.get("win.text.fontSmoothingOn");
 
-        if (smoothingOn != null && smoothingOn.equals(Boolean.TRUE)) {
+        if (Boolean.TRUE.equals(smoothingOn)) {
             Integer typeID = (Integer)map.get("win.text.fontSmoothingType");
             /* "1" is GASP/Standard but we'll also use that if the return
              * value is anything other than "2" for LCD.
