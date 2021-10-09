@@ -19,7 +19,7 @@ class G1ConcurrentBOTUpdateThread: public ConcurrentGCThread {
 
   G1ConcurrentBOTUpdateThread(G1ConcurrentBOTUpdate* updater, uint i);
 
-  void wait_for_work(bool more_work);
+  void wait_for_work();
 
   void run_service();
   void stop_service();
@@ -244,8 +244,8 @@ void G1ConcurrentBOTUpdate::deactivate() {
     _in_progress = false;
     _should_abort = false;
     ConcurrentBOTUpdate_lock->notify_all(); // Notify that all workers are now inactive/stopped
-    log_trace(gc, bot)("Concurrent BOT Update: took %8.2lf ms",
-                       (Ticks::now() - _stats.concurrent_phase_start_time).seconds() * MILLIUNITS);
+    log_info(gc, bot)("Concurrent BOT Update: took %8.2lf ms",
+                      (Ticks::now() - _stats.concurrent_phase_start_time).seconds() * MILLIUNITS);
   }
 }
 
@@ -278,12 +278,11 @@ G1ConcurrentBOTUpdateThread::G1ConcurrentBOTUpdateThread(G1ConcurrentBOTUpdate* 
   create_and_start();
 }
 
-void G1ConcurrentBOTUpdateThread::wait_for_work(bool more_work) {
+void G1ConcurrentBOTUpdateThread::wait_for_work() {
   MonitorLocker ml(ConcurrentBOTUpdate_lock, Mutex::_no_safepoint_check_flag);
   _updater->note_inactive();
-  while ((!more_work || _updater->should_abort()) && !should_terminate()) {
+  while ((!_updater->in_progress() || _updater->should_abort()) && !should_terminate()) {
     ml.wait();
-    more_work = _updater->in_progress();
   }
   _updater->note_active();
 }
@@ -293,9 +292,11 @@ void G1ConcurrentBOTUpdateThread::run_service() {
 
   bool more_work = false;
   while (!should_terminate()) {
-    wait_for_work(more_work);
-    if (should_terminate()) {
-      break;
+    if (more_work == false) {
+      wait_for_work();
+      if (should_terminate()) {
+        break;
+      }
     }
 
     more_work = _updater->update_bot_step();
