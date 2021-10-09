@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Locale;
 import java.awt.AWTEvent;
 import java.beans.Transient;
 import java.lang.Character.Subset;
-import sun.awt.im.InputMethodContext;
 
 /**
  * Provides methods to control text input facilities such as input
@@ -66,9 +65,6 @@ import sun.awt.im.InputMethodContext;
  * or the underlying platform does not support native input methods. In this case,
  * input contexts can still be created and used; their behavior is specified with
  * the individual methods below.
- *
- * @implSpec the default implementations of methods either return false, null
- *           or do nothing and does not throw any exceptions
  *
  * @see java.awt.Component#getInputContext
  * @see java.awt.Component#enableInputMethods
@@ -147,6 +143,9 @@ public class InputContext {
      */
     public boolean selectInputMethod(Locale locale) {
         // real implementation is in sun.awt.im.InputContext
+        if (locale == null) {
+            throw new NullPointerException();
+        }
         return false;
     }
 
@@ -218,6 +217,7 @@ public class InputContext {
      */
     public void setCompositionEnabled(boolean enable) {
         // real implementation is in sun.awt.im.InputContext
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -237,7 +237,7 @@ public class InputContext {
     @Transient
     public boolean isCompositionEnabled() {
         // real implementation is in sun.awt.im.InputContext
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -261,6 +261,7 @@ public class InputContext {
      */
     public void reconvert() {
         // real implementation is in sun.awt.im.InputContext
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -272,6 +273,9 @@ public class InputContext {
      */
     public void dispatchEvent(AWTEvent event) {
         // real implementation is in sun.awt.im.InputContext
+        if (event == null) {
+            throw new NullPointerException();
+        }
     }
 
     /**
@@ -289,6 +293,9 @@ public class InputContext {
      */
     public void removeNotify(Component client) {
         // real implementation is in sun.awt.im.InputContext
+        if (client == null) {
+            throw new NullPointerException();
+        }
     }
 
     /**
