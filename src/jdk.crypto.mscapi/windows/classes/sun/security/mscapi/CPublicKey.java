@@ -55,7 +55,6 @@ public abstract class CPublicKey extends CKey implements PublicKey {
     protected byte[] encoding = null;
 
     public static class CECPublicKey extends CPublicKey implements ECPublicKey {
-        
         @SuppressWarnings("serial") // Type of field is not Serializable;
                                     // see writeReplace
         private ECPoint w = null;
