@@ -40,7 +40,7 @@ G1CardSetContainer* volatile* G1CardSetAllocator<Elem>::next_ptr(G1CardSetContai
 
 template <class Elem>
 Elem* G1CardSetAllocator<Elem>::allocate() {
-  uint elem_size = G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
+  uint elem_size = _segmented_array.elem_size();
   assert(elem_size > 0, "instance size not set.");
 
   if (num_free_elems() > 0) {
@@ -57,7 +57,7 @@ Elem* G1CardSetAllocator<Elem>::allocate() {
     }
   }
 
-  Elem* elem = G1SegmentedArray<Elem, mtGCCardSet>::allocate();
+  Elem* elem = _segmented_array.allocate();
   assert(elem != nullptr, "must be");
   return elem;
 }

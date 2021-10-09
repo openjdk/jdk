@@ -61,20 +61,6 @@ typedef G1SegmentedArrayBufferList<mtGCCardSet> G1CardSetBufferList;
 
 // Arena-like allocator for (card set) heap memory objects (Elem elements).
 //
-// Actual allocation from the C heap occurs on G1CardSetBuffer basis, i.e. sets
-// of elements. The assumed allocation pattern for these G1CardSetBuffer elements
-// is assumed to be strictly two-phased:
-//
-// - in the first phase, G1CardSetBuffers are allocated from the C heap (or a free
-// list given at initialization time). This allocation may occur in parallel. This
-// typically corresponds to a single mutator phase, but may extend over multiple.
-//
-// - in the second phase, G1CardSetBuffers are given back in bulk to the free list.
-// This is typically done during a GC pause.
-//
-// Some third party is responsible for giving back memory from the free list to
-// the operating system.
-//
 // Allocation and deallocation in the first phase on G1CardSetContainer basis
 // may occur by multiple threads at once.
 //
@@ -83,7 +69,7 @@ typedef G1SegmentedArrayBufferList<mtGCCardSet> G1CardSetBufferList;
 // none, this class allocates a new G1CardSetBuffer (allocated from the C heap,
 // asking the G1CardSetAllocOptions instance about sizes etc) and uses that one.
 //
-// The G1CardSetContainerOnHeaps free list is a linked list of G1CardSetContainers
+// The NodeStack free list is a linked list of G1CardSetContainers
 // within all G1CardSetBuffer instances allocated so far. It uses a separate
 // pending list and global synchronization to avoid the ABA problem when the
 // user frees a memory object.
@@ -96,14 +82,16 @@ typedef G1SegmentedArrayBufferList<mtGCCardSet> G1CardSetBufferList;
 // own set of allocators, there is intentionally no padding between them to save
 // memory.
 template <class Elem>
-class G1CardSetAllocator : public G1SegmentedArray<Elem, mtGCCardSet> {
+class G1CardSetAllocator {
   // G1CardSetBuffer management.
 
+  typedef G1SegmentedArray<Elem, mtGCCardSet> SegmentedArray;
   // G1CardSetContainer node management within the G1CardSetBuffers allocated
   // by this allocator.
   static G1CardSetContainer* volatile* next_ptr(G1CardSetContainer& node);
   typedef LockFreeStack<G1CardSetContainer, &G1CardSetAllocator::next_ptr> NodeStack;
 
+  SegmentedArray _segmented_array;
   volatile bool _transfer_lock;
   NodeStack _free_nodes_list;
   NodeStack _pending_nodes_list;
@@ -135,15 +123,16 @@ public:
 
   size_t mem_size() const {
     return sizeof(*this) +
-      G1SegmentedArray<Elem, mtGCCardSet>::num_buffers() * sizeof(G1CardSetBuffer)
-            + G1SegmentedArray<Elem, mtGCCardSet>::num_available_nodes() * G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
+      _segmented_array.num_buffers() * sizeof(G1CardSetBuffer)
+            + _segmented_array.num_available_nodes() * _segmented_array.elem_size();
   }
 
   size_t wasted_mem_size() const {
-    return (G1SegmentedArray<Elem, mtGCCardSet>::num_available_nodes()
-              - (G1SegmentedArray<Elem, mtGCCardSet>::num_allocated_nodes() - _num_pending_nodes))
-                * G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
+    return (_segmented_array.num_available_nodes()
+              - (_segmented_array.num_allocated_nodes() - _num_pending_nodes))
+                * _segmented_array.elem_size();
   }
+  inline uint num_buffers() { return _segmented_array.num_buffers(); }
 
   void print(outputStream* os);
 };

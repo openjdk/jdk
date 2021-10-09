@@ -35,14 +35,14 @@ template <class Elem>
 G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
                                              const G1CardSetAllocOptions& buffer_options,
                                              G1CardSetBufferList* free_buffer_list) :
-  G1SegmentedArray<Elem, mtGCCardSet>(name, buffer_options, free_buffer_list),
+  _segmented_array(name, buffer_options, free_buffer_list),
   _transfer_lock(false),
   _free_nodes_list(),
   _pending_nodes_list(),
   _num_pending_nodes(0),
   _num_free_nodes(0)
 {
-  uint elem_size = G1SegmentedArray<Elem, mtGCCardSet>::elem_size();
+  uint elem_size = _segmented_array.elem_size();
   assert(elem_size >= sizeof(G1CardSetContainer), "Element instance size %u for allocator %s too small", elem_size, name);
 }
 
@@ -85,7 +85,6 @@ bool G1CardSetAllocator<Elem>::try_transfer_pending() {
 template <class Elem>
 void G1CardSetAllocator<Elem>::free(Elem* elem) {
   assert(elem != nullptr, "precondition");
-  // assert(elem_size() >= sizeof(G1CardSetContainer), "size mismatch");
   // Desired minimum transfer batch size.  There is relatively little
   // importance to the specific number.  It shouldn't be too big, else
   // we're wasting space when the release rate is low.  If the release
@@ -115,16 +114,14 @@ void G1CardSetAllocator<Elem>::drop_all() {
   _pending_nodes_list.pop_all();
   _num_pending_nodes = 0;
   _num_free_nodes = 0;
-
-  G1SegmentedArray<Elem, mtGCCardSet>::drop_all();
 }
 
 template <class Elem>
 void G1CardSetAllocator<Elem>::print(outputStream* os) {
-  uint num_allocated_nodes = G1SegmentedArray<Elem, mtGCCardSet>::num_allocated_nodes();
-  uint num_available_nodes = G1SegmentedArray<Elem, mtGCCardSet>::num_available_nodes();
-  const G1SegmentedArrayBuffer<mtGCCardSet>* first_array_buffer = G1SegmentedArray<Elem, mtGCCardSet>::first_array_buffer();
-  uint num_buffers = G1SegmentedArray<Elem, mtGCCardSet>::num_buffers();
+  uint num_allocated_nodes = _segmented_array.num_allocated_nodes();
+  uint num_available_nodes = _segmented_array.num_available_nodes();
+  const G1SegmentedArrayBuffer<mtGCCardSet>* first_array_buffer = _segmented_array.first_array_buffer();
+  uint num_buffers = _segmented_array.num_buffers();
   os->print("MA " PTR_FORMAT ": %u elems pending (allocated %u available %u) used %.3f highest %u buffers %u size %zu ",
             p2i(this),
             _num_pending_nodes,

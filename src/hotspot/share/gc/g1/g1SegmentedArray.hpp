@@ -81,8 +81,6 @@ public:
     return _next_allocate;
   }
 
-  const char* start() const { return _buffer; }
-
   bool is_full() const { return _next_allocate >= _num_elems; }
 };
 
@@ -136,7 +134,6 @@ protected:
   uint exponential_expand(uint prev_num_elems) {
     return clamp(prev_num_elems * 2, _initial_num_elems, _max_num_elems);
   }
-
 public:
   static const uint BufferAlignment = 4;
   static const uint MinimumBufferSize = 8;
@@ -154,7 +151,7 @@ public:
     return _initial_num_elems;
   }
 
-  uint elem_size() const {return _elem_size;}
+  uint elem_size() const { return _elem_size; }
 
   uint alignment() const { return _alignment; }
 };
@@ -164,14 +161,35 @@ public:
 // G1SegmentedArrayBufferList is the free list to cache G1SegmentedArrayBuffer,
 // and G1SegmentedArrayAllocOptions is the configuration for G1SegmentedArray
 // attributes.
+//
+// Implementation details as below:
+//
+// Arena-like allocator for (card set, or ...) heap memory objects (Elem elements).
+//
+// Actual allocation from the C heap occurs on G1SegmentedArrayBuffer basis, i.e. segments
+// of elements. The assumed allocation pattern for these G1SegmentedArrayBuffer elements
+// is assumed to be strictly two-phased:
+//
+// - in the first phase, G1SegmentedArrayBuffers are allocated from the C heap (or a free
+// list given at initialization time). This allocation may occur in parallel. This
+// typically corresponds to a single mutator phase, but may extend over multiple.
+//
+// - in the second phase, G1SegmentedArrayBuffers are given back in bulk to the free list.
+// This is typically done during a GC pause.
+//
+// Some third party is responsible for giving back memory from the free list to
+// the operating system.
+//
+// Allocation and deallocation in the first phase basis may occur by multiple threads at once.
+//
+// The class also manages a few counters for statistics using atomic operations.
+// Their values are only consistent within each other with extra global
+// synchronization.
 template <class Elem, MEMFLAGS flag>
 class G1SegmentedArray {
   // G1CardSetAllocOptions provides parameters for allocation buffer
   // sizing and expansion.
   G1SegmentedArrayAllocOptions _alloc_options;
-
-  volatile uint _num_available_nodes; // Number of nodes available in all buffers (allocated + free + pending + not yet used).
-  volatile uint _num_allocated_nodes; // Number of total nodes allocated and in use.
 
   G1SegmentedArrayBuffer<flag>* volatile _first;       // The (start of the) list of all buffers.
   G1SegmentedArrayBuffer<flag>* _last;                 // The last element of the list of all buffers.
@@ -179,18 +197,20 @@ class G1SegmentedArray {
   volatile size_t _mem_size;              // Memory used by all buffers.
 
   G1SegmentedArrayBufferList<flag>* _free_buffer_list; // The global free buffer list to
-  // preferentially get new buffers from.
+                                                       // preferentially get new buffers from.
+
+  volatile uint _num_available_nodes; // Number of nodes available in all buffers (allocated + free + pending + not yet used).
+  volatile uint _num_allocated_nodes; // Number of total nodes allocated and in use.
 
 private:
   inline G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
 
-protected:
+public:
   uint num_available_nodes() const { return _num_available_nodes; }
   uint num_allocated_nodes() const { return _num_allocated_nodes; }
   const G1SegmentedArrayBuffer<flag>* first_array_buffer() const { return _first; }
   inline uint elem_size() const;
 
-public:
   G1SegmentedArray(const char* name,
                    const G1SegmentedArrayAllocOptions& buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
@@ -205,12 +225,6 @@ public:
   inline Elem* allocate();
 
   inline uint num_buffers() const;
-
-  uint length();
-
-  template<typename Visitor>
-  void iterate_nodes(Visitor& v);
 };
-
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_HPP

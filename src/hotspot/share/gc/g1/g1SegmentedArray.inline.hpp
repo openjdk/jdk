@@ -28,11 +28,8 @@
 
 #include "gc/g1/g1SegmentedArray.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/globalCounter.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
-
-// ==== G1SegmentedArrayBuffer ====
 
 template<MEMFLAGS flag>
 G1SegmentedArrayBuffer<flag>::G1SegmentedArrayBuffer(uint elem_size, uint num_instances, G1SegmentedArrayBuffer* next) :
@@ -59,8 +56,6 @@ void* G1SegmentedArrayBuffer<flag>::get_new_buffer_elem() {
   return r;
 }
 
-
-// ==== G1SegmentedArrayBufferList ====
 
 template<MEMFLAGS flag>
 void G1SegmentedArrayBufferList<flag>::bulk_add(G1SegmentedArrayBuffer<flag>& first,
@@ -123,11 +118,8 @@ void G1SegmentedArrayBufferList<flag>::free_all() {
 }
 
 
-// ==== G1SegmentedArray ====
-
 template <class Elem, MEMFLAGS flag>
-G1SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(
-  G1SegmentedArrayBuffer<flag>* const prev) {
+G1SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev) {
 
   // Take an existing buffer if available.
   G1SegmentedArrayBuffer<flag>* next = _free_buffer_list->get();
@@ -170,13 +162,13 @@ G1SegmentedArray<Elem, flag>::G1SegmentedArray(const char* name,
                                                const G1SegmentedArrayAllocOptions& buffer_options,
                                                G1SegmentedArrayBufferList<flag>* free_buffer_list) :
      _alloc_options(buffer_options),
-     _num_available_nodes(0),
-     _num_allocated_nodes(0),
      _first(nullptr),
      _last(nullptr),
      _num_buffers(0),
      _mem_size(0),
-     _free_buffer_list(free_buffer_list) {
+     _free_buffer_list(free_buffer_list),
+     _num_available_nodes(0),
+     _num_allocated_nodes(0) {
   assert(_free_buffer_list != nullptr, "precondition!");
 }
 
@@ -219,6 +211,9 @@ void G1SegmentedArray<Elem, flag>::drop_all() {
 
 template <class Elem, MEMFLAGS flag>
 Elem* G1SegmentedArray<Elem, flag>::allocate() {
+  uint es = elem_size();
+  assert(es > 0, "instance size not set.");
+
   G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
   if (cur == nullptr) {
     cur = create_new_buffer(cur);
@@ -241,42 +236,6 @@ Elem* G1SegmentedArray<Elem, flag>::allocate() {
 template <class Elem, MEMFLAGS flag>
 inline uint G1SegmentedArray<Elem, flag>::num_buffers() const {
   return Atomic::load(&_num_buffers);
-}
-
-class LengthVisitor {
-  uint _total;
-public:
-  LengthVisitor() : _total(0) {}
-  void visit(G1SegmentedArrayBuffer<mtGC>* node, uint32_t limit) {
-    _total += limit;
-  }
-  uint length() {
-    return _total;
-  }
-};
-
-template <class Elem, MEMFLAGS flag>
-uint G1SegmentedArray<Elem, flag>::length() {
-  LengthVisitor v;
-  iterate_nodes(v);
-  return v.length();
-}
-
-template <class Elem, MEMFLAGS flag>
-template <typename Visitor>
-void G1SegmentedArray<Elem, flag>::iterate_nodes(Visitor& v)  {
-  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
-
-  if (cur != nullptr) {
-    assert(_last != nullptr, "If there is at least one element, there must be a last one.");
-
-    while (cur != nullptr) {
-      uint limit = cur->length();
-      v.visit(cur, limit);
-
-      cur = cur->next();
-    }
-  }
 }
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP
