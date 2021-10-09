@@ -246,11 +246,7 @@ public abstract class AbstractClassLoaderValue<CLV extends AbstractClassLoaderVa
      */
     public void removeAll(ClassLoader cl) {
         ConcurrentHashMap<CLV, Object> map = map(cl);
-        for (Iterator<CLV> i = map.keySet().iterator(); i.hasNext(); ) {
-            if (i.next().isEqualOrDescendantOf(this)) {
-                i.remove();
-            }
-        }
+        map.keySet().removeIf(clv -> clv.isEqualOrDescendantOf(this));
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();

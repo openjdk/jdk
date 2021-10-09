@@ -138,12 +138,7 @@ class InMemoryCookieStore implements CookieStore {
 
         lock.lock();
         try {
-            Iterator<HttpCookie> it = cookieJar.iterator();
-            while (it.hasNext()) {
-                if (it.next().hasExpired()) {
-                    it.remove();
-                }
-            }
+            cookieJar.removeIf(HttpCookie::hasExpired);
         } finally {
             rt = Collections.unmodifiableList(cookieJar);
             lock.unlock();

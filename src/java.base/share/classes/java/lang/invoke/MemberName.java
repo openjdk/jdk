@@ -1048,11 +1048,7 @@ final class MemberName implements Member, Cloneable {
             // one signature might correspond to several types.
             // So if matchType is a Class or MethodType, refilter the results.
             if (matchType != null && matchType != matchSig) {
-                for (Iterator<MemberName> it = result.iterator(); it.hasNext();) {
-                    MemberName m = it.next();
-                    if (!matchType.equals(m.getType()))
-                        it.remove();
-                }
+                result.removeIf(m -> !matchType.equals(m.getType()));
             }
             return result;
         }

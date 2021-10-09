@@ -636,13 +636,7 @@ public final class Security {
                 // For each provider in the candidates set, if it
                 // isn't in the newCandidate set, we should remove
                 // it from the candidate set.
-                for (Iterator<Provider> cansIte = candidates.iterator();
-                     cansIte.hasNext(); ) {
-                    Provider prov = cansIte.next();
-                    if (!newCandidates.contains(prov)) {
-                        cansIte.remove();
-                    }
-                }
+                candidates.removeIf(prov -> !newCandidates.contains(prov));
             } else {
                 candidates = null;
                 break;

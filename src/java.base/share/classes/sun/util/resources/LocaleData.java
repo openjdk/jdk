@@ -278,11 +278,7 @@ public class LocaleData {
                 String category = (lastDot >= 0) ? baseName.substring(lastDot + 1) : baseName;
                 Set<String> langtags = ((JRELocaleProviderAdapter)adapter).getLanguageTagSet(category);
                 if (!langtags.isEmpty()) {
-                    for (Iterator<Locale> itr = candidates.iterator(); itr.hasNext();) {
-                        if (!adapter.isSupportedProviderLocale(itr.next(), langtags)) {
-                            itr.remove();
-                        }
-                    }
+                    candidates.removeIf(l -> !adapter.isSupportedProviderLocale(l, langtags));
                 }
                 CANDIDATES_MAP.putIfAbsent(key, candidates);
             }
