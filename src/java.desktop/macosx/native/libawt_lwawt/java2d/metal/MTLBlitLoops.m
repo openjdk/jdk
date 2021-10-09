@@ -184,7 +184,8 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
     @autoreleasepool {
         J2dTraceLn4(J2D_TRACE_VERBOSE, "replaceTextureRegion src (dw, dh) : [%d, %d] dest (dx1, dy1) =[%d, %d]",
                     dw, dh, dx1, dy1);
-        id<MTLBuffer> buff = [[mtlc.device newBufferWithLength:(sw * sh * srcInfo->pixelStride) options:MTLResourceStorageModeManaged] autorelease];
+        id<MTLBuffer> buff = [[[mtlc.device newBufferWithLength:(sw * sh * srcInfo->pixelStride)
+                                options:MTLResourceStorageModeManaged] autorelease] retain];
 
         // copy src pixels inside src bounds to buff
         for (int row = 0; row < sh; row++) {
@@ -194,7 +195,8 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
         [buff didModifyRange:NSMakeRange(0, buff.length)];
 
         if (rfi->swizzleMap != nil) {
-            id <MTLBuffer> swizzled = [[mtlc.device newBufferWithLength:(sw * sh * srcInfo->pixelStride) options:MTLResourceStorageModeManaged] autorelease];
+            id <MTLBuffer> swizzled = [[[mtlc.device newBufferWithLength:(sw * sh * srcInfo->pixelStride)
+                                         options:MTLResourceStorageModeManaged] autorelease] retain];
 
             // this should be cheap, since data is already on GPU
             id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
@@ -241,6 +243,7 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
         id<MTLCommandBuffer> commandbuf = [cbwrapper getCommandBuffer];
         [commandbuf addCompletedHandler:^(id <MTLCommandBuffer> commandbuf) {
             [cbwrapper release];
+            [buff release];
         }];
         [commandbuf commit];
     }
@@ -595,7 +598,7 @@ MTLBlitLoops_Blit(JNIEnv *env,
             }
 
 #ifdef TRACE_BLIT
-            J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_FALSE,
+            J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_TRUE,
                     "MTLBlitLoops_Blit [tx=%d, xf=%d, AC=%s]: bdst=%s, src=%p (%dx%d) O=%d premul=%d | (%d, %d, %d, %d)->(%1.2f, %1.2f, %1.2f, %1.2f)",
                     texture, xform, [mtlc getCompositeDescription].cString,
                     getSurfaceDescription(dstOps).cString, srcOps,
