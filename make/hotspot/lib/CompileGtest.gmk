@@ -101,7 +101,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     CFLAGS_windows := -EHsc, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc) \
-        undef, \
+        undef stringop-overflow, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
         undef switch format-nonliteral tautological-undefined-compare \
         self-assign-overloaded, \
