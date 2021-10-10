@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_CDSCONSTANTS_HPP
 #define SHARE_CDS_CDSCONSTANTS_HPP
 
+#include <cstddef>
 #include "memory/allStatic.hpp"
 
 typedef struct {
