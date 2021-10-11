@@ -29,39 +29,34 @@ import java.util.Optional;
  * @test
  * @bug 8271623
  *
- * @clean *
- * @compile OptimizeOuterThis.java InnerClasses.java
- * @run main OptimizeOuterThis
- *
- * @clean *
- * @compile -XDoptimizeOuterThis=true --release 17 OptimizeOuterThis.java InnerClasses.java
- * @run main OptimizeOuterThis
+ * @compile --release 17 DontOptimizeOuterThis.java InnerClasses.java
+ * @run main DontOptimizeOuterThis
  */
-public class OptimizeOuterThis extends InnerClasses {
+public class DontOptimizeOuterThis extends InnerClasses {
 
     public static void main(String[] args) {
-        new OptimizeOuterThis().test();
+        new DontOptimizeOuterThis().test();
     }
 
     public void test() {
-        checkInner(localCapturesParameter(0), false);
-        checkInner(localCapturesLocal(), false);
+        checkInner(localCapturesParameter(0), true);
+        checkInner(localCapturesLocal(), true);
         checkInner(localCapturesEnclosing(), true);
 
-        checkInner(anonCapturesParameter(0), false);
-        checkInner(anonCapturesLocal(), false);
+        checkInner(anonCapturesParameter(0), true);
+        checkInner(anonCapturesLocal(), true);
         checkInner(anonCapturesEnclosing(), true);
 
-        checkInner(StaticMemberClass.class, false);
-        checkInner(NonStaticMemberClass.class, false);
+        checkInner(StaticMemberClass.class, false); // static
+        checkInner(NonStaticMemberClass.class, true);
         checkInner(NonStaticMemberClassCapturesEnclosing.class, true);
 
-        checkInner(N0.class, false);
+        checkInner(N0.class, false); // static
         checkInner(N0.N1.class, true);
         checkInner(N0.N1.N2.class, true);
         checkInner(N0.N1.N2.N3.class, true);
-        checkInner(N0.N1.N2.N3.N4.class, false);
-        checkInner(N0.N1.N2.N3.N4.N5.class, false);
+        checkInner(N0.N1.N2.N3.N4.class, true);
+        checkInner(N0.N1.N2.N3.N4.N5.class, true);
     }
 
     private static void checkInner(Class<?> clazz, boolean expectOuterThis) {

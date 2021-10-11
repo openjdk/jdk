@@ -60,16 +60,19 @@ import java.util.stream.IntStream;
 @ExpectedClass(className = "BridgeMethodsForLambdaTargetRelease14Test$Inner1",
         expectedMethods = {"<init>(BridgeMethodsForLambdaTargetRelease14Test)", "function()", "run()"},
         expectedFields = "lambda1",
-        expectedNumberOfSyntheticMethods = 1)
+        expectedNumberOfSyntheticMethods = 1,
+        expectedNumberOfSyntheticFields = 1)
 @ExpectedClass(className = "BridgeMethodsForLambdaTargetRelease14Test$Inner2",
         expectedMethods = {"<init>()", "staticFunction()"},
         expectedFields = "lambda1",
         expectedNumberOfSyntheticMethods = 1)
 @ExpectedClass(className = "BridgeMethodsForLambdaTargetRelease14Test$Inner3",
-        expectedMethods = {"<init>(BridgeMethodsForLambdaTargetRelease14Test)", "function()"})
+        expectedMethods = {"<init>(BridgeMethodsForLambdaTargetRelease14Test)", "function()"},
+        expectedNumberOfSyntheticFields = 1)
 @ExpectedClass(className = "BridgeMethodsForLambdaTargetRelease14Test$Inner4",
         expectedMethods = {"<init>(BridgeMethodsForLambdaTargetRelease14Test)", "function()"},
-        expectedNumberOfSyntheticMethods = 1)
+        expectedNumberOfSyntheticMethods = 1,
+        expectedNumberOfSyntheticFields = 1)
 public class BridgeMethodsForLambdaTargetRelease14Test {
 
     private class Inner1 implements Runnable {
