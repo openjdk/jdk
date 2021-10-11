@@ -61,14 +61,13 @@ class LogFileStreamOutput : public LogOutput {
   }
 
   int write_decorations(const LogDecorations& decorations);
-  bool flush();
-
  public:
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
-  virtual int write(const LogDecorations& decorations, const char* msg);
-  virtual int write(LogMessageBuffer::Iterator msg_iterator);
+  int write(const LogDecorations& decorations, const char* msg);
+  int write(LogMessageBuffer::Iterator msg_iterator);
+  int write_blocking(const LogDecorations& decorations, const char* msg);
+  virtual bool flush(int written);
   virtual void describe(outputStream* out);
-  virtual int write_blocking(const LogDecorations& decorations, const char* msg, bool should_flush);
 };
 
 class LogStdoutOutput : public LogFileStreamOutput {

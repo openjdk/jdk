@@ -138,7 +138,8 @@ void AsyncLogWriter::write() {
     char* msg = e->message();
 
     if (msg != nullptr) {
-      e->output()->write_blocking(e->decorations(), msg, true);
+      int sz = e->output()->write_blocking(e->decorations(), msg);
+      e->output()->flush(sz);
       os::free(msg);
     } else if (e->output() == nullptr) {
       // This is a flush token. Record that we found it and then

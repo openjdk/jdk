@@ -25,6 +25,7 @@
 #define SHARE_LOGGING_LOGFILEOUTPUT_HPP
 
 #include "logging/logFileStreamOutput.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
@@ -67,7 +68,7 @@ class LogFileOutput : public LogFileStreamOutput {
   char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
 
   bool should_rotate() {
-    return _file_count > 0 && _rotate_size > 0 && _current_size >= _rotate_size;
+    return _file_count > 0 && _rotate_size > 0 && Atomic::load(&_current_size) >= _rotate_size;
   }
 
   void increment_file_count() {
@@ -76,17 +77,15 @@ class LogFileOutput : public LogFileStreamOutput {
       _current_file = 0;
     }
   }
-
  public:
   LogFileOutput(const char *name);
   virtual ~LogFileOutput();
-  virtual bool initialize(const char* options, outputStream* errstream);
-  virtual bool set_option(const char* key, const char* value, outputStream* errstream);
-  int write_blocking(const LogDecorations& decorations, const char* msg, bool should_flush) override;
-  virtual void force_rotate();
-  virtual void describe(outputStream* out);
-
-  virtual const char* name() const {
+  virtual bool initialize(const char* options, outputStream* errstream) override;
+  virtual bool set_option(const char* key, const char* value, outputStream* errstream) override;
+  virtual bool flush(int written) override;
+  virtual void force_rotate() override;
+  virtual void describe(outputStream* out) override;
+  virtual const char* name() const override {
     return _name;
   }
 

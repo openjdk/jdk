@@ -264,23 +264,19 @@ class RotationLocker : public StackObj {
   }
 };
 
+// async-logging is on, this function is called by AsyncLog Thread sequentially. synchronization isnot necessary.
 // async-logging is off, this function is called from write(). Therefore, current thread is holding _stream_semaphore.
-// async-logging is on, this function is called by AsyncLog Thread sequentially. synchronization isn't necessary.
-int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg, bool should_flush) {
-  if (_stream == NULL) {
-    // An error has occurred with this output, avoid writing to it.
-    return 0;
-  }
+bool LogFileOutput::flush(int written) {
+  bool result = LogFileStreamOutput::flush(written);
 
-  int written = LogFileStreamOutput::write_blocking(decorations, msg, should_flush);
-  if (written > 0) {
+  if (result) {
     Atomic::add(&_current_size, (uint)written);
 
     if (should_rotate()) {
       rotate();
     }
   }
-  return written;
+  return result;
 }
 
 void LogFileOutput::archive() {
