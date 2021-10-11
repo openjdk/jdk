@@ -303,6 +303,21 @@ void Mutex::print_on_error(outputStream* st) const {
 // ----------------------------------------------------------------------------------
 // Non-product code
 //
+
+#ifndef PRODUCT
+void Mutex::print_on(outputStream* st) const {
+  st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
+            p2i(this), _name, p2i(owner()));
+#ifdef ASSERT
+  if (_allow_vm_block) {
+    st->print("%s", " allow_vm_block");
+  }
+  st->print(" %s", rank_name());
+#endif
+  st->cr();
+}
+#endif // PRODUCT
+
 #ifdef ASSERT
 static Mutex::Rank _ranks[] = { Mutex::event, Mutex::service, Mutex::stackwatermark, Mutex::tty, Mutex::oopstorage,
                                 Mutex::nosafepoint, Mutex::safepoint };
@@ -331,7 +346,6 @@ const char* Mutex::rank_name() const {
   return rank_name_internal(_rank);
 }
 
-
 void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
   int i = 0;
   while (_ranks[i] < orig) i++;
@@ -343,21 +357,7 @@ void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
            rank_name_internal(orig), adjust, rank_name_internal(adjusted));
   }
 }
-#endif // ASSERT
 
-#ifndef PRODUCT
-void Mutex::print_on(outputStream* st) const {
-  st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
-            p2i(this), _name, p2i(owner()));
-  if (_allow_vm_block) {
-    st->print("%s", " allow_vm_block");
-  }
-  DEBUG_ONLY(st->print(" %s", rank_name()));
-  st->cr();
-}
-#endif // PRODUCT
-
-#ifdef ASSERT
 void Mutex::assert_owner(Thread * expected) {
   const char* msg = "invalid owner";
   if (expected == NULL) {
