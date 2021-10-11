@@ -50,8 +50,22 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
 
   HeapRegion* _hr;
 
+  // When splitting addresses into region and card within that region, the logical
+  // shift value to get the region.
+  static uint _split_card_shift;
+  // When splitting addresses into region and card within that region, the mask
+  // to get the offset within the region.
+  static uintptr_t _split_card_mask;
+  // Cached value of heap base address.
+  static HeapWord* _heap_base_address;
+
+  // Split the given address into region of that card and the card within that
+  // region.
   inline void split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const;
   void clear_fcc();
+
+  // Maximum number of cards in a (card) region storable in the remembered set in bits.
+  static uint per_card_region_card_limit();
 
 public:
   HeapRegionRemSet(HeapRegion* hr, G1CardSetConfiguration* config);
@@ -77,6 +91,8 @@ public:
   size_t occupied() {
     return _card_set.occupied();
   }
+
+  static void initialize(HeapWord* heap_base_address);
 
   // Coarsening statistics since VM start.
   static G1CardSetCoarsenStats coarsen_stats() { return G1CardSet::coarsen_stats(); }

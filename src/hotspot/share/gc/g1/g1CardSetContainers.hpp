@@ -177,6 +177,9 @@ public:
   void set_next(G1CardSetContainer* next) {
     _next = next;
   }
+
+  // Maximum size of the entries of any G1CardSetContainer in bits.
+  static uint max_card_bits_storable();
 };
 
 class G1CardSetArray : public G1CardSetContainer {

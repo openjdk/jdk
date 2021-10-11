@@ -42,8 +42,22 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+uint HeapRegionRemSet::_split_card_shift = 0;
+uintptr_t HeapRegionRemSet::_split_card_mask = 0;
+HeapWord* HeapRegionRemSet::_heap_base_address = nullptr;
+
 const char* HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
 const char* HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPLT"};
+
+void HeapRegionRemSet::initialize(HeapWord* heap_base_address) {
+  _split_card_shift = MIN2((uint)HeapRegion::LogCardsPerRegion, per_card_region_card_limit()) + CardTable::card_shift;
+  _split_card_mask = ((uintptr_t)1 << _split_card_shift) - 1;
+  _heap_base_address = heap_base_address;
+}
+
+uint HeapRegionRemSet::per_card_region_card_limit() {
+  return G1CardSetContainer::max_card_bits_storable();
+}
 
 HeapRegionRemSet::HeapRegionRemSet(HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
