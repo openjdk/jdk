@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "oops/arrayOop.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include <type_traits>
 
 // A typeArrayOop is an array containing basic types (non oop elements).
 // It is used for arrays of {characters, singles, doubles, bytes, shorts, integers, longs}
@@ -133,5 +134,8 @@ private:
  public:
   inline int object_size(const TypeArrayKlass* tk) const;
 };
+
+// See similar requirement for oopDesc.
+static_assert(std::is_trivially_default_constructible<typeArrayOopDesc>::value, "required");
 
 #endif // SHARE_OOPS_TYPEARRAYOOP_HPP

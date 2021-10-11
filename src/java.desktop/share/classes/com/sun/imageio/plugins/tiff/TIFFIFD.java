@@ -56,12 +56,12 @@ public class TIFFIFD extends TIFFDirectory {
     // A set of tag numbers corresponding to tags essential to decoding
     // the image and metadata required to interpret its samples.
     //
-    private static volatile Set<Integer> essentialTags = null;
+    private static volatile Set<Integer> essentialTags;
 
     private static void initializeEssentialTags() {
         Set<Integer> tags = essentialTags;
         if (tags == null) {
-            essentialTags = tags = Set.of(
+            essentialTags = Set.of(
                 BaselineTIFFTagSet.TAG_BITS_PER_SAMPLE,
                 BaselineTIFFTagSet.TAG_COLOR_MAP,
                 BaselineTIFFTagSet.TAG_COMPRESSION,

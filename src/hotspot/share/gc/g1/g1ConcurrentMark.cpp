@@ -1581,8 +1581,9 @@ public:
     G1CMIsAliveClosure is_alive(&_g1h);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     G1CMDrainMarkingStackClosure complete_gc(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
@@ -1695,6 +1696,7 @@ void G1ConcurrentMark::preclean() {
   SuspendibleThreadSetJoiner joiner;
 
   G1CMKeepAliveAndDrainClosure keep_alive(this, task(0), true /* is_serial */);
+  BarrierEnqueueDiscoveredFieldClosure enqueue;
   G1CMDrainMarkingStackClosure drain_mark_stack(this, task(0), true /* is_serial */);
 
   set_concurrency_and_phase(1, true);
@@ -1706,6 +1708,7 @@ void G1ConcurrentMark::preclean() {
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(rp, false);
   rp->preclean_discovered_references(rp->is_alive_non_header(),
                                      &keep_alive,
+                                     &enqueue,
                                      &drain_mark_stack,
                                      &yield_cl,
                                      _gc_timer_cm);

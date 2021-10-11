@@ -148,7 +148,7 @@ final class LCMS implements PCMM {
     }
 
     /* methods invoked from LCMSTransform */
-    public static native void colorConvert(LCMSTransform trans,
+    public static native void colorConvert(long trans,
                                            LCMSImageLayout src,
                                            LCMSImageLayout dest);
 

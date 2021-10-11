@@ -59,14 +59,18 @@ Node* MulNode::Identity(PhaseGVN* phase) {
 // We also canonicalize the Node, moving constants to the right input,
 // and flatten expressions (so that 1+x+2 becomes x+3).
 Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  Node *progress = NULL;        // Progress flag
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  Node* progress = NULL;        // Progress flag
 
-  // convert "(-a)*(-b)" into "a*b"
-  Node *in1 = in(1);
-  Node *in2 = in(2);
-  if (in1->is_Sub() && in2->is_Sub()) {
+  // This code is used by And nodes too, but some conversions are
+  // only valid for the actual Mul nodes.
+  uint op = Opcode();
+  bool real_mul = (op == Op_MulI) || (op == Op_MulL) ||
+                  (op == Op_MulF) || (op == Op_MulD);
+
+  // Convert "(-a)*(-b)" into "a*b".
+  if (real_mul && in1->is_Sub() && in2->is_Sub()) {
     if (phase->type(in1->in(1))->is_zero_type() &&
         phase->type(in2->in(1))->is_zero_type()) {
       set_req(1, in1->in(2));
@@ -76,6 +80,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         igvn->_worklist.push(in1);
         igvn->_worklist.push(in2);
       }
+      in1 = in(1);
+      in2 = in(2);
       progress = this;
     }
   }
@@ -98,9 +104,14 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         igvn->_worklist.push(in1);
         igvn->_worklist.push(in2);
       }
+      in1 = in(1);
+      in2 = in(2);
       progress = this;
     }
   }
+
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
 
   // We are OK if right is a constant, or right is a load and
   // left is a non-constant.
@@ -119,7 +130,6 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If the right input is a constant, and the left input is a product of a
   // constant, flatten the expression tree.
-  uint op = Opcode();
   if( t2->singleton() &&        // Right input is a constant?
       op != Op_MulF &&          // Float & double cannot reassociate
       op != Op_MulD ) {

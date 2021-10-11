@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +23,15 @@
  * questions.
  */
 
-/*
- *
- *  (C) Copyright IBM Corp. 1999 All Rights Reserved.
- *  Copyright 1997 The Open Group Research Institute.  All rights reserved.
- */
+package sun.font;
 
-package sun.security.krb5.internal;
+final class PlatformFontInfo {
 
-import sun.security.krb5.EncryptionKey;
-import java.util.BitSet;
-
-public class AuthContext {
-    public HostAddress remoteAddress;
-    public int remotePort;
-    public HostAddress localAddress;
-    public int localPort;
-    public EncryptionKey keyBlock;
-    public EncryptionKey localSubkey;
-    public EncryptionKey remoteSubkey;
-    public BitSet authContextFlags;
-    public int remoteSeqNumber;
-    public int localSeqNumber;
-    public Authenticator authenticator;
-    public int reqCksumType;
-    public int safeCksumType;
-    public byte[] initializationVector;
-    //public ReplayCache replayCache;
-};
+    /**
+     * The method is only to be called via the
+     * {@code FontManagerFactory.getInstance()} factory method.
+     */
+    static FontManager createFontManager() {
+        return new CFontManager();
+    }
+}

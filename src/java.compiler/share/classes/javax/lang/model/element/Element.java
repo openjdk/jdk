@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * <p>Note that any annotations returned by this method are
      * declaration annotations.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);

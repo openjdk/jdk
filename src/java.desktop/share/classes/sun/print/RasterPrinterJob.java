@@ -1547,7 +1547,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * PrintRequestAttributeSet while calling print(attributes)
          */
         JobSheets js = (JobSheets)psvc.getDefaultAttributeValue(JobSheets.class);
-        if (js != null && js.equals(JobSheets.NONE)) {
+        if (JobSheets.NONE.equals(js)) {
             noJobSheet = true;
         }
 
