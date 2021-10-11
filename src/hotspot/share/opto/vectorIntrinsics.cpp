@@ -2414,8 +2414,8 @@ bool LibraryCallKit::inline_vector_convert() {
   // where certain masks (depending on the species) are either propagated
   // through a vector or predicate register.
   if (is_mask &&
-      ((src_type->isa_vect() && dst_type->isa_vectmask()) ||
-      (dst_type->isa_vect() && src_type->isa_vectmask()))) {
+      ((src_type->isa_vectmask() == NULL && dst_type->isa_vectmask()) ||
+       (dst_type->isa_vectmask() == NULL && src_type->isa_vectmask()))) {
     return false;
   }
 
@@ -2481,8 +2481,8 @@ bool LibraryCallKit::inline_vector_convert() {
       op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to));
     } else {
       if (is_mask) {
-        if((dst_type->isa_vectmask() && src_type->isa_vectmask()) ||
-           (type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to))) {
+        if ((dst_type->isa_vectmask() && src_type->isa_vectmask()) ||
+            (type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to))) {
           op = gvn().transform(new VectorMaskCastNode(op, dst_type));
         } else {
           // Special handling for casting operation involving floating point types.
