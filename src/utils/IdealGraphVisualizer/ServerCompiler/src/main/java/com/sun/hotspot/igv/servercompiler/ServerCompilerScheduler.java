@@ -637,7 +637,7 @@ public class ServerCompilerScheduler implements Scheduler {
         for (Integer i : edgeMap.keySet()) {
 
             List<InputEdge> list = edgeMap.get(i);
-            Collections.sort(list, edgeComparator);
+            list.sort(edgeComparator);
 
             int to = i;
             InputNode toInputNode = graph.getNode(to);

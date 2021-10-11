@@ -1293,7 +1293,7 @@ void MacroAssembler::gfmul_avx512(XMMRegister GH, XMMRegister HK) {
     vpternlogq(GH, 0x96, TMP1, TMP2, Assembler::AVX_512bit);
 }
 
-void MacroAssembler::generateHtbl_48_block_zmm(Register htbl) {
+void MacroAssembler::generateHtbl_48_block_zmm(Register htbl, Register avx512_htbl) {
     const XMMRegister HK = xmm6;
     const XMMRegister ZT5 = xmm4;
     const XMMRegister ZT7 = xmm7;
@@ -1320,48 +1320,48 @@ void MacroAssembler::generateHtbl_48_block_zmm(Register htbl) {
     vpcmpeqd(xmm2, xmm2, xmm12, AVX_128bit);
     vpand(xmm2, xmm2, xmm11, Assembler::AVX_128bit);
     vpxor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
-    movdqu(Address(htbl, 16 * 56), xmm6); // H ^ 2
+    movdqu(Address(avx512_htbl, 16 * 47), xmm6); // H ^ 2
     // Compute the remaining three powers of H using XMM registers and all following powers using ZMM
     movdqu(ZT5, HK);
     vinserti32x4(ZT7, ZT7, HK, 3);
 
     gfmul_avx512(ZT5, HK);
-    movdqu(Address(htbl, 16 * 55), ZT5); // H ^ 2 * 2
+    movdqu(Address(avx512_htbl, 16 * 46), ZT5); // H ^ 2 * 2
     vinserti32x4(ZT7, ZT7, ZT5, 2);
 
     gfmul_avx512(ZT5, HK);
-    movdqu(Address(htbl, 16 * 54), ZT5); // H ^ 2 * 3
+    movdqu(Address(avx512_htbl, 16 * 45), ZT5); // H ^ 2 * 3
     vinserti32x4(ZT7, ZT7, ZT5, 1);
 
     gfmul_avx512(ZT5, HK);
-    movdqu(Address(htbl, 16 * 53), ZT5); // H ^ 2 * 4
+    movdqu(Address(avx512_htbl, 16 * 44), ZT5); // H ^ 2 * 4
     vinserti32x4(ZT7, ZT7, ZT5, 0);
 
     evshufi64x2(ZT5, ZT5, ZT5, 0x00, Assembler::AVX_512bit);
     evmovdquq(ZT8, ZT7, Assembler::AVX_512bit);
     gfmul_avx512(ZT7, ZT5);
-    evmovdquq(Address(htbl, 16 * 49), ZT7, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 40), ZT7, Assembler::AVX_512bit);
     evshufi64x2(ZT5, ZT7, ZT7, 0x00, Assembler::AVX_512bit);
     gfmul_avx512(ZT8, ZT5);
-    evmovdquq(Address(htbl, 16 * 45), ZT8, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 36), ZT8, Assembler::AVX_512bit);
     gfmul_avx512(ZT7, ZT5);
-    evmovdquq(Address(htbl, 16 * 41), ZT7, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 32), ZT7, Assembler::AVX_512bit);
     gfmul_avx512(ZT8, ZT5);
-    evmovdquq(Address(htbl, 16 * 37), ZT8, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 28), ZT8, Assembler::AVX_512bit);
     gfmul_avx512(ZT7, ZT5);
-    evmovdquq(Address(htbl, 16 * 33), ZT7, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 24), ZT7, Assembler::AVX_512bit);
     gfmul_avx512(ZT8, ZT5);
-    evmovdquq(Address(htbl, 16 * 29), ZT8, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 20), ZT8, Assembler::AVX_512bit);
     gfmul_avx512(ZT7, ZT5);
-    evmovdquq(Address(htbl, 16 * 25), ZT7, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 16), ZT7, Assembler::AVX_512bit);
     gfmul_avx512(ZT8, ZT5);
-    evmovdquq(Address(htbl, 16 * 21), ZT8, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 12), ZT8, Assembler::AVX_512bit);
     gfmul_avx512(ZT7, ZT5);
-    evmovdquq(Address(htbl, 16 * 17), ZT7, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 8), ZT7, Assembler::AVX_512bit);
     gfmul_avx512(ZT8, ZT5);
-    evmovdquq(Address(htbl, 16 * 13), ZT8, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 4), ZT8, Assembler::AVX_512bit);
     gfmul_avx512(ZT7, ZT5);
-    evmovdquq(Address(htbl, 16 * 9), ZT7, Assembler::AVX_512bit);
+    evmovdquq(Address(avx512_htbl, 16 * 0), ZT7, Assembler::AVX_512bit);
     ret(0);
 }
 
@@ -1477,8 +1477,8 @@ void MacroAssembler::ghash16_encrypt16_parallel(Register key, Register subkeyHtb
 
     // ZTMP19 & ZTMP20 used for loading hash key
     // Pre-load hash key
-    evmovdquq(ZTMP19, Address(subkeyHtbl, i * 64 + 144), Assembler::AVX_512bit);
-    evmovdquq(ZTMP20, Address(subkeyHtbl, ++i * 64 + 144), Assembler::AVX_512bit);
+    evmovdquq(ZTMP19, Address(subkeyHtbl, i * 64), Assembler::AVX_512bit);
+    evmovdquq(ZTMP20, Address(subkeyHtbl, ++i * 64), Assembler::AVX_512bit);
     // Load data for computing ghash
     evmovdquq(ZTMP21, Address(data, ghash_pos, Address::times_1, 0 * 64), Assembler::AVX_512bit);
     vpshufb(ZTMP21, ZTMP21, xmm24, Assembler::AVX_512bit);
@@ -1499,7 +1499,7 @@ void MacroAssembler::ghash16_encrypt16_parallel(Register key, Register subkeyHtb
     // GHASH 4 blocks
     carrylessMultiply(ZTMP6, ZTMP7, ZTMP8, ZTMP5, ZTMP21, ZTMP19);
     // Load the next hkey and Ghash data
-    evmovdquq(ZTMP19, Address(subkeyHtbl, ++i * 64 + 144), Assembler::AVX_512bit);
+    evmovdquq(ZTMP19, Address(subkeyHtbl, ++i * 64), Assembler::AVX_512bit);
     evmovdquq(ZTMP21, Address(data, ghash_pos, Address::times_1, 2 * 64), Assembler::AVX_512bit);
     vpshufb(ZTMP21, ZTMP21, xmm24, Assembler::AVX_512bit);
 
@@ -1510,7 +1510,7 @@ void MacroAssembler::ghash16_encrypt16_parallel(Register key, Register subkeyHtb
     // GHASH 4 blocks(11 to 8)
     carrylessMultiply(ZTMP10, ZTMP12, ZTMP11, ZTMP9, ZTMP22, ZTMP20);
     // Load the next hkey and GDATA
-    evmovdquq(ZTMP20, Address(subkeyHtbl, ++i * 64 + 144), Assembler::AVX_512bit);
+    evmovdquq(ZTMP20, Address(subkeyHtbl, ++i * 64), Assembler::AVX_512bit);
     evmovdquq(ZTMP22, Address(data, ghash_pos, Address::times_1, 3 * 64), Assembler::AVX_512bit);
     vpshufb(ZTMP22, ZTMP22, xmm24, Assembler::AVX_512bit);
 
@@ -1628,8 +1628,7 @@ void MacroAssembler::ghash16_encrypt16_parallel(Register key, Register subkeyHtb
 }
 
 void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
-                                    Register state, Register subkeyHtbl, Register counter) {
-
+                                    Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter) {
     Label ENC_DEC_DONE, GENERATE_HTBL_48_BLKS, AES_192, AES_256, STORE_CT, GHASH_LAST_32,
           AES_32_BLOCKS, GHASH_AES_PARALLEL, LOOP, ACCUMULATE, GHASH_16_AES_16;
     const XMMRegister CTR_BLOCKx = xmm9;
@@ -1761,7 +1760,7 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
     // 2) No reduction -> accumulate multiplication values
     // 3) Final reduction post 48 blocks -> new ghash value is computed for the next round
     // Reduction value = first time
-    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
+    ghash16_encrypt16_parallel(key, avx512_subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
     addl(pos, 256);
     addl(ghash_pos, 256);
     index += 4;
@@ -1778,12 +1777,12 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
     // Each call uses 4 subkeyHtbl values, so increment the index by 4.
     bind(GHASH_16_AES_16);
     // Reduction value = no reduction
-    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
+    ghash16_encrypt16_parallel(key, avx512_subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
     addl(pos, 256);
     addl(ghash_pos, 256);
     index += 4;
     // Reduction value = final reduction means that the accumulated values have to be reduced as we have completed 48 blocks of ghash
-    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, true, index, COUNTER_INC_MASK);
+    ghash16_encrypt16_parallel(key, avx512_subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, true, index, COUNTER_INC_MASK);
     addl(pos, 256);
     addl(ghash_pos, 256);
     // Calculated ghash value needs to be moved to AAD_HASHX so that we can restart the ghash16-aes16 pipeline
@@ -1792,7 +1791,7 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
 
     // Restart the pipeline
     // Reduction value = first time
-    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
+    ghash16_encrypt16_parallel(key, avx512_subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
     addl(pos, 256);
     addl(ghash_pos, 256);
     index += 4;
@@ -1812,8 +1811,8 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
     vpshufb(ZTMP13, ZTMP13, xmm24, Assembler::AVX_512bit);
     vpshufb(ZTMP14, ZTMP14, xmm24, Assembler::AVX_512bit);
     // Load ghash keys
-    evmovdquq(ZTMP15, Address(subkeyHtbl, rbx, Address::times_1, 0 * 64 + 144), Assembler::AVX_512bit);
-    evmovdquq(ZTMP16, Address(subkeyHtbl, rbx, Address::times_1, 1 * 64 + 144), Assembler::AVX_512bit);
+    evmovdquq(ZTMP15, Address(avx512_subkeyHtbl, rbx, Address::times_1, 0 * 64), Assembler::AVX_512bit);
+    evmovdquq(ZTMP16, Address(avx512_subkeyHtbl, rbx, Address::times_1, 1 * 64), Assembler::AVX_512bit);
 
     // Ghash blocks 0 - 3
     carrylessMultiply(ZTMP2, ZTMP3, ZTMP4, ZTMP1, ZTMP13, ZTMP15);
@@ -1837,8 +1836,8 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
     evmovdquq(ZTMP14, Address(ct, ghash_pos, Address::times_1, 1 * 64), Assembler::AVX_512bit);
     vpshufb(ZTMP13, ZTMP13, xmm24, Assembler::AVX_512bit);
     vpshufb(ZTMP14, ZTMP14, xmm24, Assembler::AVX_512bit);
-    evmovdquq(ZTMP15, Address(subkeyHtbl, rbx, Address::times_1, 0 * 64 + 144), Assembler::AVX_512bit);
-    evmovdquq(ZTMP16, Address(subkeyHtbl, rbx, Address::times_1, 1 * 64 + 144), Assembler::AVX_512bit);
+    evmovdquq(ZTMP15, Address(avx512_subkeyHtbl, rbx, Address::times_1, 0 * 64), Assembler::AVX_512bit);
+    evmovdquq(ZTMP16, Address(avx512_subkeyHtbl, rbx, Address::times_1, 1 * 64), Assembler::AVX_512bit);
 
     // ghash blocks 0 - 3
     carrylessMultiply(ZTMP6, ZTMP7, ZTMP8, ZTMP5, ZTMP13, ZTMP15);
@@ -1884,7 +1883,7 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
     jmp(ENC_DEC_DONE);
 
     bind(GENERATE_HTBL_48_BLKS);
-    generateHtbl_48_block_zmm(subkeyHtbl);
+    generateHtbl_48_block_zmm(subkeyHtbl, avx512_subkeyHtbl);
 
     bind(ENC_DEC_DONE);
     movq(rax, pos);

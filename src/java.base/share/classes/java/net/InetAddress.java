@@ -1668,51 +1668,6 @@ public class InetAddress implements java.io.Serializable {
         return impl.anyLocalAddress();
     }
 
-    /*
-     * Load and instantiate an underlying impl class
-     */
-    static InetAddressImpl loadImpl(String implName) {
-        Object impl = null;
-
-        /*
-         * Property "impl.prefix" will be prepended to the classname
-         * of the implementation object we instantiate, to which we
-         * delegate the real work (like native methods).  This
-         * property can vary across implementations of the java.
-         * classes.  The default is an empty String "".
-         */
-        String prefix = GetPropertyAction.privilegedGetProperty("impl.prefix", "");
-        try {
-            @SuppressWarnings("deprecation")
-            Object tmp = Class.forName("java.net." + prefix + implName).newInstance();
-            impl = tmp;
-        } catch (ClassNotFoundException e) {
-            System.err.println("Class not found: java.net." + prefix +
-                               implName + ":\ncheck impl.prefix property " +
-                               "in your properties file.");
-        } catch (InstantiationException e) {
-            System.err.println("Could not instantiate: java.net." + prefix +
-                               implName + ":\ncheck impl.prefix property " +
-                               "in your properties file.");
-        } catch (IllegalAccessException e) {
-            System.err.println("Cannot access class: java.net." + prefix +
-                               implName + ":\ncheck impl.prefix property " +
-                               "in your properties file.");
-        }
-
-        if (impl == null) {
-            try {
-                @SuppressWarnings("deprecation")
-                Object tmp = Class.forName(implName).newInstance();
-                impl = tmp;
-            } catch (Exception e) {
-                throw new Error("System property impl.prefix incorrect");
-            }
-        }
-
-        return (InetAddressImpl) impl;
-    }
-
     /**
      * Initializes an empty InetAddress.
      */
@@ -1793,8 +1748,8 @@ public class InetAddress implements java.io.Serializable {
 class InetAddressImplFactory {
 
     static InetAddressImpl create() {
-        return InetAddress.loadImpl(isIPv6Supported() ?
-                                    "Inet6AddressImpl" : "Inet4AddressImpl");
+        return isIPv6Supported() ?
+                new Inet6AddressImpl() : new Inet4AddressImpl();
     }
 
     static native boolean isIPv6Supported();

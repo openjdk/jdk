@@ -96,13 +96,6 @@ class ClassLoaderDataGraph : public AllStatic {
   // Called from VMOperation
   static void walk_metadata_and_clean_metaspaces();
 
-  // dictionary do
-  // Iterate over all klasses in dictionary, but
-  // just the classes from defining class loaders.
-  static void dictionary_classes_do(void f(InstanceKlass*));
-  // Added for initialize_itable_for_klass to handle exceptions.
-  static void dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
-
   // VM_CounterDecay iteration support
   static InstanceKlass* try_get_next_class();
   static void adjust_saved_class(ClassLoaderData* cld);

@@ -25,23 +25,21 @@
 #ifndef SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
 #define SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
 
+#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 
 #ifndef PRODUCT
 
-inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail() {
-  if (!G1EvacuationFailureALot || !_inject_evacuation_failure_for_current_gc) {
+inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter) {
+  if (!_inject_evacuation_failure_for_current_gc) {
     return false;
   }
-  // Injecting evacuation failures is in effect for current GC
-  // Access to _evacuation_failure_alot_count is not atomic;
-  // the value does not have to be exact.
-  if (++_evacuation_failure_object_count < G1EvacuationFailureALotCount) {
+  if (++counter < G1EvacuationFailureALotCount) {
     return false;
   }
-  _evacuation_failure_object_count = 0;
+  counter = 0;
   return true;
 }
 
