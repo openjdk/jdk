@@ -271,7 +271,7 @@ public class TestFilerAsAService extends TestRunner {
                     .map(e -> e.toString())
                     .forEach(log::add);
         }
-        
+
     }
     private void assertEquals(Object expected, Object actual) throws AssertionError {
         if (!expected.equals(actual)) {
