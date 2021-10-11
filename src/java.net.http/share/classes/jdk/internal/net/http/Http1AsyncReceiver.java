@@ -727,14 +727,12 @@ class Http1AsyncReceiver {
     String dbgString() {
         String tag = dbgTag;
         if (tag == null) {
-            String flowTag = null;
             Http1Exchange<?> exchg = owner;
             Object flow = (exchg != null)
                     ? exchg.connection().getConnectionFlow()
                     : null;
-            flowTag = flow == null ? null: flow.toString();
-            if (flowTag != null) {
-                dbgTag = tag = "Http1AsyncReceiver("+ flowTag + ")";
+            if (flow != null) {
+                dbgTag = tag = "Http1AsyncReceiver(" + flow + ")";
             } else {
                 tag = "Http1AsyncReceiver(?)";
             }
