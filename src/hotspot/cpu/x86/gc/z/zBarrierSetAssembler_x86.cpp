@@ -42,6 +42,7 @@
 #endif // COMPILER1
 #ifdef COMPILER2
 #include "gc/z/c2/zBarrierSetC2.hpp"
+#include "c2_intelJccErratum_x86.hpp"
 #include "opto/output.hpp"
 #endif // COMPILER2
 
@@ -311,6 +312,72 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   BLOCK_COMMENT("} ZBarrierSetAssembler::load_at");
 }
 
+static void emit_store_fast_path_check(MacroAssembler* masm, Address ref_addr, bool is_atomic, Label& medium_path) {
+  if (is_atomic) {
+    // Atomic operations must ensure that the contents of memory are store-good before
+    // an atomic operation can execute.
+    // A not relocatable object could have spurious raw NULL pointers in its fields after
+    // getting promoted to the old generation.
+    __ cmpw(ref_addr, barrier_Relocation::unpatched);
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterCmp);
+  } else {
+    // Stores on relocatable objects never need to deal with raw NULL pointers in fields.
+    // Raw NULL pointers may only exist in the young generation, as they get pruned when
+    // the object is relocated to old. And no pre-write barrier needs to perform any action
+    // in the young generation.
+    __ testw(ref_addr, barrier_Relocation::unpatched);
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadAfterTest);
+  }
+  __ jcc(Assembler::notEqual, medium_path);
+}
+
+static size_t store_fast_path_check_size(MacroAssembler* masm, Address ref_addr, bool is_atomic, Label& medium_path) {
+  if (!VM_Version::has_intel_jcc_erratum()) {
+    return 0;
+  }
+  size_t size = 0;
+#ifdef COMPILER2
+  bool in_scratch_emit_size = masm->code_section()->scratch_emit();
+  if (!in_scratch_emit_size) {
+    // Temporarily register as scratch buffer so that relocations don't register
+    masm->code_section()->set_scratch_emit(true);
+  }
+  // First emit the code, to measure its size
+  address insts_end = masm->code_section()->end();
+  // The dummy medium path label is bound after the code emission. This ensures
+  // full size of the generated jcc, which is what the real barrier will have
+  // as well, as it also binds after the emission of the barrier.
+  Label dummy_medium_path;
+  emit_store_fast_path_check(masm, ref_addr, is_atomic, dummy_medium_path);
+  address emitted_end = masm->code_section()->end();
+  size = (size_t)(emitted_end - insts_end);
+  __ bind(dummy_medium_path);
+  if (!in_scratch_emit_size) {
+    // Potentially restore scratchyness
+    masm->code_section()->set_scratch_emit(false);
+  }
+  // Roll back code, now that we know the size
+  masm->code_section()->set_end(insts_end);
+#endif
+  return size;
+}
+
+static void emit_store_fast_path_check_c2(MacroAssembler* masm, Address ref_addr, bool is_atomic, Label& medium_path) {
+#ifdef COMPILER2
+  // This is a JCC erratum mitigation wrapper for calling the inner check
+  size_t size = store_fast_path_check_size(masm, ref_addr, is_atomic, medium_path);
+  // Emit JCC erratum mitigation nops with the right size
+  IntelJccErratumAlignment(*masm, size);
+  // Emit the JCC erratum mitigation guarded code
+  emit_store_fast_path_check(masm, ref_addr, is_atomic, medium_path);
+#endif
+}
+
+static bool is_c2_compilation() {
+  CompileTask* task = ciEnv::current()->task();
+  return task != NULL && is_c2_compile(task->comp_level());
+}
+
 void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
                                               Address ref_addr,
                                               Register rnew_zaddress,
@@ -324,22 +391,11 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
   assert_different_registers(rnew_zaddress, rnew_zpointer);
 
   if (in_nmethod) {
-    if (is_atomic) {
-      // Atomic operations must ensure that the contents of memory are store-good before
-      // an atomic operation can execute.
-      // A not relocatable object could have spurious raw NULL pointers in its fields after
-      // getting promoted to the old generation.
-      __ cmpw(ref_addr, barrier_Relocation::unpatched);
-      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterCmp);
+    if (is_c2_compilation()) {
+      emit_store_fast_path_check_c2(masm, ref_addr, is_atomic, medium_path);
     } else {
-      // Stores on relocatable objects never need to deal with raw NULL pointers in fields.
-      // Raw NULL pointers may only exist in the young generation, as they get pruned when
-      // the object is relocated to old. And no pre-write barrier needs to perform any action
-      // in the young generation.
-      __ testw(ref_addr, barrier_Relocation::unpatched);
-      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadAfterTest);
+      emit_store_fast_path_check(masm, ref_addr, is_atomic, medium_path);
     }
-    __ jcc(Assembler::notEqual, medium_path);
     __ bind(medium_path_continuation);
     __ movptr(rnew_zpointer, rnew_zaddress);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
