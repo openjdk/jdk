@@ -409,10 +409,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
-        hprofBufferedOut = fos;
+        hprofBufferedOut = new BufferedOutputStream(fos);
         if (useSegmentedHeapDump) {
             if (isCompression()) {
-                hprofBufferedOut = new GZIPOutputStream(fos) {
+                hprofBufferedOut = new GZIPOutputStream(hprofBufferedOut) {
                     {
                         this.def.setLevel(gzLevel);
                     }
