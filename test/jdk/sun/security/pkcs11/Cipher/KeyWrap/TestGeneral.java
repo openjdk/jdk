@@ -71,7 +71,6 @@ public class TestGeneral extends PKCS11Test {
                     throw new RuntimeException("Failed enc output len check");
                 }
 
-                //System.out.println("enc out.length=" + out.length);
                 c.init(Cipher.DECRYPT_MODE, KEY, iv);
                 estOutLen = c.getOutputSize(out.length);
                 byte[] recovered = new byte[estOutLen];

@@ -54,7 +54,7 @@ import static sun.security.pkcs11.P11Cipher.*;
  * For multi-part encryption/decryption, this class has to buffer data until
  * doFinal() is called.
  *
- * @since   18
+ * @since 18
  */
 final class P11KeyWrapCipher extends CipherSpi {
 
@@ -122,14 +122,9 @@ final class P11KeyWrapCipher extends CipherSpi {
         this.token = token;
         this.mechanism = mechanism;
 
+        // javax.crypto.Cipher ensures algoParts.length == 3
         String[] algoParts = algorithm.split("/");
-
         if (algoParts[0].startsWith("AES")) {
-            // need 3 parts
-            if (algoParts.length != 3) {
-                throw new AssertionError("Invalid Transformation format: " +
-                        algorithm);
-            }
             int index = algoParts[0].indexOf('_');
             fixedKeySize = (index == -1? -1 :
                 // should be well-formed since we specify what we support
@@ -434,9 +429,9 @@ final class P11KeyWrapCipher extends CipherSpi {
     // see JCE spec
     protected byte[] engineDoFinal(byte[] in, int inOfs, int inLen)
             throws IllegalBlockSizeException, BadPaddingException {
-        int minOutLen = doFinalLength(inLen);
+        int maxOutLen = doFinalLength(inLen);
         try {
-            byte[] out = new byte[minOutLen];
+            byte[] out = new byte[maxOutLen];
             int n = engineDoFinal(in, inOfs, inLen, out, 0);
             return P11Util.convert(out, 0, n);
         } catch (ShortBufferException e) {
