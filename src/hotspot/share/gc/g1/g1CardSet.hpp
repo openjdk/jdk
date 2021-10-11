@@ -60,6 +60,8 @@ class G1CardSetConfiguration {
   uint _log2_num_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
 
+  uint _log2_card_region_per_heap_region;
+
   void log_configuration();
 public:
 
@@ -71,7 +73,8 @@ public:
                          double cards_in_bitmap_threshold,
                          uint max_buckets_in_howl,
                          double cards_in_howl_threshold,
-                         uint max_cards_in_cardset);
+                         uint max_cards_in_cardset,
+                         uint log2_card_region_per_region);
 
   // Inline pointer configuration
   uint inline_ptr_bits_per_card() const { return _inline_ptr_bits_per_card; }
@@ -103,6 +106,10 @@ public:
   // Maximum number of cards in a non-full card set for a single region. Card sets
   // with more entries per region are coarsened to Full.
   uint max_cards_in_region() const { return _max_cards_in_card_set; }
+
+  // Heap region virtualization: the log2 of the amount of card regions within
+  // a heap region.
+  uint log2_card_region_per_heap_region() const { return _log2_card_region_per_heap_region; }
 
   // Memory object types configuration
   // Number of distinctly sized memory objects on the card set heap.

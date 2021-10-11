@@ -84,20 +84,21 @@ template <typename Closure>
 class G1ContainerCardsOrRanges {
   Closure& _iter;
   uint _region_idx;
+  uint _offset;
 
 public:
-  G1ContainerCardsOrRanges(Closure& iter, uint region_idx) : _iter(iter), _region_idx(region_idx) { }
+  G1ContainerCardsOrRanges(Closure& iter, uint region_idx, uint offset) : _iter(iter), _region_idx(region_idx), _offset(offset) { }
 
   bool start_iterate(uint tag) {
     return _iter.start_iterate(tag, _region_idx);
   }
 
   void operator()(uint card_idx) {
-    _iter.do_card(card_idx);
+    _iter.do_card(card_idx + _offset);
   }
 
   void operator()(uint card_idx, uint length) {
-    _iter.do_card_range(card_idx, length);
+    _iter.do_card_range(card_idx + _offset, length);
   }
 };
 
@@ -105,20 +106,27 @@ template <typename Closure, template <typename> class CardOrRanges>
 class G1CardSetMergeCardIterator : public G1CardSet::G1CardSetPtrIterator {
   G1CardSet* _card_set;
   Closure& _iter;
+  uint _log_card_regions_per_region;
+  uint _card_regions_per_region_mask;
 
 public:
 
-  G1CardSetMergeCardIterator(G1CardSet* card_set, Closure& iter) : _card_set(card_set), _iter(iter) { }
+  G1CardSetMergeCardIterator(G1CardSet* card_set, Closure& iter, uint log_card_regions_per_region) :
+    _card_set(card_set), _iter(iter), _log_card_regions_per_region(log_card_regions_per_region),
+    _card_regions_per_region_mask((1 << log_card_regions_per_region) - 1) { 
+    }
 
   void do_cardsetptr(uint region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
-    CardOrRanges<Closure> cl(_iter, region_idx);
+    CardOrRanges<Closure> cl(_iter,
+                             region_idx >> _log_card_regions_per_region,
+                             (region_idx & _card_regions_per_region_mask) << G1CardSetContainer::max_card_bits_storable());
     _card_set->iterate_cards_or_ranges_in_container(card_set, cl);
   }
 };
 
 template <class CardOrRangeVisitor>
 inline void G1CardSet::iterate_for_merge(CardOrRangeVisitor& cl) {
-  G1CardSetMergeCardIterator<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(this, cl);
+  G1CardSetMergeCardIterator<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(this, cl, _config->log2_card_region_per_heap_region());
   iterate_containers(&cl2, true /* at_safepoint */);
 }
 

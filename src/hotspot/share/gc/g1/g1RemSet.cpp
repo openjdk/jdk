@@ -106,14 +106,14 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   // within a region to claim. Dependent on the region size as proxy for the heap
   // size, we limit the total number of chunks to limit memory usage and maintenance
   // effort of that table vs. granularity of distributing scanning work.
-  // Testing showed that 8 for 1M/2M region, 16 for 4M/8M regions, 32 for 16/32M regions
-  // seems to be such a good trade-off.
+  // Testing showed that 8 for 1M/2M region, 16 for 4M/8M regions, 32 for 16/32M regions,
+  // and so on seems to be such a good trade-off.
   static uint get_chunks_per_region(uint log_region_size) {
     // Limit the expected input values to current known possible values of the
     // (log) region size. Adjust as necessary after testing if changing the permissible
     // values for region size.
-    assert(log_region_size >= 20 && log_region_size <= 25,
-           "expected value in [20,25], but got %u", log_region_size);
+    assert(log_region_size >= 20 && log_region_size <= 29,
+           "expected value in [20,29], but got %u", log_region_size);
     return 1u << (log_region_size / 2 - 7);
   }
 
