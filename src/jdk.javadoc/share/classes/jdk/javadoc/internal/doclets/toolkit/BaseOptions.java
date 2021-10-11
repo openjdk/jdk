@@ -166,6 +166,12 @@ public abstract class BaseOptions {
     private final List<Utils.Pair<String, String>> linkOfflineList = new ArrayList<>();
 
     /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * True if warnings on external documentation with non-matching modularity should be omitted.
+     */
+    private boolean linkModularityNoWarning = false;
+
+    /**
      * Location of alternative platform link properties file.
      */
     private String linkPlatformProperties;
@@ -403,6 +409,23 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new Option(resources, "--link-modularity-mismatch", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String s = args.get(0);
+                        switch (s) {
+                            case "warn" -> linkModularityNoWarning = false;
+                            case "info" -> linkModularityNoWarning = true;
+                            default -> {
+                                reporter.print(ERROR, resources.getText(
+                                        "doclet.Option_invalid", s, "--link-modularity-mismatch"));
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                },
+
                 new Option(resources, "--link-platform-properties", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -464,16 +487,13 @@ public abstract class BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         String o = args.get(0);
                         switch (o) {
-                            case "summary":
-                                summarizeOverriddenMethods = true;
-                                break;
-                            case "detail":
-                                summarizeOverriddenMethods = false;
-                                break;
-                            default:
+                            case "summary" -> summarizeOverriddenMethods = true;
+                            case "detail"  -> summarizeOverriddenMethods = false;
+                            default -> {
                                 reporter.print(ERROR,
                                         resources.getText("doclet.Option_invalid",o, "--override-methods"));
                                 return false;
+                            }
                         }
                         return true;
                     }
@@ -825,6 +845,15 @@ public abstract class BaseOptions {
      */
     List<Utils.Pair<String, String>> linkOfflineList() {
         return linkOfflineList;
+    }
+
+    /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * True if warnings on external documentation with non-matching modularity
+     * should be omitted.
+     */
+    public boolean linkModularityNoWarning() {
+        return linkModularityNoWarning;
     }
 
     /**
