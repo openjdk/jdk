@@ -2514,6 +2514,7 @@ public final class Files {
      *          read access to the file.
      *
      * @see #notExists
+     * @see FileSystemProvider#checkAccess
      */
     public static boolean exists(Path path, LinkOption... options) {
         if (options.length == 0) {

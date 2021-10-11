@@ -409,10 +409,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
-        hprofBufferedOut = fos;
+        hprofBufferedOut = new BufferedOutputStream(fos);
         if (useSegmentedHeapDump) {
             if (isCompression()) {
-                hprofBufferedOut = new GZIPOutputStream(fos) {
+                hprofBufferedOut = new GZIPOutputStream(hprofBufferedOut) {
                     {
                         this.def.setLevel(gzLevel);
                     }
@@ -615,6 +615,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         } else {
             out.writeByte((byte)HPROF_HEAP_DUMP);
             out.writeInt(0);
+            // We must flush all data to the file before reading the current file position.
+            out.flush();
             // record the current position in file, it will be use for calculating the size of written data
             currentSegmentStart = fos.getChannel().position();
             // write dummy zero for length

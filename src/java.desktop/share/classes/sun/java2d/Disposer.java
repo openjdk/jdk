@@ -184,7 +184,7 @@ public class Disposer implements Runnable {
     /*
      * Set to indicate the queue is presently being polled.
      */
-    public static volatile boolean pollingQueue = false;
+    public static volatile boolean pollingQueue;
 
     /*
      * The pollRemove() method is called back from a dispose method

@@ -52,6 +52,23 @@
  * @run main/othervm/timeout=180 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom
  */
 
+/**
+ * @test id=custom-cl-zgc
+ * @requires vm.cds.custom.loaders
+ * @requires vm.gc.Z
+ * @summary Test dumptime_table entries are removed with zgc eager class unloading
+ * @bug 8274935
+ * @library /test/lib
+ *          /test/hotspot/jtreg/runtime/cds/appcds
+ *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive
+ * @modules java.base/jdk.internal.misc
+ *          jdk.httpserver
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm/timeout=180 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom-zgc
+ */
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import jdk.test.lib.Asserts;
@@ -83,9 +100,11 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
      *                  if false, LoaderConstraintsApp will be loaded by the built-in AppClassLoader.
      */
     static boolean useCustomLoader;
+    static boolean useZGC;
 
     public static void main(String[] args) throws Exception {
         useCustomLoader = (args.length != 0);
+        useZGC = (args.length != 0 && args[0].equals("custom-zgc"));
         runTest(DynamicLoaderConstraintsTest::doTest);
     }
 
@@ -124,8 +143,15 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
             };
 
             if (useCustomLoader) {
-                cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
-                                          loaderMainClass, appJar);
+                if (useZGC) {
+                    // Add options to force eager class unloading.
+                    cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
+                                                "-XX:+UseZGC", "-XX:ZCollectionInterval=0.01",
+                                                loaderMainClass, appJar);
+                } else {
+                    cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
+                                                loaderMainClass, appJar);
+                }
             } else {
                 cmdLine = TestCommon.concat(cmdLine, "-cp", appJar);
             }
