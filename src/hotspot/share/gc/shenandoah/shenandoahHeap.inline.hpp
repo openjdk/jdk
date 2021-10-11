@@ -418,16 +418,17 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
-    if (target_gen == OLD_GENERATION) {
-      handle_old_evacuation(copy, size, from_region->is_young());
-    } else if (target_gen == YOUNG_GENERATION) {
-      if (is_aging_cycle()) {
-        ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
+    if (mode()->is_generational()) {
+      if (target_gen == OLD_GENERATION) {
+        handle_old_evacuation(copy, size, from_region->is_young());
+      } else if (target_gen == YOUNG_GENERATION) {
+        if (is_aging_cycle()) {
+          ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
+        }
+      } else {
+        ShouldNotReachHere();
       }
-    } else {
-      ShouldNotReachHere();
     }
-
     shenandoah_assert_correct(NULL, copy_val);
     return copy_val;
   }  else {
@@ -460,7 +461,9 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
       // we have to keep the fwdptr initialized and pointing to our (stale) copy.
       fill_with_object(copy, size);
       shenandoah_assert_correct(NULL, copy_val);
-      // For non-LAB allocations, the object has already been registered
+      if (mode()->is_generational() && target_gen == OLD_GENERATION) {
+        card_scan()->register_object(copy);
+      }
     }
     shenandoah_assert_correct(NULL, result);
     return result;
