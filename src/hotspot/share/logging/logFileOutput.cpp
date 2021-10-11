@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
-#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/allocation.inline.hpp"
@@ -265,62 +264,22 @@ class RotationLocker : public StackObj {
   }
 };
 
-int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
-  RotationLocker lock(_rotation_semaphore);
+// async-logging is off, this function is called from write(). Therefore, current thread is holding _stream_semaphore.
+// async-logging is on, this function is called by AsyncLog Thread sequentially. synchronization isn't necessary.
+int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg, bool should_flush) {
   if (_stream == NULL) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
 
-  int written = LogFileStreamOutput::write(decorations, msg);
+  int written = LogFileStreamOutput::write_blocking(decorations, msg, should_flush);
   if (written > 0) {
-    _current_size += written;
+    Atomic::add(&_current_size, (uint)written);
 
     if (should_rotate()) {
       rotate();
     }
   }
-
-  return written;
-}
-
-int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
-  if (_stream == NULL) {
-    // An error has occurred with this output, avoid writing to it.
-    return 0;
-  }
-
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, decorations, msg);
-    return 0;
-  }
-
-  return write_blocking(decorations, msg);
-}
-
-int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  if (_stream == NULL) {
-    // An error has occurred with this output, avoid writing to it.
-    return 0;
-  }
-
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, msg_iterator);
-    return 0;
-  }
-
-  RotationLocker lock(_rotation_semaphore);
-  int written = LogFileStreamOutput::write(msg_iterator);
-  if (written > 0) {
-    _current_size += written;
-
-    if (should_rotate()) {
-      rotate();
-    }
-  }
-
   return written;
 }
 
@@ -347,11 +306,12 @@ void LogFileOutput::force_rotate() {
     return;
   }
 
-  RotationLocker lock(_rotation_semaphore);
+  FileLocker lock(_stream_semaphore);
   rotate();
 }
 
 void LogFileOutput::rotate() {
+  assert(LogConfiguration::is_async_mode() || FileLocker::current_thread_has_lock(), "current thread must be holding _stream_semaphore!");
   if (fclose(_stream)) {
     jio_fprintf(defaultStream::error_stream(), "Error closing file '%s' during log rotation (%s).\n",
                 _file_name, os::strerror(errno));

@@ -25,7 +25,6 @@
 #define SHARE_LOGGING_LOGFILEOUTPUT_HPP
 
 #include "logging/logFileStreamOutput.hpp"
-#include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
@@ -83,9 +82,7 @@ class LogFileOutput : public LogFileStreamOutput {
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options, outputStream* errstream);
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
-  virtual int write(const LogDecorations& decorations, const char* msg);
-  virtual int write(LogMessageBuffer::Iterator msg_iterator);
-  int write_blocking(const LogDecorations& decorations, const char* msg);
+  int write_blocking(const LogDecorations& decorations, const char* msg, bool should_flush) override;
   virtual void force_rotate();
   virtual void describe(outputStream* out);
 

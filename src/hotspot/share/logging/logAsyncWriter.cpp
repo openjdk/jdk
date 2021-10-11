@@ -56,7 +56,7 @@ void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
   _lock.notify();
 }
 
-void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg) {
+void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
   AsyncLogMessage m(&output, decorations, os::strdup(msg));
 
   { // critical area
@@ -67,7 +67,7 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decora
 
 // LogMessageBuffer consists of a multiple-part/multiple-line messsage.
 // The lock here guarantees its integrity.
-void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
   AsyncLogLocker locker;
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
@@ -95,7 +95,7 @@ class AsyncLogMapIterator {
 
  public:
   AsyncLogMapIterator(AsyncLogBuffer& logs) :_logs(logs) {}
-  bool do_entry(LogFileOutput* output, uint32_t& counter) {
+  bool do_entry(LogFileStreamOutput* output, uint32_t& counter) {
     using none = LogTagSetMapping<LogTag::__NO_TAG>;
 
     if (counter > 0) {
@@ -138,12 +138,20 @@ void AsyncLogWriter::write() {
     char* msg = e->message();
 
     if (msg != nullptr) {
-      e->output()->write_blocking(e->decorations(), msg);
+      e->output()->write_blocking(e->decorations(), msg, true);
       os::free(msg);
     } else if (e->output() == nullptr) {
       // This is a flush token. Record that we found it and then
       // signal the flushing thread after the loop.
       req++;
+    } else {
+#ifdef ASSERT
+      // only LogFileOutput supports force_rotate();
+      size_t idx = LogConfiguration::find_output(e->output());
+      assert(idx != SIZE_MAX && idx > 1, "e->output() must be a valid LogFileOutput.");
+#endif
+      // This is a force_rotation token.
+      static_cast<LogFileOutput*>(e->output())->force_rotate();
     }
   }
 
@@ -211,5 +219,22 @@ void AsyncLogWriter::flush() {
     }
 
     _instance->_flush_sem.wait();
+  }
+}
+
+void AsyncLogWriter::force_rotate(LogOutput* output) {
+  if (_instance != nullptr) {
+    assert(output != NULL, "output can't be NULL");
+    {
+      using none = LogTagSetMapping<LogTag::__NO_TAG>;
+      AsyncLogLocker locker;
+      LogDecorations d(LogLevel::Off, none::tagset(), LogDecorators::None);
+      AsyncLogMessage token(static_cast<LogFileStreamOutput*>(output), d, nullptr);
+
+      // Push directly in-case we are at logical max capacity, as this must not get dropped.
+      _instance->_buffer.push_back(token);
+      _instance->_data_available = true;
+      _instance->_lock.notify();
+    }
   }
 }

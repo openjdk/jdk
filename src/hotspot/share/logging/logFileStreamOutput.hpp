@@ -27,6 +27,7 @@
 #include "logging/logDecorators.hpp"
 #include "logging/logOutput.hpp"
 #include "runtime/os.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
@@ -45,13 +46,15 @@ class LogFileStreamOutput : public LogOutput {
   static const char* const FoldMultilinesOptionKey;
   bool                _fold_multilines;
   bool                _write_error_is_shown;
-
   int write_internal(const char* msg);
  protected:
   FILE*               _stream;
+  // Semaphore used for synchronizing file rotations and writes
+  Semaphore           _stream_semaphore;
+
   size_t              _decorator_padding[LogDecorators::Count];
 
-  LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream) {
+  LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream), _stream_semaphore(1) {
     for (size_t i = 0; i < LogDecorators::Count; i++) {
       _decorator_padding[i] = 0;
     }
@@ -65,6 +68,7 @@ class LogFileStreamOutput : public LogOutput {
   virtual int write(const LogDecorations& decorations, const char* msg);
   virtual int write(LogMessageBuffer::Iterator msg_iterator);
   virtual void describe(outputStream* out);
+  virtual int write_blocking(const LogDecorations& decorations, const char* msg, bool should_flush);
 };
 
 class LogStdoutOutput : public LogFileStreamOutput {
@@ -95,6 +99,27 @@ class LogStderrOutput : public LogFileStreamOutput {
   virtual const char* name() const {
     return "stderr";
   }
+};
+
+
+// sempahore-based mutex. Implementation of flockfile do not work with LogFileOuptut::rotate()
+// because fclose() automatically unlocks FILE->_lock and nullifies FileLocker protection.
+class FileLocker : public StackObj {
+  Semaphore& _sem;
+  debug_only(static intx _locking_thread_id;)
+
+ public:
+  FileLocker(Semaphore& sem) : _sem(sem) {
+    sem.wait();
+    debug_only(_locking_thread_id = os::current_thread_id());
+  }
+
+  ~FileLocker() {
+    debug_only(_locking_thread_id = -1);
+    _sem.signal();
+  }
+
+  debug_only(static bool current_thread_has_lock();)
 };
 
 extern LogStderrOutput &StderrLog;

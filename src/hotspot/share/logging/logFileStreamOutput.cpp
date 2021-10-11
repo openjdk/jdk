@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorators.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
@@ -92,20 +93,6 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   return total_written;
 }
 
-class FileLocker : public StackObj {
-private:
-  FILE *_file;
-
-public:
-  FileLocker(FILE *file) : _file(file) {
-    os::flockfile(_file);
-  }
-
-  ~FileLocker() {
-    os::funlockfile(_file);
-  }
-};
-
 bool LogFileStreamOutput::flush() {
   bool result = true;
   if (fflush(_stream) != 0) {
@@ -159,31 +146,55 @@ int LogFileStreamOutput::write_internal(const char* msg) {
   return written;
 }
 
-int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
+int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const char* msg, bool should_flush) {
   const bool use_decorations = !_decorators.is_empty();
 
   int written = 0;
-  FileLocker flocker(_stream);
   if (use_decorations) {
     WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
   }
   written += write_internal(msg);
+  if (should_flush && flush()) {
+    return written;
+  } else {
+    return -1;
+  }
+}
 
+int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
+  if (_stream == nullptr) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, decorations, msg);
+    return 0;
+  }
+
+  FileLocker flocker(_stream_semaphore);
+  int written = write_blocking(decorations, msg, false);
   return flush() ? written : -1;
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  const bool use_decorations = !_decorators.is_empty();
+  if (_stream == nullptr) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, msg_iterator);
+    return 0;
+  }
 
   int written = 0;
-  FileLocker flocker(_stream);
+  FileLocker flocker(_stream_semaphore);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    if (use_decorations) {
-      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(msg_iterator.decorations()), written);
-      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
-    }
-    written += write_internal(msg_iterator.message());
+    written += write_blocking(msg_iterator.decorations(), msg_iterator.message(), false);
   }
 
   return flush() ? written : -1;
@@ -195,3 +206,10 @@ void LogFileStreamOutput::describe(outputStream *out) {
 
   out->print("foldmultilines=%s", _fold_multilines ? "true" : "false");
 }
+
+#ifdef ASSERT
+intx FileLocker::_locking_thread_id = -1;
+bool FileLocker::current_thread_has_lock() {
+  return _locking_thread_id == os::current_thread_id();
+}
+#endif
