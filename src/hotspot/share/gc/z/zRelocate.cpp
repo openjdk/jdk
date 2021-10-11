@@ -158,14 +158,18 @@ static bool should_free_target_page(ZPage* page) {
 class ZRelocateSmallAllocator {
 private:
   volatile size_t _in_place_count;
-  ZPerWorker<ZArray<ZPage*>> _empty_pages;
   static const int BULK_FREE_LIMIT = 64;
 
+  ZArray<ZPage*>* bulk_free_pages() {
+    static ZPerWorker<ZArray<ZPage*>> _empty_pages;
+    return _empty_pages.addr();
+  }
+
   void free_empty_pages(bool free_all) {
-    if ((free_all && _empty_pages.get().is_nonempty()) ||
-        (_empty_pages.get().length() == BULK_FREE_LIMIT)) {
-      free_pages(_empty_pages.addr());
-      _empty_pages.get().clear();
+    if ((free_all && bulk_free_pages()->is_nonempty()) ||
+        (bulk_free_pages()->length() == BULK_FREE_LIMIT)) {
+      free_pages(bulk_free_pages());
+      bulk_free_pages()->clear();
     }
   }
 
@@ -174,8 +178,8 @@ public:
       _in_place_count(0) {}
 
   ZPage* alloc_target_page(ZForwarding* forwarding, ZPage* target) {
-    if (_empty_pages.get().is_nonempty()) {
-      ZPage* const page = _empty_pages.get().pop();
+    if (bulk_free_pages()->is_nonempty()) {
+      ZPage* const page = bulk_free_pages()->pop();
       page->reset();
       return page;
     }
@@ -194,14 +198,14 @@ public:
 
   void free_target_page(ZPage* page) {
     if (should_free_target_page(page)) {
-      _empty_pages.get().push(page);
+      bulk_free_pages()->push(page);
     }
 
     free_empty_pages(true /* free_all */);
   }
 
   void free_relocated_page(ZPage* page) {
-    _empty_pages.get().push(page);
+    bulk_free_pages()->push(page);
 
     free_empty_pages(Atomic::load(&_in_place_count) > 0);
   }
