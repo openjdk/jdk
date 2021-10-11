@@ -653,8 +653,11 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       nm->method()->print_value_on(st);
     }
     st->cr();
-    if (st == tty) {
-      nm->print_nmethod(verbose);
+    if (verbose && st == tty) {
+      // verbose is only ever true when called from findpc in debug.cpp
+      nm->print_nmethod(true);
+    } else {
+      nm->print(st);
     }
     return;
   }
