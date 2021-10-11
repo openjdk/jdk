@@ -40,8 +40,7 @@ void OSThread::pd_initialize() {
 
   sigemptyset(&_caller_sigmask);
 
-  _startThread_lock = new Monitor(Mutex::event, "startThread_lock",
-                                  Monitor::_safepoint_check_never);
+  _startThread_lock = new Monitor(Mutex::event, "startThread_lock");
   assert(_startThread_lock !=NULL, "check");
 }
 
