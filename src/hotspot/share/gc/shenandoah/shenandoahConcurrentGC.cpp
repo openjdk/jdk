@@ -51,7 +51,7 @@
 // Breakpoint support
 class ShenandoahBreakpointGCScope : public StackObj {
 private:
-  GCCause::Cause _cause;
+  const GCCause::Cause _cause;
 public:
   ShenandoahBreakpointGCScope(GCCause::Cause cause) : _cause(cause) {
     if (cause == GCCause::_wb_breakpoint) {
@@ -69,7 +69,7 @@ public:
 
 class ShenandoahBreakpointMarkScope : public StackObj {
 private:
-  GCCause::Cause _cause;
+  const GCCause::Cause _cause;
 public:
   ShenandoahBreakpointMarkScope(GCCause::Cause cause) : _cause(cause) {
     if (_cause == GCCause::_wb_breakpoint) {
