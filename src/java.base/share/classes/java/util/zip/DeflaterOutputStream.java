@@ -233,20 +233,12 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * @throws    IOException if an I/O error has occurred
      */
     public void close() throws IOException {
-        try {
-            if (!closed) {
-                finish();
-                if (usesDefaultDeflater)
-                   def.end();
-                out.close();
-                closed = true;
-            }
-        } catch(IOException ioe) {
-             if (usesDefaultDeflater)
+        if (!closed) {
+            finish();
+            if (usesDefaultDeflater)
                 def.end();
-             out.close();
-             closed = true;
-             throw ioe;
+            out.close();
+            closed = true;
         }
     }
 
@@ -257,7 +249,14 @@ public class DeflaterOutputStream extends FilterOutputStream {
     protected void deflate() throws IOException {
         int len = def.deflate(buf, 0, buf.length);
         if (len > 0) {
-            out.write(buf, 0, len);
+            try {
+                out.write(buf, 0, len);
+            } catch (Exception e) {
+                def.end();
+                out.close();
+                closed = true;
+                throw e;
+            }
         }
     }
 
