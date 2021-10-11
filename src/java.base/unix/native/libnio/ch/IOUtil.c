@@ -26,10 +26,6 @@
 #include <sys/types.h>
 #include <string.h>
 #include <sys/resource.h>
-#ifdef MACOSX
-#include <stdlib.h>
-#include <sys/utsname.h>
-#endif
 
 #include "jni.h"
 #include "jni_util.h"
@@ -178,57 +174,27 @@ Java_sun_nio_ch_IOUtil_iovMax(JNIEnv *env, jclass this)
     return (jint)iov_max;
 }
 
-#ifdef MACOSX
-//
-// Returns the Darwin version or -1 if it is indeterminate
-//
-static int get_darwin_version() {
-    struct utsname name;
-    if (uname(&name) < 0)
-        return -1;
-
-    char *dotp = strchr(name.release, '.');
-    if (dotp != NULL) {
-        size_t len = dotp - name.release;
-        if (len > 0) {
-            char major_version[_SYS_NAMELEN];
-            strncpy(major_version, name.release, len);
-            major_version[len]= '\0';
-            return atoi(major_version);
-        }
-    }
-
-    return -1;
-}
-#endif
-
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_IOUtil_writevMax(JNIEnv *env, jclass this)
 {
-#ifdef MACOSX
+#if defined(MACOSX) || defined(__linux__)
     //
-    // As of macOS 11 Big Sur, Darwin version 20, writev() started to
-    // enforce the constraint
+    // The man pages of writev() on both Linux and macOS specify this
+    // constraint on the sum of all byte lengths in the iovec array:
     //
     // [EINVAL] The sum of the iov_len values in the iov array
     //          overflows a 32-bit integer.
     //
-    int darwin_version = get_darwin_version();
-
-    // Return a conservative value if the Darwin version is either
-    // indeterminate or at least 20.
-    if (darwin_version < 0 || darwin_version >= 20)
-        return java_lang_Integer_MAX_VALUE;
-#elif defined(__linux__)
+    // As of macOS 11 Big Sur, Darwin version 20, writev() started to
+    // actually enforce the constraint which had been previously ignored.
     //
-    // The Linux specification of writev() has the same constraint on
-    // the sum of the iov_len values in the iov array as above, but in
-    // practice on Linux writev() has been observed not to write more
+    // In practice on Linux writev() has been observed not to write more
     // than 0x7fff0000 (aarch64) or 0x7ffff000 (x64) bytes in one call.
     //
     return java_lang_Integer_MAX_VALUE;
-#endif
+#else
     return java_lang_Long_MAX_VALUE;
+#endif
 }
 
 /* Declared in nio_util.h for use elsewhere in NIO */
