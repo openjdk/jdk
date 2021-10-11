@@ -615,6 +615,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         } else {
             out.writeByte((byte)HPROF_HEAP_DUMP);
             out.writeInt(0);
+            // remember position of dump length, we will fixup
+            // length later - hprof format require length.
+            out.flush();
             // record the current position in file, it will be use for calculating the size of written data
             currentSegmentStart = fos.getChannel().position();
             // write dummy zero for length
