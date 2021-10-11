@@ -231,13 +231,13 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
       assert(className::klass() != NULL && className::klass()->is_linked(), "Class not yet linked: " #className);         \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
-      return HeapAccess<>::load_at(base, className::_##name##_offset);                                                    \
+      return *base->field_addr<jtypename>(className::_##name##_offset);                                                   \
     }                                                                                                                     \
     void HotSpotJVMCI::className::set_##name(JVMCIEnv* env, jtypename x) {                                                \
       assert(className::klass() != NULL && className::klass()->is_linked(), "Class not yet linked: " #className);         \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
-      HeapAccess<>::store_at(base, _##name##_offset, x);                                                                  \
+      *base->field_addr<jtypename>(className::_##name##_offset) = x;                                                      \
     }
 
 #define STATIC_INT_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jint)
