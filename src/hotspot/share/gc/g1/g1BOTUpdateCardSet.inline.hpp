@@ -1,5 +1,5 @@
-#ifndef SHARE_GC_G1_G1BOTFIXINGCARDSET_INLINE_HPP
-#define SHARE_GC_G1_G1BOTFIXINGCARDSET_INLINE_HPP
+#ifndef SHARE_GC_G1_G1BOTUPDATECARDSET_INLINE_HPP
+#define SHARE_GC_G1_G1BOTUPDATECARDSET_INLINE_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1BOTUpdateCardSet.hpp"
@@ -44,7 +44,7 @@ inline G1BOTUpdateCardSet::CardIndex G1BOTUpdateCardSetArray::try_clear_entry(si
     ((CardIndex*)(&new_val))[offset] = 0;
     old_val = Atomic::cmpxchg(word_entry, expect, new_val, memory_order_relaxed);
   } while (old_val != expect);
-  return ((CardIndex*)(&expect))[offset];
+  return ((CardIndex*)(&old_val))[offset];
 }
 
 inline void G1BOTUpdateCardSetArray::add_card(size_t position, CardIndex card_index) {
@@ -171,4 +171,4 @@ inline G1BOTUpdateCardSetBitMap* G1BOTUpdateCardSet::as_bitmap() {
   return (G1BOTUpdateCardSetBitMap*)_dynamic_container;
 }
 
-#endif // SHARE_GC_G1_G1BOTFIXINGCARDSET_INLINE_HPP
+#endif // SHARE_GC_G1_G1BOTUPDATECARDSET_INLINE_HPP

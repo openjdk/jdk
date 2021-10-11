@@ -1,5 +1,5 @@
-#ifndef SHARE_GC_G1_G1BOTFIXINGCARDSET_HPP
-#define SHARE_GC_G1_G1BOTFIXINGCARDSET_HPP
+#ifndef SHARE_GC_G1_G1BOTUPDATECARDSET_HPP
+#define SHARE_GC_G1_G1BOTUPDATECARDSET_HPP
 
 #include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -229,4 +229,4 @@ public:
   void iterate_cards(BitMapClosure* cl);
 };
 
-#endif // SHARE_GC_G1_G1BOTFIXINGCARDSET_HPP
+#endif // SHARE_GC_G1_G1BOTUPDATECARDSET_HPP
