@@ -39,7 +39,7 @@ private:
   // large, otherwise cleanup's effectiveness would decrease as there
   // will be fewer opportunities to find totally empty regions after
   // marking.
-  static const size_t MAX_REGION_SIZE = 32 * 1024 * 1024;
+  static const size_t MAX_REGION_SIZE = 512 * 1024 * 1024;
 
   // The automatic region size calculation will try to have around this
   // many regions in the heap.
