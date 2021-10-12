@@ -34,13 +34,17 @@
  * @run driver MachCodeFramesInErrorFile
  */
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.stream.Stream;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -51,45 +55,73 @@ import jdk.test.lib.Asserts;
 import jdk.internal.misc.Unsafe;
 
 public class MachCodeFramesInErrorFile {
+
     private static class Crasher {
-        // Need to make unsafe a compile-time constant so that
-        // C2 intrinsifies the call to Unsafe.getLong in method3.
+        // Make Crasher.unsafe a compile-time constant so that
+        // C2 intrinsifies calls to Unsafe intrinsics.
         private static final Unsafe unsafe = Unsafe.getUnsafe();
-        public static void main(String[] args) {
-            method1(10);
+
+        public static void main(String[] args) throws Exception {
+            if (args[0].equals("crashInJava")) {
+                // This test relies on Unsafe.putLong(Object, long, long) being intrinsified
+                if (!Stream.of(Unsafe.class.getDeclaredMethod("putLong", Object.class, long.class, long.class).getAnnotations()).
+                    anyMatch(a -> a.annotationType().getName().equals("jdk.internal.vm.annotation.IntrinsicCandidate"))) {
+                    throw new RuntimeException("Unsafe.putLong(Object, long, long) is not an intrinsic");
+                }
+                crashInJava1(10);
+            } else {
+                assert args[0].equals("crashInVM");
+                crashInNative1(10);
+            }
         }
 
-        static void method1(long address) {
-            System.out.println("in method1");
-            method2(address);
+        static void crashInJava1(long address) {
+            System.out.println("in crashInJava1");
+            crashInJava2(address);
         }
-        static void method2(long address) {
-            System.out.println("in method2");
-            method3(address);
+        static void crashInJava2(long address) {
+            System.out.println("in crashInJava2");
+            crashInJava3(address);
         }
-        static void method3(long address) {
-            System.out.println("in method3");
-            // Keep chasing pointers until we crash
-            while (true) {
-                address = unsafe.getLong(address);
-            }
+        static void crashInJava3(long address) {
+            unsafe.putLong(null, address, 42);
+            System.out.println("wrote value to 0x" + Long.toHexString(address));
+        }
+
+        static void crashInNative1(long address) {
+            System.out.println("in crashInNative1");
+            crashInNative2(address);
+        }
+        static void crashInNative2(long address) {
+            System.out.println("in crashInNative2");
+            crashInNative3(address);
+        }
+        static void crashInNative3(long address) {
+            System.out.println("read value " + unsafe.getLong(address) + " from 0x" + Long.toHexString(address));
         }
     }
 
+    public static void main(String[] args) throws Exception {
+        run(true);
+        run(false);
+    }
+
     /**
-     * Runs Crasher and tries to force compile the methods in Crasher. The inner
+     * Runs Crasher in Xcomp mode. The inner
      * most method crashes the VM with Unsafe. The resulting hs-err log is
      * expected to have a min number of MachCode sections.
      */
-    public static void main(String[] args) throws Exception {
+    private static void run(boolean crashInJava) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xmx64m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
             "-XX:-CreateCoredumpOnCrash",
             "-Xcomp",
-            "-XX:-TieredCompilation", // ensure C2 compiles Crasher.method3
-            "-XX:CompileCommand=compileonly,MachCodeFramesInErrorFile$Crasher.m*",
-            "-XX:CompileCommand=dontinline,MachCodeFramesInErrorFile$Crasher.m*",
-            Crasher.class.getName());
+            "-XX:-TieredCompilation",
+            "-XX:CompileCommand=compileonly,MachCodeFramesInErrorFile$Crasher.crashIn*",
+            "-XX:CompileCommand=dontinline,MachCodeFramesInErrorFile$Crasher.crashIn*",
+            "-XX:CompileCommand=dontinline,*/Unsafe.getLong", // ensures VM call when crashInJava == false
+            Crasher.class.getName(),
+            crashInJava ? "crashInJava" : "crashInVM");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         // Extract hs_err_pid file.
@@ -104,71 +136,50 @@ public class MachCodeFramesInErrorFile {
             throw new RuntimeException("hs_err_pid file missing at " + hsErrPath + ".\n");
         }
         String hsErr = Files.readString(hsErrPath);
-        if (!crashedInCrasherMethod(hsErr)) {
+        if (System.getenv("DEBUG") != null) {
+            System.err.println(hsErr);
+        }
+        Set<String> frames = new HashSet<>();
+        extractFrames(hsErr, frames, true);
+        if (!crashInJava) {
+            // A crash in native will have Java frames in the hs-err log
+            // as there is a Java frame anchor on the stack.
+            extractFrames(hsErr, frames, false);
+        }
+        int compiledJavaFrames = (int) frames.stream().filter(f -> f.startsWith("J ")).count();
+
+        Matcher matcherDisasm = Pattern.compile("\\[Disassembly\\].*\\[/Disassembly\\]", Pattern.DOTALL).matcher(hsErr);
+        if (matcherDisasm.find()) {
+            // Real disassembly is present, no MachCode is expected.
             return;
         }
-        List<String> nativeFrames = extractNativeFrames(hsErr);
-        int compiledJavaFrames = (int) nativeFrames.stream().filter(f -> f.startsWith("J ")).count();
 
         Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
         List<String> machCodeHeaders = matcher.results().map(mr -> String.format("'%s' '%s' in '%s'", mr.group(1), mr.group(2), mr.group(3))).collect(Collectors.toList());
-        String message = "Mach code headers: " + machCodeHeaders +
-                         "\n\nExtracted MachCode:\n" + extractMachCode(hsErr) +
-                         "\n\nExtracted native frames:\n" + String.join("\n", nativeFrames);
         int minExpectedMachCodeSections = Math.max(1, compiledJavaFrames);
-        Asserts.assertTrue(machCodeHeaders.size() >= minExpectedMachCodeSections, message);
-    }
-
-    /**
-     * Checks whether the crashing frame is in {@code Crasher.method3}.
-     */
-    private static boolean crashedInCrasherMethod(String hsErr) {
-        boolean checkProblematicFrame = false;
-        for (String line : hsErr.split(System.lineSeparator())) {
-            if (line.startsWith("# Problematic frame:")) {
-                checkProblematicFrame = true;
-            } else if (checkProblematicFrame) {
-                String crasherMethod = Crasher.class.getSimpleName() + ".method3";
-                if (!line.contains(crasherMethod)) {
-                    // There's any number of things that can subvert the attempt
-                    // to crash in the expected method.
-                    System.out.println("Crashed in method other than " + crasherMethod + "\n\n" + line + "\n\nSkipping rest of test.");
-                    return false;
-                }
-                return true;
-            }
+        if (machCodeHeaders.size() < minExpectedMachCodeSections) {
+            Asserts.fail(machCodeHeaders.size() + " < " + minExpectedMachCodeSections);
         }
-        throw new RuntimeException("\"# Problematic frame:\" line missing in hs_err_pid file:\n" + hsErr);
     }
 
     /**
-     * Gets the lines in {@code hsErr} below the line starting with "Native frames:" up to the next blank line.
+     * Extracts the lines in {@code hsErr} below the line starting with
+     * "Native frames:" or "Java frames:" up to the next blank line
+     * and adds them to {@code frames}.
      */
-    private static List<String> extractNativeFrames(String hsErr) {
-        List<String> res = new ArrayList<>();
-        boolean inNativeFrames = false;
+    private static void extractFrames(String hsErr, Set<String> frames, boolean nativeStack) {
+        String marker = (nativeStack ? "Native" : "Java") + " frames: ";
+        boolean seenMarker = false;
         for (String line : hsErr.split(System.lineSeparator())) {
-            if (line.startsWith("Native frames: ")) {
-                inNativeFrames = true;
-            } else if (inNativeFrames) {
+            if (line.startsWith(marker)) {
+                seenMarker = true;
+            } else if (seenMarker) {
                 if (line.trim().isEmpty()) {
-                    return res;
+                    return;
                 }
-                res.add(line);
+                frames.add(line);
             }
         }
-        throw new RuntimeException("\"Native frames:\" line missing in hs_err_pid file:\n" + hsErr);
-    }
-
-    private static String extractMachCode(String hsErr) {
-        int start = hsErr.indexOf("[MachCode]");
-        if (start != -1) {
-            int end = hsErr.lastIndexOf("[/MachCode]");
-            if (end != -1) {
-                return hsErr.substring(start, end + "[/MachCode]".length());
-            }
-            return hsErr.substring(start);
-        }
-        return null;
+        throw new RuntimeException("\"" + marker + "\" line missing in hs_err_pid file:\n" + hsErr);
     }
 }
