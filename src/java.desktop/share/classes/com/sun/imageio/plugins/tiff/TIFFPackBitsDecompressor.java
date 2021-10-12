@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package com.sun.imageio.plugins.tiff;
 
 import java.io.IOException;
+import com.sun.imageio.plugins.common.ReaderUtil;
 
 public class TIFFPackBitsDecompressor extends TIFFDecompressor {
 
@@ -77,8 +78,8 @@ public class TIFFPackBitsDecompressor extends TIFFDecompressor {
                           int scanlineStride) throws IOException {
         stream.seek(offset);
 
-        byte[] srcData = new byte[byteCount];
-        stream.readFully(srcData);
+        byte[] srcData = ReaderUtil.
+            staggeredReadByteStream(stream, byteCount);
 
         int bytesPerRow = (srcWidth*bitsPerPixel + 7)/8;
         byte[] buf;
