@@ -164,6 +164,15 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+class UMulHiLNode : public Node {
+public:
+  UMulHiLNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
 //------------------------------AndINode---------------------------------------
 // Logically AND 2 integers.  Included with the MUL nodes because it inherits
 // all the behavior of multiplication on a ring.
