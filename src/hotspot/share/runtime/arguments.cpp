@@ -3531,9 +3531,8 @@ bool Arguments::init_shared_archive_paths() {
       }
       if (archives == 1) {
         char* temp_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
-        int name_size;
         bool success =
-          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &name_size, &SharedArchivePath);
+          FileMapInfo::get_base_archive_name_from_header(temp_archive_path, &SharedArchivePath);
         if (!success) {
           SharedArchivePath = temp_archive_path;
         } else {

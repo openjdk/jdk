@@ -218,6 +218,12 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
   return stats;
 }
 
+void BarrierEnqueueDiscoveredFieldClosure::enqueue(oop reference, oop value) {
+  HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(reference,
+                                            java_lang_ref_Reference::discovered_offset(),
+                                            value);
+}
+
 void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   _current_discovered_addr = java_lang_ref_Reference::discovered_addr_raw(_current_discovered);
   oop discovered = java_lang_ref_Reference::discovered(_current_discovered);
@@ -271,18 +277,25 @@ void DiscoveredListIterator::clear_referent() {
 }
 
 void DiscoveredListIterator::enqueue() {
-  HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(_current_discovered,
-                                            java_lang_ref_Reference::discovered_offset(),
-                                            _next_discovered);
+  _enqueue->enqueue(_current_discovered, _next_discovered);
 }
 
 void DiscoveredListIterator::complete_enqueue() {
-  if (_prev_discovered != NULL) {
+  if (_prev_discovered != nullptr) {
     // This is the last object.
     // Swap refs_list into pending list and set obj's
     // discovered to what we read from the pending list.
     oop old = Universe::swap_reference_pending_list(_refs_list.head());
-    HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(_prev_discovered, java_lang_ref_Reference::discovered_offset(), old);
+    _enqueue->enqueue(_prev_discovered, old);
+  }
+}
+
+inline void log_preclean_ref(const DiscoveredListIterator& iter, const char* reason) {
+  if (log_develop_is_enabled(Trace, gc, ref)) {
+    ResourceMark rm;
+    log_develop_trace(gc, ref)("Precleaning %s reference " PTR_FORMAT ": %s",
+                               reason, p2i(iter.obj()),
+                               iter.obj()->klass()->internal_name());
   }
 }
 
@@ -307,8 +320,9 @@ inline void log_enqueued_ref(const DiscoveredListIterator& iter, const char* rea
 size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_list,
                                                         BoolObjectClosure* is_alive,
                                                         OopClosure*        keep_alive,
+                                                        EnqueueDiscoveredFieldClosure* enqueue,
                                                         bool               do_enqueue_and_clear) {
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
+  DiscoveredListIterator iter(refs_list, keep_alive, is_alive, enqueue);
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(discovery_is_concurrent() /* allow_null_referent */));
     if (iter.referent() == NULL) {
@@ -350,8 +364,9 @@ size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_
 }
 
 size_t ReferenceProcessor::process_final_keep_alive_work(DiscoveredList& refs_list,
-                                                         OopClosure*     keep_alive) {
-  DiscoveredListIterator iter(refs_list, keep_alive, NULL);
+                                                         OopClosure*     keep_alive,
+                                                         EnqueueDiscoveredFieldClosure* enqueue) {
+  DiscoveredListIterator iter(refs_list, keep_alive, NULL, enqueue);
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(false /* allow_null_referent */));
     // keep the referent and followers around
@@ -421,7 +436,8 @@ size_t ReferenceProcessor::total_reference_count(ReferenceType type) const {
 void RefProcTask::process_discovered_list(uint worker_id,
                                           ReferenceType ref_type,
                                           BoolObjectClosure* is_alive,
-                                          OopClosure* keep_alive) {
+                                          OopClosure* keep_alive,
+                                          EnqueueDiscoveredFieldClosure* enqueue) {
   ReferenceProcessor::RefProcSubPhases subphase;
   DiscoveredList* dl;
   switch (ref_type) {
@@ -453,6 +469,7 @@ void RefProcTask::process_discovered_list(uint worker_id,
     size_t const removed = _ref_processor.process_discovered_list_work(dl[worker_id],
                                                                        is_alive,
                                                                        keep_alive,
+                                                                       enqueue,
                                                                        do_enqueue_and_clear);
     _phase_times->add_ref_cleared(ref_type, removed);
   }
@@ -468,15 +485,15 @@ public:
   void rp_work(uint worker_id,
                BoolObjectClosure* is_alive,
                OopClosure* keep_alive,
+               EnqueueDiscoveredFieldClosure* enqueue,
                VoidClosure* complete_gc) override {
-    ResourceMark rm;
     RefProcWorkerTimeTracker t(_phase_times->soft_weak_final_refs_phase_worker_time_sec(), tracker_id(worker_id));
 
-    process_discovered_list(worker_id, REF_SOFT, is_alive, keep_alive);
+    process_discovered_list(worker_id, REF_SOFT, is_alive, keep_alive, enqueue);
 
-    process_discovered_list(worker_id, REF_WEAK, is_alive, keep_alive);
+    process_discovered_list(worker_id, REF_WEAK, is_alive, keep_alive, enqueue);
 
-    process_discovered_list(worker_id, REF_FINAL, is_alive, keep_alive);
+    process_discovered_list(worker_id, REF_FINAL, is_alive, keep_alive, enqueue);
 
     // Close the reachable set; needed for collectors which keep_alive_closure do
     // not immediately complete their work.
@@ -494,10 +511,10 @@ public:
   void rp_work(uint worker_id,
                BoolObjectClosure* is_alive,
                OopClosure* keep_alive,
+               EnqueueDiscoveredFieldClosure* enqueue,
                VoidClosure* complete_gc) override {
-    ResourceMark rm;
     RefProcSubPhasesWorkerTimeTracker tt(ReferenceProcessor::KeepAliveFinalRefsSubPhase, _phase_times, tracker_id(worker_id));
-    _ref_processor.process_final_keep_alive_work(_ref_processor._discoveredFinalRefs[worker_id], keep_alive);
+    _ref_processor.process_final_keep_alive_work(_ref_processor._discoveredFinalRefs[worker_id], keep_alive, enqueue);
     // Close the reachable set
     complete_gc->do_void();
   }
@@ -513,9 +530,9 @@ public:
   void rp_work(uint worker_id,
                BoolObjectClosure* is_alive,
                OopClosure* keep_alive,
+               EnqueueDiscoveredFieldClosure* enqueue,
                VoidClosure* complete_gc) override {
-    ResourceMark rm;
-    process_discovered_list(worker_id, REF_PHANTOM, is_alive, keep_alive);
+    process_discovered_list(worker_id, REF_PHANTOM, is_alive, keep_alive, enqueue);
 
     // Close the reachable set; needed for collectors which keep_alive_closure do
     // not immediately complete their work.
@@ -1042,6 +1059,7 @@ bool ReferenceProcessor::has_discovered_references() {
 
 void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_alive,
                                                         OopClosure* keep_alive,
+                                                        EnqueueDiscoveredFieldClosure* enqueue,
                                                         VoidClosure* complete_gc,
                                                         YieldClosure* yield,
                                                         GCTimer* gc_timer) {
@@ -1056,7 +1074,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
         return;
       }
       if (preclean_discovered_reflist(_discoveredSoftRefs[i], is_alive,
-                                      keep_alive, complete_gc, yield)) {
+                                      keep_alive, enqueue, complete_gc, yield)) {
         log_reflist("SoftRef abort: ", _discoveredSoftRefs, _max_num_queues);
         return;
       }
@@ -1073,7 +1091,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
         return;
       }
       if (preclean_discovered_reflist(_discoveredWeakRefs[i], is_alive,
-                                      keep_alive, complete_gc, yield)) {
+                                      keep_alive, enqueue, complete_gc, yield)) {
         log_reflist("WeakRef abort: ", _discoveredWeakRefs, _max_num_queues);
         return;
       }
@@ -1090,7 +1108,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
         return;
       }
       if (preclean_discovered_reflist(_discoveredFinalRefs[i], is_alive,
-                                      keep_alive, complete_gc, yield)) {
+                                      keep_alive, enqueue, complete_gc, yield)) {
         log_reflist("FinalRef abort: ", _discoveredFinalRefs, _max_num_queues);
         return;
       }
@@ -1107,7 +1125,7 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
         return;
       }
       if (preclean_discovered_reflist(_discoveredPhantomRefs[i], is_alive,
-                                      keep_alive, complete_gc, yield)) {
+                                      keep_alive, enqueue, complete_gc, yield)) {
         log_reflist("PhantomRef abort: ", _discoveredPhantomRefs, _max_num_queues);
         return;
       }
@@ -1116,30 +1134,33 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
   }
 }
 
-// Walk the given discovered ref list, and remove all reference objects
-// whose referents are still alive, whose referents are NULL or which
-// are not active (have a non-NULL next field). NOTE: When we are
-// thus precleaning the ref lists (which happens single-threaded today),
-// we do not disable refs discovery to honor the correct semantics of
-// java.lang.Reference. As a result, we need to be careful below
-// that ref removal steps interleave safely with ref discovery steps
-// (in this thread).
+// Walk the given discovered ref list, and remove all reference objects whose
+// referents are still alive or NULL. NOTE: When we are precleaning the
+// ref lists, we do not disable refs discovery to honor the correct semantics of
+// java.lang.Reference. Therefore, as we iterate over the discovered list (DL)
+// and drop elements from it, newly discovered refs can be discovered and added
+// to the DL. Because precleaning is implemented single-threaded today, for
+// each per-thread DL, the insertion of refs (calling `complete_gc`) happens
+// after the iteration. The clear separation means no special synchronization
+// is needed.
 bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
                                                      BoolObjectClosure* is_alive,
                                                      OopClosure*        keep_alive,
+                                                     EnqueueDiscoveredFieldClosure* enqueue,
                                                      VoidClosure*       complete_gc,
                                                      YieldClosure*      yield) {
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
+  DiscoveredListIterator iter(refs_list, keep_alive, is_alive, enqueue);
   while (iter.has_next()) {
     if (yield->should_return_fine_grain()) {
       return true;
     }
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
-    if (iter.referent() == NULL || iter.is_referent_alive()) {
-      // The referent has been cleared, or is alive; we need to trace
-      // and mark its cohort.
-      log_develop_trace(gc, ref)("Precleaning Reference (" INTPTR_FORMAT ": %s)",
-                                 p2i(iter.obj()), iter.obj()->klass()->internal_name());
+    if (iter.referent() == nullptr) {
+      log_preclean_ref(iter, "cleared");
+      iter.remove();
+      iter.move_to_next();
+    } else if (iter.is_referent_alive()) {
+      log_preclean_ref(iter, "reachable");
       // Remove Reference object from list
       iter.remove();
       // Keep alive its cohort.

@@ -55,6 +55,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -133,8 +134,7 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder) :
   _metaspace(NULL),
-  _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock",
-                            Mutex::_safepoint_check_never)),
+  _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock")),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true),
   // A non-strong hidden class loader data doesn't have anything to keep
@@ -302,9 +302,7 @@ bool ClassLoaderData::try_claim(int claim) {
 // it is being defined, therefore _keep_alive is not volatile or atomic.
 void ClassLoaderData::inc_keep_alive() {
   if (has_class_mirror_holder()) {
-    if (!Arguments::is_dumping_archive()) {
-      assert(_keep_alive > 0, "Invalid keep alive increment count");
-    }
+    assert(_keep_alive > 0, "Invalid keep alive increment count");
     _keep_alive++;
   }
 }
@@ -887,6 +885,8 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
       // Remove the class so unloading events aren't triggered for
       // this class (scratch or error class) in do_unloading().
       remove_class(ik);
+      // But still have to remove it from the dumptime_table.
+      SystemDictionaryShared::handle_class_unloading(ik);
     }
   }
 }

@@ -81,7 +81,6 @@ class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
-  const bool _is_young;
   size_t _marked_bytes;
   UpdateLogBuffersDeferred* _log_buffer_cl;
   bool _during_concurrent_start;
@@ -96,7 +95,6 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
-    _is_young(hr->is_young()),
     _marked_bytes(0),
     _log_buffer_cl(log_buffer_cl),
     _during_concurrent_start(during_concurrent_start),
@@ -143,18 +141,23 @@ public:
       _marked_bytes += (obj_size * HeapWordSize);
       PreservedMarks::init_forwarded_mark(obj);
 
-      // During evacuation failure we do not record inter-region
-      // references referencing regions that need a remembered set
-      // update originating from young regions (including eden) that
-      // failed evacuation. Make up for that omission now by rescanning
-      // these failed objects.
-      if (_is_young) {
-        obj->oop_iterate(_log_buffer_cl);
-      }
+      // While we were processing RSet buffers during the collection,
+      // we actually didn't scan any cards on the collection set,
+      // since we didn't want to update remembered sets with entries
+      // that point into the collection set, given that live objects
+      // from the collection set are about to move and such entries
+      // will be stale very soon.
+      // This change also dealt with a reliability issue which
+      // involved scanning a card in the collection set and coming
+      // across an array that was being chunked and looking malformed.
+      // The problem is that, if evacuation fails, we might have
+      // remembered set entries missing given that we skipped cards on
+      // the collection set. So, we'll recreate such entries now.
+      obj->oop_iterate(_log_buffer_cl);
 
       HeapWord* obj_end = obj_addr + obj_size;
       _last_forwarded_object_end = obj_end;
-      _hr->cross_threshold(obj_addr, obj_end);
+      _hr->alloc_block_in_bot(obj_addr, obj_end);
     }
   }
 
@@ -171,13 +174,13 @@ public:
       CollectedHeap::fill_with_objects(start, gap_size);
 
       HeapWord* end_first_obj = start + cast_to_oop(start)->size();
-      _hr->cross_threshold(start, end_first_obj);
+      _hr->alloc_block_in_bot(start, end_first_obj);
       // Fill_with_objects() may have created multiple (i.e. two)
       // objects, as the max_fill_size() is half a region.
       // After updating the BOT for the first object, also update the
       // BOT for the second object to make the BOT complete.
       if (end_first_obj != end) {
-        _hr->cross_threshold(end_first_obj, end);
+        _hr->alloc_block_in_bot(end_first_obj, end);
 #ifdef ASSERT
         size_t size_second_obj = cast_to_oop(end_first_obj)->size();
         HeapWord* end_of_second_obj = end_first_obj + size_second_obj;

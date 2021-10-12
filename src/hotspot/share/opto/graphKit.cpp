@@ -1748,14 +1748,15 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
 }
 
 //-------------------------load_array_element-------------------------
-Node* GraphKit::load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype) {
+Node* GraphKit::load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl) {
   const Type* elemtype = arytype->elem();
   BasicType elembt = elemtype->array_element_basic_type();
   Node* adr = array_element_address(ary, idx, elembt, arytype->size());
   if (elembt == T_NARROWOOP) {
     elembt = T_OBJECT; // To satisfy switch in LoadNode::make()
   }
-  Node* ld = make_load(ctl, adr, elemtype, elembt, arytype, MemNode::unordered);
+  Node* ld = access_load_at(ary, adr, arytype, elemtype, elembt,
+                            IN_HEAP | IS_ARRAY | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0));
   return ld;
 }
 
@@ -2488,7 +2489,8 @@ Node* GraphKit::make_runtime_call(int flags,
                                   Node* parm0, Node* parm1,
                                   Node* parm2, Node* parm3,
                                   Node* parm4, Node* parm5,
-                                  Node* parm6, Node* parm7) {
+                                  Node* parm6, Node* parm7,
+                                  Node* parm8) {
   assert(call_addr != NULL, "must not call NULL targets");
 
   // Slow-path call
@@ -2535,7 +2537,8 @@ Node* GraphKit::make_runtime_call(int flags,
   if (parm5 != NULL) { call->init_req(TypeFunc::Parms+5, parm5);
   if (parm6 != NULL) { call->init_req(TypeFunc::Parms+6, parm6);
   if (parm7 != NULL) { call->init_req(TypeFunc::Parms+7, parm7);
-  /* close each nested if ===> */  } } } } } } } }
+  if (parm8 != NULL) { call->init_req(TypeFunc::Parms+8, parm8);
+  /* close each nested if ===> */  } } } } } } } } }
   assert(call->in(call->req()-1) != NULL, "must initialize all parms");
 
   if (!is_leaf) {
@@ -4256,7 +4259,7 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
   record_for_igvn(mem);
   set_control(head);
   set_memory(mem, TypeAryPtr::BYTES);
-  Node* ch = load_array_element(control(), src, i_byte, TypeAryPtr::BYTES);
+  Node* ch = load_array_element(src, i_byte, TypeAryPtr::BYTES, /* set_ctrl */ true);
   Node* st = store_to_memory(control(), array_element_address(dst, i_char, T_BYTE),
                              AndI(ch, intcon(0xff)), T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
                              false, false, true /* mismatched */);

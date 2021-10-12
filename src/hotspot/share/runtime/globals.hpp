@@ -1336,6 +1336,10 @@ const intx ObjectAlignmentInBytes = 8;
   develop(intx, StackPrintLimit, 100,                                       \
           "number of stack frames to print in VM-level stack dump")         \
                                                                             \
+  product(int, ErrorLogPrintCodeLimit, 3, DIAGNOSTIC,                       \
+          "max number of compiled code units to print in error log")        \
+          range(0, VMError::max_error_log_print_code)                       \
+                                                                            \
   notproduct(intx, MaxElementPrintSize, 256,                                \
           "maximum number of elements to print")                            \
                                                                             \
@@ -1435,10 +1439,10 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
-  product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
+  develop(bool, MetaspaceGuardAllocations, false,                           \
           "Metapace allocations are guarded.")                              \
                                                                             \
-  product(bool, MetaspaceHandleDeallocations, true, DIAGNOSTIC,             \
+  develop(bool, MetaspaceHandleDeallocations, true,                         \
           "Switch off Metapace deallocation handling.")                     \
                                                                             \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \

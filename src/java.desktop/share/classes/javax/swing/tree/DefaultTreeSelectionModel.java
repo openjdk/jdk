@@ -1174,10 +1174,9 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
         sb.append(getClass().getName() + " " + hashCode() + " [ ");
         for(int counter = 0; counter < selCount; counter++) {
             if(rows != null)
-                sb.append(selection[counter].toString() + "@" +
-                          Integer.toString(rows[counter])+ " ");
+                sb.append(selection[counter] + "@" + rows[counter] + " ");
             else
-                sb.append(selection[counter].toString() + " ");
+                sb.append(selection[counter] + " ");
         }
         sb.append("]");
         return sb.toString();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.swing.*;
 public class DefaultHighlighter extends LayeredHighlighter {
 
     /**
-     * Creates a new DefaultHighlighther object.
+     * Creates a new DefaultHighlighter object.
      */
     public DefaultHighlighter() {
         drawsLayeredHighlights = true;
@@ -244,7 +244,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
             lhi.width = lhi.height = 0;
             lhi.p0 = doc.createPosition(p0);
             lhi.p1 = doc.createPosition(p1);
-            safeDamageRange(Math.min(p0, p1), Math.max(p0, p1));
+            safeDamageRange(p0, p1);
         }
         else {
             HighlightInfo info = (HighlightInfo) tag;

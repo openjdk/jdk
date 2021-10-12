@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 package nsk.jdi.EventRequestManager.createStepRequest;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
+
 
 /**
  * The debugged application of the test.
@@ -83,7 +83,7 @@ public class crstepreq005a {
         label0:
         for (int testCase = 0; testCase < maxCase && instruction != quit; testCase++) {
 
-            thread1 = new Thread0crstepreq005a(testCase);
+            thread1 = JDIThreadFactory.newThread(new Thread0crstepreq005a(testCase));
             threadStart(thread1);
             threadJoin (thread1, testCase);
 
@@ -125,7 +125,7 @@ public class crstepreq005a {
 /**
  * This thread will be suspended on breakpoint. No locks are used.
  */
-class Thread0crstepreq005a extends Thread {
+class Thread0crstepreq005a extends NamedTask {
     int testCase;
 
     public Thread0crstepreq005a (int testCase) {
