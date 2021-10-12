@@ -37,7 +37,7 @@
  *                  breakpoint in Thread.resume() so the JDWP agent receives a
  *                  breakpoint event. It finds that "resumee" is suspended because
  *                  of JDWP actions. The resume() call would interfere with the
- *                  debugger therefore "main" is blocked.
+ *                  debugger therefore "main" is blocked in JDWP's blockOnDebuggerSuspend().
  *
  *          Debugger: Resumes "resumee" by calling ThreadReference.resume().
  *                    The JDWP agent notifies "main" about it.
@@ -46,6 +46,8 @@
  *
  *          "main": Receives the notification, finds that "resumee" is not
  *                  suspended anymore and continues execution.
+ *
+ *          Debugger: Verifies that "main" is no longer blocked.
  *
  * @author Richard Reingruber richard DOT reingruber AT sap DOT com
  *
