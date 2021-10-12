@@ -24,11 +24,29 @@
 /**
  * @test
  * @bug 8274687
- * @summary Test if a thread R can be resumed by ThreadReference.resume() and
- *          check if another thread T is unblocked afterwards if T is blocked by
- *          the JDWP agent (in blockOnDebuggerSuspend()) because it called
- *          j.l.Thread.resume() on a thread R that was suspended by the
- *          debugger.
+ * @summary Test the special handling in the JDWP agent of threads that call
+ *          j.l.Thread.resume().
+ *
+ *          This is the sequence of actions by the debugger and the threads
+ *          "main" and "resumee" in the target vm.
+ *
+ *          "resumee": Reaches breakpoint in methodWithBreakpoint() and is
+ *                     suspended then.
+ *
+ *          "main": Calls j.l.Thread.resume() for "resumee". There is an internal
+ *                  breakpoint in Thread.resume() so the JDWP agent receives a
+ *                  breakpoint event. It finds that "resumee" is suspended because
+ *                  of JDWP actions. The resume() call would interfere with the
+ *                  debugger therefore "main" is blocked.
+ *
+ *          Debugger: Resumes "resumee" by calling ThreadReference.resume().
+ *                    Notifies "main" about it.
+ *
+ *          "resumee": Continues execution.
+ *
+ *          "main": Receives the notification, finds that "resumee" is not
+ *                  suspended anymore and continues execution.
+ *
  * @author Richard Reingruber richard DOT reingruber AT sap DOT com
  *
  * @library /test/lib
@@ -64,18 +82,18 @@ class ResumeAfterThreadResumeCallTarg extends Thread {
     public static void main(String[] args) {
         log("Entered main()");
 
-        // Start Resumee thread.
-        ResumeAfterThreadResumeCallTarg resumee = new ResumeAfterThreadResumeCallTarg("Resumee");
+        // Start "resumee" thread.
+        ResumeAfterThreadResumeCallTarg resumee = new ResumeAfterThreadResumeCallTarg("resumee");
         resumee.start();
 
-        // Wait for Resumee to reach the breakpoint in methodWithBreakpoint().
+        // Wait for "resumee" to reach the breakpoint in methodWithBreakpoint().
         while (!resumee.reachedBreakpoint) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) { /* ignored */ }
         }
 
-        // Resumee is suspended now because of the breakpoint
+        // "resumee" is suspended now because of the breakpoint
         // Calling Thread.resume() will block this thread.
 
         log("Calling Thread.resume()");
@@ -133,7 +151,7 @@ public class ResumeAfterThreadResumeCallTest extends TestScaffold {
         log("Resuming to methodWithBreakpoint()");
         bpe = resumeTo(TARGET_CLS_NAME, "methodWithBreakpoint", "()V");
 
-        log("Resumee has reached the breakpoint and is suspended now.");
+        log("Thread \"resumee\" has reached the breakpoint and is suspended now.");
         ThreadReference resumee = bpe.thread();
         ObjectReference resumeeThreadObj = resumee.frame(1).thisObject();
         printStack(resumee);
@@ -142,7 +160,7 @@ public class ResumeAfterThreadResumeCallTest extends TestScaffold {
         log("Notify target main thread to continue by setting reachedBreakpoint = true.");
         setField(resumeeThreadObj, "reachedBreakpoint", vm().mirrorOf(true));
 
-        log("Sleeping 500ms shows that the main thread is blocked calling Thread.resume() on 'Resumee' Thread.");
+        log("Sleeping 500ms shows that the main thread is blocked calling Thread.resume() on \"resumee\" Thread.");
         Thread.sleep(500);
         log("After sleep.");
 
@@ -155,7 +173,7 @@ public class ResumeAfterThreadResumeCallTest extends TestScaffold {
             if (!resumedResumee) {
                 // main thread should be still blocked.
                 Asserts.assertFalse(mainThreadReturnedFromResumeCall, "main Thread was not blocked");
-                log("Resuming 'Resumee' will unblock the main thread.");
+                log("Resuming \"resumee\" will unblock the main thread.");
                 resumee.resume();
                 resumedResumee = true;
             }
