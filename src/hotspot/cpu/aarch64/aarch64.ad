@@ -2418,23 +2418,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
-    // Some types of VectorCast are not implemented for now.
-    case Op_VectorCastI2X:
-      if (bt == T_BYTE) {
-        return false;
-      }
-      break;
-    case Op_VectorCastS2X:
-      if (vlen < 4 || bit_size < 64) {
-        return false;
-      }
-      break;
-    case Op_VectorCastF2X:
-    case Op_VectorCastD2X:
-      if (bt == T_INT || bt == T_SHORT || bt == T_BYTE || bt == T_LONG) {
-        return false;
-      }
-      break;
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
       return false;
