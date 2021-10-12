@@ -358,6 +358,44 @@ public:
   size_t garbage() { return _garbage; }
 };
 
+class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
+ public:
+  ShenandoahCalculateRegionStatsClosure old;
+  ShenandoahCalculateRegionStatsClosure young;
+  ShenandoahCalculateRegionStatsClosure global;
+
+  void heap_region_do(ShenandoahHeapRegion* r) override {
+    switch (r->affiliation()) {
+      default:
+        ShouldNotReachHere();
+        return;
+      case FREE: return;
+      case YOUNG_GENERATION:
+        young.heap_region_do(r);
+        break;
+      case OLD_GENERATION:
+        old.heap_region_do(r);
+        break;
+    }
+    global.heap_region_do(r);
+  }
+
+  static void log_usage(ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
+    log_debug(gc)("Safepoint verification: %s verified usage: " SIZE_FORMAT "%s, recorded usage: " SIZE_FORMAT "%s",
+                  generation->name(),
+                  byte_size_in_proper_unit(generation->used()), proper_unit_for_byte_size(generation->used()),
+                  byte_size_in_proper_unit(stats.used()), proper_unit_for_byte_size(stats.used()));
+  }
+
+  static void validate_usage(const char* label, ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
+    guarantee(stats.used() == generation->used(),
+              "%s: generation (%s) used size must be consistent: generation-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
+              label, generation->name(),
+              byte_size_in_proper_unit(generation->used()), proper_unit_for_byte_size(generation->used()),
+              byte_size_in_proper_unit(stats.used()), proper_unit_for_byte_size(stats.used()));
+  }
+};
+
 class ShenandoahVerifyHeapRegionClosure : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahHeap* _heap;
@@ -779,20 +817,18 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
       _heap->verify_rem_set_after_full_gc();
     }
 
-    ShenandoahCalculateRegionStatsClosure cl;
-    generation->heap_region_iterate(&cl);
+    ShenandoahGenerationStatsClosure cl;
+    _heap->heap_region_iterate(&cl);
 
-    log_debug(gc)("Safepoint verification: generation %s usage hereby calculated as: " SIZE_FORMAT,
-                  generation->name(), cl.used());
-    log_debug(gc)("                                    previous tabulation of usage: " SIZE_FORMAT, generation->used());
+    if (LogTarget(Debug, gc)::is_enabled()) {
+      ShenandoahGenerationStatsClosure::log_usage(_heap->old_generation(), cl.old);
+      ShenandoahGenerationStatsClosure::log_usage(_heap->young_generation(), cl.young);
+      ShenandoahGenerationStatsClosure::log_usage(_heap->global_generation(), cl.global);
+    }
 
-
-    size_t generation_used = generation->used();
-    guarantee(cl.used() == generation_used,
-              "%s: generation (%s) used size must be consistent: generation-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
-              label, generation->name(),
-              byte_size_in_proper_unit(generation_used), proper_unit_for_byte_size(generation_used),
-              byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
+    ShenandoahGenerationStatsClosure::validate_usage(label, _heap->old_generation(), cl.old);
+    ShenandoahGenerationStatsClosure::validate_usage(label, _heap->young_generation(), cl.young);
+    ShenandoahGenerationStatsClosure::validate_usage(label, _heap->global_generation(), cl.global);
   }
 
   log_debug(gc)("Safepoint verification finished remembered set verification");

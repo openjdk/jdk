@@ -377,12 +377,10 @@ private:
   ShenandoahHeap*           const _heap;
   ShenandoahHeapRegionSet** const _worker_slices;
   size_t                    const _num_workers;
-  size_t                    *_old_used;
-  size_t                    *_young_used;
 
 public:
   ShenandoahPrepareForCompactionTask(PreservedMarksSet *preserved_marks, ShenandoahHeapRegionSet **worker_slices,
-                                     size_t num_workers, size_t* old_used, size_t* young_used);
+                                     size_t num_workers);
 
   static bool is_candidate_region(ShenandoahHeapRegion* r) {
     // Empty region: get it into the slice to defragment the slice itself.
@@ -397,10 +395,6 @@ public:
   }
 
   void work(uint worker_id);
-  void add_to_young_used(size_t worker_id, size_t amount);
-  void add_to_old_used(size_t worker_id, size_t amount);
-  size_t young_used();
-  size_t old_used();
 };
 
 class ShenandoahPrepareForGenerationalCompactionObjectClosure : public ObjectClosure {
@@ -464,7 +458,6 @@ public:
     if (_old_to_region != nullptr) {
       log_debug(gc)("Planned compaction into Old Region " SIZE_FORMAT ", used: " SIZE_FORMAT " tabulated by worker %u",
                     _old_to_region->index(), _old_compact_point - _old_to_region->bottom(), _worker_id);
-      _compactor->add_to_old_used(_worker_id, _old_compact_point - _old_to_region->bottom());
       _old_to_region->set_new_top(_old_compact_point);
       _old_to_region = nullptr;
     }
@@ -474,7 +467,6 @@ public:
     if (_young_to_region != nullptr) {
       log_debug(gc)("Worker %u planned compaction into Young Region " SIZE_FORMAT ", used: " SIZE_FORMAT,
                     _worker_id, _young_to_region->index(), _young_compact_point - _young_to_region->bottom());
-      _compactor->add_to_young_used(_worker_id, _young_compact_point - _young_to_region->bottom());
       _young_to_region->set_new_top(_young_compact_point);
       _young_to_region = nullptr;
     }
@@ -650,16 +642,10 @@ public:
 
 ShenandoahPrepareForCompactionTask::ShenandoahPrepareForCompactionTask(PreservedMarksSet *preserved_marks,
                                                                        ShenandoahHeapRegionSet **worker_slices,
-                                                                       size_t num_workers, size_t* old_used, size_t* young_used) :
+                                                                       size_t num_workers) :
     AbstractGangTask("Shenandoah Prepare For Compaction"),
     _preserved_marks(preserved_marks), _heap(ShenandoahHeap::heap()),
-    _worker_slices(worker_slices), _num_workers(num_workers),
-    _old_used(old_used), _young_used(young_used) {
-  for (size_t i = 0; i < _num_workers; i++) {
-    _old_used[i] = 0;
-    _young_used[i] = 0;
-  }
-}
+    _worker_slices(worker_slices), _num_workers(num_workers) { }
 
 
 void ShenandoahPrepareForCompactionTask::work(uint worker_id) {
@@ -731,44 +717,6 @@ void ShenandoahPrepareForCompactionTask::work(uint worker_id) {
   }
 }
 
-// Accumulate HeapWords of memory used in young-gen memory.
-void ShenandoahPrepareForCompactionTask::add_to_young_used(size_t worker_id, size_t amount) {
-  log_debug(gc)("Adding to _young_used for worker_id: " SIZE_FORMAT ", amount: " SIZE_FORMAT, worker_id, amount);
-  _young_used[worker_id] += amount;
-}
-
-// Accumulate HeapWords of memory used in old-gen memory.
-void ShenandoahPrepareForCompactionTask::add_to_old_used(size_t worker_id, size_t amount) {
-  log_debug(gc)("Adding to _old_used for worker_id: " SIZE_FORMAT ", amount: " SIZE_FORMAT, worker_id, amount);
-  _old_used[worker_id] += amount;
-}
-
-// Return total number of bytes used in young-gen memory
-size_t ShenandoahPrepareForCompactionTask::young_used() {
-  size_t result = 0;
-  log_debug(gc)("Calculating young_used by accumulating worker totals");
-  for (size_t i = 0; i < _num_workers; i++) {
-    log_debug(gc)("  worker [" SIZE_FORMAT "] contributed " SIZE_FORMAT, i, _young_used[i]);
-    result += _young_used[i];
-  }
-  result *= HeapWordSize;
-  log_debug(gc)("Accumulated _young_used is: " SIZE_FORMAT, result);
-  return result;
-}
-
-// Return total number of bytes used in old-gen memory
-size_t ShenandoahPrepareForCompactionTask::old_used() {
-  size_t result = 0;
-  log_debug(gc)("Calculating old_used by accumulating worker totals");
-  for (size_t i = 0; i < _num_workers; i++) {
-    log_debug(gc)("  worker [" SIZE_FORMAT "] contributed " SIZE_FORMAT, i, _old_used[i]);
-    result += _old_used[i];
-  }
-  log_debug(gc)("Accumulated _old_used is: " SIZE_FORMAT, result);
-  result *= HeapWordSize;
-  return result;
-}
-
 void ShenandoahFullGC::calculate_target_humongous_objects() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
@@ -789,17 +737,6 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
   log_debug(gc)("Full GC calculating target humongous objects from end " SIZE_FORMAT, to_end);
   for (size_t c = heap->num_regions(); c > 0; c--) {
     ShenandoahHeapRegion *r = heap->get_region(c - 1);
-
-    if (r->is_humongous_start() && heap->mode()->is_generational()) {
-      oop obj = cast_to_oop(r->bottom());
-      size_t humongous_bytes = obj->size() * HeapWordSize;
-      log_debug(gc)("Adjusting used for humongous %s object by " SIZE_FORMAT, r->is_old()? "OLD": "YOUNG", humongous_bytes);
-      if (r->is_old()) {
-        heap->old_generation()->increase_used(humongous_bytes);
-      } else {
-        heap->young_generation()->increase_used(humongous_bytes);
-      }
-    }
     if (r->is_humongous_continuation() || (r->new_top() == r->bottom())) {
       // To-region candidate: record this, and continue scan
       to_begin = r->index();
@@ -1070,21 +1007,8 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
     size_t num_workers = heap->max_workers();
 
     ResourceMark rm;
-    size_t* old_used   = NEW_RESOURCE_ARRAY(size_t, num_workers);
-    size_t* young_used = NEW_RESOURCE_ARRAY(size_t, num_workers);
-
-    ShenandoahPrepareForCompactionTask task(_preserved_marks, worker_slices, num_workers, old_used, young_used);
+    ShenandoahPrepareForCompactionTask task(_preserved_marks, worker_slices, num_workers);
     heap->workers()->run_task(&task);
-
-    if (heap->mode()->is_generational()) {
-      log_debug(gc)("Usage after compacting regular objects is young: " SIZE_FORMAT ", old: " SIZE_FORMAT,
-                    task.young_used(), task.old_used());
-      heap->young_generation()->increase_used(task.young_used());
-      heap->old_generation()->increase_used(task.old_used());
-    }
-
-    FREE_RESOURCE_ARRAY(size_t, old_used, num_workers);
-    FREE_RESOURCE_ARRAY(size_t, young_used, num_workers);
   }
 
   // Compute the new addresses for humongous objects
@@ -1293,6 +1217,15 @@ public:
       r->recycle();
     }
 
+    // Update final usage for generations
+    if (_heap->mode()->is_generational() && live != 0) {
+      if (r->is_young()) {
+        _heap->young_generation()->increase_used(live);
+      } else if (r->is_old()) {
+        _heap->old_generation()->increase_used(live);
+      }
+    }
+
     r->set_live_data(live);
     r->reset_alloc_metadata();
     _live += live;
@@ -1431,6 +1364,11 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
   // Bring regions in proper states after the collection, and set heap properties.
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_rebuild);
+
+    if (heap->mode()->is_generational()) {
+      heap->young_generation()->clear_used();
+      heap->old_generation()->clear_used();
+    }
 
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
