@@ -4165,7 +4165,7 @@ instruct ReplI_zero(vec dst, immI_0 zero) %{
 %}
 
 instruct ReplI_M1(vec dst, immI_M1 con) %{
-  predicate(UseAVX > 0);
+  predicate(UseAVX > 0 && Matcher::vector_length_in_bytes(n) >= 16);
   match(Set dst (ReplicateB con));
   match(Set dst (ReplicateS con));
   match(Set dst (ReplicateI con));
@@ -7919,18 +7919,19 @@ instruct vstoreMask1B(vec dst, vec src, immI_1 size) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vstoreMask2B(vec dst, vec src, immI_2 size) %{
+instruct vstoreMask2B(vec dst, vec src, vec xtmp, immI_2 size) %{
   predicate(Matcher::vector_length(n) <= 16 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
   match(Set dst (VectorStoreMask src size));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, TEMP xtmp);
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   ins_encode %{
     int vlen_enc = Assembler::AVX_128bit;
     int vlen = Matcher::vector_length(this);
-    if (vlen <= 8 && UseAVX <= 2) {
+    if (vlen <= 8) {
       assert(UseSSE >= 3, "required");
+      __ pxor($xtmp$$XMMRegister, $xtmp$$XMMRegister);
       __ pabsw($dst$$XMMRegister, $src$$XMMRegister);
-      __ packuswb($dst$$XMMRegister, $dst$$XMMRegister);
+      __ packuswb($dst$$XMMRegister, $xtmp$$XMMRegister);
     } else {
       assert(UseAVX > 0, "required");
       __ vextracti128($dst$$XMMRegister, $src$$XMMRegister, 0x1);
@@ -7941,40 +7942,44 @@ instruct vstoreMask2B(vec dst, vec src, immI_2 size) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vstoreMask4B(vec dst, vec src, immI_4 size) %{
+instruct vstoreMask4B(vec dst, vec src, vec xtmp, immI_4 size) %{
   predicate(UseAVX <= 2 && Matcher::vector_length(n) <= 8 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, TEMP xtmp);
   ins_encode %{
     int vlen_enc = Assembler::AVX_128bit;
     int vlen = Matcher::vector_length(this);
-    if (vlen <= 4 && UseAVX <= 2) {
+    if (vlen <= 4) {
       assert(UseSSE >= 3, "required");
+      __ pxor($xtmp$$XMMRegister, $xtmp$$XMMRegister);
       __ pabsd($dst$$XMMRegister, $src$$XMMRegister);
-      __ packusdw($dst$$XMMRegister, $dst$$XMMRegister);
-      __ packuswb($dst$$XMMRegister, $dst$$XMMRegister);
+      __ packusdw($dst$$XMMRegister, $xtmp$$XMMRegister);
+      __ packuswb($dst$$XMMRegister, $xtmp$$XMMRegister);
     } else {
       assert(UseAVX > 0, "required");
+      __ vpxor($xtmp$$XMMRegister, $xtmp$$XMMRegister, $xtmp$$XMMRegister, vlen_enc);
       __ vextracti128($dst$$XMMRegister, $src$$XMMRegister, 0x1);
       __ vpackssdw($dst$$XMMRegister, $src$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-      __ vpacksswb($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+      __ vpacksswb($dst$$XMMRegister, $dst$$XMMRegister, $xtmp$$XMMRegister, vlen_enc);
       __ vpabsb($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     }
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct storeMask8B(vec dst, vec src, immI_8 size) %{
+instruct storeMask8B(vec dst, vec src, vec xtmp, immI_8 size) %{
   predicate(UseAVX <= 2 && Matcher::vector_length(n) == 2);
   match(Set dst (VectorStoreMask src size));
+  effect(TEMP_DEF dst, TEMP xtmp);
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   ins_encode %{
     assert(UseSSE >= 3, "required");
+    __ pxor($xtmp$$XMMRegister, $xtmp$$XMMRegister);
     __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x8);
-    __ packssdw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ packsswb($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pabsb($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pabsd($dst$$XMMRegister, $dst$$XMMRegister);
+    __ packusdw($dst$$XMMRegister, $xtmp$$XMMRegister);
+    __ packuswb($dst$$XMMRegister, $xtmp$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7983,14 +7988,15 @@ instruct storeMask8B_avx(vec dst, vec src, immI_8 size, vec vtmp) %{
   predicate(UseAVX <= 2 && Matcher::vector_length(n) == 4);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s], using $vtmp as TEMP" %}
-  effect(TEMP dst, TEMP vtmp);
+  effect(TEMP_DEF dst, TEMP vtmp);
   ins_encode %{
     int vlen_enc = Assembler::AVX_128bit;
     __ vpshufps($dst$$XMMRegister, $src$$XMMRegister, $src$$XMMRegister, 0x88, Assembler::AVX_256bit);
     __ vextracti128($vtmp$$XMMRegister, $dst$$XMMRegister, 0x1);
     __ vblendps($dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, 0xC, vlen_enc);
-    __ vpackssdw($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpacksswb($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+    __ vpxor($vtmp$$XMMRegister, $vtmp$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
+    __ vpackssdw($dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
+    __ vpacksswb($dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
     __ vpabsb($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
@@ -8635,33 +8641,49 @@ instruct vmasked_store64(memory mem, vec src, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vmask_tolong_evex(rRegL dst, kReg mask) %{
+instruct vmask_tolong_evex(rRegL dst, kReg mask, rFlagsReg cr) %{
   predicate(n->in(1)->bottom_type()->isa_vectmask());
   match(Set dst (VectorMaskToLong mask));
+  effect(TEMP dst, KILL cr);
   format %{ "vector_tolong_evex $dst, $mask \t! vector mask tolong" %}
   ins_encode %{
+    int mask_len = Matcher::vector_length(this, $mask);
+    BasicType mbt = Matcher::vector_element_basic_type(this, $mask);
     if (VM_Version::supports_avx512vlbw()) {
       __ kmovql($dst$$Register, $mask$$KRegister);
     } else {
-      int mask_len = Matcher::vector_length(this, $mask);
       assert(mask_len <= 16, "");
       __ kmovwl($dst$$Register, $mask$$KRegister);
+    }
+    // Mask generated out of partial vector comparisons/replicate/mask manipulation
+    // operations needs to be clipped.
+    int mask_size = mask_len * type2aelembytes(mbt);
+    if (mask_size < 16) {
+      __ andq($dst$$Register, (((jlong)1 << mask_len) - 1));
     }
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vmask_tolong_avx(rRegL dst, vec mask, vec xtmp) %{
+instruct vmask_tolong_avx(rRegL dst, vec mask, vec xtmp, rFlagsReg cr) %{
   predicate(n->in(1)->bottom_type()->isa_vectmask() == NULL &&
             n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
   match(Set dst (VectorMaskToLong mask));
   format %{ "vector_tolong_avx $dst, $mask \t! using $xtmp as TEMP" %}
-  effect(TEMP xtmp);
+  effect(TEMP_DEF dst, TEMP xtmp, KILL cr);
   ins_encode %{
+    int mask_len = Matcher::vector_length(this, $mask);
+    BasicType mbt = Matcher::vector_element_basic_type(this, $mask);
     int vlen_enc = vector_length_encoding(this, $mask);
-     __ vpxor($xtmp$$XMMRegister, $xtmp$$XMMRegister, $xtmp$$XMMRegister, vlen_enc);
-     __ vpsubb($xtmp$$XMMRegister, $xtmp$$XMMRegister, $mask$$XMMRegister, vlen_enc);
-     __ vpmovmskb($dst$$Register, $xtmp$$XMMRegister, vlen_enc);
+    __ vpxor($xtmp$$XMMRegister, $xtmp$$XMMRegister, $xtmp$$XMMRegister, vlen_enc);
+    __ vpsubb($xtmp$$XMMRegister, $xtmp$$XMMRegister, $mask$$XMMRegister, vlen_enc);
+    __ vpmovmskb($dst$$Register, $xtmp$$XMMRegister, vlen_enc);
+    // Mask generated out of partial vector comparisons/replicate/mask manipulation
+    // operations needs to be clipped.
+    int mask_size = mask_len * type2aelembytes(mbt);
+    if (mask_size < 16) {
+      __ andq($dst$$Register, (((jlong)1 << mask_len) - 1));
+    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8673,9 +8695,12 @@ instruct vmask_truecount_evex(rRegI dst, kReg mask, rRegL tmp, rFlagsReg cr) %{
   format %{ "vector_truecount_evex $dst, $mask \t! using $tmp as TEMP" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    int vlen_enc = vector_length_encoding(this, $mask);
+    BasicType mbt = Matcher::vector_element_basic_type(this, $mask);
     int mask_len = Matcher::vector_length(this, $mask);
-    __ vector_mask_operation(opcode, $dst$$Register, $mask$$KRegister, $tmp$$Register, mask_len, vlen_enc);
+    int mask_size = mask_len * type2aelembytes(mbt);
+    int vlen_enc = vector_length_encoding(this, $mask);
+    __ vector_mask_operation(opcode, $dst$$Register, $mask$$KRegister, $tmp$$Register,
+                             mask_len, mask_size, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8687,10 +8712,12 @@ instruct vmask_truecount_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, vec xtmp1
   format %{ "vector_truecount_avx $dst, $mask \t! using $tmp, $xtmp and $xtmp1 as TEMP" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    int vlen_enc = vector_length_encoding(this, $mask);
+    BasicType mbt = Matcher::vector_element_basic_type(this, $mask);
     int mask_len = Matcher::vector_length(this, $mask);
+    int mask_size = mask_len * type2aelembytes(mbt);
+    int vlen_enc = vector_length_encoding(this, $mask);
     __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
-                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vlen_enc);
+                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, mask_size, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8703,9 +8730,12 @@ instruct vmask_first_or_last_true_evex(rRegI dst, kReg mask, rRegL tmp, rFlagsRe
   format %{ "vector_mask_first_or_last_true_evex $dst, $mask \t! using $tmp as TEMP" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    int vlen_enc = vector_length_encoding(this, $mask);
+    BasicType mbt = Matcher::vector_element_basic_type(this, $mask);
     int mask_len = Matcher::vector_length(this, $mask);
-    __ vector_mask_operation(opcode, $dst$$Register, $mask$$KRegister, $tmp$$Register, mask_len, vlen_enc);
+    int mask_size = mask_len * type2aelembytes(mbt);
+    int vlen_enc = vector_length_encoding(this, $mask);
+    __ vector_mask_operation(opcode, $dst$$Register, $mask$$KRegister, $tmp$$Register, mask_len,
+                             mask_size, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8718,10 +8748,12 @@ instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, 
   format %{ "vector_mask_first_or_last_true_avx $dst, $mask \t! using $tmp, $xtmp and $xtmp1 as TEMP" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    int vlen_enc = vector_length_encoding(this, $mask);
+    BasicType mbt = Matcher::vector_element_basic_type(this, $mask);
     int mask_len = Matcher::vector_length(this, $mask);
+    int mask_size = mask_len * type2aelembytes(mbt);
+    int vlen_enc = vector_length_encoding(this, $mask);
     __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
-                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vlen_enc);
+                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, mask_size, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
