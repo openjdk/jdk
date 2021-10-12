@@ -40,7 +40,7 @@
  *                  debugger therefore "main" is blocked.
  *
  *          Debugger: Resumes "resumee" by calling ThreadReference.resume().
- *                    Notifies "main" about it.
+ *                    The JDWP agent notifies "main" about it.
  *
  *          "resumee": Continues execution.
  *
