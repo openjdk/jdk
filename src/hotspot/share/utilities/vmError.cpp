@@ -917,7 +917,8 @@ void VMError::report(outputStream* st, bool _verbose) {
        int printed_len = 0;
        // Even though ErrorLogPrintCodeLimit is ranged checked
        // during argument parsing, there's no way to prevent it
-       // being set to a value outside the range.
+       // subsequently (i.e., after parsing) being set to a
+       // value outside the range.
        int limit = MIN2(ErrorLogPrintCodeLimit, printed_capacity);
        if (limit > 0) {
          // Scan the native stack
