@@ -2496,7 +2496,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
 
 void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
                                     int sve_vector_size_in_bytes) {
-  push(0x3fffffff, sp);         // integer registers except lr & sp
+  push(RegSet::range(r0, r29), sp); // integer registers except lr & sp
   if (save_vectors && use_sve && sve_vector_size_in_bytes > 16) {
     sub(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
     for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
@@ -2534,7 +2534,14 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
     reinitialize_ptrue();
   }
 
-  pop(0x3fffffff, sp);         // integer registers except lr & sp
+  // integer registers except lr & sp
+  pop(RegSet::range(r0, r17), sp);
+#ifdef R18_RESERVED
+  ldp(zr, r19, Address(post(sp, 2 * wordSize)));
+  pop(RegSet::range(r20, r29), sp);
+#else
+  pop(RegSet::range(r18_tls, r29), sp);
+#endif
 }
 
 /**
