@@ -284,7 +284,7 @@ public non-sealed class LinuxAArch64VaList implements VaList, Scoped {
                     for (MemoryLayout elem : group.memberLayouts()) {
                         assert elem.byteSize() <= 8;
                         final long copy = elem.byteSize();
-                        MemorySegment.copy(gpRegsArea, currentFPOffset(), value, offset, copy);
+                        MemorySegment.copy(fpRegsArea, currentFPOffset(), value, offset, copy);
                         consumeFPSlots(1);
                         offset += copy;
                     }
@@ -457,7 +457,7 @@ public non-sealed class LinuxAArch64VaList implements VaList, Scoped {
                         for (MemoryLayout elem : group.memberLayouts()) {
                             assert elem.byteSize() <= 8;
                             final long copy = elem.byteSize();
-                            MemorySegment.copy(valueSegment, offset, gpRegs, currentFPOffset, copy);
+                            MemorySegment.copy(valueSegment, offset, fpRegs, currentFPOffset, copy);
                             currentFPOffset += FP_SLOT_SIZE;
                             offset += copy;
                         }
