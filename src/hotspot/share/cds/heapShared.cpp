@@ -59,6 +59,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
@@ -297,7 +298,13 @@ oop HeapShared::archive_object(oop obj) {
     // identity_hash for all shared objects, so they are less likely to be written
     // into during run time, increasing the potential of memory sharing.
     int hash_original = obj->identity_hash();
-    narrowKlass nklass = obj->mark().narrow_klass();
+
+    assert(SafepointSynchronize::is_at_safepoint(), "resolving displaced headers only at safepoint");
+    markWord mark = obj->mark();
+    if (mark.has_displaced_mark_helper()) {
+      mark = mark.displaced_mark_helper();
+    }
+    narrowKlass nklass = mark.narrow_klass();
     archived_oop->set_mark(markWord::prototype().copy_set_hash(hash_original) LP64_ONLY(.set_narrow_klass(nklass)));
     assert(archived_oop->mark().is_unlocked(), "sanity");
 
