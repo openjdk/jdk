@@ -110,6 +110,12 @@ public class MachCodeFramesInErrorFile {
         List<String> nativeFrames = extractNativeFrames(hsErr);
         int compiledJavaFrames = (int) nativeFrames.stream().filter(f -> f.startsWith("J ")).count();
 
+        Matcher matcherDisasm = Pattern.compile("\\[Disassembly\\].*\\[/Disassembly\\]", Pattern.DOTALL).matcher(hsErr);
+        if (matcherDisasm.find()) {
+            // Real disassembly is present, no MachCode is expected.
+            return;
+        }
+
         Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
         List<String> machCodeHeaders = matcher.results().map(mr -> String.format("'%s' '%s' in '%s'", mr.group(1), mr.group(2), mr.group(3))).collect(Collectors.toList());
         String message = "Mach code headers: " + machCodeHeaders +
