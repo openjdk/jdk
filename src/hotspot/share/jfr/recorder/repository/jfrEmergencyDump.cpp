@@ -35,7 +35,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
@@ -495,6 +494,36 @@ static volatile int jfr_shutdown_lock = 0;
 static bool guard_reentrancy() {
   return Atomic::cmpxchg(&jfr_shutdown_lock, 0, 1) == 0;
 }
+
+class JavaThreadInVMAndNative : public StackObj {
+ private:
+  JavaThread* const _jt;
+  JavaThreadState _original_state;
+ public:
+
+  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? JavaThread::cast(t) : NULL),
+                                       _original_state(_thread_max_state) {
+    if (_jt != NULL) {
+      _original_state = _jt->thread_state();
+      if (_original_state != _thread_in_vm) {
+        _jt->set_thread_state(_thread_in_vm);
+      }
+    }
+  }
+
+  ~JavaThreadInVMAndNative() {
+    if (_original_state != _thread_max_state) {
+      _jt->set_thread_state(_original_state);
+    }
+  }
+
+  void transition_to_native() {
+    if (_jt != NULL) {
+      assert(_jt->thread_state() == _thread_in_vm, "invariant");
+      _jt->set_thread_state(_thread_in_native);
+    }
+  }
+};
 
 static void post_events(bool exception_handler, Thread* thread) {
   if (exception_handler) {

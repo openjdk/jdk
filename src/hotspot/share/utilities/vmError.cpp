@@ -1338,6 +1338,27 @@ void VMError::report_and_die(Thread* thread, const char* filename, int lineno, s
   report_and_die(vm_err_type, NULL, detail_fmt, detail_args, thread, NULL, NULL, NULL, filename, lineno, size);
 }
 
+
+class VMErrorForceInNative : public StackObj {
+ private:
+  JavaThread* _jt;
+
+ public:
+  VMErrorForceInNative(Thread* t): _jt(t != NULL && t->is_Java_thread() ? JavaThread::cast(t) : NULL) {
+    if (_jt != NULL && _jt->thread_state() == _thread_in_vm) {
+      _jt->set_thread_state(_thread_in_native);
+    } else if (_jt != NULL) {
+      _jt = NULL;
+    }
+  }
+
+  ~VMErrorForceInNative() {
+    if (_jt != NULL) {
+      _jt->set_thread_state(_thread_in_vm);
+    }
+  }
+};
+
 void VMError::report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context, const char* filename,
                              int lineno, size_t size)
@@ -1617,7 +1638,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     char* cmd;
     const char* ptr = OnError;
-    JavaThreadInVMAndNative jtivm(Thread::current_or_null());
 
     while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
       out.print_raw   ("#   Executing ");
@@ -1631,10 +1651,10 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       out.print_raw_cr("\" ...");
 
       // 8273608: Attempt to set the current thread to Native state.
-      // it allows os::fork_and_exec to execute cmd such as jcmd %p.
+      // It allows os::fork_and_exec to execute cmd such as jcmd %p.
       // Otherwise, it may end up with a deadlock when dcmds try to synchronize all Java threads
       // at safepoints.
-      jtivm.transition_to_native();
+      VMErrorForceInNative fn(Thread::current_or_null());
       if (os::fork_and_exec(cmd) < 0) {
         out.print_cr("os::fork_and_exec failed: %s (%s=%d)",
                      os::strerror(errno), os::errno_name(errno), errno);
