@@ -28,6 +28,8 @@ package java.lang;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.VarHandle;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleReference;
 import java.lang.module.ModuleDescriptor;
@@ -68,6 +70,7 @@ import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.Stable;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -109,8 +112,10 @@ public final class Module implements AnnotatedElement {
     // the module descriptor
     private final ModuleDescriptor descriptor;
 
-    // true, if this module allows restricted native access
-    private volatile boolean enableNativeAccess;
+    // true, if this module allows restricted native access; @Stable makes sure that modules that allow native
+    // access capture this property as a constant.
+    @Stable
+    private boolean enableNativeAccess;
 
     /**
      * Creates a new named Module. The resulting Module will be defined to the

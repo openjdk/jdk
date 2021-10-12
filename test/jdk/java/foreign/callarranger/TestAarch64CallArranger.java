@@ -157,8 +157,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
             // struct s { int32_t a, b; double c; int32_t d };
             { struct2, new Binding[] {
                 copy(struct2),
-                baseAddress(),
-                unboxAddress(),
+                unboxAddress(MemorySegment.class),
                 vmStore(r0, long.class)
             }},
             // struct s { int32_t a[2]; float b[2] };
@@ -198,14 +197,12 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         checkArgumentBindings(callingSequence, new Binding[][]{
             {
                 copy(struct1),
-                baseAddress(),
-                unboxAddress(),
+                unboxAddress(MemorySegment.class),
                 vmStore(r0, long.class)
             },
             {
                 copy(struct2),
-                baseAddress(),
-                unboxAddress(),
+                unboxAddress(MemorySegment.class),
                 vmStore(r1, long.class)
             },
             { vmStore(r2, int.class) }
@@ -366,15 +363,15 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { copy(struct), baseAddress(), unboxAddress(), vmStore(r0, long.class) },
-            { copy(struct), baseAddress(), unboxAddress(), vmStore(r1, long.class) },
+            { copy(struct), unboxAddress(MemorySegment.class), vmStore(r0, long.class) },
+            { copy(struct), unboxAddress(MemorySegment.class), vmStore(r1, long.class) },
             { vmStore(r2, int.class) },
             { vmStore(r3, int.class) },
             { vmStore(r4, int.class) },
             { vmStore(r5, int.class) },
             { vmStore(r6, int.class) },
             { vmStore(r7, int.class) },
-            { copy(struct), baseAddress(), unboxAddress(), vmStore(stackStorage(0), long.class) },
+            { copy(struct), unboxAddress(MemorySegment.class), vmStore(stackStorage(0), long.class) },
             { vmStore(stackStorage(1), int.class) },
         });
 

@@ -30,10 +30,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -46,58 +43,14 @@ import java.util.stream.Stream;
  * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
  * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  */
-public final class FunctionDescriptor implements Constable {
-
-    /**
-     * The name of the function descriptor attribute (see {@link #attributes()} used to mark trivial functions. The
-     * attribute value must be a boolean.
-     */
-    public static final String TRIVIAL_ATTRIBUTE_NAME = "abi/trivial";
+public sealed class FunctionDescriptor implements Constable permits FunctionDescriptor.VariadicFunction {
 
     private final MemoryLayout resLayout;
     private final MemoryLayout[] argLayouts;
-    private final Map<String, Constable> attributes;
 
-    private FunctionDescriptor(MemoryLayout resLayout, Map<String, Constable> attributes, MemoryLayout... argLayouts) {
+    private FunctionDescriptor(MemoryLayout resLayout, MemoryLayout... argLayouts) {
         this.resLayout = resLayout;
-        this.attributes = attributes;
         this.argLayouts = argLayouts;
-    }
-
-    /**
-     * Returns the attribute with the given name (if it exists).
-     *
-     * @param name the attribute name.
-     * @return the attribute with the given name (if it exists).
-     */
-    public Optional<Constable> attribute(String name) {
-        Objects.requireNonNull(name);
-        return Optional.ofNullable(attributes.get(name));
-    }
-
-    /**
-     * Returns a stream of the attribute names associated with this function descriptor.
-     *
-     * @return a stream of the attribute names associated with this function descriptor.
-     */
-    public Stream<String> attributes() {
-        return attributes.keySet().stream();
-    }
-
-    /**
-     * Returns a new function descriptor which features the same attributes as this descriptor, plus the newly specified attribute.
-     * If this descriptor already contains an attribute with the same name, the existing attribute value is overwritten in the returned
-     * descriptor.
-     *
-     * @param name the attribute name.
-     * @param value the attribute value.
-     * @return a new function descriptor which features the same attributes as this descriptor, plus the newly specified attribute.
-     */
-    public FunctionDescriptor withAttribute(String name, Constable value) {
-        Objects.requireNonNull(name);
-        Map<String, Constable> newAttributes = new HashMap<>(attributes);
-        newAttributes.put(name, value);
-        return new FunctionDescriptor(resLayout, newAttributes, argLayouts);
     }
 
     /**
@@ -126,7 +79,7 @@ public final class FunctionDescriptor implements Constable {
         Objects.requireNonNull(resLayout);
         Objects.requireNonNull(argLayouts);
         Arrays.stream(argLayouts).forEach(Objects::requireNonNull);
-        return new FunctionDescriptor(resLayout, Map.of(), argLayouts);
+        return new FunctionDescriptor(resLayout, argLayouts);
     }
 
     /**
@@ -137,7 +90,31 @@ public final class FunctionDescriptor implements Constable {
     public static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
         Objects.requireNonNull(argLayouts);
         Arrays.stream(argLayouts).forEach(Objects::requireNonNull);
-        return new FunctionDescriptor(null, Map.of(), argLayouts);
+        return new FunctionDescriptor(null, argLayouts);
+    }
+
+    /**
+     * Obtain a specialized variadic function descriptor, by appending given variadic layouts to this
+     * function descriptor argument layouts. The resulting function descriptor can report the position
+     * of the {@linkplain #firstVariadicArgumentIndex() first variadic argument}, and cannot be altered
+     * in any way: for instance, calling {@link #withReturnLayout(MemoryLayout)} on the resulting descriptor
+     * will throw an {@link UnsupportedOperationException}.
+     * @param variadicLayouts the variadic argument layouts to be appended to this descriptor argument layouts.
+     * @return a new variadic function descriptor, or this descriptor if {@code variadicLayouts.length == 0}.
+     */
+    public FunctionDescriptor asVariadic(MemoryLayout... variadicLayouts) {
+        Objects.requireNonNull(variadicLayouts);
+        Arrays.stream(variadicLayouts).forEach(Objects::requireNonNull);
+        return variadicLayouts.length == 0 ? this : new VariadicFunction(this, variadicLayouts);
+    }
+
+    /**
+     * The index of the first variadic argument layout (where defined).
+     * @return The index of the first variadic argument layout, or {@code -1} if this is not a
+     * {@linkplain #asVariadic(MemoryLayout...) variadic} layout.
+     */
+    public int firstVariadicArgumentIndex() {
+        return -1;
     }
 
     /**
@@ -151,7 +128,7 @@ public final class FunctionDescriptor implements Constable {
         Arrays.stream(addedLayouts).forEach(Objects::requireNonNull);
         MemoryLayout[] newLayouts = Arrays.copyOf(argLayouts, argLayouts.length + addedLayouts.length);
         System.arraycopy(addedLayouts, 0, newLayouts, argLayouts.length, addedLayouts.length);
-        return new FunctionDescriptor(resLayout, attributes, newLayouts);
+        return new FunctionDescriptor(resLayout, newLayouts);
     }
 
     /**
@@ -161,7 +138,7 @@ public final class FunctionDescriptor implements Constable {
      */
     public FunctionDescriptor withReturnLayout(MemoryLayout newReturn) {
         Objects.requireNonNull(newReturn);
-        return new FunctionDescriptor(newReturn, attributes, argLayouts);
+        return new FunctionDescriptor(newReturn, argLayouts);
     }
 
     /**
@@ -169,7 +146,7 @@ public final class FunctionDescriptor implements Constable {
      * @return the new function descriptor.
      */
     public FunctionDescriptor withVoidReturnLayout() {
-        return new FunctionDescriptor(null, attributes, argLayouts);
+        return new FunctionDescriptor(null, argLayouts);
     }
 
     /**
@@ -187,7 +164,7 @@ public final class FunctionDescriptor implements Constable {
 
     /**
      * Compares the specified object with this function descriptor for equality. Returns {@code true} if and only if the specified
-     * object is also a function descriptor, and all of the following conditions are met:
+     * object is also a function descriptor, and all the following conditions are met:
      * <ul>
      *     <li>the two function descriptors have equals return layouts (see {@link MemoryLayout#equals(Object)}), or both have no return layout</li>
      *     <li>the two function descriptors have argument layouts that are pair-wise equal (see {@link MemoryLayout#equals(Object)})
@@ -201,10 +178,9 @@ public final class FunctionDescriptor implements Constable {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof FunctionDescriptor)) {
+        if (!(other instanceof FunctionDescriptor f)) {
             return false;
         }
-        FunctionDescriptor f = (FunctionDescriptor) other;
         return Objects.equals(resLayout, f.resLayout) && Arrays.equals(argLayouts, f.argLayouts);
     }
 
@@ -230,5 +206,44 @@ public final class FunctionDescriptor implements Constable {
         }
         return Optional.of(DynamicConstantDesc.ofNamed(
                     ConstantDescs.BSM_INVOKE, "function", AbstractLayout.CD_FUNCTION_DESC, constants.toArray(new ConstantDesc[0])));
+    }
+
+    static final class VariadicFunction extends FunctionDescriptor {
+
+        private final int firstVariadicIndex;
+
+        public VariadicFunction(FunctionDescriptor descriptor, MemoryLayout... argLayouts) {
+            super(descriptor.returnLayout().orElse(null),
+                    Stream.concat(descriptor.argumentLayouts().stream(), Stream.of(argLayouts)).toArray(MemoryLayout[]::new));
+            this.firstVariadicIndex = descriptor.argumentLayouts().size();
+        }
+
+        public boolean isVariadicIndex(int pos) {
+            return pos >= firstVariadicIndex;
+        }
+
+        public int firstVariadicArgumentIndex() {
+            return firstVariadicIndex;
+        }
+
+        @Override
+        public FunctionDescriptor withAppendedArgumentLayouts(MemoryLayout... addedLayouts) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public FunctionDescriptor withReturnLayout(MemoryLayout newReturn) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public FunctionDescriptor withVoidReturnLayout() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Optional<DynamicConstantDesc<FunctionDescriptor>> describeConstable() {
+            return Optional.empty();
+        }
     }
 }

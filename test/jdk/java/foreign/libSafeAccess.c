@@ -36,3 +36,7 @@ struct Point {
 EXPORT void struct_func(struct Point p) { }
 
 EXPORT void addr_func(struct Point* p) { }
+
+EXPORT void addr_func_cb(void* p, void (*callback)()) {
+   callback();
+}

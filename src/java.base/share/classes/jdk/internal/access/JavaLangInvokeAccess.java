@@ -134,9 +134,9 @@ public interface JavaLangInvokeAccess {
     MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback);
 
     /**
-     * Ensure given method handle is customized
-     *
-     * @param mh the method handle
+     * A best-effort method that tries to find any exceptions thrown by the given method handle.
+     * @param handle the handle to check
+     * @return an array of exceptions, or {@code null}.
      */
-    void ensureCustomized(MethodHandle mh);
+    Class<?>[] exceptionTypes(MethodHandle handle);
 }

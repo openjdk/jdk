@@ -23,7 +23,6 @@
 
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import static jdk.incubator.foreign.MemoryAccess.*;
 import jdk.incubator.foreign.*;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
@@ -33,6 +32,8 @@ import sun.misc.Unsafe;
 import java.util.concurrent.TimeUnit;
 
 import java.lang.invoke.VarHandle;
+
+import static jdk.incubator.foreign.ValueLayout.JAVA_LONG;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -46,8 +47,8 @@ public class UnrolledAccess {
 
     final static int SIZE = 1024;
 
-    static final VarHandle LONG_HANDLE = MemoryLayout.sequenceLayout(SIZE, MemoryLayouts.JAVA_LONG)
-            .varHandle(long.class, MemoryLayout.PathElement.sequenceElement());
+    static final VarHandle LONG_HANDLE = MemoryLayout.sequenceLayout(SIZE, JAVA_LONG)
+            .varHandle(MemoryLayout.PathElement.sequenceElement());
 
     @State(Scope.Benchmark)
     public static class Data {
@@ -65,8 +66,8 @@ public class UnrolledAccess {
             this.outputArray = new double[SIZE];
             this.inputAddress = U.allocateMemory(8 * SIZE);
             this.outputAddress = U.allocateMemory(8 * SIZE);
-            this.inputSegment = MemoryAddress.ofLong(inputAddress).asSegment(8*SIZE, ResourceScope.globalScope());
-            this.outputSegment = MemoryAddress.ofLong(outputAddress).asSegment(8*SIZE, ResourceScope.globalScope());
+            this.inputSegment = MemorySegment.ofAddressNative(MemoryAddress.ofLong(inputAddress), 8*SIZE, ResourceScope.globalScope());
+            this.outputSegment = MemorySegment.ofAddressNative(MemoryAddress.ofLong(outputAddress), 8*SIZE, ResourceScope.globalScope());
         }
     }
 
@@ -96,15 +97,15 @@ public class UnrolledAccess {
     }
 
     @Benchmark
-    public void static_handle_loop(Data state) {
+    public void handle_loop_instance(Data state) {
         final MemorySegment is = state.inputSegment;
         final MemorySegment os = state.outputSegment;
 
         for(int i = 0; i < SIZE; i+=4) {
-            setLongAtIndex(os, i,getLongAtIndex(is, i) + MemoryAccess.getLongAtIndex(os, i));
-            setLongAtIndex(os, i+1,getLongAtIndex(is, i+1) + getLongAtIndex(os, i+1));
-            setLongAtIndex(os, i+2,getLongAtIndex(is, i+2) + getLongAtIndex(os, i+2));
-            setLongAtIndex(os, i+3,getLongAtIndex(is, i+3) + getLongAtIndex(os, i+3));
+            os.setAtIndex(JAVA_LONG, i, is.getAtIndex(JAVA_LONG, i) + os.get(JAVA_LONG, i));
+            os.setAtIndex(JAVA_LONG, i+1, is.getAtIndex(JAVA_LONG, i+1) + os.get(JAVA_LONG, i+1));
+            os.setAtIndex(JAVA_LONG, i+2, is.getAtIndex(JAVA_LONG, i+2) + os.get(JAVA_LONG, i+2));
+            os.setAtIndex(JAVA_LONG, i+3, is.getAtIndex(JAVA_LONG, i+3) + os.get(JAVA_LONG, i+3));
         }
     }
 }

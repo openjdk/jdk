@@ -22,7 +22,7 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAccess;
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -44,7 +44,7 @@ import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.MemoryLayout.PathElement.sequenceElement;
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -60,7 +60,7 @@ public class LoopOverNonConstant {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
-    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(int.class, sequenceElement());
+    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(sequenceElement());
     MemorySegment segment;
     long unsafe_addr;
 
@@ -117,19 +117,48 @@ public class LoopOverNonConstant {
     }
 
     @Benchmark
-    public int segment_loop_static() {
-        int res = 0;
-        for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += MemoryAccess.getIntAtIndex(segment, i);
-        }
-        return res;
-    }
-
-    @Benchmark
     public int segment_loop() {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(segment, (long) i);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int segment_loop_instance() {
+        int sum = 0;
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            sum += segment.get(JAVA_INT, i * CARRIER_SIZE);
+
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int segment_loop_instance_index() {
+        int sum = 0;
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            sum += segment.getAtIndex(JAVA_INT, i);
+
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int segment_loop_instance_address() {
+        int sum = 0;
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            sum += segment.address().get(JAVA_INT, i * CARRIER_SIZE);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int segment_loop_instance_address_index() {
+        int sum = 0;
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            sum += segment.address().getAtIndex(JAVA_INT, i);
         }
         return sum;
     }

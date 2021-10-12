@@ -28,13 +28,14 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestSymbolLookup
  */
 
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.Test;
 
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.*;
 
 // FYI this test is run on 64-bit platforms only for now,
@@ -61,7 +62,7 @@ public class TestSymbolLookup {
 
     @Test
     public void testVariableSymbolLookup() {
-        MemorySegment segment = LOOKUP.lookup("c").get().asSegment(MemoryLayouts.JAVA_INT.byteSize(), ResourceScope.globalScope());
-        assertEquals(MemoryAccess.getInt(segment), 42);
+        MemorySegment segment = MemorySegment.ofAddressNative(LOOKUP.lookup("c").get().address(), ValueLayout.JAVA_INT.byteSize(), ResourceScope.globalScope());
+        assertEquals(segment.get(JAVA_BYTE, 0), 42);
     }
 }
