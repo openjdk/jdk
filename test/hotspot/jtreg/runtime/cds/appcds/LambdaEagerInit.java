@@ -109,6 +109,7 @@ public class LambdaEagerInit {
     static void testDefaultArchiveWithEagerInitializationEnabled() throws Exception {
         // run with default CDS archive with the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions runOpts = (new CDSOptions())
+            .setXShareMode("auto")
             .addPrefix("-cp", appJar, testProperty,  "-Xlog:class+load,cds=debug")
             .setUseSystemArchive(true)
             .setUseVersion(false)
@@ -122,13 +123,12 @@ public class LambdaEagerInit {
     static void testDefaultArchiveWithEagerInitializationDisabled() throws Exception {
         // run with default CDS archive without the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions runOpts = (new CDSOptions())
+            .setXShareMode("auto")
             .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug")
             .setUseSystemArchive(true)
             .setUseVersion(false)
             .addSuffix(mainClass);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldMatch(lambdaLoadedFromArchive)
-              .shouldMatch(cdsLoadedLambdaProxy)
-              .shouldHaveExitValue(0);
+        output.shouldHaveExitValue(0);
     }
 }
