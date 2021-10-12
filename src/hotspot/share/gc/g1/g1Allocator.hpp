@@ -30,7 +30,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
 
-class G1EvacuationInfo;
+class G1EvacInfo;
 class G1NUMA;
 
 // Interface to keep track of which regions G1 is currently allocating into. Provides
@@ -68,7 +68,7 @@ private:
   void set_survivor_full();
   void set_old_full();
 
-  void reuse_retained_old_region(G1EvacuationInfo* evacuation_info,
+  void reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                  OldGCAllocRegion* old,
                                  HeapRegion** retained);
 
@@ -105,8 +105,8 @@ public:
   void init_mutator_alloc_regions();
   void release_mutator_alloc_regions();
 
-  void init_gc_alloc_regions(G1EvacuationInfo* evacuation_info);
-  void release_gc_alloc_regions(G1EvacuationInfo* evacuation_info);
+  void init_gc_alloc_regions(G1EvacInfo* evacuation_info);
+  void release_gc_alloc_regions(G1EvacInfo* evacuation_info);
   void abandon_gc_alloc_regions();
   bool is_retained_old_region(HeapRegion* hr);
 

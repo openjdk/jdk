@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ public final class HelloApp {
     }
 
     private JarBuilder prepareSources(Path srcDir) throws IOException {
+        final String srcClassName = appDesc.srcClassName();
+
         final String qualifiedClassName = appDesc.className();
 
         final String className = qualifiedClassName.substring(
@@ -83,9 +85,9 @@ public final class HelloApp {
         // Add package directive and replace class name in java source file.
         // Works with simple test Hello.java.
         // Don't expect too much from these regexps!
-        Pattern classNameRegex = Pattern.compile("\\bHello\\b");
+        Pattern classNameRegex = Pattern.compile("\\b" + srcClassName + "\\b");
         Pattern classDeclaration = Pattern.compile(
-                "(^.*\\bclass\\s+)\\bHello\\b(.*$)");
+                "(^.*\\bclass\\s+)\\b" + srcClassName + "\\b(.*$)");
         Pattern importDirective = Pattern.compile(
                 "(?<=import (?:static )?+)[^;]+");
         AtomicBoolean classDeclared = new AtomicBoolean();
@@ -97,7 +99,8 @@ public final class HelloApp {
                     System.lineSeparator(), line);
         });
 
-        Files.write(srcFile, Files.readAllLines(HELLO_JAVA).stream().map(line -> {
+        Files.write(srcFile,
+                Files.readAllLines(appDesc.srcJavaPath()).stream().map(line -> {
             Matcher m;
             if (classDeclared.getPlain()) {
                 if ((m = classNameRegex.matcher(line)).find()) {
@@ -144,13 +147,14 @@ public final class HelloApp {
             return cmd.getArgumentValue("--module-path", cmd::inputDir, Path::of);
         };
 
-        if (moduleName == null && CLASS_NAME.equals(qualifiedClassName)) {
+        if (moduleName == null && CLASS_NAME.equals(qualifiedClassName)
+                && HELLO_JAVA.equals(appDesc.srcJavaPath())) {
             // Use Hello.java as is.
             cmd.addPrerequisiteAction((self) -> {
                 if (self.inputDir() != null) {
                     Path jarFile = self.inputDir().resolve(appDesc.jarFileName());
                     createJarBuilder().setOutputJar(jarFile).addSourceFile(
-                            HELLO_JAVA).create();
+                            appDesc.srcJavaPath()).create();
                 }
             });
         } else if (appDesc.jmodFileName() != null) {
@@ -159,7 +163,7 @@ public final class HelloApp {
                 createBundle(appDesc, getModulePath.get());
             });
         } else {
-            // Modular app in .jar file
+            // Modular/non-modular app in .jar file
             cmd.addPrerequisiteAction(unused -> {
                 final Path jarFile;
                 if (moduleName == null) {
@@ -195,7 +199,7 @@ public final class HelloApp {
     }
 
     static JavaAppDesc createDefaltAppDesc() {
-        return new JavaAppDesc().setClassName(CLASS_NAME).setBundleFileName("hello.jar");
+        return new JavaAppDesc().setSrcJavaPath(HELLO_JAVA).setClassName(CLASS_NAME).setBundleFileName("hello.jar");
     }
 
     static void verifyOutputFile(Path outputFile, List<String> args,
@@ -462,7 +466,7 @@ public final class HelloApp {
     private final JavaAppDesc appDesc;
 
     private static final Path HELLO_JAVA = TKit.TEST_SRC_ROOT.resolve(
-            "apps/image/Hello.java");
+            "apps/Hello.java");
 
     private final static String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
             "\\.", 2)[0];

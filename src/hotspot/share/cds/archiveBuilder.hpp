@@ -205,9 +205,6 @@ private:
   GrowableArray<SpecialRefInfo>* _special_refs;
 
   // statistics
-  int _num_instance_klasses;
-  int _num_obj_array_klasses;
-  int _num_type_array_klasses;
   DumpAllocStats _alloc_stats;
   size_t _total_closed_heap_region_size;
   size_t _total_open_heap_region_size;

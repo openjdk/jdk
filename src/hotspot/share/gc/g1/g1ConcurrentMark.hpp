@@ -375,10 +375,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // it has been reclaimed.
   void clear_statistics(HeapRegion* r);
 
-  // Resets the global marking data structures, as well as the
-  // task local ones; should be called during concurrent start.
-  void reset();
-
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
   void reset_marking_for_restart();
@@ -444,9 +440,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
 
-  // Clear the given bitmap in parallel using the given WorkGang. If may_yield is
+  // Clear the next marking bitmap in parallel using the given WorkGang. If may_yield is
   // true, periodically insert checks to see if this method should exit prematurely.
-  void clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield);
+  void clear_next_bitmap(WorkGang* workers, bool may_yield);
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
@@ -525,6 +521,10 @@ public:
 
   // Calculates the number of concurrent GC threads to be used in the marking phase.
   uint calc_active_marking_workers();
+
+  // Resets the global marking data structures, as well as the
+  // task local ones; should be called during concurrent start.
+  void reset();
 
   // Moves all per-task cached data into global state.
   void flush_all_task_caches();
@@ -855,5 +855,4 @@ public:
   virtual bool do_heap_region(HeapRegion* r);
   ~G1PrintRegionLivenessInfoClosure();
 };
-
 #endif // SHARE_GC_G1_G1CONCURRENTMARK_HPP

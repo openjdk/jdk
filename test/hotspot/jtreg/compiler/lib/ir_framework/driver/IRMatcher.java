@@ -39,6 +39,8 @@ import java.util.regex.Pattern;
  * Parse the hotspot pid file of the test VM to match all @IR rules.
  */
 public class IRMatcher {
+    public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
+
     private static final boolean PRINT_IR_ENCODING = Boolean.parseBoolean(System.getProperty("PrintIREncoding", "false"));
     private static final Pattern IR_ENCODING_PATTERN =
             Pattern.compile("(?<=" + IREncodingPrinter.START + "\r?\n)[\\s\\S]*(?=" + IREncodingPrinter.END + ")");
@@ -487,7 +489,16 @@ public class IRMatcher {
                                        + "-".repeat(String.valueOf(failures).length()) + System.lineSeparator());
             failuresBuilder.append(">>> Check stdout for compilation output of the failed methods")
                            .append(System.lineSeparator()).append(System.lineSeparator());
-            throw new IRViolationException(failuresBuilder.toString(), compilationsBuilder.toString());
+
+            // In some very rare cases, the VM output to regex match on contains "<!-- safepoint while printing -->"
+            // (emitted by ttyLocker::break_tty_for_safepoint) which might be the reason for a matching error.
+            // Do not throw an exception in this case (i.e. bailout).
+            String compilations = compilationsBuilder.toString();
+            if (!compilations.contains(SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
+                throw new IRViolationException(failuresBuilder.toString(), compilationsBuilder.toString());
+            } else {
+                System.out.println("Found " + SAFEPOINT_WHILE_PRINTING_MESSAGE + ", bail out of IR matching");
+            }
         }
     }
 }

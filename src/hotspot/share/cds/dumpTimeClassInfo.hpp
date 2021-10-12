@@ -171,10 +171,10 @@ inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
 class DumpTimeSharedClassTable: public ResourceHashtable<
   InstanceKlass*,
   DumpTimeClassInfo,
-  &DumpTimeSharedClassTable_hash,
-  primitive_equals<InstanceKlass*>,
   15889, // prime number
-  ResourceObj::C_HEAP>
+  ResourceObj::C_HEAP,
+  mtClassShared,
+  &DumpTimeSharedClassTable_hash>
 {
   int _builtin_count;
   int _unregistered_count;

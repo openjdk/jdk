@@ -41,11 +41,12 @@ class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
   static const uint8_t Compacting = 0;       // Region will be compacted.
   static const uint8_t SkipCompacting = 1;   // Region should not be compacted, but otherwise handled as usual.
   static const uint8_t SkipMarking = 2;      // Region contents are not even marked through, but contain live objects.
+  static const uint8_t Free = 3;             // Regions is free.
 
   static const uint8_t Invalid = 255;
 
-  bool is_invalid(HeapWord* obj) const {
-    return get_by_address(obj) == Invalid;
+  bool is_free(HeapWord* obj) const {
+    return get_by_address(obj) == Free;
   }
 
 protected:
@@ -57,19 +58,24 @@ public:
   void set_compacting(uint idx) { set_by_index(idx, Compacting); }
   void set_skip_marking(uint idx) { set_by_index(idx, SkipMarking); }
   void set_skip_compacting(uint idx) { set_by_index(idx, SkipCompacting); }
+  void set_free(uint idx) { set_by_index(idx, Free); }
 
   bool is_skip_marking(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
+    assert(!is_free(obj), "Should not have objects in free regions.");
     return get_by_address(obj) == SkipMarking;
   }
 
   bool is_compacting(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
+    assert(!is_free(obj), "Should not have objects in free regions.");
     return get_by_address(obj) == Compacting;
   }
 
   bool is_skip_compacting(uint idx) const {
     return get_by_index(idx) == SkipCompacting;
+  }
+
+  bool is_free(uint idx) const {
+    return get_by_index(idx) == Free;
   }
 
   void verify_is_compacting(uint idx) { assert(get_by_index(idx) == Compacting, "invariant"); }

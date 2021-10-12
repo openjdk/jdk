@@ -39,12 +39,10 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.Principal;
 import java.security.cert.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringTokenizer;
-import java.util.Vector;
-
-import javax.security.auth.x500.X500Principal;
 
 import javax.net.ssl.*;
 import sun.net.www.http.HttpClient;
@@ -148,14 +146,14 @@ final class HttpsClient extends HttpClient
             ciphers = null;
         } else {
             StringTokenizer     tokenizer;
-            Vector<String>      v = new Vector<String>();
+            ArrayList<String>   v = new ArrayList<>();
 
             tokenizer = new StringTokenizer(cipherString, ",");
             while (tokenizer.hasMoreTokens())
-                v.addElement(tokenizer.nextToken());
+                v.add(tokenizer.nextToken());
             ciphers = new String [v.size()];
             for (int i = 0; i < ciphers.length; i++)
-                ciphers [i] = v.elementAt(i);
+                ciphers [i] = v.get(i);
         }
         return ciphers;
     }
@@ -172,14 +170,14 @@ final class HttpsClient extends HttpClient
             protocols = null;
         } else {
             StringTokenizer     tokenizer;
-            Vector<String>      v = new Vector<String>();
+            ArrayList<String>   v = new ArrayList<>();
 
             tokenizer = new StringTokenizer(protocolString, ",");
             while (tokenizer.hasMoreTokens())
-                v.addElement(tokenizer.nextToken());
+                v.add(tokenizer.nextToken());
             protocols = new String [v.size()];
             for (int i = 0; i < protocols.length; i++) {
-                protocols [i] = v.elementAt(i);
+                protocols [i] = v.get(i);
             }
         }
         return protocols;

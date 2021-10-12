@@ -26,6 +26,7 @@
 package javax.net.ssl;
 
 import java.security.Principal;
+import java.nio.ByteBuffer;
 
 /**
  * In SSL, sessions are used to describe an ongoing relationship between

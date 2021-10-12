@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,12 @@ package sun.awt.X11;
  * @since       1.5
  */
 
-import jdk.internal.misc.Unsafe;
 import java.util.HashMap;
+
+import jdk.internal.misc.Unsafe;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class XAtom {
 
@@ -308,12 +312,7 @@ public final class XAtom {
             throw new IllegalStateException("Atom should be initialized");
         }
         checkWindow(window);
-        byte[] bdata = null;
-        try {
-            bdata = str.getBytes("UTF-8");
-        } catch (java.io.UnsupportedEncodingException uee) {
-            uee.printStackTrace();
-        }
+        byte[] bdata = str.getBytes(UTF_8);
         if (bdata != null) {
             setAtomData(window, XA_UTF8_STRING.atom, bdata);
         }
@@ -327,12 +326,7 @@ public final class XAtom {
             throw new IllegalStateException("Atom should be initialized");
         }
         checkWindow(window);
-        byte[] bdata = null;
-        try {
-            bdata = str.getBytes("ISO-8859-1");
-        } catch (java.io.UnsupportedEncodingException uee) {
-            uee.printStackTrace();
-        }
+        byte[] bdata = str.getBytes(ISO_8859_1);
         if (bdata != null) {
             setAtomData(window, XA_STRING, bdata);
         }

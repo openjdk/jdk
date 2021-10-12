@@ -879,14 +879,14 @@ public class ObjectInputStream
      * objects is disabled until enableResolveObject is called. The
      * enableResolveObject method checks that the stream requesting to resolve
      * object can be trusted. Every reference to serializable objects is passed
-     * to resolveObject.  To insure that the private state of objects is not
+     * to resolveObject.  To ensure that the private state of objects is not
      * unintentionally exposed only trusted streams may use resolveObject.
      *
      * <p>This method is called after an object has been read but before it is
      * returned from readObject.  The default resolveObject method just returns
      * the same object.
      *
-     * <p>When a subclass is replacing objects it must insure that the
+     * <p>When a subclass is replacing objects it must ensure that the
      * substituted object is compatible with every field where the reference
      * will be stored.  Objects whose type is not a subclass of the type of the
      * field or array element abort the deserialization by raising an exception

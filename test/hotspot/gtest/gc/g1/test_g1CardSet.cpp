@@ -50,7 +50,7 @@ class G1CardSetTest : public ::testing::Test {
   static WorkGang* workers() {
     if (_workers == NULL) {
       _max_workers = os::processor_count();
-      _workers = new WorkGang("G1CardSetTest Work Gang", _max_workers, false, false);
+      _workers = new WorkGang("G1CardSetTest Work Gang", _max_workers);
       _workers->initialize_workers();
       _workers->update_active_workers(_max_workers);
     }

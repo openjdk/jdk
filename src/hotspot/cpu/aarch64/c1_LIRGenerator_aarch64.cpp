@@ -1127,8 +1127,8 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr reg = result_register_for(x->type());
   new_instance(reg, x->klass(), x->is_unresolved(),
-                       FrameMap::r2_oop_opr,
-                       FrameMap::r5_oop_opr,
+                       FrameMap::r10_oop_opr,
+                       FrameMap::r11_oop_opr,
                        FrameMap::r4_oop_opr,
                        LIR_OprFact::illegalOpr,
                        FrameMap::r3_metadata_opr, info);
@@ -1143,8 +1143,8 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   length.load_item_force(FrameMap::r19_opr);
 
   LIR_Opr reg = result_register_for(x->type());
-  LIR_Opr tmp1 = FrameMap::r2_oop_opr;
-  LIR_Opr tmp2 = FrameMap::r4_oop_opr;
+  LIR_Opr tmp1 = FrameMap::r10_oop_opr;
+  LIR_Opr tmp2 = FrameMap::r11_oop_opr;
   LIR_Opr tmp3 = FrameMap::r5_oop_opr;
   LIR_Opr tmp4 = reg;
   LIR_Opr klass_reg = FrameMap::r3_metadata_opr;
@@ -1172,8 +1172,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   CodeEmitInfo* info = state_for(x, x->state());
 
   LIR_Opr reg = result_register_for(x->type());
-  LIR_Opr tmp1 = FrameMap::r2_oop_opr;
-  LIR_Opr tmp2 = FrameMap::r4_oop_opr;
+  LIR_Opr tmp1 = FrameMap::r10_oop_opr;
+  LIR_Opr tmp2 = FrameMap::r11_oop_opr;
   LIR_Opr tmp3 = FrameMap::r5_oop_opr;
   LIR_Opr tmp4 = reg;
   LIR_Opr klass_reg = FrameMap::r3_metadata_opr;

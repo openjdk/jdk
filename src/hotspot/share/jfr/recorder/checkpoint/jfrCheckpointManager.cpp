@@ -455,7 +455,7 @@ size_t JfrCheckpointManager::flush_type_set() {
       elements = ::flush_type_set(thread);
     }
   }
-  if (_new_checkpoint.is_signaled()) {
+  if (_new_checkpoint.is_signaled_with_reset()) {
     WriteOperation wo(_chunkwriter);
     MutexedWriteOperation mwo(wo);
     _thread_local_mspace->iterate(mwo); // current epoch list

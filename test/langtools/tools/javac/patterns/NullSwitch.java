@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8262891
+ * @bug 8262891 8272776
  * @summary Check null handling for non-pattern switches.
  * @compile --enable-preview -source ${jdk.version} NullSwitch.java
  * @run main/othervm --enable-preview NullSwitch
@@ -57,6 +57,9 @@ public class NullSwitch {
         assertEquals(0, matchingSwitch12(""));
         assertEquals(2, matchingSwitch12(null));
         assertEquals(1, matchingSwitch12(0.0));
+        assertEquals(0, matchingSwitch13(""));
+        assertEquals(1, matchingSwitch13(0.0));
+        assertEquals(2, matchingSwitch13(null));
     }
 
     private int matchingSwitch1(Object obj) {
@@ -153,6 +156,17 @@ public class NullSwitch {
             switch (obj) {
                 case String s: return 0;
                 default: return 1;
+            }
+        } catch (NullPointerException ex) {
+            return 2;
+        }
+    }
+
+    private int matchingSwitch13(Object obj) {
+        try {
+            switch (obj) {
+                default: return 1;
+                case String s: return 0;
             }
         } catch (NullPointerException ex) {
             return 2;

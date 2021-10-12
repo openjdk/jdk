@@ -26,6 +26,7 @@
 #import "ScrollAreaAccessibility.h"
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
+#import "sun_lwawt_macosx_CAccessibility.h"
 
 /*
  * Implementation of the accessibility peer for the ScrollArea role
@@ -35,16 +36,16 @@
 - (NSArray * _Nullable)accessibilityContentsAttribute
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-    NSArray *children = [JavaComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
+    NSArray *children = [CommonComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN allowIgnored:YES];
 
     if ([children count] <= 0) return nil;
     NSArray *contents = [NSMutableArray arrayWithCapacity:[children count]];
 
     // The scroll bars are in the children. children less the scroll bars is the contents
     NSEnumerator *enumerator = [children objectEnumerator];
-    JavaComponentAccessibility *aElement;
-    while ((aElement = (JavaComponentAccessibility *)[enumerator nextObject])) {
-        if (![[aElement accessibilityRoleAttribute] isEqualToString:NSAccessibilityScrollBarRole]) {
+    CommonComponentAccessibility *aElement;
+    while ((aElement = (CommonComponentAccessibility *)[enumerator nextObject])) {
+        if (![[aElement accessibilityRole] isEqualToString:NSAccessibilityScrollBarRole]) {
             // no scroll bars in contents
             [(NSMutableArray *)contents addObject:aElement];
         }
@@ -56,14 +57,14 @@
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 
-    NSArray *children = [JavaComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
+    NSArray *children = [CommonComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN allowIgnored:YES];
     if ([children count] <= 0) return nil;
 
     // The scroll bars are in the children.
-    JavaComponentAccessibility *aElement;
+    CommonComponentAccessibility *aElement;
     NSEnumerator *enumerator = [children objectEnumerator];
-    while ((aElement = (JavaComponentAccessibility *)[enumerator nextObject])) {
-        if ([[aElement accessibilityRoleAttribute] isEqualToString:NSAccessibilityScrollBarRole]) {
+    while ((aElement = (CommonComponentAccessibility *)[enumerator nextObject])) {
+        if ([[aElement accessibilityRole] isEqualToString:NSAccessibilityScrollBarRole]) {
             jobject elementAxContext = [aElement axContextWithEnv:env];
             if (orientation == NSAccessibilityOrientationHorizontal) {
                 if (isHorizontal(env, elementAxContext, fComponent)) {

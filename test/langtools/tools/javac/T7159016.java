@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class T7159016 {
             if (roundEnv.processingOver() || written++ > 0) {
                 return false;
             }
-            messager.printMessage(Diagnostic.Kind.NOTE, "writing Generated.java");
+            messager.printNote("writing Generated.java");
             try {
                 Writer w = processingEnv.getFiler().createSourceFile("p.Generated").openWriter();
                 try {
@@ -86,7 +86,7 @@ public class T7159016 {
                     w.close();
                 }
             } catch (IOException x) {
-                messager.printMessage(Diagnostic.Kind.ERROR, x.toString());
+                messager.printError(x.toString());
             }
             return true;
         }

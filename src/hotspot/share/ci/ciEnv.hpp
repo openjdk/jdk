@@ -44,9 +44,9 @@ class OopMapSet;
 // to the VM.
 class ciEnv : StackObj {
   CI_PACKAGE_ACCESS_TO
-
   friend class CompileBroker;
   friend class Dependencies;  // for get_object, during logging
+  friend class RecordLocation;
   friend class PrepareExtraDataClosure;
 
 private:
@@ -460,12 +460,49 @@ public:
   // RedefineClasses support
   void metadata_do(MetadataClosure* f) { _factory->metadata_do(f); }
 
+  // Replay support
+private:
+  static int klass_compare(const InstanceKlass* const &ik1, const InstanceKlass* const &ik2) {
+    if (ik1 > ik2) {
+      return 1;
+    } else if (ik1 < ik2) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+  bool dyno_loc(const InstanceKlass* ik, const char *&loc) const;
+  void set_dyno_loc(const InstanceKlass* ik);
+  void record_best_dyno_loc(const InstanceKlass* ik);
+  bool print_dyno_loc(outputStream* out, const InstanceKlass* ik) const;
+
+  GrowableArray<const InstanceKlass*>* _dyno_klasses;
+  GrowableArray<const char *>*         _dyno_locs;
+
+#define MAX_DYNO_NAME_LENGTH 1024
+  char _dyno_name[MAX_DYNO_NAME_LENGTH+1];
+
+public:
   // Dump the compilation replay data for the ciEnv to the stream.
   void dump_replay_data(int compile_id);
   void dump_inline_data(int compile_id);
   void dump_replay_data(outputStream* out);
   void dump_replay_data_unsafe(outputStream* out);
+  void dump_replay_data_helper(outputStream* out);
   void dump_compile_data(outputStream* out);
+
+  const char *dyno_name(const InstanceKlass* ik) const;
+  const char *replay_name(const InstanceKlass* ik) const;
+  const char *replay_name(ciKlass* i) const;
+
+  void record_lambdaform(Thread* thread, oop obj);
+  void record_member(Thread* thread, oop obj);
+  void record_mh(Thread* thread, oop obj);
+  void record_call_site_obj(Thread* thread, const constantPoolHandle& pool, const Handle appendix);
+  void record_call_site_method(Thread* thread, const constantPoolHandle& pool, Method* adapter);
+  void process_invokedynamic(const constantPoolHandle &cp, int index, JavaThread* thread);
+  void process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread);
+  void find_dynamic_call_sites();
 };
 
 #endif // SHARE_CI_CIENV_HPP

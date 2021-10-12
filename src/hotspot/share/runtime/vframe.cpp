@@ -574,23 +574,24 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 javaVFrame* vframeStreamCommon::asJavaVFrame() {
   javaVFrame* result = NULL;
   if (_mode == compiled_mode) {
-    assert(_frame.is_compiled_frame() || _frame.is_native_frame(), "expected compiled Java frame");
-
-    // lazy update to register map
-    bool update_map = true;
-    RegisterMap map(_thread, update_map);
-    frame f = _prev_frame.sender(&map);
-
-    assert(f.is_compiled_frame() || f.is_native_frame(), "expected compiled Java frame");
-
-    compiledVFrame* cvf = compiledVFrame::cast(vframe::new_vframe(&f, &map, _thread));
-
-    assert(cvf->cb() == cb(), "wrong code blob");
-
-    if (cvf->scope() == NULL) {
-      // native nmethods have no scope
-      assert(f.is_native_frame(), "expected native frame");
+    compiledVFrame* cvf;
+    if (_frame.is_native_frame()) {
+      cvf = compiledVFrame::cast(vframe::new_vframe(&_frame, &_reg_map, _thread));
+      assert(cvf->cb() == cb(), "wrong code blob");
     } else {
+      assert(_frame.is_compiled_frame(), "expected compiled Java frame");
+
+      // lazy update to register map
+      bool update_map = true;
+      RegisterMap map(_thread, update_map);
+      frame f = _prev_frame.sender(&map);
+
+      assert(f.is_compiled_frame(), "expected compiled Java frame");
+
+      cvf = compiledVFrame::cast(vframe::new_vframe(&f, &map, _thread));
+
+      assert(cvf->cb() == cb(), "wrong code blob");
+
       // get the same scope as this stream
       cvf = cvf->at_scope(_decode_offset, _vframe_id);
 

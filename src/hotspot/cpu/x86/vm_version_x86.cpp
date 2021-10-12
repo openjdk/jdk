@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -65,6 +66,22 @@ extern "C" {
 static get_cpu_info_stub_t get_cpu_info_stub = NULL;
 static detect_virt_stub_t detect_virt_stub = NULL;
 
+#ifdef _LP64
+
+bool VM_Version::supports_clflush() {
+  // clflush should always be available on x86_64
+  // if not we are in real trouble because we rely on it
+  // to flush the code cache.
+  // Unfortunately, Assembler::clflush is currently called as part
+  // of generation of the code cache flush routine. This happens
+  // under Universe::init before the processor features are set
+  // up. Assembler::flush calls this routine to check that clflush
+  // is allowed. So, we give the caller a free pass if Universe init
+  // is still in progress.
+  assert ((!Universe::is_fully_initialized() || (_features & CPU_FLUSH) != 0), "clflush should be available");
+  return true;
+}
+#endif
 
 class VM_Version_StubGenerator: public StubCodeGenerator {
  public:
@@ -1719,6 +1736,9 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
+  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
+      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+  }
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
@@ -1746,54 +1766,58 @@ bool VM_Version::compute_has_intel_jcc_erratum() {
   // https://www.intel.com/content/dam/support/us/en/documents/processors/mitigations-jump-conditional-code-erratum.pdf
   switch (_model) {
   case 0x8E:
-    // 06_8EH | 9 | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Amber Lake Y
-    // 06_8EH | 9 | 7th Generation Intel® Core™ Processor Family based on microarchitecture code name Kaby Lake U
-    // 06_8EH | 9 | 7th Generation Intel® Core™ Processor Family based on microarchitecture code name Kaby Lake U 23e
-    // 06_8EH | 9 | 7th Generation Intel® Core™ Processor Family based on microarchitecture code name Kaby Lake Y
-    // 06_8EH | A | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Coffee Lake U43e
-    // 06_8EH | B | 8th Generation Intel® Core™ Processors based on microarchitecture code name Whiskey Lake U
-    // 06_8EH | C | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Amber Lake Y
-    // 06_8EH | C | 10th Generation Intel® Core™ Processor Family based on microarchitecture code name Comet Lake U42
-    // 06_8EH | C | 8th Generation Intel® Core™ Processors based on microarchitecture code name Whiskey Lake U
+    // 06_8EH | 9 | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Amber Lake Y
+    // 06_8EH | 9 | 7th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Kaby Lake U
+    // 06_8EH | 9 | 7th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Kaby Lake U 23e
+    // 06_8EH | 9 | 7th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Kaby Lake Y
+    // 06_8EH | A | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Coffee Lake U43e
+    // 06_8EH | B | 8th Generation Intel(R) Core(TM) Processors based on microarchitecture code name Whiskey Lake U
+    // 06_8EH | C | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Amber Lake Y
+    // 06_8EH | C | 10th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Comet Lake U42
+    // 06_8EH | C | 8th Generation Intel(R) Core(TM) Processors based on microarchitecture code name Whiskey Lake U
     return _stepping == 0x9 || _stepping == 0xA || _stepping == 0xB || _stepping == 0xC;
   case 0x4E:
-    // 06_4E  | 3 | 6th Generation Intel® Core™ Processors based on microarchitecture code name Skylake U
-    // 06_4E  | 3 | 6th Generation Intel® Core™ Processor Family based on microarchitecture code name Skylake U23e
-    // 06_4E  | 3 | 6th Generation Intel® Core™ Processors based on microarchitecture code name Skylake Y
+    // 06_4E  | 3 | 6th Generation Intel(R) Core(TM) Processors based on microarchitecture code name Skylake U
+    // 06_4E  | 3 | 6th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Skylake U23e
+    // 06_4E  | 3 | 6th Generation Intel(R) Core(TM) Processors based on microarchitecture code name Skylake Y
     return _stepping == 0x3;
   case 0x55:
-    // 06_55H | 4 | Intel® Xeon® Processor D Family based on microarchitecture code name Skylake D, Bakerville
-    // 06_55H | 4 | Intel® Xeon® Scalable Processors based on microarchitecture code name Skylake Server
-    // 06_55H | 4 | Intel® Xeon® Processor W Family based on microarchitecture code name Skylake W
-    // 06_55H | 4 | Intel® Core™ X-series Processors based on microarchitecture code name Skylake X
-    // 06_55H | 4 | Intel® Xeon® Processor E3 v5 Family based on microarchitecture code name Skylake Xeon E3
-    // 06_55  | 7 | 2nd Generation Intel® Xeon® Scalable Processors based on microarchitecture code name Cascade Lake (server)
+    // 06_55H | 4 | Intel(R) Xeon(R) Processor D Family based on microarchitecture code name Skylake D, Bakerville
+    // 06_55H | 4 | Intel(R) Xeon(R) Scalable Processors based on microarchitecture code name Skylake Server
+    // 06_55H | 4 | Intel(R) Xeon(R) Processor W Family based on microarchitecture code name Skylake W
+    // 06_55H | 4 | Intel(R) Core(TM) X-series Processors based on microarchitecture code name Skylake X
+    // 06_55H | 4 | Intel(R) Xeon(R) Processor E3 v5 Family based on microarchitecture code name Skylake Xeon E3
+    // 06_55  | 7 | 2nd Generation Intel(R) Xeon(R) Scalable Processors based on microarchitecture code name Cascade Lake (server)
     return _stepping == 0x4 || _stepping == 0x7;
   case 0x5E:
-    // 06_5E  | 3 | 6th Generation Intel® Core™ Processor Family based on microarchitecture code name Skylake H
-    // 06_5E  | 3 | 6th Generation Intel® Core™ Processor Family based on microarchitecture code name Skylake S
+    // 06_5E  | 3 | 6th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Skylake H
+    // 06_5E  | 3 | 6th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Skylake S
     return _stepping == 0x3;
   case 0x9E:
-    // 06_9EH | 9 | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Kaby Lake G
-    // 06_9EH | 9 | 7th Generation Intel® Core™ Processor Family based on microarchitecture code name Kaby Lake H
-    // 06_9EH | 9 | 7th Generation Intel® Core™ Processor Family based on microarchitecture code name Kaby Lake S
-    // 06_9EH | 9 | Intel® Core™ X-series Processors based on microarchitecture code name Kaby Lake X
-    // 06_9EH | 9 | Intel® Xeon® Processor E3 v6 Family Kaby Lake Xeon E3
-    // 06_9EH | A | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Coffee Lake H
-    // 06_9EH | A | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Coffee Lake S
-    // 06_9EH | A | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Coffee Lake S (6+2) x/KBP
-    // 06_9EH | A | Intel® Xeon® Processor E Family based on microarchitecture code name Coffee Lake S (6+2)
-    // 06_9EH | A | Intel® Xeon® Processor E Family based on microarchitecture code name Coffee Lake S (4+2)
-    // 06_9EH | B | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Coffee Lake S (4+2)
-    // 06_9EH | B | Intel® Celeron® Processor G Series based on microarchitecture code name Coffee Lake S (4+2)
-    // 06_9EH | D | 9th Generation Intel® Core™ Processor Family based on microarchitecturecode name Coffee Lake H (8+2)
-    // 06_9EH | D | 9th Generation Intel® Core™ Processor Family based on microarchitecture code name Coffee Lake S (8+2)
+    // 06_9EH | 9 | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Kaby Lake G
+    // 06_9EH | 9 | 7th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Kaby Lake H
+    // 06_9EH | 9 | 7th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Kaby Lake S
+    // 06_9EH | 9 | Intel(R) Core(TM) X-series Processors based on microarchitecture code name Kaby Lake X
+    // 06_9EH | 9 | Intel(R) Xeon(R) Processor E3 v6 Family Kaby Lake Xeon E3
+    // 06_9EH | A | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Coffee Lake H
+    // 06_9EH | A | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Coffee Lake S
+    // 06_9EH | A | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Coffee Lake S (6+2) x/KBP
+    // 06_9EH | A | Intel(R) Xeon(R) Processor E Family based on microarchitecture code name Coffee Lake S (6+2)
+    // 06_9EH | A | Intel(R) Xeon(R) Processor E Family based on microarchitecture code name Coffee Lake S (4+2)
+    // 06_9EH | B | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Coffee Lake S (4+2)
+    // 06_9EH | B | Intel(R) Celeron(R) Processor G Series based on microarchitecture code name Coffee Lake S (4+2)
+    // 06_9EH | D | 9th Generation Intel(R) Core(TM) Processor Family based on microarchitecturecode name Coffee Lake H (8+2)
+    // 06_9EH | D | 9th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Coffee Lake S (8+2)
     return _stepping == 0x9 || _stepping == 0xA || _stepping == 0xB || _stepping == 0xD;
+  case 0xA5:
+    // Not in Intel documentation.
+    // 06_A5H |    | 10th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Comet Lake S/H
+    return true;
   case 0xA6:
-    // 06_A6H | 0  | 10th Generation Intel® Core™ Processor Family based on microarchitecture code name Comet Lake U62
+    // 06_A6H | 0  | 10th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Comet Lake U62
     return _stepping == 0x0;
   case 0xAE:
-    // 06_AEH | A | 8th Generation Intel® Core™ Processor Family based on microarchitecture code name Kaby Lake Refresh U (4+2)
+    // 06_AEH | A | 8th Generation Intel(R) Core(TM) Processor Family based on microarchitecture code name Kaby Lake Refresh U (4+2)
     return _stepping == 0xA;
   default:
     // If we are running on another intel machine not recognized in the table, we are okay.

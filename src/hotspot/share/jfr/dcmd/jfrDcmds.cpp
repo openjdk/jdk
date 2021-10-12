@@ -154,19 +154,19 @@ static void print_message(outputStream* output, oop content, TRAPS) {
 }
 
 static void log(oop content, TRAPS) {
-    LogMessage(jfr,startup) msg;
-    objArrayOop lines = objArrayOop(content);
-    assert(lines != NULL, "invariant");
-    assert(lines->is_array(), "must be array");
-    const int length = lines->length();
-    for (int i = 0; i < length; ++i) {
-      const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
-      if (text == NULL) {
-        // An oome has been thrown and is pending.
-        break;
-      }
-      msg.info("%s", text);
+  LogMessage(jfr,startup) msg;
+  objArrayOop lines = objArrayOop(content);
+  assert(lines != NULL, "invariant");
+  assert(lines->is_array(), "must be array");
+  const int length = lines->length();
+  for (int i = 0; i < length; ++i) {
+    const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
+    if (text == NULL) {
+      // An oome has been thrown and is pending.
+      break;
     }
+    msg.info("%s", text);
+  }
 }
 
 static void handle_dcmd_result(outputStream* output,
@@ -214,6 +214,8 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
   JfrJavaSupport::new_object(args, CHECK_NULL);
   return args->result()->get_oop();
 }
+
+JfrDCmd::JfrDCmd(outputStream* output, bool heap, int num_arguments) : DCmd(output, heap), _args(NULL), _num_arguments(num_arguments), _delimiter('\0') {}
 
 void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
   JavaValue constructor_result(T_OBJECT);
@@ -272,6 +274,20 @@ void JfrDCmd::print_help(const char* name) const {
   JfrJavaArguments printHelp(&result, javaClass(), "printHelp", signature, thread);
   invoke(printHelp, thread);
   handle_dcmd_result(output(), result.get_oop(), DCmd_Source_MBean, thread);
+}
+
+static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array) {
+  assert(array != NULL, "invariant");
+  DCmdArgumentInfo * const dummy = new DCmdArgumentInfo(NULL,
+                                                        NULL,
+                                                        NULL,
+                                                        NULL,
+                                                        false,
+                                                        true, // a DcmdFramework "option"
+                                                        false);
+  for (int i = 0; i < array->max_length(); ++i) {
+    array->append(dummy);
+  }
 }
 
 // Since the DcmdFramework does not support dynamically allocated strings,
@@ -340,16 +356,29 @@ static DCmdArgumentInfo* create_info(oop argument, TRAPS) {
 GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
   static const char signature[] = "()[Ljdk/jfr/internal/dcmd/Argument;";
   JavaThread* thread = JavaThread::current();
+  GrowableArray<DCmdArgumentInfo*>* const array = new GrowableArray<DCmdArgumentInfo*>(_num_arguments);
   JavaValue result(T_OBJECT);
   JfrJavaArguments getArgumentInfos(&result, javaClass(), "getArgumentInfos", signature, thread);
   invoke(getArgumentInfos, thread);
+  if (thread->has_pending_exception()) {
+    // Most likely an OOME, but the DCmdFramework is not the best place to handle it.
+    // We handle it locally by clearing the exception and returning an array with dummy descriptors.
+    // This lets the MBean server initialization routine complete successfully,
+    // but this particular command will have no argument descriptors exposed.
+    // Hence we postpone, or delegate, handling of OOME's to code that is better suited.
+    log_debug(jfr, system)("Exception in DCmd getArgumentInfos");
+    thread->clear_pending_exception();
+    initialize_dummy_descriptors(array);
+    assert(array->length() == _num_arguments, "invariant");
+    return array;
+  }
   objArrayOop arguments = objArrayOop(result.get_oop());
   assert(arguments != NULL, "invariant");
   assert(arguments->is_array(), "must be array");
-  GrowableArray<DCmdArgumentInfo*>* const array = new GrowableArray<DCmdArgumentInfo*>();
-  const int length = arguments->length();
+  const int num_arguments = arguments->length();
+  assert(num_arguments == _num_arguments, "invariant");
   prepare_dcmd_string_arena();
-  for (int i = 0; i < length; ++i) {
+  for (int i = 0; i < num_arguments; ++i) {
     DCmdArgumentInfo* const dai = create_info(arguments->obj_at(i), thread);
     assert(dai != NULL, "invariant");
     array->append(dai);

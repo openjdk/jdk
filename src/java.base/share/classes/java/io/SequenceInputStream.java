@@ -184,7 +184,7 @@ public class SequenceInputStream extends InputStream {
      *             greater than {@code b.length - off}
      * @throws     IOException  if an I/O error occurs.
      */
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         if (in == null) {
             return -1;
         } else if (b == null) {

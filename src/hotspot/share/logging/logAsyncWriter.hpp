@@ -110,8 +110,6 @@ public:
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
 typedef ResourceHashtable<LogFileOutput*,
                           uint32_t,
-                          primitive_hash<LogFileOutput*>,
-                          primitive_equals<LogFileOutput*>,
                           17, /*table_size*/
                           ResourceObj::C_HEAP,
                           mtLogging> AsyncLogMap;

@@ -490,29 +490,30 @@ void TemplateTable::ldc2_w() {
   __ add(Rtemp, Rtags, tags_offset);
   __ ldrb(Rtemp, Address(Rtemp, Rindex));
 
-  Label Condy, exit;
-#ifdef __ABI_HARD__
-  Label NotDouble;
+  Label Done, NotLong, NotDouble;
   __ cmp(Rtemp, JVM_CONSTANT_Double);
   __ b(NotDouble, ne);
+#ifdef __SOFTFP__
+  __ ldr(R0_tos_lo, Address(Rbase, base_offset + 0 * wordSize));
+  __ ldr(R1_tos_hi, Address(Rbase, base_offset + 1 * wordSize));
+#else // !__SOFTFP__
   __ ldr_double(D0_tos, Address(Rbase, base_offset));
-
+#endif // __SOFTFP__
   __ push(dtos);
-  __ b(exit);
+  __ b(Done);
   __ bind(NotDouble);
-#endif
 
   __ cmp(Rtemp, JVM_CONSTANT_Long);
-  __ b(Condy, ne);
+  __ b(NotLong, ne);
   __ ldr(R0_tos_lo, Address(Rbase, base_offset + 0 * wordSize));
   __ ldr(R1_tos_hi, Address(Rbase, base_offset + 1 * wordSize));
   __ push(ltos);
-  __ b(exit);
+  __ b(Done);
+  __ bind(NotLong);
 
-  __ bind(Condy);
-  condy_helper(exit);
+  condy_helper(Done);
 
-  __ bind(exit);
+  __ bind(Done);
 }
 
 

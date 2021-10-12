@@ -86,7 +86,7 @@ final class Configure extends Command {
         stream.println("                          (default.jfc). If 'none' is specified, the new");
         stream.println("                          configuration starts empty.");
         stream.println();
-        stream.println("  --ouput <file>          The filename of the generated output file. If not");
+        stream.println("  --output <file>         The filename of the generated output file. If not");
         stream.println("                          specified, the filename custom.jfc will be used.");
         stream.println();
         stream.println("  option=value            The option value to modify. For available options,");

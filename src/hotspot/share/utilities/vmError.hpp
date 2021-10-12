@@ -51,6 +51,10 @@ class VMError : public AllStatic {
   static void*       _context;          // ContextRecord on Windows,
                                         // ucontext_t on Solaris/Linux
 
+  // records if VMError::print_native_stack was used to
+  // print the native stack instead of os::platform_print_native_stack
+  static bool        _print_native_stack_used;
+
   // additional info for VM internal errors
   static const char* _filename;
   static int         _lineno;

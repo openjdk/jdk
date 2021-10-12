@@ -35,7 +35,7 @@ class G1MapperWorkers : AllStatic {
   static WorkGang* _work_gang;
   static WorkGang* work_gang() {
     if (_work_gang == NULL) {
-      _work_gang = new WorkGang("G1 Small Workers", MaxWorkers, false, false);
+      _work_gang = new WorkGang("G1 Small Workers", MaxWorkers);
       _work_gang->initialize_workers();
       _work_gang->update_active_workers(MaxWorkers);
     }

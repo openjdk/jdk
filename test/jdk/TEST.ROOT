@@ -27,7 +27,7 @@ exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
 sun/tools/jstatd sun/tools/jcmd \
 sun/tools/jinfo sun/tools/jmap sun/tools/jps sun/tools/jstack sun/tools/jstat \
-com/sun/tools/attach sun/security/mscapi java/util/stream java/util/Arrays/largeMemory \
+com/sun/tools/attach sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket
 
 # Group definitions
@@ -39,7 +39,7 @@ groups=TEST.groups
 # to determine additional characteristics of the system for use with the @requires tag.
 # Note: compiled bootlibs classes will be added to BCP.
 requires.extraPropDefns = ../jtreg-ext/requires/VMProps.java
-requires.extraPropDefns.bootlibs = ../lib/sun
+requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java

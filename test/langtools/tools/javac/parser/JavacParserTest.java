@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1793,6 +1793,31 @@ public class JavacParserTest extends TestCase {
         int typeStart = (int) sp.getStartPosition(cut, param.getType());
         int typeEnd   = (int) sp.getEndPosition(cut, param.getType());
         assertEquals("correct parameter type span", code.substring(typeStart, typeEnd), "int[]...");
+    }
+
+    @Test //JDK-8271928
+    void testX() throws IOException {
+        String code = """
+                      package test;
+                          public static void test() {
+                              return test;
+                          }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        SourcePositions sp = Trees.instance(ct).getSourcePositions();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitErroneous(ErroneousTree tree, Void p) {
+                int pos = (int) sp.getStartPosition(cut, tree);
+                if (pos == (-1)) {
+                    fail("Invalid source position for an ErroneousTree");
+                }
+                return scan(tree.getErrorTrees(), p);
+            }
+        }.scan(cut, null);
     }
 
     void run(String[] args) throws Exception {

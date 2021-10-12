@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class TestProcessor extends AbstractProcessor {
     /** Report an error to the annotation processing system. */
     void error(String msg) {
         Messager messager = processingEnv.getMessager();
-        messager.printMessage(Diagnostic.Kind.ERROR, msg);
+        messager.printError(msg);
     }
 
     /** Report an error to the annotation processing system. */
@@ -109,7 +109,7 @@ public class TestProcessor extends AbstractProcessor {
         // need better API for reporting tree position errors to the messager
         Messager messager = processingEnv.getMessager();
         String text = file.getName() + ":" + getLine(file, tree) + ": " + msg;
-        messager.printMessage(Diagnostic.Kind.ERROR, text);
+        messager.printError(text);
     }
 
     /** Get the line number for the primary position for a tree.

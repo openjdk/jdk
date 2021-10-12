@@ -45,6 +45,76 @@ void VM_Version::initialize() {
   }
   FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
 
+  // If lock diagnostics is needed, always call to runtime
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    FLAG_SET_DEFAULT(UseHeavyMonitors, true);
+  }
+
+  if (UseAESIntrinsics) {
+    warning("AES intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+  }
+
+  if (UseAES) {
+    warning("AES instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAES, false);
+  }
+
+  if (UseAESCTRIntrinsics) {
+    warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+  }
+
+  if (UseFMA) {
+    warning("FMA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseFMA, false);
+  }
+
+  if (UseMD5Intrinsics) {
+    warning("MD5 intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  }
+
+  if (UseSHA) {
+    warning("SHA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseSHA, false);
+  }
+
+  if (UseSHA1Intrinsics) {
+    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
+  }
+
+  if (UseSHA256Intrinsics) {
+    warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+  }
+
+  if (UseSHA512Intrinsics) {
+    warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+  }
+
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
+  if (UseCRC32Intrinsics) {
+    warning("CRC32 intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  }
+
+  if (UseAdler32Intrinsics) {
+    warning("Adler32 intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+
+  if (UseVectorizedMismatchIntrinsic) {
+    warning("vectorizedMismatch intrinsic is not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   // Not implemented
   UNSUPPORTED_OPTION(CriticalJNINatives);
 }

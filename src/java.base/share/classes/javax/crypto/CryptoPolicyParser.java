@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.crypto;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -254,15 +255,15 @@ final class CryptoPolicyParser {
             // AlgorithmParameterSpec class name.
             String algParamSpecClassName = match("quoted string");
 
-            Vector<Integer> paramsV = new Vector<>(1);
+            ArrayList<Integer> paramsV = new ArrayList<>(1);
             while (peek(",")) {
                 match(",");
                 if (peek("number")) {
-                    paramsV.addElement(match());
+                    paramsV.add(match());
                 } else {
                     if (peek("*")) {
                         match("*");
-                        paramsV.addElement(Integer.MAX_VALUE);
+                        paramsV.add(Integer.MAX_VALUE);
                     } else {
                         throw new ParsingException(st.lineno(),
                                                    "Expecting an integer");
@@ -270,8 +271,7 @@ final class CryptoPolicyParser {
                 }
             }
 
-            Integer[] params = new Integer[paramsV.size()];
-            paramsV.copyInto(params);
+            Integer[] params = paramsV.toArray(new Integer[0]);
 
             e.checkParam = true;
             e.algParamSpec = getInstance(algParamSpecClassName, params);
@@ -458,7 +458,7 @@ final class CryptoPolicyParser {
     }
 
     CryptoPermission[] getPermissions() {
-        Vector<CryptoPermission> result = new Vector<>();
+        ArrayList<CryptoPermission> result = new ArrayList<>();
 
         Enumeration<GrantEntry> grantEnum = grantEntries.elements();
         while (grantEnum.hasMoreElements()) {
@@ -469,16 +469,16 @@ final class CryptoPolicyParser {
                 CryptoPermissionEntry pe = permEnum.nextElement();
                 if (pe.cryptoPermission.equals(
                                         "javax.crypto.CryptoAllPermission")) {
-                    result.addElement(CryptoAllPermission.INSTANCE);
+                    result.add(CryptoAllPermission.INSTANCE);
                 } else {
                     if (pe.checkParam) {
-                        result.addElement(new CryptoPermission(
+                        result.add(new CryptoPermission(
                                                 pe.alg,
                                                 pe.maxKeySize,
                                                 pe.algParamSpec,
                                                 pe.exemptionMechanism));
                     } else {
-                        result.addElement(new CryptoPermission(
+                        result.add(new CryptoPermission(
                                                 pe.alg,
                                                 pe.maxKeySize,
                                                 pe.exemptionMechanism));
@@ -487,10 +487,7 @@ final class CryptoPolicyParser {
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[result.size()];
-        result.copyInto(ret);
-
-        return ret;
+        return result.toArray(new CryptoPermission[0]);
     }
 
     private boolean isConsistent(String alg, String exemptionMechanism,

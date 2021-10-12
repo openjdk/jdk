@@ -206,14 +206,12 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
   // Create queues
   for (uint i = 0; i < _queues.size(); i++) {
     ZHeapIteratorQueue* const queue = new ZHeapIteratorQueue();
-    queue->initialize();
     _queues.register_queue(i, queue);
   }
 
   // Create array queues
   for (uint i = 0; i < _array_queues.size(); i++) {
     ZHeapIteratorArrayQueue* const array_queue = new ZHeapIteratorArrayQueue();
-    array_queue->initialize();
     _array_queues.register_queue(i, array_queue);
   }
 }

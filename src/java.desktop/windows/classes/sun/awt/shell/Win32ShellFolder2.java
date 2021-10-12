@@ -26,7 +26,6 @@
 package sun.awt.shell;
 
 import java.awt.Image;
-import java.awt.Toolkit;
 import java.awt.image.AbstractMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
@@ -36,7 +35,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serial;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -1333,7 +1331,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         // synchronize the whole code of the sort method once
         invoke(new Callable<Void>() {
             public Void call() {
-                Collections.sort(files, new ColumnComparator(Win32ShellFolder2.this, 0));
+                files.sort(new ColumnComparator(Win32ShellFolder2.this, 0));
 
                 return null;
             }

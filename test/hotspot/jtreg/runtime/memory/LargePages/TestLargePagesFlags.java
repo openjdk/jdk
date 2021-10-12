@@ -22,9 +22,10 @@
  */
 
 /* @test TestLargePagesFlags
- * @summary Tests how large pages are choosen depending on the given large pages flag combinations.
+ * @summary Tests how large pages are chosen depending on the given large pages flag combinations.
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

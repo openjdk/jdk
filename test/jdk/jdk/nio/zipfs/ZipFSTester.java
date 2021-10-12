@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ import static java.nio.file.StandardCopyOption.*;
  * @test
  * @bug 6990846 7009092 7009085 7015391 7014948 7005986 7017840 7007596
  *      7157656 8002390 7012868 7012856 8015728 8038500 8040059 8069211
- *      8131067 8034802 8210899
+ *      8131067 8034802 8210899 8273961
  * @summary Test Zip filesystem provider
  * @modules jdk.zipfs
  * @run main ZipFSTester
@@ -687,10 +687,19 @@ public class ZipFSTester {
         throws Exception
     {
         // Use URLDecoder (for test only) to remove the double escaped space
-        // character
+        // character. For the path which is not encoded by UTF-8, we need to
+        // replace "+" by "%2b" manually before feeding into the decoder.
+        // Otherwise, the URLDecoder would replace "+" by " ", which may
+        // raise NoSuchFileException.
+        //
+        // eg. var path = "file:///jdk-18+9/basic.jar";
+        //     URLDecoder.decode(path, "utf8") -> file:///jdk-18 9/basic.jar
+        //
+        // Also, we should not use URLEncoder in case of the path has been
+        // encoded.
         return FileSystems.newFileSystem(
-            new URI("jar", URLDecoder.decode(path.toUri().toString(), "utf8"),
-                null), env, null);
+            new URI("jar", URLDecoder.decode(path.toUri().toString()
+                            .replace("+", "%2b"), "utf8"), null), env, null);
     }
 
     private static Path getTempPath() throws IOException

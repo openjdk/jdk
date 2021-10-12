@@ -36,7 +36,7 @@ import sun.hotspot.WhiteBox;
  * @library /testlibrary /test/lib
  * @build HandshakeTimeoutTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main HandshakeTimeoutTest
+ * @run driver HandshakeTimeoutTest
  */
 
 public class HandshakeTimeoutTest {
