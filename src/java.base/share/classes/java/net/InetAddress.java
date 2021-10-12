@@ -1037,7 +1037,7 @@ public class InetAddress implements java.io.Serializable {
                             expirySet.add(cachedAddresses);
                         }
                     }
-                    if (inetAddresses == null) {
+                    if (inetAddresses == null || inetAddresses.length == 0) {
                         throw ex == null ? new UnknownHostException(host) : ex;
                     }
                     return inetAddresses;
@@ -1658,11 +1658,12 @@ public class InetAddress implements java.io.Serializable {
                 ex.initCause(x);
             }
         }
-
-        if (addresses == null) {
+        InetAddress[] result = addresses == null ? null
+                : addresses.toArray(InetAddress[]::new);
+        if (result == null || result.length == 0) {
             throw ex == null ? new UnknownHostException(host) : ex;
         }
-        return addresses.toArray(InetAddress[]::new);
+        return result;
     }
 
     /**
