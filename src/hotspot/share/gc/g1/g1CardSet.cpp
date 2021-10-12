@@ -67,11 +67,15 @@ G1CardSetConfiguration::G1CardSetConfiguration() :
 
   // Heap region virtualization.
   _log2_card_region_per_heap_region = 0;
+
   uint bits_storable = G1CardSetContainer::max_card_bits_storable();
-  guarantee(HeapRegion::LogCardsPerRegion != 0, "");
   if (bits_storable < (uint)HeapRegion::LogCardsPerRegion) {
     _log2_card_region_per_heap_region = (uint)HeapRegion::LogCardsPerRegion - bits_storable;
   }
+  _log2_card_region_size = log2i_exact(_max_cards_in_card_set) - _log2_card_region_per_heap_region;
+
+  assert((_log2_card_region_per_heap_region + _log2_card_region_size) == (uint)HeapRegion::LogCardsPerRegion,
+          "inconsistent heap region virtualization setup");
 
   log_configuration();
 }
@@ -99,6 +103,8 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _log2_num_cards_in_howl_bitmap = log2i_exact(_num_cards_in_howl_bitmap);
   _bitmap_hash_mask = ~(~(0) << _log2_num_cards_in_howl_bitmap);
 
+  _log2_card_region_size = log2i_exact(max_cards_in_cardset) - log2_card_region_per_region;
+
   log_configuration();
 }
 
@@ -108,12 +114,13 @@ void G1CardSetConfiguration::log_configuration() {
                           "Array Of Cards #elems %u size %zu "
                           "Howl #buckets %u coarsen threshold %u "
                           "Howl Bitmap #elems %u size %zu coarsen threshold %u "
-                          "Card regions per heap region %u",
+                          "Card regions per heap region %u card region size %u",
                           num_cards_in_inline_ptr(), sizeof(void*),
                           num_cards_in_array(), G1CardSetArray::size_in_bytes(num_cards_in_array()),
                           num_buckets_in_howl(), cards_in_howl_threshold(),
                           num_cards_in_howl_bitmap(), G1CardSetBitMap::size_in_bytes(num_cards_in_howl_bitmap()), cards_in_howl_bitmap_threshold(),
-                          (uint)1 << log2_card_region_per_heap_region());
+                          (uint)1 << log2_card_region_per_heap_region(),
+                          (uint)1 << log2_card_region_size());
 }
 
 uint G1CardSetConfiguration::num_cards_in_inline_ptr() const {
@@ -818,26 +825,43 @@ template <typename Closure>
 class G1ContainerCards {
   Closure& _iter;
   uint _region_idx;
-  uint _offset;
 
 public:
-  G1ContainerCards(Closure& iter, uint region_idx, uint offset) : _iter(iter), _region_idx(region_idx), _offset(offset) { }
+  G1ContainerCards(Closure& iter, uint region_idx) : _iter(iter), _region_idx(region_idx) { }
 
   bool start_iterate(uint tag) { return true; }
 
   void operator()(uint card_idx) {
-    _iter.do_card(_region_idx, card_idx + _offset);
+    _iter.do_card(_region_idx, card_idx);
   }
 
   void operator()(uint card_idx, uint length) {
     for (uint i = 0; i < length; i++) {
-      _iter.do_card(_region_idx, card_idx + _offset);
+      _iter.do_card(_region_idx, card_idx);
     }
   }
 };
 
+template <typename Closure, template <typename> class CardOrRanges>
+class G1CardSetIterateCardsIterator : public G1CardSet::G1CardSetPtrIterator {
+  G1CardSet* _card_set;
+  Closure& _iter;
+
+public:
+
+  G1CardSetIterateCardsIterator(G1CardSet* card_set,
+                                Closure& iter) :
+    _card_set(card_set),
+    _iter(iter) { }
+
+  void do_cardsetptr(uint region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
+    CardOrRanges<Closure> cl(_iter, region_idx);
+    _card_set->iterate_cards_or_ranges_in_container(card_set, cl);
+  }
+};
+
 void G1CardSet::iterate_cards(G1CardSetCardIterator& iter) {
-  G1CardSetMergeCardIterator<G1CardSetCardIterator, G1ContainerCards> cl(this, iter, _config->log2_card_region_per_heap_region());
+  G1CardSetIterateCardsIterator<G1CardSetCardIterator, G1ContainerCards> cl(this, iter);
   iterate_containers(&cl);
 }
 
