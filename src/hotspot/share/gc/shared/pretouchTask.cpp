@@ -36,7 +36,6 @@ PretouchTask::PretouchTask(const char* task_name,
                            size_t chunk_size) :
     AbstractGangTask(task_name),
     _cur_addr(start_address),
-    _start_addr(start_address),
     _end_addr(end_address),
     _page_size(page_size),
     _chunk_size(chunk_size) {
@@ -52,14 +51,13 @@ size_t PretouchTask::chunk_size() {
 
 void PretouchTask::work(uint worker_id) {
   while (true) {
-    char* touch_addr = Atomic::fetch_and_add(&_cur_addr, _chunk_size);
-    if (touch_addr < _start_addr || touch_addr >= _end_addr) {
+    char* cur_start = Atomic::load(&_cur_addr);
+    char* cur_end = cur_start + MIN2(_chunk_size, pointer_delta(_end_addr, cur_start, 1));
+    if (cur_start >= cur_end) {
       break;
-    }
-
-    char* end_addr = touch_addr + MIN2(_chunk_size, pointer_delta(_end_addr, touch_addr, sizeof(char)));
-
-    os::pretouch_memory(touch_addr, end_addr, _page_size);
+    } else if (cur_start == Atomic::cmpxchg(&_cur_addr, cur_start, cur_end)) {
+      os::pretouch_memory(cur_start, cur_end, _page_size);
+    } // Else attempt to claim chunk failed, so try again.
   }
 }
 

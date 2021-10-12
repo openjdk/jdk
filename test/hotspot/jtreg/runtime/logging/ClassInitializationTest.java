@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 /*
  * @test ClassInitializationTest
  * @bug 8142976
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile BadMap50.jasm
@@ -45,6 +46,7 @@ public class ClassInitializationTest {
                                                                   "-Xmx128m",
                                                                   "BadMap50");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldNotHaveExitValue(0);
         out.shouldContain("Start class verification for:");
         out.shouldContain("End class verification for:");
         out.shouldContain("Initializing");
@@ -69,6 +71,7 @@ public class ClassInitializationTest {
                                                    "-Xmx128m",
                                                    "BadMap50");
         out = new OutputAnalyzer(pb.start());
+        out.shouldNotHaveExitValue(0);
         out.shouldNotContain("[class,init]");
         out.shouldNotContain("Fail over class verification to old verifier for: BadMap50");
 

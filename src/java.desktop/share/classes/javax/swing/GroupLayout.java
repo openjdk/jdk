@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1230,7 +1230,7 @@ public class GroupLayout implements LayoutManager2 {
         String padding = "";
         if (spring instanceof ComponentSpring) {
             ComponentSpring cSpring = (ComponentSpring)spring;
-            origin = Integer.toString(cSpring.getOrigin()) + " ";
+            origin = cSpring.getOrigin() + " ";
             String name = cSpring.getComponent().getName();
             if (name != null) {
                 origin = "name=" + name + ", ";
@@ -1885,7 +1885,7 @@ public class GroupLayout implements LayoutManager2 {
          * @param comp1 the first component
          * @param comp2 the second component
          * @param type the type of gap
-         * @param pref the preferred size of the grap; one of
+         * @param pref the preferred size of the gap; one of
          *        {@code DEFAULT_SIZE} or a value &gt;= 0
          * @param max the maximum size of the gap; one of
          *        {@code DEFAULT_SIZE}, {@code PREFERRED_SIZE}
@@ -1944,7 +1944,7 @@ public class GroupLayout implements LayoutManager2 {
          * @param type the type of gap; one of
          *        {@code LayoutStyle.ComponentPlacement.RELATED} or
          *        {@code LayoutStyle.ComponentPlacement.UNRELATED}
-         * @param pref the preferred size of the grap; one of
+         * @param pref the preferred size of the gap; one of
          *        {@code DEFAULT_SIZE} or a value &gt;= 0
          * @param max the maximum size of the gap; one of
          *        {@code DEFAULT_SIZE}, {@code PREFERRED_SIZE}
@@ -3506,10 +3506,10 @@ public class GroupLayout implements LayoutManager2 {
 
         String getMatchDescription() {
             if (targets != null) {
-                return "leading: " + targets.toString();
+                return "leading: " + targets;
             }
             if (sources != null) {
-                return "trailing: " + sources.toString();
+                return "trailing: " + sources;
             }
             return "--";
         }

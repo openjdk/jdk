@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class T6439826 extends AbstractProcessor {
             out.write("class Foo #"); // write a file that generates a scanner error
             out.close();
         } catch (IOException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, e.toString());
+            messager.printError(e.toString());
         }
     }
 

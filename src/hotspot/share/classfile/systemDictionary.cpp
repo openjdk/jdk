@@ -1623,6 +1623,8 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     } else {
       assert(_pd_cache_table->number_of_entries() == 0, "should be empty");
     }
+
+    InstanceKlass::clean_initialization_error_table();
   }
 
   return unloading_occurred;

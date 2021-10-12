@@ -38,6 +38,26 @@ class ReferenceProcessorPhaseTimes;
 class RefProcTask;
 class RefProcProxyTask;
 
+// Provides a callback to the garbage collector to set the given value to the
+// discovered field of the j.l.ref.Reference instance. This is called during STW
+// reference processing when iterating over the discovered lists for all
+// discovered references.
+// Typically garbage collectors may just call the barrier, but for some garbage
+// collectors the barrier environment (e.g. card table) may not be set up correctly
+// at the point of invocation.
+class EnqueueDiscoveredFieldClosure {
+public:
+  // For the given j.l.ref.Reference reference, set the discovered field to value.
+  virtual void enqueue(oop reference, oop value) = 0;
+};
+
+// EnqueueDiscoveredFieldClosure that executes the default barrier on the discovered
+// field of the j.l.ref.Reference reference with the given value.
+class BarrierEnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
+public:
+  void enqueue(oop reference, oop value) override;
+};
+
 // List of discovered references.
 class DiscoveredList {
 public:
@@ -47,6 +67,7 @@ public:
     return UseCompressedOops ? (HeapWord*)&_compressed_head :
                                (HeapWord*)&_oop_head;
   }
+  inline void add_as_head(oop o);
   inline void set_head(oop o);
   inline bool is_empty() const;
   size_t length()               { return _len; }
@@ -65,7 +86,6 @@ private:
 
 // Iterator for the list of discovered references.
 class DiscoveredListIterator {
-private:
   DiscoveredList&    _refs_list;
   HeapWord*          _prev_discovered_addr;
   oop                _prev_discovered;
@@ -77,6 +97,7 @@ private:
 
   OopClosure*        _keep_alive;
   BoolObjectClosure* _is_alive;
+  EnqueueDiscoveredFieldClosure* _enqueue;
 
   DEBUG_ONLY(
   oop                _first_seen; // cyclic linked list check
@@ -88,7 +109,8 @@ private:
 public:
   inline DiscoveredListIterator(DiscoveredList&    refs_list,
                                 OopClosure*        keep_alive,
-                                BoolObjectClosure* is_alive);
+                                BoolObjectClosure* is_alive,
+                                EnqueueDiscoveredFieldClosure* enqueue);
 
   // End Of List.
   inline bool has_next() const { return _current_discovered != NULL; }
@@ -160,9 +182,8 @@ public:
 // straightforward manner in a general, non-generational, non-contiguous generation
 // (or heap) setting.
 class ReferenceProcessor : public ReferenceDiscoverer {
-  friend class RefProcSoftWeakFinalPhaseTask;
+  friend class RefProcTask;
   friend class RefProcKeepAliveFinalPhaseTask;
-  friend class RefProcPhantomPhaseTask;
 public:
   // Names of sub-phases of reference processing. Indicates the type of the reference
   // processed and the associated phase number at the end.
@@ -195,8 +216,7 @@ private:
                                                // (and further processing).
 
   bool        _discovering_refs;        // true when discovery enabled
-  bool        _discovery_is_atomic;     // if discovery is atomic wrt
-                                        // other collectors in configuration
+  bool        _discovery_is_concurrent; // if discovery is concurrent to the mutator
   bool        _discovery_is_mt;         // true if reference discovery is MT.
 
   uint        _next_id;                 // round-robin mod _num_queues counter in
@@ -251,23 +271,19 @@ private:
   // removed elements.
 
   // Traverse the list and remove any Refs whose referents are alive,
-  // or NULL if discovery is not atomic. Enqueue and clear the reference for
+  // or NULL if discovery is concurrent. Enqueue and clear the reference for
   // others if do_enqueue_and_clear is set.
-  size_t process_soft_weak_final_refs_work(DiscoveredList&    refs_list,
-                                           BoolObjectClosure* is_alive,
-                                           OopClosure*        keep_alive,
-                                           bool               do_enqueue_and_clear);
+  size_t process_discovered_list_work(DiscoveredList&    refs_list,
+                                      BoolObjectClosure* is_alive,
+                                      OopClosure*        keep_alive,
+                                      EnqueueDiscoveredFieldClosure* enqueue,
+                                      bool               do_enqueue_and_clear);
 
   // Keep alive followers of referents for FinalReferences. Must only be called for
   // those.
-  size_t process_final_keep_alive_work(DiscoveredList&    refs_list,
-                                       OopClosure*        keep_alive,
-                                       VoidClosure*       complete_gc);
-
-  size_t process_phantom_refs_work(DiscoveredList&    refs_list,
-                                   BoolObjectClosure* is_alive,
-                                   OopClosure*        keep_alive,
-                                   VoidClosure*       complete_gc);
+  size_t process_final_keep_alive_work(DiscoveredList& refs_list,
+                                       OopClosure* keep_alive,
+                                       EnqueueDiscoveredFieldClosure* enqueue);
 
 
   void setup_policy(bool always_clear) {
@@ -298,6 +314,7 @@ public:
   // (or predicates involved) by other threads.
   void preclean_discovered_references(BoolObjectClosure* is_alive,
                                       OopClosure*        keep_alive,
+                                      EnqueueDiscoveredFieldClosure* enqueue,
                                       VoidClosure*       complete_gc,
                                       YieldClosure*      yield,
                                       GCTimer*           gc_timer);
@@ -314,6 +331,7 @@ private:
   bool preclean_discovered_reflist(DiscoveredList&    refs_list,
                                    BoolObjectClosure* is_alive,
                                    OopClosure*        keep_alive,
+                                   EnqueueDiscoveredFieldClosure* enqueue,
                                    VoidClosure*       complete_gc,
                                    YieldClosure*      yield);
 
@@ -328,8 +346,13 @@ private:
     return id;
   }
   DiscoveredList* get_discovered_list(ReferenceType rt);
-  inline void add_to_discovered_list_mt(DiscoveredList& refs_list, oop obj,
-                                        HeapWord* discovered_addr);
+  inline bool set_discovered_link(HeapWord* discovered_addr, oop next_discovered);
+  inline void add_to_discovered_list(DiscoveredList& refs_list, oop obj,
+                                     HeapWord* discovered_addr);
+  inline bool set_discovered_link_st(HeapWord* discovered_addr,
+                                     oop next_discovered);
+  inline bool set_discovered_link_mt(HeapWord* discovered_addr,
+                                     oop next_discovered);
 
   void clear_discovered_references(DiscoveredList& refs_list);
 
@@ -353,7 +376,7 @@ public:
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
-                     bool atomic_discovery = true,
+                     bool concurrent_discovery = false,
                      BoolObjectClosure* is_alive_non_header = NULL);
 
   // RefDiscoveryPolicy values
@@ -382,8 +405,9 @@ public:
   void disable_discovery()  { _discovering_refs = false; }
   bool discovery_enabled()  { return _discovering_refs;  }
 
-  // whether discovery is atomic wrt other collectors
-  bool discovery_is_atomic() const { return _discovery_is_atomic; }
+  // whether discovery is concurrent to the mutator, or done in an stw pause.
+  bool discovery_is_concurrent() const { return _discovery_is_concurrent; }
+  bool discovery_is_stw() const { return !discovery_is_concurrent(); }
 
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }
@@ -539,6 +563,12 @@ protected:
   uint tracker_id(uint worker_id) const {
     return _ref_processor.processing_is_mt() ? worker_id : 0;
   }
+
+  void process_discovered_list(uint worker_id,
+                               ReferenceType ref_type,
+                               BoolObjectClosure* is_alive,
+                               OopClosure* keep_alive,
+                               EnqueueDiscoveredFieldClosure* enqueue);
 public:
   RefProcTask(ReferenceProcessor& ref_processor,
               ReferenceProcessorPhaseTimes* phase_times)
@@ -548,6 +578,7 @@ public:
   virtual void rp_work(uint worker_id,
                        BoolObjectClosure* is_alive,
                        OopClosure* keep_alive,
+                       EnqueueDiscoveredFieldClosure* enqueue,
                        VoidClosure* complete_gc) = 0;
 };
 

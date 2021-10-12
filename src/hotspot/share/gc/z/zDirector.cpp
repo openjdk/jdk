@@ -212,8 +212,7 @@ ZDriverRequest rule_allocation_rate_dynamic() {
   // Calculate time until GC given the time until OOM and GC duration.
   // We also subtract the sample interval, so that we don't overshoot the
   // target time and end up starting the GC too late in the next interval.
-  const double more_safety_for_fewer_workers = (ConcGCThreads - actual_gc_workers) * sample_interval;
-  const double time_until_gc = time_until_oom - actual_gc_duration - sample_interval - more_safety_for_fewer_workers;
+  const double time_until_gc = time_until_oom - actual_gc_duration - sample_interval;
 
   log_debug(gc, director)("Rule: Allocation Rate (Dynamic GC Workers), "
                           "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: " SIZE_FORMAT "MB, GCCPUTime: %.3f, "

@@ -334,10 +334,6 @@ class Thread: public ThreadShadow {
   virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
-  // True iff the thread can perform GC operations at a safepoint.
-  // Generally will be true only of VM thread and parallel GC WorkGang
-  // threads.
-  virtual bool is_GC_task_thread() const             { return false; }
   virtual bool is_Watcher_thread() const             { return false; }
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }
@@ -806,37 +802,21 @@ class JavaThread: public Thread {
 
   // Asynchronous exceptions support
  private:
-  enum AsyncExceptionCondition {
-    _no_async_condition = 0,
-    _async_exception,
-    _async_unsafe_access_error
-  };
-  AsyncExceptionCondition _async_exception_condition;
-  oop                     _pending_async_exception;
+  oop     _pending_async_exception;
+#ifdef ASSERT
+  bool    _is_unsafe_access_error;
+#endif
 
-  void set_async_exception_condition(AsyncExceptionCondition aec) { _async_exception_condition = aec; }
-  AsyncExceptionCondition clear_async_exception_condition() {
-    AsyncExceptionCondition x = _async_exception_condition;
-    _async_exception_condition = _no_async_condition;
-    return x;
-  }
-
+  inline bool clear_async_exception_condition();
  public:
-  bool has_async_exception_condition(bool check_unsafe_access_error = true) {
-    return check_unsafe_access_error ? _async_exception_condition != _no_async_condition
-                                     : _async_exception_condition == _async_exception;
+  bool has_async_exception_condition() {
+    return (_suspend_flags & _has_async_exception) != 0;
   }
   inline void set_pending_async_exception(oop e);
-  void set_pending_unsafe_access_error()  {
-    // Don't overwrite an asynchronous exception sent by another thread
-    if (_async_exception_condition == _no_async_condition) {
-      set_async_exception_condition(_async_unsafe_access_error);
-    }
-  }
-  void check_and_handle_async_exceptions();
-  // Installs a pending exception to be inserted later
-  static void send_async_exception(oop thread_oop, oop java_throwable);
+  inline void set_pending_unsafe_access_error();
+  static void send_async_exception(JavaThread* jt, oop java_throwable);
   void send_thread_stop(oop throwable);
+  void check_and_handle_async_exceptions();
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -958,8 +938,8 @@ class JavaThread: public Thread {
   jlong*    _jvmci_counters;
 
   // Fast thread locals for use by JVMCI
-  intptr_t*  _jvmci_reserved0;
-  intptr_t*  _jvmci_reserved1;
+  jlong      _jvmci_reserved0;
+  jlong      _jvmci_reserved1;
   oop        _jvmci_reserved_oop0;
 
  public:
@@ -969,6 +949,30 @@ class JavaThread: public Thread {
   bool resize_counters(int current_size, int new_size);
 
   static bool resize_all_jvmci_counters(int new_size);
+
+  void set_jvmci_reserved_oop0(oop value) {
+    _jvmci_reserved_oop0 = value;
+  }
+
+  oop get_jvmci_reserved_oop0() {
+    return _jvmci_reserved_oop0;
+  }
+
+  void set_jvmci_reserved0(jlong value) {
+    _jvmci_reserved0 = value;
+  }
+
+  jlong get_jvmci_reserved0() {
+    return _jvmci_reserved0;
+  }
+
+  void set_jvmci_reserved1(jlong value) {
+    _jvmci_reserved1 = value;
+  }
+
+  jlong get_jvmci_reserved1() {
+    return _jvmci_reserved1;
+  }
 
  private:
 #endif // INCLUDE_JVMCI
@@ -1157,8 +1161,7 @@ class JavaThread: public Thread {
   // Return true if JavaThread has an asynchronous condition or
   // if external suspension is requested.
   bool has_special_runtime_exit_condition() {
-    return (_async_exception_condition != _no_async_condition) ||
-           (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
+    return (_suspend_flags & (_has_async_exception | _obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
   // Fast-locking support

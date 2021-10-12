@@ -239,7 +239,9 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+    bool dep_seen_x0 = note_dep_seen(dept, x0); // records x0 for future queries
+    bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+    if (dep_seen_x0 && dep_seen_x1) {
       // look in this bucket for redundant assertions
       const int stride = 2;
       for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -266,7 +268,10 @@ void Dependencies::assert_common_4(DepType dept,
   GrowableArray<ciBaseObject*>* deps = _deps[dept];
 
   // see if the same (or a similar) dep is already recorded
-  if (note_dep_seen(dept, x1) && note_dep_seen(dept, x2) && note_dep_seen(dept, x3)) {
+  bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+  bool dep_seen_x2 = note_dep_seen(dept, x2); // records x2 for future queries
+  bool dep_seen_x3 = note_dep_seen(dept, x3); // records x3 for future queries
+  if (dep_seen_x1 && dep_seen_x2 && dep_seen_x3) {
     // look in this bucket for redundant assertions
     const int stride = 4;
     for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -339,7 +344,9 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+    bool dep_seen_x0 = note_dep_seen(dept, x0); // records x0 for future queries
+    bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+    if (dep_seen_x0 && dep_seen_x1) {
       // look in this bucket for redundant assertions
       const int stride = 2;
       for (int i = deps->length(); (i -= stride) >= 0; ) {

@@ -34,7 +34,8 @@ package sun.security.krb5.internal;
 import java.io.IOException;
 import java.util.Vector;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import sun.security.krb5.Asn1Exception;
 import sun.security.krb5.internal.util.KerberosString;

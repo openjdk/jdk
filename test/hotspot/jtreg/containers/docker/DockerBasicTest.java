@@ -48,7 +48,7 @@ public class DockerBasicTest {
             return;
         }
 
-        DockerTestUtils.buildJdkDockerImage(imageNameAndTag, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageNameAndTag);
 
         try {
             testJavaVersion();

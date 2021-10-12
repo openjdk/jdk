@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8142968 8253751
+ * @bug 8142968 8253751 8262944
  * @library /test/lib
  * @build AutomaticModulesTest
  *        jdk.test.lib.util.JarUtils
@@ -35,6 +35,7 @@
 import java.io.IOException;
 import java.lang.module.Configuration;
 import java.lang.module.FindException;
+import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
 import java.lang.module.ModuleFinder;
@@ -434,10 +435,28 @@ public class AutomaticModulesTest {
         Files.write(services.resolve("p.S"), Set.of("q.P"));
 
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        JarUtils.createJarFile(dir.resolve("m.jar"), tmpdir);
+        Path jarfile = dir.resolve("m.jar");
+        JarUtils.createJarFile(jarfile, tmpdir);
 
-        // should throw FindException
-        ModuleFinder.of(dir).findAll();
+        // catch FindException, inspect its cause's type and details, and rethrow
+        var expectedMessage = "Provider class q.P not in JAR file " + jarfile.getFileName();
+        try {
+            ModuleFinder.of(dir).findAll();
+        } catch (FindException exception) {
+            if (exception.getCause() instanceof InvalidModuleDescriptorException imde) {
+                var actualMessage = imde.getMessage();
+                if (actualMessage.equals(expectedMessage)) {
+                    throw exception; // rethrow as expected
+                }
+                throw new AssertionError(
+                    """
+                    Unexpected detail message in InvalidModuleDescriptorException:
+                      Expected message -> '%s'
+                        Actual message -> '%s'
+                    """.formatted(expectedMessage, actualMessage));
+            }
+            throw new AssertionError("Unexpected exception cause: " + exception.getCause());
+        }
     }
 
     /**

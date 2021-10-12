@@ -56,7 +56,6 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
 public:
   HeapRegionRemSet(HeapRegion* hr, G1CardSetConfiguration* config);
 
-  // Setup sparse and fine-grain tables sizes.
   bool cardset_is_empty() const {
     return _card_set.is_empty();
   }

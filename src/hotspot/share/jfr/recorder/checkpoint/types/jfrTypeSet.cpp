@@ -1101,6 +1101,10 @@ void JfrTypeSet::clear() {
 }
 
 size_t JfrTypeSet::on_unloading_classes(JfrCheckpointWriter* writer) {
+  // JfrTraceIdEpoch::has_changed_tag_state_no_reset() is a load-acquire we issue to see side-effects (i.e. tags).
+  // The JfrRecorderThread does this as part of normal processing, but with concurrent class unloading, which can
+  // happen in arbitrary threads, we invoke it explicitly.
+  JfrTraceIdEpoch::has_changed_tag_state_no_reset();
   if (JfrRecorder::is_recording()) {
     return serialize(writer, NULL, true, false);
   }

@@ -23,14 +23,6 @@
  * questions.
  */
 
-/**
- *  A utility class.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
 
 package jdk.javadoc.internal.doclets.toolkit;
 
@@ -57,9 +49,13 @@ import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IdentifierTree;
+import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReferenceTree;
+import com.sun.source.doctree.ReturnTree;
+import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
@@ -67,7 +63,16 @@ import com.sun.source.util.TreePath;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
+/**
+ *  A utility class for handling documentation comments.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ */
 public class CommentUtils {
 
     final BaseConfiguration configuration;
@@ -96,31 +101,28 @@ public class CommentUtils {
     }
 
     public List<? extends DocTree> makePropertyDescriptionTree(List<? extends DocTree> content) {
-        List<DocTree> out = new ArrayList<>();
         Name name = elementUtils.getName("propertyDescription");
-        out.add(treeFactory.newUnknownBlockTagTree(name, content));
-        return out;
+        return List.of(treeFactory.newUnknownBlockTagTree(name, content));
     }
 
-    public List<? extends DocTree> makePropertyDescriptionTree(String content) {
-        List<DocTree> inlist = new ArrayList<>();
-        inlist.add(treeFactory.newCommentTree(content));
-        List<DocTree> out = new ArrayList<>();
-        Name name = elementUtils.getName("propertyDescription");
-        out.add(treeFactory.newUnknownBlockTagTree(name, inlist));
-        return out;
+    public LiteralTree makeCodeTree(String text) {
+        return treeFactory.newCodeTree(makeTextTree(text));
     }
 
     public List<? extends DocTree> makeFirstSentenceTree(String content) {
-        List<DocTree> out = new ArrayList<>();
-        out.add(treeFactory.newTextTree(content));
-        return out;
+        return List.of(treeFactory.newTextTree(content));
+    }
+
+    public ParamTree makeParamTree(Name name, List<? extends DocTree> description) {
+        return treeFactory.newParamTree(false, treeFactory.newIdentifierTree(name), description);
+    }
+
+    public ReturnTree makeReturnTree(List<? extends DocTree> description) {
+        return treeFactory.newReturnTree(false, description);
     }
 
     public DocTree makeSeeTree(String sig, Element e) {
-        List<DocTree> list = new ArrayList<>();
-        list.add(treeFactory.newReferenceTree(sig));
-        return treeFactory.newSeeTree(list);
+        return treeFactory.newSeeTree(List.of(treeFactory.newReferenceTree(sig)));
     }
 
     public TextTree makeTextTree(String content) {
@@ -189,7 +191,6 @@ public class CommentUtils {
                 makeDescriptionWithName("doclet.record_constructor_doc.fullbody", te.getSimpleName());
 
         List<DocTree> tags = new ArrayList<>();
-        java.util.List<? extends VariableElement> parameters = ee.getParameters();
         for (VariableElement param : ee.getParameters()) {
             Name name = param.getSimpleName();
             IdentifierTree id = treeFactory.newIdentifierTree(name);
@@ -318,6 +319,107 @@ public class CommentUtils {
         dcInfoMap.put(ve, new DocCommentInfo(null, docTree));
     }
 
+
+    /**
+     * Update the property method, property setter and/or property getter
+     * comment text so that it contains the documentation from
+     * the preferred property description (field or property method).
+     * The method adds the leading sentence, copied documentation including
+     * the defaultValue tag and the {@code @see} tags if the appropriate methods are
+     * available.
+     *
+     * @param member the member which is to be augmented
+     * @param property the element containing the preferred property description
+     */
+    public void updatePropertyMethodComment(ExecutableElement member,
+                                 Element property) {
+        final String memberName = member.getSimpleName().toString();
+        final boolean isSetter = memberName.startsWith("set");
+        final boolean isGetter = memberName.startsWith("get") || memberName.startsWith("is");
+
+        List<DocTree> fullBody = new ArrayList<>();
+        List<DocTree> blockTags = new ArrayList<>();
+
+        if (isGetter || isSetter) {
+            DocTree propName = makeCodeTree(utils.propertyName(member));
+
+            if (isGetter) {
+                // Set the body and @return
+                fullBody.addAll(getComment("doclet.PropertyGetterWithName", propName));
+                blockTags.add(makeReturnTree(
+                        getComment("doclet.PropertyGetterReturn", propName)));
+            }
+
+            if (isSetter) {
+                // Set the body and @param
+                fullBody.addAll(getComment("doclet.PropertySetterWithName", propName));
+                VariableElement arg0 = member.getParameters().get(0);
+                blockTags.add(makeParamTree(arg0.getSimpleName(),
+                        getComment("doclet.PropertySetterParam", propName)));
+            }
+
+            // Set the @propertyDescription
+            List<? extends DocTree> propertyTags = utils.getBlockTags(property,
+                    t -> (t instanceof UnknownBlockTagTree tree)
+                            && (tree.getTagName().equals("propertyDescription")));
+            if (propertyTags.isEmpty()) {
+                List<? extends DocTree> comment = utils.getFullBody(property);
+                blockTags.addAll(makePropertyDescriptionTree(comment));
+            }
+        } else {
+            // property method
+            fullBody.addAll(utils.getFullBody(property));
+
+            // Set the @return
+            DocTree propName = makeCodeTree(configuration.propertyUtils.getBaseName(member));
+            List<? extends DocTree> returnTags = utils.getBlockTags(property, DocTree.Kind.RETURN);
+            if (returnTags.isEmpty()) {
+                blockTags.add(makeReturnTree(
+                        getComment("doclet.PropertyMethodReturn", propName)));
+            } else {
+                blockTags.addAll(returnTags);
+            }
+        }
+
+        // copy certain tags
+        List<? extends SinceTree> sinceTags = utils.getBlockTags(property, DocTree.Kind.SINCE, SinceTree.class);
+        blockTags.addAll(sinceTags);
+
+        List<? extends DocTree> bTags = utils.getBlockTags(property,
+                t -> (t instanceof UnknownBlockTagTree tree)
+                        && (tree.getTagName().equals("defaultValue")));
+        blockTags.addAll(bTags);
+
+        //add @see tags
+        TypeElement te = (TypeElement) member.getEnclosingElement();
+        VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
+        ExecutableElement getter = vmt.getPropertyGetter(member);
+        ExecutableElement setter = vmt.getPropertySetter(member);
+        ExecutableElement propMethod = vmt.getPropertyMethod(member);
+
+        if (getter != null && getter != member) {
+            String sig = "#" + getter.getSimpleName() + "()";
+            blockTags.add(makeSeeTree(sig, getter));
+        }
+
+        if (setter != null && setter != member) {
+            VariableElement param = setter.getParameters().get(0);
+            StringBuilder sb = new StringBuilder("#");
+            sb.append(setter.getSimpleName());
+            if (!utils.isTypeVariable(param.asType())) {
+                sb.append("(").append(utils.getTypeSignature(param.asType(), false, true)).append(")");
+            }
+            blockTags.add(makeSeeTree(sb.toString(), setter));
+        }
+
+        if (propMethod != member) {
+            String sig = "#" + propMethod.getSimpleName() + "()";
+            blockTags.add(makeSeeTree(sig, propMethod));
+        }
+
+        setDocCommentTree(member, fullBody, blockTags);
+    }
+
     /**
      * Creates a description that contains a reference to a state component of a record.
      * The description is looked up as a resource, and should contain {@code {0}} where the
@@ -401,6 +503,59 @@ public class CommentUtils {
         }
     }
 
+    /**
+     * Returns a list containing the string for a given key in the doclet's resources,
+     * formatted with given arguments.
+     *
+     * @param key the key for the desired string
+     * @param o0  string or tree argument to be formatted into the result
+     * @return a content tree for the text
+     */
+    public List<? extends DocTree> getComment(String key, Object o0) {
+        return getComment(key, o0, null, null);
+    }
+
+    /**
+     * Returns a list containing the string for a given key in the doclet's resources,
+     * formatted with given arguments.
+     *
+     * @param key the key for the desired string
+     * @param o0  string or tree argument to be formatted into the result
+     * @param o1  string or tree argument to be formatted into the result
+     * @param o2  string or tree argument to be formatted into the result
+     * @return a content tree for the text
+     */
+    public List<? extends DocTree> getComment(String key, Object o0, Object o1, Object o2) {
+        List<DocTree> l = new ArrayList<>();
+        Pattern p = Pattern.compile("\\{([012])\\}");
+        String text = resources.getText(key);
+        Matcher m = p.matcher(text);
+        int start = 0;
+        while (m.find(start)) {
+            l.add(makeTextTree(text.substring(start, m.start())));
+
+            Object o = null;
+            switch (m.group(1).charAt(0)) {
+                case '0': o = o0; break;
+                case '1': o = o1; break;
+                case '2': o = o2; break;
+            }
+
+            if (o == null) {
+                l.add(makeTextTree("{" + m.group(1) + "}"));
+            } else if (o instanceof String str) {
+                l.add(makeTextTree(str));
+            } else if (o instanceof DocTree t) {
+                l.add(t);
+            }
+
+            start = m.end();
+        }
+
+        l.add(makeTextTree(text.substring(start)));
+        return l;
+    }
+
     /*
      * Returns the TreePath/DocCommentTree info that has been generated for an element.
      * @param e the element
@@ -453,13 +608,18 @@ public class CommentUtils {
         });
     }
 
-    public void setDocCommentTree(Element element, List<? extends DocTree> fullBody,
+    public DocCommentInfo setDocCommentTree(Element element, List<? extends DocTree> fullBody,
                                   List<? extends DocTree> blockTags) {
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, blockTags);
-        dcInfoMap.put(element, new DocCommentInfo(null, docTree));
+        return setDocCommentInfo(element, new DocCommentInfo(null, docTree));
+    }
+
+    public DocCommentInfo setDocCommentInfo(Element element, DocCommentInfo dci) {
+        DocCommentInfo prev = dcInfoMap.put(element, dci);
         // A method having null comment (no comment) that might need to be replaced
         // with a generated comment, remove such a comment from the cache.
         utils.removeCommentHelper(element);
+        return prev;
     }
 
     /**

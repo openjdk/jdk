@@ -131,6 +131,8 @@ public:
   Node* find_mem(Node* ctrl, Node* n) const;
   void fix_mem(Node* ctrl, Node* region, Node* mem, Node* mem_for_ctrl, Node* mem_phi, Unique_Node_List& uses);
   int alias() const { return _alias; }
+
+  Node* collect_memory_for_infinite_loop(const Node* in);
 };
 
 class ShenandoahCompareAndSwapPNode : public CompareAndSwapPNode {

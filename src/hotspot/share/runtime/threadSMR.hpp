@@ -328,6 +328,10 @@ public:
     return _list_ptr.list();
   }
 
+  using Iterator = ThreadsList::Iterator;
+  inline Iterator begin();
+  inline Iterator end();
+
   template <class T>
   void threads_do(T *cl) const {
     return list()->threads_do(cl);

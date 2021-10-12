@@ -784,7 +784,7 @@ public class TransTypes extends TreeTranslator {
             Type.IntersectionClassType ict = (Type.IntersectionClassType)originalTarget;
             for (Type c : ict.getExplicitComponents()) {
                 Type ec = erasure(c);
-                if (!types.isSameType(ec, tree.type)) {
+                if (!types.isSameType(ec, tree.type) && (!types.isSameType(ec, pt))) {
                     tree.expr = coerce(tree.expr, ec);
                 }
             }

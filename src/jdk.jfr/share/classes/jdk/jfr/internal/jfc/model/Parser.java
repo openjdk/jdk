@@ -26,7 +26,6 @@ package jdk.jfr.internal.jfc.model;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayDeque;
@@ -39,10 +38,12 @@ import jdk.internal.org.xml.sax.helpers.DefaultHandler;
 import jdk.internal.util.xml.SAXParser;
 import jdk.internal.util.xml.impl.SAXParserImpl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 final class Parser {
 
     static XmlConfiguration parse(Path path) throws ParseException, IOException {
-        try (FileReader r = new FileReader(path.toFile(), Charset.forName("UTF-8"))) {
+        try (FileReader r = new FileReader(path.toFile(), UTF_8)) {
             SAXParser saxParser = new SAXParserImpl();
             ConfigurationHandler handler = new ConfigurationHandler();
             saxParser.parse(new InputSource(r), handler);

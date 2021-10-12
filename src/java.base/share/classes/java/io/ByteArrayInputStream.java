@@ -102,7 +102,7 @@ public class ByteArrayInputStream extends InputStream {
      *
      * @param   buf   the input buffer.
      */
-    public ByteArrayInputStream(byte buf[]) {
+    public ByteArrayInputStream(byte[] buf) {
         this.buf = buf;
         this.pos = 0;
         this.count = buf.length;
@@ -122,7 +122,7 @@ public class ByteArrayInputStream extends InputStream {
      * @param   offset   the offset in the buffer of the first byte to read.
      * @param   length   the maximum number of bytes to read from the buffer.
      */
-    public ByteArrayInputStream(byte buf[], int offset, int length) {
+    public ByteArrayInputStream(byte[] buf, int offset, int length) {
         this.buf = buf;
         this.pos = offset;
         this.count = Math.min(offset + length, buf.length);
@@ -173,7 +173,7 @@ public class ByteArrayInputStream extends InputStream {
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}
      */
-    public synchronized int read(byte b[], int off, int len) {
+    public synchronized int read(byte[] b, int off, int len) {
         Objects.checkFromIndexSize(off, len, b.length);
 
         if (pos >= count) {
