@@ -281,7 +281,7 @@ static int save(const StoredEdge* edge) {
   return _leak_context_edges->append(edge);
 }
 
-// We associated the leak context edge with the leak candidate object by saving the
+// We associate the leak context edge with the leak candidate object by saving the
 // edge in an array and storing the array idx (shifted) into the markword of the candidate object.
 static void associate_with_candidate(const StoredEdge* leak_context_edge) {
   assert(leak_context_edge != nullptr, "invariant");
