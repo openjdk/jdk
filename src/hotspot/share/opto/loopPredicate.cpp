@@ -749,21 +749,6 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
   if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, &scale, &offset, bt)) {
     return false;
   }
-#ifdef ASSERT
-  if (offset && phase->has_ctrl(offset)) {
-    Node* offset_ctrl = phase->get_ctrl(offset);
-    if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
-        phase->is_dominator(predicate_proj, offset_ctrl)) {
-      // If the control of offset is loop predication promoted by previous pass,
-      // then it will lead to cyclic dependency.
-      // Previously promoted loop predication is in the same loop of predication
-      // point.
-      // This situation can occur when pinning nodes too conservatively - can we do better?
-      assert(false, "cyclic dependency prevents range check elimination, idx: offset %d, offset_ctrl %d, predicate_proj %d",
-             offset->_idx, offset_ctrl->_idx, predicate_proj->_idx);
-    }
-  }
-#endif
   return true;
 }
 
@@ -779,6 +764,21 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
     if (offset && !invar.is_invariant(offset)) { // offset must be invariant
       return false;
     }
+#ifdef ASSERT
+    if (offset && phase->has_ctrl(offset)) {
+      Node* offset_ctrl = phase->get_ctrl(offset);
+      if (phase->get_loop(predicate_proj) == phase->get_loop(offset_ctrl) &&
+          phase->is_dominator(predicate_proj, offset_ctrl)) {
+        // If the control of offset is loop predication promoted by previous pass,
+        // then it will lead to cyclic dependency.
+        // Previously promoted loop predication is in the same loop of predication
+        // point.
+        // This situation can occur when pinning nodes too conservatively - can we do better?
+        assert(false, "cyclic dependency prevents range check elimination, idx: offset %d, offset_ctrl %d, predicate_proj %d",
+               offset->_idx, offset_ctrl->_idx, predicate_proj->_idx);
+      }
+    }
+#endif
     return true;
   }
   return false;
