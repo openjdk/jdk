@@ -516,7 +516,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @param i the lane index
      *
      * @return true if the lane at index {@code i} is set, otherwise false
-     * @throws IndexOutOfBoundsException if the index is is out of range
+     * @throws IndexOutOfBoundsException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract boolean laneIsSet(int i);
