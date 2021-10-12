@@ -42,6 +42,8 @@ import java.util.ServiceLoader;
  * <p>
  * Resolver providers are located using the {@link ServiceLoader} facility, as specified by
  * {@link InetAddress}.
+ *
+ * @since 18
  */
 public abstract class InetAddressResolverProvider {
 
@@ -109,6 +111,8 @@ public abstract class InetAddressResolverProvider {
      * system-wide custom resolver implementation.
      * The custom resolver implementation can then delegate to the built-in resolver
      * provided by this interface if it needs to.
+     *
+     * @since 18
      */
     public sealed interface Configuration permits ResolverProviderConfiguration {
         /**

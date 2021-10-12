@@ -41,6 +41,8 @@ import java.util.stream.Stream;
  * The <i>system-wide resolver</i> can be customized by
  * <a href="{@docRoot}/java.base/java/net/InetAddress.html#resolverProviders">deploying an implementation</a>
  * of {@link InetAddressResolverProvider}.
+ *
+ * @since 18
  */
 public interface InetAddressResolver {
 
@@ -91,6 +93,8 @@ public interface InetAddressResolver {
      * The default platform-wide lookup policy is constructed by consulting
      * <a href="doc-files/net-properties.html#Ipv4IPv6">System Properties</a> which affect
      * how IPv4 and IPv6 addresses are returned.
+     *
+     * @since 18
      */
     final class LookupPolicy {
 
