@@ -328,10 +328,10 @@ public abstract class StringConcat {
                     }
                     if (!first || generateFirstArg) {
                         gen.genExpr(arg, arg.type).load();
-                        if (shouldConvertToStringEagerly(argType)) {
-                            gen.callMethod(pos, syms.stringType, names.valueOf, List.of(syms.objectType), true);
-                            argType = syms.stringType;
-                        }
+                    }
+                    if (shouldConvertToStringEagerly(argType)) {
+                        gen.callMethod(pos, syms.stringType, names.valueOf, List.of(syms.objectType), true);
+                        argType = syms.stringType;
                     }
                     dynamicArgs.add(argType);
                     first = false;
@@ -435,10 +435,10 @@ public abstract class StringConcat {
                         Type argType = arg.type;
                         if (!first || generateFirstArg) {
                             gen.genExpr(arg, arg.type).load();
-                            if (shouldConvertToStringEagerly(argType)) {
-                                gen.callMethod(pos, syms.stringType, names.valueOf, List.of(syms.objectType), true);
-                                argType = syms.stringType;
-                            }
+                        }
+                        if (shouldConvertToStringEagerly(argType)) {
+                            gen.callMethod(pos, syms.stringType, names.valueOf, List.of(syms.objectType), true);
+                            argType = syms.stringType;
                         }
                         dynamicArgs.add(argType);
                         first = false;

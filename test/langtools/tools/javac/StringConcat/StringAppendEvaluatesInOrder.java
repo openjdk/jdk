@@ -46,9 +46,21 @@ public class StringAppendEvaluatesInOrder {
         return "Test: " + i + " " + (++i) + builder + builder.append("bar");
     }
 
+    static String compoundAssignment() {
+        StringBuilder builder2 = new StringBuilder("foo");
+        Object oo = builder2;
+        oo += "" + builder2.append("bar");
+        return oo.toString();
+    }
+
     public static void main(String[] args) throws Exception {
-        if (!test().equals("Test: 15 16foofoobar")) {
-            throw new Exception();
-        }
+        assertEquals(test(), "Test: 15 16foofoobar");
+        assertEquals(compoundAssignment(), "foofoobar");
+    }
+
+    private static void assertEquals(String actual, String expected) {
+      if (!actual.equals(expected)) {
+        throw new AssertionError("expected: " + expected + ", actual: " + actual);
+      }
     }
 }
