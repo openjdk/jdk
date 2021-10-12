@@ -31,6 +31,7 @@ import java.security.AccessController;
 import java.util.Set;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.Stable;
 
 /** Base class for jdk.internal.misc.Unsafe-based FieldAccessors for static
     fields. The observation is that there are only nine types of
@@ -45,6 +46,7 @@ abstract class UnsafeStaticFieldAccessorImpl extends UnsafeFieldAccessorImpl {
                                           Set.of("base"));
     }
 
+    @Stable
     protected final Object base; // base
 
     UnsafeStaticFieldAccessorImpl(Field field) {

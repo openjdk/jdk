@@ -2514,6 +2514,7 @@ public final class Files {
      *          read access to the file.
      *
      * @see #notExists
+     * @see FileSystemProvider#checkAccess
      */
     public static boolean exists(Path path, LinkOption... options) {
         if (options.length == 0) {
@@ -3110,7 +3111,7 @@ public final class Files {
      * @throws  DirectoryNotEmptyException
      *          the {@code REPLACE_EXISTING} option is specified but the file
      *          cannot be replaced because it is a non-empty directory
-     *          <i>(optional specific exception)</i>     *
+     *          <i>(optional specific exception)</i>
      * @throws  UnsupportedOperationException
      *          if {@code options} contains a copy option that is not supported
      * @throws  SecurityException

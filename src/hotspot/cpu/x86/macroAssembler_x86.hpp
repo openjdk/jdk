@@ -194,6 +194,8 @@ class MacroAssembler: public Assembler {
   void incrementq(AddressLiteral dst);
 
   // Alignment
+  void align32();
+  void align64();
   void align(int modulus);
   void align(int modulus, int target);
 
@@ -1724,7 +1726,7 @@ public:
 
   void encode_iso_array(Register src, Register dst, Register len,
                         XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
-                        XMMRegister tmp4, Register tmp5, Register result);
+                        XMMRegister tmp4, Register tmp5, Register result, bool ascii);
 
 #ifdef _LP64
   void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2);

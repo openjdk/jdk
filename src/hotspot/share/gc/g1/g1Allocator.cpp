@@ -475,7 +475,6 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
       // Non-zero space; need to insert the filler
       size_t fill_size = free_words;
       CollectedHeap::fill_with_object(old_top, fill_size);
-      _summary_bytes_used += fill_size * HeapWordSize;
     }
     // Set the current chunk as "full"
     _allocation_region->set_top(_max);
@@ -495,7 +494,6 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
   }
   assert(pointer_delta(_max, old_top) >= word_size, "enough space left");
   _allocation_region->set_top(old_top + word_size);
-  _summary_bytes_used += word_size * HeapWordSize;
 
   return old_top;
 }
