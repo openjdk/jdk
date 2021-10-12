@@ -141,7 +141,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     // An InputStream based on a pipe to the target VM
-    private class PipedInputStream extends InputStream {
+    private static class PipedInputStream extends InputStream {
 
         private long hPipe;
 
