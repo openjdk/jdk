@@ -24,25 +24,34 @@
  */
 
 import javax.security.auth.Subject;
+import java.security.AccessController;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
  * @test
  * @bug 8267108
- * @summary confirm current installed subject specification
- * @run main CurrentInstalledSubject
- * @run main/othervm -Djava.security.manager=allow CurrentInstalledSubject
+ * @summary confirm current subject specification
+ * @run main/othervm
+ *      -Djdk.security.auth.subject.useTL=false -Dtest=both CurrentSubject
+ * @run main/othervm
+ *      -Djdk.security.auth.subject.useTL=true -Dtest=old CurrentSubject
+ * @run main/othervm
+ *      -Djdk.security.auth.subject.useTL=true -Dtest=new CurrentSubject
  */
-public class CurrentInstalledSubject {
+public class CurrentSubject {
+
+    static final boolean TEST_NEW = !System.getProperty("test").equals("old");
+    static final boolean TEST_OLD = !System.getProperty("test").equals("new");
 
     static transient boolean failed = false;
     static CountDownLatch cl = new CountDownLatch(1);
     static AtomicInteger count = new AtomicInteger();
 
     public static void main(String[] args) throws Exception {
-        // At the beginning, CIS is null
+        // At the beginning, current subject is null
         test("", null);
         cl.await();
         if (failed) {
@@ -51,40 +60,49 @@ public class CurrentInstalledSubject {
     }
 
     /**
-     * Ensure the CIS is the expected Subject objet.
+     * Ensure the current subject is the expected Subject objet.
      *
      * @param label label to print out
      * @param expected the expected Subject
      */
     synchronized static void check(String label, Subject expected) {
         Subject cas = Subject.current();
-        if (cas != expected) {
+        Subject accs = Subject.getSubject(AccessController.getContext());
+        if (TEST_NEW && TEST_OLD && cas != accs) {
+            failed = true;
+            System.out.println(label + ": current " + s2s(cas)
+                    + " but getSubject is " + s2s(accs));
+        }
+        Subject interested = TEST_NEW ? cas : accs;
+        if (interested != expected) {
             failed = true;
             System.out.println(label + ": expected " + s2s(expected)
-                    + " but see " + s2s(cas));
+                    + " but see " + s2s(interested));
         } else {
             System.out.println(label + ": " + s2s(expected));
         }
     }
 
     /**
-     * Recursively testing on CIS with getAs() and thread creations.
+     * Recursively testing on current subject with getAs() and thread creations.
      *
      * @param name the current label
      * @param expected the expected Subject
      */
     static Void test(String name, Subject expected) {
-        // Now it's the expected CIS
+        // Now it's the expected current subject
         check(" ".repeat(name.length()) + "-> " + name, expected);
         // Recursively check, do not go infinity
         if (name.length() < 4) {
             Subject another = new Subject();
             another.getPrincipals().add(new RawPrincipal(name + "d"));
-            // run with a new subject, inside CIS will be the new subject
-            Subject.getAs(another, () -> test(name + 'd', another));
-            // run with null, inside CIS will be null
-            Subject.getAs(null, () -> test(name + '0', null));
-            // new thread, inside CIS is unchanged
+            // run with a new subject, inside current subject will be the new subject
+            if (TEST_NEW) Subject.callAs(another, () -> test(name + 'c', another));
+            if (TEST_OLD) Subject.doAs(another, (PrivilegedAction<Void>) () -> test(name + 'd', another));
+            // run with null, inside current subject will be null
+            if (TEST_NEW) Subject.callAs(null, () -> test(name + 'C', null));
+            if (TEST_OLD) Subject.doAs(null, (PrivilegedAction<Void>) () -> test(name + 'D', null));
+            // new thread, inside current subject is unchanged
             count.incrementAndGet();
             new Thread(() -> {
                 try {
@@ -95,7 +113,8 @@ public class CurrentInstalledSubject {
                         throw new AssertionError(e);
                     }
                     // by this time, parent thread should have exited the
-                    // action and CIS reset, but here CIS unchanged.
+                    // action and current subject reset, but here
+                    // current subject unchanged.
                     test(name + 'T', expected);
                 } finally {
                     var n = count.decrementAndGet();
