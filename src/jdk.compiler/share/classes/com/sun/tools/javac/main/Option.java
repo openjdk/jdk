@@ -513,10 +513,7 @@ public enum Option {
 
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
-            String message = "-J is not valid here (e.g. in an @argfile): pass -J"
-                + arg
-                + " arguments directly to the launcher";
-            throw helper.newInvalidValueException(Errors.InvalidFlag(message));
+            throw helper.newInvalidValueException(Errors.InvalidFlag(option + arg));
         }
     },
 
