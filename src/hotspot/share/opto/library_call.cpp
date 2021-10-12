@@ -6205,7 +6205,7 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   if (objSessionK == NULL) {
     return (Node *) NULL;
   }
-  Node* objAESCryptKey = load_array_element(control(), objSessionK, intcon(0), TypeAryPtr::OOPS);
+  Node* objAESCryptKey = load_array_element(objSessionK, intcon(0), TypeAryPtr::OOPS, /* set_ctrl */ true);
 #else
   Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I");
 #endif // PPC64
@@ -6794,14 +6794,19 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   ciKlass* klass = ciTypeArrayKlass::make(T_LONG);
   Node* klass_node = makecon(TypeKlassPtr::make(klass));
 
-  // htbl entries is set to 96 only fox x86-64
+  // Does this target support this intrinsic?
   if (Matcher::htbl_entries == -1) return false;
 
-  // new array to hold 48 computed htbl entries
-  Node* subkeyHtbl_48_entries = new_array(klass_node, intcon(Matcher::htbl_entries), 0);
-  if (subkeyHtbl_48_entries == NULL) return false;
-
-  Node* subkeyHtbl_48_entries_start = array_element_address(subkeyHtbl_48_entries, intcon(0), T_LONG);
+  Node* subkeyHtbl_48_entries_start;
+  if (Matcher::htbl_entries != 0) {
+    // new array to hold 48 computed htbl entries
+    Node* subkeyHtbl_48_entries = new_array(klass_node, intcon(Matcher::htbl_entries), 0);
+    if (subkeyHtbl_48_entries == NULL) return false;
+    subkeyHtbl_48_entries_start = array_element_address(subkeyHtbl_48_entries, intcon(0), T_LONG);
+  } else {
+    // This target doesn't need the extra-large Htbl.
+    subkeyHtbl_48_entries_start = ConvL2X(intcon(0));
+  }
 
   // Call the stub, passing params
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,

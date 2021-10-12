@@ -356,26 +356,27 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       }
 
       // read CDSFileMapHeaderBase from the file
-      memset(&header, 0, sizeof(CDSFileMapHeaderBase));
-      if ((n = read(fd, &header, sizeof(CDSFileMapHeaderBase)))
-           != sizeof(CDSFileMapHeaderBase)) {
+      size_t header_size = sizeof(CDSFileMapHeaderBase);
+      memset(&header, 0, header_size);
+      if ((n = read(fd, &header, header_size))
+           != header_size) {
         print_debug("can't read shared archive file map header from %s\n", classes_jsa);
         close(fd);
         return false;
       }
 
       // check file magic
-      if (header._magic != CDS_ARCHIVE_MAGIC) {
+      if (header._generic_header._magic != CDS_ARCHIVE_MAGIC) {
         print_debug("%s has bad shared archive file magic number 0x%x, expecting 0x%x\n",
-                    classes_jsa, header._magic, CDS_ARCHIVE_MAGIC);
+                    classes_jsa, header._generic_header._magic, CDS_ARCHIVE_MAGIC);
         close(fd);
         return false;
       }
 
       // check version
-      if (header._version != CURRENT_CDS_ARCHIVE_VERSION) {
+      if (header._generic_header._version != CURRENT_CDS_ARCHIVE_VERSION) {
         print_debug("%s has wrong shared archive file version %d, expecting %d\n",
-                     classes_jsa, header._version, CURRENT_CDS_ARCHIVE_VERSION);
+                     classes_jsa, header._generic_header._version, CURRENT_CDS_ARCHIVE_VERSION);
         close(fd);
         return false;
       }

@@ -127,7 +127,7 @@ public abstract class SunToolkit extends Toolkit
         if (AccessController.doPrivileged(new GetBooleanAction("sun.awt.nativedebug"))) {
             DebugSettings.init();
         }
-        touchKeyboardAutoShowIsEnabled = Boolean.valueOf(
+        touchKeyboardAutoShowIsEnabled = Boolean.parseBoolean(
             GetPropertyAction.privilegedGetProperty(
                 "awt.touchKeyboardAutoShowIsEnabled", "true"));
     };
@@ -1767,8 +1767,7 @@ public abstract class SunToolkit extends Toolkit
                          new GetPropertyAction("awt.useSystemAAFontSettings"));
             }
             if (systemAAFonts != null) {
-                useSystemAAFontSettings =
-                    Boolean.valueOf(systemAAFonts).booleanValue();
+                useSystemAAFontSettings = Boolean.parseBoolean(systemAAFonts);
                 /* If it is anything other than "true", then it may be
                  * a hint name , or it may be "off, "default", etc.
                  */
@@ -1803,8 +1802,8 @@ public abstract class SunToolkit extends Toolkit
         if (useSystemAAFontSettings()) {
              Toolkit tk = Toolkit.getDefaultToolkit();
              if (tk instanceof SunToolkit) {
-                 Object map = ((SunToolkit)tk).getDesktopAAHints();
-                 return (RenderingHints)map;
+                 RenderingHints map = ((SunToolkit)tk).getDesktopAAHints();
+                 return map;
              } else { /* Headless Toolkit */
                  return null;
              }
