@@ -206,7 +206,7 @@ ShenandoahCardCluster<RememberedSet>::register_object_wo_lock(HeapWord* address)
 template<typename RememberedSet>
 inline void
 ShenandoahCardCluster<RememberedSet>::coalesce_objects(HeapWord* address, size_t length_in_words) {
-#ifdef FAST_REMEMBERED_SET_SCANNING
+
   size_t card_at_start = _rs->card_index_for_addr(address);
   HeapWord *card_start_address = _rs->addr_for_card_index(card_at_start);
   size_t card_at_end = card_at_start + ((address + length_in_words) - card_start_address) / CardTable::card_size_in_words;
@@ -246,136 +246,28 @@ ShenandoahCardCluster<RememberedSet>::coalesce_objects(HeapWord* address, size_t
     //  card_at_end had an object that starts after the coalesced object, so no changes required for card_at_end
 
   }
-#else  // FAST_REMEMBERED_SET_SCANNING
-  // Do nothing for now as we have a brute-force implementation
-  // of findSpanningObject().
-#endif // FAST_REMEMBERED_SET_SCANNING
 }
 
 
 template<typename RememberedSet>
 inline bool
 ShenandoahCardCluster<RememberedSet>::has_object(size_t card_index) {
-#ifdef FAST_REMEMBERED_SET_SCANNING
-  if (object_starts[card_index] & ObjectStartsInCardRegion)
-    return true;
-  else
-    return false;
-#else // FAST_REMEMBERED_SET_SCANNING'
-  ShenandoahHeap *heap = ShenandoahHeap::heap();
-  HeapWord *addr = _rs->addr_for_card_index(card_index);
-  ShenandoahHeapRegion *region = heap->heap_region_containing(addr);
-
-  // region->block_start(addr) is not robust to inquiries beyond top() and it crashes.
-  if (region->top() <= addr)
-    return false;
-
-  // region->block_start(addr) is also not robust to inquiries within a humongous continuation region.
-  // if region is humongous continuation, no object starts within it.
-  if (region->is_humongous_continuation())
-    return false;
-
-  HeapWord *obj = region->block_start(addr);
-
-  // addr is the first address of the card region.
-  // obj is the object that spans addr (or starts at addr).
-  assert(obj != NULL, "Object cannot be null");
-  if (obj >= addr)
-    return true;
-  else {
-    HeapWord *end_addr = addr + CardTable::card_size_in_words;
-
-    // end_addr needs to be adjusted downward if top address of the enclosing region is less than end_addr.  this is intended
-    // to be slow and reliable alternative to the planned production quality replacement, so go ahead and spend some extra
-    // cycles here in order to make this code reliable.
-    if (region->top() < end_addr) {
-      end_addr = region->top();
-    }
-
-    obj += oop(obj)->size();
-    if (obj < end_addr)
-      return true;
-    else
-      return false;
-  }
-#endif // FAST_REMEMBERED_SET_SCANNING'
+  return object_starts[card_index] & ObjectStartsInCardRegion;
 }
 
 template<typename RememberedSet>
 inline size_t
 ShenandoahCardCluster<RememberedSet>::get_first_start(size_t card_index) {
-#ifdef FAST_REMEMBERED_SET_SCANNING
   assert(object_starts[card_index] & ObjectStartsInCardRegion, "Can't get first start because no object starts here");
   return (object_starts[card_index] & FirstStartBits) >> FirstStartShift;
-#else  // FAST_REMEMBERED_SET_SCANNING
-  HeapWord *addr = _rs->addr_for_card_index(card_index);
-  ShenandoahHeap *heap = ShenandoahHeap::heap();
-  ShenandoahHeapRegion *region = heap->heap_region_containing(addr);
-
-  HeapWord *obj = region->block_start(addr);
-
-  assert(obj != NULL, "Object cannot be null.");
-  if (obj >= addr)
-    return obj - addr;
-  else {
-    HeapWord *end_addr = addr + CardTable::card_size_in_words;
-    obj += oop(obj)->size();
-
-    // If obj > end_addr, offset will reach beyond end of this card
-    // region.  But clients should not invoke this service unless
-    // they first confirm that this card has an object.
-    assert(obj < end_addr, "Object out of range");
-    return obj - addr;
-  }
-#endif  // FAST_REMEMBERED_SET_SCANNING
 }
 
 template<typename RememberedSet>
 inline size_t
 ShenandoahCardCluster<RememberedSet>::get_last_start(size_t card_index) {
-#ifdef FAST_REMEMBERED_SET_SCANNING
   assert(object_starts[card_index] & ObjectStartsInCardRegion, "Can't get last start because no objects starts here");
   return (object_starts[card_index] & LastStartBits) >> LastStartShift;
-#else  // FAST_REMEMBERED_SET_SCANNING
-  HeapWord *addr = _rs->addr_for_card_index(card_index);
-  HeapWord *end_addr = addr + CardTable::card_size_in_words;
-  ShenandoahHeap *heap = ShenandoahHeap::heap();
-  ShenandoahHeapRegion *region = heap->heap_region_containing(addr);
-  HeapWord *obj = region->block_start(addr);
-  assert(obj != NULL, "Object cannot be null.");
-
-  if (region->top() <= end_addr) {
-    end_addr = region->top();
-  }
-
-  HeapWord *end_obj = obj + oop(obj)->size();
-  while (end_obj < end_addr) {
-    obj = end_obj;
-    end_obj = obj + oop(obj)->size();
-  }
-  assert(obj >= addr, "Object out of range.");
-  return obj - addr;
-#endif  // FAST_REMEMBERED_SET_SCANNING
 }
-
-#ifdef CROSSING_OFFSETS_NO_LONGER_NEEDED
-template<typename RememberedSet>
-inline size_t
-ShenandoahCardCluster<RememberedSet>::get_crossing_object_start(size_t card_index) {
-  HeapWord *addr = _rs->addr_for_card_index(card_index);
-  size_t cluster_no = card_index / ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
-  HeapWord *cluster_addr = _rs->addr_for_card_index(cluster_no * CardsPerCluster);
-
-  ShenandoahHeap *heap = ShenandoahHeap::heap();
-  ShenandoahHeapRegion *region = heap->heap_region_containing(addr);
-  HeapWord *obj = region->block_start(addr);
-
-  if (obj > cluster_addr)
-    return obj - cluster_addr;
-  else
-    return 0x7fff;
-}
-#endif
 
 template<typename RememberedSet>
 inline size_t

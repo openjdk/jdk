@@ -405,10 +405,6 @@
           "Fix references with load reference barrier. Disabling this "     \
           "might degrade performance.")                                     \
                                                                             \
-  product(bool, ShenandoahUseSimpleCardScanning, false, DIAGNOSTIC,         \
-          "Testing: use simplified, very inefficient but much less complex" \
-          " card table scanning.")                                          \
-                                                                            \
   product(uintx, ShenandoahTenuredRegionUsageBias, 192, EXPERIMENTAL,       \
           "The collection set is comprised of heap regions that contain "   \
           "the greatest amount of garbage.  "                               \
@@ -428,10 +424,6 @@
                                                                             \
   product(bool, ShenandoahPromoteTenuredObjects, true, DIAGNOSTIC,          \
           "Turn on/off evacuating individual tenured young objects "        \
-          " to the old generation.")                                        \
-                                                                            \
-  product(bool, ShenandoahPromoteTenuredRegions, true, DIAGNOSTIC,          \
-          "Turn on/off transitioning tenured young regions "                \
           " to the old generation.")                                        \
                                                                             \
   product(bool, ShenandoahAllowOldMarkingPreemption, true, DIAGNOSTIC,      \

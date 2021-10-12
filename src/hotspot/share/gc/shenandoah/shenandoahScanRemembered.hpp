@@ -26,10 +26,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_HPP
 
-// During development of this new feature, we want the option to test
-// with and without, and to compare performance before and after.
-#define FAST_REMEMBERED_SET_SCANNING
-
 // Terminology used within this source file:
 //
 // Card Entry:   This is the information that identifies whether a
@@ -503,7 +499,6 @@ private:
 public:
   static const size_t CardsPerCluster = 64;
 
-#ifdef FAST_REMEMBERED_SET_SCANNING
 private:
   // This bit is set iff at least one object starts within a
   // particular card region.
@@ -512,8 +507,6 @@ private:
   static const uint16_t LastStartBits = 0x0fc0;
   static const uint16_t FirstStartShift = 0;
   static const uint16_t LastStartShift = 6;
-
-  static const uint16_t CardOffsetMultiplier = 8;
 
   uint16_t *object_starts;
 
@@ -542,19 +535,16 @@ public:
     while (card_index <= last_card_index)
       object_starts[card_index++] = 0;
   }
-#endif  // FAST_REMEMBERED_SET_SCANNING
 
   ShenandoahCardCluster(RememberedSet *rs) {
     _rs = rs;
-#ifdef FAST_REMEMBERED_SET_SCANNING
-    // HEY!  We don't really need object_starts entries for every card entry.  We only need these for the
+    // HEY!  We don't really need object_starts entries for every card entry.  We only need these for
     // the card entries that correspond to old-gen memory.  But for now, let's be quick and dirty.
     object_starts = (uint16_t *) malloc(rs->total_cards() * sizeof(uint16_t));
     if (object_starts == NULL)
       fatal("Insufficient memory for initializing heap");
     for (size_t i = 0; i < rs->total_cards(); i++)
       object_starts[i] = 0;
-#endif
   }
 
   ~ShenandoahCardCluster() {
@@ -643,23 +633,7 @@ public:
   //         time, so we get a lot of benefit from each investment
   //         in registering an object.
 
-private:
-  const size_t CardByteOffsetMultiplier = 8;
-  const size_t CardWordOffsetMultiplier = 1;
-
 public:
-#ifdef CROSSING_OFFSETS_NO_LONGER_NEEDED
-private:
-  const uint16_t CrossingObjectOverflow = 0x7fff;
-
-public:
-
-  // This has side effect of clearing ObjectStartsInCardRegion bit.
-  inline void set_crossing_object_start(size_t card_index, uint16_t crossing_offset) {
-    object_starts[card_index] = crossing_offset;
-  }
-#endif  // CROSSING_OFFSETS_NO_LONGER_NEEDED
-
 
   // The starting locations of objects contained within old-gen memory
   // are registered as part of the remembered set implementation.  This

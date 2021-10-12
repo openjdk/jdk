@@ -2301,11 +2301,7 @@ private:
             _heap->marked_object_oop_iterate(r, &cl, update_watermark);
           } else {
             // Old region in a young cycle or mixed cycle.
-            if (ShenandoahUseSimpleCardScanning) {
-              if (ShenandoahBarrierSet::barrier_set()->card_table()->is_dirty(MemRegion(r->bottom(), r->top()))) {
-                update_all_references(&cl, r, update_watermark );
-              }
-            } else if (!_mixed_evac) {
+            if (!_mixed_evac) {
               // This is a young evac..
               _heap->card_scan()->process_region(r, &cl, true);
             } else {
@@ -2373,25 +2369,6 @@ private:
         return;
       }
       r = _regions->next();
-    }
-  }
-
-  template<class T>
-  void update_all_references(T* cl, ShenandoahHeapRegion* r, HeapWord* update_watermark) {
-    if (r->is_humongous()) {
-      r->oop_iterate_humongous(cl);
-    } else {
-      // We don't have liveness information about this region.
-      // Therefore we process all objects, rather than just marked ones.
-      // Otherwise subsequent traversals will encounter stale pointers.
-      HeapWord* p = r->bottom();
-      ShenandoahObjectToOopBoundedClosure<T> objs(cl, p, update_watermark);
-      // Anything beyond update_watermark is not yet allocated or initialized.
-      while (p < update_watermark) {
-        oop obj = cast_to_oop(p);
-        objs.do_object(obj);
-        p += obj->size();
-      }
     }
   }
 };
