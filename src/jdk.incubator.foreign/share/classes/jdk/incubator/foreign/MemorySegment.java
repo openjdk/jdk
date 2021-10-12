@@ -643,7 +643,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
     }
 
     /**
-     * Writes a UTF-8 encoded, null-terminated string into this segment at given offset.
+     * Writes the given string into this segment at given offset, converting it to a null-terminated byte sequence using UTF-8 encoding.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
