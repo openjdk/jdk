@@ -42,7 +42,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.inline.hpp"
@@ -1342,19 +1341,20 @@ void VMError::report_and_die(Thread* thread, const char* filename, int lineno, s
 class VMErrorForceInNative : public StackObj {
  private:
   JavaThread* _jt;
+  JavaThreadState _orig_state;
 
  public:
-  VMErrorForceInNative(Thread* t): _jt(t != NULL && t->is_Java_thread() ? JavaThread::cast(t) : NULL) {
-    if (_jt != NULL && _jt->thread_state() == _thread_in_vm) {
+  VMErrorForceInNative(Thread* t): _jt(t != NULL && t->is_Java_thread() ? JavaThread::cast(t) : NULL),
+                                   _orig_state(_thread_max_state) {
+    if (_jt != NULL) {
+      _orig_state = _jt->thread_state();
       _jt->set_thread_state(_thread_in_native);
-    } else if (_jt != NULL) {
-      _jt = NULL;
     }
   }
 
   ~VMErrorForceInNative() {
     if (_jt != NULL) {
-      _jt->set_thread_state(_thread_in_vm);
+      _jt->set_thread_state(_orig_state);
     }
   }
 };
@@ -1638,6 +1638,11 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     char* cmd;
     const char* ptr = OnError;
+    // 8273608: Attempt to set the current thread to Native state.
+    // It allows os::fork_and_exec to execute cmd such as jcmd %p. Otherwise,
+    // it may end up with a deadlock when dcmds try to synchronize all Java threads
+    // at safepoints.
+    VMErrorForceInNative fn(Thread::current_or_null());
 
     while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
       out.print_raw   ("#   Executing ");
@@ -1650,11 +1655,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       out.print_raw   (cmd);
       out.print_raw_cr("\" ...");
 
-      // 8273608: Attempt to set the current thread to Native state.
-      // It allows os::fork_and_exec to execute cmd such as jcmd %p.
-      // Otherwise, it may end up with a deadlock when dcmds try to synchronize all Java threads
-      // at safepoints.
-      VMErrorForceInNative fn(Thread::current_or_null());
       if (os::fork_and_exec(cmd) < 0) {
         out.print_cr("os::fork_and_exec failed: %s (%s=%d)",
                      os::strerror(errno), os::errno_name(errno), errno);
