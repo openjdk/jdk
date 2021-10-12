@@ -289,6 +289,7 @@ class Runner implements Runnable {
     private Node mergeImplLoad(Node startNode, Node expectedNext, Node head) {
         // Atomic load version
         Node temp = (Node) UNSAFE.getReference(startNode, offset);
+        UNSAFE.storeFence(); // Make all new Node fields visible to concurrent readers.
         startNode.setNext(head);
         return temp;
     }
