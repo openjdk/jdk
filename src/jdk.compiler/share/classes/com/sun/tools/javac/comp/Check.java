@@ -74,7 +74,6 @@ import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -4459,15 +4458,15 @@ public class Check {
 
             // Check declarations of serialization-related methods and
             // fields
-            for(Element el : e.getEnclosedElements()) {
+            for(Symbol el : c.getEnclosedElements()) {
                 runUnderLint(el, p, (enclosed, tree) -> {
                     String name = null;
                     switch(enclosed.getKind()) {
                     case FIELD -> {
                         if (!serialPersistentFieldsPresent) {
-                            var modifiers = enclosed.getModifiers();
-                            if (!modifiers.contains(Modifier.TRANSIENT) &&
-                                !modifiers.contains(Modifier.STATIC)) {
+                            var flags = enclosed.flags();
+                            if ( ((flags & TRANSIENT) == 0) &&
+                                 ((flags & STATIC) == 0)) {
                                 TypeMirror varType = enclosed.asType();
                                 if (!rs.isSerializable((Type)varType) &&
                                     !varType.getKind().isPrimitive()) {
@@ -4475,7 +4474,7 @@ public class Check {
                                     // serializable even if the component
                                     // type is not.
                                     log.warning(LintCategory.SERIAL,
-                                                TreeInfo.diagnosticPositionFor((Symbol)enclosed, tree),
+                                                TreeInfo.diagnosticPositionFor(enclosed, tree),
                                                 Warnings.NonSerializableInstanceField);
                                 }
                             }
@@ -4547,10 +4546,13 @@ public class Check {
          */
         private void checkCtorAccess(JCClassDecl tree, ClassSymbol c) {
             if (isExternalizable(c.type)) {
-                for(var ctor : ElementFilter.constructorsIn(c.getEnclosedElements())) {
-                    if (ctor.getParameters().isEmpty() &&
-                        ctor.getModifiers().contains(Modifier.PUBLIC))
-                        return;
+                for(var sym : c.getEnclosedElements()) {
+                    if (sym.isConstructor() &&
+                        ((sym.flags() & PUBLIC) == PUBLIC)) {
+                        if (((MethodSymbol)sym).getParameters().isEmpty()) {
+                            return;
+                        }
+                    }
                 }
                 log.warning(LintCategory.SERIAL, tree.pos(),
                             Warnings.ExternalizableMissingPublicNoArgCtor);
@@ -4574,15 +4576,17 @@ public class Check {
                 // Non-Serializable super class
                 try {
                     ClassSymbol supertype = ((ClassSymbol)(((DeclaredType)superClass).asElement()));
-                    for (var ctor:
-                             ElementFilter.constructorsIn(supertype.getEnclosedElements()) ) {
-                        if (ctor.getParameters().isEmpty()) {
-                            if (ctor.getModifiers().contains(Modifier.PRIVATE) ||
-                                // Handle nested classes and implicit this$0
-                                (supertype.getNestingKind() == NestingKind.MEMBER &&
-                                 !supertype.getModifiers().contains(Modifier.STATIC)))
-                                log.warning(LintCategory.SERIAL, tree.pos(),
-                                            Warnings.SerializableMissingAccessNoArgCtor(supertype.getQualifiedName()));
+                    for(var sym : supertype.getEnclosedElements()) {
+                        if (sym.isConstructor()) {
+                            MethodSymbol ctor = (MethodSymbol)sym;
+                            if (ctor.getParameters().isEmpty()) {
+                                if (((ctor.flags() & PRIVATE) == PRIVATE) ||
+                                    // Handle nested classes and implicit this$0
+                                    (supertype.getNestingKind() == NestingKind.MEMBER &&
+                                     ((supertype.flags() & STATIC) == 0)))
+                                    log.warning(LintCategory.SERIAL, tree.pos(),
+                                                Warnings.SerializableMissingAccessNoArgCtor(supertype.getQualifiedName()));
+                            }
                         }
                     }
                 } catch (ClassCastException cce) {
@@ -4814,21 +4818,20 @@ public class Check {
 
         private void checkPrivateMethod(JCClassDecl tree,
                                         Element e,
-                                        ExecutableElement method) {
-            if (!method.getModifiers().contains(Modifier.PRIVATE)) { // TODO: changes to flags
+                                        MethodSymbol method) {
+            if ((method.flags() & PRIVATE) == 0) {
                 log.warning(LintCategory.SERIAL,
-                            TreeInfo.diagnosticPositionFor((Symbol)method, tree),
+                            TreeInfo.diagnosticPositionFor(method, tree),
                             Warnings.NonPrivateMethodWeakerAccess);
-
             }
         }
 
         private void checkDefaultIneffective(JCClassDecl tree,
                                              Element e,
-                                             ExecutableElement method) {
-            if (method.getModifiers().contains(Modifier.DEFAULT)) {
+                                             MethodSymbol method) {
+            if ((method.flags() & DEFAULT) == DEFAULT) {
                 log.warning(LintCategory.SERIAL,
-                            TreeInfo.diagnosticPositionFor((Symbol)method, tree),
+                            TreeInfo.diagnosticPositionFor(method, tree),
                             Warnings.DefaultIneffective);
 
             }
