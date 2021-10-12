@@ -36,7 +36,6 @@ import java.io.*;
 import static org.testng.Assert.assertEquals;
 
 public class OldDatagramSocketImplTest {
-
     InetAddress LOOPBACK = InetAddress.getLoopbackAddress();
 
     @Test
@@ -162,77 +161,17 @@ public class OldDatagramSocketImplTest {
         }
     }
 
-    private class OldDatagramSocketImplWithValidConnect extends DatagramSocketImpl implements AutoCloseable {
-
+    private class OldDatagramSocketImplWithValidConnect extends OldDatagramSocketImpl implements AutoCloseable {
         @Override
         protected void connect(InetAddress address, int port) throws SocketException { }
-
-        @Override
-        protected void create() throws SocketException { }
-
-        @Override
-        protected void bind(int lport, InetAddress laddr) throws SocketException { }
-
-        @Override
-        protected void send(DatagramPacket p) throws IOException { }
-
-        @Override
-        protected int peek(InetAddress i) throws IOException {
-            return 0;
-        }
-
-        @Override
-        protected int peekData(DatagramPacket p) throws IOException {
-            return 0;
-        }
-
-        @Override
-        protected void receive(DatagramPacket p) throws IOException { }
-
-        @Override
-        protected void setTTL(byte ttl) throws IOException { }
-
-        @Override
-        protected byte getTTL() throws IOException {
-            return 0;
-        }
-
-        @Override
-        protected void setTimeToLive(int ttl) throws IOException { }
-
-        @Override
-        protected int getTimeToLive() throws IOException {
-            return 0;
-        }
-
-        @Override
-        protected void join(InetAddress inetaddr) throws IOException { }
-
-        @Override
-        protected void leave(InetAddress inetaddr) throws IOException { }
-
-        @Override
-        protected void joinGroup(SocketAddress mcastaddr, NetworkInterface netIf) throws IOException { }
-
-        @Override
-        protected void leaveGroup(SocketAddress mcastaddr, NetworkInterface netIf) throws IOException { }
-
-        @Override
-        public void close() { }
-
-        @Override
-        public void setOption(int optID, Object value) throws SocketException { }
-
-        @Override
-        public Object getOption(int optID) throws SocketException {
-            return null;
-        }
     }
-
+    // Overriding connect() to make it public so that it can be called
+    // directly from the test code
     private class PublicOldDatagramSocketImpl extends OldDatagramSocketImpl {
         public void connect(InetAddress addr, int port) throws SocketException { super.connect(addr, port); }
     }
-
+    // Overriding disconnect() to make it public so that it can be called
+    // directly from the test code
     private class PublicOldDatagramSocketImplWithValidConnect extends OldDatagramSocketImplWithValidConnect {
         public void disconnect() { super.disconnect(); }
     }

@@ -339,12 +339,11 @@ final class NetMulticastSocket extends MulticastSocket {
                 SecurityManager security = System.getSecurityManager();
                 if (security != null) {
                     while (true) {
-                        String peekAd = null;
                         int peekPort = 0;
                         // peek at the packet to see who it is from.
                         DatagramPacket peekPacket = new DatagramPacket(new byte[1], 1);
                         peekPort = getImpl().peekData(peekPacket);
-                        peekAd = peekPacket.getAddress().getHostAddress();
+                        String peekAd = peekPacket.getAddress().getHostAddress();
                         try {
                             security.checkAccept(peekAd, peekPort);
                             // security check succeeded - so now break
@@ -376,14 +375,11 @@ final class NetMulticastSocket extends MulticastSocket {
                 // when packets from other sources might be queued on socket.
                 boolean stop = false;
                 while (!stop) {
-                    InetAddress peekAddress = null;
-                    int peekPort = -1;
                     // peek at the packet to see who it is from.
                     DatagramPacket peekPacket = new DatagramPacket(new byte[1], 1);
-                    peekPort = getImpl().peekData(peekPacket);
-                    peekAddress = peekPacket.getAddress();
-                    if ((!connectedAddress.equals(peekAddress)) ||
-                            (connectedPort != peekPort)) {
+                    int peekPort = getImpl().peekData(peekPacket);
+                    InetAddress peekAddress = peekPacket.getAddress();
+                    if ((!connectedAddress.equals(peekAddress)) || (connectedPort != peekPort)) {
                         // throw the packet away and silently continue
                         tmp = new DatagramPacket(
                                 new byte[1024], 1024);

@@ -101,7 +101,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      * send or receive may throw a PortUnreachableException.
      * Note, there is no guarantee that the exception will be thrown.
      *
-     * @implSpec the default implementation of this method always throws {@code SocketException}
+     * @implSpec The default implementation of this method throws {@code SocketException}.
      *
      * @param   address the remote InetAddress to connect to
      * @param   port the remote port number
@@ -116,7 +116,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
     /**
      * Disconnects a datagram socket from its remote destination.
      *
-     * @implSpec The default implementation of this method always throws {@code UncheckedIOException}.
+     * @implSpec The default implementation of this method throws {@code UncheckedIOException}.
      *
      * @throws UncheckedIOException if disconnect fails or no implementation is provided
      * @since 1.4
