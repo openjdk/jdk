@@ -83,9 +83,9 @@ public class CommandLinePositiveTest {
         out.println("\n--- testDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Default bind address loopback. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                        "URL http://" + LOOPBACK_ADDR);
+                .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
     @DataProvider
@@ -96,9 +96,9 @@ public class CommandLinePositiveTest {
         out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Default bind address loopback. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                        "URL http://" + LOOPBACK_ADDR);
+                .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
     @DataProvider
@@ -150,8 +150,8 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsBindAddress, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "123.4.5.6", opt, LOOPBACK_ADDR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                        "URL http://" + LOOPBACK_ADDR);
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("URL http://" + LOOPBACK_ADDR);
 
     }
 
@@ -160,9 +160,9 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, TEST_DIR_STR, opt, TEST_DIR_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Default bind address loopback. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                        "URL http://" + LOOPBACK_ADDR);
+                .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
     @DataProvider
@@ -173,9 +173,9 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsOutput, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", opt, "none", opt, "verbose")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Default bind address loopback. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                        "URL http://" + LOOPBACK_ADDR);
+                .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
     @Test(dataProvider = "portOptions")
@@ -183,9 +183,9 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, "-m", "jdk.httpserver", opt, "-999", opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Default bind address loopback. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                        "URL http://" + LOOPBACK_ADDR);
+                .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
+                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
     @AfterTest
