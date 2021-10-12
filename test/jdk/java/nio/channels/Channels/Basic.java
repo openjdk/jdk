@@ -298,6 +298,7 @@ public class Basic {
 
         try {
             rbc.read(bb.asReadOnlyBuffer());
+            throw new RuntimeException("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException expected) {
             // ignore it
         }
