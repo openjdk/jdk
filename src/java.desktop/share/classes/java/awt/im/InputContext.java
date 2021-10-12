@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.awt.AWTEvent;
 import java.beans.Transient;
 import java.lang.Character.Subset;
+import java.util.Objects;
 
 /**
  * Provides methods to control text input facilities such as input
@@ -143,9 +144,7 @@ public class InputContext {
      */
     public boolean selectInputMethod(Locale locale) {
         // real implementation is in sun.awt.im.InputContext
-        if (locale == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(locale);
         return false;
     }
 
@@ -273,9 +272,7 @@ public class InputContext {
      */
     public void dispatchEvent(AWTEvent event) {
         // real implementation is in sun.awt.im.InputContext
-        if (event == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(event);
     }
 
     /**
@@ -293,9 +290,7 @@ public class InputContext {
      */
     public void removeNotify(Component client) {
         // real implementation is in sun.awt.im.InputContext
-        if (client == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(client);
     }
 
     /**
