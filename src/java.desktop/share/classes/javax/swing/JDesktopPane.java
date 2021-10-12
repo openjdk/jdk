@@ -327,7 +327,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      */
     public JInternalFrame[] getAllFramesInLayer(int layer) {
         Collection<JInternalFrame> allFrames = getAllFrames(this);
-        allFrames.removeIf(jInternalFrame -> jInternalFrame.getLayer() != layer);
+        allFrames.removeIf(frame -> frame.getLayer() != layer);
         return allFrames.toArray(new JInternalFrame[0]);
     }
 

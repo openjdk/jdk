@@ -402,7 +402,7 @@ public class TIFFTag {
             Set<Integer> values = valueNames.keySet();
             intValues = new int[values.size()];
             int i = 0;
-            for (Integer value : values) {
+            for (int value : values) {
                 intValues[i++] = value;
             }
         }

@@ -1957,7 +1957,7 @@ search:
         Set<Long> keySet = map.keySet();
         long[] retval = new long[keySet.size()];
         int i = 0;
-        for (Long key : keySet) {
+        for (long key : keySet) {
             retval[i++] = key;
         }
         return retval;

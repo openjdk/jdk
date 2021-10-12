@@ -566,7 +566,7 @@ final class ListHelper implements XScrollbarClient {
     }
 
     private boolean isItemSelected(int index) {
-        for (Integer val : selected) {
+        for (int val : selected) {
             if (val == index) {
                 return true;
             }
