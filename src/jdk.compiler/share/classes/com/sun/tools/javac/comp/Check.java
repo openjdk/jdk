@@ -4365,7 +4365,7 @@ public class Check {
     /**
      * Check structure of serialization declarations.
      */
-    public void checkSerialStructure(JCClassDecl tree, ClassSymbol c, Env<AttrContext> env) {
+    public void checkSerialStructure(JCClassDecl tree, ClassSymbol c) {
         (new SerialTypeVisitor()).visit(c, tree);
     }
 
