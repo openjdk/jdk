@@ -1170,20 +1170,26 @@ class ImmutableCollections {
         final int size; // number of pairs
 
         MapN(Object... input) {
-            if ((input.length & 1) != 0) { // implicit nullcheck of input
+            this(i -> input[i], i -> input[i + 1], input.length);
+        }
+
+        MapN(Function<Integer, Object> accessKey,
+             Function<Integer, Object> accessValue,
+             int length) {
+            if ((length & 1) != 0) { // implicit nullcheck of input
                 throw new InternalError("length is odd");
             }
-            size = input.length >> 1;
+            size = length >> 1;
 
-            int len = EXPAND_FACTOR * input.length;
+            int len = EXPAND_FACTOR * length;
             len = (len + 1) & ~1; // ensure table is even length
             table = new Object[len];
 
-            for (int i = 0; i < input.length; i += 2) {
+            for (int i = 0; i < length; i += 2) {
                 @SuppressWarnings("unchecked")
-                    K k = Objects.requireNonNull((K)input[i]);
+                    K k = Objects.requireNonNull((K)accessKey.apply(i));
                 @SuppressWarnings("unchecked")
-                    V v = Objects.requireNonNull((V)input[i+1]);
+                    V v = Objects.requireNonNull((V)accessValue.apply(i));
                 int idx = probe(k);
                 if (idx >= 0) {
                     throw new IllegalArgumentException("duplicate key: " + k);
