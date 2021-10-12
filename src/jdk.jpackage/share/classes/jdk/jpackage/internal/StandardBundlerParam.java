@@ -405,6 +405,15 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
             );
 
     @SuppressWarnings("unchecked")
+    static final BundlerParamInfo<List<String>> DMG_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.DMG_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p -> Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
+            );
+
+    @SuppressWarnings("unchecked")
     static final BundlerParamInfo<List<Path>> MODULE_PATH =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.MODULE_PATH.getId(),
