@@ -800,7 +800,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
 
   if test "x$with_hsdis" = xyes; then
     AC_MSG_ERROR([--with-hsdis must have a value])
-  elif test "x$with_hsdis" = xnone || test "x$with_hsdis" = x; then
+  elif test "x$with_hsdis" = xnone || test "x$with_hsdis" = xno || test "x$with_hsdis" = x; then
     HSDIS_BACKEND=none
     AC_MSG_RESULT(['none', hsdis will not be built])
   elif test "x$with_hsdis" = xbinutils; then

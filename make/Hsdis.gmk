@@ -66,8 +66,11 @@ ifeq ($(call isTargetOs, windows), true)
 
   HSDIS_TOOLCHAIN := TOOLCHAIN_MINGW
   HSDIS_TOOLCHAIN_CFLAGS :=
-  HSDIS_TOOLCHAIN_LDFLAGS := -L/usr/lib/gcc/$(MINGW_BASE)/9.2.0  -L/usr/$(MINGW_BASE)/sys-root/mingw/lib
-  HSDIS_TOOLCHAIN_LIBS := /usr/$(MINGW_BASE)/sys-root/mingw/lib/dllcrt2.o -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32
+  HSDIS_TOOLCHAIN_LDFLAGS := -L/usr/lib/gcc/$(MINGW_BASE)/9.2.0 \
+      -L/usr/$(MINGW_BASE)/sys-root/mingw/lib
+  MINGW_DLLCRT := /usr/$(MINGW_BASE)/sys-root/mingw/lib/dllcrt2.o
+  HSDIS_TOOLCHAIN_LIBS := $(MINGW_DLLCRT) -lmingw32 -lgcc -lgcc_eh -lmoldname \
+      -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32
 else
   INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/lib
 
