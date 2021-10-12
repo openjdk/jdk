@@ -244,7 +244,7 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
 
 void DiscoveredListIterator::remove() {
   assert(oopDesc::is_oop(_current_discovered), "Dropping a bad reference");
-  _enqueue->enqueue(_current_discovered_addr, oop(nullptr));
+  RawAccess<>::oop_store(_current_discovered_addr, oop(NULL));
 
   // First _prev_next ref actually points into DiscoveredList (gross).
   oop new_next;
@@ -256,14 +256,9 @@ void DiscoveredListIterator::remove() {
   } else {
     new_next = _next_discovered;
   }
-  // Remove Reference object from discovered list. The first address is in the
-  // C heap, so do not apply the barrier on it but only store the new_next value
-  // directly.
-  if (_prev_discovered_addr != _refs_list.adr_head()) {
-    _enqueue->enqueue(_prev_discovered_addr, new_next);
-  } else {
-    RawAccess<>::oop_store(_prev_discovered_addr, new_next);
-  }
+  // Remove Reference object from discovered list. We do not need barriers here,
+  // as we only remove. We will do the barrier when we actually advance the cursor.
+  RawAccess<>::oop_store(_prev_discovered_addr, new_next);
   _removed++;
   _refs_list.dec_length(1);
 }
@@ -282,7 +277,11 @@ void DiscoveredListIterator::clear_referent() {
 }
 
 void DiscoveredListIterator::enqueue() {
-  _enqueue->enqueue(_current_discovered_addr, _next_discovered);
+  if (_prev_discovered_addr != _refs_list.adr_head()) {
+    _enqueue->enqueue(_prev_discovered_addr, _current_discovered);
+  } else {
+    RawAccess<>::oop_store(_prev_discovered_addr, _current_discovered);
+  }
 }
 
 void DiscoveredListIterator::complete_enqueue() {
