@@ -126,8 +126,9 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      const char* external_name = (*p) == nullptr ? "null"
-                                                  : (*p)->klass()->external_name();
+      oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
+      const char* external_name = o == nullptr ? "N/A"
+                                               : o->klass()->external_name();
       log_oops.print("           Oop[" SIZE_FORMAT "] " PTR_FORMAT " (%s)",
                      (p - begin), p2i(*p), external_name);
     }
