@@ -105,7 +105,6 @@ instruct zLoadP(rRegP dst, memory mem, rFlagsReg cr)
   ins_encode %{
     __ movptr($dst$$Register, $mem$$Address);
     z_load_barrier(_masm, this, $mem$$Address, $dst$$Register);
-    ZBarrierSet::assembler()->prefetch_stores(&_masm, this, $dst$$Register);
   %}
 
   ins_pipe(ialu_reg_mem);

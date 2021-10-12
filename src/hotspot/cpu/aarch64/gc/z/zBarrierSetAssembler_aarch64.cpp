@@ -1283,31 +1283,6 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ b(slow_continuation);
 }
 
-static const int z_max_prefetches = 2;
-
-void ZBarrierSetAssembler::prefetch_stores(MacroAssembler* masm, const MachNode* node, Register base) {
-  if (Compile::current()->output()->in_scratch_emit_size()) {
-    // We have not yet analyzed how many prefetches there will be. Estimate.
-    for (int i = 0; i < z_max_prefetches; ++i) {
-      masm->prfm(Address(rthread, 0));
-    }
-  } else {
-    int prefetches = 0;
-    ZBarrierSetC2* bs = static_cast<ZBarrierSetC2*>(BarrierSet::barrier_set()->barrier_set_c2());
-    GrowableArray<intptr_t>* offsets = bs->prefetch_offsets(node);
-    if (offsets->length() != 0) {
-      for (int i = 0; i < offsets->length(); ++i) {
-        if (prefetches++ == z_max_prefetches) {
-          // Don't prefetch too much
-          break;
-        }
-        intptr_t offset = offsets->at(i);
-        masm->prfm(Address(base, offset));
-      }
-    }
-  }
-}
-
 #undef __
 
 #endif // COMPILER2

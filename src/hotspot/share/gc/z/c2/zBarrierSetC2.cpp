@@ -118,19 +118,16 @@ public:
 };
 
 typedef ZArenaHashtable<intptr_t, bool, 4> ZOffsetTable;
-typedef ZArenaHashtable<node_idx_t, ZOffsetTable*, 128> ZPrefetchTable;
 
 class ZBarrierSetC2State : public ResourceObj {
 private:
   GrowableArray<ZBarrierStubC2*>* _stubs;
   Node_Array                      _live;
-  ZPrefetchTable*                 _prefetch_table;
 
 public:
   ZBarrierSetC2State(Arena* arena) :
     _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, NULL)),
-    _live(arena),
-    _prefetch_table(new (arena) ZPrefetchTable(arena)) {}
+    _live(arena) {}
 
   GrowableArray<ZBarrierStubC2*>* stubs() {
     return _stubs;
@@ -155,15 +152,6 @@ public:
     }
 
     return live;
-  }
-
-  ZPrefetchTable* prefetch_table() {
-    return _prefetch_table;
-  }
-
-  ZOffsetTable::Iterator prefetch_offsets(const Node* node) {
-    ZOffsetTable* offsets = *_prefetch_table->get(node->_idx);
-    return offsets->iterator();
   }
 };
 
@@ -591,7 +579,7 @@ static void elide_mach_barrier(MachNode* mach) {
   mach->set_barrier_data(ZBarrierElided);
 }
 
-void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators, bool prefetch) const {
+void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const {
   Block_List worklist;
 
   Compile* const C = Compile::current();
@@ -607,11 +595,6 @@ void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_L
     if (access_obj == NULL) {
       // No information available
       continue;
-    }
-
-    if (prefetch) {
-      VectorSet visited_phis;
-      analyze_prefetching(access, access_block, access_index, access_offset, access_obj, visited_phis);
     }
 
     for (uint j = 0; j < access_dominators.size(); j++) {
@@ -750,9 +733,9 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
   }
 
   // Step 2 - Find dominating accesses or allocations for each access
-  analyze_dominating_barriers_impl(loads, load_dominators, false /* prefetch */);
-  analyze_dominating_barriers_impl(stores, store_dominators, true /* prefetch */);
-  analyze_dominating_barriers_impl(atomics, atomic_dominators, false /* prefetch */);
+  analyze_dominating_barriers_impl(loads, load_dominators);
+  analyze_dominating_barriers_impl(stores, store_dominators);
+  analyze_dominating_barriers_impl(atomics, atomic_dominators);
 }
 
 // == Reduced spilling optimization ==
@@ -841,91 +824,5 @@ void ZBarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   } else if (node->is_LoadStore()) {
     LoadStoreNode* loadstore = node->as_LoadStore();
     loadstore->set_barrier_data(ZBarrierElided);
-  }
-}
-
-// == Prefetch optimization ==
-
-void ZBarrierSetC2::register_prefetch(const Node* node, intptr_t offset) const {
-  ZPrefetchTable* prefetch_table = barrier_set_state()->prefetch_table();
-  ZOffsetTable** offsets_ptr = prefetch_table->get(node->_idx);
-  ZOffsetTable* offsets;
-  if (offsets_ptr == NULL) {
-    Arena* arena = Compile::current()->comp_arena();
-    offsets = new (arena) ZOffsetTable(arena);
-    prefetch_table->add(node->_idx, offsets);
-  } else {
-    offsets = *offsets_ptr;
-  }
-  if (offsets->get(offset) == NULL) {
-    offsets->add(offset, true);
-  }
-}
-
-int z_offset_compare(intptr_t* a, intptr_t* b) {
-  return *a - *b;
-}
-
-GrowableArray<intptr_t>* ZBarrierSetC2::prefetch_offsets(const Node* node) const {
-  Arena* arena = Compile::current()->comp_arena();
-  GrowableArray<intptr_t>* result = new (arena) GrowableArray<intptr_t>(arena, 2,  0, 0);
-  ZPrefetchTable* prefetch_table = barrier_set_state()->prefetch_table();
-  ZOffsetTable** offsets_ptr = prefetch_table->get(node->_idx);
-  ZOffsetTable* offsets;
-  if (offsets_ptr == NULL) {
-    return result;
-  } else {
-    offsets = *offsets_ptr;
-  }
-  for (auto it = offsets->iterator(); it.has_next(); it.next()) {
-    result->append(it.key());
-  }
-  result->sort(z_offset_compare);
-  return result;
-}
-
-void ZBarrierSetC2::analyze_prefetching(const MachNode* access, Block* access_block, uint access_index, intptr_t access_offset, const Node* base, VectorSet& visited_phis) const {
-  if (!ZPrefetchStores) {
-    return;
-  }
-
-  static const float z_prefetch_block_probability = 0.0f;
-
-  if (base->is_Phi()) {
-    PhiNode* phi = base->as_Phi();
-    if (is_allocation(phi)) {
-      // No need to prefetch allocations; they already prefetch
-      return;
-    }
-    if (!visited_phis.test_set(phi->_idx)) {
-      for (uint i = 1; i < phi->req(); ++i) {
-        const Node* new_base = look_through_node(phi->in(i));
-        analyze_prefetching(access, access_block, access_index, access_offset, new_base, visited_phis);
-      }
-    }
-    return;
-  }
-
-  if (!base->is_Mach() || base->as_Mach()->barrier_data() == 0) {
-    // Not a ZGC load
-    return;
-  }
-
-  Compile* const C = Compile::current();
-  PhaseCFG* const cfg = C->cfg();
-
-  // A load is the base pointer of a subsequent access. Check if it is worthwhile
-  // to prefetch the subsequent access.
-  Block* const base_block = cfg->get_block_for_node(base);
-  if (base_block == access_block) {
-    // Same block - prefetch if far enough away
-    const uint base_index = block_index(base_block, base);
-    if (access_index - base_index > 4) {
-      // Far enough ahead; prefetch
-      register_prefetch(base, access_offset);
-    }
-  } else if (access_block->_freq > z_prefetch_block_probability) {
-    // The subsequent access is "likely" to be executed. Prefetch it!
-    register_prefetch(base, access_offset);
   }
 }

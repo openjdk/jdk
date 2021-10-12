@@ -105,7 +105,6 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
     const Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ ldr($dst$$Register, ref_addr);
     z_load_barrier(_masm, this, ref_addr, $dst$$Register, rscratch1);
-    ZBarrierSet::assembler()->prefetch_stores(&_masm, this, $dst$$Register);
   %}
 
   ins_pipe(iload_reg_mem);

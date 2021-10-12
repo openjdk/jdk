@@ -1410,34 +1410,4 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   }
 }
 
-static const int z_max_prefetches = 2;
-
-void ZBarrierSetAssembler::prefetch_stores(MacroAssembler* masm, const MachNode* node, Register base) {
-  if (!VM_Version::supports_3dnow_prefetch()) {
-    // No support for prefetching
-    return;
-  }
-  if (Compile::current()->output()->in_scratch_emit_size()) {
-    // We have not yet analyzed how many prefetches there will be. Estimate.
-    for (int i = 0; i < z_max_prefetches; ++i) {
-      // Longest prefetch address encoding
-      masm->prefetchw(Address(r15, max_jint));
-    }
-  } else {
-    int prefetches = 0;
-    ZBarrierSetC2* bs = static_cast<ZBarrierSetC2*>(BarrierSet::barrier_set()->barrier_set_c2());
-    GrowableArray<intptr_t>* offsets = bs->prefetch_offsets(node);
-    if (offsets->length() != 0) {
-      for (int i = 0; i < offsets->length(); ++i) {
-        if (prefetches++ == z_max_prefetches) {
-          // Don't prefetch too much
-          break;
-        }
-        intptr_t offset = offsets->at(i);
-        masm->prefetchw(Address(base, offset));
-      }
-    }
-  }
-}
-
 #endif // COMPILER2

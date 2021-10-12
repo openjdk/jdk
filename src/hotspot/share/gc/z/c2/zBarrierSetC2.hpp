@@ -99,7 +99,7 @@ public:
 class ZBarrierSetC2 : public BarrierSetC2 {
 private:
   void compute_liveness_at_stubs() const;
-  void analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators, bool prefetch) const;
+  void analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const;
   void analyze_dominating_barriers() const;
 
 protected:
@@ -132,11 +132,6 @@ public:
   virtual void emit_stubs(CodeBuffer& cb) const;
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
   virtual void eliminate_gc_barrier_data(Node* node) const;
-
-  // Access prefetching
-  void analyze_prefetching(const MachNode* access, Block* access_block, uint access_index, intptr_t access_offset, const Node* base, VectorSet& visited_phis) const;
-  void register_prefetch(const Node* node, intptr_t offset) const;
-  GrowableArray<intptr_t>* prefetch_offsets(const Node* node) const;
 };
 
 #endif // SHARE_GC_Z_C2_ZBARRIERSETC2_HPP

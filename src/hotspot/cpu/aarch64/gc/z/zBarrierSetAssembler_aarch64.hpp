@@ -188,7 +188,6 @@ public:
                                      ZLoadBarrierStubC2* stub) const;
   void generate_c2_store_barrier_stub(MacroAssembler* masm,
                                       ZStoreBarrierStubC2* stub) const;
-  void prefetch_stores(MacroAssembler* masm, const MachNode* node, Register base);
 #endif // COMPILER2
 };
 
