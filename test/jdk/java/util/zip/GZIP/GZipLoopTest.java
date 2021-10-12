@@ -30,6 +30,7 @@
 import java.io.*;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.fail;
@@ -52,7 +53,7 @@ public class GZipLoopTest {
     private static Random rand = new Random();
 
     @Test
-    public void testZipClose() throws IOException {
+    public void testGZipClose() throws IOException {
         rand.nextBytes(b);
         GZIPOutputStream zip = new GZIPOutputStream(outStream);
         try {
@@ -74,7 +75,7 @@ public class GZipLoopTest {
     }
 
     @Test
-    public void testZipFinish() throws IOException {
+    public void testGZipFinish() throws IOException {
         rand.nextBytes(b);
         GZIPOutputStream zip = new GZIPOutputStream(outStream);
         try {
@@ -95,6 +96,49 @@ public class GZipLoopTest {
         }
     }
 
+    @Test
+    public void testZipClose() throws IOException {
+        rand.nextBytes(b);
+        ZipOutputStream zip = new ZipOutputStream(outStream);
+        try {
+            zip.write(b, 1, FINISH_NUM-1);
+            //close zip
+            zip.close();
+        } catch (IOException e) {
+            //expected
+        }
+        for (int i = 0; i < 3; i++) {
+            try {
+                zip.write(b, 1, FINISH_NUM-1);
+                fail("Deflater closed exception not thrown");
+            } catch (NullPointerException | IOException e) {
+                //for the first write operation IOException will be thrown
+                //second write operation should throw NPE with deflator closed error instead of infinite loop
+            }
+        }
+    }
+
+    @Test
+    public void testZipFinish() throws IOException {
+        rand.nextBytes(b);
+        ZipOutputStream zip = new ZipOutputStream(outStream);
+        try {
+            zip.write(b, 0, FINISH_NUM);
+            //close zip using finish()
+            zip.finish();
+        } catch (IOException e) {
+            //expected
+        }
+        for (int i = 0; i < 3; i++) {
+            try {
+                zip.write(b, 1, FINISH_NUM-1);
+                fail("Deflater closed exception not thrown");
+            } catch (NullPointerException | IOException e) {
+                //for the first write operation IOException will be thrown
+                //second write operation should throw NPE with deflator closed error instead of infinite loop
+            }
+        }
+    }
 
 
 }
