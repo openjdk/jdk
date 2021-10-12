@@ -56,7 +56,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   testptr(obj, obj);
   jccb(Assembler::notZero, update);
   orptr(mdo_addr, TypeEntries::null_seen);
-  jmpb(next);
+  jmp(next);
 
   bind(update);
   Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);

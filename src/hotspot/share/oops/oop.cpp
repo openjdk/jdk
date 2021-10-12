@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
@@ -172,6 +173,11 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
     return *(void**)addr;
   }
 }
+
+JRT_LEAF(Klass*, oopDesc::load_klass_runtime(oopDesc* o))
+  assert(o != NULL, "null-check");
+  return oop(o)->klass();
+JRT_END
 
 oop oopDesc::obj_field_acquire(int offset) const                      { return HeapAccess<MO_ACQUIRE>::oop_load_at(as_oop(), offset); }
 
