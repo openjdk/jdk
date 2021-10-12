@@ -34,7 +34,11 @@ include JdkNativeCompilation.gmk
 #
 ################################################################################
 
+HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
+
 ifeq ($(call isTargetOs, windows), true)
+  INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/bin
+
   # On windows, we need to "fake" a completely different toolchain using gcc
   # instead of the normal microsoft toolchain. This is quite hacky...
 
@@ -58,19 +62,21 @@ ifeq ($(call isTargetOs, windows), true)
   DISABLED_WARNINGS :=
   DISABLE_WARNING_PREFIX := -Wno-
   CFLAGS_WARNINGS_ARE_ERRORS := -Werror
+  SHARED_LIBRARY_FLAGS := -shared
 
   HSDIS_TOOLCHAIN := TOOLCHAIN_MINGW
   HSDIS_TOOLCHAIN_CFLAGS :=
   HSDIS_TOOLCHAIN_LDFLAGS := -L/usr/lib/gcc/$(MINGW_BASE)/9.2.0  -L/usr/$(MINGW_BASE)/sys-root/mingw/lib
   HSDIS_TOOLCHAIN_LIBS := -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmsvcrt
 else
+  INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/lib
+
   HSDIS_TOOLCHAIN := TOOLCHAIN_DEFAULT
   HSDIS_TOOLCHAIN_CFLAGS := $(CFLAGS_JDKLIB)
   HSDIS_TOOLCHAIN_LDFLAGS := $(LDFLAGS_JDKLIB)
   HSDIS_TOOLCHAIN_LIBS := -ldl
 endif
 
-HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
 
 $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
@@ -81,7 +87,7 @@ $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     DISABLED_WARNINGS_gcc := undef format-nonliteral sign-compare, \
     DISABLED_WARNINGS_clang := undef format-nonliteral, \
     CFLAGS := $(HSDIS_TOOLCHAIN_CFLAGS) $(HSDIS_CFLAGS), \
-    LDFLAGS := $(HSDIS_TOOLCHAIN_LDFLAGS), \
+    LDFLAGS := $(HSDIS_TOOLCHAIN_LDFLAGS) $(SHARED_LIBRARY_FLAGS), \
     LIBS := $(HSDIS_LIBS) $(HSDIS_TOOLCHAIN_LIBS), \
 ))
 
@@ -90,11 +96,6 @@ build: $(BUILD_HSDIS)
 TARGETS += build
 
 INSTALLED_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
-ifeq ($(call isTargetOs, windows), true)
-  INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/bin
-else
-  INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/lib
-endif
 
 INSTALLED_HSDIS := $(INSTALLED_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
 
