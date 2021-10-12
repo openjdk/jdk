@@ -1315,8 +1315,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   if (VM_Version::is_cpu_emulated()) {
     snprintf(buf, buflen, "\"%s\" %s (EMULATED) %d MHz", model, machine, mhz);
   } else {
-    // M1 doesn't report CPU speed
-    snprintf(buf, buflen, "\"%s\" %s", model, machine);
+    NOT_AARCH64(snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz));
+    // aarch64 CPU doesn't report its speed
+    AARCH64_ONLY(snprintf(buf, buflen, "\"%s\" %s", model, machine));
   }
 #else
   snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz);
