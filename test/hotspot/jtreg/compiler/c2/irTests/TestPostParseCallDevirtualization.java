@@ -154,6 +154,7 @@ public class TestPostParseCallDevirtualization {
 
     @Test
     @IR(failOn = {IRNode.STATIC_CALL_OF_METHOD, "invokeBasic"},
+        applyIf = {"TieredCompilation", "true"},
         counts = {IRNode.STATIC_CALL_OF_METHOD, "invokeStatic", "= 1"})
     public int testMethodHandleCallWithLoop() throws Throwable {
         MethodHandle mh = mh1;
@@ -175,6 +176,7 @@ public class TestPostParseCallDevirtualization {
 
     @Test
     @IR(failOn = {IRNode.STATIC_CALL_OF_METHOD, "invokeBasic"},
+        applyIf = {"TieredCompilation", "true"},
         counts = {IRNode.STATIC_CALL_OF_METHOD, "invokeStatic", "= 1"})
     public int testMethodHandleCallWithCCP() throws Throwable {
         MethodHandle mh = mh1;
