@@ -922,7 +922,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        if (limit > 0) {
          // Scan the native stack
          if (!_print_native_stack_used) {
-           // Only try print code of the crashing frame since
+           // Only try to print code of the crashing frame since
            // the native stack cannot be walked with next_frame.
            if (print_code(st, _thread, _pc, true, printed, printed_capacity)) {
              printed_len++;
