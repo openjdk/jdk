@@ -4467,8 +4467,8 @@ public class Check {
                             var flags = enclosed.flags();
                             if ( ((flags & TRANSIENT) == 0) &&
                                  ((flags & STATIC) == 0)) {
-                                TypeMirror varType = enclosed.asType();
-                                if (!rs.isSerializable((Type)varType) &&
+                                Type varType = enclosed.asType();
+                                if (!rs.isSerializable(varType) &&
                                     !varType.getKind().isPrimitive()) {
                                     // Note per JLS arrays are
                                     // serializable even if the component
