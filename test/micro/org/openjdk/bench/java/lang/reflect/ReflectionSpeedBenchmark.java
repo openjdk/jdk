@@ -320,11 +320,11 @@ public class ReflectionSpeedBenchmark {
     }
 
     public static Integer sumStatic(Integer a, Integer b) {
-        return a + b;
+        return a; // a + b;
     }
 
     public Integer sumInstance(Integer a, Integer b) {
-        return a + b;
+        return a; // a + b;
     }
 
     public static int staticField;

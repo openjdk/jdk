@@ -84,7 +84,14 @@ public class ReflectionFactory {
     // and NativeConstructorAccessorImpl
     private static boolean noInflation        = false;
     private static int     inflationThreshold = 15;
-    private static boolean useDirectMethodHandle = true;
+
+    //
+    // New implementation uses direct invocation of method handles
+    private static final int METHOD_MH_ACCESSOR      = 0x1;
+    private static final int FIELD_MH_ACCESSOR       = 0x2;
+    private static final int ALL_MH_ACCESSORS        = METHOD_MH_ACCESSOR|FIELD_MH_ACCESSOR;
+
+    private static int     useDirectMethodHandle = ALL_MH_ACCESSORS;
     private static boolean useNativeAccessorOnly = false;  // for testing only
 
     // true if deserialization constructor checking is disabled
@@ -165,7 +172,7 @@ public class ReflectionFactory {
         }
         boolean isFinal = Modifier.isFinal(field.getModifiers());
         boolean isReadOnly = isFinal && (!override || langReflectAccess.isTrustedFinalField(field));
-        if (useDirectMethodHandle) {
+        if (useFieldHandleAccessor()) {
             return MethodHandleAccessorFactory.newFieldAccessor(field, isReadOnly);
         } else {
             return UnsafeFieldAccessorFactory.newFieldAccessor(field, isReadOnly);
@@ -181,7 +188,7 @@ public class ReflectionFactory {
             method = root;
         }
 
-        if (useDirectMethodHandle) {
+        if (useMethodHandleAccessor()) {
             return MethodHandleAccessorFactory.newMethodAccessor(method, callerSensitive);
         } else {
             if (noInflation && !method.getDeclaringClass().isHidden()) {
@@ -225,7 +232,7 @@ public class ReflectionFactory {
             c = root;
         }
 
-        if (useDirectMethodHandle) {
+        if (useMethodHandleAccessor()) {
             return MethodHandleAccessorFactory.newConstructorAccessor(c);
         } else {
             // Bootstrapping issue: since we use Class.newInstance() in
@@ -623,9 +630,14 @@ public class ReflectionFactory {
         return noInflation;
     }
 
-    static boolean useDirectMethodHandle() {
-        return useDirectMethodHandle;
+    static boolean useMethodHandleAccessor() {
+        return (useDirectMethodHandle & METHOD_MH_ACCESSOR) == METHOD_MH_ACCESSOR;
     }
+
+    static boolean useFieldHandleAccessor() {
+        return (useDirectMethodHandle & FIELD_MH_ACCESSOR) == FIELD_MH_ACCESSOR;
+    }
+
     static boolean useNativeAccessorOnly() {
         return useNativeAccessorOnly;
     }
@@ -660,8 +672,14 @@ public class ReflectionFactory {
             }
         }
         val = props.getProperty("jdk.reflect.useDirectMethodHandle");
-        if (val != null && val.equals("false")) {
-            useDirectMethodHandle = false;
+        if (val != null) {
+            if (val.equals("false")) {
+                useDirectMethodHandle = 0;
+            } else if (val.equals("methods")) {
+                useDirectMethodHandle = METHOD_MH_ACCESSOR;
+            } else if (val.equals("fields")) {
+                useDirectMethodHandle = FIELD_MH_ACCESSOR;
+            }
         }
         val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
         if (val != null && val.equals("true")) {
