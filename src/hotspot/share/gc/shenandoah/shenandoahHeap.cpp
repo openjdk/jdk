@@ -947,7 +947,7 @@ public:
 
   void do_object(oop p) {
     shenandoah_assert_marked(NULL, p);
-    if (!p->is_forwarded()) {
+    if (!ShenandoahForwarding::is_forwarded(p)) {
       _heap->evacuate_object(p, _thread);
     }
   }

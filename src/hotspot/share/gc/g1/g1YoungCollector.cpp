@@ -856,10 +856,11 @@ public:
       return;
     }
     if (region_attr.is_in_cset()) {
-      assert( obj->is_forwarded(), "invariant" );
+      OopForwarding fwd(obj);
+      assert(fwd.is_forwarded(), "invariant" );
       *p = OopForwarding(obj).forwardee();
     } else {
-      assert(!obj->is_forwarded(), "invariant" );
+      assert(!OopForwarding(obj).is_forwarded(), "invariant" );
       assert(region_attr.is_humongous(),
              "Only allowed G1HeapRegionAttr state is IsHumongous, but is %d", region_attr.type());
      _g1h->set_humongous_is_live(obj);
@@ -992,7 +993,7 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
 bool G1STWIsAliveClosure::do_object_b(oop p) {
   // An object is reachable if it is outside the collection set,
   // or is inside and copied.
-  return !_g1h->is_in_cset(p) || p->is_forwarded();
+  return !_g1h->is_in_cset(p) || OopForwarding(p).is_forwarded();
 }
 
 void G1YoungCollector::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {

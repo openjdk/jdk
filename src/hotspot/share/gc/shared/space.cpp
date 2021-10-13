@@ -371,7 +371,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
 
   // store the forwarding pointer into the mark word
   if (cast_from_oop<HeapWord*>(q) != compact_top) {
-    q->forward_to(cast_to_oop(compact_top));
+    OopForwarding::forward_to(q, cast_to_oop(compact_top));
     assert(q->is_gc_marked(), "encoding the pointer should preserve the mark");
   } else {
     // if the object isn't moving we can just set the mark to the default

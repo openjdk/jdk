@@ -73,7 +73,7 @@ void PreservedMarks::assert_empty() {
 #endif // ndef PRODUCT
 
 void RemoveForwardedPointerClosure::do_object(oop obj) {
-  if (obj->is_forwarded()) {
+  if (OopForwarding(obj).is_forwarded()) {
     PreservedMarks::init_forwarded_mark(obj);
   }
 }

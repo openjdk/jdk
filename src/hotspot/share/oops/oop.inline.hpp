@@ -190,7 +190,7 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // disjunct below to fail if the two comparands are computed across such
       // a concurrent change.
       assert((s == klass->oop_size(this)) ||
-             (Universe::is_gc_active() && is_objArray() && is_forwarded() && (get_UseParallelGC() || get_UseG1GC())),
+             (Universe::is_gc_active() && is_objArray() && mark().is_marked() && (get_UseParallelGC() || get_UseG1GC())),
              "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
@@ -258,36 +258,9 @@ bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
 }
 
-// Used by scavengers
-bool oopDesc::is_forwarded() const {
-  // The extra heap check is needed since the obj might be locked, in which case the
-  // mark would point to a stack location and have the sentinel bit cleared
-  return mark().is_marked();
-}
-
-// Used by scavengers
-void oopDesc::forward_to(oop p) {
-  verify_forwardee(p);
-  markWord m = markWord::encode_pointer_as_mark(p);
-  assert(m.decode_pointer() == p, "encoding must be reversable");
-  set_mark(m);
-}
-
-oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
-  verify_forwardee(p);
-  markWord m = markWord::encode_pointer_as_mark(p);
-  assert(m.decode_pointer() == p, "encoding must be reversable");
-  markWord old_mark = cas_set_mark(m, compare, order);
-  if (old_mark == compare) {
-    return NULL;
-  } else {
-    return cast_to_oop(old_mark.decode_pointer());
-  }
-}
-
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
-  assert(!is_forwarded(), "Attempt to read age from forwarded mark");
+  assert(!mark().is_marked(), "Attempt to read age from forwarded mark");
   if (has_displaced_mark()) {
     return displaced_mark().age();
   } else {
@@ -296,7 +269,7 @@ uint oopDesc::age() const {
 }
 
 void oopDesc::incr_age() {
-  assert(!is_forwarded(), "Attempt to increment age of forwarded mark");
+  assert(!mark().is_marked(), "Attempt to increment age of forwarded mark");
   if (has_displaced_mark()) {
     set_displaced_mark(displaced_mark().incr_age());
   } else {

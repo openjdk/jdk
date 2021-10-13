@@ -359,7 +359,7 @@ public:
     assert(_compact_point + obj_size <= _to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(NULL, p);
     _preserved_marks->push_if_necessary(p, p->mark());
-    p->forward_to(cast_to_oop(_compact_point));
+    OopForwarding::forward_to(p, cast_to_oop(_compact_point));
     _compact_point += obj_size;
   }
 };
@@ -467,7 +467,7 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
       if (start >= to_begin && start != r->index()) {
         // Fits into current window, and the move is non-trivial. Record the move then, and continue scan.
         _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark());
-        old_obj->forward_to(cast_to_oop(heap->get_region(start)->bottom()));
+        OopForwarding::forward_to(old_obj, cast_to_oop(heap->get_region(start)->bottom()));
         to_end = start;
         continue;
       }

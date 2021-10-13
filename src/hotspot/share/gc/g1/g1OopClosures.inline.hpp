@@ -232,11 +232,11 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
   const G1HeapRegionAttr state = _g1h->region_attr(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    OopForwarding mwd = OopForwarding(obj);
-    if (mwd.is_forwarded()) {
-      forwardee = mwd.forwardee();
+    OopForwarding fwd = OopForwarding(obj);
+    if (fwd.is_forwarded()) {
+      forwardee = fwd.forwardee();
     } else {
-      forwardee = _par_scan_state->copy_to_survivor_space(state, obj, mwd.mark());
+      forwardee = _par_scan_state->copy_to_survivor_space(state, obj, fwd);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);

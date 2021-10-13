@@ -316,7 +316,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayScanTask task) {
 
   oop old = task.to_source_array();
   assert(old->is_objArray(), "invariant");
-  assert(old->is_forwarded(), "invariant");
+  assert(OopForwarding(old).is_forwarded(), "invariant");
 
   TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
 
@@ -345,7 +345,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayScanTask task) {
   }
 }
 
-oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
+oop PSPromotionManager::oop_promotion_failed(oop obj, const OopForwarding& fwd) {
   assert(_old_gen_is_full || PromotionFailureALot, "Sanity");
 
   // Attempt to CAS in the header.
@@ -353,7 +353,8 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   // this started.  If it is the same (i.e., no forwarding
   // pointer has been installed), then this thread owns
   // it.
-  if (obj->forward_to_atomic(obj, obj_mark) == NULL) {
+  oop forwardee = fwd.forward_to_atomic(obj);
+  if (forwardee== NULL) {
     // We won any races, we "own" this object.
     assert(obj == OopForwarding(obj).forwardee(), "Sanity");
 
@@ -361,14 +362,13 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
 
     push_contents(obj);
 
-    _preserved_marks->push_if_necessary(obj, obj_mark);
+    _preserved_marks->push_if_necessary(obj, fwd.mark());
   }  else {
     // We lost, someone else "owns" this object
-    OopForwarding mwd(obj);
-    guarantee(mwd.is_forwarded(), "Object must be forwarded if the cas failed.");
+    guarantee(OopForwarding(obj).is_forwarded(), "Object must be forwarded if the cas failed.");
 
     // No unallocation to worry about.
-    obj = mwd.forwardee();
+    obj = forwardee;
   }
 
   return obj;

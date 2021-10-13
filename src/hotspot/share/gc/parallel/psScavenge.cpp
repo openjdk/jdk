@@ -143,7 +143,7 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
 class PSIsAliveClosure: public BoolObjectClosure {
 public:
   bool do_object_b(oop p) {
-    return (!PSScavenge::is_obj_in_young(p)) || p->is_forwarded();
+    return (!PSScavenge::is_obj_in_young(p)) || OopForwarding(p).is_forwarded();
   }
 };
 
