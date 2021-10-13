@@ -5105,7 +5105,6 @@ public class Attr extends JCTree.Visitor {
         attribAnnotationTypes(tree.annotations, env);
     }
 
-    
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
         Type underlyingType = attribType(tree.underlyingType, env);
