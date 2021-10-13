@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Serial;
 import java.io.StringReader;
@@ -854,8 +855,10 @@ public class JEditorPane extends JTextComponent {
         conn.setDoOutput(true);
         conn.setRequestProperty("Content-Type",
                 "application/x-www-form-urlencoded");
-        try (DataOutputStream os = new DataOutputStream(conn.getOutputStream())) {
-            os.writeBytes((String) postData);
+        try (OutputStream os = conn.getOutputStream();
+             DataOutputStream dos = new DataOutputStream(os))
+        {
+            dos.writeBytes((String)postData);
         }
     }
 

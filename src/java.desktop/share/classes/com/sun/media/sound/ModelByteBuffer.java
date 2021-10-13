@@ -315,10 +315,12 @@ public final class ModelByteBuffer {
                     "No file associated with this ByteBuffer!");
         }
 
-        try (DataInputStream is = new DataInputStream(getInputStream())) {
+        try (InputStream is = getInputStream();
+             DataInputStream dis = new DataInputStream(is))
+        {
             buffer = new byte[(int) capacity()];
             offset = 0;
-            is.readFully(buffer);
+            dis.readFully(buffer);
         }
 
     }

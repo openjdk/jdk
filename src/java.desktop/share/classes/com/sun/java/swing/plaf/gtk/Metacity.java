@@ -584,7 +584,9 @@ class Metacity implements SynthConstants {
                                       ".gconf/apps/metacity/general/%25gconf.xml");
                     // Pending: verify character encoding spec for gconf
                     StringBuilder sb = new StringBuilder();
-                    try (Reader reader = new InputStreamReader(url.openStream(), ISO_8859_1)) {
+                    try (InputStream in = url.openStream();
+                         Reader reader = new InputStreamReader(in, ISO_8859_1))
+                    {
                         char[] buf = new char[1024];
                         int n;
                         while ((n = reader.read(buf)) >= 0) {
