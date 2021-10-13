@@ -85,11 +85,13 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         return win32PrintLUS;
     }
 
+    @SuppressWarnings("removal")
     public PrintServiceLookupProvider() {
 
         if (win32PrintLUS == null) {
             win32PrintLUS = this;
 
+            // start the local printer listener thread
             AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
                 Thread thread = new Thread(
                         ThreadGroupUtils.getRootThreadGroup(),
