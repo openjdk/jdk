@@ -131,6 +131,7 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
 
         private static final long serialVersionUID = 6802729912091130335L;
 
+        @SuppressWarnings("serial") // Array component type is not Serializable
         Object[] errorSubstText=null;
         @SuppressWarnings("serial") // Type of field is not Serializable
         Element  errorElem = null;

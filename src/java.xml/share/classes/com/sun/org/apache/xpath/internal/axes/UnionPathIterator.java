@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -470,6 +470,7 @@ public class UnionPathIterator extends LocPathIterator
    * path</a> contained in the union expression.
    * @serial
    */
+  @SuppressWarnings("serial") // Array component type is not Serializable
   protected DTMIterator[] m_iterators;
 
   /**
