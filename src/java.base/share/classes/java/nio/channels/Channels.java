@@ -333,8 +333,8 @@ public final class Channels {
     }
 
     /**
-     * Constructs a channel that reads bytes from the given stream into one
-     * buffer or a sequence of buffers.
+     * Constructs a channel that reads bytes from the given stream into
+     * a sequence of buffers.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
      * its I/O operations to the given stream.  Closing the channel will in
@@ -343,7 +343,9 @@ public final class Channels {
      * @param  in
      *         The stream from which bytes are to be read
      *
-     * @return  A new scatterin byte channel
+     * @return  A new scattering byte channel
+     *
+     * @since 18
      */
     public static ScatteringByteChannel newScatteringChannel(InputStream in) {
         Objects.requireNonNull(in, "in");
@@ -476,8 +478,8 @@ public final class Channels {
     }
 
     /**
-     * Constructs a channel that writes bytes to the given stream from one
-     * buffer or a sequence of buffers.
+     * Constructs a channel that writes bytes to the given stream from
+     * a sequence of buffers.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
      * its I/O operations to the given stream.  Closing the channel will in
@@ -487,6 +489,8 @@ public final class Channels {
      *         The stream to which bytes are to be written
      *
      * @return  A new gathering byte channel
+     *
+     * @since 18
      */
     public static GatheringByteChannel newGatheringChannel(OutputStream out) {
         Objects.requireNonNull(out, "out");
