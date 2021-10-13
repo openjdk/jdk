@@ -397,6 +397,13 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Convert (~x+1) into -x. Note there isn't a bitwise not bytecode,
+  // "~x" would typically represented as "x^(-1)", so (~x+1) will
+  // be (x^(-1))+1.
+  if (op1 == Op_XorI && phase->type(in2) == TypeInt::ONE &&
+      phase->type(in1->in(2)) == TypeInt::MINUS_1) {
+    return new SubINode(phase->makecon(TypeInt::ZERO), in1->in(1));
+  }
   return AddNode::Ideal(phase, can_reshape);
 }
 
@@ -554,7 +561,13 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-
+  // Convert (~x+1) into -x. Note there isn't a bitwise not bytecode,
+  // "~x" would typically represented as "x^(-1)", so (~x+1) will
+  // be (x^(-1))+1
+  if (op1 == Op_XorL && phase->type(in2) == TypeLong::ONE &&
+      phase->type(in1->in(2)) == TypeLong::MINUS_1) {
+    return new SubLNode(phase->makecon(TypeLong::ZERO), in1->in(1));
+  }
   return AddNode::Ideal(phase, can_reshape);
 }
 
@@ -967,6 +980,21 @@ const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 //=============================================================================
+//------------------------------Idealize---------------------------------------
+Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  int op1 = in1->Opcode();
+  // Convert ~(x-1) into -x. Note there isn't a bitwise not bytecode,
+  // "~x" would typically represented as "x^(-1)", and "x-c0" would
+  // convert into "x+ -c0" in SubXNode::Ideal. So ~(x-1) will eventually
+  // be (x+(-1))^-1.
+  if (op1 == Op_AddI && phase->type(in2) == TypeInt::MINUS_1 &&
+      phase->type(in1->in(2)) == TypeInt::MINUS_1) {
+    return new SubINode(phase->makecon(TypeInt::ZERO), in1->in(1));
+  }
+  return AddNode::Ideal(phase, can_reshape);
+}
 
 const Type* XorINode::Value(PhaseGVN* phase) const {
   Node* in1 = in(1);
@@ -1030,6 +1058,21 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
 
   // Otherwise just OR them bits.
   return TypeLong::make( r0->get_con() ^ r1->get_con() );
+}
+
+Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  int op1 = in1->Opcode();
+  // Convert ~(x-1) into -x. Note there isn't a bitwise not bytecode,
+  // "~x" would typically represented as "x^(-1)", and "x-c0" would
+  // convert into "x+ -c0" in SubXNode::Ideal. So ~(x-1) will eventually
+  // be (x+(-1))^-1.
+  if (op1 == Op_AddL && phase->type(in2) == TypeLong::MINUS_1 &&
+      phase->type(in1->in(2)) == TypeLong::MINUS_1) {
+    return new SubLNode(phase->makecon(TypeLong::ZERO), in1->in(1));
+  }
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 const Type* XorLNode::Value(PhaseGVN* phase) const {

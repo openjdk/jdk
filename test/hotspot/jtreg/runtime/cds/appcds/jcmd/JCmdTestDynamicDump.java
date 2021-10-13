@@ -27,6 +27,7 @@
  * @bug 8259070
  * @summary Test jcmd to dump dynamic shared archive.
  * @requires vm.cds
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @modules jdk.jcmd/sun.tools.common:+open
  * @compile ../test-classes/Hello.java JCmdTestDumpBase.java

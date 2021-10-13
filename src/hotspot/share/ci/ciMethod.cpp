@@ -70,6 +70,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _holder(holder)
 {
   assert(h_m() != NULL, "no null method");
+  assert(_holder->get_instanceKlass() == h_m->method_holder(), "");
 
   if (LogTouchedMethods) {
     h_m->log_touched(Thread::current());
@@ -1288,17 +1289,25 @@ ciMethodBlocks  *ciMethod::get_method_blocks() {
 
 #undef FETCH_FLAG_FROM_VM
 
-void ciMethod::dump_name_as_ascii(outputStream* st) {
-  Method* method = get_Method();
+void ciMethod::dump_name_as_ascii(outputStream* st, Method* method) {
   st->print("%s %s %s",
-            method->klass_name()->as_quoted_ascii(),
+            CURRENT_ENV->replay_name(method->method_holder()),
             method->name()->as_quoted_ascii(),
             method->signature()->as_quoted_ascii());
+}
+
+void ciMethod::dump_name_as_ascii(outputStream* st) {
+  Method* method = get_Method();
+  dump_name_as_ascii(st, method);
 }
 
 void ciMethod::dump_replay_data(outputStream* st) {
   ResourceMark rm;
   Method* method = get_Method();
+  if (MethodHandles::is_signature_polymorphic_method(method)) {
+    // ignore for now
+    return;
+  }
   MethodCounters* mcs = method->method_counters();
   st->print("ciMethod ");
   dump_name_as_ascii(st);

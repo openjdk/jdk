@@ -1747,8 +1747,7 @@ bool LibraryCallKit::inline_vector_convert() {
     if (num_elem_from < num_elem_to) {
       // Since input and output number of elements are not consistent, we need to make sure we
       // properly size. Thus, first make a cast that retains the number of elements from source.
-      // In case the size exceeds the arch size, we do the minimum.
-      int num_elem_for_cast = MIN2(num_elem_from, Matcher::max_vector_size(elem_bt_to));
+      int num_elem_for_cast = num_elem_from;
 
       // It is possible that arch does not support this intermediate vector size
       // TODO More complex logic required here to handle this corner case for the sizes.
@@ -1767,7 +1766,7 @@ bool LibraryCallKit::inline_vector_convert() {
     } else if (num_elem_from > num_elem_to) {
       // Since number elements from input is larger than output, simply reduce size of input (we are supposed to
       // drop top elements anyway).
-      int num_elem_for_resize = MAX2(num_elem_to, Matcher::min_vector_size(elem_bt_from));
+      int num_elem_for_resize = num_elem_to;
 
       // It is possible that arch does not support this intermediate vector size
       // TODO More complex logic required here to handle this corner case for the sizes.

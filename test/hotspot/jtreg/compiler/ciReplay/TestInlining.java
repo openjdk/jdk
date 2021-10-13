@@ -51,6 +51,7 @@ public class TestInlining extends CiReplayBase {
 
     @Override
     public void testAction() {
+        positiveTest(TIERED_DISABLED_VM_OPTION);
         try {
             Path replayFilePath = Paths.get(REPLAY_FILE_NAME);
             List<String> replayContent = Files.readAllLines(replayFilePath);

@@ -112,15 +112,22 @@ protected:
   const char*         _name;
   S390_ONLY(int       _ctable_offset;)
 
-  NOT_PRODUCT(CodeStrings _strings;)
+#ifndef PRODUCT
+  AsmRemarks _asm_remarks;
+  DbgStrings _dbg_strings;
+
+ ~CodeBlob() {
+    _asm_remarks.clear();
+    _dbg_strings.clear();
+  }
+#endif // not PRODUCT
 
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
 
 public:
   // Only used by unit test.
-  CodeBlob()
-    : _type(compiler_none) {}
+  CodeBlob() : _type(compiler_none) {}
 
   // Returns the space needed for CodeBlob
   static unsigned int allocation_size(CodeBuffer* cb, int header_size);
@@ -232,18 +239,21 @@ public:
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code();
 
-  // Print the comment associated with offset on stream, if there is one
+  // Print to stream, any comments associated with offset.
   virtual void print_block_comment(outputStream* stream, address block_begin) const {
-  #ifndef PRODUCT
-    intptr_t offset = (intptr_t)(block_begin - code_begin());
-    _strings.print_block_comment(stream, offset);
-  #endif
+#ifndef PRODUCT
+    ptrdiff_t offset = block_begin - code_begin();
+    assert(offset >= 0, "Expecting non-negative offset!");
+    _asm_remarks.print(uint(offset), stream);
+#endif
   }
 
 #ifndef PRODUCT
-  void set_strings(CodeStrings& strings) {
-    _strings.copy(strings);
-  }
+  AsmRemarks &asm_remarks() { return _asm_remarks; }
+  DbgStrings &dbg_strings() { return _dbg_strings; }
+
+  void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
+  void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
 #endif
 };
 

@@ -559,13 +559,21 @@ public class WhiteBox {
   public native void AddModuleExportsToAllUnnamed(Object module, String pkg);
   public native void AddModuleExportsToAll(Object module, String pkg);
 
-  public native int getOffsetForName0(String name);
-  public int getOffsetForName(String name) throws Exception {
-    int offset = getOffsetForName0(name);
+  public native int getCDSOffsetForName0(String name);
+  public int getCDSOffsetForName(String name) throws Exception {
+    int offset = getCDSOffsetForName0(name);
     if (offset == -1) {
       throw new RuntimeException(name + " not found");
     }
     return offset;
+  }
+  public native int getCDSConstantForName0(String name);
+  public int getCDSConstantForName(String name) throws Exception {
+    int constant = getCDSConstantForName0(name);
+    if (constant == -1) {
+      throw new RuntimeException(name + " not found");
+    }
+    return constant;
   }
   public native Boolean getMethodBooleanOption(Executable method, String name);
   public native Long    getMethodIntxOption(Executable method, String name);
@@ -595,7 +603,7 @@ public class WhiteBox {
   public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
-  public native boolean isJavaHeapArchiveSupported();
+  public native boolean canWriteJavaHeapArchive();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();

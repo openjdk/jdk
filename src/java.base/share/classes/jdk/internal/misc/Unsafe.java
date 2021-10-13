@@ -1143,9 +1143,14 @@ public final class Unsafe {
     }
 
     /**
-     * Ensures the given class has been initialized. This is often
-     * needed in conjunction with obtaining the static field base of a
-     * class.
+     * Ensures the given class has been initialized (see JVMS-5.5 for details).
+     * This is often needed in conjunction with obtaining the static field base
+     * of a class.
+     *
+     * The call returns when either class {@code c} is fully initialized or
+     * class {@code c} is being initialized and the call is performed from
+     * the initializing thread. In the latter case a subsequent call to
+     * {@link #shouldBeInitialized} will return {@code true}.
      */
     public void ensureClassInitialized(Class<?> c) {
         if (c == null) {

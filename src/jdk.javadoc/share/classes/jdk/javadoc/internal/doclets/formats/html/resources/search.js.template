@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,28 +96,16 @@ function createMatcher(pattern, flags) {
     var isCamelCase = /[A-Z]/.test(pattern);
     return new RegExp(pattern, flags + (isCamelCase ? "" : "i"));
 }
-var watermark = 'Search';
 $(function() {
     var search = $("#search-input");
     var reset = $("#reset-button");
     search.val('');
     search.prop("disabled", false);
     reset.prop("disabled", false);
-    search.val(watermark).addClass('watermark');
-    search.blur(function() {
-        if ($(this).val().length === 0) {
-            $(this).val(watermark).addClass('watermark');
-        }
-    });
-    search.on('click keydown paste', function() {
-        if ($(this).val() === watermark) {
-            $(this).val('').removeClass('watermark');
-        }
-    });
     reset.click(function() {
         search.val('').focus();
     });
-    search.focus()[0].setSelectionRange(0, 0);
+    search.focus();
 });
 $.widget("custom.catcomplete", $.ui.autocomplete, {
     _create: function() {
@@ -291,6 +279,35 @@ function doSearch(request, response) {
     response(result);
 }
 $(function() {
+    var expanded = false;
+    var windowWidth;
+    function collapse() {
+        if (expanded) {
+            $("div#navbar-top").removeAttr("style");
+            $("button#navbar-toggle-button")
+                .removeClass("expanded")
+                .attr("aria-expanded", "false");
+            expanded = false;
+        }
+    }
+    $("button#navbar-toggle-button").click(function (e) {
+        if (expanded) {
+            collapse();
+        } else {
+            $("div#navbar-top").height($("#navbar-top").prop("scrollHeight"));
+            $("button#navbar-toggle-button")
+                .addClass("expanded")
+                .attr("aria-expanded", "true");
+            expanded = true;
+            windowWidth = window.innerWidth;
+        }
+    });
+    $("ul.sub-nav-list-small li a").click(collapse);
+    $("input#search-input").focus(collapse);
+    $("main").click(collapse);
+    $(window).on("orientationchange", collapse).on("resize", function(e) {
+        if (expanded && windowWidth !== window.innerWidth) collapse();
+    });
     $("#search-input").catcomplete({
         minLength: 1,
         delay: 300,

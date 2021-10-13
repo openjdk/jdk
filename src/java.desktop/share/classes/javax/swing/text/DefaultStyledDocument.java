@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -833,17 +833,17 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         else {
             // Will only happen for text with more than 2 levels.
             // Find the common parent of a paragraph and pParagraph
-            Vector<Element> leftParents = new Vector<Element>();
-            Vector<Element> rightParents = new Vector<Element>();
+            ArrayList<Element> leftParents = new ArrayList<Element>();
+            ArrayList<Element> rightParents = new ArrayList<Element>();
             Element e = pParagraph;
             while(e != null) {
-                leftParents.addElement(e);
+                leftParents.add(e);
                 e = e.getParentElement();
             }
             e = paragraph;
             int leftIndex = -1;
             while(e != null && (leftIndex = leftParents.indexOf(e)) == -1) {
-                rightParents.addElement(e);
+                rightParents.add(e);
                 e = e.getParentElement();
             }
             if(e != null) {
@@ -858,7 +858,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 ElementSpec spec;
                 for(int counter = rightParents.size() - 1;
                     counter >= 0; counter--) {
-                    spec = new ElementSpec(rightParents.elementAt(counter).getAttributes(),
+                    spec = new ElementSpec(rightParents.get(counter).getAttributes(),
                                    ElementSpec.StartTagType);
                     if(counter > 0)
                         spec.setDirection(ElementSpec.JoinNextDirection);
@@ -2081,35 +2081,34 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 if (rj.getStartOffset() == rmOffs1) {
                     rj = null;
                 }
-                Vector<Element> children = new Vector<Element>();
+                ArrayList<Element> children = new ArrayList<Element>();
 
                 // transfer the left
                 for (int i = 0; i < ljIndex; i++) {
-                    children.addElement(clone(to, left.getElement(i)));
+                    children.add(clone(to, left.getElement(i)));
                 }
 
                 // transfer the join/middle
                 if (canJoin(lj, rj)) {
                     Element e = join(to, lj, rj, rmOffs0, rmOffs1);
-                    children.addElement(e);
+                    children.add(e);
                 } else {
                     if (lj != null) {
-                        children.addElement(cloneAsNecessary(to, lj, rmOffs0, rmOffs1));
+                        children.add(cloneAsNecessary(to, lj, rmOffs0, rmOffs1));
                     }
                     if (rj != null) {
-                        children.addElement(cloneAsNecessary(to, rj, rmOffs0, rmOffs1));
+                        children.add(cloneAsNecessary(to, rj, rmOffs0, rmOffs1));
                     }
                 }
 
                 // transfer the right
                 int n = right.getElementCount();
                 for (int i = (rj == null) ? rjIndex : rjIndex + 1; i < n; i++) {
-                    children.addElement(clone(to, right.getElement(i)));
+                    children.add(clone(to, right.getElement(i)));
                 }
 
                 // install the children
-                Element[] c = new Element[children.size()];
-                children.copyInto(c);
+                Element[] c = children.toArray(new Element[0]);
                 ((BranchElement)to).replace(0, 0, c);
                 return to;
             } else {

@@ -8,11 +8,11 @@
  * @run main DocLintTester -Xmsgs:missing -ref MissingThrowsTest.out MissingThrowsTest.java
  */
 
-/** */
+/** . */
 public class MissingThrowsTest {
-    /** */
+    /** . */
     void missingThrows() throws Exception { }
 
-    /** */
+    /** . */
     MissingThrowsTest() { }
 }

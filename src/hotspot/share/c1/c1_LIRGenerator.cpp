@@ -647,7 +647,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
 
     assert(klass->is_loaded(), "must be loaded");
     // allocate space for instance
-    assert(klass->size_helper() >= 0, "illegal instance size");
+    assert(klass->size_helper() > 0, "illegal instance size");
     const int instance_size = align_object_size(klass->size_helper());
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
                        oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
@@ -2122,10 +2122,10 @@ void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
     LIR_Opr offset = off.result();
 #endif
     LIR_Address* addr = new LIR_Address(src.result(), offset, type);
-    if (type == T_LONG || type == T_DOUBLE) {
-      __ move(addr, result);
+    if (is_reference_type(type)) {
+      __ move_wide(addr, result);
     } else {
-      access_load(IN_NATIVE, type, LIR_OprFact::address(addr), result);
+      __ move(addr, result);
     }
   }
 }

@@ -468,10 +468,11 @@ class Http2Connection  {
             CompletableFuture<Void> cf = new MinimalFuture<>();
             SSLEngine engine = aconn.getEngine();
             String engineAlpn = engine.getApplicationProtocol();
-            assert Objects.equals(alpn, engineAlpn)
-                    : "alpn: %s, engine: %s".formatted(alpn, engineAlpn);
-
-            DEBUG_LOGGER.log("checkSSLConfig: alpn: %s", alpn );
+            DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s', engine: '%s'", alpn, engineAlpn);
+            if (alpn == null && engineAlpn != null) {
+                alpn = engineAlpn;
+            }
+            DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s'", alpn );
 
             if (alpn == null || !alpn.equals("h2")) {
                 String msg;
@@ -494,6 +495,8 @@ class Http2Connection  {
                 cf.completeExceptionally(new ALPNException(msg, aconn));
                 return cf;
             }
+            assert Objects.equals(alpn, engineAlpn)
+                    : "alpn: %s, engine: %s".formatted(alpn, engineAlpn);
             cf.complete(null);
             return cf;
         };

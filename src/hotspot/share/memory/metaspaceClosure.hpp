@@ -128,10 +128,7 @@ public:
     virtual ~Ref() {}
 
     address obj() const {
-      // In some rare cases we store some flags in the lowest 2 bits of a
-      // MetaspaceObj pointer. Unmask these when manipulating the pointer.
-      uintx p = (uintx)*mpp();
-      return (address)(p & (~FLAG_MASK));
+      return *addr();
     }
 
     address* addr() const {
@@ -147,14 +144,6 @@ public:
     void* user_data()               { return _user_data; }
     void set_next(Ref* n)           { _next = n; }
     Ref* next() const               { return _next; }
-
-  private:
-    static const uintx FLAG_MASK = 0x03;
-
-    int flag_bits() const {
-      uintx p = (uintx)*mpp();
-      return (int)(p & FLAG_MASK);
-    }
   };
 
 private:

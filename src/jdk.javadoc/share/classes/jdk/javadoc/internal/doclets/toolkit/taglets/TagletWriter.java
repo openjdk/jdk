@@ -39,11 +39,13 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.SnippetTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.ThrowsTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet.UnsupportedTagletOperationException;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.StyledText;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -173,6 +175,16 @@ public abstract class TagletWriter {
      * @return the output
      */
     protected abstract Content simpleBlockTagOutput(Element element, List<? extends DocTree> simpleTags, String header);
+
+    /**
+     * Returns the output for a {@code {@snippet ...}} tag.
+     *
+     * @param element    The element that owns the doc comment
+     * @param snippetTag the snippet tag
+     *
+     * @return the output
+     */
+    protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text);
 
     /**
      * Returns the output for a {@code {@systemProperty...}} tag.

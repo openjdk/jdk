@@ -41,7 +41,6 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
-#include "gc/g1/g1SharedDirtyCardQueue.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -1688,12 +1687,27 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
     return;
   }
 
-  // Re-dirty the card and enqueue in the *shared* queue.  Can't use
-  // the thread-local queue, because that might be the queue that is
-  // being processed by us; we could be a Java thread conscripted to
-  // perform refinement on our queue's current buffer.
+  enqueue_for_reprocessing(card_ptr);
+}
+
+// Re-dirty and re-enqueue the card to retry refinement later.
+// This is used to deal with a rare race condition in concurrent refinement.
+void G1RemSet::enqueue_for_reprocessing(CardValue* card_ptr) {
+  // We can't use the thread-local queue, because that might be the queue
+  // that is being processed by us; we could be a Java thread conscripted to
+  // perform refinement on our queue's current buffer.  This situation only
+  // arises from rare race condition, so it's not worth any significant
+  // development effort or clever lock-free queue implementation.  Instead
+  // we use brute force, allocating and enqueuing an entire buffer for just
+  // this card.  Since buffers are processed in FIFO order and we try to
+  // keep some in the queue, it is likely that the racing state will have
+  // resolved by the time this card comes up for reprocessing.
   *card_ptr = G1CardTable::dirty_card_val();
-  G1BarrierSet::shared_dirty_card_queue().enqueue(card_ptr);
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  void** buffer = dcqs.allocate_buffer();
+  size_t index = dcqs.buffer_size() - 1;
+  buffer[index] = card_ptr;
+  dcqs.enqueue_completed_buffer(BufferNode::make_node_from_buffer(buffer, index));
 }
 
 void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {

@@ -90,12 +90,29 @@ public class TestGCLogMessages {
         }
     }
 
+    private class LogMessageWithJFROnly extends LogMessageWithLevel {
+        public LogMessageWithJFROnly(String message, Level level) {
+            super(message, level);
+        }
+
+        public boolean isAvailable() {
+            sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
+            return WB.isJFRIncluded();
+        }
+    }
+
     private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Pre Evacuate Collection Set", Level.INFO),
         new LogMessageWithLevel("Evacuate Collection Set", Level.INFO),
         new LogMessageWithLevel("Post Evacuate Collection Set", Level.INFO),
         new LogMessageWithLevel("Other", Level.INFO),
 
+        // Pre Evacuate Collection Set
+        new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
+        new LogMessageWithLevel("Concatenate Dirty Card Logs", Level.DEBUG),
+        new LogMessageWithLevel("Choose Collection Set", Level.DEBUG),
+        new LogMessageWithLevel("Region Register", Level.DEBUG),
+        new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
         // Merge Heap Roots
         new LogMessageWithLevel("Merge Heap Roots", Level.INFO),
         new LogMessageWithLevel("Prepare Merge Heap Roots", Level.DEBUG),
@@ -113,6 +130,13 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
+        // Evacuate Collection Set
+        new LogMessageWithLevel("Ext Root Scanning", Level.DEBUG),
+        new LogMessageWithLevel("Thread Roots", Level.TRACE),
+        new LogMessageWithLevel("CLDG Roots", Level.TRACE),
+        new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
+        new LogMessageWithLevel("JNI Global Roots", Level.TRACE),
+        new LogMessageWithLevel("VM Global Roots", Level.TRACE),
         // Scan Heap Roots
         new LogMessageWithLevel("Scan Heap Roots", Level.DEBUG),
         new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
@@ -125,52 +149,51 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Copied Bytes", Level.DEBUG),
         new LogMessageWithLevel("LAB Waste", Level.DEBUG),
         new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
-        // Ext Root Scan
-        new LogMessageWithLevel("Thread Roots", Level.TRACE),
-        new LogMessageWithLevel("CLDG Roots", Level.TRACE),
-        new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
-        new LogMessageWithLevel("JNI Global Roots", Level.TRACE),
-        new LogMessageWithLevel("VM Global Roots", Level.TRACE),
-        // Redirty Cards
-        new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
-        new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
-        // Misc Top-level
-        new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
-        new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
-        new LogMessageWithLevel("Region Register", Level.DEBUG),
-        new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
-        new LogMessageWithLevel("Concatenate Dirty Card Logs", Level.DEBUG),
-        new LogMessageWithLevel("Sample Collection Set Candidates", Level.DEBUG),
-        // Free CSet
-        new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
-        new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
-        new LogMessageWithLevel("Young Free Collection Set", Level.TRACE),
-        new LogMessageWithLevel("Non-Young Free Collection Set", Level.TRACE),
-        // Rebuild Free List
-        new LogMessageWithLevel("Rebuild Free List", Level.DEBUG),
-        new LogMessageWithLevel("Serial Rebuild Free List", Level.TRACE),
-        new LogMessageWithLevel("Parallel Rebuild Free List", Level.TRACE),
-
-        // Merge PSS
-        new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
-        // TLAB handling
-        new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
-        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
-
+        // Termination
+        new LogMessageWithLevel("Termination", Level.DEBUG),
+        new LogMessageWithLevel("Termination Attempts", Level.DEBUG),
+        // Post Evacuate Collection Set
         // NMethod List Cleanup
         new LogMessageWithLevel("NMethod List Cleanup", Level.DEBUG),
-
         // Reference Processing
         new LogMessageWithLevel("Reference Processing", Level.DEBUG),
         // VM internal reference processing
         new LogMessageWithLevel("Weak Processing", Level.DEBUG),
-        new LogMessageWithLevel("JNI Weak", Level.DEBUG),
+        new LogMessageWithLevel("VM Weak", Level.DEBUG),
+        new LogMessageWithLevel("ObjectSynchronizer Weak", Level.DEBUG),
+        new LogMessageWithLevel("JVMTI Tag Weak OopStorage", Level.DEBUG),
         new LogMessageWithLevel("StringTable Weak", Level.DEBUG),
         new LogMessageWithLevel("ResolvedMethodTable Weak", Level.DEBUG),
-        new LogMessageWithLevel("VM Weak", Level.DEBUG),
+        new LogMessageWithJFROnly("Weak JFR Old Object Samples", Level.DEBUG),
+        new LogMessageWithLevel("JNI Weak", Level.DEBUG),
 
+        // Post Evacuate Cleanup 1
+        new LogMessageWithLevel("Post Evacuate Cleanup 1", Level.DEBUG),
+        new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
+        new LogMessageWithLevel("LAB Waste", Level.DEBUG),
+        new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
+        new LogMessageWithLevel("Clear Logged Cards", Level.DEBUG),
+        new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
+
+        // Post Evacuate Cleanup 2
+        new LogMessageWithLevel("Post Evacuate Cleanup 2", Level.DEBUG),
+        new LogMessageWithLevel("Reset Hot Card Cache", Level.DEBUG),
+        new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
+        new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
+        new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
+        new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
+        new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
+        new LogMessageWithLevel("Young Free Collection Set", Level.TRACE),
+        new LogMessageWithLevel("Non-Young Free Collection Set", Level.TRACE),
+
+        // Misc Top-level
+        new LogMessageWithLevel("Rebuild Free List", Level.DEBUG),
+        new LogMessageWithLevel("Serial Rebuild Free List", Level.TRACE),
+        new LogMessageWithLevel("Parallel Rebuild Free List", Level.TRACE),
         new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),
+        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+        new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
     };
 
     void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {
@@ -274,6 +297,12 @@ public class TestGCLogMessages {
         output.shouldHaveExitValue(0);
     }
 
+    LogMessageWithLevel concurrentStartMessages[] = new LogMessageWithLevel[] {
+        new LogMessageWithLevel("Clear Claimed Marks", Level.DEBUG),
+        new LogMessageWithLevel("Reset Marking State", Level.DEBUG),
+        new LogMessageWithLevel("Note Start Of Mark", Level.DEBUG),
+    };
+
     private void testWithConcurrentStart() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                                   "-Xmx10M",
@@ -284,7 +313,7 @@ public class TestGCLogMessages {
                                                                   GCTestWithConcurrentStart.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Clear Claimed Marks");
+        checkMessagesAtLevel(output, concurrentStartMessages, Level.TRACE);
         output.shouldHaveExitValue(0);
     }
 

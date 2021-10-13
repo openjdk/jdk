@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,12 +300,10 @@ public class TestWarnErrorCount extends JavacTestingAbstractProcessor {
         ErrorKind ek = ErrorKind.valueOf(options.get("errKind"));
         WarnKind mwk = WarnKind.valueOf(options.get("msgrWarnKind"));
         WarnKind jwk = WarnKind.valueOf(options.get("javaWarnKind"));
-        messager.printMessage(Diagnostic.Kind.NOTE,
-                "Round " + round
-                + " " + roundEnv.getRootElements()
-                + ", last round: " + roundEnv.processingOver());
-        messager.printMessage(Diagnostic.Kind.NOTE,
-                "ek: " + ek + ", mwk: " + mwk + ", jwk: " + jwk);
+        messager.printNote("Round " + round
+                           + " " + roundEnv.getRootElements()
+                           + ", last round: " + roundEnv.processingOver());
+        messager.printNote("ek: " + ek + ", mwk: " + mwk + ", jwk: " + jwk);
 
         if (round <= MAX_GEN && !roundEnv.processingOver())
             generate("Gen" + round,
@@ -313,10 +311,10 @@ public class TestWarnErrorCount extends JavacTestingAbstractProcessor {
                     jwk.warn(round));
 
         if (mwk.warn(round))
-            messager.printMessage(Diagnostic.Kind.WARNING, "round " + round);
+            messager.printWarning("round " + round);
 
         if ((ek == ErrorKind.MESSAGER) && (round == ERROR_ROUND))
-            messager.printMessage(Diagnostic.Kind.ERROR, "round " + round);
+            messager.printError("round " + round);
 
         return true;
     }

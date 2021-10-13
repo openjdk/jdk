@@ -91,6 +91,7 @@ public abstract class CiReplayBase {
         }
 
         static void test(int i) {
+            i += ((Lambda)(() -> 0)).value();
             if ((i % 1000) == 0) {
                 System.out.println("Hello World!");
             }

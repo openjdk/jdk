@@ -18,8 +18,8 @@
  * @run main DocLintTester -Xmsgs:all,-syntax/private -ref AccessTest.package.out AccessTest.java
  */
 
-/** */
-public class AccessTest { /** */ AccessTest() { }
+/** . */
+public class AccessTest { /** . */ AccessTest() { }
     /**
      * public a < b
      */
@@ -41,8 +41,8 @@ public class AccessTest { /** */ AccessTest() { }
     private void private_syntax_error() { }
 }
 
-/** */
-class AccessTest2 { /** */ AccessTest2() { }
+/** Class comment. */
+class AccessTest2 { /** Constructor comment. */ AccessTest2() { }
     /**
      * public a < b
      */

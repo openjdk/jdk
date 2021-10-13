@@ -1,5 +1,5 @@
 /* Copyright (c) 2018, Cavium. All rights reserved. (By BELLSOFT)
- * Copyright (c) 2016, Intel Corporation.
+ * Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.

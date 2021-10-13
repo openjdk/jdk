@@ -24,7 +24,20 @@
 package gc.stringdedup;
 
 /*
- * @test TestStringDeduplicationInterned
+ * @test id=Serial
+ * @summary Test string deduplication of interned strings
+ * @bug 8029075
+ * @requires vm.gc.Serial
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationInterned Serial
+ */
+
+/*
+ * @test id=G1
  * @summary Test string deduplication of interned strings
  * @bug 8029075
  * @requires vm.gc.G1
@@ -37,7 +50,33 @@ package gc.stringdedup;
  */
 
 /*
- * @test TestStringDeduplicationInterned
+ * @test id=Parallel
+ * @summary Test string deduplication of interned strings
+ * @bug 8029075
+ * @requires vm.gc.Parallel
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationInterned Parallel
+ */
+
+/*
+ * @test id=Shenandoah
+ * @summary Test string deduplication of interned strings
+ * @bug 8029075
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationInterned Shenandoah
+ */
+
+/*
+ * @test id=Z
  * @summary Test string deduplication of interned strings
  * @bug 8029075
  * @requires vm.gc.Z

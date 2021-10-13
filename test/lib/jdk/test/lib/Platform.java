@@ -79,7 +79,7 @@ public class Platform {
     }
 
     public static boolean isTieredSupported() {
-        return compiler.contains("Tiered Compilers");
+        return (compiler != null) && compiler.contains("Tiered Compilers");
     }
 
     public static boolean isInt() {
@@ -364,6 +364,8 @@ public class Platform {
             return "client";
         } else if (Platform.isMinimal()) {
             return "minimal";
+        } else if (Platform.isZero()) {
+            return "zero";
         } else {
             throw new Error("TESTBUG: unsupported vm variant");
         }

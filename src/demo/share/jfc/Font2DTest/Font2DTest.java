@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -71,6 +71,8 @@ import java.util.StringTokenizer;
 import java.util.BitSet;
 import javax.swing.*;
 import javax.swing.event.*;
+
+import static java.nio.charset.StandardCharsets.UTF_16;
 
 /**
  * Font2DTest.java
@@ -589,7 +591,7 @@ public final class Font2DTest extends JPanel
             if (numBytes >= 2 &&
                 (( byteData[0] == (byte) 0xFF && byteData[1] == (byte) 0xFE ) ||
                  ( byteData[0] == (byte) 0xFE && byteData[1] == (byte) 0xFF )))
-              fileText = new String( byteData, "UTF-16" );
+              fileText = new String(byteData, UTF_16);
             /// Otherwise, use system default encoding
             else
               fileText = new String( byteData );
@@ -647,7 +649,7 @@ public final class Font2DTest extends JPanel
                 showFontInfoCBMI.getState() + "\n" +
                 rm.getSelectedItem() + "\n" +
                 range[0] + "\n" + range[1] + "\n" + curOptions + tFileName);
-            byte[] toBeWritten = completeOptions.getBytes( "UTF-16" );
+            byte[] toBeWritten = completeOptions.getBytes(UTF_16);
             bos.write( toBeWritten, 0, toBeWritten.length );
             bos.close();
         }
@@ -712,7 +714,7 @@ public final class Font2DTest extends JPanel
                 (byteData[0] != (byte) 0xFE || byteData[1] != (byte) 0xFF) )
               throw new Exception( "Not a Font2DTest options file" );
 
-            String options = new String( byteData, "UTF-16" );
+            String options = new String(byteData, UTF_16);
             StringTokenizer perLine = new StringTokenizer( options, "\n" );
             String title = perLine.nextToken();
             if ( !title.equals( "Font2DTest Option File" ))

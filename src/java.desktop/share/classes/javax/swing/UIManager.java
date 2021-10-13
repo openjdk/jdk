@@ -1353,28 +1353,28 @@ public class UIManager implements Serializable
          * property.  For example given "swing.installedlafs=motif,windows"
          * lafs = {"motif", "windows"}.
          */
-        Vector<String> lafs = new Vector<String>();
+        ArrayList<String> lafs = new ArrayList<String>();
         StringTokenizer st = new StringTokenizer(ilafsString, ",", false);
         while (st.hasMoreTokens()) {
-            lafs.addElement(st.nextToken());
+            lafs.add(st.nextToken());
         }
 
         /* Look up the name and class for each name in the "swing.installedlafs"
          * list.  If they both exist then add a LookAndFeelInfo to
          * the installedLafs array.
          */
-        Vector<LookAndFeelInfo> ilafs = new Vector<LookAndFeelInfo>(lafs.size());
+        ArrayList<LookAndFeelInfo> ilafs = new ArrayList<LookAndFeelInfo>(lafs.size());
         for (String laf : lafs) {
             String name = swingProps.getProperty(makeInstalledLAFKey(laf, "name"), laf);
             String cls = swingProps.getProperty(makeInstalledLAFKey(laf, "class"));
             if (cls != null) {
-                ilafs.addElement(new LookAndFeelInfo(name, cls));
+                ilafs.add(new LookAndFeelInfo(name, cls));
             }
         }
 
         LookAndFeelInfo[] installedLAFs = new LookAndFeelInfo[ilafs.size()];
         for(int i = 0; i < ilafs.size(); i++) {
-            installedLAFs[i] = ilafs.elementAt(i);
+            installedLAFs[i] = ilafs.get(i);
         }
         getLAFState().installedLAFs = installedLAFs;
     }

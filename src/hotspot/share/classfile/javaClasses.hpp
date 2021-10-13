@@ -237,9 +237,8 @@ class java_lang_String : AllStatic {
   static Symbol* as_symbol(oop java_string);
   static Symbol* as_symbol_or_null(oop java_string);
 
-  // Testers
-  static bool is_instance(oop obj);
-  static inline bool is_instance_inlined(oop obj);
+  // Tester
+  static inline bool is_instance(oop obj);
 
   // Debugging
   static void print(oop java_string, outputStream* st);

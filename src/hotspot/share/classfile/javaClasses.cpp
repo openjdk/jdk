@@ -206,9 +206,6 @@ int java_lang_String::_flags_offset;
 
 bool java_lang_String::_initialized;
 
-bool java_lang_String::is_instance(oop obj) {
-  return is_instance_inlined(obj);
-}
 
 bool java_lang_String::test_and_set_flag(oop java_string, uint8_t flag_mask) {
   uint8_t* addr = flags_addr(java_string);
@@ -903,7 +900,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (HeapShared::open_regions_mapped()) {
+    if (HeapShared::are_archived_mirrors_available()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1146,8 +1143,7 @@ static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass
 }
 
 void java_lang_Class::archive_basic_type_mirrors() {
-  assert(HeapShared::is_heap_object_archiving_allowed(),
-         "HeapShared::is_heap_object_archiving_allowed() must be true");
+  assert(HeapShared::can_write(), "must be");
 
   for (int t = T_BOOLEAN; t < T_VOID+1; t++) {
     BasicType bt = (BasicType)t;
@@ -1185,8 +1181,7 @@ void java_lang_Class::archive_basic_type_mirrors() {
 // be used at runtime, new mirror object is created for the shared
 // class. The _has_archived_raw_mirror is cleared also during the process.
 oop java_lang_Class::archive_mirror(Klass* k) {
-  assert(HeapShared::is_heap_object_archiving_allowed(),
-         "HeapShared::is_heap_object_archiving_allowed() must be true");
+  assert(HeapShared::can_write(), "must be");
 
   // Mirror is already archived
   if (k->has_archived_mirror_index()) {
@@ -1340,7 +1335,9 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
+  if (HeapShared::is_mapped()) {
+    assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
+  }
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
@@ -4223,8 +4220,8 @@ void java_lang_invoke_MethodHandleNatives_CallSiteContext::serialize_offsets(Ser
 
 DependencyContext java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
   assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
-  nmethodBucket* volatile* vmdeps_addr = (nmethodBucket* volatile*)call_site->field_addr(_vmdependencies_offset);
-  volatile uint64_t* last_cleanup_addr = (volatile uint64_t*)call_site->field_addr(_last_cleanup_offset);
+  nmethodBucket* volatile* vmdeps_addr = call_site->field_addr<nmethodBucket* volatile>(_vmdependencies_offset);
+  volatile uint64_t* last_cleanup_addr = call_site->field_addr<volatile uint64_t>(_last_cleanup_offset);
   DependencyContext dep_ctx(vmdeps_addr, last_cleanup_addr);
   return dep_ctx;
 }
@@ -4282,19 +4279,19 @@ int  java_lang_ClassLoader::_parent_offset;
 ClassLoaderData* java_lang_ClassLoader::loader_data_acquire(oop loader) {
   assert(loader != NULL, "loader must not be NULL");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  return HeapAccess<MO_ACQUIRE>::load_at(loader, _loader_data_offset);
+  return Atomic::load_acquire(loader->field_addr<ClassLoaderData*>(_loader_data_offset));
 }
 
 ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
   assert(loader != NULL, "loader must not be NULL");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  return HeapAccess<>::load_at(loader, _loader_data_offset);
+  return *loader->field_addr<ClassLoaderData*>(_loader_data_offset);
 }
 
 void java_lang_ClassLoader::release_set_loader_data(oop loader, ClassLoaderData* new_data) {
   assert(loader != NULL, "loader must not be NULL");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  HeapAccess<MO_RELEASE>::store_at(loader, _loader_data_offset, new_data);
+  Atomic::release_store(loader->field_addr<ClassLoaderData*>(_loader_data_offset), new_data);
 }
 
 #define CLASSLOADER_FIELDS_DO(macro) \
@@ -4441,6 +4438,7 @@ bool java_lang_System::allow_security_manager() {
     oop base = vmClasses::System_klass()->static_field_base_raw();
     int never = base->int_field(_static_never_offset);
     allowed = (base->int_field(_static_allow_security_offset) != never);
+    initialized = true;
   }
   return allowed;
 }
