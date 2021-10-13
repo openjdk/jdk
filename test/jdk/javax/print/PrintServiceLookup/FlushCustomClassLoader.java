@@ -35,7 +35,7 @@ import javax.print.PrintServiceLookup;
  * @bug 8273831
  * @summary Tests custom class loader cleanup
  */
-public final class FlushCustomClassLoaded {
+public final class FlushCustomClassLoader {
 
     public static void main(String[] args) throws Exception {
         Reference<ClassLoader> loader = getLoader("testMethod");
@@ -69,13 +69,13 @@ public final class FlushCustomClassLoaded {
          */
         EventQueue.invokeAndWait(() -> {});
 
-        URL url = FlushCustomClassLoaded.class.getProtectionDomain()
+        URL url = FlushCustomClassLoader.class.getProtectionDomain()
                                               .getCodeSource().getLocation();
         URLClassLoader loader = new URLClassLoader(new URL[]{url}, null);
 
         Thread ct = Thread.currentThread();
         ct.setContextClassLoader(loader);
-        Class<?> cls = Class.forName("FlushCustomClassLoaded", true, loader);
+        Class<?> cls = Class.forName("FlushCustomClassLoader", true, loader);
         cls.getDeclaredMethod(m).invoke(null);
         ct.setContextClassLoader(null);
         loader.close();
