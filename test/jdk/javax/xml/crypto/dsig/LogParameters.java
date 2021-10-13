@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,10 @@ import java.util.logging.*;
 
 /**
  * @test
- * @bug 8247907
+ * @bug 8247907 8254267
  * @library /test/lib
  * @modules java.xml.crypto/com.sun.org.slf4j.internal
+ * @run main/othervm LogParameters
  */
 public class LogParameters {
     public static void main(String[] args) {
