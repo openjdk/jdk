@@ -34,6 +34,7 @@
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
+#include "oops/markWordDecoder.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
@@ -376,7 +377,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     // if the object isn't moving we can just set the mark to the default
     // mark and handle it specially later on.
     q->init_mark();
-    assert(q->forwardee() == NULL, "should be forwarded to NULL");
+    assert(q->mark().decode_pointer() == NULL, "should be forwarded to NULL");
   }
 
   compact_top += size;
@@ -536,7 +537,8 @@ void CompactibleSpace::compact() {
 
   debug_only(HeapWord* prev_obj = NULL);
   while (cur_obj < end_of_live) {
-    if (!cast_to_oop(cur_obj)->is_gc_marked()) {
+    MarkWordDecoder mwd = MarkWordDecoder(cast_to_oop(cur_obj));
+    if (!mwd.is_encoded()) {
       debug_only(prev_obj = cur_obj);
       // The first word of the dead object contains a pointer to the next live object or end of space.
       cur_obj = *(HeapWord**)cur_obj;
@@ -547,7 +549,7 @@ void CompactibleSpace::compact() {
 
       // size and destination
       size_t size = cast_to_oop(cur_obj)->size();
-      HeapWord* compaction_top = cast_from_oop<HeapWord*>(cast_to_oop(cur_obj)->forwardee());
+      HeapWord* compaction_top = mwd.decode<HeapWord*>();
 
       // prefetch beyond compaction_top
       Prefetch::write(compaction_top, copy_interval);

@@ -857,7 +857,7 @@ public:
     }
     if (region_attr.is_in_cset()) {
       assert( obj->is_forwarded(), "invariant" );
-      *p = obj->forwardee();
+      *p = MarkWordDecoder(obj).decode();
     } else {
       assert(!obj->is_forwarded(), "invariant" );
       assert(region_attr.is_humongous(),

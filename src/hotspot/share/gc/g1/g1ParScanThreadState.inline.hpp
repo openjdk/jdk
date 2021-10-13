@@ -32,6 +32,7 @@
 #include "gc/g1/g1OopStarChunkedList.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/markWordDecoder.hpp"
 #include "oops/oop.inline.hpp"
 
 inline void G1ParScanThreadState::push_on_queue(ScannerTask task) {
@@ -111,7 +112,7 @@ template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj
   // References to the current collection set are references to objects that failed
   // evacuation. Currently these regions are always relabelled as old without
   // remembered sets, so skip them.
-  assert(dest_attr.is_in_cset() == (obj->forwardee() == obj),
+  assert(dest_attr.is_in_cset() == (MarkWordDecoder(obj).is_encoded() && (MarkWordDecoder(obj).decode() == obj)),
          "Only evac-failed objects must be in the collection set here but " PTR_FORMAT " is not", p2i(obj));
   if (dest_attr.is_in_cset()) {
     return;

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "oops/markWordDecoder.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -104,7 +105,7 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
   if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
     object->forward_to(cast_to_oop(_compaction_top));
   } else {
-    if (object->forwardee() != NULL) {
+    if (object->mark().decode_pointer() != NULL) {
       // Object should not move but mark-word is used so it looks like the
       // object is forwarded. Need to clear the mark and it's no problem
       // since it will be restored by preserved marks.
@@ -117,7 +118,7 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
              "should have correct prototype obj: " PTR_FORMAT " mark: " PTR_FORMAT " prototype: " PTR_FORMAT,
              p2i(object), object->mark().value(), markWord::prototype().value());
     }
-    assert(object->forwardee() == NULL, "should be forwarded to NULL");
+    assert(object->mark().decode_pointer() == NULL, "should be forwarded to NULL");
   }
 
   // Update compaction values.

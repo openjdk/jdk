@@ -40,6 +40,7 @@
 #include "memory/padded.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/markWordDecoder.hpp"
 #include "oops/compressedOops.inline.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
@@ -319,7 +320,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayScanTask task) {
 
   TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
 
-  oop const obj = old->forwardee();
+  oop const obj = MarkWordDecoder(old).decode();
 
   int start;
   int const end = arrayOop(old)->length();
@@ -354,7 +355,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   // it.
   if (obj->forward_to_atomic(obj, obj_mark) == NULL) {
     // We won any races, we "own" this object.
-    assert(obj == obj->forwardee(), "Sanity");
+    assert(obj == MarkWordDecoder(obj).decode(), "Sanity");
 
     _promotion_failed_info.register_copy_failure(obj->size());
 
@@ -363,10 +364,11 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
     _preserved_marks->push_if_necessary(obj, obj_mark);
   }  else {
     // We lost, someone else "owns" this object
-    guarantee(obj->is_forwarded(), "Object must be forwarded if the cas failed.");
+    MarkWordDecoder mwd(obj);
+    guarantee(mwd.is_encoded(), "Object must be forwarded if the cas failed.");
 
     // No unallocation to worry about.
-    obj = obj->forwardee();
+    obj = mwd.decode();
   }
 
   return obj;

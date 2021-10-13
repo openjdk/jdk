@@ -222,7 +222,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   assert(from_obj->is_objArray(), "must be obj array");
   assert(from_obj->is_forwarded(), "must be forwarded");
 
-  oop to_obj = from_obj->forwardee();
+  oop to_obj = MarkWordDecoder(from_obj).decode();
   assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
   assert(to_obj->is_objArray(), "must be obj array");
   objArrayOop to_array = objArrayOop(to_obj);
@@ -251,7 +251,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                                   oop to_obj) {
   assert(from_obj->is_objArray(), "precondition");
   assert(from_obj->is_forwarded(), "precondition");
-  assert(from_obj->forwardee() == to_obj, "precondition");
+  assert(MarkWordDecoder(from_obj).decode() == to_obj, "precondition");
   assert(from_obj != to_obj, "should not be scanning self-forwarded objects");
   assert(to_obj->is_objArray(), "precondition");
 

@@ -34,6 +34,7 @@
 #include "gc/shared/space.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/markWordDecoder.hpp"
 #include "oops/oop.inline.hpp"
 #if INCLUDE_SERIALGC
 #include "gc/serial/defNewGeneration.inline.hpp"
@@ -56,8 +57,9 @@ inline void FastScanClosure<Derived>::do_oop_work(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     if (cast_from_oop<HeapWord*>(obj) < _young_gen_end) {
       assert(!_young_gen->to()->is_in_reserved(obj), "Scanning field twice?");
-      oop new_obj = obj->is_forwarded() ? obj->forwardee()
-                                        : _young_gen->copy_to_survivor_space(obj);
+      MarkWordDecoder mwd(obj);
+      oop new_obj = mwd.is_encoded() ? mwd.decode()
+                                     : _young_gen->copy_to_survivor_space(obj);
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
       static_cast<Derived*>(this)->barrier(p);
@@ -122,8 +124,9 @@ template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
   // weak references are sometimes scanned twice; must check
   // that to-space doesn't already contain this object
   if (cast_from_oop<HeapWord*>(obj) < _boundary && !_g->to()->is_in_reserved(obj)) {
-    oop new_obj = obj->is_forwarded() ? obj->forwardee()
-                                      : _g->copy_to_survivor_space(obj);
+    MarkWordDecoder mwd(obj);
+    oop new_obj = mwd.is_encoded() ? mwd.decode()
+                                   : _g->copy_to_survivor_space(obj);
     RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
   }
 }

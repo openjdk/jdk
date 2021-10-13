@@ -259,8 +259,6 @@ class oopDesc {
   // value of the forwarding pointer returned and does not modify "this".
   inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
-  inline oop forwardee() const;
-
   // Age of object during scavenge
   inline uint age() const;
   inline void incr_age();

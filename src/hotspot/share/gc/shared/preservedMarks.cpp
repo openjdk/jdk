@@ -27,6 +27,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/markWordDecoder.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
@@ -45,8 +46,9 @@ void PreservedMarks::adjust_during_full_gc() {
     OopAndMarkWord* elem = iter.next_addr();
 
     oop obj = elem->get_oop();
-    if (obj->is_forwarded()) {
-      elem->set_oop(obj->forwardee());
+    MarkWordDecoder mwd(obj);
+    if (mwd.is_encoded()) {
+      elem->set_oop(mwd.decode());
     }
   }
 }
