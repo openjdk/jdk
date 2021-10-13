@@ -32,7 +32,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
-#include "oops/markWordDecoder.hpp"
+#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
@@ -61,11 +61,13 @@ public:
 
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
-  HeapWord* destination = reinterpret_cast<HeapWord*>(obj->mark().decode_pointer());
-  if (destination == NULL) {
+  OopForwarding mwd(obj);
+  if (!mwd.is_forwarded()) {
     // Object not moving
     return size;
   }
+
+  HeapWord* destination = mwd.forwardee<HeapWord*>();
 
   // copy object and reinit its mark
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);

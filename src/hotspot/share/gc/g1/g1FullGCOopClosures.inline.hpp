@@ -36,7 +36,7 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/markWordDecoder.hpp"
+#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 
 template <typename T>
@@ -78,20 +78,14 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
     return;
   }
 
-  MarkWordDecoder mwd(obj);
-  if (!mwd.is_encoded()) {
-    // Not forwarded, return current reference.
-    assert(obj->mark() == markWord::prototype() || // Correct mark
-           obj->mark_must_be_preserved(), // Will be restored by PreservedMarksSet
-           "Must have correct prototype or be preserved, obj: " PTR_FORMAT ", mark: " PTR_FORMAT ", prototype: " PTR_FORMAT,
-           p2i(obj), obj->mark().value(), markWord::prototype().value());
-    return;
+  OopForwarding mwd(obj);
+  if (mwd.is_forwarded()) {
+    oop forwardee = mwd.forwardee();
+    // Forwarded, just update.
+    assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
+    RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
   }
 
-  oop forwardee = mwd.decode();
-  // Forwarded, just update.
-  assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
-  RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
 }
 
 inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }

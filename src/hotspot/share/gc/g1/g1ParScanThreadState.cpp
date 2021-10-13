@@ -203,11 +203,11 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
     return;
   }
 
-  markWord m = obj->mark();
-  if (m.is_marked()) {
-    obj = cast_to_oop(m.decode_pointer());
+  OopForwarding mwd(obj);
+  if (mwd.is_forwarded()) {
+    obj = mwd.forwardee();
   } else {
-    obj = do_copy_to_survivor_space(region_attr, obj, m);
+    obj = do_copy_to_survivor_space(region_attr, obj, mwd.mark());
   }
   RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
@@ -222,7 +222,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   assert(from_obj->is_objArray(), "must be obj array");
   assert(from_obj->is_forwarded(), "must be forwarded");
 
-  oop to_obj = MarkWordDecoder(from_obj).decode();
+  oop to_obj = OopForwarding(from_obj).forwardee();
   assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
   assert(to_obj->is_objArray(), "must be obj array");
   objArrayOop to_array = objArrayOop(to_obj);
@@ -251,7 +251,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                                   oop to_obj) {
   assert(from_obj->is_objArray(), "precondition");
   assert(from_obj->is_forwarded(), "precondition");
-  assert(MarkWordDecoder(from_obj).decode() == to_obj, "precondition");
+  assert(OopForwarding(from_obj).forwardee() == to_obj, "precondition");
   assert(from_obj != to_obj, "should not be scanning self-forwarded objects");
   assert(to_obj->is_objArray(), "precondition");
 

@@ -38,7 +38,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/markWordDecoder.hpp"
+#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -137,16 +137,16 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
   // at any time.
-  markWord m = o->mark();
-  if (!m.is_marked()) {
-    return copy_unmarked_to_survivor_space<promote_immediately>(o, m);
+  OopForwarding mwd(o);
+  if (!mwd.is_forwarded()) {
+    return copy_unmarked_to_survivor_space<promote_immediately>(o, mwd.mark());
   } else {
     // Ensure any loads from the forwardee follow all changes that precede
     // the release-cmpxchg that performed the forwarding, possibly in some
     // other thread.
     OrderAccess::acquire();
     // Return the already installed forwardee.
-    return cast_to_oop(m.decode_pointer());
+    return mwd.forwardee();
   }
 }
 
@@ -258,7 +258,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_release);
   if (forwardee == NULL) {  // forwardee is NULL when forwarding is successful
     // We won any races, we "own" this object.
-    assert(new_obj == MarkWordDecoder(o).decode(), "Sanity");
+    assert(new_obj == OopForwarding(o).forwardee(), "Sanity");
 
     // Increment age if obj still in new generation. Now that
     // we're dealing with a markWord that cannot change, it is
@@ -296,7 +296,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     OrderAccess::acquire();
 
     assert(o->is_forwarded(), "Object must be forwarded if the cas failed.");
-    assert(MarkWordDecoder(o).decode() == forwardee, "invariant");
+    assert(OopForwarding(o).forwardee() == forwardee, "invariant");
 
     // Try to deallocate the space.  If it was directly allocated we cannot
     // deallocate it, so we have to test.  If the deallocation fails,

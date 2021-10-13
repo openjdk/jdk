@@ -34,6 +34,7 @@
 #include "oops/markWord.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.inline.hpp"
@@ -88,13 +89,9 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    oop new_obj = cast_to_oop(obj->mark().decode_pointer());
-
-    assert(new_obj != NULL ||                      // is forwarding ptr?
-           obj->mark() == markWord::prototype(), // not gc marked?
-           "should be forwarded");
-
-    if (new_obj != NULL) {
+    OopForwarding mwd(obj);
+    if (mwd.is_forwarded()) {
+      oop new_obj = mwd.forwardee();
       assert(is_object_aligned(new_obj), "oop must be aligned");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }

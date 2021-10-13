@@ -31,7 +31,7 @@
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/markWordDecoder.hpp"
+#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -43,7 +43,7 @@ public:
     if (PSScavenge::should_scavenge(p)) {
       oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
       assert(o->is_forwarded(), "Objects are already forwarded before weak processing");
-      oop new_obj = MarkWordDecoder(o).decode();
+      oop new_obj = OopForwarding(o).forwardee();
       if (log_develop_is_enabled(Trace, gc, scavenge)) {
         ResourceMark rm; // required by internal_name()
         log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",

@@ -36,7 +36,7 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/markWordDecoder.hpp"
+#include "oops/oopForwarding.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -56,7 +56,7 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // problems before we go into push_on_queue to know where the
   // problem is coming from
   assert((obj == RawAccess<>::oop_load(p)) ||
-         (MarkWordDecoder(obj).decode() == RawAccess<>::oop_load(p)),
+         (OopForwarding(obj).forwardee() == RawAccess<>::oop_load(p)),
          "p should still be pointing to obj or to its forwardee");
 
   _par_scan_state->push_on_queue(ScannerTask(p));
@@ -232,9 +232,9 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
   const G1HeapRegionAttr state = _g1h->region_attr(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    MarkWordDecoder mwd = MarkWordDecoder(obj);
-    if (mwd.is_encoded()) {
-      forwardee = mwd.decode();
+    OopForwarding mwd = OopForwarding(obj);
+    if (mwd.is_forwarded()) {
+      forwardee = mwd.forwardee();
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, mwd.mark());
     }

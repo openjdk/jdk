@@ -52,7 +52,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/markWordDecoder.hpp"
+#include "oops/oopForwarding.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.hpp"
@@ -727,9 +727,9 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       assert(_ctx->is_marked(obj), "must be marked");
-      MarkWordDecoder mwd(obj);
-      if (mwd.is_encoded()) {
-        oop forw = mwd.decode();
+      OopForwarding mwd(obj);
+      if (mwd.is_forwarded()) {
+        oop forw = mwd.forwardee();
         RawAccess<IS_NOT_NULL>::oop_store(p, forw);
       }
     }
@@ -837,10 +837,10 @@ public:
   void do_object(oop p) {
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
     size_t size = (size_t)p->size();
-    MarkWordDecoder mwd(p);
-    if (mwd.is_encoded()) {
+    OopForwarding mwd(p);
+    if (mwd.is_forwarded()) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
-      HeapWord* compact_to = cast_from_oop<HeapWord*>(mwd.decode());
+      HeapWord* compact_to = cast_from_oop<HeapWord*>(mwd.forwardee());
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
       new_obj->init_mark();
@@ -940,8 +940,8 @@ void ShenandoahFullGC::compact_humongous_objects() {
     ShenandoahHeapRegion* r = heap->get_region(c - 1);
     if (r->is_humongous_start()) {
       oop old_obj = cast_to_oop(r->bottom());
-      MarkWordDecoder mwd(old_obj);
-      if (!mwd.is_encoded()) {
+      OopForwarding mwd(old_obj);
+      if (!mwd.is_forwarded()) {
         // No need to move the object, it stays at the same slot
         continue;
       }
@@ -950,7 +950,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
 
       size_t old_start = r->index();
       size_t old_end   = old_start + num_regions - 1;
-      size_t new_start = heap->heap_region_index_containing(mwd.decode());
+      size_t new_start = heap->heap_region_index_containing(mwd.forwardee());
       size_t new_end   = new_start + num_regions - 1;
       assert(old_start != new_start, "must be real move");
       assert(r->is_stw_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->index());
