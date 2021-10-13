@@ -541,7 +541,7 @@ public class MathBench {
     }
 
     @Benchmark
-    public long  unsignedMultiplyHighLongLog() {
+    public long  unsignedMultiplyHighLongLong() {
         return  Math.unsignedMultiplyHigh(long747, long13);
     }
 
