@@ -3044,7 +3044,8 @@ public class Utils {
         value.accept(new SimpleAnnotationValueVisitor14<>() {
             @Override
             public Object visitArray(List<? extends AnnotationValue> vals, Object p) {
-                vals.forEach(v -> v.accept(this, null));
+                vals.stream()
+                    .forEach(v -> v.accept(this, null));
                 return super.visitArray(vals, p);
             }
             @Override

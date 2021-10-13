@@ -37,7 +37,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.regex.*;
-import java.util.stream.Collectors;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -46,7 +45,6 @@ import javax.lang.model.util.*;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
-import javax.tools.StandardJavaFileManager;
 
 import static javax.tools.StandardLocation.*;
 
