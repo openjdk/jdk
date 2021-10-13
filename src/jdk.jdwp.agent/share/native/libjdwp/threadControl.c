@@ -741,10 +741,11 @@ handleAppResumeCompletion(JNIEnv *env, EventInfo *evinfo,
 
 /*
  * The caller must own handlerLock and threadLock.
- * The current thread waits on threadLock if the suspendCount of the given
- * thread is greather than 0 but before it releases the handlerLock. This is
- * necessary because threadControl_resumeThread() and threadControl_resumeAll()
- * need it.
+ * If the suspendCount of the given thread is greater than 0, then the
+ * current thread will release the handlerLock and wait on the threadLock. It
+ * must release the handlerLock first, because threadControl_resumeThread()
+ * and threadControl_resumeAll() need it, and calling them is how suspendCount
+ * will eventually be decremented to 0.
  * handlerLock and threadLock are owned when returning and the suspendCount of
  * the given thread is 0.
  */

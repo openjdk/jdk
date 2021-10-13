@@ -76,9 +76,7 @@ class ResumeAfterThreadResumeCallTarg extends Thread {
 
     public static void log(String m) {
         String threadName = Thread.currentThread().getName();
-        System.out.println();
         System.out.println("###(Target,"+ threadName +") " + m);
-        System.out.println();
     }
 
     public static void main(String[] args) {
@@ -97,7 +95,6 @@ class ResumeAfterThreadResumeCallTarg extends Thread {
 
         // "resumee" is suspended now because of the breakpoint
         // Calling Thread.resume() will block this thread.
-
         log("Calling Thread.resume()");
         resumee.resume();
         resumee.mainThreadReturnedFromResumeCall = true;
@@ -157,14 +154,20 @@ public class ResumeAfterThreadResumeCallTest extends TestScaffold {
         ThreadReference resumee = bpe.thread();
         ObjectReference resumeeThreadObj = resumee.frame(1).thisObject();
         printStack(resumee);
+        mainThread.suspend();
+        printStack(mainThread);
+        mainThread.resume();
         log("resumee.isSuspended() -> " + resumee.isSuspended());
         log("mainThread.isSuspended() -> " + mainThread.isSuspended());
         log("Notify target main thread to continue by setting reachedBreakpoint = true.");
         setField(resumeeThreadObj, "reachedBreakpoint", vm().mirrorOf(true));
 
-        log("Sleeping 500ms shows that the main thread is blocked calling Thread.resume() on \"resumee\" Thread.");
+        log("Sleeping 500ms so that the main thread is blocked calling Thread.resume() on \"resumee\" Thread.");
         Thread.sleep(500);
         log("After sleep.");
+        mainThread.suspend();
+        printStack(mainThread);
+        mainThread.resume();
 
         boolean mainThreadReturnedFromResumeCall = false;
         boolean resumedResumee = false;
@@ -173,7 +176,7 @@ public class ResumeAfterThreadResumeCallTest extends TestScaffold {
             Value v = getField(resumeeThreadObj, "mainThreadReturnedFromResumeCall");
             mainThreadReturnedFromResumeCall = ((PrimitiveValue) v).booleanValue();
             if (!resumedResumee) {
-                // main thread should be still blocked.
+                // main thread should still be blocked.
                 Asserts.assertFalse(mainThreadReturnedFromResumeCall, "main Thread was not blocked");
                 log("Resuming \"resumee\" will unblock the main thread.");
                 resumee.resume();
@@ -217,8 +220,6 @@ public class ResumeAfterThreadResumeCallTest extends TestScaffold {
     }
 
     public void log(String m) {
-        System.out.println();
         System.out.println("###(Debugger) " + m);
-        System.out.println();
     }
 }
