@@ -251,7 +251,7 @@ const StoredEdge* EdgeStore::get(const ObjectSample* sample) const {
 
 #ifdef ASSERT
 // max_idx to ensure idx fit in lower 32-bits of markword together with lock bits.
-static constexpr const int max_idx =  right_n_bits(32 - markWord::lock_bits) - 1;
+static constexpr const int max_idx =  right_n_bits(32 - markWord::lock_bits);
 
 static void store_idx_precondition(oop sample_object, int idx) {
   assert(sample_object != NULL, "invariant");
