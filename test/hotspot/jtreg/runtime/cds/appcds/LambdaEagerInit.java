@@ -127,8 +127,12 @@ public class LambdaEagerInit {
             .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug")
             .setUseSystemArchive(true)
             .setUseVersion(false)
-            .addSuffix(mainClass);
+            .addSuffix("-showversion", mainClass);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
+        if (output.getStderr().contains("sharing")) {
+            output.shouldMatch(lambdaLoadedFromArchive)
+                  .shouldMatch(cdsLoadedLambdaProxy);
+        }
         output.shouldHaveExitValue(0);
     }
 }
