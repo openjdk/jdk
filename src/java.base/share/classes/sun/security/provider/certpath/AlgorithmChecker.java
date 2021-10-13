@@ -148,7 +148,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         }
 
         this.prevPubKey = this.trustedPubKey;
-        this.constraints = constraints == null ? 
+        this.constraints = constraints == null ?
             DisabledAlgorithmConstraints.certPathConstraints() : constraints;
         this.date = date;
         this.variant = (variant == null ? Validator.VAR_GENERIC : variant);

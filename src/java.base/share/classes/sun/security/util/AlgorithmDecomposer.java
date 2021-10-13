@@ -43,7 +43,7 @@ public class AlgorithmDecomposer {
 
     private static final Map<String, String> CANONICAL_NAME =
         Map.of("SHA-1", "SHA1", "SHA-224", "SHA224", "SHA-256", "SHA256",
-               "SHA-384", "SHA384", "SHA-512", "SHA512", "SHA-512/224", 
+               "SHA-384", "SHA384", "SHA-512", "SHA512", "SHA-512/224",
                "SHA512/224", "SHA-512/256", "SHA512/256");
 
     private static Set<String> decomposeImpl(String algorithm) {
