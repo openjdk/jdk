@@ -35,8 +35,8 @@ class ZVirtualMemoryManagerImpl : public CHeapObj<mtGC> {
 public:
   virtual void initialize_before_reserve() {}
   virtual void initialize_after_reserve(ZMemoryManager* manager) {}
-  virtual bool reserve(zaddress addr, size_t size) = 0;
-  virtual void unreserve(zaddress addr, size_t size) = 0;
+  virtual bool reserve(zaddress_unsafe addr, size_t size) = 0;
+  virtual void unreserve(zaddress_unsafe addr, size_t size) = 0;
 };
 
 // Implements small pages (paged) support using placeholder reservation.
@@ -44,21 +44,21 @@ class ZVirtualMemoryManagerSmallPages : public ZVirtualMemoryManagerImpl {
 private:
   class PlaceholderCallbacks : public AllStatic {
   public:
-    static void split_placeholder(zaddress start, size_t size) {
-      ZMapper::split_placeholder(untype(start), size);
+    static void split_placeholder(zoffset start, size_t size) {
+      ZMapper::split_placeholder(ZOffset::address_unsafe(start), size);
     }
 
-    static void coalesce_placeholders(zaddress start, size_t size) {
-      ZMapper::coalesce_placeholders(untype(start), size);
+    static void coalesce_placeholders(zoffset start, size_t size) {
+      ZMapper::coalesce_placeholders(ZOffset::address_unsafe(start), size);
     }
 
-    static void split_into_placeholder_granules(zaddress start, size_t size) {
-      for (zaddress addr = start; addr < start + size; addr += ZGranuleSize) {
-        split_placeholder(addr, ZGranuleSize);
+    static void split_into_placeholder_granules(zoffset start, size_t size) {
+      for (uintptr_t addr = untype(start); addr < untype(start) + size; addr += ZGranuleSize) {
+        split_placeholder(to_zoffset(addr), ZGranuleSize);
       }
     }
 
-    static void coalesce_into_one_placeholder(zaddress start, size_t size) {
+    static void coalesce_into_one_placeholder(zoffset start, size_t size) {
       assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
 
       if (size > ZGranuleSize) {
@@ -68,34 +68,34 @@ private:
 
     static void create_callback(const ZMemory* area) {
       assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
-      coalesce_into_one_placeholder(ZAddress::address(area->start()), area->size());
+      coalesce_into_one_placeholder(area->start(), area->size());
     }
 
     static void destroy_callback(const ZMemory* area) {
       assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
       // Don't try split the last granule - VirtualFree will fail
-      split_into_placeholder_granules(ZAddress::address(area->start()), area->size() - ZGranuleSize);
+      split_into_placeholder_granules(area->start(), area->size() - ZGranuleSize);
     }
 
     static void shrink_from_front_callback(const ZMemory* area, size_t size) {
       assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
-      split_into_placeholder_granules(ZAddress::address(area->start()), size);
+      split_into_placeholder_granules(area->start(), size);
     }
 
     static void shrink_from_back_callback(const ZMemory* area, size_t size) {
       assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
       // Don't try split the last granule - VirtualFree will fail
-      split_into_placeholder_granules(ZAddress::address(area->end() - size), size - ZGranuleSize);
+      split_into_placeholder_granules(to_zoffset(untype(area->end()) - size), size - ZGranuleSize);
     }
 
     static void grow_from_front_callback(const ZMemory* area, size_t size) {
       assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
-      coalesce_into_one_placeholder(ZAddress::address(area->start() - size), area->size() + size);
+      coalesce_into_one_placeholder(to_zoffset(untype(area->start()) - size), area->size() + size);
     }
 
     static void grow_from_back_callback(const ZMemory* area, size_t size) {
       assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
-      coalesce_into_one_placeholder(ZAddress::address(area->start()), area->size() + size);
+      coalesce_into_one_placeholder(area->start(), area->size() + size);
     }
 
     static void register_with(ZMemoryManager* manager) {
@@ -132,15 +132,15 @@ private:
     PlaceholderCallbacks::register_with(manager);
   }
 
-  virtual bool reserve(zaddress addr, size_t size) {
-    const uintptr_t res = ZMapper::reserve(untype(addr), size);
+  virtual bool reserve(zaddress_unsafe addr, size_t size) {
+    const zaddress_unsafe res = ZMapper::reserve(addr, size);
 
-    assert(res == addr || res == NULL, "Should not reserve other memory than requested");
+    assert(res == addr || untype(res) == 0, "Should not reserve other memory than requested");
     return res == addr;
   }
 
-  virtual void unreserve(zaddress addr, size_t size) {
-    ZMapper::unreserve(untype(addr), size);
+  virtual void unreserve(zaddress_unsafe addr, size_t size) {
+    ZMapper::unreserve(addr, size);
   }
 };
 
@@ -155,15 +155,15 @@ private:
     ZAWESection = ZMapper::create_shared_awe_section();
   }
 
-  virtual bool reserve(zaddress addr, size_t size) {
-    const uintptr_t res = ZMapper::reserve_for_shared_awe(ZAWESection, untype(addr), size);
+  virtual bool reserve(zaddress_unsafe addr, size_t size) {
+    const zaddress_unsafe res = ZMapper::reserve_for_shared_awe(ZAWESection, addr, size);
 
-    assert(res == addr || res == NULL, "Should not reserve other memory than requested");
+    assert(res == addr || untype(res) == 0, "Should not reserve other memory than requested");
     return res == addr;
   }
 
-  virtual void unreserve(zaddress addr, size_t size) {
-    ZMapper::unreserve_for_shared_awe(untype(addr), size);
+  virtual void unreserve(zaddress_unsafe addr, size_t size) {
+    ZMapper::unreserve_for_shared_awe(addr, size);
   }
 };
 
@@ -182,10 +182,10 @@ void ZVirtualMemoryManager::pd_initialize_after_reserve() {
   _impl->initialize_after_reserve(&_manager);
 }
 
-bool ZVirtualMemoryManager::pd_reserve(zaddress addr, size_t size) {
+bool ZVirtualMemoryManager::pd_reserve(zaddress_unsafe addr, size_t size) {
   return _impl->reserve(addr, size);
 }
 
-void ZVirtualMemoryManager::pd_unreserve(zaddress addr, size_t size) {
+void ZVirtualMemoryManager::pd_unreserve(zaddress_unsafe addr, size_t size) {
   _impl->unreserve(addr, size);
 }

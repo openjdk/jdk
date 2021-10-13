@@ -75,7 +75,6 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
       // and the marking logic will not attempt to follow its elements.
       // Relocation and remembered set code know how to dodge iterating
       // over such objects.
-      assert(segmented, "potentially yielded without coloring nulls");
       yielded = true;
       cast_to_oop(mem)->set_mark(mark.set_marked());
       ZThreadLocalData::set_invisible_root(_thread, (oop*)&mem);

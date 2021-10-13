@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
@@ -76,7 +77,7 @@ void ZStoreBarrierBuffer::install_base_pointers_inner() {
          (ZPointer::remap_bits(_last_processed_color) & ZPointerRemappedMajorMask) == 0,
          "Should not have double bit errors");
 
-  for (size_t i = current(); i < _buffer_length; ++i) {
+  for (int i = current(); i < (int)_buffer_length; ++i) {
     const ZStoreBarrierEntry& entry = _buffer[i];
     volatile zpointer* const p = entry._p;
     const zaddress_unsafe p_unsafe = to_zaddress_unsafe((uintptr_t)p);
@@ -225,7 +226,7 @@ void ZStoreBarrierBuffer::on_new_phase() {
   // Install all base pointers for relocation
   install_base_pointers();
 
-  for (size_t i = current(); i < _buffer_length; ++i) {
+  for (int i = current(); i < (int)_buffer_length; ++i) {
     on_new_phase_relocate(i);
     on_new_phase_remember(i);
     on_new_phase_mark(i);
@@ -242,7 +243,7 @@ void ZStoreBarrierBuffer::flush() {
     return;
   }
 
-  for (size_t i = current(); i < _buffer_length; ++i) {
+  for (int i = current(); i < (int)_buffer_length; ++i) {
     const ZStoreBarrierEntry& entry = _buffer[i];
     const zaddress addr = ZBarrier::make_load_good(entry._prev);
     ZBarrier::mark_and_remember(entry._p, addr);
@@ -262,7 +263,7 @@ bool ZStoreBarrierBuffer::is_in(volatile zpointer* p) {
     const uintptr_t  last_remap_bits = ZPointer::remap_bits(buffer->_last_processed_color) & ZPointerRemappedMask;
     const bool needs_remap = last_remap_bits != ZPointerRemapped;
 
-    for (size_t i = buffer->current(); i < _buffer_length; ++i) {
+    for (int i = buffer->current(); i < (int)_buffer_length; ++i) {
       const ZStoreBarrierEntry& entry = buffer->_buffer[i];
       volatile zpointer* entry_p = entry._p;
 

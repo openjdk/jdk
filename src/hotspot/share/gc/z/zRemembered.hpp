@@ -29,7 +29,7 @@
 class OopClosure;
 class ZForwarding;
 class ZPageTable;
-class ZRememberedSetContaining;
+struct ZRememberedSetContaining;
 template <typename T> class GrowableArrayView;
 
 class ZRemembered {

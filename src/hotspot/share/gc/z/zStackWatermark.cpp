@@ -105,7 +105,7 @@ void ZStackWatermark::save_old_watermark() {
   if (!prev_processing_started) {
     // Nothing was processed in the previous phase, so there's no need to save a watermark for it.
     // Must have been a remapped phase, the other phases are explicitly completed by the GC.
-    assert(prev_color & ZPointerRemapped != 0, "Unexpected color: " PTR_FORMAT, prev_color);
+    assert((prev_color & ZPointerRemapped) != 0, "Unexpected color: " PTR_FORMAT, prev_color);
     return;
   }
 

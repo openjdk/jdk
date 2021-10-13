@@ -293,8 +293,7 @@ TEST_VM(BitMap, iterate_reverse) {
 
   // With no bits set
   {
-    size_t seq[] = {};
-    BitMapTestIterateReverse::test(size, seq, 0);
+    BitMapTestIterateReverse::test(size, NULL, 0);
   }
 
   // With end-points set

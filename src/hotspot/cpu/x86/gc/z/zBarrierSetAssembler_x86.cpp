@@ -292,12 +292,12 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   if (dst == rcx) {
     __ movptr(scratch, dst);
-    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift), rcx);
     __ shrq(scratch);
     __ movptr(dst, scratch);
   } else {
     __ push(rcx);
-    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift), rcx);
     __ shrq(dst);
     __ pop(rcx);
   }
@@ -331,11 +331,11 @@ static void emit_store_fast_path_check(MacroAssembler* masm, Address ref_addr, b
   __ jcc(Assembler::notEqual, medium_path);
 }
 
-static size_t store_fast_path_check_size(MacroAssembler* masm, Address ref_addr, bool is_atomic, Label& medium_path) {
+static int store_fast_path_check_size(MacroAssembler* masm, Address ref_addr, bool is_atomic, Label& medium_path) {
   if (!VM_Version::has_intel_jcc_erratum()) {
     return 0;
   }
-  size_t size = 0;
+  int size = 0;
 #ifdef COMPILER2
   bool in_scratch_emit_size = masm->code_section()->scratch_emit();
   if (!in_scratch_emit_size) {
@@ -350,7 +350,7 @@ static size_t store_fast_path_check_size(MacroAssembler* masm, Address ref_addr,
   Label dummy_medium_path;
   emit_store_fast_path_check(masm, ref_addr, is_atomic, dummy_medium_path);
   address emitted_end = masm->code_section()->end();
-  size = (size_t)(emitted_end - insts_end);
+  size = (int)(intptr_t)(emitted_end - insts_end);
   __ bind(dummy_medium_path);
   if (!in_scratch_emit_size) {
     // Potentially restore scratchyness
@@ -365,7 +365,7 @@ static size_t store_fast_path_check_size(MacroAssembler* masm, Address ref_addr,
 static void emit_store_fast_path_check_c2(MacroAssembler* masm, Address ref_addr, bool is_atomic, Label& medium_path) {
 #ifdef COMPILER2
   // This is a JCC erratum mitigation wrapper for calling the inner check
-  size_t size = store_fast_path_check_size(masm, ref_addr, is_atomic, medium_path);
+  int size = store_fast_path_check_size(masm, ref_addr, is_atomic, medium_path);
   // Emit JCC erratum mitigation nops with the right size
   IntelJccErratumAlignment(*masm, size);
   // Emit the JCC erratum mitigation guarded code
@@ -414,7 +414,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     }
     assert_different_registers(rcx, rnew_zpointer);
     __ push(rcx);
-    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift), rcx);
     __ shlq(rnew_zpointer);
     __ pop(rcx);
     __ orq(rnew_zpointer, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
@@ -530,7 +530,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
         __ movptr(tmp1, src);
       }
       __ push(rcx);
-      __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+      __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift), rcx);
       __ shlq(tmp1);
       __ pop(rcx);
       __ orq(tmp1, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
@@ -776,12 +776,12 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
   // Uncolor
   if (obj == rcx) {
     __ movptr(tmp, obj);
-    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift), rcx);
     __ shrq(tmp);
     __ movptr(obj, tmp);
   } else {
     __ push(rcx);
-    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift), rcx);
     __ shrq(obj);
     __ pop(rcx);
   }

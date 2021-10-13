@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "precompiled.hpp"
 #include "gc/z/zGeneration.hpp"
 #include "gc/z/zHeap.inline.hpp"
 

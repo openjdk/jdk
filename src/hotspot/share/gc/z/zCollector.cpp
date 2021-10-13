@@ -110,7 +110,7 @@ void ZCollector::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
   if (selector->should_free_empty_pages(bulk)) {
-    ZHeap::heap()->free_pages(selector->empty_pages(), this);
+    ZHeap::heap()->free_pages(selector->empty_pages(), true /* reclaimed */);
     selector->clear_empty_pages();
   }
 }

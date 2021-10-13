@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zRememberedSet.hpp"
