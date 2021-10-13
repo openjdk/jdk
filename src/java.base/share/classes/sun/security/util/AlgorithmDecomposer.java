@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.util;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +40,11 @@ public class AlgorithmDecomposer {
     // '(?<!padd)in': match 'in' but not preceded with 'padd'.
     private static final Pattern PATTERN =
             Pattern.compile("with|and|(?<!padd)in", Pattern.CASE_INSENSITIVE);
+
+    private static final Map<String, String> CANONICAL_NAME =
+        Map.of("SHA-1", "SHA1", "SHA-224", "SHA224", "SHA-256", "SHA256",
+               "SHA-384", "SHA384", "SHA-512", "SHA512", "SHA-512/224", 
+               "SHA512/224", "SHA-512/256", "SHA512/256");
 
     private static Set<String> decomposeImpl(String algorithm) {
         Set<String> elements = new HashSet<>();
@@ -183,10 +189,9 @@ public class AlgorithmDecomposer {
     }
 
     /*
-     * The provided message digest algorithm name will return a consistent
-     * naming scheme.
+     * The provided algorithm name will return a consistent naming scheme.
      */
-    public static String hashName(String algorithm) {
-        return algorithm.replace("-", "");
+    static String canonicalName(String algorithm) {
+        return CANONICAL_NAME.getOrDefault(algorithm, algorithm);
     }
 }

@@ -90,10 +90,6 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             CryptoPrimitive.PUBLIC_KEY_ENCRYPTION,
             CryptoPrimitive.KEY_AGREEMENT));
 
-    private static final DisabledAlgorithmConstraints
-        certPathDefaultConstraints =
-            DisabledAlgorithmConstraints.certPathConstraints();
-
     /**
      * Create a new {@code AlgorithmChecker} with the given
      * {@code TrustAnchor} and {@code String} variant.
@@ -104,7 +100,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *                passed will set it to Validator.GENERIC.
      */
     public AlgorithmChecker(TrustAnchor anchor, String variant) {
-        this(anchor, certPathDefaultConstraints, null, variant);
+        this(anchor, null, null, variant);
     }
 
     /**
@@ -152,8 +148,8 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         }
 
         this.prevPubKey = this.trustedPubKey;
-        this.constraints = (constraints == null ? certPathDefaultConstraints :
-                constraints);
+        this.constraints = constraints == null ? 
+            DisabledAlgorithmConstraints.certPathConstraints() : constraints;
         this.date = date;
         this.variant = (variant == null ? Validator.VAR_GENERIC : variant);
     }
@@ -172,7 +168,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *                passed will set it to Validator.GENERIC.
      */
     public AlgorithmChecker(TrustAnchor anchor, Date date, String variant) {
-        this(anchor, certPathDefaultConstraints, date, variant);
+        this(anchor, null, date, variant);
     }
 
     @Override
@@ -207,8 +203,8 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             Collection<String> unresolvedCritExts)
             throws CertPathValidatorException {
 
-        if (!(cert instanceof X509Certificate) || constraints == null) {
-            // ignore the check for non-x.509 certificate or null constraints
+        if (!(cert instanceof X509Certificate)) {
+            // ignore the check for non-x.509 certificate
             return;
         }
 
@@ -233,73 +229,84 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         PublicKey currPubKey = cert.getPublicKey();
         String currSigAlg = x509Cert.getSigAlgName();
 
-        // Check the signature algorithm and parameters against constraints.
-        if (!constraints.permits(SIGNATURE_PRIMITIVE_SET, currSigAlg,
-                currSigAlgParams)) {
-            throw new CertPathValidatorException(
-                    "Algorithm constraints check failed on signature " +
-                            "algorithm: " + currSigAlg, null, null, -1,
-                    BasicReason.ALGORITHM_CONSTRAINED);
-        }
+        if (constraints instanceof DisabledAlgorithmConstraints) {
+            DisabledAlgorithmConstraints dac =
+                (DisabledAlgorithmConstraints)constraints;
+            if (prevPubKey != null && prevPubKey == trustedPubKey) {
+                // check constraints of trusted public key
+                CertPathConstraintsParameters cp =
+                    new CertPathConstraintsParameters(trustedPubKey, variant,
+                        anchor, date);
+                dac.permits(trustedPubKey.getAlgorithm(), cp);
+            }
+            // Check the signature algorithm and parameters against constraints
+            CertPathConstraintsParameters cp =
+                new CertPathConstraintsParameters(x509Cert, variant,
+                    anchor, date);
+            dac.permits(currSigAlg, currSigAlgParams, cp);
+        } else {
+            if (prevPubKey != null) {
+                if (!constraints.permits(SIGNATURE_PRIMITIVE_SET,
+                    currSigAlg, prevPubKey, currSigAlgParams)) {
+                    throw new CertPathValidatorException(
+                        "Algorithm constraints check failed on " +
+                            currSigAlg + "signature and " +
+                            currPubKey.getAlgorithm() + " key with size of " +
+                            sun.security.util.KeyUtil.getKeySize(currPubKey) +
+                            "bits",
+                        null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
+                }
+            } else {
+                if (!constraints.permits(SIGNATURE_PRIMITIVE_SET,
+                    currSigAlg, currSigAlgParams)) {
+                    throw new CertPathValidatorException(
+                        "Algorithm constraints check failed on " +
+                            "signature algorithm: " + currSigAlg,
+                        null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
+                }
+            }
+            // Assume all key usage bits are set if key usage is not present
+            Set<CryptoPrimitive> primitives = KU_PRIMITIVE_SET;
 
-        // Assume all key usage bits are set if key usage is not present
-        Set<CryptoPrimitive> primitives = KU_PRIMITIVE_SET;
-
-        if (keyUsage != null) {
+            if (keyUsage != null) {
                 primitives = EnumSet.noneOf(CryptoPrimitive.class);
 
-            if (keyUsage[0] || keyUsage[1] || keyUsage[5] || keyUsage[6]) {
-                // keyUsage[0]: KeyUsage.digitalSignature
-                // keyUsage[1]: KeyUsage.nonRepudiation
-                // keyUsage[5]: KeyUsage.keyCertSign
-                // keyUsage[6]: KeyUsage.cRLSign
-                primitives.add(CryptoPrimitive.SIGNATURE);
+                if (keyUsage[0] || keyUsage[1] || keyUsage[5] || keyUsage[6]) {
+                    // keyUsage[0]: KeyUsage.digitalSignature
+                    // keyUsage[1]: KeyUsage.nonRepudiation
+                    // keyUsage[5]: KeyUsage.keyCertSign
+                    // keyUsage[6]: KeyUsage.cRLSign
+                    primitives.add(CryptoPrimitive.SIGNATURE);
+                }
+
+                if (keyUsage[2]) {      // KeyUsage.keyEncipherment
+                    primitives.add(CryptoPrimitive.KEY_ENCAPSULATION);
+                }
+
+                if (keyUsage[3]) {      // KeyUsage.dataEncipherment
+                    primitives.add(CryptoPrimitive.PUBLIC_KEY_ENCRYPTION);
+                }
+
+                if (keyUsage[4]) {      // KeyUsage.keyAgreement
+                    primitives.add(CryptoPrimitive.KEY_AGREEMENT);
+                }
+
+                // KeyUsage.encipherOnly and KeyUsage.decipherOnly are
+                // undefined in the absence of the keyAgreement bit.
+
+                if (primitives.isEmpty()) {
+                    throw new CertPathValidatorException(
+                        "incorrect KeyUsage extension bits",
+                        null, null, -1, PKIXReason.INVALID_KEY_USAGE);
+                }
             }
-
-            if (keyUsage[2]) {      // KeyUsage.keyEncipherment
-                primitives.add(CryptoPrimitive.KEY_ENCAPSULATION);
-            }
-
-            if (keyUsage[3]) {      // KeyUsage.dataEncipherment
-                primitives.add(CryptoPrimitive.PUBLIC_KEY_ENCRYPTION);
-            }
-
-            if (keyUsage[4]) {      // KeyUsage.keyAgreement
-                primitives.add(CryptoPrimitive.KEY_AGREEMENT);
-            }
-
-            // KeyUsage.encipherOnly and KeyUsage.decipherOnly are
-            // undefined in the absence of the keyAgreement bit.
-
-            if (primitives.isEmpty()) {
-                throw new CertPathValidatorException(
-                    "incorrect KeyUsage extension bits",
-                    null, null, -1, PKIXReason.INVALID_KEY_USAGE);
-            }
-        }
-
-        ConstraintsParameters cp =
-            new CertPathConstraintsParameters(x509Cert, variant,
-                    anchor, date);
-
-        // Check against local constraints if it is DisabledAlgorithmConstraints
-        if (constraints instanceof DisabledAlgorithmConstraints) {
-            ((DisabledAlgorithmConstraints)constraints).permits(currSigAlg,
-                currSigAlgParams, cp);
-            // DisabledAlgorithmsConstraints does not check primitives, so key
-            // additional key check.
-
-        } else {
-            // Perform the default constraints checking anyway.
-            certPathDefaultConstraints.permits(currSigAlg, currSigAlgParams, cp);
-            // Call locally set constraints to check key with primitives.
             if (!constraints.permits(primitives, currPubKey)) {
                 throw new CertPathValidatorException(
-                        "Algorithm constraints check failed on key " +
-                                currPubKey.getAlgorithm() + " with size of " +
-                                sun.security.util.KeyUtil.getKeySize(currPubKey) +
-                                "bits",
-                        null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
+                    "Algorithm constraints check failed on " +
+                        currPubKey.getAlgorithm() + " key with size of " +
+                        sun.security.util.KeyUtil.getKeySize(currPubKey) +
+                        "bits",
+                    null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
         }
 
@@ -307,16 +314,6 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         if (prevPubKey == null) {
             prevPubKey = currPubKey;
             return;
-        }
-
-        // Check with previous cert for signature algorithm and public key
-        if (!constraints.permits(
-                SIGNATURE_PRIMITIVE_SET,
-                currSigAlg, prevPubKey, currSigAlgParams)) {
-            throw new CertPathValidatorException(
-                    "Algorithm constraints check failed on " +
-                            "signature algorithm: " + currSigAlg,
-                    null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
         }
 
         // Inherit key parameters from previous key
@@ -412,9 +409,9 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     static void check(PublicKey key, AlgorithmId algorithmId, String variant,
                       TrustAnchor anchor) throws CertPathValidatorException {
 
-        certPathDefaultConstraints.permits(algorithmId.getName(),
-            algorithmId.getParameters(),
-            new CertPathConstraintsParameters(key, variant, anchor));
+        DisabledAlgorithmConstraints.certPathConstraints().permits(
+            algorithmId.getName(), algorithmId.getParameters(),
+            new CertPathConstraintsParameters(key, variant, anchor, null));
     }
 }
 
