@@ -386,13 +386,9 @@ public interface SegmentAllocator {
      * This segment allocator can be useful when clients want to perform multiple allocation requests while avoiding the
      * cost associated with allocating a new off-heap memory region upon each allocation request.
      * <p>
-     * An allocator associated with a <em>shared</em> resource scope is thread-safe and allocation requests may be
-     * performed concurrently; conversely, if the arena allocator is associated with a <em>confined</em> resource scope,
-     * allocation requests can only occur from the thread owning the allocator's resource scope.
-     * <p>
      * The returned allocator might throw an {@link OutOfMemoryError} if the total memory allocated with this allocator
-     * exceeds the arena size, or the system capacity. Furthermore, the returned allocator is not thread safe, and all
-     * allocation requests should occur within a single thread (regardless of the scope associated with the native arena).
+     * exceeds the arena size, or the system capacity. Furthermore, the returned allocator is not thread safe.
+     * Concurrent allocation needs to be guarded with synchronization primitives.
      *
      * @param arenaSize the size (in bytes) of the allocation arena.
      * @param blockSize the block size associated with the arena-based allocator.

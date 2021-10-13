@@ -94,10 +94,7 @@ final class ConfinedScope extends ResourceScopeImpl {
             // which is implicitly released (in which case the release call comes from the cleaner thread). Or,
             // this scope might be kept alive by a shared scope, which means the release call can come from any
             // thread.
-            int value;
-            do {
-                value = (int)ASYNC_RELEASE_COUNT.getVolatile(this);
-            } while (!ASYNC_RELEASE_COUNT.compareAndSet(this, value, value + 1));
+            ASYNC_RELEASE_COUNT.getAndAdd(this, 1);
         }
     }
 

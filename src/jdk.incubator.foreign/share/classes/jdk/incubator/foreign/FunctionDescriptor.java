@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ import java.util.stream.Stream;
 public sealed class FunctionDescriptor implements Constable permits FunctionDescriptor.VariadicFunction {
 
     private final MemoryLayout resLayout;
-    private final MemoryLayout[] argLayouts;
+    private final List<MemoryLayout> argLayouts;
 
-    private FunctionDescriptor(MemoryLayout resLayout, MemoryLayout... argLayouts) {
+    private FunctionDescriptor(MemoryLayout resLayout, List<MemoryLayout> argLayouts) {
         this.resLayout = resLayout;
         this.argLayouts = argLayouts;
     }
@@ -66,7 +66,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
      * @return the argument layouts.
      */
     public List<MemoryLayout> argumentLayouts() {
-        return Arrays.asList(argLayouts);
+        return argLayouts;
     }
 
     /**
@@ -79,7 +79,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
         Objects.requireNonNull(resLayout);
         Objects.requireNonNull(argLayouts);
         Arrays.stream(argLayouts).forEach(Objects::requireNonNull);
-        return new FunctionDescriptor(resLayout, argLayouts);
+        return new FunctionDescriptor(resLayout, List.of(argLayouts));
     }
 
     /**
@@ -90,7 +90,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
     public static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
         Objects.requireNonNull(argLayouts);
         Arrays.stream(argLayouts).forEach(Objects::requireNonNull);
-        return new FunctionDescriptor(null, argLayouts);
+        return new FunctionDescriptor(null, List.of(argLayouts));
     }
 
     /**
@@ -126,8 +126,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
     public FunctionDescriptor withAppendedArgumentLayouts(MemoryLayout... addedLayouts) {
         Objects.requireNonNull(addedLayouts);
         Arrays.stream(addedLayouts).forEach(Objects::requireNonNull);
-        MemoryLayout[] newLayouts = Arrays.copyOf(argLayouts, argLayouts.length + addedLayouts.length);
-        System.arraycopy(addedLayouts, 0, newLayouts, argLayouts.length, addedLayouts.length);
+        List<MemoryLayout> newLayouts = Stream.concat(argLayouts.stream(), Stream.of(addedLayouts)).toList();
         return new FunctionDescriptor(resLayout, newLayouts);
     }
 
@@ -181,7 +180,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
         if (!(other instanceof FunctionDescriptor f)) {
             return false;
         }
-        return Objects.equals(resLayout, f.resLayout) && Arrays.equals(argLayouts, f.argLayouts);
+        return Objects.equals(resLayout, f.resLayout) && Objects.equals(argLayouts, f.argLayouts);
     }
 
     /**
@@ -190,10 +189,18 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
      */
     @Override
     public int hashCode() {
-        int hashCode = Arrays.hashCode(argLayouts);
+        int hashCode = Objects.hashCode(argLayouts);
         return resLayout == null ? hashCode : resLayout.hashCode() ^ hashCode;
     }
 
+    /**
+     * Returns an {@link Optional} containing the nominal descriptor for this
+     * function descriptor, if one can be constructed, or an empty {@link Optional}
+     * if one cannot be constructed.
+     *
+     * @return An {@link Optional} containing the resulting nominal descriptor,
+     * or an empty {@link Optional} if one cannot be constructed.
+     */
     @Override
     public Optional<DynamicConstantDesc<FunctionDescriptor>> describeConstable() {
         List<ConstantDesc> constants = new ArrayList<>();
@@ -214,14 +221,11 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
 
         public VariadicFunction(FunctionDescriptor descriptor, MemoryLayout... argLayouts) {
             super(descriptor.returnLayout().orElse(null),
-                    Stream.concat(descriptor.argumentLayouts().stream(), Stream.of(argLayouts)).toArray(MemoryLayout[]::new));
+                    Stream.concat(descriptor.argumentLayouts().stream(), Stream.of(argLayouts)).toList());
             this.firstVariadicIndex = descriptor.argumentLayouts().size();
         }
 
-        public boolean isVariadicIndex(int pos) {
-            return pos >= firstVariadicIndex;
-        }
-
+        @Override
         public int firstVariadicArgumentIndex() {
             return firstVariadicIndex;
         }
