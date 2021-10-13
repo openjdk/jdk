@@ -62,7 +62,7 @@ import org.w3c.dom.Element;
  * </complexType>
  *
  * @xerces.internal
- * @LastModified: Apr 2019
+ * @LastModified: Oct 2021
  */
 
 class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
