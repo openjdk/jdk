@@ -45,7 +45,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
-import sun.net.www.MessageHeader;
+import jdk.test.lib.net.HttpHeaderParser;
+
 
 public class TunnelProxy {
 
@@ -261,7 +262,7 @@ public class TunnelProxy {
             try {
                 InputStream is = new BufferedInputStream (new NioInputStream (chan));
                 String requestline = readLine (is);
-                MessageHeader mhead = new MessageHeader (is);
+                HttpHeaderParser mhead = new HttpHeaderParser (is);
                 String[] req = requestline.split (" ");
                 if (req.length < 2) {
                     /* invalid request line */
