@@ -228,11 +228,9 @@ EdgeStore::~EdgeStore() {
   _leak_context_edges = nullptr;
 }
 
-static constexpr const int idx_shift = static_cast<int>(markWord::marked_value - 1);
-
 static int leak_context_edge_idx(const ObjectSample* sample) {
   assert(sample != nullptr, "invariant");
-  return static_cast<int>(sample->object()->mark().value()) >> idx_shift;
+  return static_cast<int>(sample->object()->mark().value()) >> markWord::lock_bits;
 }
 
 bool EdgeStore::has_leak_context(const ObjectSample* sample) const {
@@ -252,8 +250,8 @@ const StoredEdge* EdgeStore::get(const ObjectSample* sample) const {
 }
 
 #ifdef ASSERT
-// max_idx to ensure idx fit in lower 32-bits of markword together with marked_value.
-static constexpr const int max_idx = (1 << (32 - idx_shift)) - 1;
+// max_idx to ensure idx fit in lower 32-bits of markword together with lock bits.
+static constexpr const int max_idx =  right_n_bits(32 - markWord::lock_bits) - 1;
 
 static void store_idx_precondition(oop sample_object, int idx) {
   assert(sample_object != NULL, "invariant");
@@ -265,7 +263,7 @@ static void store_idx_precondition(oop sample_object, int idx) {
 
 static void store_idx_in_markword(oop sample_object, int idx) {
   DEBUG_ONLY(store_idx_precondition(sample_object, idx);)
-  const markWord idx_mark_word(sample_object->mark().value() | idx << idx_shift);
+  const markWord idx_mark_word(sample_object->mark().value() | idx << markWord::lock_bits);
   sample_object->set_mark(idx_mark_word);
   assert(sample_object->mark().is_marked(), "must still be marked");
 }
