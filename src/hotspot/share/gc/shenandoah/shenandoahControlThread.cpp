@@ -208,9 +208,9 @@ void ShenandoahControlThread::run_service() {
         } else {
           heap->set_unload_classes(false);
         }
-      } else if (heap->is_concurrent_old_mark_in_progress()) {
-        // Nobody asked us to do anything, but we have an old generation mark
-        // in progress, so resume working on that.
+      } else if (heap->is_concurrent_old_mark_in_progress() || heap->is_concurrent_prep_for_mixed_evacuation_in_progress()) {
+        // Nobody asked us to do anything, but we have an old-generation mark or old-generation preparation for
+        // mixed evacuation in progress, so resume working on that.
         cause = GCCause::_shenandoah_concurrent_gc;
         generation = OLD;
         set_gc_mode(marking_old);
@@ -507,7 +507,10 @@ bool ShenandoahControlThread::check_soft_max_changed() const {
 }
 
 void ShenandoahControlThread::resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause) {
-  assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress(), "Old mark should be in progress");
+
+  assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress() ||
+         ShenandoahHeap::heap()->is_concurrent_prep_for_mixed_evacuation_in_progress(),
+         "Old mark or mixed-evac prep should be in progress");
   log_debug(gc)("Resuming old generation with " UINT32_FORMAT " marking tasks queued.", generation->task_queues()->tasks());
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -516,10 +519,9 @@ void ShenandoahControlThread::resume_concurrent_old_cycle(ShenandoahGeneration* 
   ShenandoahGCSession session(cause, generation);
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-  // We can only really tolerate being cancelled during concurrent
-  // marking. This flag here (passed by reference) is used to control
-  // precisely where the regulator is allowed to cancel a GC.
+  // We can only tolerate being cancelled during concurrent marking or during preparation for mixed
+  // evacuation. This flag here (passed by reference) is used to control precisely where the regulator
+  // is allowed to cancel a GC.
   ShenandoahOldGC gc(generation, _allow_old_preemption);
   if (gc.collect(cause)) {
     // Old collection is complete, the young generation no longer needs this

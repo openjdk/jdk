@@ -164,7 +164,6 @@ void ShenandoahDegenGC::op_degenerated() {
         {
           heap->sync_pinned_region_status();
           heap->collection_set()->clear_current_index();
-
           ShenandoahHeapRegion* r;
           while ((r = heap->collection_set()->next()) != NULL) {
             if (r->is_pinned()) {

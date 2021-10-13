@@ -240,6 +240,7 @@ private:
 
   // Seldom updated fields
   RegionState _state;
+  HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
   HeapWord* _top;
@@ -368,9 +369,30 @@ public:
 
   void recycle();
 
+  inline void reset_coalesce_and_fill_boundary() {
+    _coalesce_and_fill_boundary = _bottom;
+  }
+
+  inline void finish_coalesce_and_fill() {
+    _coalesce_and_fill_boundary = _end;
+  }
+
+  inline void suspend_coalesce_and_fill(HeapWord* next_focus) {
+    _coalesce_and_fill_boundary = next_focus;
+  }
+
+  inline HeapWord* resume_coalesce_and_fill() {
+    return _coalesce_and_fill_boundary;
+  }
+
+  inline bool coalesce_and_fill_is_done() {
+    return _coalesce_and_fill_boundary >= _top;
+  }
+
   // Coalesce contiguous spans of garbage objects by filling header and reregistering start locations with remembered set.
-  // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parseable.
-  void oop_fill_and_coalesce();
+  // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parseable.  Return true iff
+  // region is completely coalesced and filled.  Returns false if cancelled before task is complete.
+  bool oop_fill_and_coalesce();
 
   // During global collections, this service iterates through an old-gen heap region that is not part of collection
   // set to fill and register ranges of dead memory.  Note that live objects were previously registered.  Some dead objects

@@ -97,7 +97,6 @@ public:
 
 private:
   static jlong encode_heap_status(ShenandoahHeap* heap) ;
-
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP

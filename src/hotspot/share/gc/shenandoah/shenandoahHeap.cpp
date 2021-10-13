@@ -501,6 +501,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   CollectedHeap(),
   _gc_generation(NULL),
   _mixed_evac(false),
+  _prep_for_mixed_evac_in_progress(false),
   _initial_size(0),
   _used(0),
   _committed(0),
@@ -1919,6 +1920,16 @@ void ShenandoahHeap::set_concurrent_old_mark_in_progress(bool in_progress) {
   }
 
   manage_satb_barrier(in_progress);
+}
+
+void ShenandoahHeap::set_concurrent_prep_for_mixed_evacuation_in_progress(bool in_progress) {
+  // Unlike other set-gc-state functions, this may happen outside safepoint.
+  // Is only set and queried by control thread, so no coherence issues.
+  _prep_for_mixed_evac_in_progress = in_progress;
+}
+
+bool ShenandoahHeap::is_concurrent_prep_for_mixed_evacuation_in_progress() {
+  return _prep_for_mixed_evac_in_progress;
 }
 
 void ShenandoahHeap::set_aging_cycle(bool in_progress) {

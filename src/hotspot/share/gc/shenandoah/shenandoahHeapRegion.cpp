@@ -425,12 +425,17 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->cr();
 }
 
-// oop_iterate without closure
-void ShenandoahHeapRegion::oop_fill_and_coalesce() {
-  HeapWord* obj_addr = bottom();
+// oop_iterate without closure, return true if completed without cancellation
+bool ShenandoahHeapRegion::oop_fill_and_coalesce() {
+  HeapWord* obj_addr = resume_coalesce_and_fill();
+  // Consider yielding to cancel/preemption request after this many coalesce operations (skip marked, or coalesce free).
+  const size_t preemption_stride = 128;
 
   assert(!is_humongous(), "No need to fill or coalesce humongous regions");
-  if (!is_active()) return;
+  if (!is_active()) {
+    finish_coalesce_and_fill();
+    return true;
+  }
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahMarkingContext* marking_context = heap->marking_context();
@@ -444,6 +449,7 @@ void ShenandoahHeapRegion::oop_fill_and_coalesce() {
   // Expect marking to be completed before these threads invoke this service.
   assert(heap->active_generation()->is_mark_complete(), "sanity");
 
+  size_t ops_before_preempt_check = preemption_stride;
   while (obj_addr < t) {
     oop obj = cast_to_oop(obj_addr);
     if (marking_context->is_marked(obj)) {
@@ -458,7 +464,17 @@ void ShenandoahHeapRegion::oop_fill_and_coalesce() {
       heap->card_scan()->coalesce_objects(obj_addr, fill_size);
       obj_addr = next_marked_obj;
     }
+    if (ops_before_preempt_check-- == 0) {
+      if (heap->cancelled_gc()) {
+        suspend_coalesce_and_fill(obj_addr);
+        return false;
+      }
+      ops_before_preempt_check = preemption_stride;
+    }
   }
+  // Mark that this region has been coalesced and filled
+  finish_coalesce_and_fill();
+  return true;
 }
 
 void ShenandoahHeapRegion::global_oop_iterate_and_fill_dead(OopIterateClosure* blk) {

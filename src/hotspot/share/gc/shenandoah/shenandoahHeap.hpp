@@ -151,6 +151,7 @@ private:
   ShenandoahHeapLock _lock;
   ShenandoahGeneration* _gc_generation;
   bool _mixed_evac;             // true iff most recent evac included at least one old-gen HeapRegion
+  bool _prep_for_mixed_evac_in_progress; // true iff we are concurrently coalescing and filling old-gen HeapRegions
 
 public:
   ShenandoahHeapLock* lock() {
@@ -351,6 +352,7 @@ public:
   void set_has_forwarded_objects(bool cond);
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
+  void set_concurrent_prep_for_mixed_evacuation_in_progress(bool cond);
   void set_aging_cycle(bool cond);
 
   inline bool is_stable() const;
@@ -368,6 +370,7 @@ public:
   inline bool is_stw_gc_in_progress() const;
   inline bool is_concurrent_strong_root_in_progress() const;
   inline bool is_concurrent_weak_root_in_progress() const;
+  bool is_concurrent_prep_for_mixed_evacuation_in_progress();
   inline bool is_aging_cycle() const;
 
 private:
