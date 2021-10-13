@@ -93,24 +93,22 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
 
             // start the local printer listener thread
             AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                Thread thread = new Thread(
-                        ThreadGroupUtils.getRootThreadGroup(),
-                        new PrinterChangeListener(), "PrinterListener",
-                        0, false);
-                thread.setContextClassLoader(null);
-                thread.setDaemon(true);
-                return thread;
+                Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                        new PrinterChangeListener(),
+                                        "PrinterListener", 0, false);
+                thr.setContextClassLoader(null);
+                thr.setDaemon(true);
+                return thr;
             }).start();
 
             // start the remote printer listener thread
             AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                Thread thread = new Thread(
-                        ThreadGroupUtils.getRootThreadGroup(),
-                        new RemotePrinterChangeListener(), "RemotePrinterListener",
-                        0, false);
-                thread.setContextClassLoader(null);
-                thread.setDaemon(true);
-                return thread;
+                Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                        new RemotePrinterChangeListener(),
+                                        "RemotePrinterListener", 0, false);
+                thr.setContextClassLoader(null);
+                thr.setDaemon(true);
+                return thr;
             }).start();
         } /* else condition ought to never happen! */
     }
