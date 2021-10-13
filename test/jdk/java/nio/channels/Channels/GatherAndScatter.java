@@ -141,7 +141,7 @@ public class GatherAndScatter {
         try (FileOutputStream fos = new FileOutputStream(file);
             FilterOutputStream filfos = new FilterOutputStream(fos)) {
             // Create a Channels$GatheringByteChannelImpl
-            try (GatheringByteChannel gbc = Channels.newChannel(filfos)) {
+            try (GatheringByteChannel gbc = Channels.newGatheringChannel(filfos)) {
                 // test parameters
                 testParamExceptions((a, b, c) -> gbc.write(a, b, c));
 
@@ -165,7 +165,7 @@ public class GatherAndScatter {
         try (FileInputStream fis = new FileInputStream(file);
             BufferedInputStream filfis = new BufferedInputStream(fis)) {
             // Create a Channels$ScatteringByteChannelImpl
-            try (ScatteringByteChannel sbc = Channels.newChannel(filfis)) {
+            try (ScatteringByteChannel sbc = Channels.newScatteringChannel(filfis)) {
                 // test parameters
                 testParamExceptions((a, b, c) -> sbc.read(a, b, c));
 
@@ -251,7 +251,7 @@ public class GatherAndScatter {
             for (int i = offset; i < offset + length; i++)
                 sum += bufs[i].remaining();
 
-            try (GatheringByteChannel gbc = Channels.newChannel(filfos)) {
+            try (GatheringByteChannel gbc = Channels.newGatheringChannel(filfos)) {
                 // Gather the range of buffers into the file
                 long written = gbc.write(bufs, offset, length);
 
@@ -329,7 +329,7 @@ public class GatherAndScatter {
             for (int i = offset; i < offset + length; i++)
                 sum += bufs[i].remaining();
 
-            try (ScatteringByteChannel sbc = Channels.newChannel(filfis)) {
+            try (ScatteringByteChannel sbc = Channels.newScatteringChannel(filfis)) {
                 // Gather the range of buffers into the file
                 long read = sbc.read(bufs, offset, length);
 

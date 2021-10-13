@@ -256,8 +256,7 @@ public final class Channels {
     // -- Channels from streams --
 
     /**
-     * Constructs a channel that reads bytes from the given stream into one
-     * buffer or a sequence of buffers.
+     * Constructs a channel that reads bytes from the given stream.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
      * its I/O operations to the given stream.  Closing the channel will in
@@ -268,26 +267,26 @@ public final class Channels {
      *
      * @return  A new readable byte channel
      */
-    public static ScatteringByteChannel newChannel(InputStream in) {
+    public static ReadableByteChannel newChannel(InputStream in) {
         Objects.requireNonNull(in, "in");
 
         if (in.getClass() == FileInputStream.class) {
             return ((FileInputStream) in).getChannel();
         }
 
-        return new ScatteringByteChannelImpl(in);
+        return new ReadableByteChannelImpl(in);
     }
 
-    private static class ScatteringByteChannelImpl
+    private static class ReadableByteChannelImpl
         extends AbstractInterruptibleChannel    // Not really interruptible
-        implements ScatteringByteChannel
+        implements ReadableByteChannel
     {
         private final InputStream in;
         private static final int TRANSFER_SIZE = 8192;
         private byte[] buf = new byte[0];
         private final Object readLock = new Object();
 
-        ScatteringByteChannelImpl(InputStream in) {
+        ReadableByteChannelImpl(InputStream in) {
             this.in = in;
         }
 
@@ -325,6 +324,43 @@ public final class Channels {
 
                 return totalRead;
             }
+        }
+
+        @Override
+        protected void implCloseChannel() throws IOException {
+            in.close();
+        }
+    }
+
+    /**
+     * Constructs a channel that reads bytes from the given stream into one
+     * buffer or a sequence of buffers.
+     *
+     * <p> The resulting channel will not be buffered; it will simply redirect
+     * its I/O operations to the given stream.  Closing the channel will in
+     * turn cause the stream to be closed.  </p>
+     *
+     * @param  in
+     *         The stream from which bytes are to be read
+     *
+     * @return  A new scatterin byte channel
+     */
+    public static ScatteringByteChannel newScatteringChannel(InputStream in) {
+        Objects.requireNonNull(in, "in");
+
+        if (in.getClass() == FileInputStream.class) {
+            return ((FileInputStream) in).getChannel();
+        }
+
+        return new ScatteringByteChannelImpl(in);
+    }
+
+    private static class ScatteringByteChannelImpl
+        extends ReadableByteChannelImpl
+        implements ScatteringByteChannel
+    {
+        ScatteringByteChannelImpl(InputStream in) {
+            super(in);
         }
 
         public long read(ByteBuffer[] dsts, int offset, int length)
@@ -369,17 +405,10 @@ public final class Channels {
         public final long read(ByteBuffer[] dsts) throws IOException {
             return read(dsts, 0, dsts.length);
         }
-
-        @Override
-        protected void implCloseChannel() throws IOException {
-            in.close();
-        }
     }
 
-
     /**
-     * Constructs a channel that writes bytes to the given stream from one
-     * buffer or a sequence of buffers.
+     * Constructs a channel that writes bytes to the given stream.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
      * its I/O operations to the given stream.  Closing the channel will in
@@ -390,26 +419,26 @@ public final class Channels {
      *
      * @return  A new writable byte channel
      */
-    public static GatheringByteChannel newChannel(OutputStream out) {
+    public static WritableByteChannel newChannel(OutputStream out) {
         Objects.requireNonNull(out, "out");
 
         if (out.getClass() == FileOutputStream.class) {
             return ((FileOutputStream) out).getChannel();
         }
 
-        return new GatheringByteChannelImpl(out);
+        return new WritableByteChannelImpl(out);
     }
 
-    private static class GatheringByteChannelImpl
+    private static class WritableByteChannelImpl
         extends AbstractInterruptibleChannel    // Not really interruptible
-        implements GatheringByteChannel
+        implements WritableByteChannel
     {
         private final OutputStream out;
         private static final int TRANSFER_SIZE = 8192;
         private byte[] buf = new byte[0];
         private final Object writeLock = new Object();
 
-        GatheringByteChannelImpl(OutputStream out) {
+        WritableByteChannelImpl(OutputStream out) {
             this.out = out;
         }
 
@@ -438,6 +467,43 @@ public final class Channels {
                 }
                 return totalWritten;
             }
+        }
+
+        @Override
+        protected void implCloseChannel() throws IOException {
+            out.close();
+        }
+    }
+
+    /**
+     * Constructs a channel that writes bytes to the given stream from one
+     * buffer or a sequence of buffers.
+     *
+     * <p> The resulting channel will not be buffered; it will simply redirect
+     * its I/O operations to the given stream.  Closing the channel will in
+     * turn cause the stream to be closed.  </p>
+     *
+     * @param  out
+     *         The stream to which bytes are to be written
+     *
+     * @return  A new gathering byte channel
+     */
+    public static GatheringByteChannel newGatheringChannel(OutputStream out) {
+        Objects.requireNonNull(out, "out");
+
+        if (out.getClass() == FileOutputStream.class) {
+            return ((FileOutputStream) out).getChannel();
+        }
+
+        return new GatheringByteChannelImpl(out);
+    }
+
+    private static class GatheringByteChannelImpl
+        extends WritableByteChannelImpl
+        implements GatheringByteChannel
+    {
+        GatheringByteChannelImpl(OutputStream out) {
+            super(out);
         }
 
         public long write(ByteBuffer[] srcs, int offset, int length)
@@ -475,11 +541,6 @@ public final class Channels {
 
         public final long write(ByteBuffer[] srcs) throws IOException {
             return write(srcs, 0, srcs.length);
-        }
-
-        @Override
-        protected void implCloseChannel() throws IOException {
-            out.close();
         }
     }
 
