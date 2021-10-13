@@ -798,8 +798,9 @@ void GenCollectedHeap::full_process_roots(bool is_adjust_phase,
 
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
   WeakProcessor::oops_do(root_closure);
-  _young_gen->ref_processor()->weak_oops_do(root_closure);
-  _old_gen->ref_processor()->weak_oops_do(root_closure);
+  // Elements on discovered lists should have been pushed to the pending list at the end of ref-processing.
+  _young_gen->ref_processor()->verify_no_references_recorded();
+  _old_gen->ref_processor()->verify_no_references_recorded();
 }
 
 bool GenCollectedHeap::no_allocs_since_save_marks() {

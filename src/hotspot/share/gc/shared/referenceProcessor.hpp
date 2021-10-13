@@ -420,8 +420,6 @@ public:
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
 
-  void verify_list(DiscoveredList& ref_list);
-
   // Discover a Reference object, using appropriate discovery criteria
   virtual bool discover_reference(oop obj, ReferenceType rt);
 
