@@ -74,7 +74,7 @@ import java.util.Optional;
  * <p>
  * Furthermore, if the function descriptor's return layout is a group layout, the resulting downcall method handle accepts
  * an extra parameter of type {@link SegmentAllocator}, which is used by the linker runtime to allocate the
- * memory region associated with the struct returned by  the downcall method handle.
+ * memory region associated with the struct returned by the downcall method handle.
  * <p>
  * Finally, downcall method handles feature a leading parameter of type {@link NativeSymbol}, from which the
  * address of the target native function can be derived. The address, when known statically, can also be provided by
@@ -85,7 +85,7 @@ import java.util.Optional;
  * variadic function by using a {@linkplain FunctionDescriptor#asVariadic(MemoryLayout...) <em>variadic</em>} function descriptor,
  * in which the specialized signature of a given variable arity callsite is described in full. Alternatively,
  * if the foreign library allows it, clients might also be able to interact with variable arity methods
- * using by passing a trailing parameter of type {@link VaList}.
+ * by passing a trailing parameter of type {@link VaList}.
  *
  * <h2><a id = "upcall-stubs">Upcall stubs</a></h2>
  *
@@ -142,7 +142,7 @@ public sealed interface CLinker extends SymbolLookup permits Windowsx64Linker, S
     /**
      * Lookup a symbol in the standard libraries associated with this linker.
      * The set of symbols available for lookup is unspecified, as it depends on the platform and on the operating system.
-     * @return a linker-specific library lookup which is suitable to find symbols in the standard libraries associated with this linker.
+     * @return a symbol in the standard libraries associated with this linker.
      */
     @Override
     default Optional<NativeSymbol> lookup(String name) {
