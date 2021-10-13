@@ -35,6 +35,8 @@ class JfrEmergencyDump : AllStatic {
  private:
   static char _dump_path[JVM_MAXPATHLEN];
 
+  static bool open_emergency_dump_file();
+
  public:
   static void set_dump_path(const char* dump_path);
   static const char* get_dump_path();

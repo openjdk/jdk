@@ -132,12 +132,20 @@ static const char* create_emergency_dump_path() {
   return result ? _path_buffer : NULL;
 }
 
-static bool open_emergency_dump_file() {
+bool JfrEmergencyDump::open_emergency_dump_file() {
   if (is_emergency_dump_file_open()) {
     // opened already
     return true;
   }
-  return open_emergency_dump_fd(create_emergency_dump_path());
+
+  bool result = open_emergency_dump_fd(create_emergency_dump_path());
+  if (!result && *_dump_path != '\0') {
+    // Attempt to create emergency dump to current directory
+    // if we couldn't create it on `dumppath=`.
+    *_dump_path = '\0';
+    result = open_emergency_dump_fd(create_emergency_dump_path());
+  }
+  return result;
 }
 
 static void report(outputStream* st, bool emergency_file_opened, const char* repository_path) {

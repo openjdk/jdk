@@ -75,11 +75,13 @@ public class TestDumpOnCrash {
     }
 
     public static void main(String[] args) throws Exception {
-        test(CrasherIllegalAccess.class, "", true, null);
-        test(CrasherIllegalAccess.class, "", false, null);
-        test(CrasherHalt.class, "", true, null);
-        test(CrasherHalt.class, "", false, null);
+        // Test without dumppath
+        test(CrasherIllegalAccess.class, "", true);
+        test(CrasherIllegalAccess.class, "", false);
+        test(CrasherHalt.class, "", true);
+        test(CrasherHalt.class, "", false);
 
+        // Test with dumppath
         Path dumppath = Files.createTempDirectory(null);
         try {
             test(CrasherIllegalAccess.class, "", true, dumppath.toString());
@@ -90,17 +92,32 @@ public class TestDumpOnCrash {
             dumppath.toFile().delete();
         }
 
+        // Test with illegal dumppath
+        Path illegalpath = Path.of("silverbullet");
+        test(CrasherIllegalAccess.class, "", true, illegalpath.toString(), null);
+        test(CrasherIllegalAccess.class, "", false, illegalpath.toString(), null);
+        test(CrasherHalt.class, "", true, illegalpath.toString(), null);
+        test(CrasherHalt.class, "", false, illegalpath.toString(), null);
+
         // Test is excluded until 8219680 is fixed
         // @ignore 8219680
         // test(CrasherSig.class, "FPE", true);
     }
 
+    private static void test(Class<?> crasher, String signal, boolean disk) throws Exception {
+        test(crasher, signal, disk, null);
+    }
+
     private static void test(Class<?> crasher, String signal, boolean disk, String dumppath) throws Exception {
+        test(crasher, signal, disk, dumppath, dumppath);
+    }
+
+    private static void test(Class<?> crasher, String signal, boolean disk, String dumppath, String expectedPath) throws Exception {
         // The JVM may be in a state it can't recover from, so try three times
         // before concluding functionality is not working.
         for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
             try {
-                verify(runProcess(crasher, signal, disk, dumppath), dumppath);
+                verify(runProcess(crasher, signal, disk, dumppath), expectedPath);
                 return;
             } catch (Exception e) {
                 System.out.println("Attempt " + attempt + ". Verification failed:");
