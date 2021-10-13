@@ -198,7 +198,12 @@ public class ResumeAfterThreadResumeCallTest extends TestScaffold {
         List<StackFrame> stack_frames = thread.frames();
         int i = 0;
         for (StackFrame ff : stack_frames) {
-            System.out.println("frame[" + i++ +"]: " + ff.location().method() + " (bci:" + ff.location().codeIndex() + ")");
+            Location loc = ff.location();
+            String locString = "bci:" + loc.codeIndex();
+            try {
+                locString = loc.sourceName() + ":" + loc.lineNumber() + "," + locString;
+            } catch (AbsentInformationException e) {/* empty */};
+            log("  frame[" + i++ +"]: " + ff.location().method() + " (" + locString + ")");
         }
     }
 
