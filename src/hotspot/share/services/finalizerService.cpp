@@ -33,7 +33,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vm_version.hpp"
 #include "services/finalizerService.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/debug.hpp"
@@ -47,41 +46,21 @@ const InstanceKlass* FinalizerEntry::klass() const {
   return _ik;
 }
 
-uint64_t FinalizerEntry::objects_on_heap() const {
+uintptr_t FinalizerEntry::objects_on_heap() const {
   return Atomic::load(&_objects_on_heap);
 }
 
-uint64_t FinalizerEntry::total_finalizers_run() const {
+uintptr_t FinalizerEntry::total_finalizers_run() const {
   return Atomic::load(&_total_finalizers_run);
 }
 
-template <uint64_t op(uint64_t)>
-static inline void set_atomic(volatile uint64_t* volatile dest) {
-  assert(VM_Version::supports_cx8(), "invariant");
-  uint64_t compare;
-  uint64_t exchange;
-  do {
-    compare = *dest;
-    exchange = op(compare);
-  } while (Atomic::cmpxchg(dest, compare, exchange) != compare);
-}
-
-static inline uint64_t inc(uint64_t value) {
-  return value + 1;
-}
-
 void FinalizerEntry::on_register() {
-  set_atomic<inc>(&_objects_on_heap);
-}
-
-static inline uint64_t dec(uint64_t value) {
-  assert(value > 0, "invariant");
-  return value - 1;
+  Atomic::inc(&_objects_on_heap);
 }
 
 void FinalizerEntry::on_complete() {
-  set_atomic<inc>(&_total_finalizers_run);
-  set_atomic<dec>(&_objects_on_heap);
+  Atomic::inc(&_total_finalizers_run);
+  Atomic::dec(&_objects_on_heap);
 }
 
 static inline uintx hash_function(const InstanceKlass* ik) {
