@@ -108,7 +108,7 @@ public class IRNode {
     public static final String LOAD_P_OF_CLASS = COMPOSITE_PREFIX + START + "LoadP" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
     public static final String LOAD_N_OF_CLASS = COMPOSITE_PREFIX + START + "LoadN" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
     public static final String LOAD_OF_FIELD = COMPOSITE_PREFIX + START + "Load(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=" + IS_REPLACED + ",.*" + END;
-    public static final String LOAD_KLASS  = START + "LoadK" + MID + END;
+    public static final String LOAD_KLASS  = START + "LoadN?K" + MID + END;
 
     public static final String LOOP   = START + "Loop" + MID + END;
     public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;

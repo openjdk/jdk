@@ -123,8 +123,7 @@ public class TestIRMatching {
                  BadFailOnConstraint.create(RunTests.class, "bad1(int)", 2, "Load")
         );
 
-        runCheck(new String[] {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers"},
-                 BadFailOnConstraint.create(Loads.class, "load()", 1, 1, "Load"),
+        runCheck(BadFailOnConstraint.create(Loads.class, "load()", 1, 1, "Load"),
                  BadFailOnConstraint.create(Loads.class, "load()", 1, 3, "LoadI"),
                  BadCountsConstraint.create(Loads.class, "load()", 1, 1, 0),
                  BadCountsConstraint.create(Loads.class, "load()", 1, 2, 1,"Load"),
