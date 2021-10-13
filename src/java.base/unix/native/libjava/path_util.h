@@ -26,9 +26,6 @@
 #ifndef PATH_UTIL_H
 #define PATH_UTIL_H
 
-int collapsible(char *names);
-void splitNames(char *names, char **ix);
-void joinNames(char *names, int nc, char **ix);
 void collapse(char *path);
 
 #endif

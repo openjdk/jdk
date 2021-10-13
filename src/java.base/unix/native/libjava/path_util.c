@@ -34,7 +34,7 @@
 /* Check the given name sequence to see if it can be further collapsed.
    Return zero if not, otherwise return the number of names in the sequence. */
 
-int
+static int
 collapsible(char *names)
 {
     char *p = names;
@@ -63,7 +63,7 @@ collapsible(char *names)
 /* Split the names in the given name sequence,
    replacing slashes with nulls and filling in the given index array */
 
-void
+static void
 splitNames(char *names, char **ix)
 {
     char *p = names;
@@ -85,7 +85,7 @@ splitNames(char *names, char **ix)
 /* Join the names in the given name sequence, ignoring names whose index
    entries have been cleared and replacing nulls with slashes as needed */
 
-void
+static void
 joinNames(char *names, int nc, char **ix)
 {
     int i;
