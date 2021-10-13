@@ -486,6 +486,29 @@ bool Thread::is_JavaThread_protected(const JavaThread* p) {
   return false;
 }
 
+// Is the target JavaThread protected by a ThreadsList associated
+// with the calling Thread.
+//
+// Thread::is_JavaThread_protected() above is the more general check.
+// This function ONLY checks the ThreadsLists (if any) associated with
+// the calling thread in order to verify proper ThreadsListHandle
+// placement somewhere in the calling context.
+bool Thread::is_JavaThread_protected_by_my_ThreadsList(const JavaThread* p) {
+  Thread* current_thread = Thread::current();
+  // Check the ThreadsLists associated with the calling thread (if any)
+  // to see if one of them protects the target JavaThread:
+  for (SafeThreadsListPtr* stlp = current_thread->_threads_list_ptr;
+       stlp != NULL; stlp = stlp->previous()) {
+    if (stlp->list()->includes(p)) {
+      // The target JavaThread is protected by this ThreadsList:
+      return true;
+    }
+  }
+
+  // The target JavaThread is not protected.
+  return false;
+}
+
 ThreadPriority Thread::get_priority(const Thread* const thread) {
   ThreadPriority priority;
   // Can return an error!
@@ -1743,18 +1766,20 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
 //   - Target thread will not enter any new monitors.
 //
 bool JavaThread::java_suspend() {
-  ThreadsListHandle tlh;
-  if (!tlh.includes(this)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, no suspension", p2i(this));
+  guarantee(Thread::is_JavaThread_protected_by_my_ThreadsList(this),
+            "missing ThreadsListHandle in calling context.");
+  if (is_exiting()) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " is exiting, no suspension", p2i(this));
     return false;
   }
   return this->handshake_state()->suspend();
 }
 
 bool JavaThread::java_resume() {
-  ThreadsListHandle tlh;
-  if (!tlh.includes(this)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, nothing to resume", p2i(this));
+  guarantee(Thread::is_JavaThread_protected_by_my_ThreadsList(this),
+            "missing ThreadsListHandle in calling context.");
+  if (is_exiting()) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " is exiting, nothing to resume", p2i(this));
     return false;
   }
   return this->handshake_state()->resume();

@@ -2072,8 +2072,9 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
   ReadMonitorsClosure rmc;
   oop thread_oop = JNIHandles::resolve(thread_handle);
   if (thread_oop != NULL) {
+    ThreadsListHandle tlh;
     JavaThread* target = java_lang_Thread::thread(thread_oop);
-    Handshake::execute(&rmc, target);
+    Handshake::execute(&rmc, &tlh, target);
   }
   return rmc.executed();
 WB_END
@@ -2104,8 +2105,9 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
   } else {
     oop thread_oop = JNIHandles::resolve(thread_handle);
     if (thread_oop != NULL) {
+      ThreadsListHandle tlh;
       JavaThread* target = java_lang_Thread::thread(thread_oop);
-      Handshake::execute(&tsc, target);
+      Handshake::execute(&tsc, &tlh, target);
     }
   }
   return tsc.num_threads_completed();
@@ -2131,7 +2133,10 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
   };
   oop thread_oop = JNIHandles::resolve(thread_handle);
   if (thread_oop != NULL) {
+    ThreadsListHandle tlh;
     JavaThread* target = java_lang_Thread::thread(thread_oop);
+    // Sometimes 'target' is NULL and this test code expects
+    // Handshake::execute(AsyncHandshakeClosure,...) to handle it.
     TraceSelfClosure* tsc = new TraceSelfClosure(target);
     Handshake::execute(tsc, target);
   }

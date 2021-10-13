@@ -616,8 +616,14 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   }
 
   // compute and set thread-filtered events
-  for (JvmtiThreadState *state = JvmtiThreadState::first(); state != NULL; state = state->next()) {
-    any_env_thread_enabled |= recompute_thread_enabled(state);
+  JvmtiThreadState *state = JvmtiThreadState::first();
+  if (state != nullptr) {
+    // If we have a JvmtiThreadState, then we've reached the point where
+    // threads can exist so create a ThreadsListHandle to protect them.
+    ThreadsListHandle tlh;
+    for (; state != NULL; state = state->next()) {
+      any_env_thread_enabled |= recompute_thread_enabled(state);
+    }
   }
 
   // set universal state (across all envs and threads)

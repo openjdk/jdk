@@ -342,8 +342,9 @@ void Handshake::execute(HandshakeClosure* hs_cl) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
-  ThreadsListHandle tlh;
-  Handshake::execute(hs_cl, &tlh, target);
+  // tlh_p == nullptr means we rely on a ThreadsListHandle somewhere
+  // in the caller's context (and we sanity check for that).
+  Handshake::execute(hs_cl, nullptr, target);
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh_p, JavaThread* target) {
@@ -352,9 +353,21 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh_p, JavaT
 
   jlong start_time_ns = os::javaTimeNanos();
 
-  if (tlh_p->includes(target)) {
-    target->handshake_state()->add_operation(&op);
+  bool target_is_dead = false;
+  if (target == nullptr) {
+    target_is_dead = true;
   } else {
+    if (tlh_p == nullptr) {
+      guarantee(Thread::is_JavaThread_protected_by_my_ThreadsList(target),
+                "missing ThreadsListHandle in calling context.");
+      target->handshake_state()->add_operation(&op);
+    } else if (tlh_p->includes(target)) {
+      target->handshake_state()->add_operation(&op);
+    } else {
+      target_is_dead = true;
+    }
+  }
+  if (target_is_dead) {
     char buf[128];
     jio_snprintf(buf, sizeof(buf),  "(thread= " INTPTR_FORMAT " dead)", p2i(target));
     log_handshake_info(start_time_ns, op.name(), 0, 0, buf);
@@ -400,13 +413,24 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   jlong start_time_ns = os::javaTimeNanos();
   AsyncHandshakeOperation* op = new AsyncHandshakeOperation(hs_cl, target, start_time_ns);
 
-  ThreadsListHandle tlh;
-  if (tlh.includes(target)) {
-    target->handshake_state()->add_operation(op);
-  } else {
+  if (target == nullptr) {
+    // Stress test that calls WB_AsyncHandshakeWalkStack() can get here:
     log_handshake_info(start_time_ns, op->name(), 0, 0, "(thread dead)");
     delete op;
+    return;
   }
+
+  Thread* current = Thread::current();
+  if (current != target) {
+    // Another thread is handling the request and it must be protecting
+    // the target.
+    guarantee(Thread::is_JavaThread_protected_by_my_ThreadsList(target),
+              "missing ThreadsListHandle in calling context.");
+  }
+  // Implied else:
+  // The target is handling the request itself so it can't be dead.
+
+  target->handshake_state()->add_operation(op);
 }
 
 HandshakeState::HandshakeState(JavaThread* target) :

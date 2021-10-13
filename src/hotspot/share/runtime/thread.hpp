@@ -203,6 +203,9 @@ class Thread: public ThreadShadow {
   // Is the target JavaThread protected by the calling Thread
   // or by some other mechanism:
   static bool is_JavaThread_protected(const JavaThread* p);
+  // Is the target JavaThread protected by a ThreadsList associated
+  // with the calling Thread.
+  static bool is_JavaThread_protected_by_my_ThreadsList(const JavaThread* p);
 
   void* operator new(size_t size) throw() { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
