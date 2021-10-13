@@ -23,10 +23,13 @@
  */
 #include "precompiled.hpp"
 
+#include "runtime/os.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/mallocTracker.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
@@ -103,14 +106,101 @@ void MallocMemorySummary::initialize() {
   ::new ((void*)_snapshot)MallocMemorySnapshot();
 }
 
-void MallocHeader::release() const {
+void MallocHeader::mark_block_as_dead() {
+  _canary = _header_canary_dead_mark;
+  NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
+  set_footer_byte(_footer_canary_dead_mark);
+}
+
+void MallocHeader::release() {
   // Tracking already shutdown, no housekeeping is needed anymore
   if (MemTracker::tracking_level() <= NMT_minimal) return;
+
+  check_block_integrity();
 
   MallocMemorySummary::record_free(size(), flags());
   MallocMemorySummary::record_free_malloc_header(sizeof(MallocHeader));
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::deallocation_at(size(), _bucket_idx, _pos_idx);
+  }
+
+  mark_block_as_dead();
+}
+
+void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
+  st->print_cr("NMT Block at " PTR_FORMAT ", corruption at: " PTR_FORMAT ": ",
+               p2i(this), p2i(bad_address));
+  address from = align_down((address)this, sizeof(void*)) - 8;
+  address to = from + 64;
+  // Note: print_hex_dump uses SafeFetch, so it should be able to handle unmapped memory.
+  os::print_hex_dump(st, from, to, 1);
+  assert(bad_address >= from, "sanity");
+  // if the corruption is in the block body of in the footer, print out that part too
+  // unless it has been part of the first hexdump
+  address from2 = align_down(bad_address, sizeof(void*)) - 8;
+  from2 = MAX2(to, from2);
+  address to2 = from2 + 96;
+  if (to2 > to) {
+    if (from2 > to) {
+      st->print_cr("...");
+    }
+    os::print_hex_dump(st, from2, to2, 1);
+  }
+}
+
+// Check block integrity. If block is broken, print out a report
+// to tty (optionally with hex dump surrounding the broken block),
+// then trigger a fatal error.
+void MallocHeader::check_block_integrity() const {
+
+  // Note: if you modify the error messages here, make sure you
+  // adapt the associated gtests too.
+
+  // Weed out obviously wrong block addresses of NULL or very low
+  // values. Note that we should not call this for ::free(NULL),
+  // which should be handled by os::free() above us.
+  if (((size_t)p2i(this)) < K) {
+    fatal("Block at " PTR_FORMAT ": invalid block address", p2i(this));
+  }
+
+  // From here on we assume the block pointer to be valid. We could
+  //  use SafeFetch but since this is a hot path we don't. If we are
+  //  wrong, we will crash when accessing the canary, which hopefully
+  //  generates distinct crash report.
+
+  // Also weed out unaligned addresses. Note that the alignment requirements
+  // we check here are the bare minimum of what we know will malloc() give us
+  // (which is 64-bit even on 32-bit platforms).
+  if (!is_aligned(this, sizeof(uint64_t))) {
+    print_block_on_error(tty, (address)this);
+    fatal("Block at " PTR_FORMAT ": block address is unaligned", p2i(this));
+  }
+
+  // Check header canary
+  if (_canary != _header_canary_life_mark) {
+    print_block_on_error(tty, (address)this);
+    fatal("Block at " PTR_FORMAT ": header canary broken.", p2i(this));
+  }
+
+#ifndef _LP64
+  // On 32-bit we have a second canary, check that one too.
+  if (_alt_canary != _header_alt_canary_life_mark) {
+    print_block_on_error(tty, (address)this);
+    fatal("Block at " PTR_FORMAT ": header alternate canary broken.", p2i(this));
+  }
+#endif
+
+  // Does block size seems reasonable?
+  if (_size >= max_reasonable_malloc_size) {
+    print_block_on_error(tty, (address)this);
+    fatal("Block at " PTR_FORMAT ": header looks invalid (weirdly large block size)", p2i(this));
+  }
+
+  // Check footer canary
+  if (get_footer_byte() != _footer_canary_life_mark) {
+    print_block_on_error(tty, footer_address());
+    fatal("Block at " PTR_FORMAT ": footer canary broken at " PTR_FORMAT " (buffer overflow?)",
+          p2i(this), p2i(footer_address()));
   }
 }
 
