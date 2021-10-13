@@ -4468,14 +4468,24 @@ public class Check {
                             if ( ((flags & TRANSIENT) == 0) &&
                                  ((flags & STATIC) == 0)) {
                                 Type varType = enclosed.asType();
-                                if (!rs.isSerializable(varType) &&
-                                    !varType.getKind().isPrimitive()) {
+                                if (!canBeSerialized(varType)) {
                                     // Note per JLS arrays are
-                                    // serializable even if the component
-                                    // type is not.
+                                    // serializable even if the
+                                    // component type is not.
                                     log.warning(LintCategory.SERIAL,
                                                 TreeInfo.diagnosticPositionFor(enclosed, tree),
                                                 Warnings.NonSerializableInstanceField);
+                                } else if (varType.hasTag(ARRAY)) {
+                                    ArrayType arrayType = (ArrayType)varType;
+                                    Type elementType = arrayType.elemtype;
+                                    while (elementType.hasTag(ARRAY)) {
+                                        arrayType = (ArrayType)elementType;
+                                        elementType = arrayType.elemtype;
+                                    }
+                                    if (!canBeSerialized(elementType)) {
+                                        System.out.println("\tArray component type " + varType + " in " +
+                                                           el.outermostClass().getSimpleName());
+                                    }
                                 }
                             }
                         }
@@ -4536,6 +4546,10 @@ public class Check {
             return null;
         }
 
+
+        boolean canBeSerialized(Type type) {
+            return type.isPrimitive() || rs.isSerializable(type);
+        }
 
         /**
          * Check that Externalizable class needs a public no-arg
