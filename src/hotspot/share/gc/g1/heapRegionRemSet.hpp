@@ -64,9 +64,6 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   inline void split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const;
   void clear_fcc();
 
-  // Maximum number of cards in a (card) region storable in the remembered set in bits.
-  static uint per_card_region_card_limit();
-
 public:
   HeapRegionRemSet(HeapRegion* hr, G1CardSetConfiguration* config);
 

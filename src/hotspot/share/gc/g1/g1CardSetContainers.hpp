@@ -179,7 +179,8 @@ public:
   }
 
   // Maximum size of the entries of any G1CardSetContainer in bits.
-  static uint max_card_bits_storable();
+  // The only limitation there is is from the G1CardSetArray.
+  static uint LogCardsPerRegionLimit;
 };
 
 class G1CardSetArray : public G1CardSetContainer {
