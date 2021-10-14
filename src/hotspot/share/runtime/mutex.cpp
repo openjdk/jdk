@@ -31,6 +31,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadCritical.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
@@ -267,7 +268,26 @@ bool Monitor::wait(int64_t timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
+static GrowableArray<Mutex*>* _mutex_array = NULL;
+
+static void add_mutex(Mutex* var) {
+  // This is at startup so doesn't need sync.
+  if (_mutex_array == NULL) {
+    _mutex_array = new (ResourceObj::C_HEAP, mtThread) GrowableArray<Mutex*>(128, mtThread);
+  }
+  ThreadCritical tc;
+  _mutex_array->push(var);
+}
+
+static void remove_mutex(Mutex* var) {
+  ThreadCritical tc;
+  int i = _mutex_array->find_from_end(var);
+  assert(i != -1, "Mutex not in list");
+  _mutex_array->remove_at(i);
+}
+
 Mutex::~Mutex() {
+  remove_mutex(this);
   assert_owner(NULL);
   os::free(const_cast<char*>(_name));
 }
@@ -288,6 +308,7 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(NULL) {
   assert(_rank > nosafepoint || _allow_vm_block,
          "Locks that don't check for safepoint should always allow the vm to block: %s", name);
 #endif
+  add_mutex(this);
 }
 
 bool Mutex::owned_by_self() const {
@@ -298,6 +319,26 @@ void Mutex::print_on_error(outputStream* st) const {
   st->print("[" PTR_FORMAT, p2i(this));
   st->print("] %s", _name);
   st->print(" - owner thread: " PTR_FORMAT, p2i(owner()));
+}
+
+// Print all mutexes/monitors that are currently owned by a thread; called
+// by fatal error handler.
+void Mutex::print_owned_locks_on_error(outputStream* st) {
+  st->print("VM Mutex/Monitor currently owned by a thread: ");
+  bool none = true;
+  for (int i = 0; i < _mutex_array->length(); i++) {
+     // see if it has an owner
+     if (_mutex_array->at(i)->owner() != NULL) {
+       if (none) {
+          // print format used by Mutex::print_on_error()
+          st->print_cr(" ([mutex/lock_event])");
+          none = false;
+       }
+       _mutex_array->at(i)->print_on_error(st);
+       st->cr();
+     }
+  }
+  if (none) st->print_cr("None");
 }
 
 // ----------------------------------------------------------------------------------

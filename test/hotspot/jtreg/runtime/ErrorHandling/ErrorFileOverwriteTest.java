@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, SAP. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,46 +42,6 @@ import java.util.regex.Pattern;
 
 public class ErrorFileOverwriteTest {
 
-  private static File findHsErrorFileInOutput(OutputAnalyzer output) {
-
-    String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid.*\\.log)", 1);
-    if(hs_err_file ==null) {
-      throw new RuntimeException("Did not find hs-err file in output.\n");
-    }
-
-    File f = new File(hs_err_file);
-    if (!f.exists()) {
-      throw new RuntimeException("hs-err file missing at "
-              + f.getAbsolutePath() + ".\n");
-    }
-
-    return f;
-
-  }
-
-  private static void scanHsErrorFileForContent(File f, Pattern[] pattern) throws IOException {
-    FileInputStream fis = new FileInputStream(f);
-    BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-    String line = null;
-
-    int currentPattern = 0;
-
-    String lastLine = null;
-    while ((line = br.readLine()) != null && currentPattern < pattern.length) {
-      if (pattern[currentPattern].matcher(line).matches()) {
-        System.out.println("Found: " + line + ".");
-        currentPattern++;
-      }
-      lastLine = line;
-    }
-    br.close();
-
-    if (currentPattern < pattern.length) {
-      throw new RuntimeException("hs-err file incomplete (first missing pattern: " +  pattern[currentPattern] + ")");
-    }
-
-  }
-
   public static void do_test(boolean with_percent_p) throws Exception {
 
     // Crash twice.
@@ -110,10 +70,10 @@ public class ErrorFileOverwriteTest {
     output_detail.shouldMatch("# " + errorFileStem + ".*");
     System.out.println("First crash: Found expected output on tty. Ok.");
 
-    File f = findHsErrorFileInOutput(output_detail);
+    File f = ErrorFileScanner.findHsErrorFileInOutput(output_detail);
     System.out.println("First crash: Found hs error file at " + f.getAbsolutePath());
 
-    scanHsErrorFileForContent(f, new Pattern[] {
+    ErrorFileScanner.scanHsErrorFileForContent(f, new Pattern[] {
             Pattern.compile("# *Internal Error.*"),
             Pattern.compile("Command Line:.*-XX:ErrorHandlerTest=1.*-XX:ErrorFile=" + errorFileStem + ".*")
     });
@@ -136,7 +96,7 @@ public class ErrorFileOverwriteTest {
     output_detail.shouldMatch("# " + errorFileStem + ".*");
     System.out.println("Second crash: Found expected output on tty. Ok.");
 
-    File f2 = findHsErrorFileInOutput(output_detail);
+    File f2 = ErrorFileScanner.findHsErrorFileInOutput(output_detail);
     System.out.println("Second crash: Found hs error file at " + f2.getAbsolutePath());
 
     if (with_percent_p) {
@@ -145,7 +105,7 @@ public class ErrorFileOverwriteTest {
       }
     }
 
-    scanHsErrorFileForContent(f2, new Pattern[] {
+    ErrorFileScanner.scanHsErrorFileForContent(f2, new Pattern[] {
             Pattern.compile("# *Internal Error.*"),
             Pattern.compile("Command Line:.*-XX:ErrorHandlerTest=2.*-XX:ErrorFile=" + errorFileStem + ".*")
     });

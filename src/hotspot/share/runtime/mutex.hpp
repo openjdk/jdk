@@ -190,6 +190,11 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   const char *name() const                  { return _name; }
 
   void print_on_error(outputStream* st) const;
+
+  // Print all mutexes/monitors that are currently owned by a thread; called
+  // by fatal error handler.
+  static void print_owned_locks_on_error(outputStream* st);
+
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
     void print() const                      { print_on(::tty); }
