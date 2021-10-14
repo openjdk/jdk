@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8185194 8182765 8261976
+ * @bug      8185194 8182765 8261976 8223357
  * @summary  Test anchor for package description in package summary page
   * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -49,8 +49,10 @@ public class TestPackageDescription extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
+                    <!-- ============ PACKAGE DESCRIPTION =========== -->
                     <section class="package-description" id="package-description">
                     <div class="block">package description</div>
+                    </section>
                     """);
     }
 }

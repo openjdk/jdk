@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,12 @@ public class MarkerComments {
      */
     public static final Comment START_OF_MODULES_SUMMARY =
             new Comment("============ MODULES SUMMARY ===========");
+
+    /**
+     * Marker to identify start of package description.
+     */
+    public static final Comment START_OF_PACKAGE_DESCRIPTION =
+            new Comment("============ PACKAGE DESCRIPTION ===========");
 
     /**
      * Marker to identify start of packages summary.
