@@ -45,9 +45,12 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
@@ -184,9 +187,25 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             }
         } else {
             if (tree == null) {
-                if (!isSynthetic() && !isOverridingMethod)
+                if (isDefaultConstructor()) {
+                    if (isNormalClass(p.getParentPath())) {
+                        reportMissing("dc.default.constructor");
+                    }
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous()) {
                     reportMissing("dc.missing.comment");
+                }
                 return null;
+            } else if (tree.getFirstSentence().isEmpty() && !isOverridingMethod) {
+                if (tree.getBlockTags().isEmpty()) {
+                    reportMissing("dc.empty.comment");
+                    return null;
+                } else {
+                    // Don't report an empty description if the comment contains @deprecated,
+                    // because javadoc will use the content of that tag in summary tables.
+                    if (tree.getBlockTags().stream().allMatch(t -> t.getKind() != DocTree.Kind.DEPRECATED)) {
+                        env.messages.report(MISSING, Kind.WARNING, tree, "dc.empty.description");
+                    }
+                }
             }
         }
 
@@ -383,11 +402,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
                 }
             }
-        }
 
-        // check for self closing tags, such as <a id="name"/>
-        if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
-            env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            // check for self closing tags, such as <a id="name"/>
+            if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
+                env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            }
         }
 
         try {
@@ -610,6 +629,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
     public Void visitAttribute(AttributeTree tree, Void ignore) {
+        // for now, ensure we're in an HTML StartElementTree;
+        // in time, we might check uses of attributes in other tree nodes
+        if (getParentKind() != DocTree.Kind.START_ELEMENT) {
+            return null;
+        }
+
         HtmlTag currTag = tagStack.peek().tag;
         if (currTag != null && currTag.elemKind != ElemKind.HTML4) {
             Name name = tree.getName();
@@ -1137,12 +1162,25 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="Utility methods">
 
+    private DocTree.Kind getParentKind() {
+        return getCurrentPath().getParentPath().getLeaf().getKind();
+    }
+
     private boolean isCheckedException(TypeMirror t) {
         return !(env.types.isAssignable(t, env.java_lang_Error)
                 || env.types.isAssignable(t, env.java_lang_RuntimeException));
     }
 
     private boolean isSynthetic() {
+        return env.elements.getOrigin(env.currElement) == Elements.Origin.SYNTHETIC;
+    }
+
+    private boolean isAnonymous() {
+        return (env.currElement instanceof TypeElement te)
+                && te.getNestingKind() == NestingKind.ANONYMOUS;
+    }
+
+    private boolean isDefaultConstructor() {
         switch (env.currElement.getKind()) {
             case CONSTRUCTOR:
                 // A synthetic default constructor has the same pos as the
@@ -1151,6 +1189,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 return env.getPos(p) == env.getPos(p.getParentPath());
         }
         return false;
+    }
+
+    private boolean isNormalClass(TreePath p) {
+        return switch (p.getLeaf().getKind()) {
+            case ENUM, RECORD -> false;
+            case CLASS -> true;
+            default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
+        };
     }
 
     void markEnclosingTag(Flag flag) {

@@ -142,6 +142,7 @@ public class GlobalFilterTest {
      * If there is no security manager then setting it should work.
      */
     @Test()
+    @SuppressWarnings("removal")
     static void setGlobalFilter() {
         SecurityManager sm = System.getSecurityManager();
         ObjectInputFilter filter = new SerialFilterTest.Validator();

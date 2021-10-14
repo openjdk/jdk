@@ -353,6 +353,9 @@ class methodHandle;
                                                                                                                         \
   do_intrinsic(_encodeByteISOArray,     java_lang_StringCoding, encodeISOArray_name, indexOfI_signature,         F_S)   \
                                                                                                                         \
+  do_intrinsic(_encodeAsciiArray,       java_lang_StringCoding, encodeAsciiArray_name, encodeISOArray_signature, F_S)   \
+   do_name(     encodeAsciiArray_name,                           "implEncodeAsciiArray")                                \
+                                                                                                                        \
   do_class(java_math_BigInteger,                      "java/math/BigInteger")                                           \
   do_intrinsic(_multiplyToLen,      java_math_BigInteger, multiplyToLen_name, multiplyToLen_signature, F_S)             \
    do_name(     multiplyToLen_name,                             "implMultiplyToLen")                                    \
@@ -415,6 +418,11 @@ class methodHandle;
    do_intrinsic(_counterMode_AESCrypt, com_sun_crypto_provider_counterMode, crypt_name, byteArray_int_int_byteArray_int_signature, F_R)   \
    do_name(     crypt_name,                                 "implCrypt")                                                    \
                                                                                                                         \
+  do_class(com_sun_crypto_provider_galoisCounterMode, "com/sun/crypto/provider/GaloisCounterMode")                      \
+   do_intrinsic(_galoisCounterMode_AESCrypt, com_sun_crypto_provider_galoisCounterMode, gcm_crypt_name, aes_gcm_signature, F_S)   \
+   do_name(gcm_crypt_name, "implGCMCrypt0")                                                                                 \
+   do_signature(aes_gcm_signature, "([BII[BI[BILcom/sun/crypto/provider/GCTR;Lcom/sun/crypto/provider/GHASH;)I")                                                             \
+                                                                                                                        \
   /* support for sun.security.provider.MD5 */                                                                           \
   do_class(sun_security_provider_md5,                              "sun/security/provider/MD5")                         \
   do_intrinsic(_md5_implCompress, sun_security_provider_md5, implCompress_name, implCompress_signature, F_R)            \
@@ -453,7 +461,7 @@ class methodHandle;
   do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
   do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
    do_name(decodeBlock_name, "decodeBlock")                                                                             \
-   do_signature(decodeBlock_signature, "([BII[BIZ)I")                                                                   \
+   do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                   \
                                                                                                                         \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \

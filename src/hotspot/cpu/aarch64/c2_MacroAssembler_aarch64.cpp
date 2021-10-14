@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #ifdef PRODUCT
@@ -539,6 +540,75 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   BIND(DONE);
 }
 
+void C2_MacroAssembler::string_indexof_char_sve(Register str1, Register cnt1,
+                                                Register ch, Register result,
+                                                FloatRegister ztmp1,
+                                                FloatRegister ztmp2,
+                                                PRegister tmp_pg,
+                                                PRegister tmp_pdn, bool isL)
+{
+  // Note that `tmp_pdn` should *NOT* be used as governing predicate register.
+  assert(tmp_pg->is_governing(),
+         "this register has to be a governing predicate register");
+
+  Label LOOP, MATCH, DONE, NOMATCH;
+  Register vec_len = rscratch1;
+  Register idx = rscratch2;
+
+  SIMD_RegVariant T = (isL == true) ? B : H;
+
+  cbz(cnt1, NOMATCH);
+
+  // Assign the particular char throughout the vector.
+  sve_dup(ztmp2, T, ch);
+  if (isL) {
+    sve_cntb(vec_len);
+  } else {
+    sve_cnth(vec_len);
+  }
+  mov(idx, 0);
+
+  // Generate a predicate to control the reading of input string.
+  sve_whilelt(tmp_pg, T, idx, cnt1);
+
+  BIND(LOOP);
+    // Read a vector of 8- or 16-bit data depending on the string type. Note
+    // that inactive elements indicated by the predicate register won't cause
+    // a data read from memory to the destination vector.
+    if (isL) {
+      sve_ld1b(ztmp1, T, tmp_pg, Address(str1, idx));
+    } else {
+      sve_ld1h(ztmp1, T, tmp_pg, Address(str1, idx, Address::lsl(1)));
+    }
+    add(idx, idx, vec_len);
+
+    // Perform the comparison. An element of the destination predicate is set
+    // to active if the particular char is matched.
+    sve_cmp(Assembler::EQ, tmp_pdn, T, tmp_pg, ztmp1, ztmp2);
+
+    // Branch if the particular char is found.
+    br(NE, MATCH);
+
+    sve_whilelt(tmp_pg, T, idx, cnt1);
+
+    // Loop back if the particular char not found.
+    br(MI, LOOP);
+
+  BIND(NOMATCH);
+    mov(result, -1);
+    b(DONE);
+
+  BIND(MATCH);
+    // Undo the index increment.
+    sub(idx, idx, vec_len);
+
+    // Crop the vector to find its location.
+    sve_brka(tmp_pdn, tmp_pg, tmp_pdn, false /* isMerge */);
+    add(result, idx, -1);
+    sve_incp(result, T, tmp_pdn);
+  BIND(DONE);
+}
+
 void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
                                             Register ch, Register result,
                                             Register tmp1, Register tmp2, Register tmp3)
@@ -606,7 +676,8 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
     Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
-    FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3, int ae) {
+    FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+    PRegister pgtmp1, PRegister pgtmp2, int ae) {
   Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
       DIFF, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
       SHORT_LOOP_START, TAIL_CHECK;
@@ -831,4 +902,99 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   bind(DONE);
 
   BLOCK_COMMENT("} string_compare");
+}
+
+void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
+                                     FloatRegister src2, int cond, bool isQ) {
+  SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
+  if (bt == T_FLOAT || bt == T_DOUBLE) {
+    switch (cond) {
+      case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
+      case BoolTest::ne: {
+        fcmeq(dst, size, src1, src2);
+        notr(dst, T16B, dst);
+        break;
+      }
+      case BoolTest::ge: fcmge(dst, size, src1, src2); break;
+      case BoolTest::gt: fcmgt(dst, size, src1, src2); break;
+      case BoolTest::le: fcmge(dst, size, src2, src1); break;
+      case BoolTest::lt: fcmgt(dst, size, src2, src1); break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  } else {
+    switch (cond) {
+      case BoolTest::eq: cmeq(dst, size, src1, src2); break;
+      case BoolTest::ne: {
+        cmeq(dst, size, src1, src2);
+        notr(dst, T16B, dst);
+        break;
+      }
+      case BoolTest::ge: cmge(dst, size, src1, src2); break;
+      case BoolTest::gt: cmgt(dst, size, src1, src2); break;
+      case BoolTest::le: cmge(dst, size, src2, src1); break;
+      case BoolTest::lt: cmgt(dst, size, src2, src1); break;
+      case BoolTest::uge: cmhs(dst, size, src1, src2); break;
+      case BoolTest::ugt: cmhi(dst, size, src1, src2); break;
+      case BoolTest::ult: cmhi(dst, size, src2, src1); break;
+      case BoolTest::ule: cmhs(dst, size, src2, src1); break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  }
+}
+
+void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
+                                    FloatRegister zn, FloatRegister zm, int cond) {
+  assert(pg->is_governing(), "This register has to be a governing predicate register");
+  FloatRegister z1 = zn, z2 = zm;
+  // Convert the original BoolTest condition to Assembler::condition.
+  Condition condition;
+  switch (cond) {
+    case BoolTest::eq: condition = Assembler::EQ; break;
+    case BoolTest::ne: condition = Assembler::NE; break;
+    case BoolTest::le: z1 = zm; z2 = zn; condition = Assembler::GE; break;
+    case BoolTest::ge: condition = Assembler::GE; break;
+    case BoolTest::lt: z1 = zm; z2 = zn; condition = Assembler::GT; break;
+    case BoolTest::gt: condition = Assembler::GT; break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
+  if (bt == T_FLOAT || bt == T_DOUBLE) {
+    sve_fcm(condition, pd, size, pg, z1, z2);
+  } else {
+    assert(is_integral_type(bt), "unsupported element type");
+    sve_cmp(condition, pd, size, pg, z1, z2);
+  }
+}
+
+void C2_MacroAssembler::sve_vmask_reduction(int opc, Register dst, SIMD_RegVariant size, FloatRegister src,
+                                            PRegister pg, PRegister pn, int length) {
+  assert(pg->is_governing(), "This register has to be a governing predicate register");
+  // The conditional flags will be clobbered by this function
+  sve_cmp(Assembler::NE, pn, size, pg, src, 0);
+  switch (opc) {
+    case Op_VectorMaskTrueCount:
+      sve_cntp(dst, size, ptrue, pn);
+      break;
+    case Op_VectorMaskFirstTrue:
+      sve_brkb(pn, pg, pn, false);
+      sve_cntp(dst, size, ptrue, pn);
+      break;
+    case Op_VectorMaskLastTrue:
+      sve_rev(pn, size, pn);
+      sve_brkb(pn, ptrue, pn, false);
+      sve_cntp(dst, size, ptrue, pn);
+      movw(rscratch1, length - 1);
+      subw(dst, rscratch1, dst);
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+  }
 }

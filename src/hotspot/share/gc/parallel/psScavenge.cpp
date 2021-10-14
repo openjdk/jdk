@@ -62,7 +62,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
@@ -210,9 +209,10 @@ public:
     assert(worker_id < _max_workers, "sanity");
     PSPromotionManager* promotion_manager = (_tm == RefProcThreadModel::Single) ? PSPromotionManager::vm_thread_promotion_manager() : PSPromotionManager::gc_thread_promotion_manager(worker_id);
     PSIsAliveClosure is_alive;
-    PSKeepAliveClosure keep_alive(promotion_manager);;
+    PSKeepAliveClosure keep_alive(promotion_manager);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     PSEvacuateFollowersClosure complete_gc(promotion_manager, (_marks_oops_alive && _tm == RefProcThreadModel::Multi) ? &_terminator : nullptr, worker_id);;
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
@@ -449,8 +449,7 @@ bool PSScavenge::invoke_no_policy() {
     DerivedPointerTable::clear();
 #endif
 
-    reference_processor()->enable_discovery();
-    reference_processor()->setup_policy(false);
+    reference_processor()->start_discovery(false /* always_clear */);
 
     const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
@@ -486,7 +485,6 @@ bool PSScavenge::invoke_no_policy() {
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
-      reference_processor()->setup_policy(false); // not always_clear
       reference_processor()->set_active_mt_degree(active_workers);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());
@@ -804,7 +802,7 @@ void PSScavenge::initialize() {
                            ParallelGCThreads,          // mt processing degree
                            true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree
-                           true,                       // atomic_discovery
+                           false,                      // concurrent_discovery
                            NULL);                      // header provides liveness info
 
   // Cache the cardtable

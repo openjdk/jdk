@@ -2045,7 +2045,7 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(Node* expr, Node** tr
 }
 
 LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
-  if (is_strip_mined() && is_valid_counted_loop(T_INT)) {
+  if (is_strip_mined() && in(EntryControl) != NULL && in(EntryControl)->is_OuterStripMinedLoop()) {
     verify_strip_mined(expect_skeleton);
     return in(EntryControl)->as_Loop();
   }
@@ -2139,9 +2139,10 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
 }
 
 Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
-    while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0)->is_If() &&
-           ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
-           ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt) {
+    while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0) != NULL && ctrl->in(0)->is_If() &&
+            (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
+             (ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
+              ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt))) {
       ctrl = ctrl->in(0)->in(0);
     }
 
@@ -4013,6 +4014,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     // all the code before the peeled area, so the verify pass will always
     // complain about it.
   }
+
+  // Check for bailout, and return
+  if (C->failing()) {
+    return;
+  }
+
   // Do verify graph edges in any case
   NOT_PRODUCT( C->verify_graph_edges(); );
 
@@ -4914,28 +4921,34 @@ Node* PhaseIdealLoop::compute_lca_of_uses(Node* n, Node* early, bool verify) {
 // loop unswitching, and IGVN, or a combination of them) can freely change
 // the graph's shape. As a result, the graph shape outlined below cannot
 // be guaranteed anymore.
-bool PhaseIdealLoop::is_canonical_loop_entry(CountedLoopNode* cl) {
-  if (!cl->is_main_loop() && !cl->is_post_loop()) {
-    return false;
+Node* CountedLoopNode::is_canonical_loop_entry() {
+  if (!is_main_loop() && !is_post_loop()) {
+    return NULL;
   }
-  Node* ctrl = cl->skip_predicates();
+  Node* ctrl = skip_predicates();
 
   if (ctrl == NULL || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
-    return false;
+    return NULL;
   }
   Node* iffm = ctrl->in(0);
   if (iffm == NULL || !iffm->is_If()) {
-    return false;
+    return NULL;
   }
   Node* bolzm = iffm->in(1);
   if (bolzm == NULL || !bolzm->is_Bool()) {
-    return false;
+    return NULL;
   }
   Node* cmpzm = bolzm->in(1);
   if (cmpzm == NULL || !cmpzm->is_Cmp()) {
-    return false;
+    return NULL;
   }
-  // compares can get conditionally flipped
+
+  uint input = is_main_loop() ? 2 : 1;
+  if (input >= cmpzm->req() || cmpzm->in(input) == NULL) {
+    return NULL;
+  }
+  bool res = cmpzm->in(input)->Opcode() == Op_Opaque1;
+#ifdef ASSERT
   bool found_opaque = false;
   for (uint i = 1; i < cmpzm->req(); i++) {
     Node* opnd = cmpzm->in(i);
@@ -4944,10 +4957,9 @@ bool PhaseIdealLoop::is_canonical_loop_entry(CountedLoopNode* cl) {
       break;
     }
   }
-  if (!found_opaque) {
-    return false;
-  }
-  return true;
+  assert(found_opaque == res, "wrong pattern");
+#endif
+  return res ? cmpzm->in(input) : NULL;
 }
 
 //------------------------------get_late_ctrl----------------------------------
@@ -5027,19 +5039,19 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
           }
         }
       }
-      // For Phis only consider Region's inputs that were reached by following the memory edges
-      if (LCA != early) {
-        for (uint i = 0; i < worklist.size(); i++) {
-          Node* s = worklist.at(i);
-          if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
-            Node* r = s->in(0);
-            for (uint j = 1; j < s->req(); j++) {
-              Node* in = s->in(j);
-              Node* r_in = r->in(j);
-              // We can't reach any node from a Phi because we don't enqueue Phi's uses above
-              if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
-                LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
-              }
+    }
+    // For Phis only consider Region's inputs that were reached by following the memory edges
+    if (LCA != early) {
+      for (uint i = 0; i < worklist.size(); i++) {
+        Node* s = worklist.at(i);
+        if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+          Node* r = s->in(0);
+          for (uint j = 1; j < s->req(); j++) {
+            Node* in = s->in(j);
+            Node* r_in = r->in(j);
+            // We can't reach any node from a Phi because we don't enqueue Phi's uses above
+            if (((worklist.member(in) && !in->is_Phi()) || in == mem) && is_dominator(early, r_in)) {
+              LCA = dom_lca_for_get_late_ctrl(LCA, r_in, n);
             }
           }
         }

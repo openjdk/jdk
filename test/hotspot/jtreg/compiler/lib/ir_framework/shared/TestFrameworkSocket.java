@@ -39,6 +39,9 @@ import java.util.concurrent.FutureTask;
  */
 public class TestFrameworkSocket implements AutoCloseable {
     public static final String STDOUT_PREFIX = "[STDOUT]";
+    public static final String TESTLIST_TAG = "[TESTLIST]";
+    public static final String DEFAULT_REGEX_TAG = "[DEFAULT_REGEX]";
+
     // Static fields used for test VM only.
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
     private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
@@ -51,6 +54,7 @@ public class TestFrameworkSocket implements AutoCloseable {
     private final String serverPortPropertyFlag;
     private FutureTask<String> socketTask;
     private final ServerSocket serverSocket;
+    private boolean receivedStdOut = false;
 
     public TestFrameworkSocket() {
         try {
@@ -88,6 +92,9 @@ public class TestFrameworkSocket implements AutoCloseable {
                 String next;
                 while ((next = in.readLine()) != null) {
                     builder.append(next).append(System.lineSeparator());
+                    if (next.startsWith(STDOUT_PREFIX)) {
+                        receivedStdOut = true;
+                    }
                 }
                 return builder.toString();
             } catch (IOException e) {
@@ -108,14 +115,14 @@ public class TestFrameworkSocket implements AutoCloseable {
     /**
      * Only called by test VM to write to server socket.
      */
-    public static void write(String msg, String type) {
-        write(msg, type, false);
+    public static void write(String msg, String tag) {
+        write(msg, tag, false);
     }
 
     /**
      * Only called by test VM to write to server socket.
      */
-    public static void write(String msg, String type, boolean stdout) {
+    public static void write(String msg, String tag, boolean stdout) {
         if (REPRODUCE) {
             System.out.println("Debugging Test VM: Skip writing due to -DReproduce");
             return;
@@ -129,7 +136,7 @@ public class TestFrameworkSocket implements AutoCloseable {
                 clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
             }
             if (stdout) {
-                msg = STDOUT_PREFIX + msg;
+                msg = STDOUT_PREFIX + tag + " " + msg;
             }
             clientWriter.println(msg);
         } catch (Exception e) {
@@ -145,7 +152,7 @@ public class TestFrameworkSocket implements AutoCloseable {
             throw new TestRunException(failMsg, e);
         }
         if (TestFramework.VERBOSE) {
-            System.out.println("Written " + type + " to socket:");
+            System.out.println("Written " + tag + " to socket:");
             System.out.println(msg);
         }
     }
@@ -177,5 +184,12 @@ public class TestFrameworkSocket implements AutoCloseable {
         } catch (Exception e) {
             throw new TestFrameworkException("Could not read from socket task", e);
         }
+    }
+
+    /**
+     * Return whether test VM sent messages to be put on stdout (starting with {@link ::STDOUT_PREFIX}).
+     */
+    public boolean hasStdOut() {
+        return receivedStdOut;
     }
 }

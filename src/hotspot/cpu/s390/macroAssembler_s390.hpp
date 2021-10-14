@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -718,26 +718,9 @@ class MacroAssembler: public Assembler {
   // Increment a counter at counter_address when the eq condition code is set.
   // Kills registers tmp1_reg and tmp2_reg and preserves the condition code.
   void increment_counter_eq(address counter_address, Register tmp1_reg, Register tmp2_reg);
-  // Biased locking support
-  // Upon entry,obj_reg must contain the target object, and mark_reg
-  // must contain the target object's header.
-  // Destroys mark_reg if an attempt is made to bias an anonymously
-  // biased lock. In this case a failure will go either to the slow
-  // case or fall through with the notEqual condition code set with
-  // the expectation that the slow case in the runtime will be called.
-  // In the fall-through case where the CAS-based lock is done,
-  // mark_reg is not destroyed.
-  void biased_locking_enter(Register obj_reg, Register mark_reg, Register temp_reg,
-                            Register temp2_reg, Label& done, Label* slow_case = NULL);
-  // Upon entry, the base register of mark_addr must contain the oop.
-  // Destroys temp_reg.
-  // If allow_delay_slot_filling is set to true, the next instruction
-  // emitted after this one will go in an annulled delay slot if the
-  // biased locking exit case failed.
-  void biased_locking_exit(Register mark_addr, Register temp_reg, Label& done);
 
-  void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2, bool try_bias = UseBiasedLocking);
-  void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2, bool try_bias = UseBiasedLocking);
+  void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2);
+  void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
@@ -782,7 +765,6 @@ class MacroAssembler: public Assembler {
   void decode_klass_not_null(Register dst);
   void load_klass(Register klass, Address mem);
   void load_klass(Register klass, Register src_oop);
-  void load_prototype_header(Register Rheader, Register Rsrc_oop);
   void store_klass(Register klass, Register dst_oop, Register ck = noreg); // Klass will get compressed if ck not provided.
   void store_klass_gap(Register s, Register dst_oop);
 

@@ -46,9 +46,10 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
         String appJar = ClassFileInstaller.getJarPath("custom_loader_app.jar");
         String mainClass = "CustomLoaderApp";
 
+        // 1. Host class loaded by a custom loader is initialized during dump time.
         dump(topArchiveName,
             "-Xlog:class+load,cds=debug,cds+dynamic",
-            "-cp", appJar, mainClass, appJar)
+            "-cp", appJar, mainClass, appJar, "init")
             .assertNormalExit(output -> {
                 output.shouldMatch("Skipping.LambHello[$][$]Lambda[$].*0x.*:.Hidden.class")
                       .shouldHaveExitValue(0);
@@ -56,9 +57,26 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
 
         run(topArchiveName,
             "-Xlog:class+load,class+unload",
-            "-cp", appJar, mainClass, appJar)
+            "-cp", appJar, mainClass, appJar, "init")
             .assertNormalExit(output -> {
                 output.shouldMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.LambHello")
+                      .shouldContain("LambHello source: shared objects file (top)")
+                      .shouldHaveExitValue(0);
+            });
+
+        // 2. Host class loaded by a custom loader is NOT initialized during dump time.
+        dump(topArchiveName,
+            "-Xlog:class+load,cds=debug,cds+dynamic",
+            "-cp", appJar, mainClass, appJar)
+            .assertNormalExit(output -> {
+                output.shouldHaveExitValue(0);
+            });
+
+        run(topArchiveName,
+            "-Xlog:class+load,class+unload",
+            "-cp", appJar, mainClass, appJar)
+            .assertNormalExit(output -> {
+                output.shouldContain("LambHello source: shared objects file (top)")
                       .shouldHaveExitValue(0);
             });
     }

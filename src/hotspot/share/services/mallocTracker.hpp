@@ -153,6 +153,8 @@ class MallocMemorySnapshot : public ResourceObj {
     return &_tracking_header;
   }
 
+  // Total malloc invocation count
+  size_t total_count() const;
   // Total malloc'd memory amount
   size_t total() const;
   // Total malloc'd memory used by arenas

@@ -46,7 +46,7 @@ import java.util.stream.IntStream;
 
 public class TestResourceScope {
 
-    final static int N_THREADS = 10000;
+    final static int N_THREADS = 100;
 
     @Test(dataProvider = "cleaners")
     public void testConfined(Supplier<Cleaner> cleanerSupplier) {
@@ -204,10 +204,6 @@ public class TestResourceScope {
                     // might be already closed - do nothing
                 }
             }).start();
-        }
-
-        while (lockCount.get() == 0) {
-            waitSomeTime(); // make sure some thread gets scheduled
         }
 
         while (true) {

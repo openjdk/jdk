@@ -35,6 +35,7 @@
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -48,6 +49,7 @@
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
@@ -64,6 +66,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
@@ -166,7 +169,72 @@ ciEnv::ciEnv(CompileTask* task)
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
   _jvmti_can_pop_frame = false;
+
+  _dyno_klasses = NULL;
+  _dyno_locs = NULL;
+  _dyno_name[0] = '\0';
 }
+
+// Record components of a location descriptor string.  Components are appended by the constructor and
+// removed by the destructor, like a stack, so scope matters.  These location descriptors are used to
+// locate dynamic classes, and terminate at a Method* or oop field associated with dynamic/hidden class.
+//
+// Example use:
+//
+// {
+//   RecordLocation fp(this, "field1");
+//   // location: "field1"
+//   { RecordLocation fp(this, " field2"); // location: "field1 field2" }
+//   // location: "field1"
+//   { RecordLocation fp(this, " field3"); // location: "field1 field3" }
+//   // location: "field1"
+// }
+// // location: ""
+//
+// Examples of actual locations
+// @bci compiler/ciReplay/CiReplayBase$TestMain test (I)V 1 <appendix> argL0 ;
+// // resolve invokedynamic at bci 1 of TestMain.test, then read field "argL0" from appendix
+// @bci compiler/ciReplay/CiReplayBase$TestMain main ([Ljava/lang/String;)V 0 <appendix> form vmentry <vmtarget> ;
+// // resolve invokedynamic at bci 0 of TestMain.main, then read field "form.vmentry.method.vmtarget" from appendix
+// @cpi compiler/ciReplay/CiReplayBase$TestMain 56 form vmentry <vmtarget> ;
+// // resolve MethodHandle at cpi 56 of TestMain, then read field "vmentry.method.vmtarget" from resolved MethodHandle
+class RecordLocation {
+private:
+  char* end;
+
+  ATTRIBUTE_PRINTF(3, 4)
+  void push(ciEnv* ci, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    push_va(ci, fmt, args);
+    va_end(args);
+  }
+
+public:
+  ATTRIBUTE_PRINTF(3, 0)
+  void push_va(ciEnv* ci, const char* fmt, va_list args) {
+    char *e = ci->_dyno_name + strlen(ci->_dyno_name);
+    char *m = ci->_dyno_name + ARRAY_SIZE(ci->_dyno_name) - 1;
+    os::vsnprintf(e, m - e, fmt, args);
+    assert(strlen(ci->_dyno_name) < (ARRAY_SIZE(ci->_dyno_name) - 1), "overflow");
+  }
+
+  // append a new component
+  ATTRIBUTE_PRINTF(3, 4)
+  RecordLocation(ciEnv* ci, const char* fmt, ...) {
+    end = ci->_dyno_name + strlen(ci->_dyno_name);
+    va_list args;
+    va_start(args, fmt);
+    push(ci, " ");
+    push_va(ci, fmt, args);
+    va_end(args);
+  }
+
+  // reset to previous state
+  ~RecordLocation() {
+    *end = '\0';
+  }
+};
 
 ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   ASSERT_IN_VM;
@@ -222,6 +290,9 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
   _jvmti_can_pop_frame = false;
+
+  _dyno_klasses = NULL;
+  _dyno_locs = NULL;
 }
 
 ciEnv::~ciEnv() {
@@ -1190,10 +1261,340 @@ ciInstance* ciEnv::unloaded_ciinstance() {
 }
 
 // ------------------------------------------------------------------
-// ciEnv::dump_replay_data*
+// Replay support
 
-// Don't change thread state and acquire any locks.
-// Safe to call from VM error reporter.
+
+// Lookup location descriptor for the class, if any.
+// Returns false if not found.
+bool ciEnv::dyno_loc(const InstanceKlass* ik, const char *&loc) const {
+  bool found = false;
+  int pos = _dyno_klasses->find_sorted<const InstanceKlass*, klass_compare>(ik, found);
+  if (!found) {
+    return false;
+  }
+  loc = _dyno_locs->at(pos);
+  return found;
+}
+
+// Associate the current location descriptor with the given class and record for later lookup.
+void ciEnv::set_dyno_loc(const InstanceKlass* ik) {
+  const char *loc = os::strdup(_dyno_name);
+  bool found = false;
+  int pos = _dyno_klasses->find_sorted<const InstanceKlass*, klass_compare>(ik, found);
+  if (found) {
+    _dyno_locs->at_put(pos, loc);
+  } else {
+    _dyno_klasses->insert_before(pos, ik);
+    _dyno_locs->insert_before(pos, loc);
+  }
+}
+
+// Associate the current location descriptor with the given class and record for later lookup.
+// If it turns out that there are multiple locations for the given class, that conflict should
+// be handled here.  Currently we choose the first location found.
+void ciEnv::record_best_dyno_loc(const InstanceKlass* ik) {
+  if (!ik->is_hidden()) {
+    return;
+  }
+  const char *loc0;
+  if (dyno_loc(ik, loc0)) {
+    // TODO: found multiple references, see if we can improve
+    if (Verbose) {
+      tty->print_cr("existing call site @ %s for %s",
+                     loc0, ik->external_name());
+    }
+  } else {
+    set_dyno_loc(ik);
+  }
+}
+
+// Look up the location descriptor for the given class and print it to the output stream.
+bool ciEnv::print_dyno_loc(outputStream* out, const InstanceKlass* ik) const {
+  const char *loc;
+  if (dyno_loc(ik, loc)) {
+    out->print("%s", loc);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Look up the location descriptor for the given class and return it as a string.
+// Returns NULL if no location is found.
+const char *ciEnv::dyno_name(const InstanceKlass* ik) const {
+  if (ik->is_hidden()) {
+    stringStream ss;
+    if (print_dyno_loc(&ss, ik)) {
+      ss.print(" ;"); // add terminator
+      const char* call_site = ss.as_string();
+      return call_site;
+    }
+  }
+  return NULL;
+}
+
+// Look up the location descriptor for the given class and return it as a string.
+// Returns the class name as a fallback if no location is found.
+const char *ciEnv::replay_name(ciKlass* k) const {
+  if (k->is_instance_klass()) {
+    return replay_name(k->as_instance_klass()->get_instanceKlass());
+  }
+  return k->name()->as_quoted_ascii();
+}
+
+// Look up the location descriptor for the given class and return it as a string.
+// Returns the class name as a fallback if no location is found.
+const char *ciEnv::replay_name(const InstanceKlass* ik) const {
+  const char* name = dyno_name(ik);
+  if (name != NULL) {
+      return name;
+  }
+  return ik->name()->as_quoted_ascii();
+}
+
+// Process a java.lang.invoke.MemberName object and record any dynamic locations.
+void ciEnv::record_member(Thread* thread, oop member) {
+  assert(java_lang_invoke_MemberName::is_instance(member), "!");
+  // Check MemberName.clazz field
+  oop clazz = java_lang_invoke_MemberName::clazz(member);
+  if (clazz->klass()->is_instance_klass()) {
+    RecordLocation fp(this, "clazz");
+    InstanceKlass* ik = InstanceKlass::cast(clazz->klass());
+    record_best_dyno_loc(ik);
+  }
+  // Check MemberName.method.vmtarget field
+  Method* vmtarget = java_lang_invoke_MemberName::vmtarget(member);
+  if (vmtarget != NULL) {
+    RecordLocation fp2(this, "<vmtarget>");
+    InstanceKlass* ik = vmtarget->method_holder();
+    record_best_dyno_loc(ik);
+  }
+}
+
+// Read an object field.  Lookup is done by name only.
+static inline oop obj_field(oop obj, const char* name) {
+    return ciReplay::obj_field(obj, name);
+}
+
+// Process a java.lang.invoke.LambdaForm object and record any dynamic locations.
+void ciEnv::record_lambdaform(Thread* thread, oop form) {
+  assert(java_lang_invoke_LambdaForm::is_instance(form), "!");
+
+  {
+    // Check LambdaForm.vmentry field
+    oop member = java_lang_invoke_LambdaForm::vmentry(form);
+    RecordLocation fp0(this, "vmentry");
+    record_member(thread, member);
+  }
+
+  // Check LambdaForm.names array
+  objArrayOop names = (objArrayOop)obj_field(form, "names");
+  if (names != NULL) {
+    RecordLocation lp0(this, "names");
+    int len = names->length();
+    for (int i = 0; i < len; ++i) {
+      oop name = names->obj_at(i);
+      RecordLocation lp1(this, "%d", i);
+     // Check LambdaForm.names[i].function field
+      RecordLocation lp2(this, "function");
+      oop function = obj_field(name, "function");
+      if (function != NULL) {
+        // Check LambdaForm.names[i].function.member field
+        oop member = obj_field(function, "member");
+        if (member != NULL) {
+          RecordLocation lp3(this, "member");
+          record_member(thread, member);
+        }
+        // Check LambdaForm.names[i].function.resolvedHandle field
+        oop mh = obj_field(function, "resolvedHandle");
+        if (mh != NULL) {
+          RecordLocation lp3(this, "resolvedHandle");
+          record_mh(thread, mh);
+        }
+        // Check LambdaForm.names[i].function.invoker field
+        oop invoker = obj_field(function, "invoker");
+        if (invoker != NULL) {
+          RecordLocation lp3(this, "invoker");
+          record_mh(thread, invoker);
+        }
+      }
+    }
+  }
+}
+
+// Process a java.lang.invoke.MethodHandle object and record any dynamic locations.
+void ciEnv::record_mh(Thread* thread, oop mh) {
+  {
+    // Check MethodHandle.form field
+    oop form = java_lang_invoke_MethodHandle::form(mh);
+    RecordLocation fp(this, "form");
+    record_lambdaform(thread, form);
+  }
+  // Check DirectMethodHandle.member field
+  if (java_lang_invoke_DirectMethodHandle::is_instance(mh)) {
+    oop member = java_lang_invoke_DirectMethodHandle::member(mh);
+    RecordLocation fp(this, "member");
+    record_member(thread, member);
+  } else {
+    // Check <MethodHandle subclass>.argL0 field
+    // Probably BoundMethodHandle.Species_L, but we only care if the field exists
+    oop arg = obj_field(mh, "argL0");
+    if (arg != NULL) {
+      RecordLocation fp(this, "argL0");
+      if (arg->klass()->is_instance_klass()) {
+        InstanceKlass* ik2 = InstanceKlass::cast(arg->klass());
+        record_best_dyno_loc(ik2);
+      }
+    }
+  }
+}
+
+// Process an object found at an invokedynamic/invokehandle call site and record any dynamic locations.
+// Types currently supported are MethodHandle and CallSite.
+// The object is typically the "appendix" object, or Bootstrap Method (BSM) object.
+void ciEnv::record_call_site_obj(Thread* thread, const constantPoolHandle& pool, const Handle obj)
+{
+  if (obj.not_null()) {
+    if (java_lang_invoke_MethodHandle::is_instance(obj())) {
+        record_mh(thread, obj());
+    } else if (java_lang_invoke_ConstantCallSite::is_instance(obj())) {
+      oop target = java_lang_invoke_CallSite::target(obj());
+      if (target->klass()->is_instance_klass()) {
+        RecordLocation fp(this, "target");
+        InstanceKlass* ik = InstanceKlass::cast(target->klass());
+        record_best_dyno_loc(ik);
+      }
+    }
+  }
+}
+
+// Process an adapter Method* found at an invokedynamic/invokehandle call site and record any dynamic locations.
+void ciEnv::record_call_site_method(Thread* thread, const constantPoolHandle& pool, Method* adapter) {
+  InstanceKlass* holder = adapter->method_holder();
+  if (!holder->is_hidden()) {
+    return;
+  }
+  RecordLocation fp(this, "<adapter>");
+  record_best_dyno_loc(holder);
+}
+
+// Process an invokedynamic call site and record any dynamic locations.
+void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, JavaThread* thread) {
+  ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(indy_index);
+  if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
+    // process the adapter
+    Method* adapter = cp_cache_entry->f1_as_method();
+    record_call_site_method(thread, cp, adapter);
+    // process the appendix
+    Handle appendix(thread, cp_cache_entry->appendix_if_resolved(cp));
+    {
+      RecordLocation fp(this, "<appendix>");
+      record_call_site_obj(thread, cp, appendix);
+    }
+    // process the BSM
+    int pool_index = cp_cache_entry->constant_pool_index();
+    BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
+    oop bsm_oop = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
+    Handle bsm(thread, bsm_oop);
+    {
+      RecordLocation fp(this, "<bsm>");
+      record_call_site_obj(thread, cp, bsm);
+    }
+  }
+}
+
+// Process an invokehandle call site and record any dynamic locations.
+void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread) {
+  const int holder_index = cp->klass_ref_index_at(index);
+  if (!cp->tag_at(holder_index).is_klass()) {
+    return;  // not resolved
+  }
+  Klass* holder = ConstantPool::klass_at_if_loaded(cp, holder_index);
+  Symbol* name = cp->name_ref_at(index);
+  if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
+    ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
+    if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
+      // process the adapter
+      Method* adapter = cp_cache_entry->f1_as_method();
+      Handle appendix(thread, cp_cache_entry->appendix_if_resolved(cp));
+      record_call_site_method(thread, cp, adapter);
+      // process the appendix
+      {
+        RecordLocation fp(this, "<appendix>");
+        record_call_site_obj(thread, cp, appendix);
+      }
+    }
+  }
+}
+
+// Search the class hierarchy for dynamic classes reachable through dynamic call sites or
+// constant pool entries and record for future lookup.
+void ciEnv::find_dynamic_call_sites() {
+  _dyno_klasses = new (arena()) GrowableArray<const InstanceKlass*>(arena(), 100, 0, NULL);
+  _dyno_locs    = new (arena()) GrowableArray<const char *>(arena(), 100, 0, NULL);
+
+  // Iterate over the class hierarchy
+  for (ClassHierarchyIterator iter(vmClasses::Object_klass()); !iter.done(); iter.next()) {
+    Klass* sub = iter.klass();
+    if (sub->is_instance_klass()) {
+      InstanceKlass *isub = InstanceKlass::cast(sub);
+      InstanceKlass* ik = isub;
+      if (!ik->is_linked()) {
+        continue;
+      }
+      if (ik->is_hidden()) {
+        continue;
+      }
+      JavaThread* thread = JavaThread::current();
+      const constantPoolHandle pool(thread, ik->constants());
+
+      // Look for invokedynamic/invokehandle call sites
+      for (int i = 0; i < ik->methods()->length(); ++i) {
+        Method* m = ik->methods()->at(i);
+
+        BytecodeStream bcs(methodHandle(thread, m));
+        while (!bcs.is_last_bytecode()) {
+          Bytecodes::Code opcode = bcs.next();
+          opcode = bcs.raw_code();
+          switch (opcode) {
+          case Bytecodes::_invokedynamic:
+          case Bytecodes::_invokehandle: {
+            RecordLocation fp(this, "@bci %s %s %s %d",
+                         ik->name()->as_quoted_ascii(),
+                         m->name()->as_quoted_ascii(), m->signature()->as_quoted_ascii(),
+                         bcs.bci());
+            if (opcode == Bytecodes::_invokedynamic) {
+              int index = bcs.get_index_u4();
+              process_invokedynamic(pool, index, thread);
+            } else {
+              assert(opcode == Bytecodes::_invokehandle, "new switch label added?");
+              int cp_cache_index = bcs.get_index_u2_cpcache();
+              process_invokehandle(pool, cp_cache_index, thread);
+            }
+            break;
+          }
+          default:
+            break;
+          }
+        }
+      }
+
+      // Look for MethodHandle contant pool entries
+      RecordLocation fp(this, "@cpi %s", ik->name()->as_quoted_ascii());
+      int len = pool->length();
+      for (int i = 0; i < len; ++i) {
+        if (pool->tag_at(i).is_method_handle()) {
+          bool found_it;
+          oop mh = pool->find_cached_constant_at(i, found_it, thread);
+          if (mh != NULL) {
+            RecordLocation fp(this, "%d", i);
+            record_mh(thread, mh);
+          }
+        }
+      }
+    }
+  }
+}
 
 void ciEnv::dump_compile_data(outputStream* out) {
   CompileTask* task = this->task();
@@ -1201,11 +1602,9 @@ void ciEnv::dump_compile_data(outputStream* out) {
     Method* method = task->method();
     int entry_bci = task->osr_bci();
     int comp_level = task->comp_level();
-    out->print("compile %s %s %s %d %d",
-               method->klass_name()->as_quoted_ascii(),
-               method->name()->as_quoted_ascii(),
-               method->signature()->as_quoted_ascii(),
-               entry_bci, comp_level);
+    out->print("compile ");
+    get_method(method)->dump_name_as_ascii(out);
+    out->print(" %d %d", entry_bci, comp_level);
     if (compiler_data() != NULL) {
       if (is_c2_compile(comp_level)) {
 #ifdef COMPILER2
@@ -1223,13 +1622,20 @@ void ciEnv::dump_compile_data(outputStream* out) {
   }
 }
 
-void ciEnv::dump_replay_data_unsafe(outputStream* out) {
+// Called from VM error reporter, so be careful.
+// Don't safepoint or acquire any locks.
+//
+void ciEnv::dump_replay_data_helper(outputStream* out) {
+  NoSafepointVerifier no_safepoint;
   ResourceMark rm;
+
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
   out->print_cr("JvmtiExport can_hotswap_or_post_breakpoint %d", _jvmti_can_hotswap_or_post_breakpoint);
   out->print_cr("JvmtiExport can_post_on_exceptions %d",         _jvmti_can_post_on_exceptions);
 #endif // INCLUDE_JVMTI
+
+  find_dynamic_call_sites();
 
   GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
   out->print_cr("# %d ciObject found", objects->length());
@@ -1240,10 +1646,19 @@ void ciEnv::dump_replay_data_unsafe(outputStream* out) {
   out->flush();
 }
 
+// Called from VM error reporter, so be careful.
+// Don't safepoint or acquire any locks.
+//
+void ciEnv::dump_replay_data_unsafe(outputStream* out) {
+  GUARDED_VM_ENTRY(
+    dump_replay_data_helper(out);
+  )
+}
+
 void ciEnv::dump_replay_data(outputStream* out) {
   GUARDED_VM_ENTRY(
     MutexLocker ml(Compile_lock);
-    dump_replay_data_unsafe(out);
+    dump_replay_data_helper(out);
   )
 }
 

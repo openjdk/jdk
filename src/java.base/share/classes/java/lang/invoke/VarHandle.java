@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,7 +382,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * {@code invokevirtual} instruction is linked.
  * <p>
  * Apart from type descriptor checks, a VarHandles's capability to
- * access it's variables is unrestricted.
+ * access its variables is unrestricted.
  * If a VarHandle is formed on a non-public variable by a class that has access
  * to that variable, the resulting VarHandle can be used in any place by any
  * caller who receives a reference to it.
@@ -2178,15 +2178,6 @@ public abstract class VarHandle implements Constable {
         UNSAFE.putReference(this, VFORM_OFFSET, newVForm);
         UNSAFE.fullFence();
     }
-
-    static final BiFunction<String, List<Number>, ArrayIndexOutOfBoundsException>
-            AIOOBE_SUPPLIER = Preconditions.outOfBoundsExceptionFormatter(
-            new Function<String, ArrayIndexOutOfBoundsException>() {
-                @Override
-                public ArrayIndexOutOfBoundsException apply(String s) {
-                    return new ArrayIndexOutOfBoundsException(s);
-                }
-            });
 
     private static final long VFORM_OFFSET;
 

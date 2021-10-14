@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8262891
+ * @bug 8262891 8270151
  * @summary Verify pattern switches work properly when the set of sealed types changes.
  * @compile --enable-preview -source ${jdk.version} SealedTypeChanges.java
  * @compile --enable-preview -source ${jdk.version} SealedTypeChanges2.java
@@ -43,6 +43,7 @@ public class SealedTypeChanges {
         doRun(this::statementIntf, this::validateIncompatibleClassChangeError);
         doRun(this::expressionCls, this::validateIncompatibleClassChangeError);
         doRun(this::statementCls, this::validateIncompatibleClassChangeError);
+        doRun(this::statementFallThrough, this::validateIncompatibleClassChangeError);
         doRun(this::expressionCoveredIntf, this::validateTestException);
         doRun(this::statementCoveredIntf, this::validateTestException);
         doRun(this::expressionCoveredCls, this::validateTestException);
@@ -86,6 +87,12 @@ public class SealedTypeChanges {
     void statementCls(SealedTypeChangesCls obj) {
         switch (obj) {
             case A a -> System.err.println(1);
+        }
+    }
+
+    void statementFallThrough(SealedTypeChangesCls obj) {
+        switch (obj) {
+            case A a: System.err.println(1);
         }
     }
 

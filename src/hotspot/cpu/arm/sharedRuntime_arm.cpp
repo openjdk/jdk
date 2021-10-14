@@ -862,11 +862,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(markWord::unlocked_value == 1, "adjust this code");
     __ tbz(Rtemp, exact_log2(markWord::unlocked_value), slow_case);
 
-    if (UseBiasedLocking) {
-      assert(is_power_of_2(markWord::biased_lock_bit_in_place), "adjust this code");
-      __ tbnz(Rtemp, exact_log2(markWord::biased_lock_bit_in_place), slow_case);
-    }
-
     __ bics(Rtemp, Rtemp, ~markWord::hash_mask_in_place);
     __ mov(R0, AsmOperand(Rtemp, lsr, markWord::hash_shift), ne);
     __ bx(LR, ne);
@@ -1151,16 +1146,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register disp_hdr    = altFP_7_11;
   const Register tmp         = R8;
 
-  Label slow_lock, slow_lock_biased, lock_done, fast_lock;
+  Label slow_lock, lock_done, fast_lock;
   if (method->is_synchronized()) {
     // The first argument is a handle to sync object (a class or an instance)
     __ ldr(sync_obj, Address(R1));
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
-
-    if(UseBiasedLocking) {
-      __ biased_locking_enter(sync_obj, tmp, disp_hdr/*scratched*/, false, Rtemp, lock_done, slow_lock_biased);
-    }
 
     const Register mark = tmp;
     // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
@@ -1180,8 +1171,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // -2- test (hdr - SP) if the low two bits are 0
     __ sub(Rtemp, mark, SP, eq);
     __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-    // If still 'eq' then recursive locking OK: set displaced header to 0
-    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()), eq);
+    // If still 'eq' then recursive locking OK
+    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
     __ b(lock_done, eq);
     __ b(slow_lock);
 
@@ -1242,12 +1234,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (method->is_synchronized()) {
     __ ldr(sync_obj, Address(sync_handle));
 
-    if(UseBiasedLocking) {
-      __ biased_locking_exit(sync_obj, Rtemp, unlock_done);
-      // disp_hdr may not have been saved on entry with biased locking
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    }
-
     // See C1_MacroAssembler::unlock_object() for more comments
     __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
     __ cbz(R2, unlock_done);
@@ -1303,11 +1289,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (method->is_synchronized()) {
     // Locking slow case
-    if(UseBiasedLocking) {
-      __ bind(slow_lock_biased);
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    }
-
     __ bind(slow_lock);
 
     push_param_registers(masm, fp_regs_in_arguments);

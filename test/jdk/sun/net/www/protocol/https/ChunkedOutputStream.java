@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /**
  * @test
  * @bug 5026745
- * @modules java.base/sun.net.www
- * @build TestHttpsServer HttpCallback
+ * @library /test/lib
  * @run main/othervm ChunkedOutputStream
  * @run main/othervm -Djava.net.preferIPv6Addresses=true ChunkedOutputStream
  *
@@ -34,12 +33,35 @@
  * @summary Cannot flush output stream when writing to an HttpUrlConnection
  */
 
-import java.io.*;
-import java.net.*;
-import javax.net.ssl.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpRetryException;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.security.KeyStore;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ChunkedOutputStream implements HttpCallback {
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManagerFactory;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
+
+public class ChunkedOutputStream implements HttpHandler {
     /*
      * Where do we find the keystores for ssl?
      */
@@ -57,98 +79,100 @@ public class ChunkedOutputStream implements HttpCallback {
     static final String str2 = "Helloworld1234567890abcdefghijklmnopqrstuvwxyz"+
                                 "1234567890";
 
-    public void request(HttpTransaction req) {
-        try {
-            // this is needed (count++ doesn't work), 'cause we
-            // are doing concurrent tests
-            String path = req.getRequestURI().getPath();
-            if (path.equals("/d0")) {
-                count = 0;
-            } else if (path.equals("/d01")) {
-                count = 1;
-            } else if (path.equals("/d3")) {
-                count = 2;
-            } else if (path.equals("/d4") || path.equals("/d5")) {
-                count = 3;
-            } else if (path.equals("/d6")) {
-                count = 3;
-            }  else if (path.equals("/d7")) {
-                count = 4;
-            }  else if (path.equals("/d8")) {
-                count = 5;
-            }
+    private static String getAuthority() {
+        InetAddress address = server.getAddress().getAddress();
+        String hostaddr = address.getHostAddress();
+        if (address.isAnyLocalAddress()) hostaddr = "localhost";
+        if (hostaddr.indexOf(':') > -1) hostaddr = "[" + hostaddr + "]";
+        return hostaddr + ":" + server.getAddress().getPort();
+    }
 
-            switch (count) {
+    public void handle(HttpExchange req) throws IOException {
+        // this is needed (count++ doesn't work), 'cause we
+        // are doing concurrent tests
+        System.out.println("Request Received");
+        String path = req.getRequestURI().getPath();
+        if (path.equals("/d0")) {
+            count = 0;
+        } else if (path.equals("/d01")) {
+            count = 1;
+        } else if (path.equals("/d3")) {
+            count = 2;
+        } else if (path.equals("/d4") || path.equals("/d5")) {
+            count = 3;
+        } else if (path.equals("/d6")) {
+            count = 3;
+        }  else if (path.equals("/d7")) {
+            count = 4;
+        }  else if (path.equals("/d8")) {
+            count = 5;
+        }
+
+        switch (count) {
             case 0: /* test1 -- keeps conn alive */
             case 1: /* test2 -- closes conn */
-                String reqbody = req.getRequestEntityBody();
+
+                String reqbody = "";
+                try(InputStream inputStream = req.getRequestBody()) {
+                    reqbody = new String(inputStream.readAllBytes(), Charset.forName("ISO8859_1"));
+                }
                 if (!reqbody.equals(str1)) {
-                    req.sendResponse(500, "Internal server error");
-                    req.orderlyClose();
+                    req.sendResponseHeaders(500, -1);
+                    break;
                 }
-                String chunk = req.getRequestHeader("Transfer-encoding");
+                String chunk = req.getRequestHeaders().getFirst("Transfer-encoding");
                 if (!"chunked".equals(chunk)) {
-                    req.sendResponse(501, "Internal server error");
-                    req.orderlyClose();
+                    req.sendResponseHeaders(501, -1);
+                    break;
                 }
-                req.setResponseEntityBody(reqbody);
                 if (count == 1) {
-                    req.setResponseHeader("Connection", "close");
+                    req.getResponseHeaders().set("Connection", "close");
                 }
-                req.sendResponse(200, "OK");
-                if (count == 1) {
-                    req.orderlyClose();
+                req.sendResponseHeaders(200, 0);
+                try (OutputStream os = req.getResponseBody()) {
+                    os.write(reqbody.getBytes(Charset.forName("ISO8859_1")));
                 }
                 break;
             case 2: /* test 3 */
-                reqbody = req.getRequestEntityBody();
+                reqbody = new String(req.getRequestBody().readAllBytes(), Charset.forName("ISO8859_1"));
                 if (!reqbody.equals(str2)) {
-                    req.sendResponse(500, "Internal server error");
-                    req.orderlyClose();
+                    req.sendResponseHeaders(500, -1);
+                    break;
                 }
-                int clen = Integer.parseInt (
-                        req.getRequestHeader("Content-length"));
+                int clen = Integer.parseInt (req.getRequestHeaders().getFirst("Content-length"));
                 if (clen != str2.length()) {
-                    req.sendResponse(501, "Internal server error");
-                    req.orderlyClose();
+                    req.sendResponseHeaders(501, -1);
+                    break;
                 }
-                req.setResponseEntityBody (reqbody);
-                req.setResponseHeader("Connection", "close");
-                req.sendResponse(200, "OK");
-                req.orderlyClose();
+                req.getResponseHeaders().set("Connection", "close");
+                req.sendResponseHeaders(200, 0);
+                try (OutputStream os = req.getResponseBody()) {
+                    os.write(reqbody.getBytes(Charset.forName("ISO8859_1")));
+                }
                 break;
             case 3: /* test 6 */
-                req.setResponseHeader("Location", "https://foo.bar/");
-                req.setResponseHeader("Connection", "close");
-                req.sendResponse(307, "Temporary Redirect");
-                req.orderlyClose();
+                if (path.equals("/d6")) {
+                    reqbody = new String(req.getRequestBody().readAllBytes(), Charset.forName("ISO8859_1"));
+                }
+                req.getResponseHeaders().set("Location", "https://foo.bar/");
+                req.getResponseHeaders().set("Connection", "close");
+                req.sendResponseHeaders(307, -1);
                 break;
             case 4: /* test 7 */
             case 5: /* test 8 */
-                reqbody = req.getRequestEntityBody();
+                reqbody = new String(req.getRequestBody().readAllBytes(), Charset.forName("ISO8859_1"));
                 if (reqbody != null && !"".equals(reqbody)) {
-                    req.sendResponse(501, "Internal server error");
-                    req.orderlyClose();
+                    req.sendResponseHeaders(501, -1);
+                    break;
                 }
-                req.setResponseHeader("Connection", "close");
-                req.sendResponse(200, "OK");
-                req.orderlyClose();
+                req.getResponseHeaders().set("Connection", "close");
+                req.sendResponseHeaders(200, -1);
                 break;
             default:
-                req.sendResponse(404, "Not Found");
-                req.orderlyClose();
+                req.sendResponseHeaders(404, -1);
                 break;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-    }
-
-    public boolean dropPlainTextConnections() {
-        System.out.println("Unrecognized SSL message, plaintext connection?");
-        System.out.println("TestHttpsServer receveived rogue connection: ignoring it.");
-        rogueCount.incrementAndGet();
-        return true;
+        req.close();
     }
 
     static void readAndCompare(InputStream is, String cmp) throws IOException {
@@ -179,9 +203,6 @@ public class ChunkedOutputStream implements HttpCallback {
         } catch (SocketException x) {
             // we expect that the server will drop the connection and
             // close the accepted socket, so we should get a SocketException
-            // on the client side, and confirm that this::dropPlainTextConnections
-            // has ben called.
-            if (rogueCount.get() == rogue) throw x;
             System.out.println("Got expected exception: " + x);
         }
     }
@@ -196,7 +217,7 @@ public class ChunkedOutputStream implements HttpCallback {
         urlc.setDoOutput(true);
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
-        os.write(str1.getBytes());
+        os.write(str1.getBytes(Charset.forName("ISO8859_1")));
         os.close();
         InputStream is = urlc.getInputStream();
         readAndCompare(is, str1);
@@ -213,7 +234,7 @@ public class ChunkedOutputStream implements HttpCallback {
         urlc.setDoOutput(true);
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
-        os.write (str2.getBytes());
+        os.write (str2.getBytes(Charset.forName("ISO8859_1")));
         os.close();
         InputStream is = urlc.getInputStream();
         readAndCompare(is, str2);
@@ -230,7 +251,7 @@ public class ChunkedOutputStream implements HttpCallback {
         urlc.setDoOutput(true);
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
-        os.write(str2.getBytes());
+        os.write(str2.getBytes(Charset.forName("ISO8859_1")));
         try {
             os.close();
             throw new Exception("should have thrown IOException");
@@ -248,7 +269,7 @@ public class ChunkedOutputStream implements HttpCallback {
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
         try {
-            os.write(str2.getBytes());
+            os.write(str2.getBytes(Charset.forName("ISO8859_1")));
             throw new Exception("should have thrown IOException");
         } catch (IOException e) {}
     }
@@ -263,7 +284,7 @@ public class ChunkedOutputStream implements HttpCallback {
         urlc.setDoOutput(true);
         urlc.setRequestMethod("POST");
         OutputStream os = urlc.getOutputStream();
-        os.write(str1.getBytes());
+        os.write(str1.getBytes(Charset.forName("ISO8859_1")));
         os.close();
         try {
             InputStream is = urlc.getInputStream();
@@ -310,9 +331,10 @@ public class ChunkedOutputStream implements HttpCallback {
         }
     }
 
-    static TestHttpsServer server;
+    static HttpsServer server;
 
     public static void main(String[] args) throws Exception {
+        ChunkedOutputStream chunkedOutputStream = new ChunkedOutputStream();
         // setup properties to do ssl
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
@@ -333,26 +355,48 @@ public class ChunkedOutputStream implements HttpCallback {
             HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
 
             try {
-                server = new TestHttpsServer(
-                        new ChunkedOutputStream(), 1, 10, loopback, 0);
-                System.out.println("Server started: listening on: " + server.getAuthority());
-                testPlainText(server.getAuthority());
+                // create and initialize a SSLContext
+                KeyStore ks = KeyStore.getInstance("JKS");
+                KeyStore ts = KeyStore.getInstance("JKS");
+                char[] passphrase = "passphrase".toCharArray();
+
+                ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), passphrase);
+                ts.load(new FileInputStream(System.getProperty("javax.net.ssl.trustStore")), passphrase);
+
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+                kmf.init(ks, passphrase);
+
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+                tmf.init(ts);
+
+                SSLContext sslCtx = SSLContext.getInstance("TLS");
+
+                sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+                server = HttpsServer.create(new InetSocketAddress(loopback, 0), 10);
+                server.setHttpsConfigurator(new HttpsConfigurator(sslCtx));
+                server.createContext("/", chunkedOutputStream);
+                server.setExecutor(Executors.newSingleThreadExecutor());
+                server.start();
+
+                System.out.println("Server started: listening on: " + getAuthority());
+                testPlainText(getAuthority());
                 // the test server doesn't support keep-alive yet
                 // test1("http://" + server.getAuthority() + "/d0");
-                test1("https://" + server.getAuthority() + "/d01");
-                test3("https://" + server.getAuthority() + "/d3");
-                test4("https://" + server.getAuthority() + "/d4");
-                test5("https://" + server.getAuthority() + "/d5");
-                test6("https://" + server.getAuthority() + "/d6");
-                test7("https://" + server.getAuthority() + "/d7");
-                test8("https://" + server.getAuthority() + "/d8");
+                test1("https://" + getAuthority() + "/d01");
+                test3("https://" + getAuthority() + "/d3");
+                test4("https://" + getAuthority() + "/d4");
+                test5("https://" + getAuthority() + "/d5");
+                test6("https://" + getAuthority() + "/d6");
+                test7("https://" + getAuthority() + "/d7");
+                test8("https://" + getAuthority() + "/d8");
             } catch (Exception e) {
                 if (server != null) {
-                    server.terminate();
+                    server.stop(1);
                 }
                 throw e;
             }
-            server.terminate();
+            server.stop(1);
         } finally {
             HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
@@ -365,7 +409,7 @@ public class ChunkedOutputStream implements HttpCallback {
     }
 
     public static void except(String s) {
-        server.terminate();
+        server.stop(1);
         throw new RuntimeException(s);
     }
 }

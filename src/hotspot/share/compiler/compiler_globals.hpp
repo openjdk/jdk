@@ -72,6 +72,10 @@
   develop(bool, CICountOSR, false,                                          \
           "use a separate counter when assigning ids to osr compilations")  \
                                                                             \
+  develop(bool, CICountNative, false,                                       \
+          "use a separate counter when assigning ids to native "            \
+          "compilations")                                                   \
+                                                                            \
   develop(bool, CICompileNatives, true,                                     \
           "compile native methods if supported by the compiler")            \
                                                                             \

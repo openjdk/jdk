@@ -40,7 +40,6 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -1171,7 +1170,20 @@ void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+// See 8273459.  Function for ensuring 64-byte alignment, intended for stubs only.
+// Stub code is generated once and never copied.
+// NMethods can't use this because they get copied and we can't force alignment > 32 bytes.
+void MacroAssembler::align64() {
+  align(64, (unsigned long long) pc());
+}
+
+void MacroAssembler::align32() {
+  align(32, (unsigned long long) pc());
+}
+
 void MacroAssembler::align(int modulus) {
+  // 8273459: Ensure alignment is possible with current segment alignment
+  assert(modulus <= CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
   align(modulus, offset());
 }
 
@@ -1278,200 +1290,6 @@ void MacroAssembler::reserved_stack_check() {
     should_not_reach_here();
 
     bind(no_reserved_zone_enabling);
-}
-
-void MacroAssembler::biased_locking_enter(Register lock_reg,
-                                          Register obj_reg,
-                                          Register swap_reg,
-                                          Register tmp_reg,
-                                          Register tmp_reg2,
-                                          bool swap_reg_contains_mark,
-                                          Label& done,
-                                          Label* slow_case,
-                                          BiasedLockingCounters* counters) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-  assert(swap_reg == rax, "swap_reg must be rax for cmpxchgq");
-  assert(tmp_reg != noreg, "tmp_reg must be supplied");
-  assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
-  assert(markWord::age_shift == markWord::lock_bits + markWord::biased_lock_bits, "biased locking makes assumptions about bit layout");
-  Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
-  NOT_LP64( Address saved_mark_addr(lock_reg, 0); )
-
-  if (PrintBiasedLockingStatistics && counters == NULL) {
-    counters = BiasedLocking::counters();
-  }
-  // Biased locking
-  // See whether the lock is currently biased toward our thread and
-  // whether the epoch is still valid
-  // Note that the runtime guarantees sufficient alignment of JavaThread
-  // pointers to allow age to be placed into low bits
-  // First check to see whether biasing is even enabled for this object
-  Label cas_label;
-  if (!swap_reg_contains_mark) {
-    movptr(swap_reg, mark_addr);
-  }
-  movptr(tmp_reg, swap_reg);
-  andptr(tmp_reg, markWord::biased_lock_mask_in_place);
-  cmpptr(tmp_reg, markWord::biased_lock_pattern);
-  jcc(Assembler::notEqual, cas_label);
-  // The bias pattern is present in the object's header. Need to check
-  // whether the bias owner and the epoch are both still current.
-#ifndef _LP64
-  // Note that because there is no current thread register on x86_32 we
-  // need to store off the mark word we read out of the object to
-  // avoid reloading it and needing to recheck invariants below. This
-  // store is unfortunate but it makes the overall code shorter and
-  // simpler.
-  movptr(saved_mark_addr, swap_reg);
-#endif
-  load_prototype_header(tmp_reg, obj_reg, tmp_reg2);
-#ifdef _LP64
-  orptr(tmp_reg, r15_thread);
-  xorptr(tmp_reg, swap_reg);
-  Register header_reg = tmp_reg;
-#else
-  xorptr(tmp_reg, swap_reg);
-  get_thread(swap_reg);
-  xorptr(swap_reg, tmp_reg);
-  Register header_reg = swap_reg;
-#endif
-  andptr(header_reg, ~((int) markWord::age_mask_in_place));
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->biased_lock_entry_count_addr()));
-  }
-  jcc(Assembler::equal, done);
-
-  Label try_revoke_bias;
-  Label try_rebias;
-
-  // At this point we know that the header has the bias pattern and
-  // that we are not the bias owner in the current epoch. We need to
-  // figure out more details about the state of the header in order to
-  // know what operations can be legally performed on the object's
-  // header.
-
-  // If the low three bits in the xor result aren't clear, that means
-  // the prototype header is no longer biased and we have to revoke
-  // the bias on this object.
-  testptr(header_reg, markWord::biased_lock_mask_in_place);
-  jcc(Assembler::notZero, try_revoke_bias);
-
-  // Biasing is still enabled for this data type. See whether the
-  // epoch of the current bias is still valid, meaning that the epoch
-  // bits of the mark word are equal to the epoch bits of the
-  // prototype header. (Note that the prototype header's epoch bits
-  // only change at a safepoint.) If not, attempt to rebias the object
-  // toward the current thread. Note that we must be absolutely sure
-  // that the current epoch is invalid in order to do this because
-  // otherwise the manipulations it performs on the mark word are
-  // illegal.
-  testptr(header_reg, markWord::epoch_mask_in_place);
-  jccb(Assembler::notZero, try_rebias);
-
-  // The epoch of the current bias is still valid but we know nothing
-  // about the owner; it might be set or it might be clear. Try to
-  // acquire the bias of the object using an atomic operation. If this
-  // fails we will go in to the runtime to revoke the object's bias.
-  // Note that we first construct the presumed unbiased header so we
-  // don't accidentally blow away another thread's valid bias.
-  NOT_LP64( movptr(swap_reg, saved_mark_addr); )
-  andptr(swap_reg,
-         markWord::biased_lock_mask_in_place | markWord::age_mask_in_place | markWord::epoch_mask_in_place);
-#ifdef _LP64
-  movptr(tmp_reg, swap_reg);
-  orptr(tmp_reg, r15_thread);
-#else
-  get_thread(tmp_reg);
-  orptr(tmp_reg, swap_reg);
-#endif
-  lock();
-  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->anonymously_biased_lock_entry_count_addr()));
-  }
-  if (slow_case != NULL) {
-    jcc(Assembler::notZero, *slow_case);
-  }
-  jmp(done);
-
-  bind(try_rebias);
-  // At this point we know the epoch has expired, meaning that the
-  // current "bias owner", if any, is actually invalid. Under these
-  // circumstances _only_, we are allowed to use the current header's
-  // value as the comparison value when doing the cas to acquire the
-  // bias in the current epoch. In other words, we allow transfer of
-  // the bias from one thread to another directly in this situation.
-  //
-  // FIXME: due to a lack of registers we currently blow away the age
-  // bits in this situation. Should attempt to preserve them.
-  load_prototype_header(tmp_reg, obj_reg, tmp_reg2);
-#ifdef _LP64
-  orptr(tmp_reg, r15_thread);
-#else
-  get_thread(swap_reg);
-  orptr(tmp_reg, swap_reg);
-  movptr(swap_reg, saved_mark_addr);
-#endif
-  lock();
-  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  // If the biasing toward our thread failed, then another thread
-  // succeeded in biasing it toward itself and we need to revoke that
-  // bias. The revocation will occur in the runtime in the slow case.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->rebiased_lock_entry_count_addr()));
-  }
-  if (slow_case != NULL) {
-    jcc(Assembler::notZero, *slow_case);
-  }
-  jmp(done);
-
-  bind(try_revoke_bias);
-  // The prototype mark in the klass doesn't have the bias bit set any
-  // more, indicating that objects of this data type are not supposed
-  // to be biased any more. We are going to try to reset the mark of
-  // this object to the prototype value and fall through to the
-  // CAS-based locking scheme. Note that if our CAS fails, it means
-  // that another thread raced us for the privilege of revoking the
-  // bias of this particular object, so it's okay to continue in the
-  // normal locking code.
-  //
-  // FIXME: due to a lack of registers we currently blow away the age
-  // bits in this situation. Should attempt to preserve them.
-  NOT_LP64( movptr(swap_reg, saved_mark_addr); )
-  load_prototype_header(tmp_reg, obj_reg, tmp_reg2);
-  lock();
-  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
-  // Fall through to the normal CAS-based lock, because no matter what
-  // the result of the above CAS, some thread must have succeeded in
-  // removing the bias bit from the object's header.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->revoked_lock_entry_count_addr()));
-  }
-
-  bind(cas_label);
-}
-
-void MacroAssembler::biased_locking_exit(Register obj_reg, Register temp_reg, Label& done) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-
-  // Check for biased locking unlock case, which is a no-op
-  // Note: we do not have to check the thread ID for two reasons.
-  // First, the interpreter checks for IllegalMonitorStateException at
-  // a higher level. Second, if the bias was revoked while we held the
-  // lock, the object could not be rebiased toward another thread, so
-  // the bias bit would be clear.
-  movptr(temp_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-  andptr(temp_reg, markWord::biased_lock_mask_in_place);
-  cmpptr(temp_reg, markWord::biased_lock_pattern);
-  jcc(Assembler::equal, done);
 }
 
 void MacroAssembler::c2bool(Register x) {
@@ -4732,11 +4550,6 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
 }
 
-void MacroAssembler::load_prototype_header(Register dst, Register src, Register tmp) {
-  load_klass(dst, src, tmp);
-  movptr(dst, Address(dst, Klass::prototype_header_offset()));
-}
-
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
@@ -5614,7 +5427,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
   BIND(L_exit);
 }
 
-// encode char[] to byte[] in ISO_8859_1
+// encode char[] to byte[] in ISO_8859_1 or ASCII
    //@IntrinsicCandidate
    //private static int implEncodeISOArray(byte[] sa, int sp,
    //byte[] da, int dp, int len) {
@@ -5627,10 +5440,23 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
    //  }
    //  return i;
    //}
+   //
+   //@IntrinsicCandidate
+   //private static int implEncodeAsciiArray(char[] sa, int sp,
+   //    byte[] da, int dp, int len) {
+   //  int i = 0;
+   //  for (; i < len; i++) {
+   //    char c = sa[sp++];
+   //    if (c >= '\u0080')
+   //      break;
+   //    da[dp++] = (byte)c;
+   //  }
+   //  return i;
+   //}
 void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   XMMRegister tmp1Reg, XMMRegister tmp2Reg,
   XMMRegister tmp3Reg, XMMRegister tmp4Reg,
-  Register tmp5, Register result) {
+  Register tmp5, Register result, bool ascii) {
 
   // rsi: src
   // rdi: dst
@@ -5640,6 +5466,9 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   ShortBranchVerifier sbv(this);
   assert_different_registers(src, dst, len, tmp5, result);
   Label L_done, L_copy_1_char, L_copy_1_char_exit;
+
+  int mask = ascii ? 0xff80ff80 : 0xff00ff00;
+  int short_mask = ascii ? 0xff80 : 0xff00;
 
   // set result
   xorl(result, result);
@@ -5660,7 +5489,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
 
     if (UseAVX >= 2) {
       Label L_chars_32_check, L_copy_32_chars, L_copy_32_chars_exit;
-      movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vector
+      movl(tmp5, mask);   // create mask to test for Unicode or non-ASCII chars in vector
       movdl(tmp1Reg, tmp5);
       vpbroadcastd(tmp1Reg, tmp1Reg, Assembler::AVX_256bit);
       jmp(L_chars_32_check);
@@ -5669,7 +5498,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
       vmovdqu(tmp3Reg, Address(src, len, Address::times_2, -64));
       vmovdqu(tmp4Reg, Address(src, len, Address::times_2, -32));
       vpor(tmp2Reg, tmp3Reg, tmp4Reg, /* vector_len */ 1);
-      vptest(tmp2Reg, tmp1Reg);       // check for Unicode chars in  vector
+      vptest(tmp2Reg, tmp1Reg);       // check for Unicode or non-ASCII chars in vector
       jccb(Assembler::notZero, L_copy_32_chars_exit);
       vpackuswb(tmp3Reg, tmp3Reg, tmp4Reg, /* vector_len */ 1);
       vpermq(tmp4Reg, tmp3Reg, 0xD8, /* vector_len */ 1);
@@ -5684,7 +5513,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
       jccb(Assembler::greater, L_copy_16_chars_exit);
 
     } else if (UseSSE42Intrinsics) {
-      movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vector
+      movl(tmp5, mask);   // create mask to test for Unicode or non-ASCII chars in vector
       movdl(tmp1Reg, tmp5);
       pshufd(tmp1Reg, tmp1Reg, 0);
       jmpb(L_chars_16_check);
@@ -5708,7 +5537,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
         movdqu(tmp4Reg, Address(src, len, Address::times_2, -16));
         por(tmp2Reg, tmp4Reg);
       }
-      ptest(tmp2Reg, tmp1Reg);       // check for Unicode chars in  vector
+      ptest(tmp2Reg, tmp1Reg);       // check for Unicode or non-ASCII chars in vector
       jccb(Assembler::notZero, L_copy_16_chars_exit);
       packuswb(tmp3Reg, tmp4Reg);
     }
@@ -5746,7 +5575,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
 
   bind(L_copy_1_char);
   load_unsigned_short(tmp5, Address(src, len, Address::times_2, 0));
-  testl(tmp5, 0xff00);      // check if Unicode char
+  testl(tmp5, short_mask);      // check if Unicode or non-ASCII char
   jccb(Assembler::notZero, L_copy_1_char_exit);
   movb(Address(dst, len, Address::times_1, 0), tmp5);
   addptr(len, 1);
@@ -7080,7 +6909,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   // 128 bits per each of 4 parallel streams.
   movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 32));
 
-  align(32);
+  align32();
   BIND(L_fold_512b_loop);
   fold_128bit_crc32(xmm1, xmm0, xmm5, buf,  0);
   fold_128bit_crc32(xmm2, xmm0, xmm5, buf, 16);

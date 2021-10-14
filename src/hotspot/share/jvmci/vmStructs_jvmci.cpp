@@ -183,8 +183,8 @@
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
-  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              intptr_t*)                             \
-  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              jlong)                                 \
+  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              jlong)                                 \
   nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
@@ -203,7 +203,6 @@
   volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
-  nonstatic_field(Klass,                       _prototype_header,                             markWord)                              \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
@@ -309,6 +308,7 @@
   static_field(StubRoutines,                _electronicCodeBook_encryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _counterMode_AESCrypt,                            address)                               \
+  static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                      address)                               \
   static_field(StubRoutines,                _base64_encodeBlock,                              address)                               \
   static_field(StubRoutines,                _base64_decodeBlock,                              address)                               \
   static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
@@ -497,13 +497,6 @@
   declare_constant(vmIntrinsics::_invokeGeneric)                          \
   declare_constant(vmIntrinsics::_compiledLambdaForm)                     \
                                                                           \
-  declare_constant(CollectedHeap::Serial)                                 \
-  declare_constant(CollectedHeap::Parallel)                               \
-  declare_constant(CollectedHeap::G1)                                     \
-  declare_constant(CollectedHeap::Epsilon)                                \
-  declare_constant(CollectedHeap::Z)                                      \
-  declare_constant(CollectedHeap::Shenandoah)                             \
-                                                                          \
   declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \
@@ -648,14 +641,11 @@
   declare_constant(markWord::hash_shift)                                  \
   declare_constant(markWord::monitor_value)                               \
                                                                           \
-  declare_constant(markWord::biased_lock_mask_in_place)                   \
   declare_constant(markWord::age_mask_in_place)                           \
-  declare_constant(markWord::epoch_mask_in_place)                         \
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
                                                                           \
   declare_constant(markWord::unlocked_value)                              \
-  declare_constant(markWord::biased_lock_pattern)                         \
                                                                           \
   declare_constant(markWord::no_hash_in_place)                            \
   declare_constant(markWord::no_lock_in_place)                            \

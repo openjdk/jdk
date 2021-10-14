@@ -68,7 +68,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1624,6 +1623,8 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     } else {
       assert(_pd_cache_table->number_of_entries() == 0, "should be empty");
     }
+
+    InstanceKlass::clean_initialization_error_table();
   }
 
   return unloading_occurred;

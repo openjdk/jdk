@@ -36,6 +36,8 @@
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
+class G1CardSetConfiguration;
+class G1CardSetMemoryManager;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1Predictions;
@@ -165,8 +167,8 @@ public:
 
   // Full GC support methods.
 
-  HeapWord* initialize_threshold();
-  HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
+  void initialize_bot_threshold();
+  void alloc_block_in_bot(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc();
@@ -281,7 +283,10 @@ private:
   // starting at p extending to at most the prev TAMS using the given mark bitmap.
   inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
 public:
-  HeapRegion(uint hrm_index, G1BlockOffsetTable* bot, MemRegion mr);
+  HeapRegion(uint hrm_index,
+             G1BlockOffsetTable* bot,
+             MemRegion mr,
+             G1CardSetConfiguration* config);
 
   // If this region is a member of a HeapRegionManager, the index in that
   // sequence, otherwise -1.
@@ -445,6 +450,7 @@ public:
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
 
+  void set_rem_set(HeapRegionRemSet* rem_set) { _rem_set = rem_set; }
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {
     return _rem_set;

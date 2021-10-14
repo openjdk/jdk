@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,11 @@ class G1ServiceTaskQueue {
   void verify_task_queue() NOT_DEBUG_RETURN;
 public:
   G1ServiceTaskQueue();
-  G1ServiceTask* pop();
-  G1ServiceTask* peek();
+
+  // precondition: !is_empty().
+  G1ServiceTask* front();
+  // precondition: !is_empty().
+  void remove_front();
   void add_ordered(G1ServiceTask* task);
   bool is_empty();
 };
@@ -107,22 +110,15 @@ class G1ServiceThread: public ConcurrentGCThread {
   void run_service();
   void stop_service();
 
-  // Returns the time in milliseconds until the next task is due.
-  // Used both to determine if there are tasks ready to run and
-  // how long to sleep when nothing is ready.
-  int64_t time_to_next_task_ms();
-  void sleep_before_next_cycle();
+  // Return the next ready task, waiting until a task is ready.
+  // Instead returns nullptr if termination requested.
+  G1ServiceTask* wait_for_task();
 
-  G1ServiceTask* pop_due_task();
   void run_task(G1ServiceTask* task);
 
   // Helper used by both schedule_task() and G1ServiceTask::schedule()
   // to schedule a registered task to run after the given delay.
-  void schedule(G1ServiceTask* task, jlong delay);
-
-  // Notify a change to the service thread. Used to either stop
-  // the service or to force check for new tasks.
-  void notify();
+  void schedule(G1ServiceTask* task, jlong delay, bool notify);
 
 public:
   G1ServiceThread();

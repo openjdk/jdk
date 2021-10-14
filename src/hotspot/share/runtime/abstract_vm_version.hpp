@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,9 +165,6 @@ class Abstract_VM_Version: AllStatic {
   static bool supports_data_cache_line_flush() {
     return _data_cache_line_flush_size != 0;
   }
-
-  // ARCH specific policy for the BiasedLocking
-  static bool use_biased_locking()  { return true; }
 
   // Number of page sizes efficiently supported by the hardware.  Most chips now
   // support two sizes, thus this default implementation.  Processor-specific

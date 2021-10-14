@@ -183,17 +183,13 @@ static jint thread_dump(AttachOperation* op, outputStream* out) {
     }
   }
 
-  // thread stacks
-  VM_PrintThreads op1(out, print_concurrent_locks, print_extended_info);
+  // thread stacks and JNI global handles
+  VM_PrintThreads op1(out, print_concurrent_locks, print_extended_info, true /* print JNI handle info */);
   VMThread::execute(&op1);
 
-  // JNI global handles
-  VM_PrintJNI op2(out);
-  VMThread::execute(&op2);
-
   // Deadlock detection
-  VM_FindDeadlocks op3(out);
-  VMThread::execute(&op3);
+  VM_FindDeadlocks op2(out);
+  VMThread::execute(&op2);
 
   return JNI_OK;
 }
@@ -247,11 +243,15 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
         return JNI_ERR;
       }
     }
+    // Parallel thread number for heap dump, initialize based on active processor count.
+    // Note the real number of threads used is also determined by active workers and compression
+    // backend thread number. See heapDumper.cpp.
+    uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(op->arg(0), out, (int)level);
+    dumper.dump(path, out, (int)level, false, (uint)parallel_thread_num);
   }
   return JNI_OK;
 }
@@ -455,55 +455,17 @@ bool AttachListener::has_init_error(TRAPS) {
 void AttachListener::init() {
   EXCEPTION_MARK;
 
-  const char thread_name[] = "Attach Listener";
-  Handle string = java_lang_String::create_from_str(thread_name, THREAD);
+  const char* name = "Attach Listener";
+  Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, THREAD);
   if (has_init_error(THREAD)) {
     set_state(AL_NOT_INITIALIZED);
     return;
   }
 
-  // Initialize thread_oop to put it into the system threadGroup
-  Handle thread_group (THREAD, Universe::system_thread_group());
-  Handle thread_oop = JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
-                       vmSymbols::threadgroup_string_void_signature(),
-                       thread_group,
-                       string,
-                       THREAD);
-  if (has_init_error(THREAD)) {
-    set_state(AL_NOT_INITIALIZED);
-    return;
-  }
+  JavaThread* thread = new JavaThread(&attach_listener_thread_entry);
+  JavaThread::vm_exit_on_osthread_failure(thread);
 
-  Klass* group = vmClasses::ThreadGroup_klass();
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result,
-                        thread_group,
-                        group,
-                        vmSymbols::add_method_name(),
-                        vmSymbols::thread_void_signature(),
-                        thread_oop,
-                        THREAD);
-  if (has_init_error(THREAD)) {
-    set_state(AL_NOT_INITIALIZED);
-    return;
-  }
-
-  { MutexLocker mu(THREAD, Threads_lock);
-    JavaThread* listener_thread = new JavaThread(&attach_listener_thread_entry);
-
-    // Check that thread and osthread were created
-    if (listener_thread == NULL || listener_thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    os::native_thread_creation_failed_msg());
-    }
-
-    java_lang_Thread::set_thread(thread_oop(), listener_thread);
-    java_lang_Thread::set_daemon(thread_oop());
-
-    listener_thread->set_threadObj(thread_oop());
-    Threads::add(listener_thread);
-    Thread::start(listener_thread);
-  }
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
 }
 
 // Performs clean-up tasks on platforms where we can detect that the last

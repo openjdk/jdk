@@ -331,7 +331,18 @@ public class SignerInfo implements DerEncoder {
     throws NoSuchAlgorithmException, SignatureException {
 
         try {
-            Timestamp timestamp = getTimestamp();
+            Timestamp timestamp = null;
+            try {
+                timestamp = getTimestamp();
+            } catch (Exception e) {
+                // Log exception and continue. This allows for the case
+                // where, if there are no other errors, the code is
+                // signed but w/o a timestamp.
+                if (debug != null) {
+                    debug.println("Unexpected exception while getting" +
+                                  " timestamp: " + e);
+                }
+            }
 
             ContentInfo content = block.getContentInfo();
             if (data == null) {
@@ -471,7 +482,7 @@ public class SignerInfo implements DerEncoder {
             if (sig.verify(encryptedDigest)) {
                 return this;
             }
-        } catch (IOException | CertificateException e) {
+        } catch (IOException e) {
             throw new SignatureException("Error verifying signature", e);
         }
         return null;

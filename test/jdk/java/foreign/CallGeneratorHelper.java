@@ -47,6 +47,8 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     static SegmentAllocator IMPLICIT_ALLOCATOR = (size, align) -> MemorySegment.allocateNative(size, align, ResourceScope.newImplicitScope());
 
+    static final int SAMPLE_FACTOR = Integer.parseInt((String)System.getProperties().getOrDefault("generator.sample.factor", "-1"));
+
     static final int MAX_FIELDS = 3;
     static final int MAX_PARAMS = 3;
     static final int CHUNK_SIZE = 600;
@@ -199,7 +201,9 @@ public class CallGeneratorHelper extends NativeTestHelper {
                                 int count = functions;
                                 int fCode = functions++ / CHUNK_SIZE;
                                 String fName = String.format("f%d_%s_%s_%s", fCode, retCode, sigCode, structCode);
-                                downcalls.add(new Object[] { count, fName, r, ptypes, fields });
+                                if (SAMPLE_FACTOR == -1 || (count % SAMPLE_FACTOR) == 0) {
+                                    downcalls.add(new Object[]{count, fName, r, ptypes, fields});
+                                }
                             }
                         }
                     } else {
@@ -207,7 +211,9 @@ public class CallGeneratorHelper extends NativeTestHelper {
                         int count = functions;
                         int fCode = functions++ / CHUNK_SIZE;
                         String fName = String.format("f%d_%s_%s_%s", fCode, retCode, sigCode, structCode);
-                        downcalls.add(new Object[] { count, fName, r, ptypes, List.of() });
+                        if (SAMPLE_FACTOR == -1 || (count % SAMPLE_FACTOR) == 0) {
+                            downcalls.add(new Object[]{count, fName, r, ptypes, List.of()});
+                        }
                     }
                 }
             }

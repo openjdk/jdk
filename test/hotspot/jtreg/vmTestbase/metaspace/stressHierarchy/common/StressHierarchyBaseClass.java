@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@ package metaspace.stressHierarchy.common;
 
 import java.net.MalformedURLException;
 
+import vm.share.gc.HeapOOMEException;
 import vm.share.gc.TriggerUnloadingByFillingMetaspace;
 import vm.share.gc.TriggerUnloadingHelper;
 import vm.share.gc.TriggerUnloadingWithWhiteBox;
 
 import metaspace.stressHierarchy.common.classloader.tree.Node;
 import metaspace.stressHierarchy.common.classloader.tree.Tree;
-import metaspace.stressHierarchy.common.exceptions.GotWrongOOMEException;
 import metaspace.stressHierarchy.common.exceptions.TimeIsOverException;
 import metaspace.stressHierarchy.common.generateHierarchy.GenerateHierarchyHelper;
 import metaspace.stressHierarchy.common.generateHierarchy.GenerateHierarchyHelper.Type;
@@ -109,8 +109,8 @@ abstract public class StressHierarchyBaseClass extends TestBase {
 
             System.out.println("Whole test took " + ((System.currentTimeMillis() - startTimeStamp)/1000/60.0) +" min");
             log.info("Test PASSED");
-        } catch (GotWrongOOMEException e) {
-            log.info("GotWrongOOMEExc: " + e.getMessage());
+        } catch (HeapOOMEException e) {
+            log.info("HeapOOMEException: " + e.getMessage());
             log.info("Got wrong type of OOME. We are passing test as it breaks test logic. We have dedicated test configurations" +
             " for each OOME type provoking class unloading, that's why we are not missing test coverage here.");
         } catch (OutOfMemoryError e) {

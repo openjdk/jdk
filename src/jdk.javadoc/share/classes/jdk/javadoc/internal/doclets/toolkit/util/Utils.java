@@ -974,6 +974,21 @@ public class Utils {
     }
 
     /**
+     * Returns true if {@code type} or any of its enclosing types has non-empty type arguments.
+     * @param type the type
+     * @return {@code true} if type arguments were found
+     */
+    public boolean isGenericType(TypeMirror type) {
+        while (type instanceof DeclaredType dt) {
+            if (!dt.getTypeArguments().isEmpty()) {
+                return true;
+            }
+            type = dt.getEnclosingType();
+        }
+        return false;
+    }
+
+    /**
      * TODO: FIXME: port to javax.lang.model
      * Find a class within the context of this class. Search order: qualified name, in this class
      * (inner), in this package, in the class imports, in the package imports. Return the

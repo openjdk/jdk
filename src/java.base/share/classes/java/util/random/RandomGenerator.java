@@ -516,9 +516,10 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code bound} is not
      *         both positive and finite
      *
-     * @implSpec The default implementation simply calls
-     * {@link RandomSupport#checkBound checkBound}(bound) and then
-     * {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
+     * @implSpec The default implementation checks that {@code bound} is a
+     * positive finite float. Then invokes {@code nextFloat()}, scaling
+     * the result so that the final result lies between {@code 0.0f} (inclusive)
+     * and {@code bound} (exclusive).
      */
     default float nextFloat(float bound) {
         RandomSupport.checkBound(bound);
@@ -540,9 +541,11 @@ public interface RandomGenerator {
      *         or {@code bound} is not finite, or {@code origin}
      *         is greater than or equal to {@code bound}
      *
-     * @implSpec The default implementation simply calls
-     * {@link RandomSupport#checkBound checkBound}(bound) and then
-     * {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
+     * @implSpec The default implementation checks that {@code origin} and
+     * {@code bound} are positive finite floats. Then invokes
+     * {@code nextFloat()}, scaling and translating the result so that the final
+     * result lies between {@code origin} (inclusive) and {@code bound}
+     * (exclusive).
      */
     default float nextFloat(float origin, float bound) {
         RandomSupport.checkRange(origin, bound);
@@ -577,9 +580,10 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code bound} is not
      *         both positive and finite
      *
-     * @implSpec The default implementation simply calls
-     * {@link RandomSupport#checkBound checkBound}(bound) and then
-     * {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
+     * @implSpec The default implementation checks that {@code bound} is a
+     * positive finite double. Then invokes {@code nextDouble()}, scaling
+     * the result so that the final result lies between {@code 0.0} (inclusive)
+     * and {@code bound} (exclusive).
      */
     default double nextDouble(double bound) {
         RandomSupport.checkBound(bound);
@@ -601,9 +605,11 @@ public interface RandomGenerator {
      *         or {@code bound} is not finite, or {@code origin}
      *         is greater than or equal to {@code bound}
      *
-     * @implSpec The default implementation simply calls
-     * {@link RandomSupport#checkBound checkBound}(bound) and then
-     * {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
+     * @implSpec The default implementation checks that {@code origin} and
+     * {@code bound} are positive finite doubles. Then calls
+     * {@code nextDouble()}, scaling and translating the result so that the final
+     * result lies between {@code origin} (inclusive) and {@code bound}
+     * (exclusive).
      */
     default double nextDouble(double origin, double bound) {
         RandomSupport.checkRange(origin, bound);
@@ -627,16 +633,20 @@ public interface RandomGenerator {
      * Returns a pseudorandomly chosen {@code int} value between zero
      * (inclusive) and the specified bound (exclusive).
      *
-     * @param bound the upper bound (exclusive) for the returned value. Must be positive.
+     * @param bound the upper bound (exclusive) for the returned value.
+     * Must be positive.
      *
      * @return a pseudorandomly chosen {@code int} value between
      *         zero (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
-     * @implSpec The default implementation simply calls
-     * {@link RandomSupport#checkBound checkBound}(bound) and then
-     * {@link RandomSupport#boundedNextInt boundedNextInt}(this, bound).
+     * @implSpec The default implementation checks that {@code bound} is a
+     * positive {@code int}. Then invokes {@code nextInt()}, limiting the result
+     * to be greater than or equal zero and less than {@code bound}. If {@code bound}
+     * is a power of two then limiting is a simple masking operation. Otherwise,
+     * the result is re-calculated by invoking {@code nextInt()} until the
+     * result is greater than or equal zero and less than {@code bound}.
      */
     default int nextInt(int bound) {
         RandomSupport.checkBound(bound);
@@ -657,9 +667,13 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code origin} is greater than
      *         or equal to {@code bound}
      *
-     * @implSpec The default implementation simply calls
-     * {@link RandomSupport#checkBound(long) checkBound}(bound) and then
-     * {@link RandomSupport#boundedNextInt(RandomGenerator, int) boundedNextInt}(this, bound).
+     * @implSpec The default implementation checks that {@code origin} and
+     * {@code bound} are positive {@code ints}. Then invokes {@code nextInt()},
+     * limiting the result to be greater that or equal {@code origin} and less
+     * than {@code bound}. If {@code bound} is a power of two then limiting is a
+     * simple masking operation. Otherwise, the result is re-calculated  by
+     * invoking {@code nextInt()} until the result is greater than or equal
+     * {@code origin} and less than {@code bound}.
      */
     default int nextInt(int origin, int bound) {
         RandomSupport.checkRange(origin, bound);
@@ -678,16 +692,21 @@ public interface RandomGenerator {
      * Returns a pseudorandomly chosen {@code long} value between zero
      * (inclusive) and the specified bound (exclusive).
      *
-     * @param bound the upper bound (exclusive) for the returned value.  Must be positive.
+     * @param bound the upper bound (exclusive) for the returned value.
+     * Must be positive.
      *
      * @return a pseudorandomly chosen {@code long} value between
      *         zero (inclusive) and the bound (exclusive)
      *
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
-     * @implSpec The default implementation simply calls
-     * {@link RandomSupport#checkBound checkBound}(bound) and then
-     * {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
+     * @implSpec The default implementation checks that {@code bound} is a
+     * positive  {@code long}. Then invokes {@code nextLong()}, limiting the
+     * result to be greater than or equal zero and less than {@code bound}. If
+     * {@code bound} is a power of two then limiting is a simple masking
+     * operation. Otherwise, the result is re-calculated by invoking
+     * {@code nextLong()} until the result is greater than or equal zero and
+     * less than {@code bound}.
      */
     default long nextLong(long bound) {
         RandomSupport.checkBound(bound);
@@ -708,9 +727,13 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code origin} is greater than
      *         or equal to {@code bound}
      *
-     * @implSpec The default implementation simply calls
-     * {@link RandomSupport#checkBound checkBound}(bound) and then
-     * {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
+     * @implSpec The default implementation checks that {@code origin} and
+     * {@code bound} are positive {@code longs}. Then invokes {@code nextLong()},
+     * limiting the result to be greater than or equal {@code origin} and less
+     * than {@code bound}. If {@code bound} is a power of two then limiting is a
+     * simple masking operation. Otherwise, the result is re-calculated by
+     * invoking {@code nextLong()} until the result is greater than or equal
+     * {@code origin} and less than {@code bound}.
      */
     default long nextLong(long origin, long bound) {
         RandomSupport.checkRange(origin, bound);
@@ -891,10 +914,6 @@ public interface RandomGenerator {
         /**
          * Returns an instance of {@link SplittableGenerator} that utilizes the
          * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
-         *
-         * @implNote Availability is determined by RandomGeneratorFactory using the
-         * service provider API to locate implementations of the RandomGenerator
-         * interface and filtering on the SplittableGenerator interface.
          *
          * @param name  Name of random number generator
          *              <a href="package-summary.html#algorithms">algorithm</a>

@@ -28,8 +28,6 @@
 #include "asm/register.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-class BiasedLockingCounters;
-
 // Contains all the definitions needed for x86 assembly code generation.
 
 // Calling convention
@@ -1690,6 +1688,7 @@ private:
   void vpermq(XMMRegister dst, XMMRegister src, int imm8);
   void vpermq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpermb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpermb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpermw(XMMRegister dst,  XMMRegister nds, XMMRegister src, int vector_len);
   void vpermd(XMMRegister dst,  XMMRegister nds, Address src, int vector_len);
   void vpermd(XMMRegister dst,  XMMRegister nds, XMMRegister src, int vector_len);
@@ -1699,6 +1698,8 @@ private:
   void vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpmultishiftqb(XMMRegister dst, XMMRegister ctl, XMMRegister src, int vector_len);
 
   void pause();
 
@@ -1747,6 +1748,7 @@ private:
 
   void pmovmskb(Register dst, XMMRegister src);
   void vpmovmskb(Register dst, XMMRegister src, int vec_enc);
+  void vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
@@ -1812,6 +1814,8 @@ private:
   // Multiply add
   void pmaddwd(XMMRegister dst, XMMRegister src);
   void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+
   // Multiply add accumulate
   void evpdpwssd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
@@ -1878,6 +1882,8 @@ private:
   // Logical Compare 256bit
   void vptest(XMMRegister dst, XMMRegister src);
   void vptest(XMMRegister dst, Address src);
+
+  void evptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Vector compare
   void vptest(XMMRegister dst, XMMRegister src, int vector_len);
@@ -2140,6 +2146,7 @@ private:
 
   void shlxl(Register dst, Register src1, Register src2);
   void shlxq(Register dst, Register src1, Register src2);
+  void shrxl(Register dst, Register src1, Register src2);
   void shrxq(Register dst, Register src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
@@ -2244,6 +2251,7 @@ private:
   void psubw(XMMRegister dst, XMMRegister src);
   void psubd(XMMRegister dst, XMMRegister src);
   void psubq(XMMRegister dst, XMMRegister src);
+  void vpsubusb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2264,6 +2272,7 @@ private:
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vpmulhuw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Minimum of packed integers
   void pminsb(XMMRegister dst, XMMRegister src);

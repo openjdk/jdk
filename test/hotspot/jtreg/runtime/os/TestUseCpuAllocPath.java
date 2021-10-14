@@ -31,6 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *   VM was either compiled on a platform which does not define CPU_ALLOC,
  *   or it is executed on a platform that does not support it.
  * @requires os.family == "linux"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestUseCpuAllocPath

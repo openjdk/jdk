@@ -269,9 +269,10 @@ private:
   // Manage time-to-mixed tracking.
   void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(G1GCPauseType gc_type, double start, double end);
-
-  bool should_update_gc_stats();
+  void record_pause(G1GCPauseType gc_type,
+                    double start,
+                    double end,
+                    bool evacuation_failure = false);
 
   void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
@@ -301,7 +302,9 @@ public:
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
-  void note_gc_start();
+  // Record the start and end of the young gc pause.
+  void record_young_gc_pause_start();
+  void record_young_gc_pause_end(bool evacuation_failed);
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
@@ -309,9 +312,9 @@ public:
 
   bool about_to_start_mixed_phase() const;
 
-  // Record the start and end of an evacuation pause.
-  void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
+  // Record the start and end of the actual collection part of the evacuation pause.
+  void record_young_collection_start();
+  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -327,8 +330,6 @@ public:
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
-
-  void print_phases();
 
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
@@ -373,13 +374,13 @@ public:
   // progress or not is stable.
   bool force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause);
 
-  // This is called at the very beginning of an evacuation pause (it
-  // has to be the first thing that the pause does). If
-  // initiate_conc_mark_if_possible() is true, and the concurrent
-  // marking thread has completed its work during the previous cycle,
-  // it will set in_concurrent_start_gc() to so that the pause does
-  // the concurrent start work and start a marking cycle.
-  void decide_on_conc_mark_initiation();
+  // Decide whether this garbage collection pause should be a concurrent start
+  // pause and update the collector state accordingly.
+  // We decide on a concurrent start pause if initiate_conc_mark_if_possible() is
+  // true, the concurrent marking thread has completed its work for the previous
+  // cycle, and we are not shutting down the VM.
+  // This must be called at the very beginning of an evacuation pause.
+  void decide_on_concurrent_start_pause();
 
   size_t young_list_target_length() const { return _young_list_target_length; }
 
@@ -427,11 +428,11 @@ public:
     return _max_survivor_regions;
   }
 
-  void note_start_adding_survivor_regions() {
+  void start_adding_survivor_regions() {
     _survivor_surv_rate_group->start_adding_regions();
   }
 
-  void note_stop_adding_survivor_regions() {
+  void stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
   }
 

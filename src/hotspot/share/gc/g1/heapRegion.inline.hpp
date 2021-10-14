@@ -104,7 +104,7 @@ inline HeapWord* HeapRegion::par_allocate(size_t word_size) {
 inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
                                           size_t desired_word_size,
                                           size_t* actual_size) {
-  MutexLocker x(&_par_alloc_lock);
+  MutexLocker x(&_par_alloc_lock, Mutex::_no_safepoint_check_flag);
   return allocate(min_word_size, desired_word_size, actual_size);
 }
 
@@ -178,9 +178,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_
 }
 
 inline size_t HeapRegion::block_size(const HeapWord *addr) const {
-  if (addr == top()) {
-    return pointer_delta(end(), addr);
-  }
+  assert(addr < top(), "precondition");
 
   if (block_is_obj(addr)) {
     return cast_to_oop(addr)->size();

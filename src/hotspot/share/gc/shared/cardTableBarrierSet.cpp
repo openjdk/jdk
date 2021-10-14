@@ -187,7 +187,7 @@ void CardTableBarrierSet::on_thread_detach(Thread* thread) {
   // card-table (or other remembered set structure) before GC starts
   // processing the card-table (or other remembered set).
   if (thread->is_Java_thread()) { // Only relevant for Java threads.
-    flush_deferred_card_mark_barrier(thread->as_Java_thread());
+    flush_deferred_card_mark_barrier(JavaThread::cast(thread));
   }
 }
 

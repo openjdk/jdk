@@ -29,7 +29,7 @@
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
- *   --enable-native-access=ALL-UNNAMED
+ *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17
  *   TestUpcall
  */
 
@@ -41,7 +41,6 @@ import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 
 import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -115,9 +114,6 @@ public class TestUpcall extends CallGeneratorHelper {
         MethodHandle mh = abi.downcallHandle(addr, IMPLICIT_ALLOCATOR, mtype, function(ret, paramTypes, fields));
         Object[] args = makeArgs(ResourceScope.newImplicitScope(), ret, paramTypes, fields, returnChecks, argChecks);
         Object[] callArgs = args;
-        if (count % 100 == 0) {
-            System.gc();
-        }
         Object res = mh.invokeWithArguments(callArgs);
         argChecks.forEach(c -> c.accept(args));
         if (ret == Ret.NON_VOID) {

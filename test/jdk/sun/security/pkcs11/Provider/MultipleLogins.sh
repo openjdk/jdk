@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 7777777
+# @bug 8240256 8269034
 # @summary
 # @library /test/lib/
 # @build jdk.test.lib.util.ForceGC
@@ -114,9 +114,7 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         ${TESTSRC}${FS}MultipleLogins.java \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
-# run test
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-        -classpath ${TESTCLASSPATH} \
+TEST_ARGS="${TESTVMOPTS} -classpath ${TESTCLASSPATH} \
         --add-modules jdk.crypto.cryptoki \
         --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
@@ -125,11 +123,13 @@ ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
         -DNO_DEIMOS=true \
         -Dtest.src=${TESTSRC} \
         -Dtest.classes=${TESTCLASSES} \
-        -Djava.security.debug=${DEBUG} \
-        MultipleLogins
+        -Djava.security.debug=${DEBUG}"
 
-# save error status
-status=$?
+# run test without security manager
+${TESTJAVA}${FS}bin${FS}java ${TEST_ARGS} MultipleLogins || exit 10
 
-# return
-exit $status
+# run test with security manager
+${TESTJAVA}${FS}bin${FS}java ${TEST_ARGS} MultipleLogins useSimplePolicy || exit 11
+
+echo Done
+exit 0

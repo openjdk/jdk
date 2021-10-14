@@ -96,6 +96,9 @@ public class IREncodingPrinter {
 
     private boolean shouldApplyIrRule(IR irAnno) {
         checkIRAnnotations(irAnno);
+        if (isDefaultRegexUnsupported(irAnno)) {
+            return false;
+        }
         if (irAnno.applyIf().length != 0) {
             return hasAllRequiredFlags(irAnno.applyIf(), "applyIf");
         }
@@ -141,7 +144,21 @@ public class IREncodingPrinter {
         }
         TestFormat.checkNoThrow(applyRules <= 1,
                                 "Can only specify one apply constraint " + failAt());
+    }
 
+    private boolean isDefaultRegexUnsupported(IR irAnno) {
+        try {
+            for (String s : irAnno.failOn()) {
+                IRNode.checkDefaultRegexSupported(s);
+            }
+            for (String s : irAnno.counts()) {
+                IRNode.checkDefaultRegexSupported(s);
+            }
+        } catch (CheckedTestFrameworkException e) {
+            TestFrameworkSocket.write("Skip Rule " + ruleIndex + ": " + e.getMessage(), TestFrameworkSocket.DEFAULT_REGEX_TAG, true);
+            return true;
+        }
+        return false;
     }
 
     private boolean hasAllRequiredFlags(String[] andRules, String ruleType) {

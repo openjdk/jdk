@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.access.JavaSecurityAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
+import sun.nio.fs.DefaultFileSystemProvider;
 import sun.security.util.*;
 import sun.net.www.ParseUtil;
 
@@ -277,6 +278,13 @@ public class PolicyFile extends java.security.Policy {
         Collections.newSetFromMap(new ConcurrentHashMap<URL,Boolean>());
 
     /**
+     * Use the platform's default file system to avoid recursive initialization
+     * issues when the VM is configured to use a custom file system provider.
+     */
+    private static final java.nio.file.FileSystem builtInFS =
+        DefaultFileSystemProvider.theFileSystem();
+
+    /**
      * Initializes the Policy object and reads the default policy
      * configuration file(s) into the Policy object.
      */
@@ -475,7 +483,7 @@ public class PolicyFile extends java.security.Policy {
     }
 
     private void initDefaultPolicy(PolicyInfo newInfo) {
-        Path defaultPolicy = Path.of(StaticProperty.javaHome(),
+        Path defaultPolicy = builtInFS.getPath(StaticProperty.javaHome(),
                                      "lib",
                                      "security",
                                      "default.policy");

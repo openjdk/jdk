@@ -72,6 +72,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
   guarantee(callee != NULL, "failed method resolution");
 
+  const bool is_virtual_or_interface = (bytecode == Bytecodes::_invokevirtual) ||
+                                       (bytecode == Bytecodes::_invokeinterface);
+
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
     allow_inline = false;
@@ -133,7 +136,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       if (cg->does_virtual_dispatch()) {
         cg_intrinsic = cg;
         cg = NULL;
-      } else if (should_delay_vector_inlining(callee, jvms)) {
+      } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
         return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
@@ -164,6 +167,18 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       bool should_delay = false;
       if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
+        // For optimized virtual calls assert at runtime that receiver object
+        // is a subtype of the inlined method holder. CHA can report a method
+        // as a unique target under an abstract method, but receiver type
+        // sometimes has a broader type. Similar scenario is possible with
+        // default methods when type system loses information about implemented
+        // interfaces.
+        if (cg != NULL && is_virtual_or_interface && !callee->is_static()) {
+          CallGenerator* trap_cg = CallGenerator::for_uncommon_trap(callee,
+              Deoptimization::Reason_receiver_constraint, Deoptimization::Action_none);
+
+          cg = CallGenerator::for_guarded_call(callee->holder(), trap_cg, cg);
+        }
         if (cg != NULL) {
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
@@ -344,9 +359,16 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       return CallGenerator::for_virtual_call(callee, vtable_index);
     }
   } else {
-    // Class Hierarchy Analysis or Type Profile reveals a unique target,
-    // or it is a static or special call.
-    return CallGenerator::for_direct_call(callee, should_delay_inlining(callee, jvms));
+    // Class Hierarchy Analysis or Type Profile reveals a unique target, or it is a static or special call.
+    CallGenerator* cg = CallGenerator::for_direct_call(callee, should_delay_inlining(callee, jvms));
+    // For optimized virtual calls assert at runtime that receiver object
+    // is a subtype of the method holder.
+    if (cg != NULL && is_virtual_or_interface && !callee->is_static()) {
+      CallGenerator* trap_cg = CallGenerator::for_uncommon_trap(callee,
+          Deoptimization::Reason_receiver_constraint, Deoptimization::Action_none);
+      cg = CallGenerator::for_guarded_call(callee->holder(), trap_cg, cg);
+    }
+    return cg;
   }
 }
 
@@ -894,7 +916,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   Node* ex_klass_node = NULL;
   if (has_ex_handler() && !ex_type->klass_is_exact()) {
     Node* p = basic_plus_adr( ex_node, ex_node, oopDesc::klass_offset_in_bytes());
-    ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT));
+    ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
 
     // Compute the exception klass a little more cleverly.
     // Obvious solution is to simple do a LoadKlass from the 'ex_node'.
@@ -903,7 +925,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
     // I'm loading the class from, I can replace the LoadKlass with the
     // klass constant for the exception oop.
     if (ex_node->is_Phi()) {
-      ex_klass_node = new PhiNode(ex_node->in(0), TypeKlassPtr::OBJECT);
+      ex_klass_node = new PhiNode(ex_node->in(0), TypeInstKlassPtr::OBJECT);
       for (uint i = 1; i < ex_node->req(); i++) {
         Node* ex_in = ex_node->in(i);
         if (ex_in == top() || ex_in == NULL) {
@@ -912,10 +934,10 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
           continue;
         }
         Node* p = basic_plus_adr(ex_in, ex_in, oopDesc::klass_offset_in_bytes());
-        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT));
+        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
         ex_klass_node->init_req( i, k );
       }
-      _gvn.set_type(ex_klass_node, TypeKlassPtr::OBJECT);
+      _gvn.set_type(ex_klass_node, TypeInstKlassPtr::OBJECT);
 
     }
   }
@@ -1105,29 +1127,18 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
     return NULL;
   }
 
-  ciInstanceKlass *ikl = receiver_type->klass()->as_instance_klass();
-  if (ikl->is_loaded() && ikl->is_initialized() && !ikl->is_interface() &&
-      (ikl == actual_receiver || ikl->is_subtype_of(actual_receiver))) {
+  ciInstanceKlass* receiver_klass = receiver_type->klass()->as_instance_klass();
+  if (receiver_klass->is_loaded() && receiver_klass->is_initialized() && !receiver_klass->is_interface() &&
+      (receiver_klass == actual_receiver || receiver_klass->is_subtype_of(actual_receiver))) {
     // ikl is a same or better type than the original actual_receiver,
     // e.g. static receiver from bytecodes.
-    actual_receiver = ikl;
+    actual_receiver = receiver_klass;
     // Is the actual_receiver exact?
     actual_receiver_is_exact = receiver_type->klass_is_exact();
   }
 
   ciInstanceKlass*   calling_klass = caller->holder();
   ciMethod* cha_monomorphic_target = callee->find_monomorphic_target(calling_klass, klass, actual_receiver, check_access);
-
-  // Validate receiver info against target method.
-  if (cha_monomorphic_target != NULL) {
-    bool has_receiver = !cha_monomorphic_target->is_static();
-    bool is_interface_holder = cha_monomorphic_target->holder()->is_interface();
-    if (has_receiver && !is_interface_holder) {
-      if (!cha_monomorphic_target->holder()->is_subtype_of(receiver_type->klass())) {
-        cha_monomorphic_target = NULL; // not a subtype
-      }
-    }
-  }
 
   if (cha_monomorphic_target != NULL) {
     // Hardwiring a virtual.

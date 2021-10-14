@@ -30,6 +30,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -58,7 +59,10 @@ abstract class AbstractDCmd {
     // Called by native
     public abstract String[] printHelp();
 
-    // Called by native
+    // Called by native. The number of arguments for each command is
+    // reported to the DCmdFramework as a hardcoded number in native.
+    // This is to avoid an upcall as part of DcmdFramework enumerating existing commands.
+    // Remember to keep the two sides in synch.
     public abstract Argument[] getArgumentInfos();
 
     // Called by native
@@ -188,7 +192,7 @@ abstract class AbstractDCmd {
     }
 
     protected final void print(String s, Object... args) {
-        currentLine.append(String.format(s, args));
+        currentLine.append(args.length > 0 ? String.format(s, args) : s);
     }
 
     protected final void println(String s, Object... args) {
@@ -265,5 +269,42 @@ abstract class AbstractDCmd {
         } else {
             return "/directory/recordings";
         }
+    }
+
+    static String expandFilename(String filename) {
+        if (filename == null || filename.indexOf('%') == -1) {
+            return filename;
+        }
+
+        String pid = null;
+        String time = null;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < filename.length(); i++) {
+            char c = filename.charAt(i);
+            if (c == '%' && i < filename.length() - 1) {
+                char nc = filename.charAt(i + 1);
+                if (nc == '%') { // %% ==> %
+                    sb.append('%');
+                    i++;
+                } else if (nc == 'p') {
+                    if (pid == null) {
+                        pid = JVM.getJVM().getPid();
+                    }
+                    sb.append(pid);
+                    i++;
+                } else if (nc == 't') {
+                    if (time == null) {
+                        time = Utils.formatDateTime(LocalDateTime.now());
+                    }
+                    sb.append(time);
+                    i++;
+                } else {
+                    sb.append('%');
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }

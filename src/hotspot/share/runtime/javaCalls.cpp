@@ -54,7 +54,6 @@
 
 JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle receiver, JavaValue* result, TRAPS) {
   JavaThread* thread = THREAD;
-  bool clear_pending_exception = true;
 
   guarantee(thread->is_Java_thread(), "crucial check - the VM thread cannot and must not escape to Java code");
   assert(!thread->owns_locks(), "must release all locks when leaving VM");
@@ -65,19 +64,12 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   // since it can potentially block.
   JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(thread);
 
+  // clear any pending exception in thread (native calls start with no exception pending)
+  thread->clear_pending_exception();
+
   // After this, we are official in JavaCode. This needs to be done before we change any of the thread local
   // info, since we cannot find oops before the new information is set up completely.
-  ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_Java);
-
-  // Make sure that we handle asynchronous stops and suspends _before_ we clear all thread state
-  // in JavaCallWrapper::JavaCallWrapper(). This way, we can decide if we need to do any pd actions
-  // to prepare for stop/suspend (flush register windows on sparcs, cache sp, or other state).
-  if (thread->has_special_runtime_exit_condition()) {
-    thread->handle_special_runtime_exit_condition();
-    if (HAS_PENDING_EXCEPTION) {
-      clear_pending_exception = false;
-    }
-  }
+  ThreadStateTransition::transition_from_vm(thread, _thread_in_Java, true /* check_asyncs */);
 
   // Make sure to set the oop's after the thread transition - since we can block there. No one is GC'ing
   // the JavaCallWrapper before the entry frame is on the stack.
@@ -103,11 +95,6 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
 
   assert (_thread->thread_state() != _thread_in_native, "cannot set native pc to NULL");
-
-  // clear any pending exception in thread (native calls start with no exception pending)
-  if(clear_pending_exception) {
-    _thread->clear_pending_exception();
-  }
 
   MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }

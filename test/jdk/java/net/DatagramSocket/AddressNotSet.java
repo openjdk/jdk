@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary DatagramSocket.send should throw IllegalArgumentException
  *          when the packet address is not correctly set.
  * @run main AddressNotSet
- * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl AddressNotSet
  */
 
 import java.net.DatagramPacket;

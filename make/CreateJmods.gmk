@@ -213,12 +213,12 @@ endif
 
 ifeq ($(call isTargetOs, windows), true)
   ifeq ($(SHIP_DEBUG_SYMBOLS), )
-    JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.pdb,*.map}'
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.pdb,*.map}'
   else
-    JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.map}'
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.map}'
   endif
 else
-  JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
+  JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
 endif
 
 # Create jmods in the support dir and then move them into place to keep the

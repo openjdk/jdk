@@ -89,11 +89,12 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS],
 
     # Fix linker warning.
     # Code taken from make/autoconf/flags-cflags.m4 and adapted.
-    JVM_BASIC_ASFLAGS+="-DMAC_OS_X_VERSION_MIN_REQUIRED=$MACOSX_VERSION_MIN_NODOTS \
+    JVM_BASIC_ASFLAGS="$JVM_BASIC_ASFLAGS \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=$MACOSX_VERSION_MIN_NODOTS \
         -mmacosx-version-min=$MACOSX_VERSION_MIN"
 
     if test -n "$MACOSX_VERSION_MAX"; then
-        JVM_BASIC_ASFLAGS+="$OS_CFLAGS \
+        JVM_BASIC_ASFLAGS="$JVM_BASIC_ASFLAGS $OS_CFLAGS \
             -DMAC_OS_X_VERSION_MAX_ALLOWED=$MACOSX_VERSION_MAX_NODOTS"
     fi
   fi

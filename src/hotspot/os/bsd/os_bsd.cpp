@@ -123,10 +123,6 @@ volatile uint64_t         os::Bsd::_max_abstime   = 0;
 pthread_t os::Bsd::_main_thread;
 int os::Bsd::_page_size = -1;
 
-static jlong initial_time_count=0;
-
-static int clock_tics_per_sec = 100;
-
 #if defined(__APPLE__) && defined(__x86_64__)
 static const int processor_id_unassigned = -1;
 static const int processor_id_assigning = -2;
@@ -178,20 +174,6 @@ void os::Bsd::print_uptime_info(outputStream* st) {
 julong os::physical_memory() {
   return Bsd::physical_memory();
 }
-
-// Return true if user is running as root.
-
-bool os::have_special_privileges() {
-  static bool init = false;
-  static bool privileges = false;
-  if (!init) {
-    privileges = (getuid() != geteuid()) || (getgid() != getegid());
-    init = true;
-  }
-  return privileges;
-}
-
-
 
 // Cpu architecture string
 #if   defined(ZERO)
@@ -452,7 +434,9 @@ void os::init_system_properties_values() {
       }
     }
     Arguments::set_java_home(buf);
-    set_boot_path('/', ':');
+    if (!set_boot_path('/', ':')) {
+        vm_exit_during_initialization("Failed setting boot class path.", NULL);
+    }
   }
 
   // Where to look for native libraries.
@@ -631,16 +615,22 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   ThreadState state;
 
   {
+
+    ResourceMark rm;
     pthread_t tid;
-    int ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    int ret = 0;
+    int limit = 3;
+    do {
+      ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    } while (ret == EAGAIN && limit-- > 0);
 
     char buf[64];
     if (ret == 0) {
-      log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
-        (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+      log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+                           thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     } else {
-      log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
-        os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+      log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
+                              thread->name(), os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
       // Log some OS information which might explain why creating the thread failed.
       log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
       LogStream st(Log(os, thread)::info());
@@ -752,22 +742,6 @@ void os::free_thread(OSThread* osthread) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-
-// Time since start-up in seconds to a fine granularity.
-double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency();
-}
-
-jlong os::elapsed_counter() {
-  return javaTimeNanos() - initial_time_count;
-}
-
-jlong os::elapsed_frequency() {
-  return NANOSECS_PER_SEC; // nanosecond resolution
-}
-
-bool os::supports_vtime() { return true; }
-
 double os::elapsedVTime() {
   // better than nothing, but not much
   return elapsedTime();
@@ -817,44 +791,7 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
 }
-
 #endif // __APPLE__
-
-// Return the real, user, and system times in seconds from an
-// arbitrary fixed point in the past.
-bool os::getTimesSecs(double* process_real_time,
-                      double* process_user_time,
-                      double* process_system_time) {
-  struct tms ticks;
-  clock_t real_ticks = times(&ticks);
-
-  if (real_ticks == (clock_t) (-1)) {
-    return false;
-  } else {
-    double ticks_per_second = (double) clock_tics_per_sec;
-    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
-    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
-    *process_real_time = ((double) real_ticks) / ticks_per_second;
-
-    return true;
-  }
-}
-
-
-char * os::local_time_string(char *buf, size_t buflen) {
-  struct tm t;
-  time_t long_time;
-  time(&long_time);
-  localtime_r(&long_time, &t);
-  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
-               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-               t.tm_hour, t.tm_min, t.tm_sec);
-  return buf;
-}
-
-struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
-  return localtime_r(clock, res);
-}
 
 // Information of current thread in variety of formats
 pid_t os::Bsd::gettid() {
@@ -1225,22 +1162,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #endif // STATIC_BUILD
 }
 #endif // !__APPLE__
-
-void* os::get_default_process_handle() {
-#ifdef __APPLE__
-  // MacOS X needs to use RTLD_FIRST instead of RTLD_LAZY
-  // to avoid finding unexpected symbols on second (or later)
-  // loads of a library.
-  return (void*)::dlopen(NULL, RTLD_FIRST);
-#else
-  return (void*)::dlopen(NULL, RTLD_LAZY);
-#endif
-}
-
-// XXX: Do we need a lock around this as per Linux?
-void* os::dll_lookup(void* handle, const char* name) {
-  return dlsym(handle, name);
-}
 
 int _print_dll_info_cb(const char * name, address base_address, address top_address, void * param) {
   outputStream * out = (outputStream *) param;
@@ -1996,8 +1917,6 @@ extern void report_error(char* file_name, int line_no, char* title,
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  clock_tics_per_sec = CLK_TCK;
-
   Bsd::set_page_size(getpagesize());
   if (Bsd::page_size() == -1) {
     fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
@@ -2010,7 +1929,6 @@ void os::init(void) {
   Bsd::_main_thread = pthread_self();
 
   Bsd::clock_init();
-  initial_time_count = javaTimeNanos();
 
   os::Posix::init();
 }
@@ -2163,11 +2081,6 @@ void os::set_native_thread_name(const char *name) {
     pthread_setname_np(buf);
   }
 #endif
-}
-
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2355,9 +2268,7 @@ int os::open(const char *path, int oflag, int mode) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
-  if (!rewrite_existing) {
-    oflags |= O_EXCL;
-  }
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
   return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 

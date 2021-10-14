@@ -375,7 +375,7 @@ public final class AnnotationElement {
         throw new IllegalArgumentException("Only primitives types or java.lang.String are allowed");
     }
 
-    // Whitelist of annotation classes that are allowed, even though
+    // List of annotation classes that are allowed, even though
     // they don't have @MetadataDefinition.
     private static boolean isKnownJFRAnnotation(Class<? extends Annotation> annotationType) {
         if (annotationType == Registered.class) {

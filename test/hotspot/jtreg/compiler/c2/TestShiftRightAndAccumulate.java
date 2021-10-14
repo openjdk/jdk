@@ -25,8 +25,17 @@
  * @test
  * @bug 8260585
  * @summary AArch64: Wrong code generated for shifting right and accumulating four unsigned short integers.
+ *
  * @run main/othervm compiler.c2.TestShiftRightAndAccumulate
  * @run main/othervm -Xcomp compiler.c2.TestShiftRightAndAccumulate
+ */
+
+/**
+ * @test
+ * @bug 8260585
+ * @summary AArch64: Wrong code generated for shifting right and accumulating four unsigned short integers.
+ * @requires vm.compiler2.enabled
+ *
  * @run main/othervm -XX:-SuperWordLoopUnrollAnalysis compiler.c2.TestShiftRightAndAccumulate
  */
 

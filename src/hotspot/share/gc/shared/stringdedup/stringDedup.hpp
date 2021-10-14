@@ -96,6 +96,7 @@
 // For additional information on string deduplication, please see JEP 192,
 // http://openjdk.java.net/jeps/192
 
+#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -147,7 +148,17 @@ public:
   // precondition: is_enabled()
   static void threads_do(ThreadClosure* tc);
 
+  // Marks the String as not being subject to deduplication.  This can be
+  // used to prevent deduplication of Strings whose value array must remain
+  // stable and cannot be replaced by a shared duplicate.  Must be called
+  // before obtaining the value array; this function provides an acquire
+  // barrier.
+  // precondition: is_enabled()
+  // precondition: java_string is a Java String object.
+  static void forbid_deduplication(oop java_string);
+
   // Notify that a String is being added to the StringTable.
+  // Implicity forbids deduplication of the String.
   // precondition: is_enabled()
   // precondition: java_string is a Java String object.
   static void notify_intern(oop java_string);
@@ -185,7 +196,7 @@ public:
 // Each marking thread should have it's own Requests object.  When marking
 // is completed the Requests object must be flushed (either explicitly or by
 // the destructor).
-class StringDedup::Requests {
+class StringDedup::Requests : public CHeapObj<mtGC> {
   StorageUse* _storage_for_requests;
   oop** _buffer;
   size_t _index;

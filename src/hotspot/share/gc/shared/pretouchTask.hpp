@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 
 class PretouchTask : public AbstractGangTask {
   char* volatile _cur_addr;
-  char* const _start_addr;
   char* const _end_addr;
   size_t _page_size;
   size_t _chunk_size;

@@ -38,6 +38,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.net.httpserver.HttpConnection.State;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 /**
  * Provides implementation for both HTTP and HTTPS
  */
@@ -582,17 +584,42 @@ class ServerImpl implements TimeSource {
                 start = space+1;
                 String version = requestLine.substring (start);
                 Headers headers = req.headers();
-                String s = headers.getFirst ("Transfer-encoding");
+                /* check key for illegal characters */
+                for (var k : headers.keySet()) {
+                    if (!isValidHeaderKey(k)) {
+                        reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                "Header key contains illegal characters");
+                        return;
+                    }
+                }
+                /* checks for unsupported combinations of lengths and encodings */
+                if (headers.containsKey("Content-Length") &&
+                        (headers.containsKey("Transfer-encoding") || headers.get("Content-Length").size() > 1)) {
+                    reject(Code.HTTP_BAD_REQUEST, requestLine,
+                            "Conflicting or malformed headers detected");
+                    return;
+                }
                 long clen = 0L;
-                if (s !=null && s.equalsIgnoreCase ("chunked")) {
-                    clen = -1L;
+                String headerValue = null;
+                List<String> teValueList = headers.get("Transfer-encoding");
+                if (teValueList != null && !teValueList.isEmpty()) {
+                    headerValue = teValueList.get(0);
+                }
+                if (headerValue != null) {
+                    if (headerValue.equalsIgnoreCase("chunked") && teValueList.size() == 1) {
+                        clen = -1L;
+                    } else {
+                        reject(Code.HTTP_NOT_IMPLEMENTED,
+                                requestLine, "Unsupported Transfer-Encoding value");
+                        return;
+                    }
                 } else {
-                    s = headers.getFirst ("Content-Length");
-                    if (s != null) {
-                        clen = Long.parseLong(s);
+                    headerValue = headers.getFirst("Content-Length");
+                    if (headerValue != null) {
+                        clen = Long.parseLong(headerValue);
                     }
                     if (clen == 0) {
-                        requestCompleted (connection);
+                        requestCompleted(connection);
                     }
                 }
                 ctx = contexts.findContext (protocol, uri.getPath());
@@ -734,7 +761,7 @@ class ServerImpl implements TimeSource {
                 }
                 builder.append ("\r\n").append (text);
                 String s = builder.toString();
-                byte[] b = s.getBytes("ISO8859_1");
+                byte[] b = s.getBytes(ISO_8859_1);
                 rawout.write (b);
                 rawout.flush();
                 if (closeNow) {
@@ -906,5 +933,25 @@ class ServerImpl implements TimeSource {
         } else {
             return secs * 1000;
         }
+    }
+
+    /*
+     * Validates a RFC 7230 header-key.
+     */
+    static boolean isValidHeaderKey(String token) {
+        if (token == null) return false;
+
+        boolean isValidChar;
+        char[] chars = token.toCharArray();
+        String validSpecialChars = "!#$%&'*+-.^_`|~";
+        for (char c : chars) {
+            isValidChar = ((c >= 'a') && (c <= 'z')) ||
+                          ((c >= 'A') && (c <= 'Z')) ||
+                          ((c >= '0') && (c <= '9'));
+            if (!isValidChar && validSpecialChars.indexOf(c) == -1) {
+                return false;
+            }
+        }
+        return !token.isEmpty();
     }
 }

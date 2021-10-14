@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ import sun.security.timestamp.TimestampToken;
 
 /*
  * @test
- * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404 8247960 8242068
+ * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404
+ *      8247960 8242068 8269039
  * @summary checking response of timestamp
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
@@ -134,6 +135,9 @@ public class TimestampCheck {
             Instant instant = Instant.now();
             if (path.equals("tsold")) {
                 instant = instant.minus(20, ChronoUnit.DAYS);
+            } else if (path.equals("tsbefore2019")) {
+                // Saturday, August 18, 2018 7:04:58 PM
+                instant = Instant.ofEpochSecond(1534619098l);
             }
             respParam.genTime(Date.from(instant));
 
@@ -213,6 +217,17 @@ public class TimestampCheck {
                                 + "However, the JAR will be valid")
                         .shouldHaveExitValue(0);
 
+                // should not be disabled because timestamped before 2019
+                signVerbose("tsbefore2019", "unsigned.jar", "tsbefore2019.jar", "pre2019signer",
+                        "-digestalg", "SHA-1")
+                        .shouldHaveExitValue(4);
+
+                verify("tsbefore2019.jar", "-verbose")
+                        .shouldHaveExitValue(0)
+                        .shouldMatch("Digest.*SHA-1.*(weak)")
+                        .shouldMatch("signer certificate expired on .*. "
+                                + "However, the JAR will be valid");
+
                 // No timestamp
                 signVerbose(null, "unsigned.jar", "none.jar", "signer")
                         .shouldContain("is not timestamped")
@@ -286,35 +301,28 @@ public class TimestampCheck {
                         .shouldHaveExitValue(0);
                 checkTimestamp("sha384alg.jar", defaultPolicyId, "SHA-384");
 
-                // Legacy algorithms
+                // Disabled algorithms
                 signVerbose(null, "unsigned.jar", "sha1alg.jar", "signer",
-                        "-strict", "-digestalg", "SHA-1")
-                        .shouldHaveExitValue(0)
+                        "-digestalg", "SHA-1")
+                        .shouldHaveExitValue(4)
                         .shouldContain("jar signed")
-                        .shouldNotContain("with signer errors")
-                        .shouldMatch("SHA-1.*-digestalg.*will be disabled");
-                verify("sha1alg.jar", "-strict")
-                        .shouldHaveExitValue(0)
-                        .shouldContain("jar verified")
-                        .shouldNotContain("with signer errors")
-                        .shouldContain("SHA-1 digest algorithm is considered a security risk")
-                        .shouldContain("This algorithm will be disabled in a future update")
-                        .shouldNotContain("is disabled");
+                        .shouldContain("with signer errors")
+                        .shouldMatch("SHA-1.*-digestalg.*is disabled");
+                verify("sha1alg.jar", "-verbose")
+                        .shouldHaveExitValue(16)
+                        .shouldContain("treated as unsigned")
+                        .shouldMatch("Digest.*SHA-1.*(disabled)");
 
                 sign("sha1tsaalg", "-tsadigestalg", "SHA-1", "-strict")
-                        .shouldHaveExitValue(0)
+                        .shouldHaveExitValue(4)
                         .shouldContain("jar signed")
-                        .shouldNotContain("with signer errors")
-                        .shouldMatch("SHA-1.*-tsadigestalg.*will be disabled")
-                        .shouldNotContain("is disabled");
-                verify("sha1tsaalg.jar", "-strict")
-                        .shouldHaveExitValue(0)
-                        .shouldContain("jar verified")
-                        .shouldNotContain("with signer errors")
-                        .shouldContain("SHA-1 timestamp digest algorithm is considered a security risk")
-                        .shouldNotContain("is disabled");
+                        .shouldContain("with signer errors")
+                        .shouldMatch("SHA-1.*-tsadigestalg.*is disabled");
+                verify("sha1tsaalg.jar", "-verbose")
+                        .shouldHaveExitValue(16)
+                        .shouldContain("treated as unsigned")
+                        .shouldMatch("Timestamp.*digest.*SHA-1.*(disabled)");
 
-                // Disabled algorithms
                 sign("tsdisabled", "-digestalg", "MD5",
                                 "-sigalg", "MD5withRSA", "-tsadigestalg", "MD5")
                         .shouldHaveExitValue(68)
@@ -371,15 +379,21 @@ public class TimestampCheck {
                         .shouldContain("Signature algorithm: Ed25519")
                         .shouldContain("Signature algorithm: SHA256withDSA");
 
-                // Legacy algorithms
+                // Disabled algorithms
                 sign("tsweak", "-digestalg", "SHA1",
                                 "-sigalg", "SHA1withRSA", "-tsadigestalg", "SHA1")
-                        .shouldHaveExitValue(0)
-                        .shouldMatch("SHA1.*-digestalg.*will be disabled")
-                        .shouldMatch("SHA1.*-tsadigestalg.*will be disabled")
-                        .shouldMatch("SHA1withRSA.*-sigalg.*will be disabled");
-                checkWeak("tsweak.jar");
+                        .shouldHaveExitValue(4)
+                        .shouldMatch("SHA1.*-digestalg.*is disabled")
+                        .shouldMatch("SHA1.*-tsadigestalg.*is disabled")
+                        .shouldMatch("SHA1withRSA.*-sigalg.*is disabled");
+                verify("tsweak.jar", "-verbose")
+                        .shouldHaveExitValue(16)
+                        .shouldContain("treated as unsigned")
+                        .shouldMatch("Digest algorithm: .*(disabled)")
+                        .shouldMatch("Signature algorithm: .*(disabled)")
+                        .shouldMatch("Timestamp digest algorithm: .*(disabled)");
 
+                // Legacy algorithms (1024-bit key)
                 signVerbose("tsweak", "unsigned.jar", "tsweak2.jar", "signer")
                         .shouldHaveExitValue(0);
 
@@ -388,13 +402,15 @@ public class TimestampCheck {
                         .shouldContain("jar verified")
                         .shouldMatch("Timestamp.*1024.*(weak)");
 
-                // Algorithm used in signing is weak
+                // Algorithm used in signing is disabled
                 signVerbose("normal", "unsigned.jar", "halfWeak.jar", "signer",
                         "-digestalg", "SHA1")
-                        .shouldContain("-digestalg option is considered a security risk.")
-                        .shouldContain("This algorithm will be disabled in a future update.")
-                        .shouldHaveExitValue(0);
-                checkHalfWeak("halfWeak.jar");
+                        .shouldContain("-digestalg option is considered a security risk and is disabled.")
+                        .shouldHaveExitValue(4);
+                verify("halfWeak.jar", "-verbose")
+                        .shouldHaveExitValue(16)
+                        .shouldContain("treated as unsigned")
+                        .shouldMatch("Digest algorithm: .*(disabled)");
 
                 // sign with DSA key
                 signVerbose("normal", "unsigned.jar", "sign1.jar", "dsakey")
@@ -832,6 +848,7 @@ public class TimestampCheck {
         Files.deleteIfExists(Paths.get("ks"));
         keytool("-alias signer -genkeypair -ext bc -dname CN=signer");
         keytool("-alias oldsigner -genkeypair -dname CN=oldsigner");
+        keytool("-alias pre2019signer -genkeypair -dname CN=pre2019signer");
         keytool("-alias dsakey -genkeypair -keyalg DSA -dname CN=dsakey");
         keytool("-alias eckey -genkeypair -keyalg EC -dname CN=eckey");
         keytool("-alias psskey -genkeypair -keyalg RSASSA-PSS -dname CN=psskey");
@@ -841,6 +858,7 @@ public class TimestampCheck {
         keytool("-alias badku -genkeypair -dname CN=badku");
         keytool("-alias ts -genkeypair -dname CN=ts");
         keytool("-alias tsold -genkeypair -dname CN=tsold");
+        keytool("-alias tsbefore2019 -genkeypair -dname CN=tsbefore2019");
         keytool("-alias tsweak -genkeypair -keysize 1024 -dname CN=tsweak");
         keytool("-alias tsdisabled -genkeypair -keysize 512 -dname CN=tsdisabled");
         keytool("-alias tsbad1 -genkeypair -dname CN=tsbad1");
@@ -864,6 +882,7 @@ public class TimestampCheck {
 
         gencert("signer");
         gencert("oldsigner", "-startdate -30d -validity 20");
+        gencert("pre2019signer", "-startdate 2018/06/01 -validity 365");
         gencert("dsakey");
         gencert("eckey");
         gencert("psskey");
@@ -900,6 +919,7 @@ public class TimestampCheck {
         }
 
         gencert("tsold", "-ext eku:critical=ts -startdate -40d -validity 500");
+        gencert("tsbefore2019", "-ext eku:critical=ts -startdate 2018/01/01 -validity 3000");
 
         gencert("tsweak", "-ext eku:critical=ts");
         gencert("tsdisabled", "-ext eku:critical=ts");

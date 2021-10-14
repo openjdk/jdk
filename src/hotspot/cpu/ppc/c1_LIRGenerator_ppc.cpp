@@ -309,12 +309,7 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
 void LIRGenerator::store_stack_parameter(LIR_Opr item, ByteSize offset_from_sp) {
   BasicType t = item->type();
   LIR_Opr sp_opr = FrameMap::SP_opr;
-  if ((t == T_LONG || t == T_DOUBLE) &&
-      (in_bytes(offset_from_sp) % 8 != 0)) {
-    __ unaligned_move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
-  } else {
-    __ move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
-  }
+  __ move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
 }
 
 

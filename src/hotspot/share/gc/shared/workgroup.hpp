@@ -94,10 +94,6 @@ class WorkGang : public CHeapObj<mtInternal> {
   // Printing support.
   const char* _name;
 
-  // Initialize only instance data.
-  const bool _are_GC_task_threads;
-  const bool _are_ConcurrentGC_threads;
-
   // To get access to the GangTaskDispatcher instance.
   friend class GangWorker;
   GangTaskDispatcher* const _dispatcher;
@@ -116,15 +112,12 @@ class WorkGang : public CHeapObj<mtInternal> {
   GangWorker* allocate_worker(uint which);
 
  public:
-  WorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads);
+  WorkGang(const char* name, uint workers);
 
   ~WorkGang();
 
   // Initialize workers in the gang.  Return true if initialization succeeded.
   void initialize_workers();
-
-  bool are_GC_task_threads()      const { return _are_GC_task_threads; }
-  bool are_ConcurrentGC_threads() const { return _are_ConcurrentGC_threads; }
 
   uint total_workers() const { return _total_workers; }
 
@@ -169,9 +162,8 @@ class WorkGang : public CHeapObj<mtInternal> {
   // Run a task with the given number of workers, returns
   // when the task is done. The number of workers must be at most the number of
   // active workers.  Additional workers may be created if an insufficient
-  // number currently exists. If the add_foreground_work flag is true, the current thread
-  // is used to run the task too.
-  void run_task(AbstractGangTask* task, uint num_workers, bool add_foreground_work = false);
+  // number currently exists.
+  void run_task(AbstractGangTask* task, uint num_workers);
 };
 
 // Temporarily try to set the number of active workers.
@@ -216,9 +208,8 @@ protected:
 public:
   GangWorker(WorkGang* gang, uint id);
 
-  // Predicate for Thread
-  bool is_GC_task_thread() const override { return gang()->are_GC_task_threads(); }
-  bool is_ConcurrentGC_thread() const override { return gang()->are_ConcurrentGC_threads(); }
+  // Printing
+  const char* type_name() const override { return "GCTaskThread"; }
 };
 
 // A class that acts as a synchronisation barrier. Workers enter
@@ -246,7 +237,6 @@ protected:
 
 public:
   WorkGangBarrierSync();
-  WorkGangBarrierSync(uint n_workers, const char* name);
 
   // Set the number of workers that will use the barrier.
   // Must be called before any of the workers start running.

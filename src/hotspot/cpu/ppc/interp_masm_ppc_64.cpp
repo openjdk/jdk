@@ -943,10 +943,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
       bne(CCR0, slow_case);
     }
 
-    if (UseBiasedLocking) {
-      biased_locking_enter(CCR0, object, displaced_header, tmp, current_header, done, &slow_case);
-    }
-
     // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
     ori(displaced_header, displaced_header, markWord::unlocked_value);
 
@@ -1048,13 +1044,6 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     assert_different_registers(object, displaced_header, object_mark_addr, current_header);
 
-    if (UseBiasedLocking) {
-      // The object address from the monitor is in object.
-      ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
-      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-      biased_locking_exit(CCR0, object, displaced_header, free_slot);
-    }
-
     // Test first if we are in the fast recursive case.
     ld(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
            BasicLock::displaced_header_offset_in_bytes(), monitor);
@@ -1070,7 +1059,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     // If we still have a lightweight lock, unlock the object and be done.
 
     // The object address from the monitor is in object.
-    if (!UseBiasedLocking) { ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor); }
+    ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
     addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 
     // We have the displaced header in displaced_header. If the lock is still

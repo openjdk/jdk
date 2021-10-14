@@ -114,6 +114,10 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   void generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs);
 #endif // AARCH64
 
+#ifdef ARM32
+  void generate_math_runtime_call(AbstractInterpreter::MethodKind kind);
+#endif // ARM32
+
 #ifdef PPC
   void lock_method(Register Rflags, Register Rscratch1, Register Rscratch2, bool flags_preloaded=false);
   void generate_fixed_frame(bool native_call, Register Rsize_of_parameters, Register Rsize_of_locals);

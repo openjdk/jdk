@@ -43,6 +43,7 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -53,7 +54,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: May 2021
+ * @LastModified: June 2021
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -1893,10 +1894,6 @@ abstract public class ToStream extends SerializerBase {
             throw new SAXException(e);
         }
 
-        // process the attributes now, because after this SAX call they might be gone
-        if (atts != null)
-            addAttributes(atts);
-
         if (m_doIndent) {
             m_ispreserveSpace = m_preserveSpaces.peekOrFalse();
             m_preserveSpaces.push(m_ispreserveSpace);
@@ -1904,6 +1901,10 @@ abstract public class ToStream extends SerializerBase {
             m_childNodeNumStack.add(m_childNodeNum);
             m_childNodeNum = 0;
         }
+
+        // process the attributes now, because after this SAX call they might be gone
+        if (atts != null)
+            addAttributes(atts);
 
         m_elemContext = m_elemContext.push(namespaceURI,localName,name);
         m_isprevtext = false;
@@ -1978,21 +1979,21 @@ abstract public class ToStream extends SerializerBase {
             String doctypeSystem = getDoctypeSystem();
             if (null != doctypeSystem)
             {
-                if (null == doctypePublic)
-                    writer.write(" SYSTEM \"");
-                else
-                    writer.write(" \"");
+                char quote = JdkXmlUtils.getQuoteChar(doctypeSystem);
+                if (null == doctypePublic) {
+                    writer.write(" SYSTEM");
+                }
+                writer.write(" ");
+                writer.write(quote);
 
                 writer.write(doctypeSystem);
-
+                writer.write(quote);
                 if (closeDecl)
                 {
-                    writer.write("\">");
+                    writer.write(">");
                     writer.write(m_lineSep, 0, m_lineSepLen);
                     closeDecl = false; // done closing
                 }
-                else
-                    writer.write('\"');
             }
             boolean dothis = false;
             if (dothis)

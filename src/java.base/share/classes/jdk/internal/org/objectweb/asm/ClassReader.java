@@ -538,6 +538,9 @@ public class ClassReader {
             } else if (Constants.SYNTHETIC.equals(attributeName)) {
                 accessFlags |= Opcodes.ACC_SYNTHETIC;
             } else if (Constants.SOURCE_DEBUG_EXTENSION.equals(attributeName)) {
+                if (attributeLength > classFileBuffer.length - currentAttributeOffset) {
+                    throw new IllegalArgumentException();
+                }
                 sourceDebugExtension =
                         readUtf(currentAttributeOffset, attributeLength, new char[attributeLength]);
             } else if (Constants.RUNTIME_INVISIBLE_ANNOTATIONS.equals(attributeName)) {
@@ -1548,6 +1551,9 @@ public class ClassReader {
         final int maxLocals = readUnsignedShort(currentOffset + 2);
         final int codeLength = readInt(currentOffset + 4);
         currentOffset += 8;
+        if (codeLength > classFileBuffer.length - currentOffset) {
+            throw new IllegalArgumentException();
+        }
 
         // Read the bytecode 'code' array to create a label for each referenced instruction.
         final int bytecodeStartOffset = currentOffset;

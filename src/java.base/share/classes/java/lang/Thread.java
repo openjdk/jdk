@@ -417,14 +417,14 @@ public class Thread implements Runnable {
             }
         }
 
-        /* checkAccess regardless of whether or not threadgroup is
-           explicitly passed in. */
-        g.checkAccess();
-
         /*
          * Do we have the required permissions?
          */
         if (security != null) {
+            /* checkAccess regardless of whether or not threadgroup is
+               explicitly passed in. */
+            security.checkAccess(g);
+
             if (isCCLOverridden(getClass())) {
                 security.checkPermission(
                         SecurityConstants.SUBCLASS_IMPLEMENTATION_PERMISSION);
@@ -1247,7 +1247,7 @@ public class Thread implements Runnable {
      *          if {@link java.lang.ThreadGroup#checkAccess} determines that
      *          the current thread cannot access its thread group
      */
-    public static int enumerate(Thread tarray[]) {
+    public static int enumerate(Thread[] tarray) {
         return currentThread().getThreadGroup().enumerate(tarray);
     }
 

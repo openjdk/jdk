@@ -36,16 +36,15 @@
 #define ASSERT_REF_TYPE(ref_type) assert((ref_type) >= REF_SOFT && (ref_type) <= REF_PHANTOM, \
                                          "Invariant (%d)", (int)ref_type)
 
-#define ASSERT_PHASE(phase) assert((phase) >= ReferenceProcessor::RefPhase1 && \
+#define ASSERT_PHASE(phase) assert((phase) >= ReferenceProcessor::SoftWeakFinalRefsPhase && \
                                    (phase) < ReferenceProcessor::RefPhaseMax,  \
                                    "Invariant (%d)", (int)phase);
 
-#define ASSERT_SUB_PHASE(phase) assert((phase) >= ReferenceProcessor::SoftRefSubPhase1 && \
+#define ASSERT_SUB_PHASE(phase) assert((phase) >= ReferenceProcessor::ProcessSoftRefSubPhase && \
                                        (phase) < ReferenceProcessor::RefSubPhaseMax, \
                                        "Invariant (%d)", (int)phase);
 
 static const char* SubPhasesParWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
-       "SoftRef (ms):",
        "SoftRef (ms):",
        "WeakRef (ms):",
        "FinalRef (ms):",
@@ -53,10 +52,9 @@ static const char* SubPhasesParWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
        "PhantomRef (ms):"
        };
 
-static const char* Phase2ParWorkTitle = "Total (ms):";
+static const char* SoftWeakFinalRefsPhaseParWorkTitle = "Total (ms):";
 
 static const char* SubPhasesSerWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
-       "SoftRef:",
        "SoftRef:",
        "WeakRef:",
        "FinalRef:",
@@ -64,12 +62,11 @@ static const char* SubPhasesSerWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
        "PhantomRef:"
        };
 
-static const char* Phase2SerWorkTitle = "Total:";
+static const char* SoftWeakFinalRefsPhaseSerWorkTitle = "Total:";
 
 static const char* Indents[6] = {"", "  ", "    ", "      ", "        ", "          "};
 
 static const char* PhaseNames[ReferenceProcessor::RefPhaseMax] = {
-       "Reconsider SoftReferences",
        "Notify Soft/WeakReferences",
        "Notify and keep alive finalizable",
        "Notify PhantomReferences"
@@ -98,7 +95,7 @@ RefProcWorkerTimeTracker::RefProcWorkerTimeTracker(WorkerDataArray<double>* work
 
 RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
   double result = os::elapsedTime() - _start_time;
-  _worker_time->set(_worker_id, result);
+  _worker_time->set_or_add(_worker_id, result);
 }
 
 RefProcSubPhasesWorkerTimeTracker::RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
@@ -117,9 +114,7 @@ RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
   assert(_phase_times != NULL, "Invariant");
 
   _start_ticks.stamp();
-  if (_phase_times->gc_timer() != NULL) {
-    _phase_times->gc_timer()->register_gc_phase_start(title, _start_ticks);
-  }
+  _phase_times->gc_timer()->register_gc_phase_start(title, _start_ticks);
 }
 
 Ticks RefProcPhaseTimeBaseTracker::end_ticks() {
@@ -138,10 +133,8 @@ double RefProcPhaseTimeBaseTracker::elapsed_time() {
 }
 
 RefProcPhaseTimeBaseTracker::~RefProcPhaseTimeBaseTracker() {
-  if (_phase_times->gc_timer() != NULL) {
-    Ticks ticks = end_ticks();
-    _phase_times->gc_timer()->register_gc_phase_end(ticks);
-  }
+  Ticks ticks = end_ticks();
+  _phase_times->gc_timer()->register_gc_phase_end(ticks);
 }
 
 RefProcBalanceQueuesTimeTracker::RefProcBalanceQueuesTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
@@ -175,11 +168,11 @@ RefProcTotalPhaseTimesTracker::~RefProcTotalPhaseTimesTracker() {
 
 ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, uint max_gc_threads) :
   _processing_is_mt(false), _gc_timer(gc_timer) {
-
+  assert(gc_timer != nullptr, "pre-condition");
   for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(NULL, SubPhasesParWorkTitle[i], max_gc_threads);
   }
-  _phase2_worker_time_sec = new WorkerDataArray<double>(NULL, Phase2ParWorkTitle, max_gc_threads);
+  _soft_weak_final_refs_phase_worker_time_sec = new WorkerDataArray<double>(NULL, SoftWeakFinalRefsPhaseParWorkTitle, max_gc_threads);
 
   reset();
 }
@@ -215,7 +208,7 @@ void ReferenceProcessorPhaseTimes::reset() {
     _balance_queues_time_ms[i] = uninitialized();
   }
 
-  _phase2_worker_time_sec->reset();
+  _soft_weak_final_refs_phase_worker_time_sec->reset();
 
   for (int i = 0; i < number_of_subclasses_of_ref; i++) {
     _ref_cleared[i] = 0;
@@ -231,7 +224,7 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
   for (int i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     delete _sub_phases_worker_time_sec[i];
   }
-  delete _phase2_worker_time_sec;
+  delete _soft_weak_final_refs_phase_worker_time_sec;
 }
 
 double ReferenceProcessorPhaseTimes::sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const {
@@ -247,7 +240,7 @@ void ReferenceProcessorPhaseTimes::set_sub_phase_total_phase_time_ms(ReferencePr
 
 void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
-  Atomic::add(&_ref_cleared[ref_type_2_index(ref_type)], count);
+  Atomic::add(&_ref_cleared[ref_type_2_index(ref_type)], count, memory_order_relaxed);
 }
 
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {
@@ -279,10 +272,9 @@ void ReferenceProcessorPhaseTimes::print_all_references(uint base_indent, bool p
   }
 
   uint next_indent = base_indent + 1;
-  print_phase(ReferenceProcessor::RefPhase1, next_indent);
-  print_phase(ReferenceProcessor::RefPhase2, next_indent);
-  print_phase(ReferenceProcessor::RefPhase3, next_indent);
-  print_phase(ReferenceProcessor::RefPhase4, next_indent);
+  print_phase(ReferenceProcessor::SoftWeakFinalRefsPhase, next_indent);
+  print_phase(ReferenceProcessor::KeepAliveFinalRefsPhase, next_indent);
+  print_phase(ReferenceProcessor::PhantomRefsPhase, next_indent);
 
   print_reference(REF_SOFT, next_indent);
   print_reference(REF_WEAK, next_indent);
@@ -333,25 +325,22 @@ void ReferenceProcessorPhaseTimes::print_phase(ReferenceProcessor::RefProcPhases
     }
 
     switch (phase) {
-      case ReferenceProcessor::RefPhase1:
-        print_sub_phase(&ls, ReferenceProcessor::SoftRefSubPhase1, indent + 1);
+      case ReferenceProcessor::SoftWeakFinalRefsPhase:
+        print_sub_phase(&ls, ReferenceProcessor::ProcessSoftRefSubPhase, indent + 1);
+        print_sub_phase(&ls, ReferenceProcessor::ProcessWeakRefSubPhase, indent + 1);
+        print_sub_phase(&ls, ReferenceProcessor::ProcessFinalRefSubPhase, indent + 1);
         break;
-      case ReferenceProcessor::RefPhase2:
-        print_sub_phase(&ls, ReferenceProcessor::SoftRefSubPhase2, indent + 1);
-        print_sub_phase(&ls, ReferenceProcessor::WeakRefSubPhase2, indent + 1);
-        print_sub_phase(&ls, ReferenceProcessor::FinalRefSubPhase2, indent + 1);
+      case ReferenceProcessor::KeepAliveFinalRefsPhase:
+        print_sub_phase(&ls, ReferenceProcessor::KeepAliveFinalRefsSubPhase, indent + 1);
         break;
-      case ReferenceProcessor::RefPhase3:
-        print_sub_phase(&ls, ReferenceProcessor::FinalRefSubPhase3, indent + 1);
-        break;
-      case ReferenceProcessor::RefPhase4:
-        print_sub_phase(&ls, ReferenceProcessor::PhantomRefSubPhase4, indent + 1);
+      case ReferenceProcessor::PhantomRefsPhase:
+        print_sub_phase(&ls, ReferenceProcessor::ProcessPhantomRefsSubPhase, indent + 1);
         break;
       default:
         ShouldNotReachHere();
     }
-    if (phase == ReferenceProcessor::RefPhase2) {
-      print_worker_time(&ls, _phase2_worker_time_sec, Phase2SerWorkTitle, indent + 1);
+    if (phase == ReferenceProcessor::SoftWeakFinalRefsPhase) {
+      print_worker_time(&ls, _soft_weak_final_refs_phase_worker_time_sec, SoftWeakFinalRefsPhaseSerWorkTitle, indent + 1);
     }
   }
 }

@@ -69,12 +69,11 @@ Semaphore ThreadIdExclusiveAccess::_mutex_semaphore(1);
 
 static bool has_thread_exited(traceid tid) {
   assert(tid != 0, "invariant");
-  return unloaded_thread_id_set != NULL && JfrPredicate<traceid, compare_traceid>::test(unloaded_thread_id_set, tid);
-}
-
-static bool add(GrowableArray<traceid>* set, traceid id) {
-  assert(set != NULL, "invariant");
-  return JfrMutablePredicate<traceid, compare_traceid>::test(set, id);
+  if (unloaded_thread_id_set == NULL) {
+    return false;
+  }
+  ThreadIdExclusiveAccess lock;
+  return JfrPredicate<traceid, compare_traceid>::test(unloaded_thread_id_set, tid);
 }
 
 static void add_to_unloaded_thread_set(traceid tid) {
@@ -82,7 +81,7 @@ static void add_to_unloaded_thread_set(traceid tid) {
   if (unloaded_thread_id_set == NULL) {
     unloaded_thread_id_set = c_heap_allocate_array<traceid>();
   }
-  add(unloaded_thread_id_set, tid);
+  JfrMutablePredicate<traceid, compare_traceid>::test(unloaded_thread_id_set, tid);
 }
 
 void ObjectSampleCheckpoint::on_thread_exit(JavaThread* jt) {
@@ -90,6 +89,15 @@ void ObjectSampleCheckpoint::on_thread_exit(JavaThread* jt) {
   if (LeakProfiler::is_running()) {
     add_to_unloaded_thread_set(jt->jfr_thread_local()->thread_id());
   }
+}
+
+void ObjectSampleCheckpoint::clear() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  if (unloaded_thread_id_set != NULL) {
+    delete unloaded_thread_id_set;
+    unloaded_thread_id_set = NULL;
+  }
+  assert(unloaded_thread_id_set == NULL, "invariant");
 }
 
 template <typename Processor>

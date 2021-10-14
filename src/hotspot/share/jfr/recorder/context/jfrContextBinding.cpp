@@ -52,11 +52,11 @@ bool JfrContextBinding::contains_key(const char* key) {
 }
 
 void JfrContextBinding::set_current(JfrContextBinding* current, jboolean is_inheritable) {
-  JavaThread *thread = Thread::current()->as_Java_thread();
+  JavaThread *thread = JavaThread::current();
   thread->set_jfr_context_binding(current, is_inheritable);
 }
 
 JfrContextBinding* JfrContextBinding::current(jboolean is_inheritable) {
-  JavaThread *thread = Thread::current()->as_Java_thread();
+  JavaThread *thread = JavaThread::current();
   return thread->jfr_context_binding(is_inheritable);
 }

@@ -953,7 +953,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
 }
 
 
-void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide, bool /* unaligned */) {
+void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide) {
   LIR_Address* to_addr = dest->as_address_ptr();
   PatchingStub* patch = NULL;
   Register compressed_src = rscratch1;
@@ -1178,7 +1178,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 }
 
 
-void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide, bool /* unaligned */) {
+void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
   assert(src->is_address(), "should not call otherwise");
   assert(dest->is_register(), "should not call otherwise");
 
@@ -3512,13 +3512,9 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   if (!UseFastLocking) {
     __ jmp(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
-    Register scratch = noreg;
-    if (UseBiasedLocking) {
-      scratch = op->scratch_opr()->as_register();
-    }
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, scratch, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }

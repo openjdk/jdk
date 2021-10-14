@@ -31,6 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_posix.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
@@ -1023,18 +1024,23 @@ static char* mmap_create_shared(size_t size) {
   return mapAddress;
 }
 
-// release a named shared memory region
+// release a named shared memory region that was mmap-ed.
 //
 static void unmap_shared(char* addr, size_t bytes) {
-#if defined(_AIX)
-  // Do not rely on os::reserve_memory/os::release_memory to use mmap.
-  // Use os::reserve_memory/os::release_memory for PerfDisableSharedMem=1, mmap/munmap for PerfDisableSharedMem=0
-  if (::munmap(addr, bytes) == -1) {
-    warning("perfmemory: munmap failed (%d)\n", errno);
+  int res;
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    // Note: Tracker contains a ThreadCritical.
+    Tracker tkr(Tracker::release);
+    res = ::munmap(addr, bytes);
+    if (res == 0) {
+      tkr.record((address)addr, bytes);
+    }
+  } else {
+    res = ::munmap(addr, bytes);
   }
-#else
-  os::release_memory(addr, bytes);
-#endif
+  if (res != 0) {
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+  }
 }
 
 // create the PerfData memory region in shared memory.
@@ -1234,7 +1240,7 @@ void PerfMemory::create_memory_region(size_t size) {
       if (PrintMiscellaneous && Verbose) {
         warning("Reverting to non-shared PerfMemory region.\n");
       }
-      PerfDisableSharedMem = true;
+      FLAG_SET_ERGO(PerfDisableSharedMem, true);
       _start = create_standard_memory(size);
     }
   }

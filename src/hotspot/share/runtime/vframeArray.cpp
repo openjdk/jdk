@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         if (monitor->owner_is_scalar_replaced()) {
           dest->set_obj(NULL);
         } else {
-          assert(monitor->owner() == NULL || (!monitor->owner()->is_unlocked() && !monitor->owner()->has_bias_pattern()), "object must be null or locked, and unbiased");
+          assert(monitor->owner() == NULL || !monitor->owner()->is_unlocked(), "object must be null or locked");
           dest->set_obj(monitor->owner());
           monitor->lock()->move_to(monitor->owner(), dest->lock());
         }

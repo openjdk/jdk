@@ -370,9 +370,13 @@ final class P11Cipher extends CipherSpi {
             case Cipher.DECRYPT_MODE:
                 encrypt = false;
                 break;
-            default:
-                throw new InvalidAlgorithmParameterException
+            case Cipher.WRAP_MODE:
+            case Cipher.UNWRAP_MODE:
+                throw new UnsupportedOperationException
                         ("Unsupported mode: " + opmode);
+            default:
+                // should never happen; checked by Cipher.init()
+                throw new AssertionError("Unknown mode: " + opmode);
         }
         if (blockMode == MODE_ECB) { // ECB or stream cipher
             if (iv != null) {

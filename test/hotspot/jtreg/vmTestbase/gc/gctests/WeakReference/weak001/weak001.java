@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import java.lang.ref.WeakReference;
 
 import nsk.share.gc.GC;
 import nsk.share.gc.NonbranchyTree;
+import nsk.share.gc.OOMStress;
 import nsk.share.gc.ThreadedGCTest;
 import nsk.share.gc.gp.GarbageProducer;
 import nsk.share.gc.gp.GarbageProducerAware;
@@ -99,7 +100,7 @@ public class weak001 extends ThreadedGCTest implements GarbageProducerAware, Mem
     }
 
     // The class implements the logic of the testcase
-    class Test implements Runnable {
+    class Test implements Runnable, OOMStress {
 
         int iteration;
 

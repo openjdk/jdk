@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @run driver RedefineRecord buildagent
  * @run driver/timeout=6000 RedefineRecord runtest
  */

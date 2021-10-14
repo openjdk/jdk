@@ -172,7 +172,7 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   assert(!_thread->has_pending_exception(),
          "shouldn't be allocating with pending exception");
   // Allocation of an oop can always invoke a safepoint.
-  _thread->as_Java_thread()->check_for_valid_safepoint_state();
+  JavaThread::cast(_thread)->check_for_valid_safepoint_state();
 }
 #endif
 
@@ -382,12 +382,8 @@ void MemAllocator::mem_clear(HeapWord* mem) const {
 
 oop MemAllocator::finish(HeapWord* mem) const {
   assert(mem != NULL, "NULL object pointer");
-  if (UseBiasedLocking) {
-    oopDesc::set_mark(mem, _klass->prototype_header());
-  } else {
-    // May be bootstrapping
-    oopDesc::set_mark(mem, markWord::prototype());
-  }
+  // May be bootstrapping
+  oopDesc::set_mark(mem, markWord::prototype());
   // Need a release store to ensure array/class length, mark word, and
   // object zeroing are visible before setting the klass non-NULL, for
   // concurrent collectors.

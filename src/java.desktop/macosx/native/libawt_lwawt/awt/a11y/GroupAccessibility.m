@@ -26,6 +26,7 @@
 #import "GroupAccessibility.h"
 #import "JNIUtilities.h"
 #import "ThreadUtilities.h"
+#import "sun_lwawt_macosx_CAccessibility.h"
 /*
  * This is the protocol for the components that contain children.
  * Basic logic of accessibilityChildren might be overridden in the specific implementing
@@ -43,9 +44,9 @@
 - (NSArray *)accessibilityChildren {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 
-    NSArray *children = [JavaComponentAccessibility childrenOfParent:self
+    NSArray *children = [CommonComponentAccessibility childrenOfParent:self
                                                              withEnv:env
-                                                    withChildrenCode:JAVA_AX_ALL_CHILDREN
+                                                    withChildrenCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN
                                                         allowIgnored:NO];
 
     if ([children count] == 0) {
@@ -53,6 +54,16 @@
     } else {
         return children;
     }
+}
+
+- (NSRect)accessibilityFrame
+{
+    return [super accessibilityFrame];
+}
+
+- (id)accessibilityParent
+{
+    return [super accessibilityParent];
 }
 
 @end

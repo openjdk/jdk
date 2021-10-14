@@ -91,8 +91,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
 
-    static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", BUFFER_REPS * ($bits$ / 8));
-
     interface FUnOp {
         $type$ apply($type$ a);
     }
@@ -234,6 +232,21 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 
     static void assertReductionBoolArraysEquals(boolean[] r, boolean[] a, FBoolReductionOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
+        }
+    }
+
+    interface FMaskReductionOp {
+        int apply(boolean[] a, int idx);
+    }
+
+    static void assertMaskReductionArraysEquals(int[] r, boolean[] a, FMaskReductionOp f) {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
@@ -1217,36 +1230,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
 #end[!Int]
 
-    @DataProvider
-    public Object[][] $type$UnaryOpIndexProvider() {
-        return INT_INDEX_GENERATORS.stream().
-                flatMap(fs -> $TYPE$_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fs};
-                })).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] $type$UnaryMaskedOpIndexProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
-            $TYPE$_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fm, fs};
-            }))).
-            toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] scatterMaskedOpIndexProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
-            $TYPE$_GENERATORS.stream().flatMap(fn ->
-              $TYPE$_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fn, fm, fs};
-            })))).
-            toArray(Object[][]::new);
-    }
-
     static final List<IntFunction<$type$[]>> $TYPE$_COMPARE_GENERATORS = List.of(
             withToString("$type$[i]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1399,6 +1382,30 @@ public class $vectorteststype$ extends AbstractVectorTest {
                 a[i] = v;
             }
         }
+    }
+
+    static $type$ ROL_scalar($type$ a, $type$ b) {
+#if[intOrLong]
+        return $Wideboxtype$.rotateLeft(a, ((int)b));
+#else[intOrLong]
+#if[short]
+        return (short)(((((short)a) & 0xFFFF) << (b & 15)) | ((((short)a) & 0xFFFF) >>> (16 - (b & 15))));
+#else[short]
+        return (byte)(((((byte)a) & 0xFF) << (b & 7)) | ((((byte)a) & 0xFF) >>> (8 - (b & 7))));
+#end[short]
+#end[intOrLong]
+    }
+
+    static $type$ ROR_scalar($type$ a, $type$ b) {
+#if[intOrLong]
+        return $Wideboxtype$.rotateRight(a, ((int)b));
+#else[intOrLong]
+#if[short]
+        return (short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << (16 - (b & 15))));
+#else[short]
+        return (byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << (8 - (b & 7))));
+#end[short]
+#end[intOrLong]
     }
 #end[BITWISE]
 

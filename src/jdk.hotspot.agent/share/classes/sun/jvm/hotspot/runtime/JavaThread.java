@@ -487,7 +487,7 @@ public class JavaThread extends Thread {
     out.print(" tid=");
     out.print(this.getAddress());
     out.print(" nid=");
-    out.print(String.format("0x%x ",this.getOSThread().threadId()));
+    out.print(String.format("%d ",this.getOSThread().threadId()));
     out.print(getOSThread().getThreadState().getPrintVal());
     out.print(" [");
     if(this.getLastJavaSP() == null){

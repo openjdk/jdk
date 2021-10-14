@@ -45,15 +45,18 @@ import java.util.stream.Collectors;
  * The HotSpot implementation of com.sun.tools.attach.VirtualMachine.
  */
 
-@SuppressWarnings("removal")
 public abstract class HotSpotVirtualMachine extends VirtualMachine {
 
-    private static final long CURRENT_PID;
+    private static final long CURRENT_PID = pid();
+
+    @SuppressWarnings("removal")
+    private static long pid() {
+        PrivilegedAction<ProcessHandle> pa = () -> ProcessHandle.current();
+        return AccessController.doPrivileged(pa).pid();
+    }
+
     private static final boolean ALLOW_ATTACH_SELF;
     static {
-        PrivilegedAction<ProcessHandle> pa = ProcessHandle::current;
-        CURRENT_PID = AccessController.doPrivileged(pa).pid();
-
         String s = VM.getSavedProperty("jdk.attach.allowAttachSelf");
         ALLOW_ATTACH_SELF = "".equals(s) || Boolean.parseBoolean(s);
     }

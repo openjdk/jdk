@@ -71,7 +71,7 @@
     self.leftInset = 0;
     self.framebufferOnly = NO;
     self.nextDrawableCount = 0;
-    self.opaque = FALSE;
+    self.opaque = YES;
     CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
     CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
     return self;
@@ -80,6 +80,7 @@
 - (void) blitTexture {
     if (self.ctx == NULL || self.javaLayer == NULL || self.buffer == nil || self.ctx.device == nil) {
         J2dTraceLn4(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: uninitialized (mtlc=%p, javaLayer=%p, buffer=%p, devide=%p)", self.ctx, self.javaLayer, self.buffer, ctx.device);
+        [self stopDisplayLink];
         return;
     }
 
@@ -89,6 +90,7 @@
     @autoreleasepool {
         if ((self.buffer.width == 0) || (self.buffer.height == 0)) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: cannot create drawable of size 0");
+            [self stopDisplayLink];
             return;
         }
 
@@ -99,17 +101,20 @@
 
         if (src_h <= 0 || src_w <= 0) {
            J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: Invalid src width or height.");
+           [self stopDisplayLink];
            return;
         }
 
         id<MTLCommandBuffer> commandBuf = [self.ctx createBlitCommandBuffer];
         if (commandBuf == nil) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: commandBuf is null");
+            [self stopDisplayLink];
             return;
         }
         id<CAMetalDrawable> mtlDrawable = [self nextDrawable];
         if (mtlDrawable == nil) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: nextDrawable is null)");
+            [self stopDisplayLink];
             return;
         }
         self.nextDrawableCount++;
@@ -277,8 +282,23 @@ Java_sun_java2d_metal_MTLLayer_blitTexture
     MTLContext * ctx = layer.ctx;
     if (layer == NULL || ctx == NULL) {
         J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer_blit : Layer or Context is null");
+        [layer stopDisplayLink];
         return;
     }
 
     [layer blitTexture];
+}
+
+JNIEXPORT void JNICALL
+Java_sun_java2d_metal_MTLLayer_nativeSetOpaque
+(JNIEnv *env, jclass cls, jlong layerPtr, jboolean opaque)
+{
+    JNI_COCOA_ENTER(env);
+
+    MTLLayer *mtlLayer = OBJC(layerPtr);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        [mtlLayer setOpaque:(opaque == JNI_TRUE)];
+    }];
+
+    JNI_COCOA_EXIT(env);
 }

@@ -151,7 +151,7 @@ traceid JfrContextRepository::record(Thread* thread, int skip /* 0 */) {
   }
   assert(contextentries != NULL, "invariant");
   assert(tl->contextentries() == contextentries, "invariant");
-  return instance().record_for(thread->as_Java_thread(), skip, contextentries, tl->contextsize());
+  return instance().record_for(JavaThread::cast(thread), skip, contextentries, tl->contextsize());
 }
 
 traceid JfrContextRepository::record_for(JavaThread* thread, int skip, JfrContextEntry *contextentries, u4 max_contextentries) {

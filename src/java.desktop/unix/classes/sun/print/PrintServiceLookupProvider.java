@@ -58,7 +58,6 @@ import java.nio.file.Files;
  * Remind: This class uses solaris commands. We also need a linux
  * version
  */
-@SuppressWarnings("removal")
 public class PrintServiceLookupProvider extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 
@@ -76,8 +75,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     private static final int DEFAULT_MINREFRESH = 120;  // 2 minutes
     private static int minRefreshTime = DEFAULT_MINREFRESH;
 
-
-    static String osname;
+    @SuppressWarnings("removal")
+    static String osname = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name"));
 
     // List of commands used to deal with the printer queues on AIX
     String[] lpNameComAix = {
@@ -97,6 +97,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to force the printing code to poll or not poll
          * for PrintServices.
          */
+        @SuppressWarnings("removal")
         String pollStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.java2d.print.polling"));
 
@@ -112,13 +113,14 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to specify minimum refresh time (in seconds)
          * for polling PrintServices.  The default is 120.
          */
+        @SuppressWarnings("removal")
         String refreshTimeStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction(
                 "sun.java2d.print.minRefreshTime"));
 
         if (refreshTimeStr != null) {
             try {
-                minRefreshTime = (Integer.valueOf(refreshTimeStr)).intValue();
+                minRefreshTime = Integer.parseInt(refreshTimeStr);
             } catch (NumberFormatException e) {
             }
             if (minRefreshTime < DEFAULT_MINREFRESH) {
@@ -126,15 +128,13 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
         }
 
-        osname = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("os.name"));
-
         /* The system property "sun.java2d.print.aix.lpstat"
          * can be used to force the usage of 'lpstat -p' to enumerate all
          * printer queues. By default we use 'lsallq', because 'lpstat -p' can
          * take lots of time if thousands of printers are attached to a server.
          */
         if (isAIX()) {
+            @SuppressWarnings("removal")
             String aixPrinterEnumerator = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.java2d.print.aix.lpstat"));
 
@@ -222,6 +222,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * lead people to assume its guaranteed.
      */
     public synchronized PrintService[] getPrintServices() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();
@@ -539,7 +540,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
         } else {
             /* specified service attributes don't include a name.*/
-            Vector<PrintService> matchedServices = new Vector<>();
+            ArrayList<PrintService> matchedServices = new ArrayList<>();
             services = getPrintServices();
             for (int i = 0; i< services.length; i++) {
                 if (matchesAttributes(services[i], serviceSet)) {
@@ -548,7 +549,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
             services = new PrintService[matchedServices.size()];
             for (int i = 0; i< services.length; i++) {
-                services[i] = matchedServices.elementAt(i);
+                services[i] = matchedServices.get(i);
             }
             return services;
         }
@@ -560,6 +561,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      */
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -623,6 +625,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -632,6 +635,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
 
 
     public synchronized PrintService getDefaultPrintService() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -865,6 +869,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return printerNames.toArray(new String[printerNames.size()]);
     }
 
+    @SuppressWarnings("removal")
     static String[] execCmd(final String command) {
         ArrayList<String> results = null;
         try {

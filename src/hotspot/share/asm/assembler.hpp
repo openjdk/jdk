@@ -91,7 +91,7 @@ class Label {
   int _patch_index;
   GrowableArray<int>* _patch_overflow;
 
-  Label(const Label&) { ShouldNotReachHere(); }
+  NONCOPYABLE(Label);
  protected:
 
   // The label will be bound to a location near its users.

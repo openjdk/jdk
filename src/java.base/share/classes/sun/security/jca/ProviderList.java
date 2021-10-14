@@ -178,8 +178,10 @@ public final class ProviderList {
         while ((entry = Security.getProperty("security.provider." + i)) != null) {
             entry = entry.trim();
             if (entry.isEmpty()) {
-                System.err.println("invalid entry for " +
+                if (debug != null) {
+                    debug.println("empty entry for " +
                                    "security.provider." + i);
+                }
                 break;
             }
             int k = entry.indexOf(' ');
