@@ -46,7 +46,7 @@ public final class TestFinalizerStatisticsEvent {
     private final static String TEST_CLASS_UNLOAD_NAME = "jdk.jfr.event.runtime.TestFinalizerStatisticsEvent$TestClassUnloadOverridingFinalize";
     private final static String EVENT_PATH = EventNames.FinalizerStatistics;
 
-    // Declare as "public static to prevent the compiler from optimizing away all unread writes
+    // Declare as public static to prevent the compiler from optimizing away all unread writes
     public static TestClassLoader unloadableClassLoader;
     public static Class<?> unloadOverrideClass;
     public static Object overridingInstance;
