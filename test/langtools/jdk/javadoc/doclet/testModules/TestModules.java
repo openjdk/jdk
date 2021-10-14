@@ -28,6 +28,7 @@
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
  *      8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
  *      8184205 8219060 8223378 8234746 8239804 8239816 8253117 8245058 8261976
+ *      8223356
  * @summary Test modules support in javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -464,6 +465,7 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA/module-summary.html", found,
                 """
                     <!-- ============ MODULE DESCRIPTION =========== -->
+                    <section class="module-description" id="module-description">
                     <a name="module-description">
                     <!--   -->
                     </a>
@@ -473,6 +475,7 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <!-- ============ MODULE DESCRIPTION =========== -->
+                    <section class="module-description" id="module-description">
                     <a name="module-description">
                     <!--   -->
                     </a>
@@ -501,19 +504,19 @@ public class TestModules extends JavadocTester {
     void checkHtml5Description(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
                 """
+                    <!-- ============ MODULE DESCRIPTION =========== -->
                     <section class="module-description" id="module-description">
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated, for re\
                     moval: This API element is subject to removal in a future version.</span>
                     <div class="deprecation-comment">This module is deprecated.</div>
                     </div>
-                    <!-- ============ MODULE DESCRIPTION =========== -->
                     <div class="block">This is a test description for the moduleA module with a Sear\
                     ch phrase <span id="searchphrase" class="search-tag-result">search phrase</span>\
                     .</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <section class="module-description" id="module-description">
                     <!-- ============ MODULE DESCRIPTION =========== -->
+                    <section class="module-description" id="module-description">
                     <div class="block">This is a test description for the moduleB module. Search wor\
                     d <span id="search_word" class="search-tag-result">search_word</span> with no de\
                     scription.</div>""");

@@ -815,10 +815,10 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addModuleDescription(Content moduleContentTree) {
         addPreviewInfo(mdle, moduleContentTree);
         if (!utils.getFullBody(mdle).isEmpty()) {
+            moduleContentTree.add(MarkerComments.START_OF_MODULE_DESCRIPTION);
             HtmlTree tree = HtmlTree.SECTION(HtmlStyle.moduleDescription)
                     .setId(HtmlIds.MODULE_DESCRIPTION);
             addDeprecationInfo(tree);
-            tree.add(MarkerComments.START_OF_MODULE_DESCRIPTION);
             addInlineComment(mdle, tree);
             addTagsInfo(mdle, tree);
             moduleContentTree.add(tree);
