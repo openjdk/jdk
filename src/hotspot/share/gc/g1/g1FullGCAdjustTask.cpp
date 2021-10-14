@@ -98,10 +98,6 @@ void G1FullGCAdjustTask::work(uint worker_id) {
 
   {
     // Adjust the weak roots.
-
-    // Elements on discovered lists should have been pushed to the pending list at the end of ref-processing.
-    G1CollectedHeap::heap()->ref_processor_stw()->verify_no_references_recorded();
-
     AlwaysTrueClosure always_alive;
     _weak_proc_task.work(worker_id, &always_alive, &_adjust);
   }

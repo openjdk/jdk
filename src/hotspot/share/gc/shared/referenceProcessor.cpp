@@ -216,6 +216,9 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   phase_times.set_total_time_ms((os::elapsedTime() - start_time) * 1000);
 
+  // Elements on discovered lists were pushed to the pending list.
+  verify_no_references_recorded();
+
   return stats;
 }
 

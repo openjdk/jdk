@@ -984,8 +984,6 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
 
   _g1h->make_pending_list_reachable();
 
-  rp->verify_no_references_recorded();
-
   phase_times()->record_ref_proc_time((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 

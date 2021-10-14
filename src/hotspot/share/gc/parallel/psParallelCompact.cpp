@@ -2199,11 +2199,6 @@ public:
       CodeBlobToOopClosure adjust_code(&adjust, CodeBlobToOopClosure::FixRelocations);
       CodeCache::blobs_do(&adjust_code);
     }
-
-    // Elements on discovered lists should have been pushed to the pending list at the end of ref-processing.
-    PSParallelCompact::ref_processor()->verify_no_references_recorded();
-    PSScavenge::reference_processor()->verify_no_references_recorded();
-
     _sub_tasks.all_tasks_claimed();
   }
 };

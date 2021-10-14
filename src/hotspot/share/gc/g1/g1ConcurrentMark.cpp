@@ -1645,9 +1645,6 @@ void G1ConcurrentMark::weak_refs_work() {
            "Mark stack should be empty (unless it has overflown)");
 
     assert(rp->num_queues() == active_workers, "why not");
-
-    rp->verify_no_references_recorded();
-    assert(!rp->discovery_enabled(), "Post condition");
   }
 
   if (has_overflown()) {
