@@ -61,13 +61,13 @@ public:
 
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
-  OopForwarding mwd(obj);
-  if (!mwd.is_forwarded()) {
+  OopForwarding fwd(obj);
+  if (!fwd.is_forwarded()) {
     // Object not moving
     return size;
   }
 
-  HeapWord* destination = mwd.forwardee<HeapWord*>();
+  HeapWord* destination = fwd.forwardee<HeapWord*>();
 
   // copy object and reinit its mark
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);

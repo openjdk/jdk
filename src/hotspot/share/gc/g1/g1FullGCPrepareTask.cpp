@@ -169,8 +169,8 @@ size_t G1FullGCPrepareTask::G1PrepareCompactLiveClosure::apply(oop object) {
 size_t G1FullGCPrepareTask::G1RePrepareClosure::apply(oop obj) {
   // We only re-prepare objects forwarded within the current region, so
   // skip objects that are already forwarded to another region.
-  OopForwarding mwd(obj);
-  if (mwd.is_forwarded() && !_current->is_in(mwd.forwardee())) {
+  OopForwarding fwd(obj);
+  if (fwd.is_forwarded() && !_current->is_in(fwd.forwardee())) {
     return obj->size();
   }
 

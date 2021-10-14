@@ -46,9 +46,9 @@ void PreservedMarks::adjust_during_full_gc() {
     OopAndMarkWord* elem = iter.next_addr();
 
     oop obj = elem->get_oop();
-    OopForwarding mwd(obj);
-    if (mwd.is_forwarded()) {
-      elem->set_oop(mwd.forwardee());
+    OopForwarding fwd(obj);
+    if (fwd.is_forwarded()) {
+      elem->set_oop(fwd.forwardee());
     }
   }
 }

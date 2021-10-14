@@ -70,8 +70,8 @@ public:
     HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
     assert(_hr->is_in(obj_addr), "sanity");
 
-    OopForwarding mwd(obj);
-    if (mwd.is_forwarded() && mwd.forwardee() == obj) {
+    OopForwarding fwd(obj);
+    if (fwd.is_forwarded() && fwd.forwardee() == obj) {
       // The object failed to move.
 
       zap_dead_objects(_last_forwarded_object_end, obj_addr);

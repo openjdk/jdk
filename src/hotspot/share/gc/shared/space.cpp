@@ -537,8 +537,8 @@ void CompactibleSpace::compact() {
 
   debug_only(HeapWord* prev_obj = NULL);
   while (cur_obj < end_of_live) {
-    OopForwarding mwd = OopForwarding(cast_to_oop(cur_obj));
-    if (!mwd.is_forwarded()) {
+    OopForwarding fwd = OopForwarding(cast_to_oop(cur_obj));
+    if (!fwd.is_forwarded()) {
       debug_only(prev_obj = cur_obj);
       // The first word of the dead object contains a pointer to the next live object or end of space.
       cur_obj = *(HeapWord**)cur_obj;
@@ -549,7 +549,7 @@ void CompactibleSpace::compact() {
 
       // size and destination
       size_t size = cast_to_oop(cur_obj)->size();
-      HeapWord* compaction_top = mwd.forwardee<HeapWord*>();
+      HeapWord* compaction_top = fwd.forwardee<HeapWord*>();
 
       // prefetch beyond compaction_top
       Prefetch::write(compaction_top, copy_interval);

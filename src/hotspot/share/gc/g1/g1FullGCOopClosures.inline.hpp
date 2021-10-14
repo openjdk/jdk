@@ -78,9 +78,9 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
     return;
   }
 
-  OopForwarding mwd(obj);
-  if (mwd.is_forwarded()) {
-    oop forwardee = mwd.forwardee();
+  OopForwarding fwd(obj);
+  if (fwd.is_forwarded()) {
+    oop forwardee = fwd.forwardee();
     // Forwarded, just update.
     assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
