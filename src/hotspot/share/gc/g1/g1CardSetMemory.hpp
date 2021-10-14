@@ -38,8 +38,10 @@ class outputStream;
 
 // Collects G1CardSetAllocator options/heuristics. Called by G1CardSetAllocator
 // to determine the next size of the allocated G1CardSetBuffer.
-
 class G1CardSetAllocOptions : public G1SegmentedArrayAllocOptions {
+  uint exponential_expand(uint prev_num_elems) const {
+    return clamp(prev_num_elems * 2, _initial_num_elems, _max_num_elems);
+  }
 
 public:
   static const uint BufferAlignment = 8;
@@ -48,11 +50,9 @@ public:
     G1SegmentedArrayAllocOptions(align_up(elem_size, BufferAlignment), initial_num_elems, max_num_elems, BufferAlignment) {
   }
 
-  uint next_num_elems(uint prev_num_elems) {
+  virtual uint next_num_elems(uint prev_num_elems) const override {
     return exponential_expand(prev_num_elems);
   }
-
-  uint elem_size () const {return _elem_size;}
 };
 
 typedef G1SegmentedArrayBuffer<mtGCCardSet> G1CardSetBuffer;
@@ -108,7 +108,7 @@ class G1CardSetAllocator {
 
 public:
   G1CardSetAllocator(const char* name,
-                     const G1CardSetAllocOptions& buffer_options,
+                     const G1CardSetAllocOptions* buffer_options,
                      G1CardSetBufferList* free_buffer_list);
   ~G1CardSetAllocator() {
     drop_all();
@@ -123,15 +123,13 @@ public:
 
   size_t mem_size() const {
     return sizeof(*this) +
-      _segmented_array.num_buffers() * sizeof(G1CardSetBuffer)
-            + _segmented_array.num_available_nodes() * _segmented_array.elem_size();
+      _segmented_array.num_buffers() * sizeof(G1CardSetBuffer) + _segmented_array.num_available_nodes() * _segmented_array.elem_size();
   }
 
   size_t wasted_mem_size() const {
-    return (_segmented_array.num_available_nodes()
-              - (_segmented_array.num_allocated_nodes() - _num_pending_nodes))
-                * _segmented_array.elem_size();
+    return (_segmented_array.num_available_nodes() - (_segmented_array.num_allocated_nodes() - _num_pending_nodes)) * _segmented_array.elem_size();
   }
+
   inline uint num_buffers() { return _segmented_array.num_buffers(); }
 
   void print(outputStream* os);

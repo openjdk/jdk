@@ -59,6 +59,10 @@ class G1CardSetConfiguration {
   uint _log2_num_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
 
+  G1CardSetAllocOptions* _card_set_alloc_options;
+
+  void init_card_set_alloc_options();
+
   void log_configuration();
 public:
 
@@ -71,6 +75,8 @@ public:
                          uint max_buckets_in_howl,
                          double cards_in_howl_threshold,
                          uint max_cards_in_cardset);
+
+  ~G1CardSetConfiguration();
 
   // Inline pointer configuration
   uint inline_ptr_bits_per_card() const { return _inline_ptr_bits_per_card; }
@@ -109,7 +115,7 @@ public:
   static constexpr uint num_mem_object_types() { return 4; }
   // Returns the memory allocation options for the memory objects on the card set heap. The returned
   // array must be freed by the caller.
-  G1CardSetAllocOptions* mem_object_alloc_options();
+  const G1CardSetAllocOptions* mem_object_alloc_options(uint idx);
 
   // For a given memory object, get a descriptive name.
   static const char* mem_object_type_name_str(uint index);

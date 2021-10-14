@@ -30,7 +30,6 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
-
 template<MEMFLAGS flag>
 G1SegmentedArrayBuffer<flag>::G1SegmentedArrayBuffer(uint elem_size, uint num_instances, G1SegmentedArrayBuffer* next) :
   _elem_size(elem_size), _num_elems(num_instances), _next(next), _next_allocate(0) {
@@ -55,7 +54,6 @@ void* G1SegmentedArrayBuffer<flag>::get_new_buffer_elem() {
   void* r = _buffer + (uint)result * _elem_size;
   return r;
 }
-
 
 template<MEMFLAGS flag>
 void G1SegmentedArrayBufferList<flag>::bulk_add(G1SegmentedArrayBuffer<flag>& first,
@@ -117,15 +115,13 @@ void G1SegmentedArrayBufferList<flag>::free_all() {
   Atomic::sub(&_mem_size, mem_size_freed, memory_order_relaxed);
 }
 
-
 template <class Elem, MEMFLAGS flag>
 G1SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev) {
-
   // Take an existing buffer if available.
   G1SegmentedArrayBuffer<flag>* next = _free_buffer_list->get();
   if (next == nullptr) {
     uint prev_num_elems = (prev != nullptr) ? prev->num_elems() : 0;
-    uint num_elems = _alloc_options.next_num_elems(prev_num_elems);
+    uint num_elems = _alloc_options->next_num_elems(prev_num_elems);
     next = new G1SegmentedArrayBuffer<flag>(elem_size(), num_elems, prev);
   } else {
     assert(elem_size() == next->elem_size() ,
@@ -154,12 +150,12 @@ G1SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(G1
 
 template <class Elem, MEMFLAGS flag>
 uint G1SegmentedArray<Elem, flag>::elem_size() const {
-  return _alloc_options.elem_size();
+  return _alloc_options->elem_size();
 }
 
 template <class Elem, MEMFLAGS flag>
 G1SegmentedArray<Elem, flag>::G1SegmentedArray(const char* name,
-                                               const G1SegmentedArrayAllocOptions& buffer_options,
+                                               const G1SegmentedArrayAllocOptions* buffer_options,
                                                G1SegmentedArrayBufferList<flag>* free_buffer_list) :
      _alloc_options(buffer_options),
      _first(nullptr),
@@ -223,8 +219,8 @@ Elem* G1SegmentedArray<Elem, flag>::allocate() {
     Elem* elem = (Elem*)cur->get_new_buffer_elem();
     if (elem != nullptr) {
       Atomic::inc(&_num_allocated_nodes, memory_order_relaxed);
-      guarantee(is_aligned(elem, _alloc_options.alignment()),
-                "result " PTR_FORMAT " not aligned at %u", p2i(elem), _alloc_options.alignment());
+      guarantee(is_aligned(elem, _alloc_options->alignment()),
+                "result " PTR_FORMAT " not aligned at %u", p2i(elem), _alloc_options->alignment());
       return elem;
     }
     // The buffer is full. Next round.

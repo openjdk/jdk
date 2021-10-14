@@ -33,7 +33,7 @@
 
 template <class Elem>
 G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
-                                             const G1CardSetAllocOptions& buffer_options,
+                                             const G1CardSetAllocOptions* buffer_options,
                                              G1CardSetBufferList* free_buffer_list) :
   _segmented_array(name, buffer_options, free_buffer_list),
   _transfer_lock(false),
@@ -309,13 +309,11 @@ G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config,
   _allocators = NEW_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainer>,
                                  _config->num_mem_object_types(),
                                  mtGC);
-  G1CardSetAllocOptions* alloc_options = _config->mem_object_alloc_options();
   for (uint i = 0; i < num_mem_object_types(); i++) {
     new (&_allocators[i]) G1CardSetAllocator<G1CardSetContainer>(_config->mem_object_type_name_str(i),
-                                                                 alloc_options[i],
+                                                                 _config->mem_object_alloc_options(i),
                                                                  free_list_pool->free_list(i));
   }
-  FREE_C_HEAP_ARRAY(size_t, alloc_options);
 }
 
 uint G1CardSetMemoryManager::num_mem_object_types() const {

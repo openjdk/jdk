@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "utilities/lockFreeStack.hpp"
 
-
 // A single buffer/arena containing _num_elems blocks of memory of _elem_size.
 // G1SegmentedArrayBuffers can be linked together using a singly linked list.
 template<MEMFLAGS flag>
@@ -74,17 +73,8 @@ public:
 
   size_t mem_size() const { return sizeof(*this) + (size_t)_num_elems * _elem_size; }
 
-  uint length() {
-    // _next_allocate might grow greater than _num_elems in multi-thread env,
-    // so, here we need to return the adjusted real length value.
-    _next_allocate = _next_allocate > _num_elems ? _num_elems : _next_allocate;
-    return _next_allocate;
-  }
-
   bool is_full() const { return _next_allocate >= _num_elems; }
 };
-
-
 
 // Set of (free) G1SegmentedArrayBuffers. The assumed usage is that allocation
 // to it and removal of elements is strictly separate, but every action may be
@@ -121,9 +111,9 @@ public:
   size_t mem_size() const { return Atomic::load(&_mem_size); }
 };
 
-
 // Configuration for G1SegmentedArray, e.g element size, element number of next G1SegmentedArrayBuffer.
 class G1SegmentedArrayAllocOptions {
+
 protected:
   uint _elem_size;
   uint _initial_num_elems;
@@ -131,9 +121,6 @@ protected:
   uint _max_num_elems;
   uint _alignment;
 
-  uint exponential_expand(uint prev_num_elems) {
-    return clamp(prev_num_elems * 2, _initial_num_elems, _max_num_elems);
-  }
 public:
   static const uint BufferAlignment = 4;
   static const uint MinimumBufferSize = 8;
@@ -147,7 +134,7 @@ public:
     _alignment(alignment) {
   }
 
-  uint next_num_elems(uint prev_num_elems) {
+  virtual uint next_num_elems(uint prev_num_elems) const {
     return _initial_num_elems;
   }
 
@@ -155,7 +142,6 @@ public:
 
   uint alignment() const { return _alignment; }
 };
-
 
 // A segmented array where G1SegmentedArrayBuffer is the segment, and
 // G1SegmentedArrayBufferList is the free list to cache G1SegmentedArrayBuffer,
@@ -189,12 +175,12 @@ template <class Elem, MEMFLAGS flag>
 class G1SegmentedArray {
   // G1CardSetAllocOptions provides parameters for allocation buffer
   // sizing and expansion.
-  G1SegmentedArrayAllocOptions _alloc_options;
+  const G1SegmentedArrayAllocOptions* _alloc_options;
 
   G1SegmentedArrayBuffer<flag>* volatile _first;       // The (start of the) list of all buffers.
   G1SegmentedArrayBuffer<flag>* _last;                 // The last element of the list of all buffers.
-  volatile uint _num_buffers;             // Number of assigned buffers to this allocator.
-  volatile size_t _mem_size;              // Memory used by all buffers.
+  volatile uint _num_buffers;                          // Number of assigned buffers to this allocator.
+  volatile size_t _mem_size;                           // Memory used by all buffers.
 
   G1SegmentedArrayBufferList<flag>* _free_buffer_list; // The global free buffer list to
                                                        // preferentially get new buffers from.
@@ -206,13 +192,15 @@ private:
   inline G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
 
 public:
-  uint num_available_nodes() const { return _num_available_nodes; }
-  uint num_allocated_nodes() const { return _num_allocated_nodes; }
-  const G1SegmentedArrayBuffer<flag>* first_array_buffer() const { return _first; }
+  const G1SegmentedArrayBuffer<flag>* first_array_buffer() const { return Atomic::load(&_first); }
+
+  uint num_available_nodes() const { return Atomic::load(&_num_available_nodes); }
+  uint num_allocated_nodes() const { return Atomic::load(&_num_allocated_nodes); }
+
   inline uint elem_size() const;
 
   G1SegmentedArray(const char* name,
-                   const G1SegmentedArrayAllocOptions& buffer_options,
+                   const G1SegmentedArrayAllocOptions* buffer_options,
                    G1SegmentedArrayBufferList<flag>* free_buffer_list);
   ~G1SegmentedArray() {
     drop_all();
