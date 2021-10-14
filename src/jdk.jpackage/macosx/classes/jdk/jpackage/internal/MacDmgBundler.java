@@ -320,10 +320,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         List <String> dmgContent = DMG_CONTENT.fetchFrom(params);
         for (String content : dmgContent) {
             Path path = Path.of(content);
-            if (Files.exists(path)) {
-                IOUtils.copyRecursive(path,
-                        srcFolder.resolve(path.getFileName()));
-            }
+            IOUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
         }
         // create temp image
         ProcessBuilder pb = new ProcessBuilder(

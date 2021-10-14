@@ -627,7 +627,7 @@ public class Arguments {
         }
         if (allOptions.contains(CLIOptions.DMG_CONTENT)
                 && !("dmg".equals(type))) {
-            throw new PackagerException("ERR_InvalidTypeOptions",
+            throw new PackagerException("ERR_InvalidTypeOption",
                     CLIOptions.DMG_CONTENT.getIdWithPrefix(), ptype);
         }
         if (hasMainJar && hasMainModule) {
