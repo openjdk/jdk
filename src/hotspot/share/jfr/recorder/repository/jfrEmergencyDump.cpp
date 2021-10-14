@@ -143,6 +143,7 @@ bool JfrEmergencyDump::open_emergency_dump_file() {
     // Attempt to create emergency dump to current directory
     // if we couldn't create it on `dumppath=`.
     *_dump_path = '\0';
+    *_path_buffer = '\0';
     result = open_emergency_dump_fd(create_emergency_dump_path());
   }
   return result;
