@@ -1207,7 +1207,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
     // Holds Compile_lock
-    _extra_data_lock(Mutex::nonleaf-2, "MDOExtraData_lock", Mutex::_safepoint_check_always),
+    _extra_data_lock(Mutex::safepoint-2, "MDOExtraData_lock"),
     _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();

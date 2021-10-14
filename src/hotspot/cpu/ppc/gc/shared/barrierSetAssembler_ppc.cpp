@@ -111,16 +111,28 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   }
 }
 
+// Generic implementation. GCs can provide an optimized one.
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
                                           Register tmp1, Register tmp2,
                                           MacroAssembler::PreservationLevel preservation_level) {
-  Label done;
+  Label done, not_weak, verify;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
 
-  __ clrrdi(tmp1, value, JNIHandles::weak_tag_size);
-  __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
+  __ andi_(tmp1, value, JNIHandles::weak_tag_mask);
+  __ beq(CCR0, not_weak);     // Test for jweak tag.
 
+  // Resolve (untagged) jobject.
+  __ clrrdi(value, value, JNIHandles::weak_tag_size);
+  load_at(masm, IN_NATIVE | ON_PHANTOM_OOP_REF, T_OBJECT,
+          value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+  __ b(verify);
+
+  __ bind(not_weak);
+  load_at(masm, IN_NATIVE, T_OBJECT,
+          value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+
+  __ bind(verify);
   __ verify_oop(value, FILE_AND_LINE);
   __ bind(done);
 }

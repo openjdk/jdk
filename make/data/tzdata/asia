@@ -57,9 +57,6 @@
 # Byalokoz EL. New Counting of Time in Russia since July 1, 1919.
 # (See the 'europe' file for a fuller citation.)
 #
-# A reliable and entertaining source about time zones is
-# Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
-#
 # The following alphabetic abbreviations appear in these tables
 # (corrections are welcome):
 #	     std  dst
@@ -2257,6 +2254,14 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # From Paul Eggert (2013-12-11):
 # As Steffen suggested, consider the past 21-month experiment to be DST.
 
+# From Steffen Thorsen (2021-09-24):
+# The Jordanian Government announced yesterday that they will start DST
+# in February instead of March:
+# https://petra.gov.jo/Include/InnerPage.jsp?ID=37683&lang=en&name=en_news (English)
+# https://petra.gov.jo/Include/InnerPage.jsp?ID=189969&lang=ar&name=news (Arabic)
+# From the Arabic version, it seems to say it would be at midnight
+# (assume 24:00) on the last Thursday in February, starting from 2022.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Jordan	1973	only	-	Jun	6	0:00	1:00	S
 Rule	Jordan	1973	1975	-	Oct	1	0:00	0	-
@@ -2287,8 +2292,9 @@ Rule	Jordan	2004	only	-	Oct	15	0:00s	0	-
 Rule	Jordan	2005	only	-	Sep	lastFri	0:00s	0	-
 Rule	Jordan	2006	2011	-	Oct	lastFri	0:00s	0	-
 Rule	Jordan	2013	only	-	Dec	20	0:00	0	-
-Rule	Jordan	2014	max	-	Mar	lastThu	24:00	1:00	S
+Rule	Jordan	2014	2021	-	Mar	lastThu	24:00	1:00	S
 Rule	Jordan	2014	max	-	Oct	lastFri	0:00s	0	-
+Rule	Jordan	2022	max	-	Feb	lastThu	24:00	1:00	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Amman	2:23:44 -	LMT	1931
 			2:00	Jordan	EE%sT
@@ -2763,7 +2769,8 @@ Rule	NBorneo	1935	1941	-	Dec	14	0:00	0	-
 #
 # peninsular Malaysia
 # taken from Mok Ly Yng (2003-10-30)
-# http://www.math.nus.edu.sg/aslaksen/teaching/timezone.html
+# https://web.archive.org/web/20190822231045/http://www.math.nus.edu.sg/~mathelmr/teaching/timezone.html
+# This agrees with Singapore since 1905-06-01.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Asia/Kuala_Lumpur	6:46:46 -	LMT	1901 Jan  1
 			6:55:25	-	SMT	1905 Jun  1 # Singapore M.T.
@@ -3523,6 +3530,12 @@ Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 # influence of the sources.  There is no current abbreviation for DST,
 # so use "PDT", the usual American style.
 
+# From P Chan (2021-05-10):
+# Here's a fairly comprehensive article in Japanese:
+# https://wiki.suikawiki.org/n/Philippine%20Time
+# From Paul Eggert (2021-05-10):
+# The info in the Japanese table has not been absorbed (yet) below.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Phil	1936	only	-	Nov	1	0:00	1:00	D
 Rule	Phil	1937	only	-	Feb	1	0:00	0	S
@@ -3589,12 +3602,13 @@ Link Asia/Qatar Asia/Bahrain
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Riyadh	3:06:52 -	LMT	1947 Mar 14
 			3:00	-	+03
+Link Asia/Riyadh Antarctica/Syowa
 Link Asia/Riyadh Asia/Aden	# Yemen
 Link Asia/Riyadh Asia/Kuwait
 
 # Singapore
 # taken from Mok Ly Yng (2003-10-30)
-# http://www.math.nus.edu.sg/aslaksen/teaching/timezone.html
+# https://web.archive.org/web/20190822231045/http://www.math.nus.edu.sg/~mathelmr/teaching/timezone.html
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Singapore	6:55:25 -	LMT	1901 Jan  1
 			6:55:25	-	SMT	1905 Jun  1 # Singapore M.T.
