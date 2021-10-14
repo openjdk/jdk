@@ -464,7 +464,7 @@ void ShenandoahReferenceProcessor::work() {
   }
 }
 
-class ShenandoahReferenceProcessorTask : public AbstractGangTask {
+class ShenandoahReferenceProcessorTask : public WorkerTask {
 private:
   bool const                          _concurrent;
   ShenandoahPhaseTimings::Phase const _phase;
@@ -472,7 +472,7 @@ private:
 
 public:
   ShenandoahReferenceProcessorTask(ShenandoahPhaseTimings::Phase phase, bool concurrent, ShenandoahReferenceProcessor* reference_processor) :
-    AbstractGangTask("ShenandoahReferenceProcessorTask"),
+    WorkerTask("ShenandoahReferenceProcessorTask"),
     _concurrent(concurrent),
     _phase(phase),
     _reference_processor(reference_processor) {
@@ -491,7 +491,7 @@ public:
   }
 };
 
-void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkGang* workers, bool concurrent) {
+void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
 
   Atomic::release_store_fence(&_iterate_discovered_list_id, 0U);
 

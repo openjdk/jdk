@@ -55,7 +55,7 @@
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
