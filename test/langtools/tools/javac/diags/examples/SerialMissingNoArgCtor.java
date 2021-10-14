@@ -23,6 +23,7 @@
 
 // key: compiler.warn.serializable.missing.access.no.arg.ctor
 // key: compiler.warn.non.serializable.instance.field
+// key: compiler.warn.non.serializable.instance.field.array
 
 // options: -Xlint:serial
 
@@ -43,7 +44,10 @@ class SerialMissingNoArgCtor {
         private static final long serialVersionUID = 42;
 
         // non-serializable non-transient instance field
-        private Object data = null;
+        private Object datum = null;
+
+        // base component type of array is non-serializable
+        private Object[] data = null;
 
         public SerialSubclass() {
             super(1);

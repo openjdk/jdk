@@ -15,9 +15,11 @@ class IntanceField implements Serializable {
 
     private Object foo;
 
-    // No warnings
+    private Object[] foos;
 
-    private Object[] foos; // Per JLS Object[] is a subtype of Serializable
+    private Thread[][] ArrayOfArrayOfThreads;
+
+    // No warnings
 
     private static Object bar;
 

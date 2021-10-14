@@ -4483,8 +4483,9 @@ public class Check {
                                         elementType = arrayType.elemtype;
                                     }
                                     if (!canBeSerialized(elementType)) {
-                                        System.out.println("\tArray component type " + varType + " in " +
-                                                           el.outermostClass().getSimpleName());
+                                        log.warning(LintCategory.SERIAL,
+                                                    TreeInfo.diagnosticPositionFor(enclosed, tree),
+                                                    Warnings.NonSerializableInstanceFieldArray(elementType));
                                     }
                                 }
                             }
