@@ -5101,7 +5101,7 @@ class StubGenerator: public StubCodeGenerator {
       __ add(idx, idx, vec_len);
 
       // Compare strings.
-      __ sve_cmpne(pgtmp2, mode == LL ? __ B : __ H, pgtmp1, ztmp1, ztmp2);
+      __ sve_cmp(Assembler::NE, pgtmp2, mode == LL ? __ B : __ H, pgtmp1, ztmp1, ztmp2);
       __ br(__ NE, MATCH);
       __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
       __ br(__ LT, LOOP);
