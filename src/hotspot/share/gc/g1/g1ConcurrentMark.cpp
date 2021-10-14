@@ -1379,7 +1379,7 @@ public:
                                    cl.archive_regions_removed(),
                                    cl.humongous_regions_removed());
     {
-      MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker x(ParGCRareEvent_lock);
       _g1h->decrement_summary_bytes(cl.freed_bytes());
 
       _cleanup_list->add_ordered(&local_cleanup_list);

@@ -177,7 +177,7 @@ WatcherThread::WatcherThread() : NonJavaThread() {
 int WatcherThread::sleep() const {
   // The WatcherThread does not participate in the safepoint protocol
   // for the PeriodicTask_lock because it is not a JavaThread.
-  MonitorLocker ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(PeriodicTask_lock);
 
   if (_should_terminate) {
     // check for termination before we do any housekeeping or wait
@@ -285,7 +285,7 @@ void WatcherThread::run() {
 
   // Signal that it is terminated
   {
-    MutexLocker mu(Terminator_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker mu(Terminator_lock);
     _watcher_thread = NULL;
     Terminator_lock->notify_all();
   }

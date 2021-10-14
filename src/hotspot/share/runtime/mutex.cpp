@@ -77,9 +77,8 @@ void Mutex::check_safepoint_state(Thread* thread) {
 
 void Mutex::check_no_safepoint_state(Thread* thread) {
   check_block_state(thread);
-  assert(!thread->is_active_Java_thread() || _rank <= nosafepoint,
-         "This lock should always have a safepoint check for Java threads: %s",
-         name());
+  assert(_rank <= nosafepoint,
+         "This lock should always have a safepoint check for Java threads: %s", name());
 }
 #endif // ASSERT
 
@@ -229,9 +228,8 @@ bool Monitor::wait_without_safepoint_check(int64_t timeout) {
 }
 
 bool Monitor::wait(int64_t timeout) {
-  JavaThread* const self = JavaThread::current();
-  // Safepoint checking logically implies an active JavaThread.
-  assert(self->is_active_Java_thread(), "invariant");
+  Thread* const self = Thread::current();
+  bool is_active_Java_thread = self->is_active_Java_thread();
 
   // timeout is in milliseconds - with zero meaning never timeout
   assert(timeout >= 0, "negative timeout");
@@ -246,22 +244,32 @@ bool Monitor::wait(int64_t timeout) {
   check_safepoint_state(self);
 
   int wait_status;
-  InFlightMutexRelease ifmr(this);
+  if (is_active_Java_thread) {
+    JavaThread* jt = JavaThread::cast(self);
+    InFlightMutexRelease ifmr(this);
 
-  {
-    ThreadBlockInVMPreprocess<InFlightMutexRelease> tbivmdc(self, ifmr);
-    OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
+    {
+      ThreadBlockInVMPreprocess<InFlightMutexRelease> tbivmdc(jt, ifmr);
+      OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
 
-    wait_status = _lock.wait(timeout);
-  }
+      wait_status = _lock.wait(timeout);
+    }
 
-  if (ifmr.not_released()) {
-    // Not unlocked by ~ThreadBlockInVMPreprocess
-    assert_owner(NULL);
-    // Conceptually reestablish ownership of the lock.
-    set_owner(self);
+    if (ifmr.not_released()) {
+      // Not unlocked by ~ThreadBlockInVMPreprocess
+      assert_owner(NULL);
+      // Conceptually reestablish ownership of the lock.
+      set_owner(self);
+    } else {
+      lock(self);
+    }
   } else {
-    lock(self);
+    // wait without a safepoint check for NonJavaThread
+    // The lock was specified as safepoint checking so this is the version
+    // of wait that is called but NonJavaThreads don't participate in the
+    // safepoint protocol.
+    wait_status = _lock.wait(timeout);
+    set_owner(self);
   }
 
   return wait_status != 0;          // return true IFF timeout

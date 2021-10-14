@@ -38,7 +38,7 @@ void ZBreakpoint::start_gc() {
 }
 
 void ZBreakpoint::at_before_gc() {
-  MonitorLocker ml(ConcurrentGCBreakpoints::monitor(), Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(ConcurrentGCBreakpoints::monitor());
   while (ConcurrentGCBreakpoints::is_controlled() && !_start_gc) {
     ml.wait();
   }

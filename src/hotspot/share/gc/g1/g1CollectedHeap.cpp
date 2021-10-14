@@ -1940,7 +1940,7 @@ void G1CollectedHeap::increment_old_marking_cycles_started() {
 
 void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
                                                              bool whole_heap_examined) {
-  MonitorLocker ml(G1OldGCCount_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(G1OldGCCount_lock);
 
   // We assume that if concurrent == true, then the caller is a
   // concurrent thread that was joined the Suspendible Thread

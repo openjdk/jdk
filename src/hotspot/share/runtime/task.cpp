@@ -38,7 +38,7 @@ void PeriodicTask::real_time_tick(int delay_time) {
 
   // The WatcherThread does not participate in the safepoint protocol
   // for the PeriodicTask_lock because it is not a JavaThread.
-  MutexLocker ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(PeriodicTask_lock);
   int orig_num_tasks = _num_tasks;
 
   for(int index = 0; index < _num_tasks; index++) {

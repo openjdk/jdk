@@ -352,10 +352,7 @@ bool VMThread::set_next_operation(VM_Operation *op) {
 }
 
 void VMThread::wait_until_executed(VM_Operation* op) {
-  MonitorLocker ml(VMOperation_lock,
-                   Thread::current()->is_Java_thread() ?
-                     Mutex::_safepoint_check_flag :
-                     Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(VMOperation_lock);
   {
     TraceTime timer("Installing VM operation", TRACETIME_LOG(Trace, vmthread));
     while (true) {
@@ -440,7 +437,7 @@ void VMThread::inner_execute(VM_Operation* op) {
 
 void VMThread::wait_for_operation() {
   assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
-  MonitorLocker ml_op_lock(VMOperation_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml_op_lock(VMOperation_lock);
 
   // Clear previous operation.
   // On first call this clears a dummy place-holder.

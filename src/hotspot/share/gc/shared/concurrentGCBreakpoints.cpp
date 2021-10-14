@@ -133,7 +133,7 @@ bool ConcurrentGCBreakpoints::run_to(const char* breakpoint) {
 void ConcurrentGCBreakpoints::at(const char* breakpoint) {
   assert(Thread::current()->is_ConcurrentGC_thread(), "precondition");
   assert(breakpoint != NULL, "precondition");
-  MonitorLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(monitor());
 
   // Ignore non-matching request state.
   if ((_run_to == NULL) || (strcmp(_run_to, breakpoint) != 0)) {
@@ -154,7 +154,7 @@ void ConcurrentGCBreakpoints::at(const char* breakpoint) {
 }
 
 void ConcurrentGCBreakpoints::notify_active_to_idle() {
-  MonitorLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(monitor());
   assert(!_is_stopped, "invariant");
   // Notify pending run_to request of miss by replacing the run_to() request
   // with a run_to_idle() request.

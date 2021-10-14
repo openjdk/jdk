@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ template <class T> void G1VerifyOopClosure::do_oop_work(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     bool failed = false;
     if (!_g1h->is_in(obj) || _g1h->is_obj_dead_cond(obj, _verify_option)) {
-      MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker x(ParGCRareEvent_lock);
       LogStreamHandle(Error, gc, verify) yy;
       if (!_failures) {
         yy.cr();
