@@ -111,11 +111,11 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
     if (ret != ERROR_SUCCESS) {
         free (adapterInfo);
         if (ret == ERROR_INSUFFICIENT_BUFFER) {
-            JNU_ThrowByName(env, "java/lang/Error",
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IP Helper Library GetAdaptersAddresses function failed "
                 "with ERROR_INSUFFICIENT_BUFFER");
         } else if (ret == ERROR_ADDRESS_NOT_ASSOCIATED ) {
-            JNU_ThrowByName(env, "java/lang/Error",
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IP Helper Library GetAdaptersAddresses function failed "
                 "with ERROR_ADDRESS_NOT_ASSOCIATED");
         } else {
@@ -125,9 +125,9 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
                 _TRUNCATE, "IP Helper Library GetAdaptersAddresses "
                             "function failed with error == %d", ret);
             if (_sr != -1) {
-                JNU_ThrowByName(env, "java/lang/Error", error_msg_buf);
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", error_msg_buf);
             } else {
-                JNU_ThrowByName(env, "java/lang/Error",
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                     "IP Helper Library GetAdaptersAddresses function failure");
             }
         }
@@ -180,11 +180,11 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     if (val != ERROR_SUCCESS) {
         free (adapterInfo);
         if (val == ERROR_INSUFFICIENT_BUFFER) {
-            JNU_ThrowByName(env, "java/lang/Error",
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IP Helper Library GetAdaptersAddresses function failed "
                 "with ERROR_INSUFFICIENT_BUFFER");
         } else if (val == ERROR_ADDRESS_NOT_ASSOCIATED ) {
-            JNU_ThrowByName(env, "java/lang/Error",
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IP Helper Library GetAdaptersAddresses function failed "
                 "with ERROR_ADDRESS_NOT_ASSOCIATED");
         } else {
@@ -194,9 +194,9 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
                 _TRUNCATE, "IP Helper Library GetAdaptersAddresses function failed "
                            "with error == %d", val);
             if (_sr != -1) {
-                JNU_ThrowByName(env, "java/lang/Error", error_msg_buf);
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", error_msg_buf);
             } else {
-                JNU_ThrowByName(env, "java/lang/Error",
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                     "IP Helper Library GetAdaptersAddresses function failure");
             }
         }

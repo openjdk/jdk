@@ -201,7 +201,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
     if (ret != NO_ERROR) {
         free(tableP);
 
-        JNU_ThrowByName(env, "java/lang/Error",
+        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IP Helper Library GetIfTable function failed");
         // this different error code is to handle the case when we call
         // GetIpAddrTable in pure IPv6 environment
@@ -308,7 +308,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
             // it should not fail, because we have called it once before
             if (MultiByteToWideChar(CP_OEMCP, 0, ifrowP->bDescr,
                    ifrowP->dwDescrLen, curr->displayName, wlen) == 0) {
-                JNU_ThrowByName(env, "java/lang/Error",
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                        "Cannot get multibyte char for interface display name");
                 free_netif(netifP);
                 free(tableP);
@@ -389,7 +389,7 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
         if (tableP != NULL) {
             free(tableP);
         }
-        JNU_ThrowByName(env, "java/lang/Error",
+        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IP Helper Library GetIpAddrTable function failed");
         // this different error code is to handle the case when we call
         // GetIpAddrTable in pure IPv6 environment
