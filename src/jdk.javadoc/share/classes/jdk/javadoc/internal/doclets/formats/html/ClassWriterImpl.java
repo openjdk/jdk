@@ -403,7 +403,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     public boolean isFunctionalInterface() {
-        List<? extends AnnotationMirror> annotationMirrors = ((Element) typeElement).getAnnotationMirrors();
+        List<? extends AnnotationMirror> annotationMirrors = typeElement.getAnnotationMirrors();
         for (AnnotationMirror anno : annotationMirrors) {
             if (utils.isFunctionalInterface(anno)) {
                 return true;
