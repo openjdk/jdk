@@ -58,7 +58,7 @@ template <class T, StringDedupMode STRING_DEDUP>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
-  // HEY! This will push array chunks into the mark queue with no regard for
+  // TODO: This will push array chunks into the mark queue with no regard for
   // generations. I don't think it will break anything, but the young generation
   // scan might end up processing some old generation array chunks.
 

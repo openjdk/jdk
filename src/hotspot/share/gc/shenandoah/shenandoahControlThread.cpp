@@ -102,11 +102,10 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
 
-  // HEY! heuristics are notified of allocation failures here and other outcomes
+  // Heuristics are notified of allocation failures here and other outcomes
   // of the cycle. They're also used here to control whether the Nth consecutive
-  // degenerated cycle should be 'promoted' to a full cycle. This changes the
-  // threading model for them somewhat, as they are now evaluated on a separate
-  // thread.
+  // degenerated cycle should be 'promoted' to a full cycle. The decision to
+  // trigger a cycle or not is evaluated on the regulator thread.
   ShenandoahHeuristics* global_heuristics = heap->global_generation()->heuristics();
   while (!in_graceful_shutdown() && !should_terminate()) {
     // Figure out if we have pending requests.

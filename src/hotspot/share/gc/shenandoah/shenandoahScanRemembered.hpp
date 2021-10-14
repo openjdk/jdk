@@ -538,7 +538,7 @@ public:
 
   ShenandoahCardCluster(RememberedSet *rs) {
     _rs = rs;
-    // HEY!  We don't really need object_starts entries for every card entry.  We only need these for
+    // TODO: We don't really need object_starts entries for every card entry.  We only need these for
     // the card entries that correspond to old-gen memory.  But for now, let's be quick and dirty.
     object_starts = (uint16_t *) malloc(rs->total_cards() * sizeof(uint16_t));
     if (object_starts == NULL)
@@ -875,7 +875,7 @@ public:
     delete _scc;
   }
 
-  // HEY!  We really don't want to share all of these APIs with arbitrary consumers of the ShenandoahScanRemembered abstraction.
+  // TODO:  We really don't want to share all of these APIs with arbitrary consumers of the ShenandoahScanRemembered abstraction.
   // But in the spirit of quick and dirty for the time being, I'm going to go ahead and publish everything for right now.  Some
   // of existing code already depends on having access to these services (because existing code has not been written to honor
   // full abstraction of remembered set scanning.  In the not too distant future, we want to try to make most, if not all, of

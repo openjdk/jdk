@@ -573,8 +573,6 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   assert(! region->is_humongous_continuation(), "no humongous continuation regions here");
 
   ShenandoahMarkingContext* const ctx = marking_context();
-  // HEY! All callers (at the time of this writing) have already asserted the mark context is complete.
-  // assert(ctx->is_complete(), "sanity");
 
   HeapWord* tams = ctx->top_at_mark_start(region);
 
