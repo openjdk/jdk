@@ -13,6 +13,7 @@ struct G1BOTUpdateStats {
 
 class G1CollectedHeap;
 class G1ConcurrentBOTUpdateThread;
+class G1PLABCardQueue;
 
 class G1ConcurrentBOTUpdate: public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
@@ -70,7 +71,7 @@ public:
   void pre_record_plab_allocation();
 
   // Record each plab allocation.
-  void record_plab_allocation(HeapWord* plab_allocation, size_t word_size);
+  void record_plab_allocation(G1PLABCardQueue* q, HeapWord* plab_allocation, size_t word_size);
 
   // Setup for the concurrent phase after plab recording.
   void post_record_plab_allocation();
@@ -82,6 +83,11 @@ public:
   // Entry point for concurrent refinement threads or mutators that tries to do conc refinement.
   // These threads always have a specific card in mind, that is, the dirty card to refine.
   void update_bot_before_refine(HeapRegion* r, HeapWord* card_boundary);
+
+  void update_bot_for_plab(HeapWord* card_boundary);
+  // This version will update BOT for part of the plab, allowing for more prompt pause (for gc).
+  // Return true if the plab has more parts to update; otherwise return false.
+  bool update_bot_for_plab_part(HeapWord* card_boundary);
 
   void threads_do(ThreadClosure* tc);
   void print_summary_info();

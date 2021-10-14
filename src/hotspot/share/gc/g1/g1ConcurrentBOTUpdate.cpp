@@ -130,6 +130,23 @@ void G1ConcurrentBOTUpdate::update_bot_before_refine(HeapRegion* r, HeapWord* ca
                     (Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
+void G1ConcurrentBOTUpdate::update_bot_for_plab(HeapWord* card_boundary) {
+  HeapRegion* r = _g1h->heap_region_containing(card_boundary);
+
+  assert(r->is_old(), "Only do this for heap regions with BOT");
+  assert(_g1h->card_table()->is_card_aligned(card_boundary), "Need plab card boundary");
+
+  Ticks start = Ticks::now();
+  r->update_bot(card_boundary);
+  log_info(gc, bot)("Concurrent BOT Update: cr updated 1 plab, took %8.2lf ms",
+                    (Ticks::now() - start).seconds() * MILLIUNITS);
+}
+
+bool G1ConcurrentBOTUpdate::update_bot_for_plab_part(HeapWord* card_boundary) {
+  // TODO
+  return false;
+}
+
 void G1ConcurrentBOTUpdate::pre_record_plab_allocation() {
   assert_at_safepoint_on_vm_thread();
   assert(_card_sets == NULL, "Sanity");
@@ -149,7 +166,8 @@ void G1ConcurrentBOTUpdate::enlist_card_set(G1BOTUpdateCardSet* card_set) {
   card_set->set_next(old_val);
 }
 
-void G1ConcurrentBOTUpdate::record_plab_allocation(HeapWord* plab_allocation, size_t word_size) {
+void G1ConcurrentBOTUpdate::record_plab_allocation(G1PLABCardQueue* plab_card_queue,
+                                                   HeapWord* plab_allocation, size_t word_size) {
   if (!_plab_recording_in_progress) return;
 
   HeapRegion* r = _g1h->heap_region_containing(plab_allocation);
@@ -167,12 +185,10 @@ void G1ConcurrentBOTUpdate::record_plab_allocation(HeapWord* plab_allocation, si
     return;
   }
 
-  G1BOTUpdateCardSet* card_set = r->bot_update_card_set();
-  bool should_enlist = card_set->add_card(last_card_boundary);
-
-  if (should_enlist) {
-    enlist_card_set(card_set);
-  }
+  size_t batch_size = HeapRegion::GrainWords / _plab_word_size; // TODO
+  assert(batch_size > 1, "At least 2 plabs per region");
+  G1BarrierSet::dirty_card_queue_set().enqueue_plab_card(*plab_card_queue,
+                                                         last_card_boundary, batch_size);
 }
 
 void G1ConcurrentBOTUpdate::post_record_plab_allocation() {

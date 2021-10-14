@@ -53,6 +53,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1EvacuationRootClosures* _closures;
 
   G1PLABAllocator* _plab_allocator;
+  G1PLABCardQueue* _plab_card_queue;
 
   AgeTable _age_table;
   G1HeapRegionAttr _dest[G1HeapRegionAttr::Num];

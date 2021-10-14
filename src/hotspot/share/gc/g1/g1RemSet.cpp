@@ -1366,7 +1366,13 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
     size_t buffer_size = dcqs.buffer_size();
     while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, buffer_size, worker_id);
+      if (node->index() < buffer_size &&
+          BufferNode::make_buffer_from_node(node)[buffer_size - 1] != nullptr) {
+        cl->apply_to_buffer(node, buffer_size, worker_id);
+      } else {
+        // The first card is a nullptr. This buffer must be a plab card buffer.
+        assert(G1UseConcurrentBOTUpdate, "Must be");
+      }
       dcqs.deallocate_buffer(node);
     }
   }

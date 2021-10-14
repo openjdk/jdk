@@ -63,6 +63,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _ct(g1h->card_table()),
     _closures(NULL),
     _plab_allocator(NULL),
+    _plab_card_queue(NULL),
     _age_table(false),
     _tenuring_threshold(g1h->policy()->tenuring_threshold()),
     _scanner(g1h, this),
@@ -94,6 +95,9 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   memset(_surviving_young_words, 0, _surviving_words_length * sizeof(size_t));
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
+  if (G1UseConcurrentBOTUpdate) {
+    _plab_card_queue = new G1PLABCardQueue(&G1BarrierSet::dirty_card_queue_set());
+  }
 
   // The dest for Young is used when the objects are aged enough to
   // need to be moved to the next space.
@@ -112,6 +116,8 @@ size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
   flush_numa_stats();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
+  if (_plab_card_queue != NULL)
+    G1BarrierSet::dirty_card_queue_set().flush_queue(*_plab_card_queue);
   _g1h->policy()->record_age_table(&_age_table);
 
   size_t sum = 0;
@@ -124,6 +130,7 @@ size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
 
 G1ParScanThreadState::~G1ParScanThreadState() {
   delete _plab_allocator;
+  delete _plab_card_queue;
   delete _closures;
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
   delete[] _oops_into_optional_regions;
@@ -411,7 +418,8 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
     if (actual_plab_size != 0) {
       // A new plab has been allocated to accomodate the allocation. Record it.
       if (G1UseConcurrentBOTUpdate && dest_attr->is_old()) {
-        _g1h->concurrent_bot_update()->record_plab_allocation(obj_ptr, actual_plab_size);
+        _g1h->concurrent_bot_update()->record_plab_allocation(_plab_card_queue,
+                                                              obj_ptr, actual_plab_size);
       }
     }
     update_numa_stats(node_index);

@@ -67,6 +67,12 @@ public:
 
 };
 
+class G1PLABCardQueue: public PtrQueue, public CHeapObj<mtGC> {
+public:
+  G1PLABCardQueue(G1DirtyCardQueueSet* qset);
+  ~G1PLABCardQueue();
+};
+
 class G1DirtyCardQueueSet: public PtrQueueSet {
   // Head and tail of a list of BufferNodes, linked through their next()
   // fields.  Similar to G1BufferNodeList, but without the _entry_count.
@@ -279,8 +285,12 @@ public:
 
   void flush_queue(G1DirtyCardQueue& queue);
 
+  void flush_queue(G1PLABCardQueue& queue);
+
   using CardValue = G1CardTable::CardValue;
   void enqueue(G1DirtyCardQueue& queue, volatile CardValue* card_ptr);
+
+  void enqueue_plab_card(G1PLABCardQueue& queue, HeapWord* card_boundary, size_t batch_size);
 
   // If there are more than stop_at cards in the completed buffers, pop
   // a buffer, refine its contents, and return true.  Otherwise return

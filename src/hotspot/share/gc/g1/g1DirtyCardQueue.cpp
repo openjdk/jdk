@@ -61,6 +61,14 @@ G1DirtyCardQueue::~G1DirtyCardQueue() {
   delete _refinement_stats;
 }
 
+G1PLABCardQueue::G1PLABCardQueue(G1DirtyCardQueueSet* qset) :
+  PtrQueue(qset)
+{ }
+
+G1PLABCardQueue::~G1PLABCardQueue() {
+  G1BarrierSet::dirty_card_queue_set().flush_queue(*this);
+}
+
 // Assumed to be zero by concurrent threads.
 static uint par_ids_start() { return 0; }
 
@@ -94,6 +102,22 @@ void G1DirtyCardQueueSet::flush_queue(G1DirtyCardQueue& queue) {
   PtrQueueSet::flush_queue(queue);
 }
 
+void G1DirtyCardQueueSet::flush_queue(G1PLABCardQueue& queue) {
+  void** buffer = queue.buffer();
+  if (buffer != nullptr) {
+    size_t index = queue.index();
+    queue.set_buffer(nullptr);
+    queue.set_index(0);
+    BufferNode* node = BufferNode::make_node_from_buffer(buffer, index);
+    if (index == buffer_size()) {
+      deallocate_buffer(node);
+    } else {
+      Atomic::add(&_num_cards, buffer_size() - node->index());
+      _completed.push(*node);
+    }
+  }
+}
+
 void G1DirtyCardQueueSet::enqueue(G1DirtyCardQueue& queue,
                                   volatile CardValue* card_ptr) {
   CardValue* value = const_cast<CardValue*>(card_ptr);
@@ -101,6 +125,23 @@ void G1DirtyCardQueueSet::enqueue(G1DirtyCardQueue& queue,
     handle_zero_index(queue);
     retry_enqueue(queue, value);
   }
+}
+
+void G1DirtyCardQueueSet::enqueue_plab_card(G1PLABCardQueue& queue, HeapWord* card_boundary,
+                                            size_t batch_size) {
+  CardValue* value = (CardValue*)card_boundary; // Pretend to be a card pointer
+  if (buffer_size() - queue.index() < batch_size + 1 && try_enqueue(queue, value)) {
+    return;
+  }
+  // Either we have a full batch or the buffer is full.
+  BufferNode* old_node = exchange_buffer_with_new(queue);
+  if (old_node != nullptr) {
+    Atomic::add(&_num_cards, buffer_size() - old_node->index());
+    _completed.push(*old_node);
+  }
+  // We enqueue a special card to indicate this is a plab card buffer.
+  retry_enqueue(queue, nullptr);
+  retry_enqueue(queue, value);
 }
 
 void G1DirtyCardQueueSet::handle_zero_index(G1DirtyCardQueue& queue) {
@@ -353,6 +394,7 @@ class G1RefineBufferedCards : public StackObj {
   const uint _worker_id;
   G1ConcurrentRefineStats* _stats;
   G1RemSet* const _g1rs;
+  G1ConcurrentBOTUpdate* const _concurrent_bot_update;
 
   static inline int compare_card(const CardTable::CardValue* p1,
                                  const CardTable::CardValue* p2) {
@@ -428,6 +470,25 @@ class G1RefineBufferedCards : public StackObj {
     }
   }
 
+  bool process_plab_card_buffer() {
+    // Check if the first enqueued is a nullptr.
+    if (_node->index() == _node_buffer_size || _node_buffer[_node_buffer_size - 1] != nullptr) {
+      // Not a plab card buffer.
+      return false;
+    }
+    assert(G1UseConcurrentBOTUpdate, "Otherwise there shouldn't be plab card buffers");
+
+    for (size_t i = _node->index(); i < _node_buffer_size - 1; ++i) {
+      if (SuspendibleThreadSet::should_yield()) {
+        // Abandon the unprocessed cards.
+        break;
+      }
+      _concurrent_bot_update->update_bot_for_plab((HeapWord*)_node_buffer[i]); // TODO part
+    }
+    // Return "fully processed" no matter what. This buffer will always be abandon.
+    return true;
+  }
+
 public:
   G1RefineBufferedCards(BufferNode* node,
                         size_t node_buffer_size,
@@ -438,9 +499,12 @@ public:
     _node_buffer_size(node_buffer_size),
     _worker_id(worker_id),
     _stats(stats),
-    _g1rs(G1CollectedHeap::heap()->rem_set()) {}
+    _g1rs(G1CollectedHeap::heap()->rem_set()),
+    _concurrent_bot_update(G1CollectedHeap::heap()->concurrent_bot_update()) {}
 
   bool refine() {
+    if (process_plab_card_buffer()) return true;
+
     size_t first_clean_index = clean_cards();
     if (first_clean_index == _node_buffer_size) {
       _node->set_index(first_clean_index);
@@ -476,7 +540,8 @@ bool G1DirtyCardQueueSet::refine_buffer(BufferNode* node,
 void G1DirtyCardQueueSet::handle_refined_buffer(BufferNode* node,
                                                 bool fully_processed) {
   if (fully_processed) {
-    assert(node->index() == buffer_size(),
+    assert(node->index() == buffer_size() ||
+           BufferNode::make_buffer_from_node(node)[buffer_size() - 1] == nullptr,
            "Buffer not fully consumed: index: " SIZE_FORMAT ", size: " SIZE_FORMAT,
            node->index(), buffer_size());
     deallocate_buffer(node);
