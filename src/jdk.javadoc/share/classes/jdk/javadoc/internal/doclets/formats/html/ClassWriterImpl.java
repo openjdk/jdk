@@ -382,8 +382,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                         ? contents.enclosingInterfaceLabel
                         : contents.enclosingClassLabel));
                 Content dd = new HtmlTree(TagName.DD);
-                dd.add(getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.CLASS, e)));
+                dd.add(getClassLinks(HtmlLinkInfo.Kind.CLASS, List.of(e)));
                 dl.add(dd);
                 classInfoTree.add(dl);
                 return null;
