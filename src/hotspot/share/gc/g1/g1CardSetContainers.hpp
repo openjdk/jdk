@@ -178,8 +178,7 @@ public:
     _next = next;
   }
 
-  // Maximum size of the entries of any G1CardSetContainer in bits.
-  // The only limitation there is is from the G1CardSetArray.
+   // Log of largest card index that can be stored in any G1CardSetContainer
   static uint LogCardsPerRegionLimit;
 };
 
