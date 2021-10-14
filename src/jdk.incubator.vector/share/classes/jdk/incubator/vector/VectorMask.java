@@ -571,7 +571,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @return the same mask
      * @throws ClassCastException if the species is wrong
      */
-    public abstract <F> VectorMask<F> check(Class<? extends VectorMask<F>> maskClass, Vector<F> vector);
+    abstract <F> VectorMask<F> check(Class<? extends VectorMask<F>> maskClass, Vector<F> vector);
 
     /**
      * Returns a string representation of this mask, of the form

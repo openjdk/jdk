@@ -109,7 +109,6 @@ abstract class AbstractMask<E> extends VectorMask<E> {
     @Override
     @ForceInline
     @SuppressWarnings("unchecked")
-    public
     <F> VectorMask<F> check(Class<? extends VectorMask<F>> maskClass, Vector<F> vector) {
         if (!sameSpecies(maskClass, vector)) {
             throw AbstractSpecies.checkFailed(this, vector);
