@@ -251,26 +251,11 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   return true;
 }
 
-class RotationLocker : public StackObj {
-  Semaphore& _sem;
-
- public:
-  RotationLocker(Semaphore& sem) : _sem(sem) {
-    sem.wait();
-  }
-
-  ~RotationLocker() {
-    _sem.signal();
-  }
-};
-
-// async-logging is on, this function is called by AsyncLog Thread sequentially. synchronization isnot necessary.
-// async-logging is off, this function is called from write(). Therefore, current thread is holding _stream_semaphore.
 bool LogFileOutput::flush(int written) {
   bool result = LogFileStreamOutput::flush(written);
 
   if (result) {
-    Atomic::add(&_current_size, (uint)written);
+    _current_size += written;
 
     if (should_rotate()) {
       rotate();
@@ -302,12 +287,17 @@ void LogFileOutput::force_rotate() {
     return;
   }
 
-  FileLocker lock(_stream_semaphore);
+  FileLocker lock(this);
   rotate();
 }
 
 void LogFileOutput::rotate() {
-  assert(LogConfiguration::is_async_mode() || FileLocker::current_thread_has_lock(), "current thread must be holding _stream_semaphore!");
+  assert(LogConfiguration::is_async_mode() || FileLocker::current_thread_has_lock(),
+        "current thread must be holding _stream_lock!");
+
+  if (_stream == NULL)
+    return;
+
   if (fclose(_stream)) {
     jio_fprintf(defaultStream::error_stream(), "Error closing file '%s' during log rotation (%s).\n",
                 _file_name, os::strerror(errno));

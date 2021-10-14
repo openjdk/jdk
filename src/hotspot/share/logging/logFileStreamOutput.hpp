@@ -50,17 +50,38 @@ class LogFileStreamOutput : public LogOutput {
  protected:
   FILE*               _stream;
   // Semaphore used for synchronizing file rotations and writes
-  Semaphore           _stream_semaphore;
+  Semaphore           _stream_lock;
 
   size_t              _decorator_padding[LogDecorators::Count];
 
-  LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream), _stream_semaphore(1) {
+  LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream), _stream_lock(1) {
     for (size_t i = 0; i < LogDecorators::Count; i++) {
       _decorator_padding[i] = 0;
     }
   }
 
   int write_decorations(const LogDecorations& decorations);
+
+  // sempahore-based mutex. Implementation of flockfile do not work with LogFileOuptut::rotate()
+  // because fclose() automatically unlocks FILE->_lock and nullifies FileLocker protection.
+  class FileLocker : public StackObj {
+    Semaphore& _sem;
+    debug_only(static intx _locking_thread_id;)
+
+   public:
+    FileLocker(LogFileStreamOutput* output) : _sem(output->_stream_lock) {
+      _sem.wait();
+      debug_only(_locking_thread_id = os::current_thread_id());
+    }
+
+    ~FileLocker() {
+      debug_only(_locking_thread_id = -1);
+      _sem.signal();
+    }
+
+    debug_only(static bool current_thread_has_lock();)
+  };
+
  public:
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
   int write(const LogDecorations& decorations, const char* msg);
@@ -98,27 +119,6 @@ class LogStderrOutput : public LogFileStreamOutput {
   virtual const char* name() const {
     return "stderr";
   }
-};
-
-
-// sempahore-based mutex. Implementation of flockfile do not work with LogFileOuptut::rotate()
-// because fclose() automatically unlocks FILE->_lock and nullifies FileLocker protection.
-class FileLocker : public StackObj {
-  Semaphore& _sem;
-  debug_only(static intx _locking_thread_id;)
-
- public:
-  FileLocker(Semaphore& sem) : _sem(sem) {
-    sem.wait();
-    debug_only(_locking_thread_id = os::current_thread_id());
-  }
-
-  ~FileLocker() {
-    debug_only(_locking_thread_id = -1);
-    _sem.signal();
-  }
-
-  debug_only(static bool current_thread_has_lock();)
 };
 
 extern LogStderrOutput &StderrLog;

@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logAsyncWriter.hpp"
+#include "logging/logConfiguration.hpp"
 #include "logging/logDecorators.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
@@ -93,9 +94,14 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   return total_written;
 }
 
+// if async-logging is on, this function is called by AsyncLog Thread sequentially.
+// if async-logging is off, this function is called from write(). Therefore, current thread
+// is holding _stream_lock
 bool LogFileStreamOutput::flush(int written) {
-  bool result = true;
+  assert(LogConfiguration::is_async_mode() || FileLocker::current_thread_has_lock(),
+        "current thread must be holding _stream_lock!");
 
+  bool result = written >= 0 ? true : false;
   if (written > 0) {
     if (fflush(_stream) != 0) {
       if (!_write_error_is_shown) {
@@ -106,8 +112,6 @@ bool LogFileStreamOutput::flush(int written) {
       }
       result = false;
     }
-  } else if (written < 0) {
-    result = false;
   }
 
   return result;
@@ -153,6 +157,11 @@ int LogFileStreamOutput::write_internal(const char* msg) {
 }
 
 int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
+  if (_stream == nullptr) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
   const bool use_decorations = !_decorators.is_empty();
 
   int written = 0;
@@ -176,7 +185,7 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
     return 0;
   }
 
-  FileLocker flocker(_stream_semaphore);
+  FileLocker flocker(this);
   int written = write_blocking(decorations, msg);
   return flush(written) ? written : -1;
 }
@@ -193,8 +202,8 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
     return 0;
   }
 
+  FileLocker flocker(this);
   int written = 0;
-  FileLocker flocker(_stream_semaphore);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     int sz = write_blocking(msg_iterator.decorations(), msg_iterator.message());
     if (sz < 0) return sz;
@@ -212,8 +221,8 @@ void LogFileStreamOutput::describe(outputStream *out) {
 }
 
 #ifdef ASSERT
-intx FileLocker::_locking_thread_id = -1;
-bool FileLocker::current_thread_has_lock() {
+intx LogFileStreamOutput::FileLocker::_locking_thread_id = -1;
+bool LogFileStreamOutput::FileLocker::current_thread_has_lock() {
   return _locking_thread_id == os::current_thread_id();
 }
 #endif

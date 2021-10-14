@@ -25,7 +25,6 @@
 #define SHARE_LOGGING_LOGFILEOUTPUT_HPP
 
 #include "logging/logFileStreamOutput.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
@@ -68,7 +67,7 @@ class LogFileOutput : public LogFileStreamOutput {
   char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
 
   bool should_rotate() {
-    return _file_count > 0 && _rotate_size > 0 && Atomic::load(&_current_size) >= _rotate_size;
+    return _file_count > 0 && _rotate_size > 0 && _current_size >= _rotate_size;
   }
 
   void increment_file_count() {
