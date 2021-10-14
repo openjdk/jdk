@@ -34,13 +34,16 @@ import java.util.logging.*;
  * @run main/othervm LogParameters
  */
 public class LogParameters {
+
+    private static final Logger julLogger = Logger.getLogger(String.class.getName());
+
     public static void main(String[] args) {
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        Logger.getLogger(String.class.getName()).setLevel(Level.ALL);
+        julLogger.setLevel(Level.ALL);
         Handler h = new StreamHandler(bout, new SimpleFormatter());
         h.setLevel(Level.ALL);
-        Logger.getLogger(String.class.getName()).addHandler(h);
+        julLogger.addHandler(h);
 
         com.sun.org.slf4j.internal.Logger log =
                 com.sun.org.slf4j.internal.LoggerFactory.getLogger(String.class);
