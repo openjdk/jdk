@@ -25,6 +25,8 @@
 #ifndef SHARE_OOPS_MARKWORDDECODER_HPP
 #define SHARE_OOPS_MARKWORDDECODER_HPP
 
+#include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
 #include "oops/markWord.hpp"
 
 /**
