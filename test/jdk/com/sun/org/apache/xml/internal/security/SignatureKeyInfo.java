@@ -110,11 +110,11 @@ public class SignatureKeyInfo {
         signature.sign(kp.getPrivate());
     }
 
-    private static Element getSignElement() throws Exception {
+    private static Element getSignElement() {
         NodeList nl =
                 doc.getElementsByTagNameNS(NS, "Signature");
         if (nl.getLength() == 0) {
-            throw new Exception("Could not find signature Element");
+            throw new RuntimeException("Could not find signature Element");
         }
 
         return (Element) nl.item(FIRST_EL);
