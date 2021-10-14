@@ -340,6 +340,12 @@ public class Main {
         int n = 0;
 
         if (args.length == 0) fullusage();
+        if ((collator.compare(args[0], "-version") == 0)) {
+            if (args.length != 1) {
+                usageTooManyArg();
+            }
+            doPrintVersion();
+        }
 
         String confFile = null;
         String command = "-sign";
@@ -591,10 +597,21 @@ public class Main {
         usage();
     }
 
+    static void usageTooManyArg() {
+        System.out.println(rb.getString(
+                "Option.should.not.be.specified.for.version"));
+        usage();
+    }
+
     static void usage() {
         System.out.println();
         System.out.println(rb.getString("Please.type.jarsigner.help.for.usage"));
         System.exit(1);
+    }
+
+    static void doPrintVersion() {
+        System.out.println("jarsigner " + System.getProperty("java.version"));
+        System.exit(0);
     }
 
     static void fullusage() {
@@ -602,6 +619,8 @@ public class Main {
                 ("Usage.jarsigner.options.jar.file.alias"));
         System.out.println(rb.getString
                 (".jarsigner.verify.options.jar.file.alias."));
+        System.out.println(rb.getString
+                (".jarsigner.version"));
         System.out.println();
         System.out.println(rb.getString
                 (".keystore.url.keystore.location"));
