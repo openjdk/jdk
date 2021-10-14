@@ -61,7 +61,7 @@ public class DmgContentTest {
             "apps").toString();
     private static final String TEST_BAD = TKit.TEST_SRC_ROOT.resolve(
             "non-existant").toString();
-   
+
     @Parameters
     public static Collection input() {
         List<Object[]> data = new ArrayList<>();
@@ -72,7 +72,7 @@ public class DmgContentTest {
             {"0", PackageType.MAC_DMG,
                   new String[] {TEST_JAVA + "," + TEST_DUKE, TEST_DIR}}}));
        return data;
-    } 
+    }
 
     public DmgContentTest(String expected, PackageType type, String[] content) {
         this.expected = Integer.parseInt(expected);
