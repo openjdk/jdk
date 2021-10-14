@@ -23,15 +23,31 @@
 
 package jdk.jfr.event.profiling;
 
-import java.util.List;
+import static jdk.test.lib.Asserts.*;
 
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.function.Supplier;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import jdk.jfr.Category;
+import jdk.jfr.Context;
+import jdk.jfr.Description;
+import jdk.jfr.Event;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingContext;
 import jdk.jfr.RecordingContextKey;
+import jdk.jfr.StackTrace;
 import jdk.jfr.consumer.RecordedContext;
 import jdk.jfr.consumer.RecordedContextEntry;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.test.lib.Asserts;
+import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -44,65 +60,154 @@ import jdk.test.lib.jfr.Events;
  */
 public class TestFullContext {
 
-    private final static RecordingContextKey contextKey =
-        RecordingContextKey.inheritableForName("contextKey");
+    private final static RecordingContextKey contextKey1 =
+        RecordingContextKey.inheritableForName("Key1");
+    private final static RecordingContextKey contextKey2 =
+        RecordingContextKey.inheritableForName("Key2");
 
-    private static boolean success;
+    @Name("TestEvent")
+    @Label("TestEvent")
+    @Description("Test Event")
+    @Category("Test")
+    @Context(true)
+    @StackTrace(false)
+    private static class TestEvent extends Event {
+    }
+
+    private static interface ThrowingPredicate<T, E extends Throwable> {
+        boolean test(T t) throws E;
+    }
 
     public static void main(String[] args) throws Throwable {
+        runTestWithContexts(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value1")
+                        .build()),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 1);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.getName(), "Key1Value1"));
+                return true;
+            }
+        );
+
+        runTestWithContexts(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value2")
+                        .where(contextKey2, "Key2Value2")
+                        .build()),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 1);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.getName(), "Key1Value2",
+                    contextKey2.getName(), "Key2Value2"));
+                return true;
+            }
+        );
+
+        runTestWithContexts(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value3/1")
+                        .where(contextKey1, "Key1Value3/2")
+                        .build()),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 1);
+                // assertContext(events.get(0), Map.of(
+                //     contextKey1.getName(), "Key1Value3/2"));
+                return true;
+            }
+        );
+
+        runTestWithContexts(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value4")
+                        .build(),
+                    RecordingContext
+                        .where(contextKey2, "Key2Value4")
+                        .build()),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 1);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.getName(), "Key1Value4",
+                    contextKey2.getName(), "Key2Value4"));
+                return true;
+            }
+        );
+
+        runTestWithContexts(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value5/1")
+                        .build(),
+                    RecordingContext
+                        .where(contextKey1, "Key1Value5/2")
+                        .build()),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 1);
+                // assertContext(events.get(0), Map.of(
+                //     contextKey1.getName(), "Key1Value5/2"));
+                return true;
+            }
+        );
+    }
+
+    private static void runTestWithContexts(
+            Supplier<RecordingContextHolder> contextsFactory,
+            ThrowingPredicate<List<RecordedEvent>, Throwable> validation) throws Throwable {
         try (Recording recording = new Recording()) {
-            // recording.enable(EventNames.ThreadStart);
-            // recording.enable(EventNames.ThreadEnd);
-            recording.enable("jdk.ThreadSleep");
+            recording.enable("TestEvent");
             recording.start();
 
-            Thread[] threads = new Thread[0];
-            try (RecordingContext context = RecordingContext.where(contextKey, "contextValue").build()) {
-                success = true;
-
-                for (int i = 0; i < threads.length; ++i) {
-                    threads[i] = new Thread(() -> {
-                        try {
-                            Thread.sleep(100);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            success = false;
-                        }
-                    });
-                    threads[i].setName("thread-" + i);
-                    threads[i].start();
-                }
-
-                Thread.sleep(10);
-
-                for (Thread thread : threads) {
-                    thread.join();
-                }
+            try (RecordingContextHolder contexts = contextsFactory.get()) {
+                new TestEvent().commit();
             }
 
             recording.stop();
 
-            int threadSleepCount = 0;
-            for (RecordedEvent event : fromRecording(recording)) {
-                System.out.println("Event: " + event);
-
-                RecordedContextEntry first = getFirstContextEntry(event);
-                if ("contextValue".equals(first.getValue()) && "contextKey".equals(first.getName())) {
-                    threadSleepCount += 1;
-                    // checkEvent(event, currThread.totalDepth);
-                }
+            if (!validation.test(fromRecording(recording))) {
+                throw new RuntimeException("failed");
             }
-
-            if (threadSleepCount != threads.length + 1) throw new Exception("Failed to validate all threads.");
         }
     }
 
-    public static RecordedContextEntry getFirstContextEntry(RecordedEvent event) throws Throwable {
+    private static record RecordingContextHolder(List<RecordingContext> contexts) implements AutoCloseable {
+
+        public static RecordingContextHolder of(RecordingContext... contexts) {
+            return new RecordingContextHolder(List.of(contexts));
+        }
+
+        @Override
+        public void close() {
+            for (int i = contexts.size() - 1; i >= 0; i--) {
+                contexts.get(i).close();
+            }
+        }
+    }
+
+    private static List<RecordedContextEntry> getContextEntries(RecordedEvent event) throws Throwable {
         RecordedContext context = event.getContext();
         if (context == null) throw new Exception("no context on " + event);
         List<RecordedContextEntry> entries = context.getEntries();
         if (entries.isEmpty()) throw new Exception("empty context on " + event);
-        return entries.get(0);
+        return entries;
+    }
+
+    private static RecordedContextEntry getFirstContextEntry(RecordedEvent event) throws Throwable {
+        return getContextEntries(event).get(0);
     }
 
     private static List<RecordedEvent> fromRecording(Recording recording) throws Throwable {
@@ -120,5 +225,20 @@ public class TestFullContext {
             recording.dump(p);
         }
         return p;
+    }
+
+    private static void assertContext(RecordedEvent event, Map<String, String> expected) throws Throwable {
+        expected = new HashMap<>(expected);
+        for (RecordedContextEntry entry : getContextEntries(event)) {
+            if (!expected.remove(entry.getName(), entry.getValue())) {
+                fail(String.format("unexpected entry %s -> %s", entry.getName(), entry.getValue()));
+            }
+        }
+        if (!expected.isEmpty()) {
+            fail(String.format("expected entries %s",
+                expected.entrySet().stream()
+                    .map(e -> String.format("%s -> %s", e.getKey(), e.getValue()))
+                    .collect(Collectors.joining(", "))));
+        }
     }
 }
