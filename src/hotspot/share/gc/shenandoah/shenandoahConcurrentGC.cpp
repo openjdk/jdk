@@ -156,7 +156,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_strong_roots();
   }
 
-  if (heap->mode()->is_generational() && _generation->generation_mode() == GLOBAL) {
+  if (!heap->cancelled_gc() && heap->mode()->is_generational() && _generation->generation_mode() == GLOBAL) {
     entry_global_coalesce_and_fill();
   }
 
