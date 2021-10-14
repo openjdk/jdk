@@ -197,11 +197,16 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         return super.getNavBar(pageMode, element)
-                .setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !options.noComment())
-                .setDisplaySummaryModulesLink(display(requires) || display(indirectModules))
-                .setDisplaySummaryPackagesLink(display(packages) || display(indirectPackages)
-                        || display(indirectOpenPackages))
-                .setDisplaySummaryServicesLink(displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees));
+                .setSubNavLinks(() -> List.of(
+                        links.createLink(HtmlIds.MODULE_DESCRIPTION, contents.navDescription,
+                            !utils.getFullBody(mdle).isEmpty() && !options.noComment()),
+                        links.createLink(HtmlIds.MODULES, contents.navModules,
+                            display(requires) || display(indirectModules)),
+                        links.createLink(HtmlIds.PACKAGES, contents.navPackages,
+                            display(packages) || display(indirectPackages) || display(indirectOpenPackages)),
+                        links.createLink(HtmlIds.SERVICES, contents.navServices,
+                            displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
+                ));
     }
 
     /**
@@ -546,10 +551,10 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addPackageSummary(HtmlTree li) {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setId(HtmlIds.PACKAGE_SUMMARY_TABLE)
-                .setDefaultTab(resources.getText("doclet.All_Packages"))
-                .addTab(resources.getText("doclet.Exported_Packages_Summary"), this::isExported)
-                .addTab(resources.getText("doclet.Opened_Packages_Summary"), this::isOpened)
-                .addTab(resources.getText("doclet.Concealed_Packages_Summary"), this::isConcealed);
+                .setDefaultTab(contents.getContent("doclet.All_Packages"))
+                .addTab(contents.getContent("doclet.Exported_Packages_Summary"), this::isExported)
+                .addTab(contents.getContent("doclet.Opened_Packages_Summary"), this::isOpened)
+                .addTab(contents.getContent("doclet.Concealed_Packages_Summary"), this::isConcealed);
 
         // Determine whether to show the "Exported To" and "Opened To" columns,
         // based on whether such columns would provide "useful" info.
@@ -643,9 +648,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
     private Content getPackageExportOpensTo(Set<ModuleElement> modules) {
         if (modules == null) {
-            return Text.of(resources.getText("doclet.None"));
+            return contents.getContent("doclet.None");
         } else if (modules.isEmpty()) {
-            return Text.of(resources.getText("doclet.All_Modules"));
+            return contents.getContent("doclet.All_Modules");
         } else {
             Content list = new ContentBuilder();
             for (ModuleElement m : modules) {

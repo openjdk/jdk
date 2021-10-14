@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,22 +47,15 @@ public class ClassLoaderData extends VMObject {
     nextField = type.getAddressField("_next");
     klassesField = new MetadataField(type.getAddressField("_klasses"), 0);
     hasClassMirrorHolderField = new CIntField(type.getCIntegerField("_has_class_mirror_holder"), 0);
-    dictionaryField = type.getAddressField("_dictionary");
   }
 
   private static long classLoaderFieldOffset;
   private static AddressField nextField;
   private static MetadataField  klassesField;
   private static CIntField hasClassMirrorHolderField;
-  private static AddressField dictionaryField;
 
   public ClassLoaderData(Address addr) {
     super(addr);
-  }
-
-  public Dictionary dictionary() {
-      Address tmp = dictionaryField.getValue();
-      return (Dictionary) VMObjectFactory.newObject(Dictionary.class, tmp);
   }
 
   public static ClassLoaderData instantiateWrapperFor(Address addr) {
@@ -113,10 +106,5 @@ public class ClassLoaderData extends VMObject {
           }
           v.visit(l);
       }
-  }
-
-  /** Iterate over all klasses in the dictionary, including initiating loader. */
-  public void allEntriesDo(ClassLoaderDataGraph.ClassAndLoaderVisitor v) {
-      dictionary().allEntriesDo(v, getClassLoader());
   }
 }

@@ -78,7 +78,7 @@ static void print_vs(outputStream* out, size_t scale) {
     out->print(" committed, ");
     out->print(" %d nodes.", num_nodes_c);
     out->cr();
-    out->print("              Both:  ");
+    out->print("             Both:  ");
     print_scaled_words(out, reserved_c + reserved_nc, scale, 7);
     out->print(" reserved, ");
     print_scaled_words_and_percentage(out, committed_c + committed_nc, reserved_c + reserved_nc, scale, 7);

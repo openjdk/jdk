@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,6 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (void)dealloc
 {
-    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:nil];
-
     [fApplicationName release];
     fApplicationName = nil;
 
@@ -158,15 +156,8 @@ AWT_ASSERT_APPKIT_THREAD;
     }
 
     [super finishLaunching];
-
-    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
 }
 
-- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
-     shouldPresentNotification:(NSUserNotification *)notification
-{
-    return YES; // We always show notifications to the user
-}
 
 - (void) registerWithProcessManager
 {
@@ -189,24 +180,9 @@ AWT_ASSERT_APPKIT_THREAD;
     }
 
     // If it wasn't specified as an argument, see if it was specified as a system property.
+    // The launcher code sets this if it is not already set on the command line.
     if (fApplicationName == nil) {
         fApplicationName = [PropertiesUtilities javaSystemPropertyForKey:@"apple.awt.application.name" withEnv:env];
-    }
-
-    // If we STILL don't have it, the app name is retrieved from an environment variable (set in java.c) It should be UTF8.
-    if (fApplicationName == nil) {
-        char mainClassEnvVar[80];
-        snprintf(mainClassEnvVar, sizeof(mainClassEnvVar), "JAVA_MAIN_CLASS_%d", getpid());
-        char *mainClass = getenv(mainClassEnvVar);
-        if (mainClass != NULL) {
-            fApplicationName = [NSString stringWithUTF8String:mainClass];
-            unsetenv(mainClassEnvVar);
-
-            NSRange lastPeriod = [fApplicationName rangeOfString:@"." options:NSBackwardsSearch];
-            if (lastPeriod.location != NSNotFound) {
-                fApplicationName = [fApplicationName substringFromIndex:lastPeriod.location + 1];
-            }
-        }
     }
 
     // The dock name is nil for double-clickable Java apps (bundled and Web Start apps)

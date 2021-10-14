@@ -25,6 +25,7 @@
  * @test
  * @bug 4631471 4921212 4994637
  * @summary Tests HashMap encoding
+ * @run main/othervm -Djava.security.manager=allow java_util_HashMap
  * @author Sergey Malenkov
  */
 

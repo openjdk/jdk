@@ -25,8 +25,6 @@
  * @test
  * @bug 8035968
  * @summary Verify that MD5 multi block intrinsic is actually used.
- * @comment the test verifies compilation of java.base methods, so it can't be run w/ AOT'ed java.base
- * @requires !vm.aot.enabled
  *
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc

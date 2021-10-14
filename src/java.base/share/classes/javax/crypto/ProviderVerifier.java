@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,8 @@ final class ProviderVerifier {
 
             // Get a link to the Jarfile to search.
             try {
-                jf = AccessController.doPrivileged(
+                @SuppressWarnings("removal")
+                var tmp = AccessController.doPrivileged(
                          new PrivilegedExceptionAction<JarFile>() {
                              public JarFile run() throws Exception {
                                  JarURLConnection conn =
@@ -112,6 +113,7 @@ final class ProviderVerifier {
                                  return conn.getJarFile();
                              }
                          });
+                jf = tmp;
             } catch (java.security.PrivilegedActionException pae) {
                 throw new SecurityException("Cannot load " + url.toString(),
                     pae.getCause());

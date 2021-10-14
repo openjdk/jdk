@@ -205,9 +205,6 @@ class CodeCache : AllStatic {
   static address high_bound()                         { return _high_bound; }
   static address high_bound(int code_blob_type);
 
-  // Have to use far call instructions to call this pc.
-  static bool is_far_target(address pc);
-
   // Profiling
   static size_t capacity();
   static size_t unallocated_capacity(int code_blob_type);
@@ -229,7 +226,6 @@ class CodeCache : AllStatic {
 
   static bool code_blob_type_accepts_compiled(int type) {
     bool result = type == CodeBlobType::All || type <= CodeBlobType::MethodProfiled;
-    AOT_ONLY( result = result || type == CodeBlobType::AOT; )
     return result;
   }
 
@@ -275,7 +271,6 @@ class CodeCache : AllStatic {
 
   // RedefineClasses support
   // Flushing and deoptimization in case of evolution
-  static void mark_for_evol_deoptimization(InstanceKlass* dependee);
   static int  mark_dependents_for_evol_deoptimization();
   static void mark_all_nmethods_for_evol_deoptimization();
   static void flush_evol_dependents();

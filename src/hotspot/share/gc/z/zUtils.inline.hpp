@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZUTILS_INLINE_HPP
 #define SHARE_GC_Z_ZUTILS_INLINE_HPP
 
-#include "gc/z/zOop.inline.hpp"
 #include "gc/z/zUtils.hpp"
+
+#include "gc/z/zOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"

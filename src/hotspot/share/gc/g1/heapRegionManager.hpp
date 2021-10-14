@@ -315,6 +315,11 @@ class HeapRegionClaimer : public StackObj {
     return _n_regions;
   }
 
+  void set_n_workers(uint n_workers) {
+    assert(_n_workers == 0, "already set");
+    assert(n_workers > 0, "must be");
+    _n_workers = n_workers;
+  }
   // Return a start offset given a worker id.
   uint offset_for_worker(uint worker_id) const;
 

@@ -47,7 +47,7 @@ class ObjectWaiter : public StackObj {
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
   JavaThread*   _thread;
-  jlong         _notifier_tid;
+  uint64_t      _notifier_tid;
   ParkEvent *   _event;
   volatile int  _notified;
   volatile TStates TState;
@@ -147,14 +147,14 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
                         sizeof(WeakHandle));
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
-  void* _owner;                     // pointer to owning thread OR BasicLock
-  volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
+  void* volatile _owner;            // pointer to owning thread OR BasicLock
+  volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void*) +
-                        sizeof(volatile jlong));
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+                        sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
   ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
@@ -168,13 +168,13 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
 
-  jint  _contentions;               // Number of active contentions in enter(). It is used by is_busy()
+  int _contentions;                 // Number of active contentions in enter(). It is used by is_busy()
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
  protected:
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
-  volatile jint  _waiters;          // number of waiting threads
+  volatile int  _waiters;           // number of waiting threads
  private:
   volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
 
@@ -236,16 +236,17 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   volatile markWord* header_addr();
   void               set_header(markWord hdr);
 
-  intptr_t is_busy() const {
+  bool is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
-    intptr_t ret_code = _waiters | intptr_t(_cxq) | intptr_t(_EntryList);
-    if (contentions() > 0) {
-      ret_code |= contentions();
+    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_cxq) | intptr_t(_EntryList);
+    int cnts = contentions(); // read once
+    if (cnts > 0) {
+      ret_code |= intptr_t(cnts);
     }
     if (!owner_is_DEFLATER_MARKER()) {
       ret_code |= intptr_t(owner_raw());
     }
-    return ret_code;
+    return ret_code != 0;
   }
   const char* is_busy_to_string(stringStream* ss);
 
@@ -281,10 +282,10 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   // _next_om field. Returns the prior value of the _next_om field.
   ObjectMonitor* try_set_next_om(ObjectMonitor* old_value, ObjectMonitor* new_value);
 
-  jint      waiters() const;
+  int       waiters() const;
 
-  jint      contentions() const;
-  void      add_to_contentions(jint value);
+  int       contentions() const;
+  void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
 
   // JVM/TI GetObjectMonitorUsage() needs this:
@@ -302,6 +303,24 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(TRAPS);
 
+ private:
+  class ExitOnSuspend {
+   protected:
+    ObjectMonitor* _om;
+    bool _om_exited;
+   public:
+    ExitOnSuspend(ObjectMonitor* om) : _om(om), _om_exited(false) {}
+    void operator()(JavaThread* current);
+    bool exited() { return _om_exited; }
+  };
+  class ClearSuccOnSuspend {
+   protected:
+    ObjectMonitor* _om;
+   public:
+    ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
+    void operator()(JavaThread* current);
+  };
+ public:
   bool      enter(JavaThread* current);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);

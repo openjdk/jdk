@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "compiler/oopMap.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -52,7 +53,6 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -181,7 +181,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     heap->sync_pinned_region_status();
 
     // The rest of prologue:
-    BiasedLocking::preserve_marks();
     _preserved_marks->init(heap->workers()->active_workers());
 
     assert(heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
@@ -229,7 +228,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   {
     // Epilogue
     _preserved_marks->restore(heap->workers());
-    BiasedLocking::restore_marks();
     _preserved_marks->reclaim();
   }
 

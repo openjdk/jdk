@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
 
 
 /**
@@ -45,23 +45,23 @@ import jdk.jpackage.test.TKit;
  * @build MaintainerTest
  * @requires (os.family == "linux")
  * @modules jdk.jpackage/jdk.jpackage.internal
- * @run main/othervm/timeout=360 -Xmx512m MaintainerTest
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=MaintainerTest
  */
 public class MaintainerTest {
 
-    public static void main(String[] args) {
+    @Test
+    public static void test() {
         final String MAINTAINER = "jpackage-test@java.com";
 
-        TKit.run(args, () -> {
-            new PackageTest().forTypes(PackageType.LINUX_DEB).configureHelloApp()
-            .addInitializer(cmd -> {
-                cmd.addArguments("--linux-deb-maintainer", MAINTAINER);
-            })
-            .addBundlePropertyVerifier("Maintainer", value -> {
-                String lookupValue = "<" + MAINTAINER + ">";
-                return value.endsWith(lookupValue);
-            }, "ends with")
-            .run();
-        });
+        new PackageTest().forTypes(PackageType.LINUX_DEB).configureHelloApp()
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--linux-deb-maintainer", MAINTAINER);
+                })
+                .addBundlePropertyVerifier("Maintainer", value -> {
+                    String lookupValue = "<" + MAINTAINER + ">";
+                    return value.endsWith(lookupValue);
+                }, "ends with")
+                .run();
     }
 }

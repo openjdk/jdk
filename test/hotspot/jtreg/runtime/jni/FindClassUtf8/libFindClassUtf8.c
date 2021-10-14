@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 JNIEXPORT void JNICALL Java_FindClassUtf8_nTest(JNIEnv* env, jclass jclazz)
 {
-    const uint64_t chars = 0x5b3132315d20f818UL;  // f8 is invalid utf8
+    jbyte chars[] = {0x18, 0xf8, 0x20, 0x5d, 0x31, 0x32, 0x31, 0x5b, 0}; // f8 is invalid utf8
 
     jclass badClass = (*env)->FindClass(env, (const char*)&chars);
 }

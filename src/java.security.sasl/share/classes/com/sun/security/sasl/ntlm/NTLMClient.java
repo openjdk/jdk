@@ -90,9 +90,9 @@ final class NTLMClient implements SaslClient {
             "com.sun.security.sasl.ntlm.version";
     private static final String NTLM_RANDOM =
             "com.sun.security.sasl.ntlm.random";
-    private final static String NTLM_DOMAIN =
+    private static final String NTLM_DOMAIN =
             "com.sun.security.sasl.ntlm.domain";
-    private final static String NTLM_HOSTNAME =
+    private static final String NTLM_HOSTNAME =
             "com.sun.security.sasl.ntlm.hostname";
 
     private final Client client;

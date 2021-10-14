@@ -55,7 +55,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 8080906 8114834 8206132
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.ls.LSSerializerTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.ls.LSSerializerTest
  * @run testng/othervm dom.ls.LSSerializerTest
  * @summary Test LSSerializer.
  */

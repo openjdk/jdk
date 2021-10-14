@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8017191 8182765 8200432 8239804
+ * @bug      8017191 8182765 8200432 8239804 8250766 8262992
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -43,6 +43,7 @@ public class TestSeeTag extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -52,17 +53,33 @@ public class TestSeeTag extends JavadocTester {
             """
                 <dl class="notes">
                 <dt>See Also:</dt>
-                <dd><a href="Test.InnerOne.html#foo()"><code>Test.InnerOne.foo()</code></a>,\s
-                <a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a>,\s
-                <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a>,\s
-                <a href="Test.InnerOne.html#baz(float)"><code>something</code></a></dd>
+                <dd>
+                <ul class="see-list-long">
+                <li><a href="Test.InnerOne.html#foo()"><code>Test.InnerOne.foo()</code></a></li>
+                <li><a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a></li>
+                <li><a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a></li>
+                <li><a href="Test.InnerOne.html#baz(float)"><code>something</code></a></li>
+                <li><a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object...)"><code>\
+                Test.InnerOne.format(java.lang.String, java.lang.Object...)</code></a></li>
+                </ul>
+                </dd>
                 </dl>""");
 
         checkOutput("pkg/Test.html", false,
           "&lt;code&gt;List&lt;/code&gt;");
 
         checkOutput("pkg/Test2.html", true,
-           "<code>Serializable</code>");
+           "<code>Serializable</code>",
+           """
+                <dl class="notes">
+                <dt>See Also:</dt>
+                <dd>
+                <ul class="see-list-long">
+                <li><code>Serializable</code></li>
+                <li><a href="Test.html" title="class in pkg"><code>See tag with very long label text</code></a></li>
+                </ul>
+                </dd>
+                </dl>""");
 
         checkOutput("pkg/Test2.html", false,
            ">Serialized Form<");
@@ -80,8 +97,12 @@ public class TestSeeTag extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><code>Object</code>,\s
-                    <code>Foo&lt;String&gt;</code></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><code>Object</code></li>
+                    <li><code>Foo&lt;String&gt;</code></li>
+                    </ul>
+                    </dd>
                     </dl>""");
     }
 }

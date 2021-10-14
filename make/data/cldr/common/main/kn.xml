@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -407,7 +407,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">ಮಾಲ್ಡೇವಿಯನ್</language>
 			<language type="rof">ರೊಂಬೊ</language>
 			<language type="rom">ರೋಮಾನಿ</language>
-			<language type="root">ರೂಟ್</language>
 			<language type="ru">ರಷ್ಯನ್</language>
 			<language type="rup">ಅರೋಮಾನಿಯನ್</language>
 			<language type="rw">ಕಿನ್ಯಾರ್‌ವಾಂಡಾ</language>
@@ -3226,9 +3225,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>ಸಾಂತಾ ಇಸಾಬೆಲ್</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ಹೊನಲುಲು</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ಸಂಘಟಿತ ಸಾರ್ವತ್ರಿಕ ಸಮಯ</standard>
@@ -3348,11 +3344,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>ಬ್ರೊಕನ್ ಹಿಲ್</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>ಕರೀ</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>ಮೆಲ್ಬರ್ನ್</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>ಕರೀ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ಹೋಬಾರ್ಟ್‌</exemplarCity>
@@ -4385,6 +4381,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>ನೋಮ್</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ಹೊನಲುಲು</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>ಜಾನ್‌ಸ್ಟನ್</exemplarCity>
@@ -6702,7 +6701,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಪಶ್ಚಿಮ ಆಫ್ರಿಕಾದ CFA ಫ್ರಾಂಕ್</displayName>
 				<displayName count="one">ಪಶ್ಚಿಮ ಆಫ್ರಿಕಾದ CFA ಫ್ರಾಂಕ್</displayName>
 				<displayName count="other">ಪಶ್ಚಿಮ ಆಫ್ರಿಕಾದ CFA ಫ್ರಾಂಕ್‌ಗಳು</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>[CFP] ಫ್ರಾಂಕ್</displayName>
@@ -6945,7 +6944,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಕಾರಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಕಾರಟ್‌ಗಳು</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</displayName>
 				<unitPattern count="one">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂ</unitPattern>
 				<unitPattern count="other">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</unitPattern>
@@ -7974,7 +7973,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಕಾರ.</unitPattern>
 				<unitPattern count="other">{0} ಕಾರ.</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>ಮಿಗ್ರಾಂ/ಡೆಲೀ</displayName>
 				<unitPattern count="one">{0} ಮಿಗ್ರಾಂ/ಡೆಲೀ</unitPattern>
 				<unitPattern count="other">{0} ಮಿಗ್ರಾಂ/ಡೆಲೀ</unitPattern>
@@ -8273,12 +8272,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="one">{0} ppcm</unitPattern>
 				<unitPattern count="other">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="one">{0} ppi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
@@ -8320,9 +8319,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ಮಿಮೀ</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µmeters</displayName>
-				<unitPattern count="one">{0} µm</unitPattern>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<displayName>μmeters</displayName>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>ನ್ಯಾ.ಮೀ</displayName>

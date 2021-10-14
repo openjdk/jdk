@@ -27,15 +27,12 @@ package java.util;
 
 import java.io.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import jdk.internal.util.random.RandomSupport.*;
 
-import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
-import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
 import static jdk.internal.util.random.RandomSupport.*;
 
 import jdk.internal.misc.Unsafe;
@@ -79,14 +76,12 @@ import jdk.internal.misc.Unsafe;
  * @author  Frank Yellin
  * @since   1.0
  */
-@SuppressWarnings("exports")
 @RandomGeneratorProperties(
         name = "Random",
         i = 48, j = 0, k = 0,
         equidistribution = 0
 )
-public class Random extends AbstractSpliteratorGenerator
-        implements java.io.Serializable {
+public class Random implements RandomGenerator, java.io.Serializable {
     /** use serialVersionUID from JDK 1.1 for interoperability */
     @java.io.Serial
     static final long serialVersionUID = 3905348978240129619L;
@@ -615,32 +610,6 @@ public class Random extends AbstractSpliteratorGenerator
         unsafe.putReferenceVolatile(this, seedOffset, new AtomicLong(seedVal));
     }
 
-    // Methods required by class AbstractSpliteratorGenerator
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-        return new RandomIntsSpliterator(this, index, fence, origin, bound);
-    }
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-        return new RandomLongsSpliterator(this, index, fence, origin, bound);
-    }
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-        return new RandomDoublesSpliterator(this, index, fence, origin, bound);
-    }
-
     /**
      * Returns a stream producing the given {@code streamSize} number of
      * pseudorandom {@code int} values.
@@ -656,7 +625,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public IntStream ints(long streamSize) {
-        return super.ints(streamSize);
+        return AbstractSpliteratorGenerator.ints(this, streamSize);
     }
 
     /**
@@ -674,7 +643,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public IntStream ints() {
-        return super.ints();
+        return AbstractSpliteratorGenerator.ints(this);
     }
 
     /**
@@ -711,7 +680,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
-        return super.ints(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.ints(this, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -749,7 +718,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
-        return super.ints(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.ints(this, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -767,7 +736,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public LongStream longs(long streamSize) {
-        return super.longs(streamSize);
+        return AbstractSpliteratorGenerator.longs(this, streamSize);
     }
 
     /**
@@ -785,7 +754,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public LongStream longs() {
-        return super.longs();
+        return AbstractSpliteratorGenerator.longs(this);
     }
 
     /**
@@ -827,7 +796,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
-        return super.longs(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.longs(this, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -870,7 +839,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
-        return super.longs(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.longs(this, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -889,7 +858,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public DoubleStream doubles(long streamSize) {
-        return super.doubles(streamSize);
+        return AbstractSpliteratorGenerator.doubles(this, streamSize);
     }
 
     /**
@@ -908,7 +877,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public DoubleStream doubles() {
-        return super.doubles();
+        return AbstractSpliteratorGenerator.doubles(this);
     }
 
    /**
@@ -940,7 +909,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
-        return super.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.doubles(this, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -972,6 +941,6 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-        return super.doubles(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.doubles(this, randomNumberOrigin, randomNumberBound);
     }
 }

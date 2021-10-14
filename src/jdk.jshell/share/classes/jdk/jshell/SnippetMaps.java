@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Util.PREFIX_PATTERN;
 import static jdk.jshell.Util.REPL_PACKAGE;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_DEP;
@@ -107,8 +106,7 @@ final class SnippetMaps {
             }
         }
         if (plus != null) {
-            plus.stream()
-                    .forEach(psi -> sb.append(psi.importLine(state)));
+            plus.forEach(psi -> sb.append(psi.importLine(state)));
         }
         return sb.toString();
     }
@@ -167,17 +165,19 @@ final class SnippetMaps {
                                .toList();
         for (String k : klasses) {
             if (k.equals(full)) {
-                return full.substring(full.lastIndexOf(".")+1, full.length());
+                return full.substring(full.lastIndexOf(".")+1);
             }
+        }
+        if (pkg.isEmpty()) {
+            return full;
         }
         Stream<String> pkgs = importSnippets()
                                .filter(isi -> isi.isStar)
                                .map(isi -> isi.fullname.substring(0, isi.fullname.lastIndexOf(".")));
-        return Stream.concat(Stream.of("java.lang"), pkgs)
-                     .filter(ipkg -> !ipkg.isEmpty() && ipkg.equals(pkg))
-                     .map(ipkg -> full.substring(pkg.length() + 1))
-                     .findFirst()
-                     .orElse(full);
+        if (Stream.concat(Stream.of("java.lang"), pkgs).anyMatch(pkg::equals)) {
+            return full.substring(pkg.length() + 1);
+        }
+        return full;
     }
 
     /**

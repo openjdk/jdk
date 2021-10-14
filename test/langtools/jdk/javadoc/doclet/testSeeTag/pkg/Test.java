@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,14 @@ import java.util.List;
 public class Test {
 
    /**
-    * Testing different combos of see tags.
+    * Testing different combos of see tags, including some weird formatting.
     * @see InnerOne#foo()
-    * @see InnerOne#bar(Object)
+    * @see InnerOne#bar(
+    *                   Object
+    *                   )
     * @see <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a>
     * @see InnerOne#baz(float priority) something
+    * @see InnerOne#format( java .lang.String  , java.  lang.Object ... )
     */
     public void foo() {}
 
@@ -54,6 +57,13 @@ public class Test {
          * @param GravitationalConstant
          */
         public void baz(float GravitationalConstant) {}
+
+        /**
+         * Test for multiple args and varargs.
+         */
+        public static String format(String s, Object... args) {
+            return String.format(s, args);
+        }
     }
 }
 

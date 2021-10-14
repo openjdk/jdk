@@ -114,10 +114,11 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   if( !t->singleton() ) return NULL;
 
   // No intervening control, like a simple Call
-  Node *r = iff->in(0);
-  if( !r->is_Region() ) return NULL;
-  if (r->is_Loop()) return NULL;
-  if( phi->region() != r ) return NULL;
+  Node* r = iff->in(0);
+  if (!r->is_Region() || r->is_Loop() || phi->region() != r || r->as_Region()->is_copy()) {
+    return NULL;
+  }
+
   // No other users of the cmp/bool
   if (b->outcnt() != 1 || cmp->outcnt() != 1) {
     //tty->print_cr("many users of cmp/bool");
@@ -243,13 +244,23 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     }
     Node* proj = PhaseIdealLoop::find_predicate(r->in(ii));
     if (proj != NULL) {
+      // Bail out if splitting through a region with a predicate input (could
+      // also be a loop header before loop opts creates a LoopNode for it).
       return NULL;
     }
   }
 
   // If all the defs of the phi are the same constant, we already have the desired end state.
   // Skip the split that would create empty phi and region nodes.
-  if((r->req() - req_c) == 1) {
+  if ((r->req() - req_c) == 1) {
+    return NULL;
+  }
+
+  // At this point we know that we can apply the split if optimization. If the region is still on the worklist,
+  // we should wait until it is processed. The region might be removed which makes this optimization redundant.
+  // This also avoids the creation of dead data loops when rewiring data nodes below when a region is dying.
+  if (igvn->_worklist.member(r)) {
+    igvn->_worklist.push(iff); // retry split if later again
     return NULL;
   }
 
@@ -1011,6 +1022,33 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       adjusted_lim = igvn->transform(new SubINode(hi, lo));
     }
     hook->destruct(igvn);
+
+    int lo = igvn->type(adjusted_lim)->is_int()->_lo;
+    if (lo < 0) {
+      // If range check elimination applies to this comparison, it includes code to protect from overflows that may
+      // cause the main loop to be skipped entirely. Delay this transformation.
+      // Example:
+      // for (int i = 0; i < limit; i++) {
+      //   if (i < max_jint && i > min_jint) {...
+      // }
+      // Comparisons folded as:
+      // i - min_jint - 1 <u -2
+      // when RC applies, main loop limit becomes:
+      // min(limit, max(-2 + min_jint + 1, min_jint))
+      // = min(limit, min_jint)
+      // = min_jint
+      if (!igvn->C->post_loop_opts_phase()) {
+        if (adjusted_val->outcnt() == 0) {
+          igvn->remove_dead_node(adjusted_val);
+        }
+        if (adjusted_lim->outcnt() == 0) {
+          igvn->remove_dead_node(adjusted_lim);
+        }
+        igvn->C->record_for_post_loop_opts_igvn(this);
+        return false;
+      }
+    }
+
     Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
     Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
 

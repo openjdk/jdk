@@ -115,7 +115,7 @@ public class JavacElements implements Elements {
         enter = Enter.instance(context);
         resolve = Resolve.instance(context);
         JavacTask t = context.get(JavacTask.class);
-        javacTaskImpl = t instanceof JavacTaskImpl ? (JavacTaskImpl) t : null;
+        javacTaskImpl = t instanceof JavacTaskImpl taskImpl ? taskImpl : null;
         log = Log.instance(context);
         Source source = Source.instance(context);
         allowModules = Feature.MODULES.allowedInSource(source);
@@ -570,6 +570,12 @@ public class JavacElements implements Elements {
                     scope.enter(e);
             }
         }
+
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    public TypeElement getOutermostTypeElement(Element e) {
+        Symbol sym = cast(Symbol.class, e);
+        return sym.outermostClass();
+    }
 
     /**
      * Returns all annotations of an element, whether

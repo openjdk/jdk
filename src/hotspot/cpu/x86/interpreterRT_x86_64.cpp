@@ -496,11 +496,11 @@ class SlowSignatureHandler
 
 
 JRT_ENTRY(address,
-          InterpreterRuntime::slow_signature_handler(JavaThread* thread,
+          InterpreterRuntime::slow_signature_handler(JavaThread* current,
                                                      Method* method,
                                                      intptr_t* from,
                                                      intptr_t* to))
-  methodHandle m(thread, (Method*)method);
+  methodHandle m(current, (Method*)method);
   assert(m->is_native(), "sanity check");
 
   // handle arguments

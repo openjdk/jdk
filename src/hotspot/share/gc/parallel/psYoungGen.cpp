@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ bool PSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
     if (orig_size == max_gen_size()) {
       log_trace(gc)("PSYoung generation size at maximum: " SIZE_FORMAT "K", orig_size/K);
     } else if (orig_size == min_gen_size()) {
-      log_trace(gc)("PSYoung generation size at minium: " SIZE_FORMAT "K", orig_size/K);
+      log_trace(gc)("PSYoung generation size at minimum: " SIZE_FORMAT "K", orig_size/K);
     }
   }
 

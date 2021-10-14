@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
- *      8046724 8079693 8177334 8205507 8210736 8217878
+ *      8046724 8079693 8177334 8205507 8210736 8217878 8241306
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
@@ -108,7 +108,7 @@ public class GenerationTests {
             rsaSha1, rsaSha224, rsaSha256, rsaSha384, rsaSha512,
             ecdsaSha1, ecdsaSha224, ecdsaSha256, ecdsaSha384, ecdsaSha512,
             hmacSha1, hmacSha224, hmacSha256, hmacSha384, hmacSha512,
-            rsaSha1mgf1, rsaSha224mgf1, rsaSha256mgf1, rsaSha384mgf1, rsaSha512mgf1;
+            rsaSha1mgf1, rsaSha224mgf1, rsaSha256mgf1, rsaSha384mgf1, rsaSha512mgf1, rsaShaPSS;
     private static DigestMethod sha1, sha224, sha256, sha384, sha512,
                                 sha3_224, sha3_256, sha3_384, sha3_512;
     private static KeyInfo dsa1024, dsa2048, rsa, rsa1024, rsa2048,
@@ -214,7 +214,8 @@ public class GenerationTests {
             SignatureMethod.RSA_SHA256,
             SignatureMethod.ECDSA_SHA256,
             SignatureMethod.HMAC_SHA256,
-            SignatureMethod.SHA256_RSA_MGF1);
+            SignatureMethod.SHA256_RSA_MGF1,
+            SignatureMethod.RSA_PSS);
 
     private static final String[] allSignatureMethods
             = Stream.of(SignatureMethod.class.getDeclaredFields())
@@ -246,9 +247,9 @@ public class GenerationTests {
                 })
                 .toArray(String[]::new);
 
-    // As of JDK 11, the number of defined algorithms are...
+    // As of JDK 17, the number of defined algorithms are...
     static {
-        if (allSignatureMethods.length != 22
+        if (allSignatureMethods.length != 23
                 || allDigestMethods.length != 9) {
             System.out.println(Arrays.toString(allSignatureMethods));
             System.out.println(Arrays.toString(allDigestMethods));
@@ -335,6 +336,7 @@ public class GenerationTests {
         test_create_signature_enveloping_sha512_rsa_sha256_mgf1();
         test_create_signature_enveloping_sha512_rsa_sha384_mgf1();
         test_create_signature_enveloping_sha512_rsa_sha512_mgf1();
+        test_create_signature_enveloping_sha512_rsa_pss();
         test_create_signature_reference_dependency();
         test_create_signature_with_attr_in_no_namespace();
         test_create_signature_with_empty_id();
@@ -531,6 +533,7 @@ public class GenerationTests {
         rsaSha256mgf1 = fac.newSignatureMethod(SignatureMethod.SHA256_RSA_MGF1, null);
         rsaSha384mgf1 = fac.newSignatureMethod(SignatureMethod.SHA384_RSA_MGF1, null);
         rsaSha512mgf1 = fac.newSignatureMethod(SignatureMethod.SHA512_RSA_MGF1, null);
+        rsaShaPSS = fac.newSignatureMethod(SignatureMethod. RSA_PSS, null);
 
         ecdsaSha1 = fac.newSignatureMethod(SignatureMethod.ECDSA_SHA1, null);
         ecdsaSha224 = fac.newSignatureMethod(SignatureMethod.ECDSA_SHA224, null);
@@ -789,6 +792,14 @@ public class GenerationTests {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha512_mgf1.xml");
         test_create_signature_enveloping(sha512, rsaSha512mgf1, rsa2048,
                 getPrivateKey("RSA", 2048), kvks, false, true);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_sha512_rsa_pss()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha512_rsa_pss.xml");
+        test_create_signature_enveloping(sha512, rsaShaPSS, rsa1024,
+                getPrivateKey("RSA", 1024), kvks, false, true);
         System.out.println();
     }
 

@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETCLONE_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETCLONE_INLINE_HPP
 
+// No shenandoahBarrierSetClone.hpp
+
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
@@ -52,7 +54,7 @@ private:
           fwd = _heap->evacuate_object(obj, _thread);
         }
         assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
-        ShenandoahHeap::cas_oop(fwd, p, o);
+        ShenandoahHeap::atomic_update_oop(fwd, p, o);
         obj = fwd;
       }
       if (ENQUEUE) {

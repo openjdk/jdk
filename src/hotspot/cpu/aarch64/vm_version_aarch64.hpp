@@ -97,23 +97,28 @@ public:
   };
 
   enum Feature_Flag {
-    CPU_FP           = (1<<0),
-    CPU_ASIMD        = (1<<1),
-    CPU_EVTSTRM      = (1<<2),
-    CPU_AES          = (1<<3),
-    CPU_PMULL        = (1<<4),
-    CPU_SHA1         = (1<<5),
-    CPU_SHA2         = (1<<6),
-    CPU_CRC32        = (1<<7),
-    CPU_LSE          = (1<<8),
-    CPU_DCPOP        = (1<<16),
-    CPU_SHA3         = (1<<17),
-    CPU_SHA512       = (1<<21),
-    CPU_SVE          = (1<<22),
-    // flags above must follow Linux HWCAP
-    CPU_SVE2         = (1<<28),
-    CPU_STXR_PREFETCH= (1<<29),
-    CPU_A53MAC       = (1<<30),
+#define CPU_FEATURE_FLAGS(decl)               \
+    decl(FP,            "fp",            0)   \
+    decl(ASIMD,         "simd",          1)   \
+    decl(EVTSTRM,       "evtstrm",       2)   \
+    decl(AES,           "aes",           3)   \
+    decl(PMULL,         "pmull",         4)   \
+    decl(SHA1,          "sha1",          5)   \
+    decl(SHA2,          "sha256",        6)   \
+    decl(CRC32,         "crc",           7)   \
+    decl(LSE,           "lse",           8)   \
+    decl(DCPOP,         "dcpop",         16)  \
+    decl(SHA3,          "sha3",          17)  \
+    decl(SHA512,        "sha512",        21)  \
+    decl(SVE,           "sve",           22)  \
+    /* flags above must follow Linux HWCAP */ \
+    decl(SVE2,          "sve2",          28)  \
+    decl(STXR_PREFETCH, "stxr_prefetch", 29)  \
+    decl(A53MAC,        "a53mac",        30)
+
+#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1 << bit),
+    CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
+#undef DECLARE_CPU_FEATURE_FLAG
   };
 
   static int cpu_family()                     { return _cpu; }

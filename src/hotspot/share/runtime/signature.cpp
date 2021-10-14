@@ -203,6 +203,12 @@ SignatureStream::SignatureStream(const Symbol* signature,
 }
 
 SignatureStream::~SignatureStream() {
+  if (_previous_name == vmSymbols::java_lang_Object()) {
+    // no names were created
+    assert(_names == NULL, "_names unexpectedly created");
+    return;
+  }
+
   // decrement refcount for names created during signature parsing
   _previous_name->decrement_refcount();
   if (_names != NULL) {

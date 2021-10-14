@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,7 @@ public final class Loader extends SecureClassLoader {
         = new ConcurrentHashMap<>();
 
     // ACC used when loading classes and resources
+    @SuppressWarnings("removal")
     private final AccessControlContext acc;
 
     /**
@@ -144,6 +145,7 @@ public final class Loader extends SecureClassLoader {
      * Creates a {@code Loader} in a loader pool that loads classes/resources
      * from one module.
      */
+    @SuppressWarnings("removal")
     public Loader(ResolvedModule resolvedModule,
                   LoaderPool pool,
                   ClassLoader parent)
@@ -173,6 +175,7 @@ public final class Loader extends SecureClassLoader {
      * @throws IllegalArgumentException
      *         If two or more modules have the same package
      */
+    @SuppressWarnings("removal")
     public Loader(Collection<ResolvedModule> modules, ClassLoader parent) {
         super(parent);
 
@@ -323,6 +326,7 @@ public final class Loader extends SecureClassLoader {
      * Returns a URL to a resource of the given name in a module defined to
      * this class loader.
      */
+    @SuppressWarnings("removal")
     @Override
     protected URL findResource(String mn, String name) throws IOException {
         ModuleReference mref = (mn != null) ? nameToModule.get(mn) : null;
@@ -521,6 +525,7 @@ public final class Loader extends SecureClassLoader {
     protected Class<?> loadClass(String cn, boolean resolve)
         throws ClassNotFoundException
     {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String pn = packageName(cn);
@@ -579,6 +584,7 @@ public final class Loader extends SecureClassLoader {
      *
      * @return the resulting Class or {@code null} if not found
      */
+    @SuppressWarnings("removal")
     private Class<?> findClassInModuleOrNull(LoadedModule loadedModule, String cn) {
         PrivilegedAction<Class<?>> pa = () -> defineClass(cn, loadedModule);
         return AccessController.doPrivileged(pa, acc);

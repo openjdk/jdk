@@ -29,7 +29,6 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "memory/iterator.hpp"
 
 // Perform weak root cleaning at a pause
@@ -38,7 +37,6 @@ class ShenandoahParallelWeakRootsCleaningTask : public AbstractGangTask {
 protected:
   ShenandoahPhaseTimings::Phase const _phase;
   WeakProcessor::Task                 _weak_processing_task;
-  ShenandoahStringDedupRoots          _dedup_roots;
   IsAlive*                            _is_alive;
   KeepAlive*                          _keep_alive;
 

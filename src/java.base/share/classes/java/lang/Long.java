@@ -213,38 +213,27 @@ public final class Long extends Number
         if (i >= 0)
             return toString(i, radix);
         else {
-            switch (radix) {
-            case 2:
-                return toBinaryString(i);
-
-            case 4:
-                return toUnsignedString0(i, 2);
-
-            case 8:
-                return toOctalString(i);
-
-            case 10:
-                /*
-                 * We can get the effect of an unsigned division by 10
-                 * on a long value by first shifting right, yielding a
-                 * positive value, and then dividing by 5.  This
-                 * allows the last digit and preceding digits to be
-                 * isolated more quickly than by an initial conversion
-                 * to BigInteger.
-                 */
-                long quot = (i >>> 1) / 5;
-                long rem = i - quot * 10;
-                return toString(quot) + rem;
-
-            case 16:
-                return toHexString(i);
-
-            case 32:
-                return toUnsignedString0(i, 5);
-
-            default:
-                return toUnsignedBigInteger(i).toString(radix);
-            }
+            return switch (radix) {
+                case 2  -> toBinaryString(i);
+                case 4  -> toUnsignedString0(i, 2);
+                case 8  -> toOctalString(i);
+                case 10 -> {
+                    /*
+                     * We can get the effect of an unsigned division by 10
+                     * on a long value by first shifting right, yielding a
+                     * positive value, and then dividing by 5.  This
+                     * allows the last digit and preceding digits to be
+                     * isolated more quickly than by an initial conversion
+                     * to BigInteger.
+                     */
+                    long quot = (i >>> 1) / 5;
+                    long rem = i - quot * 10;
+                    yield toString(quot) + rem;
+                }
+                case 16 -> toHexString(i);
+                case 32 -> toUnsignedString0(i, 5);
+                default -> toUnsignedBigInteger(i).toString(radix);
+            };
         }
     }
 
@@ -763,10 +752,8 @@ public final class Long extends Number
     public static long parseLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException("radix " + radix +
                     " less than Character.MIN_RADIX");
@@ -1009,10 +996,8 @@ public final class Long extends Number
     public static long parseUnsignedLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         int start = beginIndex, len = endIndex - beginIndex;
 
         if (len > 0) {
@@ -1269,7 +1254,7 @@ public final class Long extends Number
         int radix = 10;
         int index = 0;
         boolean negative = false;
-        Long result;
+        long result;
 
         if (nm.isEmpty())
             throw new NumberFormatException("Zero length string");
@@ -1299,15 +1284,15 @@ public final class Long extends Number
             throw new NumberFormatException("Sign character in wrong position");
 
         try {
-            result = Long.valueOf(nm.substring(index), radix);
-            result = negative ? Long.valueOf(-result.longValue()) : result;
+            result = parseLong(nm, index, nm.length(), radix);
+            result = negative ? -result : result;
         } catch (NumberFormatException e) {
             // If number is Long.MIN_VALUE, we'll end up here. The next line
             // handles this case, and causes any genuine format error to be
             // rethrown.
             String constant = negative ? ("-" + nm.substring(index))
                                        : nm.substring(index);
-            result = Long.valueOf(constant, radix);
+            result = parseLong(constant, radix);
         }
         return result;
     }

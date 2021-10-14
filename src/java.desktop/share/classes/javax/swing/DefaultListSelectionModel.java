@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         if (lastAdjustedIndex == MIN) {
             return;
         }
-        /* If getValueAdjusting() is true, (eg. during a drag opereration)
+        /* If getValueAdjusting() is true, (eg. during a drag operation)
          * record the bounds of the changes so that, when the drag finishes (and
          * setValueAdjusting(false) is called) we can post a single event
          * with bounds covering all of these individual adjustments.
@@ -738,7 +738,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      */
     public String toString() {
         String s =  ((getValueIsAdjusting()) ? "~" : "=") + value.toString();
-        return getClass().getName() + " " + Integer.toString(hashCode()) + " " + s;
+        return getClass().getName() + " " + hashCode() + " " + s;
     }
 
     /**
@@ -825,7 +825,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * anchor and the new lead are either all selected or all deselected.
      * If the value at the anchor index is selected, first clear all the
      * values in the range [anchor, oldLeadIndex], then select all the values
-     * values in the range [anchor, newLeadIndex], where oldLeadIndex is the old
+     * in the range [anchor, newLeadIndex], where oldLeadIndex is the old
      * leadIndex and newLeadIndex is the new one.
      * <p>
      * If the value at the anchor index is not selected, do the same thing in

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+FlightRecorder -XX:FlightRecorderOptions=maxchunksize=2097152 jdk.jfr.jcmd.TestJcmdStartWithOptions
+ * @run main/othervm -XX:FlightRecorderOptions:maxchunksize=2097152 jdk.jfr.jcmd.TestJcmdStartWithOptions
  */
 public class TestJcmdStartWithOptions {
 

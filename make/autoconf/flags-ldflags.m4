@@ -32,16 +32,10 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS],
 
   # Setup the target toolchain
 
+  # The target dir matches the name of VM variant
+  TARGET_JVM_VARIANT_PATH=$JVM_VARIANT_MAIN
+
   # On some platforms (mac) the linker warns about non existing -L dirs.
-  # For any of the variants server, client or minimal, the dir matches the
-  # variant name. The "main" variant should be used for linking. For the
-  # rest, the dir is just server.
-  if HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client) \
-      || HOTSPOT_CHECK_JVM_VARIANT(minimal); then
-    TARGET_JVM_VARIANT_PATH=$JVM_VARIANT_MAIN
-  else
-    TARGET_JVM_VARIANT_PATH=server
-  fi
   FLAGS_SETUP_LDFLAGS_CPU_DEP([TARGET])
 
   # Setup the build toolchain
@@ -107,13 +101,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       # FIXME: We should really generalize SET_SHARED_LIBRARY_ORIGIN instead.
       OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
       OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN"
-    fi
-    if test "x$OPENJDK_TARGET_OS" = xlinux; then
-      # Hotspot needs to link librt to get the clock_* functions.
-      # But once our supported minimum build and runtime platform
-      # has glibc 2.17, this can be removed as the functions are
-      # in libc.
-      OS_LDFLAGS_JVM_ONLY="-lrt"
     fi
   fi
 

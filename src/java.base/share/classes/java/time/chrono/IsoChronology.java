@@ -479,7 +479,7 @@ public final class IsoChronology extends AbstractChronology implements Serializa
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof IsoEra == false) {
+        if (!(era instanceof IsoEra)) {
             throw new ClassCastException("Era must be IsoEra");
         }
         return (era == IsoEra.CE ? yearOfEra : 1 - yearOfEra);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ import java.util.stream.Collectors;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.DefaultRoots;
-import jdk.internal.module.IllegalAccessMaps;
 import jdk.internal.module.Modules;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfo.Attributes;
@@ -622,9 +621,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             // generate moduleReads
             genModuleReads(cw, cf);
 
-            // generate concealedPackagesToOpen and exportedPackagesToOpen
-            genXXXPackagesToOpenMethods(cw);
-
             return cw;
         }
 
@@ -853,16 +849,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                     .map(ResolvedModule::name)
                                     .collect(Collectors.toSet())));
             generate(cw, "moduleReads", map, true);
-        }
-
-        /**
-         * Generate concealedPackagesToOpen and exportedPackagesToOpen methods.
-         */
-        private void genXXXPackagesToOpenMethods(ClassWriter cw) {
-            ModuleFinder finder = finderOf(moduleInfos);
-            IllegalAccessMaps maps = IllegalAccessMaps.generate(finder);
-            generate(cw, "concealedPackagesToOpen", maps.concealedPackagesToOpen(), false);
-            generate(cw, "exportedPackagesToOpen", maps.exportedPackagesToOpen(), false);
         }
 
         /**

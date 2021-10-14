@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,21 +412,13 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   LIR_Opr lock = new_pointer_register();
   LIR_Opr hdr  = new_pointer_register();
 
-  // Need a scratch register for biased locking on arm
-  LIR_Opr scratch = LIR_OprFact::illegalOpr;
-  if(UseBiasedLocking) {
-    scratch = new_pointer_register();
-  } else {
-    scratch = atomicLockOpr();
-  }
-
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
     info_for_exception = state_for(x);
   }
 
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, hdr, scratch,
+  monitor_enter(obj.result(), lock, hdr, LIR_OprFact::illegalOpr,
                 x->monitor_no(), info_for_exception, info);
 }
 
@@ -516,7 +508,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
       left.load_item();
       right.load_item();
       rlock_result(x);
-      arithmetic_op_fpu(x->op(), x->operand(), left.result(), right.result(), x->is_strictfp());
+      arithmetic_op_fpu(x->op(), x->operand(), left.result(), right.result());
       return;
     }
 #endif // __SOFTFP__

@@ -49,7 +49,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * @test
  * @bug 5072946
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug5072946
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug5072946
  * @run testng/othervm validation.Bug5072946
  * @summary Test Validator.validate(DOMSource,DOMResult) outputs to the result.
  */

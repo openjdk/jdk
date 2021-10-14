@@ -24,6 +24,7 @@
 /**
  * @test
  * @modules jdk.incubator.vector
+ * @requires vm.compiler2.enabled
  */
 
 import jdk.incubator.vector.FloatVector;

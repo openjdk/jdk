@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,15 +278,14 @@ public:
 // This class manages data structures and methods for doing liveness analysis in
 // G1's concurrent cycle.
 class G1ConcurrentMark : public CHeapObj<mtGC> {
-  friend class G1ConcurrentMarkThread;
-  friend class G1CMRefProcTaskProxy;
-  friend class G1CMRefProcTaskExecutor;
-  friend class G1CMKeepAliveAndDrainClosure;
-  friend class G1CMDrainMarkingStackClosure;
   friend class G1CMBitMapClosure;
   friend class G1CMConcurrentMarkingTask;
+  friend class G1CMDrainMarkingStackClosure;
+  friend class G1CMKeepAliveAndDrainClosure;
+  friend class G1CMRefProcProxyTask;
   friend class G1CMRemarkTask;
   friend class G1CMTask;
+  friend class G1ConcurrentMarkThread;
 
   G1ConcurrentMarkThread* _cm_thread;     // The thread doing the work
   G1CollectedHeap*        _g1h;           // The heap
@@ -363,8 +362,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   void finalize_marking();
 
-  void weak_refs_work_parallel_part(BoolObjectClosure* is_alive, bool purged_classes);
-  void weak_refs_work(bool clear_all_soft_refs);
+  void weak_refs_work();
 
   void report_object_count(bool mark_completed);
 
@@ -376,10 +374,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
   void clear_statistics(HeapRegion* r);
-
-  // Resets the global marking data structures, as well as the
-  // task local ones; should be called during concurrent start.
-  void reset();
 
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
@@ -446,9 +440,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
 
-  // Clear the given bitmap in parallel using the given WorkGang. If may_yield is
+  // Clear the next marking bitmap in parallel using the given WorkGang. If may_yield is
   // true, periodically insert checks to see if this method should exit prematurely.
-  void clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield);
+  void clear_next_bitmap(WorkGang* workers, bool may_yield);
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
@@ -457,11 +451,15 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // means that this region does not be scanned during the rebuilding remembered
   // set phase at all.
   HeapWord* volatile* _top_at_rebuild_starts;
+  // True when Remark pause selected regions for rebuilding.
+  bool _needs_remembered_set_rebuild;
 public:
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
-  // Liveness of the given region as determined by concurrent marking, i.e. the amount of
+  // Live words in the given region as determined by concurrent marking, i.e. the amount of
   // live words between bottom and nTAMS.
-  size_t liveness(uint region) const { return _region_mark_stats[region]._live_words; }
+  size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }
+  // Returns the liveness value in bytes.
+  size_t live_bytes(uint region) const { return live_words(region) * HeapWordSize; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -523,6 +521,10 @@ public:
 
   // Calculates the number of concurrent GC threads to be used in the marking phase.
   uint calc_active_marking_workers();
+
+  // Resets the global marking data structures, as well as the
+  // task local ones; should be called during concurrent start.
+  void reset();
 
   // Moves all per-task cached data into global state.
   void flush_all_task_caches();
@@ -595,6 +597,9 @@ public:
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently to the application.
   void rebuild_rem_set_concurrently();
+
+  uint needs_remembered_set_rebuild() const { return _needs_remembered_set_rebuild; }
+
 };
 
 // A class representing a marking task.
@@ -850,5 +855,4 @@ public:
   virtual bool do_heap_region(HeapRegion* r);
   ~G1PrintRegionLivenessInfoClosure();
 };
-
 #endif // SHARE_GC_G1_G1CONCURRENTMARK_HPP

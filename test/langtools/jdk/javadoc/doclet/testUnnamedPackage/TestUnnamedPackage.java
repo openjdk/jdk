@@ -71,7 +71,7 @@ public class TestUnnamedPackage extends JavadocTester {
         checkOutput("allclasses-index.html", true,
                 """
                     <div id="all-classes-table">
-                    <div class="caption"><span>Class Summary</span></div>
+                    <div class="caption"><span>Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>
@@ -96,7 +96,7 @@ public class TestUnnamedPackage extends JavadocTester {
 
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
 
         checkOutput("package-search-index.js", true,
                 """
@@ -104,12 +104,13 @@ public class TestUnnamedPackage extends JavadocTester {
 
         checkOutput("index-all.html", true,
                 """
-                    <br><a href="allclasses-index.html">All&nbsp;Classes</a><span class="vertical-se\
-                    parator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a>""");
+                    <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a\
+                    ><span class="vertical-separator">|</span><a href="allpackages-index.html">All&n\
+                    bsp;Packages</a>""");
 
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""",
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""",
                 """
                     {"p":"<Unnamed>","l":"C"}""");
 

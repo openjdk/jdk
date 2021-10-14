@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,9 +93,8 @@ public:
   uint32_t hash_oop(uintptr_t addr) const;
 
   // Threads
-  uint nconcurrent_worker_threads() const;
-  uint nconcurrent_no_boost_worker_threads() const;
-  void set_boost_worker_threads(bool boost);
+  uint active_workers() const;
+  void set_active_workers(uint nworkers);
   void threads_do(ThreadClosure* tc) const;
 
   // Reference processing
@@ -114,19 +113,20 @@ public:
   // Object allocation
   uintptr_t alloc_tlab(size_t size);
   uintptr_t alloc_object(size_t size);
-  uintptr_t alloc_object_non_blocking(size_t size);
-  void undo_alloc_object(uintptr_t addr, size_t size);
-  bool is_alloc_stalled() const;
+  uintptr_t alloc_object_for_relocation(size_t size);
+  void undo_alloc_object_for_relocation(uintptr_t addr, size_t size);
+  bool has_alloc_stalled() const;
   void check_out_of_memory();
 
   // Marking
   bool is_object_live(uintptr_t addr) const;
   bool is_object_strongly_live(uintptr_t addr) const;
-  template <bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
+  template <bool gc_thread, bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
   void mark_start();
   void mark(bool initial);
   void mark_flush_and_free(Thread* thread);
   bool mark_end();
+  void mark_free();
   void keep_alive(oop obj);
 
   // Relocation set
@@ -146,7 +146,8 @@ public:
 
   // Serviceability
   void serviceability_initialize();
-  GCMemoryManager* serviceability_memory_manager();
+  GCMemoryManager* serviceability_cycle_memory_manager();
+  GCMemoryManager* serviceability_pause_memory_manager();
   MemoryPool* serviceability_memory_pool();
   ZServiceabilityCounters* serviceability_counters();
 

@@ -458,7 +458,7 @@ private:
 
   // Optimize ideal graph.
   void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
-                            GrowableArray<Node*>& storestore_worklist);
+                            GrowableArray<MemBarStoreStoreNode*>& storestore_worklist);
   // Optimize objects compare.
   const TypeInt* optimize_ptr_compare(Node* n);
 
@@ -521,7 +521,9 @@ private:
   bool is_captured_store_address(Node* addp);
 
   // Propagate unique types created for non-escaped allocated objects through the graph
-  void split_unique_types(GrowableArray<Node *>  &alloc_worklist, GrowableArray<ArrayCopyNode*> &arraycopy_worklist);
+  void split_unique_types(GrowableArray<Node *>  &alloc_worklist,
+                          GrowableArray<ArrayCopyNode*> &arraycopy_worklist,
+                          GrowableArray<MergeMemNode*> &mergemem_worklist);
 
   // Helper methods for unique types split.
   bool split_AddP(Node *addp, Node *base);
@@ -532,9 +534,6 @@ private:
   void  move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis);
   Node* find_inst_mem(Node* mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
-
-
-  GrowableArray<MergeMemNode*>  _mergemem_worklist; // List of all MergeMem nodes
 
   Node_Array _node_map; // used for bookkeeping during type splitting
                         // Used for the following purposes:

@@ -30,6 +30,7 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
+class AbstractGangTask;
 class PreservedMarksSet;
 class WorkGang;
 
@@ -112,6 +113,8 @@ public:
   // the memory taken up by the stack segments using the given WorkGang. If the WorkGang
   // is NULL, perform the work serially in the current thread.
   void restore(WorkGang* workers);
+
+  AbstractGangTask* create_task();
 
   // Reclaim stack array.
   void reclaim();

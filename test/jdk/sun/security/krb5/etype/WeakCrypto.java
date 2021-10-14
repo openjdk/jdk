@@ -22,61 +22,83 @@
  */
 /*
  * @test
- * @bug 6844909 8012679 8139348
+ * @bug 6844909 8012679 8139348 8273670
  * @modules java.security.jgss/sun.security.krb5
  *          java.security.jgss/sun.security.krb5.internal.crypto
+ * @library /test/lib
  * @run main/othervm WeakCrypto
- * @run main/othervm WeakCrypto true
- * @run main/othervm WeakCrypto false
- * @summary support allow_weak_crypto in krb5.conf
  */
 
-import java.lang.Exception;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-
+import jdk.test.lib.Asserts;
+import sun.security.krb5.Config;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.internal.crypto.EType;
-import sun.security.krb5.EncryptedData;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 
 public class WeakCrypto {
-
-    static List<Integer> weakOnes = List.of(
-            EncryptedData.ETYPE_DES_CBC_CRC,
-            EncryptedData.ETYPE_DES_CBC_MD5,
-            EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
-            EncryptedData.ETYPE_ARCFOUR_HMAC
-    );
-
     public static void main(String[] args) throws Exception {
 
-        String conf = "[libdefaults]\n" +
-                (args.length > 0 ? ("allow_weak_crypto = " + args[0]) : "");
-        Files.write(Paths.get("krb5.conf"), conf.getBytes());
-        System.setProperty("java.security.krb5.conf", "krb5.conf");
+        System.setProperty("java.security.krb5.conf", "tmp.conf");
 
-        // expected number of supported weak etypes
-        int expected = 0;
-        if (args.length != 0 && args[0].equals("true")) {
-            expected = weakOnes.size();
-        }
+        test(null, null,
+                18, 17, 20, 19);    // the defaults
+        test(false, null,
+                18, 17, 20, 19);    // the defaults
+        test(true, null,
+                18, 17, 20, 19);    // the defaults
 
-        // Ensure EType.getBuiltInDefaults() has the correct etypes
-        if (Arrays.stream(EType.getBuiltInDefaults())
-                .filter(weakOnes::contains)
-                .count() != expected) {
-            throw new Exception("getBuiltInDefaults fails");
-        }
+        String strongAndWeak = "aes256-cts aes128-cts aes256-sha2 aes128-sha2" +
+                " des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5";
+        test(null, strongAndWeak, 18, 17, 20, 19);
+        test(false, strongAndWeak, 18, 17, 20, 19);
+        test(true, strongAndWeak, 18, 17, 20, 19, 16, 23, 1, 3);
 
-        // Ensure keys generated have the correct etypes
-        if (Arrays.stream(EncryptionKey.acquireSecretKeys(
-                    "password".toCharArray(), "salt"))
-                .map(EncryptionKey::getEType)
-                .filter(weakOnes::contains)
-                .count() != expected) {
-            throw new Exception("acquireSecretKeys fails");
+        String anotherOrder = "aes256-cts aes256-sha2 aes128-cts aes128-sha2" +
+                " des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5";
+        test(null, anotherOrder, 18, 20, 17, 19);
+        test(false, anotherOrder, 18, 20, 17, 19);
+        test(true, anotherOrder, 18, 20, 17, 19, 16, 23, 1, 3);
+
+        String two = "aes256-cts arcfour-hmac";
+        test(null, two, 18);
+        test(false, two, 18);
+        test(true, two, 18, 23);
+    }
+
+    /**
+     * Writes a krb5.conf and makes sure it's correctly parsed.
+     *
+     * @param allowWeak if "allow_weak_crypto = true" should be written
+     * @param etypes redefined "default_tkt_enctypes"
+     * @param expected expected etypes
+     */
+    static void test(Boolean allowWeak, String etypes, int... expected) throws Exception {
+
+        String s = "[libdefaults]\n";
+        if (allowWeak != null) {
+            s += "allow_weak_crypto = " + allowWeak + "\n";
         }
+        if (etypes != null) {
+            s += "default_tkt_enctypes = " + etypes;
+        }
+        Files.write(Path.of("tmp.conf"), s.getBytes(StandardCharsets.UTF_8));
+        Config.refresh();
+
+        // Check internal config read
+        int[] config = EType.getDefaults("default_tkt_enctypes");
+        Asserts.assertTrue(Arrays.equals(config, expected),
+                "config: " + Arrays.toString(config));
+
+        // Check actual etypes used
+        int[] generated = Arrays.stream(EncryptionKey.acquireSecretKeys(
+                        "password".toCharArray(), "salt"))
+                .mapToInt(EncryptionKey::getEType)
+                .toArray();
+        Asserts.assertTrue(Arrays.equals(generated, expected),
+                "generated: " + Arrays.toString(generated));
     }
 }

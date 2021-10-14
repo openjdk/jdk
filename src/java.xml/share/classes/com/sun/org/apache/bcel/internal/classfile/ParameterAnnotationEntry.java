@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class ParameterAnnotationEntry implements Node {
 
-    private final AnnotationEntry[] annotation_table;
+    private final AnnotationEntry[] annotationTable;
 
 
     /**
@@ -46,10 +46,10 @@ public class ParameterAnnotationEntry implements Node {
      */
     ParameterAnnotationEntry(final DataInput input, final ConstantPool constant_pool) throws IOException {
         final int annotation_table_length = input.readUnsignedShort();
-        annotation_table = new AnnotationEntry[annotation_table_length];
+        annotationTable = new AnnotationEntry[annotation_table_length];
         for (int i = 0; i < annotation_table_length; i++) {
             // TODO isRuntimeVisible
-            annotation_table[i] = AnnotationEntry.read(input, constant_pool, false);
+            annotationTable[i] = AnnotationEntry.read(input, constant_pool, false);
         }
     }
 
@@ -70,12 +70,12 @@ public class ParameterAnnotationEntry implements Node {
      * returns the array of annotation entries in this annotation
      */
     public AnnotationEntry[] getAnnotationEntries() {
-        return annotation_table;
+        return annotationTable;
     }
 
     public void dump(final DataOutputStream dos) throws IOException {
-        dos.writeShort(annotation_table.length);
-        for (final AnnotationEntry entry : annotation_table) {
+        dos.writeShort(annotationTable.length);
+        for (final AnnotationEntry entry : annotationTable) {
             entry.dump(dos);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.MacHelper;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Tests generation of dmg and pkg with --mac-sign and related arguments.
@@ -57,7 +57,8 @@ import jdk.jpackage.test.TKit;
  * @build SigningPackageTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm -Xmx512m SigningPackageTest
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningPackageTest
  */
 public class SigningPackageTest {
 
@@ -81,24 +82,23 @@ public class SigningPackageTest {
         });
     }
 
-    public static void main(String[] args) throws Exception {
-        TKit.run(args, () -> {
-            SigningCheck.checkCertificates();
+    @Test
+    public static void test() throws Exception {
+        SigningCheck.checkCertificates();
 
-            new PackageTest()
-                    .configureHelloApp()
-                    .forTypes(PackageType.MAC)
-                    .addInitializer(cmd -> {
-                        cmd.addArguments("--mac-sign",
-                                "--mac-signing-key-user-name", SigningBase.DEV_NAME,
-                                "--mac-signing-keychain", SigningBase.KEYCHAIN);
-                    })
-                    .forTypes(PackageType.MAC_PKG)
-                    .addBundleVerifier(SigningPackageTest::verifyPKG)
-                    .forTypes(PackageType.MAC_DMG)
-                    .addBundleVerifier(SigningPackageTest::verifyDMG)
-                    .addBundleVerifier(SigningPackageTest::verifyAppImageInDMG)
-                    .run();
-        });
+        new PackageTest()
+                .configureHelloApp()
+                .forTypes(PackageType.MAC)
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--mac-sign",
+                            "--mac-signing-key-user-name", SigningBase.DEV_NAME,
+                            "--mac-signing-keychain", SigningBase.KEYCHAIN);
+                })
+                .forTypes(PackageType.MAC_PKG)
+                .addBundleVerifier(SigningPackageTest::verifyPKG)
+                .forTypes(PackageType.MAC_DMG)
+                .addBundleVerifier(SigningPackageTest::verifyDMG)
+                .addBundleVerifier(SigningPackageTest::verifyAppImageInDMG)
+                .run();
     }
 }

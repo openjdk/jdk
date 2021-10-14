@@ -48,6 +48,8 @@ const char *IdealGraphPrinter::NODE_ELEMENT = "node";
 const char *IdealGraphPrinter::NODES_ELEMENT = "nodes";
 const char *IdealGraphPrinter::REMOVE_EDGE_ELEMENT = "removeEdge";
 const char *IdealGraphPrinter::REMOVE_NODE_ELEMENT = "removeNode";
+const char *IdealGraphPrinter::COMPILATION_ID_PROPERTY = "compilationId";
+const char *IdealGraphPrinter::COMPILATION_OSR_PROPERTY = "osr";
 const char *IdealGraphPrinter::METHOD_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::METHOD_IS_PUBLIC_PROPERTY = "public";
 const char *IdealGraphPrinter::METHOD_IS_STATIC_PROPERTY = "static";
@@ -313,6 +315,12 @@ void IdealGraphPrinter::begin_method() {
     print_prop(METHOD_IS_STATIC_PROPERTY, TRUE_VALUE);
   }
 
+  if (C->is_osr_compilation()) {
+      print_prop(COMPILATION_OSR_PROPERTY, TRUE_VALUE);
+  }
+
+  print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
+
   tail(PROPERTIES_ELEMENT);
 
   _should_send_method = true;
@@ -340,14 +348,12 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
   if (edges) {
 
-    // Output edge
-    node_idx_t dest_id = n->_idx;
-    for ( uint i = 0; i < n->len(); i++ ) {
-      if ( n->in(i) ) {
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i)) {
         Node *source = n->in(i);
         begin_elem(EDGE_ELEMENT);
-        print_attr(FROM_PROPERTY, source->_idx);
-        print_attr(TO_PROPERTY, dest_id);
+        print_attr(FROM_PROPERTY, source->_igv_idx);
+        print_attr(TO_PROPERTY, n->_igv_idx);
         print_attr(INDEX_PROPERTY, i);
         end_elem();
       }
@@ -357,7 +363,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
     // Output node
     begin_head(NODE_ELEMENT);
-    print_attr(NODE_ID_PROPERTY, n->_idx);
+    print_attr(NODE_ID_PROPERTY, n->_igv_idx);
     end_head();
 
     head(PROPERTIES_ELEMENT);
@@ -452,13 +458,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       } else {
         print_prop("is_dontcare", "false");
       }
-
-#ifdef ASSERT
       Node* old = C->matcher()->find_old_node(node);
       if (old != NULL) {
         print_prop("old_node_idx", old->_idx);
       }
-#endif
     }
 
     if (node->is_Proj()) {
@@ -542,7 +545,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         } else {
           print_prop(short_name, "L");
         }
-      } else if (t->base() == Type::KlassPtr) {
+      } else if (t->base() == Type::KlassPtr || t->base() == Type::InstKlassPtr || t->base() == Type::AryKlassPtr) {
         const TypeKlassPtr *typeKlass = t->is_klassptr();
         print_prop(short_name, "CP");
       } else if (t->base() == Type::Control) {
@@ -715,7 +718,7 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
       head(NODES_ELEMENT);
       for (uint s = 0; s < block->number_of_nodes(); s++) {
         begin_elem(NODE_ELEMENT);
-        print_attr(NODE_ID_PROPERTY, block->get_node(s)->_idx);
+        print_attr(NODE_ID_PROPERTY, block->get_node(s)->_igv_idx);
         end_elem();
       }
       tail(NODES_ELEMENT);

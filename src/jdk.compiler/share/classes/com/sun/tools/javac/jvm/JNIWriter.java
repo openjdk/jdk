@@ -417,7 +417,7 @@ public class JNIWriter {
         result.append(encode(msym.getSimpleName(), EncoderType.JNI));
         if (isOverloaded) {
             TypeSignature typeSig = new TypeSignature(types);
-            StringBuilder sig = typeSig.getParameterSignature(msym.type);
+            StringBuilder sig = typeSig.getParameterSignature(msym.type, true);
             result.append("__").append(encode(sig, EncoderType.JNI));
         }
         return result.toString();
@@ -542,23 +542,23 @@ public class JNIWriter {
             this.types = types;
         }
 
-        StringBuilder getParameterSignature(Type mType)
+        StringBuilder getParameterSignature(Type mType, boolean useFlatname)
                 throws SignatureException {
             StringBuilder result = new StringBuilder();
             for (Type pType : mType.getParameterTypes()) {
-                result.append(getJvmSignature(pType));
+                result.append(getJvmSignature(pType, useFlatname));
             }
             return result;
         }
 
         StringBuilder getReturnSignature(Type mType)
                 throws SignatureException {
-            return getJvmSignature(mType.getReturnType());
+            return getJvmSignature(mType.getReturnType(), false);
         }
 
         StringBuilder getSignature(Type mType) throws SignatureException {
             StringBuilder sb = new StringBuilder();
-            sb.append("(").append(getParameterSignature(mType)).append(")");
+            sb.append("(").append(getParameterSignature(mType, false)).append(")");
             sb.append(getReturnSignature(mType));
             return sb;
         }
@@ -567,6 +567,12 @@ public class JNIWriter {
          * Returns jvm internal signature.
          */
         static class JvmTypeVisitor extends JNIWriter.SimpleTypeVisitor<Type, StringBuilder> {
+            private final boolean useFlatname;
+
+            JvmTypeVisitor(boolean useFlatname) {
+                super();
+                this.useFlatname = useFlatname;
+            }
 
             @Override
             public Type visitClassType(Type.ClassType t, StringBuilder s) {
@@ -589,7 +595,8 @@ public class JNIWriter {
                 return t.accept(this, s);
             }
             private void setDeclaredType(Type t, StringBuilder s) {
-                    String classname = t.tsym.getQualifiedName().toString();
+                    String classname = useFlatname ? t.tsym.flatName().toString()
+                            : t.tsym.getQualifiedName().toString();
                     classname = classname.replace('.', '/');
                     s.append("L").append(classname).append(";");
             }
@@ -611,10 +618,10 @@ public class JNIWriter {
             }
         }
 
-        StringBuilder getJvmSignature(Type type) {
+        StringBuilder getJvmSignature(Type type, boolean useFlatname) {
             Type t = types.erasure(type);
             StringBuilder sig = new StringBuilder();
-            JvmTypeVisitor jv = new JvmTypeVisitor();
+            JvmTypeVisitor jv = new JvmTypeVisitor(useFlatname);
             jv.visitType(t, sig);
             return sig;
         }

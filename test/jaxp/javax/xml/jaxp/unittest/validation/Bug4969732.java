@@ -44,7 +44,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4969732
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4969732
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969732
  * @run testng/othervm validation.Bug4969732
  * @summary Test TypeInfoProvider.getElementTypeInfo() throws IllegalStateException
  * in case the method is not called from method startElement() or endElement().

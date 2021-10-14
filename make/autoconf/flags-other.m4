@@ -76,16 +76,25 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
 # platform independent
 AC_DEFUN([FLAGS_SETUP_ASFLAGS],
 [
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    # Force preprocessor to run, just to make sure
+    BASIC_ASFLAGS="-x assembler-with-cpp"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    BASIC_ASFLAGS="-nologo -c"
+  fi
+  AC_SUBST(BASIC_ASFLAGS)
+
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    JVM_BASIC_ASFLAGS="-x assembler-with-cpp -mno-omit-leaf-frame-pointer -mstack-alignment=16"
+    JVM_BASIC_ASFLAGS="-mno-omit-leaf-frame-pointer -mstack-alignment=16"
 
     # Fix linker warning.
     # Code taken from make/autoconf/flags-cflags.m4 and adapted.
-    JVM_BASIC_ASFLAGS+="-DMAC_OS_X_VERSION_MIN_REQUIRED=$MACOSX_VERSION_MIN_NODOTS \
+    JVM_BASIC_ASFLAGS="$JVM_BASIC_ASFLAGS \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=$MACOSX_VERSION_MIN_NODOTS \
         -mmacosx-version-min=$MACOSX_VERSION_MIN"
 
     if test -n "$MACOSX_VERSION_MAX"; then
-        JVM_BASIC_ASFLAGS+="$OS_CFLAGS \
+        JVM_BASIC_ASFLAGS="$JVM_BASIC_ASFLAGS $OS_CFLAGS \
             -DMAC_OS_X_VERSION_MAX_ALLOWED=$MACOSX_VERSION_MAX_NODOTS"
     fi
   fi

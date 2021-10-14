@@ -22,13 +22,13 @@
  *
  */
 
-import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 
 import java.lang.invoke.VarHandle;
 
+import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
@@ -38,15 +38,16 @@ import static org.testng.Assert.*;
  */
 public class TestSlices {
 
-    static MemoryLayout LAYOUT = MemoryLayout.ofSequence(2,
-            MemoryLayout.ofSequence(5, MemoryLayouts.JAVA_INT));
+    static MemoryLayout LAYOUT = MemoryLayout.sequenceLayout(2,
+            MemoryLayout.sequenceLayout(5, MemoryLayouts.JAVA_INT));
 
     static VarHandle VH_ALL = LAYOUT.varHandle(int.class,
             MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement());
 
     @Test(dataProvider = "slices")
     public void testSlices(VarHandle handle, int lo, int hi, int[] values) {
-        try (MemorySegment segment = MemorySegment.allocateNative(LAYOUT)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, scope);
             //init
             for (long i = 0 ; i < 2 ; i++) {
                 for (long j = 0 ; j < 5 ; j++) {

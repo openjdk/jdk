@@ -35,7 +35,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
 /**
- * A <a href="package-summary.html#unixdomain">Unix domain</a> socket address.
+ * A Unix domain socket address.
  * A Unix domain socket address encapsulates a file-system path that Unix domain sockets
  * bind or connect to.
  *

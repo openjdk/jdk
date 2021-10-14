@@ -82,12 +82,10 @@ private:
   Counters _encountered_count;
   Counters _discovered_count;
   Counters _enqueued_count;
+  NONCOPYABLE(ShenandoahRefProcThreadLocal);
 
 public:
   ShenandoahRefProcThreadLocal();
-
-  ShenandoahRefProcThreadLocal(const ShenandoahRefProcThreadLocal&) = delete; // non construction-copyable
-  ShenandoahRefProcThreadLocal& operator=(const ShenandoahRefProcThreadLocal&) = delete; // non copyable
 
   void reset();
 

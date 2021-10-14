@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,9 +467,12 @@ class Http2Connection  {
         Function<String, CompletableFuture<Void>> checkAlpnCF = (alpn) -> {
             CompletableFuture<Void> cf = new MinimalFuture<>();
             SSLEngine engine = aconn.getEngine();
-            assert Objects.equals(alpn, engine.getApplicationProtocol());
-
-            DEBUG_LOGGER.log("checkSSLConfig: alpn: %s", alpn );
+            String engineAlpn = engine.getApplicationProtocol();
+            DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s', engine: '%s'", alpn, engineAlpn);
+            if (alpn == null && engineAlpn != null) {
+                alpn = engineAlpn;
+            }
+            DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s'", alpn );
 
             if (alpn == null || !alpn.equals("h2")) {
                 String msg;
@@ -492,6 +495,8 @@ class Http2Connection  {
                 cf.completeExceptionally(new ALPNException(msg, aconn));
                 return cf;
             }
+            assert Objects.equals(alpn, engineAlpn)
+                    : "alpn: %s, engine: %s".formatted(alpn, engineAlpn);
             cf.complete(null);
             return cf;
         };
@@ -1111,8 +1116,10 @@ class Http2Connection  {
      * and CONTINUATION frames from the list and return the List<Http2Frame>.
      */
     private List<HeaderFrame> encodeHeaders(OutgoingHeaders<Stream<?>> frame) {
+        // max value of frame size is clamped by default frame size to avoid OOM
+        int bufferSize = Math.min(Math.max(getMaxSendFrameSize(), 1024), DEFAULT_FRAME_SIZE);
         List<ByteBuffer> buffers = encodeHeadersImpl(
-                getMaxSendFrameSize(),
+                bufferSize,
                 frame.getAttachment().getRequestPseudoHeaders(),
                 frame.getUserHeaders(),
                 frame.getSystemHeaders());
@@ -1135,9 +1142,9 @@ class Http2Connection  {
     // by the sendLock. / (see sendFrame())
     // private final ByteBufferPool headerEncodingPool = new ByteBufferPool();
 
-    private ByteBuffer getHeaderBuffer(int maxFrameSize) {
-        ByteBuffer buf = ByteBuffer.allocate(maxFrameSize);
-        buf.limit(maxFrameSize);
+    private ByteBuffer getHeaderBuffer(int size) {
+        ByteBuffer buf = ByteBuffer.allocate(size);
+        buf.limit(size);
         return buf;
     }
 
@@ -1152,8 +1159,8 @@ class Http2Connection  {
      *     header field names MUST be converted to lowercase prior to their
      *     encoding in HTTP/2...
      */
-    private List<ByteBuffer> encodeHeadersImpl(int maxFrameSize, HttpHeaders... headers) {
-        ByteBuffer buffer = getHeaderBuffer(maxFrameSize);
+    private List<ByteBuffer> encodeHeadersImpl(int bufferSize, HttpHeaders... headers) {
+        ByteBuffer buffer = getHeaderBuffer(bufferSize);
         List<ByteBuffer> buffers = new ArrayList<>();
         for(HttpHeaders header : headers) {
             for (Map.Entry<String, List<String>> e : header.map().entrySet()) {
@@ -1164,7 +1171,7 @@ class Http2Connection  {
                     while (!hpackOut.encode(buffer)) {
                         buffer.flip();
                         buffers.add(buffer);
-                        buffer =  getHeaderBuffer(maxFrameSize);
+                        buffer =  getHeaderBuffer(bufferSize);
                     }
                 }
             }
@@ -1173,6 +1180,7 @@ class Http2Connection  {
         buffers.add(buffer);
         return buffers;
     }
+
 
     private List<ByteBuffer> encodeHeaders(OutgoingHeaders<Stream<?>> oh, Stream<?> stream) {
         oh.streamid(stream.streamid);
@@ -1288,7 +1296,7 @@ class Http2Connection  {
         private final ConcurrentLinkedQueue<ByteBuffer> queue
                 = new ConcurrentLinkedQueue<>();
         private final SequentialScheduler scheduler =
-                SequentialScheduler.synchronizedScheduler(this::processQueue);
+                SequentialScheduler.lockingScheduler(this::processQueue);
         private final HttpClientImpl client;
 
         Http2TubeSubscriber(HttpClientImpl client) {

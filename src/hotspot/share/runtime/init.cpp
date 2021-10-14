@@ -33,6 +33,7 @@
 #endif
 #include "interpreter/bytecodes.hpp"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logTag.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -55,7 +56,6 @@ void check_ThreadShadow();
 void eventlog_init();
 void mutex_init();
 void universe_oopstorage_init();
-void chunkpool_init();
 void perfMemory_init();
 void SuspendibleThreadSet_init();
 
@@ -66,7 +66,6 @@ void classLoader_init1();
 void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
-void AOTLoader_init();
 void stubRoutines_init1();
 jint universe_init();          // depends on codeCache_init and stubRoutines_init
 // depends on universe_init, must be before interpreter_init (currently only on SPARC)
@@ -85,6 +84,7 @@ void InlineCacheBuffer_init();
 void compilerOracle_init();
 bool compileBroker_init();
 void dependencyContext_init();
+void dependencies_init();
 
 // Initialization after compiler initialization
 bool universe_post_init();  // must happen after compiler_init
@@ -103,7 +103,6 @@ void vm_init_globals() {
   eventlog_init();
   mutex_init();
   universe_oopstorage_init();
-  chunkpool_init();
   perfMemory_init();
   SuspendibleThreadSet_init();
 }
@@ -117,13 +116,13 @@ jint init_globals() {
   compilationPolicy_init();
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
-  AOTLoader_init();               // depends on VM_Version_init to adjust vm options
   stubRoutines_init1();
   jint status = universe_init();  // dependent on codeCache_init and
                                   // stubRoutines_init1 and metaspace_init.
   if (status != JNI_OK)
     return status;
 
+  AsyncLogWriter::initialize();
   gc_barrier_stubs_init();  // depends on universe_init, must be before interpreter_init
   interpreter_init_stub();  // before methods get loaded
   accessFlags_init();
@@ -143,6 +142,7 @@ jint init_globals() {
   InlineCacheBuffer_init();
   compilerOracle_init();
   dependencyContext_init();
+  dependencies_init();
 
   if (!compileBroker_init()) {
     return JNI_EINVAL;

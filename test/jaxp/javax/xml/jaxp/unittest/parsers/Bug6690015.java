@@ -41,7 +41,7 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 6518733
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6690015
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6690015
  * @run testng/othervm parsers.Bug6690015
  * @summary Test SAX parser handles several attributes with newlines.
  */

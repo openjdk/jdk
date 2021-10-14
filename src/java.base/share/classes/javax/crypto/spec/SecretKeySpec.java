@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 
 package javax.crypto.spec;
 
+import jdk.internal.access.JavaxCryptoSpecAccess;
+import jdk.internal.access.SharedSecrets;
+
 import java.security.MessageDigest;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 
@@ -65,6 +69,16 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @serial
      */
     private String algorithm;
+
+    static {
+        SharedSecrets.setJavaxCryptoSpecAccess(
+                new JavaxCryptoSpecAccess() {
+                    @Override
+                    public void clearSecretKeySpec(SecretKeySpec keySpec) {
+                        keySpec.clear();
+                    }
+                });
+    }
 
     /**
      * Constructs a secret key from the given byte array.
@@ -227,7 +241,19 @@ public class SecretKeySpec implements KeySpec, SecretKey {
         }
 
         byte[] thatKey = ((SecretKey)obj).getEncoded();
+        try {
+            return MessageDigest.isEqual(this.key, thatKey);
+        } finally {
+            if (thatKey != null) {
+                Arrays.fill(thatKey, (byte)0);
+            }
+        }
+    }
 
-        return MessageDigest.isEqual(this.key, thatKey);
+    /**
+     * Clear the key bytes inside.
+     */
+    void clear() {
+        Arrays.fill(key, (byte)0);
     }
 }

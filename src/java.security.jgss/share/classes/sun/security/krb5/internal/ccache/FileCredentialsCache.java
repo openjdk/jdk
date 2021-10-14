@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,11 +458,11 @@ public class FileCredentialsCache extends CredentialsCache
     public static String getDefaultCacheName() {
 
         String stdCacheNameComponent = "krb5cc";
-        String name;
 
         // The env var can start with TYPE:, we only support FILE: here.
         // http://docs.oracle.com/cd/E19082-01/819-2252/6n4i8rtr3/index.html
-        name = java.security.AccessController.doPrivileged(
+        @SuppressWarnings("removal")
+        String name = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
             @Override
             public String run() {
@@ -575,6 +575,7 @@ public class FileCredentialsCache extends CredentialsCache
         v.copyInto(command);
         try {
 
+            @SuppressWarnings("removal")
             Process p =
                 java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedAction<Process> () {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     /**
      * Simple utility method that reads system keys.
      */
+    @SuppressWarnings("removal")
     private String getSystemProperty(String key) {
         return AccessController.doPrivileged(new GetPropertyAction(key));
     }

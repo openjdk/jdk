@@ -71,8 +71,8 @@ ShenandoahPushWorkerScope::~ShenandoahPushWorkerScope() {
   assert(nworkers == _old_workers, "Must be able to restore");
 }
 
-AbstractGangWorker* ShenandoahWorkGang::install_worker(uint which) {
-  AbstractGangWorker* worker = WorkGang::install_worker(which);
+GangWorker* ShenandoahWorkGang::install_worker(uint which) {
+  GangWorker* worker = WorkGang::install_worker(which);
   ShenandoahThreadLocalData::create(worker);
   if (_initialize_gclab) {
     ShenandoahThreadLocalData::initialize_gclab(worker);

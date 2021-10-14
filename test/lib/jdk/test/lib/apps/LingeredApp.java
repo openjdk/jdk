@@ -24,7 +24,9 @@
 package jdk.test.lib.apps;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -89,12 +91,14 @@ public class LingeredApp {
     private Thread outPumperThread;
     private Thread errPumperThread;
     private boolean finishAppCalled = false;
+    private boolean useDefaultClasspath = true;
 
     protected Process appProcess;
     protected OutputBuffer output;
     protected static final int appWaitTime = 100;
     protected static final int appCoreWaitTime = 480;
     protected final String lockFileName;
+    protected String logFileName;
 
     protected boolean forceCrash = false; // set true to force a crash and core file
 
@@ -125,6 +129,10 @@ public class LingeredApp {
      */
     public String getLockFileName() {
         return this.lockFileName;
+    }
+
+    public void setLogFileName(String name) {
+        logFileName = name;
     }
 
     /**
@@ -310,10 +318,12 @@ public class LingeredApp {
             cmd.add("-Djava.library.path=" + System.getProperty("java.library.path"));
         }
 
-        // Make sure we set correct classpath to run the app
-        cmd.add("-cp");
-        String classpath = System.getProperty("test.class.path");
-        cmd.add((classpath == null) ? "." : classpath);
+        if (useDefaultClasspath()) {
+            // Make sure we set correct classpath to run the app
+            cmd.add("-cp");
+            String classpath = System.getProperty("test.class.path");
+            cmd.add((classpath == null) ? "." : classpath);
+        }
 
         return cmd;
     }
@@ -335,6 +345,9 @@ public class LingeredApp {
                 .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(" ", "Command line: [", "]")));
     }
+
+    public boolean useDefaultClasspath() { return useDefaultClasspath; }
+    public void setUseDefaultClasspath(boolean value) { useDefaultClasspath = value; }
 
     /**
      * Run the app.
@@ -379,7 +392,19 @@ public class LingeredApp {
                     " LingeredApp stderr: [" + output.getStderr() + "]\n" +
                     " LingeredApp exitValue = " + appProcess.exitValue();
 
-            System.out.println(msg);
+            if (logFileName != null) {
+                System.out.println(" LingeredApp exitValue = " + appProcess.exitValue());
+                System.out.println(" LingeredApp output: " + logFileName + " (" + msg.length() + " chars)");
+                try (FileOutputStream fos = new FileOutputStream(logFileName);
+                     PrintStream ps = new PrintStream(fos);) {
+                    ps.print(msg);
+                 } catch (IOException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                 }
+            } else {
+                System.out.println(msg);
+            }
         }
     }
 

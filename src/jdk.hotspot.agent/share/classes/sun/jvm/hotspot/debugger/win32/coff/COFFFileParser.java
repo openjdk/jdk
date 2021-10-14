@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import sun.jvm.hotspot.utilities.Assert;
 import sun.jvm.hotspot.debugger.DataSource;
 import sun.jvm.hotspot.debugger.MappedByteBufferDataSource;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 /** Top-level factory which parses COFF files, including object files,
     Portable Executables and DLLs. Returns {@link
     sun.jvm.hotspot.debugger.win32.coff.COFFFile} objects. This class is a
@@ -48,8 +50,6 @@ public class COFFFileParser {
   private static final int SYMBOL_SIZE = 18;
   private static final int RELOCATION_SIZE = 10;
   private static final int LINE_NUMBER_SIZE = 6;
-
-  private static final String US_ASCII = "US-ASCII";
 
   private COFFFileParser() {}
 
@@ -753,7 +753,7 @@ public class COFFFileParser {
 
         public int getNumEntries() { return numEntries; }
         public DebugDirectoryEntry getEntry(int i) {
-          if ((i < 0) || (i >= getNumEntries())) throw new IndexOutOfBoundsException();
+          Objects.checkIndex(i, getNumEntries());
           return new DebugDirectoryEntryImpl(offset + i * DEBUG_DIRECTORY_ENTRY_SIZE);
         }
       }
@@ -809,9 +809,7 @@ public class COFFFileParser {
         }
 
         public byte  getRawDataByte(int i) {
-          if (i < 0 || i >= getSizeOfData()) {
-            throw new IndexOutOfBoundsException();
-          }
+          Objects.checkIndex(i, getSizeOfData());
           seek(getPointerToRawData() + i);
           return readByte();
         }
@@ -1197,11 +1195,7 @@ public class COFFFileParser {
                   int cbName = readByte() & 0xFF;
                   byte[] res = new byte[cbName];
                   readBytes(res);
-                  try {
-                    return new String(res, US_ASCII);
-                  } catch (UnsupportedEncodingException e) {
-                    throw new COFFException(e);
-                  }
+                  return new String(res, US_ASCII);
                 }
               };
           }
@@ -3338,11 +3332,7 @@ public class COFFFileParser {
             throw new COFFException("Error reading length prefixed string in symbol at offset " +
                                     absoluteOffset);
           }
-          try {
-            return new String(res, US_ASCII);
-          } catch (UnsupportedEncodingException e) {
-            throw new COFFException(e);
-          }
+          return new String(res, US_ASCII);
         }
 
         private int unbiasTypeIndex(int index) {
@@ -3387,24 +3377,18 @@ public class COFFFileParser {
             } catch (NumberFormatException e) {
               throw new COFFException("Error parsing string table index of name of section header " +
                                       "at offset " + offset);
-            } catch (UnsupportedEncodingException e) {
-              throw new COFFException(e);
             }
             // Look up in string table
             // FIXME: this index value is assumed to be in the valid range
             name = getStringTable().get(index);
           } else {
-            try {
-              int length = 0;
-              // find last non-NULL
-              for (; length < tmpName.length && tmpName[length] != '\0';) {
-                length++;
-              }
-              // don't include NULL chars in returned name String
-              name = new String(tmpName, 0, length, US_ASCII);
-            } catch (UnsupportedEncodingException e) {
-              throw new COFFException(e);
+            int length = 0;
+            // find last non-NULL
+            for (; length < tmpName.length && tmpName[length] != '\0';) {
+              length++;
             }
+            // don't include NULL chars in returned name String
+            name = new String(tmpName, 0, length, US_ASCII);
           }
           virtualSize          = readInt();
           virtualAddress       = readInt();
@@ -3638,11 +3622,7 @@ public class COFFFileParser {
           if (numRead != 18) {
             throw new COFFException("Error reading auxiliary file record at offset " + offset);
           }
-          try {
-            name = new String(tmpName, US_ASCII);
-          } catch (UnsupportedEncodingException e) {
-            throw new COFFException(e);
-          }
+          name = new String(tmpName, US_ASCII);
         }
 
         public String getName() { return name; }
@@ -3753,12 +3733,8 @@ public class COFFFileParser {
             while (data[ptr] != 0) {
               ptr++;
             }
-            try {
-              strings[i] = new COFFString(new String(data, lastPtr, ptr - lastPtr, US_ASCII),
-                                          offset + ptr + 4);
-            } catch (UnsupportedEncodingException e) {
-              throw new COFFException(e);
-            }
+            strings[i] = new COFFString(new String(data, lastPtr, ptr - lastPtr, US_ASCII),
+                                        offset + ptr + 4);
             ptr++;
             lastPtr = ptr;
           }
@@ -3912,11 +3888,7 @@ public class COFFFileParser {
       for (int i = 0; i < data.size(); i++) {
         bytes[i] = (data.get(i)).byteValue();
       }
-      try {
-        return new String(bytes, US_ASCII);
-      } catch (UnsupportedEncodingException e) {
-        throw new COFFException(e);
-      }
+      return new String(bytes, US_ASCII);
     }
 
     void seek(long offset) throws COFFException {

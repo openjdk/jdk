@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
@@ -36,6 +35,7 @@
 
 EventLog* Events::_logs = NULL;
 StringEventLog* Events::_messages = NULL;
+StringEventLog* Events::_vm_operations = NULL;
 ExceptionsEventLog* Events::_exceptions = NULL;
 StringEventLog* Events::_redefinitions = NULL;
 UnloadingEventLog* Events::_class_unloading = NULL;
@@ -92,6 +92,7 @@ void Events::print() {
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
+    _vm_operations = new StringEventLog("VM Operations", "vmops");
     _exceptions = new ExceptionsEventLog("Internal exceptions", "exc");
     _redefinitions = new StringEventLog("Classes redefined", "redef");
     _class_unloading = new UnloadingEventLog("Classes unloaded", "unload");
@@ -106,23 +107,20 @@ void eventlog_init() {
 ///////////////////////////////////////////////////////////////////////////
 // EventMark
 
-EventMark::EventMark(const char* format, ...) {
-  if (LogEvents) {
-    va_list ap;
-    va_start(ap, format);
-    // Save a copy of begin message and log it.
-    _buffer.printv(format, ap);
-    Events::log(NULL, "%s", _buffer.buffer());
-    va_end(ap);
-  }
+EventMarkBase::EventMarkBase(EventLogFunction log_function) :
+    _log_function(log_function),
+    _buffer() {}
+
+void EventMarkBase::log_start(const char* format, va_list argp) {
+  // Save a copy of begin message and log it.
+  _buffer.printv(format, argp);
+  _log_function(NULL, "%s", _buffer.buffer());
 }
 
-EventMark::~EventMark() {
-  if (LogEvents) {
-    // Append " done" to the begin message and log it
-    _buffer.append(" done");
-    Events::log(NULL, "%s", _buffer.buffer());
-  }
+void EventMarkBase::log_end() {
+  // Append " done" to the begin message and log it
+  _buffer.append(" done");
+  _log_function(NULL, "%s", _buffer.buffer());
 }
 
 void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {

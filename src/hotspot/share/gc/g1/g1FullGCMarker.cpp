@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,6 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
     _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
   _mark_stats_cache.reset();
-  _oop_stack.initialize();
-  _objarray_stack.initialize();
 }
 
 G1FullGCMarker::~G1FullGCMarker() {

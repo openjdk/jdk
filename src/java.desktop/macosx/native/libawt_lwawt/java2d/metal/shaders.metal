@@ -46,6 +46,7 @@ struct AAVertexInput {
 
 struct ColShaderInOut {
     float4 position [[position]];
+    float  ptSize [[point_size]];
     half4  color;
 };
 
@@ -58,6 +59,7 @@ struct AAShaderInOut {
 
 struct StencilShaderInOut {
     float4 position [[position]];
+    float  ptSize [[point_size]];
     char color;
 };
 
@@ -81,6 +83,7 @@ struct GradShaderInOut {
 
 struct ColShaderInOut_XOR {
     float4 position [[position]];
+    float  ptSize [[point_size]];
     float2 orig_pos;
     half4  color;
 };
@@ -164,6 +167,7 @@ vertex ColShaderInOut vert_col(VertexInput in [[stage_in]],
     ColShaderInOut out;
     float4 pos4 = float4(in.position, 0.0, 1.0);
     out.position = transform.transformMatrix*pos4;
+    out.ptSize = 1.0;
     out.color = half4(uniforms.color.r, uniforms.color.g, uniforms.color.b, uniforms.color.a);
     return out;
 }
@@ -186,6 +190,7 @@ vertex StencilShaderInOut vert_stencil(VertexInput in [[stage_in]],
     StencilShaderInOut out;
     float4 pos4 = float4(in.position, 0.0, 1.0);
     out.position = transform.transformMatrix * pos4;
+    out.ptSize = 1.0;
     out.color = 0xFF;
     return out;
 }
@@ -640,45 +645,25 @@ kernel void stencil2tex(const device uchar *imageBuffer [[buffer(0)]],
 
 // work item deals with 4 byte pixel
 // assuming that data is aligned
-kernel void rgb_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
-                        device uchar *outputBuffer [[buffer(1)]],
-                        uint gid [[thread_position_in_grid]])
+kernel void swizzle_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
+                            device uchar *outputBuffer [[buffer(1)]],
+                            constant SwizzleUniforms& uniforms [[buffer(2)]],
+                            constant uint& size [[buffer(3)]],
+                            uint gid [[thread_position_in_grid]])
 {
-    outputBuffer[4 * gid]     = imageBuffer[4 * gid];     // r
-    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + 1]; // g
-    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid + 2]; // b
-    outputBuffer[4 * gid + 3] = 255;                      // a
-}
+    if (gid > size) {
+        return;
+    }
 
-kernel void bgr_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
-                        device uchar *outputBuffer [[buffer(1)]],
-                        uint gid [[thread_position_in_grid]])
-{
-    outputBuffer[4 * gid]     = imageBuffer[4 * gid + 2]; // r
-    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + 1]; // g
-    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid];     // b
-    outputBuffer[4 * gid + 3] = 255;                      // a
-}
+    outputBuffer[4 * gid]     = imageBuffer[4 * gid + uniforms.swizzle[0]]; // r
+    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + uniforms.swizzle[1]]; // g
+    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid + uniforms.swizzle[2]]; // b
 
-kernel void xrgb_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
-                         device uchar *outputBuffer [[buffer(1)]],
-                         uint gid [[thread_position_in_grid]])
-{
-    outputBuffer[4 * gid]     = imageBuffer[4 * gid + 1]; // r
-    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + 2]; // g
-    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid + 3]; // b
-    outputBuffer[4 * gid + 3] = imageBuffer[4 * gid];     // a
-}
-
-
-kernel void xbgr_to_rgba(const device uchar *imageBuffer [[buffer(0)]],
-                         device uchar *outputBuffer [[buffer(1)]],
-                         uint gid [[thread_position_in_grid]])
-{
-    outputBuffer[4 * gid]     = imageBuffer[4 * gid + 3]; // r
-    outputBuffer[4 * gid + 1] = imageBuffer[4 * gid + 2]; // g
-    outputBuffer[4 * gid + 2] = imageBuffer[4 * gid + 1]; // b
-    outputBuffer[4 * gid + 3] = imageBuffer[4 * gid];     // a
+    if (uniforms.hasAlpha) {
+        outputBuffer[4 * gid + 3] = imageBuffer[4 * gid + uniforms.swizzle[3]];
+    } else {
+        outputBuffer[4 * gid + 3] = 255;
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -691,6 +676,7 @@ vertex ColShaderInOut_XOR vert_col_xorMode(VertexInput in [[stage_in]],
     ColShaderInOut_XOR out;
     float4 pos4 = float4(in.position, 0.0, 1.0);
     out.position = transform.transformMatrix*pos4;
+    out.ptSize = 1.0;
     out.orig_pos = in.position;
     out.color = half4(uniforms.color.r, uniforms.color.g, uniforms.color.b, uniforms.color.a);
     return out;

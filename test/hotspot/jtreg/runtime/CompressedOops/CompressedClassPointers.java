@@ -26,6 +26,7 @@
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
  * @requires vm.bits == 64 & !vm.graal.enabled
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -93,7 +94,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             logging_option,
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
@@ -119,7 +119,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx31g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             logging_option,
             "-Xshare:off",
             "-XX:+VerifyBeforeGC", "-version");
@@ -239,7 +238,6 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
-            "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             "-Xlog:gc+metaspace=trace",
             "-Xshare:off",
             "-Xlog:cds=trace",

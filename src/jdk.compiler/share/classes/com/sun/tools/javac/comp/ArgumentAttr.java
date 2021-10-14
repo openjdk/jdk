@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
-import com.sun.tools.javac.comp.DeferredAttr.DeferredTypeCompleter;
 import com.sun.tools.javac.comp.DeferredAttr.LambdaReturnScanner;
 import com.sun.tools.javac.comp.DeferredAttr.SwitchExpressionScanner;
 import com.sun.tools.javac.comp.Infer.PartiallyInferredMethodType;
@@ -55,7 +54,6 @@ import com.sun.tools.javac.tree.JCTree.JCReturn;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeInfo;
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic;
@@ -336,7 +334,7 @@ public class ArgumentAttr extends JCTree.Visitor {
      * perform an overload check without the need of calling back to Attr. This extra information
      * is typically stored in the form of a speculative tree.
      */
-    abstract class ArgumentType<T extends JCExpression> extends DeferredType implements DeferredTypeCompleter {
+    abstract class ArgumentType<T extends JCExpression> extends DeferredType {
 
         /** The speculative tree carrying type information. */
         T speculativeTree;
@@ -351,24 +349,18 @@ public class ArgumentAttr extends JCTree.Visitor {
         }
 
         @Override
-        final DeferredTypeCompleter completer() {
-            return this;
-        }
-
-        @Override
-        public final Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
-            Assert.check(dt == this);
+        public final Type complete(ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
             if (deferredAttrContext.mode == AttrMode.SPECULATIVE) {
                 Type t = (resultInfo.pt == Type.recoveryType) ?
-                        deferredAttr.basicCompleter.complete(dt, resultInfo, deferredAttrContext) :
+                        super.complete(resultInfo, deferredAttrContext) :
                         overloadCheck(resultInfo, deferredAttrContext);
                 speculativeTypes.put(resultInfo, t);
                 return t;
             } else {
                 if (!env.info.attributionMode.isSpeculative) {
-                    argumentTypeCache.remove(new UniquePos(dt.tree));
+                    argumentTypeCache.remove(new UniquePos(tree));
                 }
-                return deferredAttr.basicCompleter.complete(dt, resultInfo, deferredAttrContext);
+                return super.complete(resultInfo, deferredAttrContext);
             }
         }
 
@@ -751,12 +743,9 @@ public class ArgumentAttr extends JCTree.Visitor {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof UniquePos) {
-                UniquePos that = (UniquePos)obj;
-                return pos == that.pos && source == that.source;
-            } else {
-                return false;
-            }
+            return (obj instanceof UniquePos uniquePos)
+                    && pos == uniquePos.pos
+                    && source == uniquePos.source;
         }
 
         @Override

@@ -338,6 +338,7 @@ public abstract class GraphicsPrimitive {
 
     static {
         GetPropertyAction gpa = new GetPropertyAction("sun.java2d.trace");
+        @SuppressWarnings("removal")
         String trace = AccessController.doPrivileged(gpa);
         if (trace != null) {
             boolean verbose = false;
@@ -401,6 +402,7 @@ public abstract class GraphicsPrimitive {
     private static PrintStream getTraceOutputFile() {
         if (traceout == null) {
             if (tracefile != null) {
+                @SuppressWarnings("removal")
                 FileOutputStream o = AccessController.doPrivileged(
                     new PrivilegedAction<FileOutputStream>() {
                         public FileOutputStream run() {
@@ -424,6 +426,7 @@ public abstract class GraphicsPrimitive {
     }
 
     public static class TraceReporter implements Runnable {
+        @SuppressWarnings("removal")
         public static void setShutdownHook() {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
                 TraceReporter t = new TraceReporter();

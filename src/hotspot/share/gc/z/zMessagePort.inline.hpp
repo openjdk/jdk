@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMESSAGEPORT_INLINE_HPP
 
 #include "gc/z/zMessagePort.hpp"
+
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -65,16 +66,19 @@ public:
 
 template <typename T>
 inline ZMessagePort<T>::ZMessagePort() :
-    _monitor(Monitor::leaf,
-             "ZMessagePort",
-             Monitor::_allow_vm_block_flag,
-             Monitor::_safepoint_check_never),
+    _monitor(Monitor::nosafepoint, "ZMessagePort_lock"),
     _has_message(false),
     _seqnum(0),
     _queue() {}
 
 template <typename T>
-inline void ZMessagePort<T>::send_sync(T message) {
+inline bool ZMessagePort<T>::is_busy() const {
+  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+  return _has_message;
+}
+
+template <typename T>
+inline void ZMessagePort<T>::send_sync(const T& message) {
   Request request;
 
   {
@@ -101,7 +105,7 @@ inline void ZMessagePort<T>::send_sync(T message) {
 }
 
 template <typename T>
-inline void ZMessagePort<T>::send_async(T message) {
+inline void ZMessagePort<T>::send_async(const T& message) {
   MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
   if (!_has_message) {
     // Post message

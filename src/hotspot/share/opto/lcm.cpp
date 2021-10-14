@@ -374,7 +374,21 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     // Check if we need to hoist decodeHeapOop_not_null first.
     Block *valb = get_block_for_node(val);
     if( block != valb && block->_dom_depth < valb->_dom_depth ) {
-      // Hoist it up to the end of the test block.
+      // Hoist it up to the end of the test block together with its inputs if they exist.
+      for (uint i = 2; i < val->req(); i++) {
+        // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
+        Node *temp = val->in(i);
+        Block *tempb = get_block_for_node(temp);
+        if (!tempb->dominates(block)) {
+          assert(block->dominates(tempb), "sanity check: temp node placement");
+          // We only expect nodes without further inputs, like MachTemp or load Base.
+          assert(temp->req() == 0 || (temp->req() == 1 && temp->in(0) == (Node*)C->root()),
+                 "need for recursive hoisting not expected");
+          tempb->find_remove(temp);
+          block->add_inst(temp);
+          map_node_to_block(temp, block);
+        }
+      }
       valb->find_remove(val);
       block->add_inst(val);
       map_node_to_block(val, block);
@@ -398,7 +412,8 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
   // Move the control dependence if it is pinned to not-null block.
   // Don't change it in other cases: NULL or dominating control.
-  if (best->in(0) == not_null_block->head()) {
+  Node* ctrl = best->in(0);
+  if (ctrl != NULL && get_block_for_node(ctrl) == not_null_block) {
     // Set it to control edge of null check.
     best->set_req(0, proj->in(0)->in(0));
   }
@@ -503,7 +518,7 @@ Node* PhaseCFG::select(
   uint score   = 0; // Bigger is better
   int idx = -1;     // Index in worklist
   int cand_cnt = 0; // Candidate count
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -855,6 +870,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
     case Op_CallRuntime:
     case Op_CallLeaf:
     case Op_CallLeafNoFP:
+    case Op_CallLeafVector:
       // Calling C code so use C calling convention
       save_policy = _matcher._c_reg_save_policy;
       break;
@@ -865,7 +881,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       save_policy = _matcher._register_save_policy;
       break;
     case Op_CallNative:
-      // We use the c reg save policy here since Panama
+      // We use the c reg save policy here since Foreign Linker
       // only supports the C ABI currently.
       // TODO compute actual save policy based on nep->abi
       save_policy = _matcher._c_reg_save_policy;
@@ -932,7 +948,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     return true;
   }
 
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   // We track the uses of local definitions as input dependences so that
   // we know when a given instruction is avialable to be scheduled.
@@ -1060,11 +1076,10 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   if (OptoRegScheduling && block_size_threshold_ok) {
     // To stage register pressure calculations we need to examine the live set variables
     // breaking them up by register class to compartmentalize the calculations.
-    uint float_pressure = Matcher::float_pressure(FLOATPRESSURE);
-    _regalloc->_sched_int_pressure.init(INTPRESSURE);
-    _regalloc->_sched_float_pressure.init(float_pressure);
-    _regalloc->_scratch_int_pressure.init(INTPRESSURE);
-    _regalloc->_scratch_float_pressure.init(float_pressure);
+    _regalloc->_sched_int_pressure.init(Matcher::int_pressure_limit());
+    _regalloc->_sched_float_pressure.init(Matcher::float_pressure_limit());
+    _regalloc->_scratch_int_pressure.init(Matcher::int_pressure_limit());
+    _regalloc->_scratch_float_pressure.init(Matcher::float_pressure_limit());
 
     _regalloc->compute_entry_block_pressure(block);
   }
@@ -1390,14 +1405,40 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
   }
 
   // If the successor blocks have a CreateEx node, move it back to the top
-  for(uint i4 = 0; i4 < block->_num_succs; i4++ ) {
+  for (uint i4 = 0; i4 < block->_num_succs; i4++) {
     Block *sb = block->_succs[i4];
     uint new_cnt = end - beg;
-    // Remove any newly created, but dead, nodes.
-    for( uint j = new_cnt; j > 0; j-- ) {
+    // Remove any newly created, but dead, nodes by traversing their schedule
+    // backwards. Here, a dead node is a node whose only outputs (if any) are
+    // unused projections.
+    for (uint j = new_cnt; j > 0; j--) {
       Node *n = sb->get_node(j);
-      if (n->outcnt() == 0 &&
-          (!n->is_Proj() || n->as_Proj()->in(0)->outcnt() == 1) ){
+      // Individual projections are examined together with all siblings when
+      // their parent is visited.
+      if (n->is_Proj()) {
+        continue;
+      }
+      bool dead = true;
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* out = n->fast_out(i);
+        // n is live if it has a non-projection output or a used projection.
+        if (!out->is_Proj() || out->outcnt() > 0) {
+          dead = false;
+          break;
+        }
+      }
+      if (dead) {
+        // n's only outputs (if any) are unused projections scheduled next to n
+        // (see PhaseCFG::select()). Remove these projections backwards.
+        for (uint k = j + n->outcnt(); k > j; k--) {
+          Node* proj = sb->get_node(k);
+          assert(proj->is_Proj() && proj->in(0) == n,
+                 "projection should correspond to dead node");
+          proj->disconnect_inputs(C);
+          sb->remove_node(k);
+          new_cnt--;
+        }
+        // Now remove the node itself.
         n->disconnect_inputs(C);
         sb->remove_node(j);
         new_cnt--;

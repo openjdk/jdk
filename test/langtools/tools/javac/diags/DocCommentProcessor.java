@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class DocCommentProcessor extends AbstractProcessor {
             DocTreeScanner<Void, Void> s = new DocTreeScanner<Void, Void>() {
                 @Override
                 public Void visitErroneous(ErroneousTree tree, Void ignore) {
-                    messager.printMessage(Diagnostic.Kind.NOTE, tree.getDiagnostic().getMessage(null));
+                    messager.printNote(tree.getDiagnostic().getMessage(null));
                     return null;
                 }
             };

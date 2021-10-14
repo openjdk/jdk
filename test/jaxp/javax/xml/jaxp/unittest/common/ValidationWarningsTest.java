@@ -47,7 +47,7 @@ import org.xml.sax.InputSource;
  * @key intermittent
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @compile -XDignore.symbol.file TestSAXDriver.java
- * @run testng/othervm -DrunSecMngr=true common.ValidationWarningsTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.ValidationWarningsTest
  * @run testng/othervm common.ValidationWarningsTest
  * @summary Check that warnings about unsupported properties from SAX
  *  parsers are suppressed during the xml validation process.

@@ -31,9 +31,15 @@
  * @run testng RemovedJDKInternals
  */
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.Graph;
@@ -42,6 +48,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class RemovedJDKInternals {
@@ -113,6 +120,65 @@ public class RemovedJDKInternals {
                 .forEach(u -> g.adjacentNodes(u).stream()
                     .forEach(v -> data.checkDependence(u.name, v.name, v.source, v.info)));
         }
+    }
+
+    private static final List<String> REMOVED_APIS = List.of(
+            "com.sun.image.codec.jpeg.JPEGCodec",
+            "sun.misc.Service",
+            "sun.misc.SoftCache",
+            "sun.reflect.Reflection"
+    );
+    private static final String REMOVED_INTERNAL_API = "JDK removed internal API";
+
+
+    @Test
+    public void removedInternalJDKs() throws IOException  {
+        // verify the JDK removed internal API
+        JdepsRunner summary = JdepsRunner.run("-summary", CLASSES_DIR.toString());
+        Arrays.stream(summary.output()).map(l -> l.split(" -> "))
+              .map(a -> a[1]).filter(n -> n.equals(REMOVED_INTERNAL_API))
+              .findFirst().orElseThrow();
+
+        JdepsRunner jdeps = JdepsRunner.run("-verbose:class", CLASSES_DIR.toString());
+        String output = jdeps.stdout.toString();
+        Map<String, String> result = findDeps(output);
+        for (String cn : result.keySet()) {
+            String name = result.get(cn);
+            if (REMOVED_APIS.contains(cn)) {
+                assertEquals(name, REMOVED_INTERNAL_API);
+            } else if (cn.startsWith("sun.reflect")){
+                assertEquals(name, "JDK internal API (jdk.unsupported)");
+            } else {
+                assertEquals(name, "java.base");
+            }
+        }
+        REMOVED_APIS.stream().map(result::containsKey).allMatch(b -> b);
+    }
+
+    // Pattern used to parse lines
+    private static final Pattern linePattern = Pattern.compile(".*\r?\n");
+    private static final  Pattern pattern = Pattern.compile("\\s+ -> (\\S+) +(.*)");
+
+    // Use the linePattern to break the given String into lines, applying
+    // the pattern to each line to see if we have a match
+    private static Map<String, String> findDeps(String out) {
+        Map<String, String> result = new LinkedHashMap<>();
+        Matcher lm = linePattern.matcher(out);  // Line matcher
+        Matcher pm = null;                      // Pattern matcher
+        int lines = 0;
+        while (lm.find()) {
+            lines++;
+            CharSequence cs = lm.group();       // The current line
+            if (pm == null)
+                pm = pattern.matcher(cs);
+            else
+                pm.reset(cs);
+            if (pm.find())
+                result.put(pm.group(1), pm.group(2).trim());
+            if (lm.end() == out.length())
+                break;
+        }
+        return result;
     }
 
     private static final Map<String, String> REPLACEMENTS = Map.of(

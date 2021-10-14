@@ -745,6 +745,7 @@ public class TextComponent extends Component implements Accessible {
      * Assigns a valid value to the canAccessClipboard instance variable.
      */
     private boolean canAccessClipboard() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) return true;
         try {

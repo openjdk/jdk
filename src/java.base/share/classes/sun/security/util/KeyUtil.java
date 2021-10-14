@@ -47,6 +47,7 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 import java.math.BigInteger;
 import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 
 import sun.security.jca.JCAUtil;
 
@@ -82,8 +83,12 @@ public final class KeyUtil {
         if (key instanceof SecretKey) {
             SecretKey sk = (SecretKey)key;
             String format = sk.getFormat();
-            if ("RAW".equals(format) && sk.getEncoded() != null) {
-                size = (sk.getEncoded().length * 8);
+            if ("RAW".equals(format)) {
+                byte[] encoded = sk.getEncoded();
+                if (encoded != null) {
+                    size = (encoded.length * 8);
+                    Arrays.fill(encoded, (byte)0);
+                }
             }   // Otherwise, it may be a unextractable key of PKCS#11, or
                 // a key we are not able to handle.
         } else if (key instanceof RSAKey) {

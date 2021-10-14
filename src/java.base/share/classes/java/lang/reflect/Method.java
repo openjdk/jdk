@@ -85,7 +85,8 @@ public final class Method extends Executable {
     private byte[]              annotations;
     private byte[]              parameterAnnotations;
     private byte[]              annotationDefault;
-    private volatile MethodAccessor methodAccessor;
+    @Stable
+    private MethodAccessor      methodAccessor;
     // For sharing of MethodAccessors. This branching structure is
     // currently only two levels deep (i.e., one root Method and
     // potentially many Method objects pointing to it.)
@@ -607,6 +608,9 @@ public final class Method extends Executable {
      * @jls 8.4.8.3 Requirements in Overriding and Hiding
      * @jls 15.12.4.5 Create Frame, Synchronize, Transfer Control
      * @jvms 4.6 Methods
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      */
     public boolean isBridge() {
         return (getModifiers() & Modifier.BRIDGE) != 0;
@@ -626,6 +630,9 @@ public final class Method extends Executable {
      * {@inheritDoc}
      * @jls 13.1 The Form of a Binary
      * @jvms 4.6 Methods
+     * @see <a
+     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
+     * programming language and JVM modeling in core reflection</a>
      * @since 1.5
      */
     @Override
@@ -659,8 +666,8 @@ public final class Method extends Executable {
     private MethodAccessor acquireMethodAccessor() {
         // First check to see if one has been created yet, and take it
         // if so
-        MethodAccessor tmp = null;
-        if (root != null) tmp = root.getMethodAccessor();
+        Method root = this.root;
+        MethodAccessor tmp = root == null ? null : root.getMethodAccessor();
         if (tmp != null) {
             methodAccessor = tmp;
         } else {
@@ -683,6 +690,7 @@ public final class Method extends Executable {
     void setMethodAccessor(MethodAccessor accessor) {
         methodAccessor = accessor;
         // Propagate up
+        Method root = this.root;
         if (root != null) {
             root.setMethodAccessor(accessor);
         }
@@ -760,7 +768,7 @@ public final class Method extends Executable {
     }
 
     @Override
-    boolean handleParameterNumberMismatch(int resultLength, int numParameters) {
+    boolean handleParameterNumberMismatch(int resultLength, Class<?>[] parameterTypes) {
         throw new AnnotationFormatError("Parameter annotations don't match number of parameters");
     }
 }

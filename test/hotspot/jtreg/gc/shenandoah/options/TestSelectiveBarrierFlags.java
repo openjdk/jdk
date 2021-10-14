@@ -22,7 +22,7 @@
  *
  */
 
-/* @test TestSelectiveBarrierFlags
+/* @test
  * @summary Test selective barrier enabling works, by aggressively compiling HelloWorld with combinations
  *          of barrier flags
  * @requires vm.gc.Shenandoah

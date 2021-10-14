@@ -35,6 +35,8 @@ frame JavaThread::pd_last_frame() {
   address pc = _anchor.last_Java_pc();
 
   // Last_Java_pc ist not set if we come here from compiled code.
+  // Assume spill slot for Z_R14 (return register) contains a suitable pc.
+  // Should have been filled by method entry code.
   if (pc == NULL) {
     pc = (address) *(sp + 14);
   }
@@ -51,6 +53,9 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
     return true;
   }
 
+  // At this point, we don't have a last_Java_frame, so
+  // we try to glean some information out of the ucontext
+  // if we were running Java code when SIGPROF came in.
   if (isInJava) {
     ucontext_t* uc = (ucontext_t*) ucontext;
     frame ret_frame((intptr_t*)uc->uc_mcontext.gregs[15/*Z_SP*/],
@@ -58,6 +63,38 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 
     if (ret_frame.pc() == NULL) {
       // ucontext wasn't useful
+      return false;
+    }
+
+    if (ret_frame.fp() == NULL) {
+      // The found frame does not have a valid frame pointer.
+      // Bail out because this will create big trouble later on, either
+      //  - when using istate, calculated as (NULL - z_ijava_state_size (= 0x70 (dbg) or 0x68 (rel)) or
+      //  - when using fp() directly in safe_for_sender()
+      //
+      // There is no conclusive description (yet) how this could happen, but it does:
+      //
+      // We observed a SIGSEGV with the following stack trace (openjdk.jdk11u-dev, 2021-07-07, linuxs390x fastdebug)
+      // V  [libjvm.so+0x12c8f12]  JavaThread::pd_get_top_frame_for_profiling(frame*, void*, bool)+0x142
+      // V  [libjvm.so+0xb1020c]  JfrGetCallTrace::get_topframe(void*, frame&)+0x3c
+      // V  [libjvm.so+0xba0b08]  OSThreadSampler::protected_task(os::SuspendedThreadTaskContext const&)+0x98
+      // V  [libjvm.so+0xff33c4]  os::SuspendedThreadTask::internal_do_task()+0x14c
+      // V  [libjvm.so+0xfe3c9c]  os::SuspendedThreadTask::run()+0x24
+      // V  [libjvm.so+0xba0c66]  JfrThreadSampleClosure::sample_thread_in_java(JavaThread*, JfrStackFrame*, unsigned int)+0x66
+      // V  [libjvm.so+0xba1718]  JfrThreadSampleClosure::do_sample_thread(JavaThread*, JfrStackFrame*, unsigned int, JfrSampleType)+0x278
+      // V  [libjvm.so+0xba4f54]  JfrThreadSampler::task_stacktrace(JfrSampleType, JavaThread**) [clone .constprop.62]+0x284
+      // V  [libjvm.so+0xba5e54]  JfrThreadSampler::run()+0x2ec
+      // V  [libjvm.so+0x12adc9c]  Thread::call_run()+0x9c
+      // V  [libjvm.so+0xff5ab0]  thread_native_entry(Thread*)+0x128
+      // siginfo: si_signo: 11 (SIGSEGV), si_code: 1 (SEGV_MAPERR), si_addr: 0xfffffffffffff000
+      // failing instruction: e320 6008 0004   LG   r2,8(r0,r6)
+      // contents of r6:  0xffffffffffffff90
+      //
+      // Here is the sequence of what happens:
+      //  - ret_frame is constructed with _fp == NULL (for whatever reason)
+      //  - ijava_state_unchecked() calculates it's result as
+      //      istate = fp() - z_ijava_state_size() = NULL - 0x68 DEBUG_ONLY(-8)
+      //  - istate->method dereferences memory at offset 8 from istate
       return false;
     }
 

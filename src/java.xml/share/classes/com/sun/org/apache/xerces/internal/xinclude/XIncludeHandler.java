@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -78,6 +78,7 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.transform.Source;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.InputSource;
 
@@ -127,7 +128,7 @@ import org.xml.sax.InputSource;
  *
  *
  * @see XIncludeNamespaceSupport
- * @LastModified: Nov 2017
+ * @LastModified: May 2021
  */
 public class XIncludeHandler
     implements XMLComponent, XMLDocumentFilter, XMLDTDFilter {
@@ -246,7 +247,7 @@ public class XIncludeHandler
 
     /** property identifier: XML security property manager. */
     protected static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** Recognized features. */
     private static final String[] RECOGNIZED_FEATURES =
@@ -561,7 +562,7 @@ public class XIncludeHandler
         }
 
         fSecurityPropertyMgr = (XMLSecurityPropertyManager)
-                componentManager.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER);
+                componentManager.getProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER);
 
         //Use Catalog
         fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG);

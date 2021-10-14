@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
    @bug 5076514 8025430 8198321
    @summary Tests if SecurityManager.checkPermission()
                   used for clipboard access with permission 'accessClipboard'
-   @run main bug5076514
-   @run main/othervm -Djava.awt.headless=true bug5076514
+   @run main/othervm -Djava.security.manager=allow bug5076514
+   @run main/othervm -Djava.security.manager=allow -Djava.awt.headless=true bug5076514
 */
 
 import java.awt.GraphicsEnvironment;

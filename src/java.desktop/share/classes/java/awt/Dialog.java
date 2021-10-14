@@ -301,7 +301,7 @@ public class Dialog extends Window {
      * @see #hideAndDisposeHandler()
      * @see #shouldBlock()
      */
-    transient volatile boolean isInHide = false;
+    transient volatile boolean isInHide;
 
     /*
      * Indicates that this dialog is being disposed. This flag is set to true at
@@ -312,7 +312,7 @@ public class Dialog extends Window {
      * @see #hideAndDisposeHandler()
      * @see #doDispose()
      */
-    transient volatile boolean isInDispose = false;
+    transient volatile boolean isInDispose;
 
     private static final String base = "dialog";
     private static int nameCounter = 0;
@@ -1073,6 +1073,7 @@ public class Dialog extends Window {
 
                     modalityPushed();
                     try {
+                        @SuppressWarnings("removal")
                         final EventQueue eventQueue = AccessController.doPrivileged(
                                 (PrivilegedAction<EventQueue>) Toolkit.getDefaultToolkit()::getSystemEventQueue);
                         secondaryLoop = eventQueue.createSecondaryLoop(() -> true, modalFilter, 0);
@@ -1587,6 +1588,7 @@ public class Dialog extends Window {
 
     private void checkModalityPermission(ModalityType mt) {
         if (mt == ModalityType.TOOLKIT_MODAL) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(AWTPermissions.TOOLKIT_MODALITY_PERMISSION);
@@ -1617,7 +1619,7 @@ public class Dialog extends Window {
 
         try {
             checkModalityPermission(localModalityType);
-        } catch (AccessControlException ace) {
+        } catch (@SuppressWarnings("removal") AccessControlException ace) {
             localModalityType = DEFAULT_MODALITY_TYPE;
         }
 

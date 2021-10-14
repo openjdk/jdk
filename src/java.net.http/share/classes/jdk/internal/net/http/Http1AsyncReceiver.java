@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ class Http1AsyncReceiver {
     private final ConcurrentLinkedDeque<ByteBuffer> queue
             = new ConcurrentLinkedDeque<>();
     private final SequentialScheduler scheduler =
-            SequentialScheduler.synchronizedScheduler(this::flush);
+            SequentialScheduler.lockingScheduler(this::flush);
     final MinimalFuture<Void> whenFinished;
     private final Executor executor;
     private final Http1TubeSubscriber subscriber = new Http1TubeSubscriber();

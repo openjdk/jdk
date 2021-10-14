@@ -254,18 +254,10 @@ public class SecureClassLoader extends ClassLoader {
                 return true;
             }
 
-            if (!(obj instanceof CodeSourceKey)) {
-                return false;
-            }
-
-            CodeSourceKey csk = (CodeSourceKey) obj;
-
-            if (!Objects.equals(cs.getLocationNoFragString(),
-                                csk.cs.getLocationNoFragString())) {
-                return false;
-            }
-
-            return cs.matchCerts(csk.cs, true);
+            return obj instanceof CodeSourceKey other
+                    && Objects.equals(cs.getLocationNoFragString(),
+                                other.cs.getLocationNoFragString())
+                    && cs.matchCerts(other.cs, true);
         }
     }
 

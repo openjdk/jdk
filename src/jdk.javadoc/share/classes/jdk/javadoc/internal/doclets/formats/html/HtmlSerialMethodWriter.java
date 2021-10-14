@@ -47,7 +47,7 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
  *  deletion without notice.</b>
  */
 public class HtmlSerialMethodWriter extends MethodWriterImpl implements
-        SerializedFormWriter.SerialMethodWriter{
+        SerializedFormWriter.SerialMethodWriter {
 
     public HtmlSerialMethodWriter(SubWriterHolderWriter writer, TypeElement  typeElement) {
         super(writer, typeElement);

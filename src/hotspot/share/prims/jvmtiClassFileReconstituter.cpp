@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -789,17 +789,11 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   if (ik()->source_debug_extension() != NULL) {
     write_source_debug_extension_attribute();
   }
-  if (inner_classes_length > 0) {
-    write_inner_classes_attribute(inner_classes_length);
-  }
   if (anno != NULL) {
     write_annotations_attribute("RuntimeVisibleAnnotations", anno);
   }
   if (type_anno != NULL) {
     write_annotations_attribute("RuntimeVisibleTypeAnnotations", type_anno);
-  }
-  if (cpool()->operands() != NULL) {
-    write_bootstrapmethod_attribute();
   }
   if (ik()->nest_host_index() != 0) {
     write_nest_host_attribute();
@@ -812,6 +806,12 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   }
   if (ik()->record_components() != NULL) {
     write_record_attribute();
+  }
+  if (cpool()->operands() != NULL) {
+    write_bootstrapmethod_attribute();
+  }
+  if (inner_classes_length > 0) {
+    write_inner_classes_attribute(inner_classes_length);
   }
 }
 

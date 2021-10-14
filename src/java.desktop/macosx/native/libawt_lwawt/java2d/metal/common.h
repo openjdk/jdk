@@ -156,4 +156,9 @@ struct LCDFrameUniforms {
     vector_float3 gamma;
     vector_float3 invgamma;
 };
+
+struct SwizzleUniforms {
+    unsigned char swizzle[4];
+    unsigned char hasAlpha;
+};
 #endif

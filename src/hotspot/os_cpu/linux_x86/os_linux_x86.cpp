@@ -343,6 +343,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   // the si_code for this condition may change in the future.
   // Furthermore, a false-positive should be harmless.
   if (UnguardOnExecutionViolation > 0 &&
+      stub == NULL &&
       (sig == SIGSEGV || sig == SIGBUS) &&
       uc->uc_mcontext.gregs[REG_TRAPNO] == trap_page_fault) {
     int page_size = os::vm_page_size();
@@ -614,7 +615,7 @@ void os::print_register_info(outputStream *st, const void *context) {
 
 void os::setup_fpu() {
 #ifndef AMD64
-  address fpu_cntrl = StubRoutines::addr_fpu_cntrl_wrd_std();
+  address fpu_cntrl = StubRoutines::x86::addr_fpu_cntrl_wrd_std();
   __asm__ volatile (  "fldcw (%0)" :
                       : "r" (fpu_cntrl) : "memory");
 #endif // !AMD64

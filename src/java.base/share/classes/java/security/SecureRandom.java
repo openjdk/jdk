@@ -933,6 +933,7 @@ public class SecureRandom extends java.util.Random {
     public static SecureRandom getInstanceStrong()
             throws NoSuchAlgorithmException {
 
+        @SuppressWarnings("removal")
         String property = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 @Override

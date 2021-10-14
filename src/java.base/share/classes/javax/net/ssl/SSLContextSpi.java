@@ -51,7 +51,7 @@ public abstract class SSLContextSpi {
      * @param tm the sources of peer authentication trust decisions
      * @param sr the source of randomness
      * @throws KeyManagementException if this operation fails
-     * @see SSLContext#init(KeyManager [], TrustManager [], SecureRandom)
+     * @see SSLContext#init(KeyManager[], TrustManager[], SecureRandom)
      */
     protected abstract void engineInit(KeyManager[] km, TrustManager[] tm,
         SecureRandom sr) throws KeyManagementException;

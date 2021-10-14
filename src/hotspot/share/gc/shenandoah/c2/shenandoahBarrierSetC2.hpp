@@ -109,7 +109,7 @@ public:
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
 
   // These are general helper methods used by C2
-  virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const;
+  virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const;
 
   // Support for GC barriers emitted during parsing
   virtual bool is_gc_barrier_node(Node* node) const;

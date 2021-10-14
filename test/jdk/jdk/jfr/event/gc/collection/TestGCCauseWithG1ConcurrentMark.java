@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class TestGCCauseWithG1ConcurrentMark {
         String testID = "G1ConcurrentMark";
         String[] vmFlags = {"-XX:+UseG1GC", "-XX:+ExplicitGCInvokesConcurrent"};
         String[] gcNames = {GCHelper.gcG1New, GCHelper.gcG1Old, GCHelper.gcG1Full};
-        String[] gcCauses = {"G1 Evacuation Pause", "Allocation Failure", "System.gc()"};
+        String[] gcCauses = {"G1 Evacuation Pause", "G1 Preventive Collection", "G1 Compaction Pause", "System.gc()"};
         GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
     }
 }

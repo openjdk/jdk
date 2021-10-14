@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -102,7 +103,11 @@ final class KeyGeneratorCore {
         }
         byte[] b = new byte[(keySize + 7) >> 3];
         random.nextBytes(b);
-        return new SecretKeySpec(b, name);
+        try {
+            return new SecretKeySpec(b, name);
+        } finally {
+            Arrays.fill(b, (byte)0);
+        }
     }
 
     // nested static classes for the Hmac key generator

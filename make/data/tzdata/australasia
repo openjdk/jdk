@@ -487,7 +487,7 @@ Link Pacific/Guam Pacific/Saipan # N Mariana Is
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tarawa	 11:32:04 -	LMT	1901 # Bairiki
 			 12:00	-	+12
-Zone Pacific/Enderbury	-11:24:20 -	LMT	1901
+Zone Pacific/Kanton	  0	-	-00	1937 Aug 31
 			-12:00	-	-12	1979 Oct
 			-11:00	-	-11	1994 Dec 31
 			 13:00	-	+13
@@ -620,13 +620,46 @@ Link Pacific/Auckland Antarctica/McMurdo
 # was probably like Pacific/Auckland
 
 # Cook Is
-# From Shanks & Pottenger:
+#
+# From Alexander Krivenyshev (2021-03-24):
+# In 1899 the Cook Islands celebrated Christmas twice to correct the calendar.
+# According to the old books, missionaries were unaware of
+# the International Date line, when they came from Sydney.
+# Thus the Cook Islands were one day ahead....
+# http://nzetc.victoria.ac.nz/tm/scholarly/tei-KloDisc-t1-body-d18.html
+# ... Appendix to the Journals of the House of Representatives, 1900
+# https://atojs.natlib.govt.nz/cgi-bin/atojs?a=d&d=AJHR1900-I.2.1.2.3
+# (page 20)
+#
+# From Michael Deckers (2021-03-24):
+# ... in the Cook Island Act of 1915-10-11, online at
+# http://www.paclii.org/ck/legis/ck-nz_act/cia1915132/
+# "651. The hour of the day shall in each of the islands included in the
+#  Cook Islands be determined in accordance with the meridian of that island."
+# so that local (mean?) time was still used in Rarotonga (and Niue) in 1915.
+# This was changed in the Cook Island Amendment Act of 1952-10-16 ...
+# http://www.paclii.org/ck/legis/ck-nz_act/ciaa1952212/
+# "651 (1) The hour of the day in each of the islands included in the Cook
+#  Islands, other than Niue, shall be determined as if each island were
+#  situated on the meridian one hundred and fifty-seven degrees thirty minutes
+#  West of Greenwich.  (2) The hour of the day in the Island of Niue shall be
+#  determined as if that island were situated on the meridian one hundred and
+#  seventy degrees West of Greenwich."
+# This act does not state when it takes effect, so one has to assume it
+# applies since 1952-10-16.  But there is the possibility that the act just
+# legalized prior existing practice, as we had seen with the Guernsey law of
+# 1913-06-18 for the switch in 1909-04-19.
+#
+# From Paul Eggert (2021-03-24):
+# Transitions after 1952 are from Shanks & Pottenger.
+#
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Cook	1978	only	-	Nov	12	0:00	0:30	-
 Rule	Cook	1979	1991	-	Mar	Sun>=1	0:00	0	-
 Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901        # Avarua
+Zone Pacific/Rarotonga	13:20:56 -	LMT	1899 Dec 26 # Avarua
+			-10:39:04 -	LMT	1952 Oct 16
 			-10:30	-	-1030	1978 Nov 12
 			-10:00	Cook	-10/-0930
 
@@ -634,10 +667,18 @@ Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901        # Avarua
 
 
 # Niue
+# See Pacific/Raratonga comments for 1952 transition.
+#
+# From Tim Parenti (2021-09-13):
+# Consecutive contemporaneous editions of The Air Almanac listed -11:20 for
+# Niue as of Apr 1964 but -11 as of Aug 1964:
+#   Apr 1964: https://books.google.com/books?id=_1So677Y5vUC&pg=SL1-PA23
+#   Aug 1964: https://books.google.com/books?id=MbJloqd-zyUC&pg=SL1-PA23
+# Without greater specificity, guess 1964-07-01 for this transition.
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Niue	-11:19:40 -	LMT	1901        # Alofi
-			-11:20	-	-1120	1951
-			-11:30	-	-1130	1978 Oct  1
+Zone	Pacific/Niue	-11:19:40 -	LMT	1952 Oct 16	# Alofi
+			-11:20	-	-1120	1964 Jul
 			-11:00	-	-11
 
 # Norfolk
@@ -661,6 +702,7 @@ Zone Pacific/Palau	-15:02:04 -	LMT	1844 Dec 31	# Koror
 Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 			9:48:32	-	PMMT	1895 # Port Moresby Mean Time
 			10:00	-	+10
+Link Pacific/Port_Moresby Antarctica/DumontDUrville
 #
 # From Paul Eggert (2014-10-13):
 # Base the Bougainville entry on the Arawa-Kieta region, which appears to have
@@ -765,13 +807,17 @@ Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 # From Paul Eggert (2014-07-08):
 # That web page currently lists transitions for 2012/3 and 2013/4.
 # Assume the pattern instituted in 2012 will continue indefinitely.
+#
+# From Geoffrey D. Bennett (2021-09-20):
+# https://www.mcil.gov.ws/storage/2021/09/MCIL-Scan_20210920_120553.pdf
+# DST has been cancelled for this year.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	WS	2010	only	-	Sep	lastSun	0:00	1	-
 Rule	WS	2011	only	-	Apr	Sat>=1	4:00	0	-
 Rule	WS	2011	only	-	Sep	lastSat	3:00	1	-
-Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	-
-Rule	WS	2012	max	-	Sep	lastSun	3:00	1	-
+Rule	WS	2012	2021	-	Apr	Sun>=1	4:00	0	-
+Rule	WS	2012	2020	-	Sep	lastSun	3:00	1	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Apia	 12:33:04 -	LMT	1892 Jul  5
 			-11:26:56 -	LMT	1911
@@ -818,8 +864,8 @@ Rule	Tonga	2001	2002	-	Jan	lastSun	2:00	0	-
 Rule	Tonga	2016	only	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Tonga	2017	only	-	Jan	Sun>=15	3:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Tongatapu	12:19:20 -	LMT	1901
-			12:20	-	+1220	1941
+Zone Pacific/Tongatapu	12:19:12 -	LMT	1945 Sep 10
+			12:20	-	+1220	1961
 			13:00	-	+13	1999
 			13:00	Tonga	+13/+14
 
@@ -1761,6 +1807,23 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # One source for this is page 202 of: Bartky IR. One Time Fits All:
 # The Campaigns for Global Uniformity (2007).
 
+# Kanton
+
+# From Paul Eggert (2021-05-27):
+# Kiribati's +13 timezone is represented by Kanton, its only populated
+# island.  (It was formerly spelled "Canton", but Gilbertese lacks "C".)
+# Kanton was settled on 1937-08-31 by two British radio operators
+# <https://history.state.gov/historicaldocuments/frus1937v02/d94>;
+# Americans came the next year and built an airfield, partly to
+# establish airline service and perhaps partly anticipating the
+# next war.  Aside from the war, the airfield was used by commercial
+# airlines until long-range jets became standard; although currently
+# for emergency use only, China says it is considering rebuilding the
+# airfield for high-end niche tourism.  Kanton has about two dozen
+# people, caretakers who rotate in from the rest of Kiribati in 2-5
+# year shifts, and who use some of the leftover structures
+# <http://pipa.neaq.org/2012/06/images-of-kanton-island.html>.
+
 # Kwajalein
 
 # From an AP article (1993-08-22):
@@ -2044,6 +2107,17 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # Tonga
 
+# From Paul Eggert (2021-03-04):
+# In 1943 "The standard time kept is 12 hrs. 19 min. 12 sec. fast
+# on Greenwich mean time." according to the Admiralty's Hydrographic
+# Dept., Pacific Islands Pilot, Vol. II, 7th ed., 1943, p 360.
+
+# From Michael Deckers (2021-03-03):
+# [Ian R Bartky: "One Time Fits All: The Campaigns for Global Uniformity".
+# Stanford University Press. 2007. p. 255]:
+# On 10 September 1945 Tonga adopted a standard time 12 hours,
+# 20 minutes in advance of Greenwich.
+
 # From Paul Eggert (1996-01-22):
 # Today's _Wall Street Journal_ (p 1) reports that "Tonga has been plotting
 # to sneak ahead of [New Zealanders] by introducing daylight-saving time."
@@ -2072,9 +2146,26 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # The Crown Prince, presented an unanswerable argument: "Remember that
 # on the World Day of Prayer, you would be the first people on Earth
 # to say your prayers in the morning."
-
-# From Paul Eggert (2006-03-22):
-# Shanks & Pottenger say the transition was on 1968-10-01; go with Mundell.
+#
+# From Tim Parenti (2021-09-13), per Paul Eggert (2006-03-22) and Michael
+# Deckers (2021-03-03):
+# Mundell places the transition from +12:20 to +13 in 1941, while Shanks &
+# Pottenger say the transition was on 1968-10-01.
+#
+# The Air Almanac published contemporaneous tables of standard times,
+# which listed +12:20 as of Nov 1960 and +13 as of Mar 1961:
+#   Nov 1960: https://books.google.com/books?id=bVgtWM6kPZUC&pg=SL1-PA19
+#   Mar 1961: https://books.google.com/books?id=W2nItAul4g0C&pg=SL1-PA19
+# (Thanks to P Chan for pointing us toward these sources.)
+# This agrees with Bartky, who writes that "since 1961 [Tonga's] official time
+# has been thirteen hours in advance of Greenwich time" (p. 202) and further
+# writes in an endnote that this was because "the legislation was amended" on
+# 1960-10-19. (p. 255)
+#
+# Without greater specificity, presume that Bartky and the Air Almanac point to
+# a 1961-01-01 transition, as Tāufaʻāhau Tupou IV was still Crown Prince in
+# 1961 and this still jives with the gist of Mundell's telling, and go with
+# this over Shanks & Pottenger.
 
 # From Eric Ulevik (1999-05-03):
 # Tonga's director of tourism, who is also secretary of the National Millennium

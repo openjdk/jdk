@@ -53,7 +53,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 4973153
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.ls.Bug4973153
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.ls.Bug4973153
  * @run testng/othervm dom.ls.Bug4973153
  * @summary Test LSSerialiser.setEncoding() raises 'unsupported-encoding' error if encoding is invalid.
  */

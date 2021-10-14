@@ -61,6 +61,30 @@ public class WinShortcutPromptTest {
         for (var withStartMenuShortcut : List.of(Boolean.TRUE, Boolean.FALSE)) {
             for (var withDesktopShortcut : List.of(Boolean.TRUE, Boolean.FALSE)) {
                 for (var withShortcutPrompt : List.of(Boolean.TRUE, Boolean.FALSE)) {
+                    if (withShortcutPrompt && withStartMenuShortcut
+                            && withDesktopShortcut) {
+                        // Duplicates WinInstallerUiTestWithShortcutPromptTest (WinInstallerUiTest(withShortcutPrompt=true))
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && !withStartMenuShortcut
+                            && !withDesktopShortcut) {
+                        // Duplicates SimplePackageTest
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && !withStartMenuShortcut
+                            && withDesktopShortcut) {
+                        // Duplicates WinShortcutTest
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && withStartMenuShortcut
+                            && !withDesktopShortcut) {
+                        // Duplicates WinMenuTest
+                        continue;
+                    }
+
                     data.add(new Object[]{withStartMenuShortcut,
                         withDesktopShortcut, withShortcutPrompt});
                 }

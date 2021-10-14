@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_CLASSLOADERDATA_INLINE_HPP
 
 #include "classfile/classLoaderData.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"

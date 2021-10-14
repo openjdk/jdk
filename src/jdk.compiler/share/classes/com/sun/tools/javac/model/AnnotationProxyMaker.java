@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,8 +246,8 @@ public class AnnotationProxyMaker {
         }
 
         public void visitError(Attribute.Error e) {
-            if (e instanceof Attribute.UnresolvedClass)
-                value = new MirroredTypeExceptionProxy(((Attribute.UnresolvedClass)e).classType);
+            if (e instanceof Attribute.UnresolvedClass unresolvedClass)
+                value = new MirroredTypeExceptionProxy(unresolvedClass.classType);
             else
                 value = null;       // indicates a type mismatch
         }
@@ -302,8 +302,8 @@ public class AnnotationProxyMaker {
 
         public boolean equals(Object obj) {
             return type != null &&
-                   obj instanceof MirroredTypeExceptionProxy &&
-                   type.equals(((MirroredTypeExceptionProxy) obj).type);
+                   obj instanceof MirroredTypeExceptionProxy proxy &&
+                   type.equals(proxy.type);
         }
 
         protected RuntimeException generateException() {
@@ -347,9 +347,8 @@ public class AnnotationProxyMaker {
 
         public boolean equals(Object obj) {
             return types != null &&
-                   obj instanceof MirroredTypesExceptionProxy &&
-                   types.equals(
-                      ((MirroredTypesExceptionProxy) obj).types);
+                   obj instanceof MirroredTypesExceptionProxy proxy &&
+                   types.equals(proxy.types);
         }
 
         protected RuntimeException generateException() {

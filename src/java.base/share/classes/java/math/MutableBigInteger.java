@@ -159,8 +159,14 @@ class MutableBigInteger {
      * supposed to modify the returned array.
      */
     private int[] getMagnitudeArray() {
-        if (offset > 0 || value.length != intLen)
-            return Arrays.copyOfRange(value, offset, offset + intLen);
+        if (offset > 0 || value.length != intLen) {
+            // Shrink value to be the total magnitude
+            int[] tmp = Arrays.copyOfRange(value, offset, offset + intLen);
+            Arrays.fill(value, 0);
+            offset = 0;
+            intLen = tmp.length;
+            value = tmp;
+        }
         return value;
     }
 
@@ -2100,6 +2106,7 @@ class MutableBigInteger {
 
         oddPart.leftShift(powersOf2);
         oddPart.multiply(y1, result);
+        oddPart.clear();
 
         evenPart.multiply(oddMod, temp1);
         temp1.multiply(y2, temp2);

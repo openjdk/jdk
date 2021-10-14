@@ -41,17 +41,17 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
  */
 final class MethodHTML {
 
-    private final String class_name; // name of current class
+    private final String className; // name of current class
     private final PrintWriter file; // file to write to
-    private final ConstantHTML constant_html;
+    private final ConstantHTML constantHtml;
     private final AttributeHTML attribute_html;
 
 
     MethodHTML(final String dir, final String class_name, final Method[] methods, final Field[] fields,
             final ConstantHTML constant_html, final AttributeHTML attribute_html) throws IOException {
-        this.class_name = class_name;
+        this.className = class_name;
         this.attribute_html = attribute_html;
-        this.constant_html = constant_html;
+        this.constantHtml = constant_html;
         file = new PrintWriter(new FileOutputStream(dir + class_name + "_methods.html"));
         file.println("<HTML><BODY BGCOLOR=\"#C0C0C0\"><TABLE BORDER=0>");
         file.println("<TR><TH ALIGN=LEFT>Access&nbsp;flags</TH><TH ALIGN=LEFT>Type</TH>"
@@ -95,7 +95,7 @@ final class MethodHTML {
             if (attributes[i].getTag() == Const.ATTR_CONSTANT_VALUE) { // Default value
                 final String str = ((ConstantValue) attributes[i]).toString();
                 // Reference attribute in _attributes.html
-                file.print("<TD>= <A HREF=\"" + class_name + "_attributes.html#" + name + "@" + i
+                file.print("<TD>= <A HREF=\"" + className + "_attributes.html#" + name + "@" + i
                         + "\" TARGET=\"Attributes\">" + str + "</TD>\n");
                 break;
             }
@@ -125,7 +125,7 @@ final class MethodHTML {
         html_name = Class2HTML.toHTML(name);
         file.print("<TR VALIGN=TOP><TD><FONT COLOR=\"#FF0000\"><A NAME=method" + method_number
                 + ">" + access + "</A></FONT></TD>");
-        file.print("<TD>" + Class2HTML.referenceType(type) + "</TD><TD>" + "<A HREF=" + class_name
+        file.print("<TD>" + Class2HTML.referenceType(type) + "</TD><TD>" + "<A HREF=" + className
                 + "_code.html#method" + method_number + " TARGET=Code>" + html_name
                 + "</A></TD>\n<TD>(");
         for (int i = 0; i < args.length; i++) {
@@ -144,7 +144,7 @@ final class MethodHTML {
                 file.print("<TR VALIGN=TOP><TD COLSPAN=2></TD><TH ALIGN=LEFT>throws</TH><TD>");
                 final int[] exceptions = ((ExceptionTable) attributes[i]).getExceptionIndexTable();
                 for (int j = 0; j < exceptions.length; j++) {
-                    file.print(constant_html.referenceConstant(exceptions[j]));
+                    file.print(constantHtml.referenceConstant(exceptions[j]));
                     if (j < exceptions.length - 1) {
                         file.print(", ");
                     }

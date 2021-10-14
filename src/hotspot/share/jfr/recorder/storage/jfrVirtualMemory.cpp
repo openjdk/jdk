@@ -104,7 +104,7 @@ bool JfrVirtualMemorySegment::initialize(size_t reservation_size_request_bytes) 
   assert(is_aligned(reservation_size_request_bytes, os::vm_allocation_granularity()), "invariant");
   _rs = ReservedSpace(reservation_size_request_bytes,
                       os::vm_allocation_granularity(),
-                      UseLargePages && os::can_commit_large_page_memory());
+                      os::vm_page_size());
   if (!_rs.is_reserved()) {
     return false;
   }

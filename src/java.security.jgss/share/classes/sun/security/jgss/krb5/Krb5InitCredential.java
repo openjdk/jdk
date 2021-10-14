@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,6 +348,7 @@ public class Krb5InitCredential
     // XXX call to this.destroy() should destroy the locally cached copy
     // of krb5Credentials and then call super.destroy().
 
+    @SuppressWarnings("removal")
     private static KerberosTicket getTgt(GSSCaller caller, Krb5NameElement name,
                                                  int initLifetime)
         throws GSSException {

@@ -58,9 +58,7 @@ class SpaceCounters: public CHeapObj<mtGC> {
     _capacity->set_value(_object_space->capacity_in_bytes());
   }
 
-  inline void update_used() {
-    _used->set_value(_object_space->used_in_bytes());
-  }
+  void update_used();
 
   inline void update_all() {
     update_used();
@@ -77,9 +75,7 @@ class MutableSpaceUsedHelper: public PerfLongSampleHelper {
   public:
     MutableSpaceUsedHelper(MutableSpace* m) : _m(m) { }
 
-    inline jlong take_sample() {
-      return _m->used_in_bytes();
-    }
+    jlong take_sample() override;
 };
 
 #endif // SHARE_GC_PARALLEL_SPACECOUNTERS_HPP

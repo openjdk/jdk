@@ -24,41 +24,31 @@
 /*
  * @test
  * @bug 8261137
+ * @requires vm.flagless
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Verify that box object is scalarized in case it is directly referenced by debug info.
  * @library /test/lib
  *
- * @run main/othervm compiler.c2.TestEliminateBoxInDebugInfo
+ * @run driver compiler.eliminateAutobox.TestEliminateBoxInDebugInfo
  */
-package compiler.c2;
+package compiler.eliminateAutobox;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-import jdk.test.lib.Asserts;
-
 public class TestEliminateBoxInDebugInfo {
     public static void runTest() throws Exception {
-        final String[] arguments = {
-            "-XX:CompileCommand=compileonly,compiler/c2/TestEliminateBoxInDebugInfo$Test.foo",
-            "-XX:CompileCommand=dontinline,compiler/c2/TestEliminateBoxInDebugInfo$Test.black",
+        String[] arguments = {
+            "-XX:CompileCommand=compileonly,compiler/eliminateAutobox/TestEliminateBoxInDebugInfo$Test.foo",
+            "-XX:CompileCommand=dontinline,compiler/eliminateAutobox/TestEliminateBoxInDebugInfo$Test.black",
             "-Xbatch",
             "-XX:+PrintEliminateAllocations",
             Test.class.getName()
-            };
+        };
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(arguments);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        System.out.println(output.getStdout());
-        String pattern = ".*Eliminated.*";
-        Pattern r = Pattern.compile(pattern);
-        Matcher m = r.matcher(output.getStdout());
-        if (!m.find()) {
-            throw new RuntimeException("Could not find Elimination output");
-        }
+        output.shouldHaveExitValue(0)
+              .stdoutShouldContain("++++ Eliminated: ");
     }
 
     public static void main(String[] args) throws Exception {
@@ -68,7 +58,7 @@ public class TestEliminateBoxInDebugInfo {
     static class Test {
         public static void main(String[] args) throws Exception {
             // warmup
-            for(int i = 0; i < 100000; i++) {
+            for (int i = 0; i < 100000; i++) {
                foo(1000 + (i % 1000));
             }
         }

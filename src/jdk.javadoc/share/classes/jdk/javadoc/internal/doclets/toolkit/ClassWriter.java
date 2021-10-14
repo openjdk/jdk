@@ -145,10 +145,9 @@ public interface ClassWriter {
     /**
      * Add the signature of the current class content tree.
      *
-     * @param modifiers the modifiers for the signature
      * @param classInfoTree the class content tree to which the signature will be added
      */
-    void addClassSignature(String modifiers, Content classInfoTree);
+    void addClassSignature(Content classInfoTree);
 
     /**
      * Build the class description.

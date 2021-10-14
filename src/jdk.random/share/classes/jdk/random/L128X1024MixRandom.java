@@ -146,7 +146,7 @@ public final class L128X1024MixRandom extends AbstractSplittableWithBrineGenerat
     private final long ah, al;
 
     /**
-     * The per-instance state: sh and sl for the LCG; the array x for the xorshift;
+     * The per-instance state: sh and sl for the LCG; the array x for the XBG;
      * p is the rotating pointer into the array x.
      * At least one of the 16 elements of the array x must be nonzero.
      */
@@ -165,22 +165,22 @@ public final class L128X1024MixRandom extends AbstractSplittableWithBrineGenerat
      * @param al low half of the additive parameter for the LCG
      * @param sh high half of the initial state for the LCG
      * @param sl low half of the initial state for the LCG
-     * @param x0 first word of the initial state for the xorshift generator
-     * @param x1 second word of the initial state for the xorshift generator
-     * @param x2 third word of the initial state for the xorshift generator
-     * @param x3 fourth word of the initial state for the xorshift generator
-     * @param x4 fifth word of the initial state for the xorshift generator
-     * @param x5 sixth word of the initial state for the xorshift generator
-     * @param x6 seventh word of the initial state for the xorshift generator
-     * @param x7 eight word of the initial state for the xorshift generator
-     * @param x8 ninth word of the initial state for the xorshift generator
-     * @param x9 tenth word of the initial state for the xorshift generator
-     * @param x10 eleventh word of the initial state for the xorshift generator
-     * @param x11 twelfth word of the initial state for the xorshift generator
-     * @param x12 thirteenth word of the initial state for the xorshift generator
-     * @param x13 fourteenth word of the initial state for the xorshift generator
-     * @param x14 fifteenth word of the initial state for the xorshift generator
-     * @param x15 sixteenth word of the initial state for the xorshift generator
+     * @param x0 first word of the initial state for the XBG
+     * @param x1 second word of the initial state for the XBG
+     * @param x2 third word of the initial state for the XBG
+     * @param x3 fourth word of the initial state for the XBG
+     * @param x4 fifth word of the initial state for the XBG
+     * @param x5 sixth word of the initial state for the XBG
+     * @param x6 seventh word of the initial state for the XBG
+     * @param x7 eight word of the initial state for the XBG
+     * @param x8 ninth word of the initial state for the XBG
+     * @param x9 tenth word of the initial state for the XBG
+     * @param x10 eleventh word of the initial state for the XBG
+     * @param x11 twelfth word of the initial state for the XBG
+     * @param x12 thirteenth word of the initial state for the XBG
+     * @param x13 fourteenth word of the initial state for the XBG
+     * @param x14 fifteenth word of the initial state for the XBG
+     * @param x15 sixteenth word of the initial state for the XBG
      */
     public L128X1024MixRandom(long ah, long al, long sh, long sl,
                  long x0, long x1, long x2, long x3,

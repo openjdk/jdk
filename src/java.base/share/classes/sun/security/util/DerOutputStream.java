@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,10 @@ import java.util.Comparator;
 import java.util.Arrays;
 import java.util.Locale;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Output stream marshaling DER-encoded data.  This is eventually provided
@@ -165,6 +168,17 @@ extends ByteArrayOutputStream implements DerEncoder {
     public void putInteger(BigInteger i) throws IOException {
         write(DerValue.tag_Integer);
         byte[]    buf = i.toByteArray(); // least number  of bytes
+        putLength(buf.length);
+        write(buf, 0, buf.length);
+    }
+
+    /**
+     * Marshals a DER integer on the output stream.
+     *
+     * @param i the integer in bytes, equivalent to BigInteger::toByteArray.
+     */
+    public void putInteger(byte[] buf) throws IOException {
+        write(DerValue.tag_Integer);
         putLength(buf.length);
         write(buf, 0, buf.length);
     }
@@ -574,5 +588,9 @@ extends ByteArrayOutputStream implements DerEncoder {
      */
     public void derEncode(OutputStream out) throws IOException {
         out.write(toByteArray());
+    }
+
+    byte[] buf() {
+        return buf;
     }
 }

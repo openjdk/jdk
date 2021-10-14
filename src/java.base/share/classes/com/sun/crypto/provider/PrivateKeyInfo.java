@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.crypto.provider;
 
 import java.math.*;
 import java.io.*;
+import java.util.Arrays;
+
 import sun.security.x509.AlgorithmId;
 import sun.security.util.*;
 
@@ -62,23 +64,27 @@ final class PrivateKeyInfo {
     PrivateKeyInfo(byte[] encoded) throws IOException {
         DerValue val = new DerValue(encoded);
 
-        if (val.tag != DerValue.tag_Sequence)
-            throw new IOException("private key parse error: not a sequence");
+        try {
+            if (val.tag != DerValue.tag_Sequence)
+                throw new IOException("private key parse error: not a sequence");
 
-        // version
-        BigInteger parsedVersion = val.data.getBigInteger();
-        if (!parsedVersion.equals(VERSION)) {
-            throw new IOException("version mismatch: (supported: " +
-                                  VERSION + ", parsed: " + parsedVersion);
+            // version
+            BigInteger parsedVersion = val.data.getBigInteger();
+            if (!parsedVersion.equals(VERSION)) {
+                throw new IOException("version mismatch: (supported: " +
+                        VERSION + ", parsed: " + parsedVersion);
+            }
+
+            // privateKeyAlgorithm
+            this.algid = AlgorithmId.parse(val.data.getDerValue());
+
+            // privateKey
+            this.privkey = val.data.getOctetString();
+
+            // OPTIONAL attributes not supported yet
+        } finally {
+            val.clear();
         }
-
-        // privateKeyAlgorithm
-        this.algid = AlgorithmId.parse(val.data.getDerValue());
-
-        // privateKey
-        this.privkey = val.data.getOctetString();
-
-        // OPTIONAL attributes not supported yet
     }
 
     /**
@@ -86,5 +92,9 @@ final class PrivateKeyInfo {
      */
     AlgorithmId getAlgorithm() {
         return this.algid;
+    }
+
+    public void clear() {
+        Arrays.fill(privkey, (byte)0);
     }
 }

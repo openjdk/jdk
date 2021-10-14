@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.lang.reflect.Proxy;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.UnexpectedException;
-import java.rmi.activation.Activatable;
 import java.util.Map;
 import java.util.WeakHashMap;
 import sun.rmi.server.Util;
@@ -45,8 +44,7 @@ import sun.rmi.server.WeakClassHashMap;
  *
  * <p>Applications are not expected to use this class directly.  A remote
  * object exported to use a dynamic proxy with {@link UnicastRemoteObject}
- * or {@link Activatable} has an instance of this class as that proxy's
- * invocation handler.
+ * has an instance of this class as that proxy's invocation handler.
  *
  * @author  Ann Wollrath
  * @since   1.5

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacHelper.PListWrapper;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Tests generation of app image with --file-associations and mac additional file
@@ -44,34 +45,34 @@ import jdk.jpackage.test.MacHelper.PListWrapper;
  * @build MacFileAssociationsTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm -Xmx512m MacFileAssociationsTest
+ * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=MacFileAssociationsTest
  */
 public class MacFileAssociationsTest {
 
-    public static void main(String[] args) throws Exception {
-        TKit.run(args, () -> {
-            final Path propFile = TKit.workDir().resolve("fa.properties");
-            Map<String,String> map = Map.ofEntries(
-                    entry("mime-type", "application/x-jpackage-foo"),
-                    entry("extension", "foo"),
-                    entry("description", "bar"),
-                    entry("mac.CFBundleTypeRole", "Viewer"),
-                    entry("mac.LSHandlerRank", "Default"),
-                    entry("mac.NSDocumentClass", "SomeClass"),
-                    entry("mac.LSTypeIsPackage", "true"),
-                    entry("mac.LSSupportsOpeningDocumentsInPlace", "false"),
-                    entry("mac.UISupportsDocumentBrowser", "false"),
-                    entry("mac.NSExportableTypes", "public.png, public.jpg"),
-                    entry("mac.UTTypeConformsTo", "public.image, public.data"));
-            TKit.createPropertiesFile(propFile, map);
+    @Test
+    public static void test() throws Exception {
+        final Path propFile = TKit.workDir().resolve("fa.properties");
+        Map<String, String> map = Map.ofEntries(
+                entry("mime-type", "application/x-jpackage-foo"),
+                entry("extension", "foo"),
+                entry("description", "bar"),
+                entry("mac.CFBundleTypeRole", "Viewer"),
+                entry("mac.LSHandlerRank", "Default"),
+                entry("mac.NSDocumentClass", "SomeClass"),
+                entry("mac.LSTypeIsPackage", "true"),
+                entry("mac.LSSupportsOpeningDocumentsInPlace", "false"),
+                entry("mac.UISupportsDocumentBrowser", "false"),
+                entry("mac.NSExportableTypes", "public.png, public.jpg"),
+                entry("mac.UTTypeConformsTo", "public.image, public.data"));
+        TKit.createPropertiesFile(propFile, map);
 
-            JPackageCommand cmd = JPackageCommand.helloAppImage();
-            cmd.addArguments("--file-associations", propFile);
-            cmd.executeAndAssertHelloAppImageCreated();
+        JPackageCommand cmd = JPackageCommand.helloAppImage();
+        cmd.addArguments("--file-associations", propFile);
+        cmd.executeAndAssertHelloAppImageCreated();
 
-            Path appImage = cmd.outputBundle();
-            verifyPList(appImage);
-        });
+        Path appImage = cmd.outputBundle();
+        verifyPList(appImage);
     }
 
     private static void checkStringValue(PListWrapper plist, String key, String value) {

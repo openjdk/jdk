@@ -25,7 +25,7 @@
 /*
  * @test
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @run testng/othervm -Dforeign.restricted=permit TestIllegalLink
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
 
 import jdk.incubator.foreign.CLinker;
@@ -45,13 +45,13 @@ import static org.testng.Assert.fail;
 
 public class TestIllegalLink {
 
-    private static final MemoryAddress dummyTarget = MemoryAddress.NULL;
+    private static final MemoryAddress DUMMY_TARGET = MemoryAddress.ofLong(1);
     private static final CLinker ABI = CLinker.getInstance();
 
     @Test(dataProvider = "types")
     public void testTypeMismatch(MethodType mt, FunctionDescriptor desc, String expectedExceptionMessage) {
         try {
-            ABI.downcallHandle(dummyTarget, mt, desc);
+            ABI.downcallHandle(DUMMY_TARGET, mt, desc);
             fail("Expected IllegalArgumentException was not thrown");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains(expectedExceptionMessage));
@@ -73,7 +73,7 @@ public class TestIllegalLink {
             },
             {
                 MethodType.methodType(void.class, int.class),
-                FunctionDescriptor.ofVoid(MemoryLayout.ofPaddingBits(32)),
+                FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(32)),
                 "Expected a ValueLayout"
             },
             {
@@ -88,7 +88,7 @@ public class TestIllegalLink {
             },
             {
                 MethodType.methodType(void.class, MemoryAddress.class),
-                FunctionDescriptor.ofVoid(MemoryLayout.ofPaddingBits(64)),
+                FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(64)),
                 "Expected a ValueLayout"
             },
             {
