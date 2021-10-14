@@ -52,11 +52,7 @@ import java.awt.font.TextAttribute;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
-
 import javax.print.PrintService;
-import javax.print.attribute.PrintRequestAttributeSet;
 
 import java.text.*;
 import java.text.AttributedCharacterIterator.Attribute;
@@ -5109,7 +5105,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     //
     // Runnable class for invokeLater() to set caret position later.
     //
-    private class DoSetCaretPosition implements Runnable {
+    private static class DoSetCaretPosition implements Runnable {
         JTextComponent host;
         Position newPos;
 
