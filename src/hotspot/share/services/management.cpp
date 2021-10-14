@@ -2058,6 +2058,10 @@ JVM_ENTRY(void, jmm_SetDiagnosticFrameworkNotificationEnabled(JNIEnv *env, jbool
   DCmdFactory::set_jmx_notification_enabled(enabled?true:false);
 JVM_END
 
+JVM_ENTRY(void, jmm_RegisterDiagnosticCommand(JNIEnv *env, jobject factory))
+  DCmdRegistrant::register_java_dcmd(factory, THREAD);
+JVM_END
+
 jlong Management::ticks_to_ms(jlong ticks) {
   assert(os::elapsed_frequency() > 0, "Must be non-zero");
   return (jlong)(((double)ticks / (double)os::elapsed_frequency())
@@ -2240,7 +2244,8 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetDiagnosticCommandInfo,
   jmm_GetDiagnosticCommandArgumentsInfo,
   jmm_ExecuteDiagnosticCommand,
-  jmm_SetDiagnosticFrameworkNotificationEnabled
+  jmm_SetDiagnosticFrameworkNotificationEnabled,
+  jmm_RegisterDiagnosticCommand
 };
 #endif // INCLUDE_MANAGEMENT
 

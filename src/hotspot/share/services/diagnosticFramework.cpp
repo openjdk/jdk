@@ -23,12 +23,16 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "jvm.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -562,4 +566,243 @@ GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list(DCmdSource source ) {
     factory = factory->next();
   }
   return array;
+}
+
+static InstanceKlass* factory_klass(TRAPS) {
+  Symbol* klass = vmSymbols::sum_management_cmd_Factory();
+  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK_NULL);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->should_be_initialized()) {
+    ik->initialize(CHECK_NULL);
+  }
+  return ik;
+}
+
+static InstanceKlass* executor_klass(TRAPS) {
+  Symbol* klass = vmSymbols::sum_management_cmd_internal_Executor();
+  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK_NULL);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->should_be_initialized()) {
+    ik->initialize(CHECK_NULL);
+  }
+  return ik;
+}
+
+void JavaDCmd::parse(CmdLine *line, char delim, TRAPS) {
+  HandleMark hm(THREAD);
+  InstanceKlass* ik = factory_klass(CHECK);
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  args.set_receiver(Handle(THREAD, JNIHandles::resolve_non_null(_factory._factory)));
+
+  char* cmd_args = NULL;
+  if (line->args_len() > 0) {
+    cmd_args = NEW_RESOURCE_ARRAY(char, line->args_len() + 1);
+    strncpy(cmd_args, line->args_addr(), line->args_len());
+    cmd_args[line->args_len()] = '\0';
+  }
+
+  Handle args_str = java_lang_String::create_from_str((cmd_args != NULL ? cmd_args : ""), CHECK);
+  args.push_oop(args_str);
+  args.push_int(delim);
+
+  JavaCalls::call_virtual(&result,
+                          ik,
+                          vmSymbols::buildCommand_name(),
+                          vmSymbols::buildCommand_signature(),
+                          &args,
+                          CHECK);
+  Handle r = Handle(THREAD, result.get_oop());
+  _cmd = JNIHandles::make_global(r);
+}
+
+void JavaDCmd::execute(DCmdSource source, TRAPS) {
+  HandleMark hm(THREAD);
+  InstanceKlass* ik = executor_klass(CHECK);
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+
+  args.push_oop(Handle(THREAD, JNIHandles::resolve_non_null(_cmd)));
+  JavaCalls::call_static(&result,
+                         ik,
+                         vmSymbols::executeCommand_name(),
+                         vmSymbols::executeCommand_signature(),
+                         &args,
+                         CHECK);
+  Handle h = Handle(THREAD, result.get_oop());
+  if (h.not_null()) {
+    output()->print_raw(java_lang_String::as_utf8_string(h()));
+  }
+}
+
+void JavaDCmd::cleanup() {
+  JNIHandles::destroy_global(_cmd);
+}
+
+void JavaDCmd::print_help(const char* name) const {
+  GrowableArray<DCmdArgumentInfo*>* argument_infos = _factory._argument_infos;
+
+  outputStream* out = output();
+  int option_count = _factory._option_count;
+  out->print("Syntax : %s %s", name, option_count == 0 ? "" : "[options]");
+
+  for (int i = option_count; i < argument_infos->length(); i++) {
+     DCmdArgumentInfo* info = argument_infos->at(i);
+     if (info->is_mandatory()) {
+       out->print(" <%s>", info->name());
+     } else {
+       out->print(" [<%s>]", info->name());
+     }
+  }
+  out->cr();
+
+  if (argument_infos->length() > option_count) {
+    out->print_cr("\nArguments:");
+
+    for (int i = _factory._option_count; i < argument_infos->length(); i++) {
+       DCmdArgumentInfo* info = argument_infos->at(i);
+       out->print("\t%s : %s %s (%s, ", info->name(),
+                  info->is_mandatory() ? "" : "[optional]",
+                  info->description(), info->type());
+       if (info->default_string() != NULL) {
+          out->print("%s", info->default_string());
+       } else {
+          out->print("no default value");
+       }
+        out->print_cr(")");
+    }
+  }
+
+  if (option_count > 0) {
+    out->print_cr("\nOptions: (options must be specified using the <key> or <key>=<value> syntax)");
+    for (int i = 0; i < option_count; i++) {
+       DCmdArgumentInfo* info = argument_infos->at(i);
+       out->print("\t%s : %s %s (%s, ", info->name(),
+                  info->is_mandatory() ? "" : "[optional]",
+                  info->description(), info->type());
+       if (info->default_string() != NULL) {
+          out->print("%s", info->default_string());
+       } else {
+          out->print("no default value");
+       }
+       out->print_cr(")");
+    }
+  }
+}
+
+GrowableArray<const char*>* JavaDCmd::argument_name_array() const {
+  return _factory._argument_names;
+}
+
+GrowableArray<DCmdArgumentInfo*>* JavaDCmd::argument_info_array() const {
+  return _factory._argument_infos;
+}
+
+static int get_offset_of(oop o, Symbol* name, Symbol* sig) {
+  fieldDescriptor fd;
+  InstanceKlass* ik = InstanceKlass::cast(o->klass());
+  bool found = ik->find_local_field(name, sig, &fd);
+  assert(found, "sanity check");
+  return fd.offset();
+}
+
+static oop get_oop_field(oop o, Symbol* name, Symbol* sig) {
+  return o->obj_field(get_offset_of(o, name, sig));
+}
+
+static oop get_string_field(oop o, Symbol* name) {
+  return get_oop_field(o, name, vmSymbols::string_signature());
+}
+
+static jint get_int_field(oop o, Symbol* name) {
+  return o->int_field(get_offset_of(o, name, vmSymbols::int_signature()));
+}
+
+static jboolean get_bool_field(oop o, Symbol* name) {
+  return o->bool_field(get_offset_of(o, name, vmSymbols::bool_signature()));
+}
+
+static char* to_native_string(oop string, bool null_if_empty = false) {
+  size_t length = java_lang_String::utf8_length(string);
+  if (length == 0 && null_if_empty) {
+    return NULL;
+  }
+  char* result = AllocateHeap(length + 1, mtInternal);
+  java_lang_String::as_utf8_string(string, result, (int) length + 1);
+  return result;
+}
+
+static void fill_argument_info(GrowableArray<const char*>* argument_names,
+                               GrowableArray<DCmdArgumentInfo*>* argument_infos,
+                               oop meta) {
+  oop name = get_string_field(meta, vmSymbols::name_name());
+  oop description = get_string_field(meta, vmSymbols::description_name());
+  int ordinal = get_int_field(meta, vmSymbols::ordinal_name());
+  oop defaultValue = get_string_field(meta, vmSymbols::defaultValue_name());
+  bool isMandatory = get_bool_field(meta, vmSymbols::isMandatory_name());
+  oop type = get_string_field(meta, vmSymbols::type_name());
+
+  argument_names->append(to_native_string(name));
+
+
+  DCmdArgumentInfo* info = new(ResourceObj::C_HEAP, mtInternal)
+                             DCmdArgumentInfo(to_native_string(name),
+                                              to_native_string(description),
+                                              to_native_string(type),
+                                              to_native_string(defaultValue, true),
+                                              isMandatory,
+                                              ordinal != -1,
+                                              false,
+                                              ordinal);
+  argument_infos->append(info);
+}
+
+void DCmdRegistrant::register_java_dcmd(jobject app_factory, TRAPS) {
+  HandleMark hm(THREAD);
+  oop o = JNIHandles::resolve_non_null(app_factory);
+  int export_flags = get_int_field(o, vmSymbols::flags_name());
+  bool enabled = get_bool_field(o, vmSymbols::factory_enabled_name());
+  oop disabled_message = get_string_field(o, vmSymbols::factory_disabledMessage_name());
+  oop cmd = get_oop_field(o, vmSymbols::factory_command_name(), vmSymbols::cmdMeta_signature());
+  oop name = get_string_field(cmd, vmSymbols::name_name());
+  oop description = get_string_field(cmd, vmSymbols::description_name());
+  oop impact = get_string_field(cmd, vmSymbols::impact_name());
+  oop permission_class = get_string_field(cmd, vmSymbols::permissionClass_name());
+  oop permission_name = get_string_field(cmd, vmSymbols::permissionName_name());
+  oop permission_action = get_string_field(cmd, vmSymbols::permissionAction_name());
+
+  JavaPermission permission = {to_native_string(permission_class, true),
+                               to_native_string(permission_name, true),
+                               to_native_string(permission_action, true)};
+
+  objArrayOop options = (objArrayOop)get_oop_field(o, vmSymbols::factory_options_name(),
+                                                      vmSymbols::paramMeta_array_signature());
+  objArrayOop arguments = (objArrayOop)get_oop_field(o, vmSymbols::factory_arguments_name(),
+                                                        vmSymbols::paramMeta_array_signature());
+
+  int num_of_arguments = options->length() + arguments->length();
+  GrowableArray<const char*>* argument_names = new(ResourceObj::C_HEAP, mtInternal)
+                                                   GrowableArray<const char*>(num_of_arguments, mtInternal);
+  GrowableArray<DCmdArgumentInfo*>* argument_infos = new(ResourceObj::C_HEAP, mtInternal)
+                                                   GrowableArray<DCmdArgumentInfo*>(num_of_arguments, mtInternal);
+
+  for (int i = 0; i < options->length(); i++) {
+    fill_argument_info(argument_names, argument_infos, options->obj_at(i));
+  }
+
+  for (int i = 0; i < arguments->length(); i++) {
+    fill_argument_info(argument_names, argument_infos, arguments->obj_at(i));
+  }
+
+  Handle fh = Handle(THREAD, o);
+  DCmdFactory::register_DCmdFactory(new JavaDCmdFactoryImpl(
+                                      export_flags, enabled,
+                                      num_of_arguments,
+                                      to_native_string(name), to_native_string(description),
+                                      to_native_string(impact), permission,
+                                      to_native_string(disabled_message),
+                                      argument_names,
+                                      argument_infos,
+                                      options->length(),
+                                      JNIHandles::make_global(fh)));
 }

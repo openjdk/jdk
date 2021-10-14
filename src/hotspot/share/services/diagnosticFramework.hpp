@@ -331,6 +331,26 @@ public:
   }
 };
 
+class JavaDCmdFactoryImpl;
+
+class JavaDCmd : public DCmd {
+private:
+  const JavaDCmdFactoryImpl& _factory;
+  jobject _cmd;
+public:
+  JavaDCmd(const JavaDCmdFactoryImpl& factory, outputStream *output, bool heap = false) : DCmd(output, heap),
+    _factory(factory), _cmd(NULL) { }
+
+  void parse(CmdLine *line, char delim, TRAPS);
+  void execute(DCmdSource source, TRAPS);
+  void cleanup();
+
+  void print_help(const char* name) const;
+
+  GrowableArray<const char*>* argument_name_array() const;
+  GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
+};
+
 class DCmdMark : public StackObj {
   DCmd* const _ref;
 public:
@@ -452,6 +472,61 @@ private:
   }
 };
 
+class JavaDCmdFactoryImpl : public DCmdFactory {
+friend class JavaDCmd;
+private:
+  char* _name;
+  char* _description;
+  char* _impact;
+  JavaPermission _permission;
+  char* _disabled_message;
+
+  GrowableArray<const char*>* _argument_names;
+  GrowableArray<DCmdArgumentInfo*>* _argument_infos;
+  const int _option_count;
+
+  jobject _factory;
+public:
+  JavaDCmdFactoryImpl(uint32_t flags, bool enabled, int num_arguments,
+                     char* name, char* description, char* impact, JavaPermission permission,
+                     char* disabled_message,
+                     GrowableArray<const char*>* argument_names,
+                     GrowableArray<DCmdArgumentInfo*>* argument_infos,
+                     int option_count,
+                     jobject factory) :
+    DCmdFactory(num_arguments, flags, enabled, false),
+    _name(name), _description(description), _impact(impact), _permission(permission),
+    _disabled_message(disabled_message),
+    _argument_names(argument_names),
+    _argument_infos(argument_infos),
+    _option_count(option_count),
+    _factory(factory) { }
+
+  DCmd* create_resource_instance(outputStream* output) const {
+    return new JavaDCmd(*this, output, false);
+  }
+
+  const char* name() const {
+    return _name;
+  }
+
+  const char* description() const {
+    return _description;
+  }
+
+  const char* impact() const {
+    return _impact;
+  }
+
+  const JavaPermission permission() const {
+    return _permission;
+  }
+
+  const char* disabled_message() const {
+     return _disabled_message;
+  }
+};
+
 // This class provides a convenient way to register Dcmds, without a need to change
 // management.cpp every time. Body of these two methods resides in
 // diagnosticCommand.cpp
@@ -463,6 +538,9 @@ private:
     static void register_dcmds_ext();
 
     friend class Management;
+
+public:
+    static void register_java_dcmd(jobject app_factory, TRAPS);
 };
 
 #endif // SHARE_SERVICES_DIAGNOSTICFRAMEWORK_HPP

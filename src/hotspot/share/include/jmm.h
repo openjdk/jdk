@@ -340,6 +340,9 @@ typedef struct jmmInterface_1_ {
   void         (JNICALL *SetDiagnosticFrameworkNotificationEnabled)
                                                  (JNIEnv *env,
                                                   jboolean enabled);
+  void         (JNICALL *RegisterDiagnosticCommand)
+                                                  (JNIEnv *env,
+                                                   jobject factory);
 } JmmInterface;
 
 #ifdef __cplusplus

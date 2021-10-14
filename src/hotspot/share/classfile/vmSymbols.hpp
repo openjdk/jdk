@@ -713,6 +713,30 @@
   template(url_void_signature,                              "(Ljava/net/URL;)V")                                  \
   template(url_array_classloader_void_signature,            "([Ljava/net/URL;Ljava/lang/ClassLoader;)V")          \
                                                                                                                   \
+  /* java level dcmd */                                                                                                                \
+  template(sum_management_cmd_Factory,                      "sun/management/cmd/Factory")                                              \
+  template(buildCommand_name,                               "buildCommand")                                                            \
+  template(buildCommand_signature,                          "(Ljava/lang/String;C)Lsun/management/cmd/Executable;")                    \
+  template(sum_management_cmd_internal_Executor,            "sun/management/cmd/internal/Executor")                                    \
+  template(executeCommand_name,                             "executeCommand")                                                          \
+  template(executeCommand_signature,                        "(Lsun/management/cmd/Executable;)Ljava/lang/String;")                     \
+  template(factory_enabled_name,                            "enabled")                                                                 \
+  template(factory_disabledMessage_name,                    "disabledMessage")                                                         \
+  template(factory_command_name,                            "command")                                                                 \
+  template(factory_options_name,                            "options")                                                                 \
+  template(factory_arguments_name,                          "arguments")                                                               \
+  template(description_name,                                "description")                                                             \
+  template(impact_name,                                     "impact")                                                                  \
+  template(permissionClass_name,                            "permissionClass")                                                         \
+  template(permissionName_name,                             "permissionName")                                                          \
+  template(permissionAction_name,                           "permissionAction")                                                        \
+  template(ordinal_name,                                    "ordinal")                                                                 \
+  template(defaultValue_name,                               "defaultValue")                                                            \
+  template(isMandatory_name,                                "isMandatory")                                                             \
+  template(cmdMeta_signature,                               "Lsun/management/cmd/Factory$CmdMeta;")                                    \
+  template(paramMeta_signature,                             "Lsun/management/cmd/Factory$ParamMeta;")                                  \
+  template(paramMeta_array_signature,                       "[Lsun/management/cmd/Factory$ParamMeta;")                                 \
+                                                                                                                                       \
   /*end*/
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]
