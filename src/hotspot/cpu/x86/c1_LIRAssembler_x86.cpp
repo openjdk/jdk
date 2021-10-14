@@ -3632,12 +3632,9 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ orptr(mdo_addr, TypeEntries::null_seen);
     }
     if (do_update) {
-#ifndef ASSERT
-      __ jmpb(next);
-    }
-#else
       __ jmp(next);
     }
+#ifdef ASSERT
   } else {
     __ testptr(tmp, tmp);
     __ jcc(Assembler::notZero, update);
