@@ -342,7 +342,7 @@ public class Factory {
                 readValue(command, arguments[nextArg].field, arg.key);
                 argumentIsSet[nextArg++] = true;
             } else {
-                throw new IllegalArgumentException("Unknown argument in command.");
+                throw new IllegalArgumentException("Unknown argument '" + arg.key + "' in diagnostic command.");
             }
         }
 
