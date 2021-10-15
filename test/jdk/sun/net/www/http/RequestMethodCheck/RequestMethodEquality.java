@@ -87,7 +87,8 @@ public class RequestMethodEquality {
             conn = (HttpURLConnection) url.openConnection();
             conn.setChunkedStreamingMode(8); // ensures the call to HttpURLConnection.streaming() passes
 
-            HttpClient freshClient = HttpClient.New(url, Proxy.NO_PROXY, 1234, true, conn);
+            int firstConnectTimeout = 1234;
+            HttpClient freshClient = HttpClient.New(url, Proxy.NO_PROXY, firstConnectTimeout, true, conn);
             freshClient.closeServer(); // ensures that the call to HttpClient.available() fails
 
             Field inCache = HttpClient.class.getDeclaredField("inCache");
@@ -104,7 +105,8 @@ public class RequestMethodEquality {
 
             // Before the fix, the value returned to 'cachedClient' would have been the (broken) cached
             // 'freshClient' as HttpClient.available() could never be checked
-            HttpClient cachedClient = HttpClient.New(url, Proxy.NO_PROXY, 4321, true, conn);
+            int secondConnectTimeout = 4321;
+            HttpClient cachedClient = HttpClient.New(url, Proxy.NO_PROXY, secondConnectTimeout, true, conn);
             cachedClient.closeServer();
 
             int originalConnectTimeout = freshClient.getConnectTimeout();
