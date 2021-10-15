@@ -31,8 +31,6 @@ import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.concurrent.Callable;
 import jdk.jfr.internal.JVM;
-import jdk.jfr.internal.InheritableRecordingContextBinding;
-import jdk.jfr.internal.NonInheritableRecordingContextBinding;
 import jdk.jfr.internal.RecordingContextBinding;
 import jdk.jfr.internal.RecordingContextEntry;
 import jdk.jfr.internal.RecordingContextFilterEngine;
@@ -45,20 +43,18 @@ import jdk.jfr.internal.RecordingContextFilterEngine;
  */
 public final class RecordingContext implements AutoCloseable {
 
-    final RecordingContextBinding inheritableBinding;
-    final RecordingContextBinding noninheritableBinding;
+    final RecordingContextBinding binding;
 
-    RecordingContext(RecordingContextBinding inheritableBinding, RecordingContextBinding noninheritableBinding) {
-        this.inheritableBinding = inheritableBinding;
-        this.noninheritableBinding = noninheritableBinding;
+    RecordingContext(RecordingContextBinding binding) {
+        this.binding = binding;
     }
 
     // snapshot + run
     public static class Snapshot {
-        final InheritableRecordingContextBinding inheritableRecordingContextBindings;
+        final RecordingContextBinding binding;
 
         Snapshot() {
-            this.inheritableRecordingContextBindings = InheritableRecordingContextBinding.current();
+            this.binding = RecordingContextBinding.current();
         }
     }
 
@@ -67,67 +63,56 @@ public final class RecordingContext implements AutoCloseable {
     }
 
     public static <R> R callWithSnapshot(Callable<R> op, Snapshot s) throws Exception {
-        InheritableRecordingContextBinding prev = InheritableRecordingContextBinding.current();
-        if (prev == s.inheritableRecordingContextBindings) {
+        RecordingContextBinding prev = RecordingContextBinding.current();
+        if (prev == s.binding) {
             return op.call();
         }
         try {
-            InheritableRecordingContextBinding.setCurrent(s.inheritableRecordingContextBindings);
+            RecordingContextBinding.setCurrent(s.binding);
             return op.call();
         } finally {
-            InheritableRecordingContextBinding.setCurrent(prev);
+            RecordingContextBinding.setCurrent(prev);
         }
     }
 
     public static void runWithSnapshot(Runnable op, Snapshot s) {
-        InheritableRecordingContextBinding prev = InheritableRecordingContextBinding.current();
-        if (prev == s.inheritableRecordingContextBindings) {
+        RecordingContextBinding prev = RecordingContextBinding.current();
+        if (prev == s.binding) {
             op.run();
         }
         try {
-            InheritableRecordingContextBinding.setCurrent(s.inheritableRecordingContextBindings);
+            RecordingContextBinding.setCurrent(s.binding);
             op.run();
         } finally {
-            InheritableRecordingContextBinding.setCurrent(prev);
+            RecordingContextBinding.setCurrent(prev);
         }
     }
 
     // initialize
     public static class Builder {
 
-        final Set<RecordingContextEntry> inheritableEntries;
-        final Set<RecordingContextEntry> noninheritableEntries;
+        final Set<RecordingContextEntry> entries;
 
         Builder() {
+            entries = new LinkedHashSet<>();
+
             RecordingContextBinding current;
-
-            inheritableEntries = new LinkedHashSet<>();
-            if ((current = InheritableRecordingContextBinding.current()) != null) {
-                inheritableEntries.addAll(current.entries());
-            }
-
-            noninheritableEntries = new LinkedHashSet<>();
-            if ((current = NonInheritableRecordingContextBinding.current()) != null) {
-                noninheritableEntries.addAll(current.entries());
+            if ((current = RecordingContextBinding.current()) != null) {
+                entries.addAll(current.entries());
             }
         }
 
         // build and set current context
         public Builder where(RecordingContextKey key, String value) {
-            Set<RecordingContextEntry> set = key.isInheritable() ?
-                inheritableEntries : noninheritableEntries;
-
             RecordingContextEntry entry = new RecordingContextEntry(key, value);
-            set.remove(entry);
-            set.add(entry);
+            entries.remove(entry);
+            entries.add(entry);
 
             return this;
         }
 
         public RecordingContext build() {
-            return new RecordingContext(
-                new InheritableRecordingContextBinding(inheritableEntries),
-                new NonInheritableRecordingContextBinding(noninheritableEntries));
+            return new RecordingContext(new RecordingContextBinding(entries));
         }
     }
 
@@ -138,7 +123,6 @@ public final class RecordingContext implements AutoCloseable {
     // close
     @Override
     public void close() {
-        inheritableBinding.close();
-        noninheritableBinding.close();
+        binding.close();
     }
 }

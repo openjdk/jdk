@@ -220,8 +220,8 @@ NO_TRANSITION(void, jfr_recording_context_delete(JNIEnv* env, jobject jvm, jlong
   delete binding;
 NO_TRANSITION_END
 
-NO_TRANSITION(void, jfr_recording_context_set(JNIEnv* env, jobject jvm, jlong id, jboolean is_inheritable))
-  JfrContextBinding::set_current(JfrContextBinding::find(id), is_inheritable);
+NO_TRANSITION(void, jfr_recording_context_set(JNIEnv* env, jobject jvm, jlong id))
+  JfrContextBinding::set_current(JfrContextBinding::find(id));
 NO_TRANSITION_END
 
 NO_TRANSITION(jboolean, jfr_recording_context_contains_key(JNIEnv* env, jobject jvm, jlong id, jstring key))

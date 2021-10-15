@@ -632,7 +632,6 @@ public final class JVM {
      * 
      *
      * @param entries the entries in the current recording context binding
-     * @param isInheritable whether the current recording context is inheritable
      */
     public native long recordingContextNew(String[] entries, boolean matchesFilter);
 
@@ -640,7 +639,6 @@ public final class JVM {
      * 
      *
      * @param prev the previous recording context binding
-     * @param isInheritable whether the current recording context is inheritable
      */
     public native void recordingContextDelete(long id);
 
@@ -648,15 +646,13 @@ public final class JVM {
      * 
      *
      * @param context the context binding
-     * @param isInheritable whether the recording context is inheritable
      */
-    public native void recordingContextSet(long id, boolean isInheritable);
+    public native void recordingContextSet(long id);
 
     /**
      * 
      *
      * @param key the key to the recording context entry
-     * @param isInheritable whether the current recording context is inheritable
      *
      * @return whether the current context contains the given key
      */

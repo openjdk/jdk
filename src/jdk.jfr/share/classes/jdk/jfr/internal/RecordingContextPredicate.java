@@ -25,37 +25,11 @@
 
 package jdk.jfr.internal;
 
-import java.util.Objects;
-import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * @since 17
  */
-public final class NonInheritableRecordingContextBinding extends RecordingContextBinding {
-
-    private final static ThreadLocal<NonInheritableRecordingContextBinding> current = ThreadLocal.withInitial(() -> null);
-
-    public NonInheritableRecordingContextBinding(Set<RecordingContextEntry> entries) {
-        super(current.get(), Objects.requireNonNull(entries));
-        current.set(this);
-    }
-
-    public static NonInheritableRecordingContextBinding current() {
-        return current.get();
-    }
-
-    @Override
-    protected boolean isInheritable() {
-        return false;
-    }
-
-    // There is no `setCurrent` method since it makes no sense to set the current context when
-    // it's not inheritable because the only place the context can come from is from the current
-    // thread
-
-    @Override
-    public void close() {
-        super.close();
-        current.set((NonInheritableRecordingContextBinding)previous());
-    }
+public interface RecordingContextPredicate
+        extends Predicate<RecordingContextBinding> {
 }

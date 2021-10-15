@@ -26,7 +26,6 @@
 package jdk.jfr.internal;
 
 import java.util.Objects;
-import java.util.function.Predicate;
 import jdk.jfr.RecordingContextFilter;
 
 /**
@@ -35,9 +34,11 @@ import jdk.jfr.RecordingContextFilter;
 public final class RecordingContextFilterEngine {
 
     private static RecordingContextFilter filter;
-    private static Predicate<RecordingContextBinding> predicate;
+    private static RecordingContextPredicate predicate;
 
-    public static void setContextFilter(RecordingContextFilter filter, Predicate<RecordingContextBinding> predicate) {
+    public static void setContextFilter(
+            RecordingContextFilter filter,
+            RecordingContextPredicate predicate) {
         RecordingContextFilterEngine.filter = filter;
         RecordingContextFilterEngine.predicate = predicate;
     }
@@ -46,7 +47,7 @@ public final class RecordingContextFilterEngine {
         return filter;
     }
 
-    public static boolean matches(RecordingContextBinding binding) {
-        return predicate == null || predicate.test(binding);
+    public static boolean matches(RecordingContextBinding b) {
+        return predicate == null || predicate.test(b);
     }
 }

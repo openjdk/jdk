@@ -64,9 +64,9 @@ public class TestFullContext {
     private static boolean success = true;
 
     private final static RecordingContextKey contextKey1 =
-        RecordingContextKey.inheritableForName("Key1");
+        RecordingContextKey.forName("Key1");
     private final static RecordingContextKey contextKey2 =
-        RecordingContextKey.inheritableForName("Key2");
+        RecordingContextKey.forName("Key2");
 
     @Name("TestEvent")
     @Label("TestEvent")

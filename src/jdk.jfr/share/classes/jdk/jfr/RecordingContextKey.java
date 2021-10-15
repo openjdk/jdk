@@ -26,8 +26,7 @@
 package jdk.jfr;
 
 import java.util.Objects;
-import jdk.jfr.internal.InheritableRecordingContextBinding;
-import jdk.jfr.internal.NonInheritableRecordingContextBinding;
+import jdk.jfr.internal.RecordingContextBinding;
 
 /**
  * @since 17
@@ -35,33 +34,21 @@ import jdk.jfr.internal.NonInheritableRecordingContextBinding;
 public final class RecordingContextKey {
 
     final String name;
-    final boolean isInheritable;
 
-    private RecordingContextKey(String name, boolean isInheritable) {
+    private RecordingContextKey(String name) {
         this.name = Objects.requireNonNull(name);
-        this.isInheritable = isInheritable;
     }
 
     public static RecordingContextKey forName(String name) {
-        return new RecordingContextKey(name, false);
-    }
-
-    public static RecordingContextKey inheritableForName(String name) {
-        return new RecordingContextKey(name, true);
+        return new RecordingContextKey(name);
     }
 
     public boolean isBound() {
-        return isInheritable ?
-            InheritableRecordingContextBinding.current().containsKey(this) :
-            NonInheritableRecordingContextBinding.current().containsKey(this);
+        return RecordingContextBinding.current().containsKey(this);
     }
 
     public String name() {
         return name;
-    }
-
-    public boolean isInheritable() {
-        return isInheritable;
     }
 
     @Override

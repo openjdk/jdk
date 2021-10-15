@@ -194,13 +194,9 @@ class IterContext : public StackObj {
 
 bool JfrContext::record_safe(JavaThread* thread, int skip) {
   IterContext iter(_entries, _max_entries, &_nr_of_entries, &_reached_root);
-  JfrContextBinding* inheritable_binding = JfrContextBinding::current(true);
-  if (inheritable_binding != NULL) {
-    inheritable_binding->iterate(&iter);
-  }
-  JfrContextBinding* non_inheritable_binding = JfrContextBinding::current(false);
-  if (non_inheritable_binding != NULL) {
-    non_inheritable_binding->iterate(&iter);
+  JfrContextBinding* binding = JfrContextBinding::current();
+  if (binding != NULL) {
+    binding->iterate(&iter);
   }
   return _nr_of_entries > 0;
 }

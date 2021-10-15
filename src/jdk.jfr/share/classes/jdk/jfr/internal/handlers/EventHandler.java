@@ -31,9 +31,7 @@ import java.io.ObjectOutputStream;
 
 import jdk.jfr.EventType;
 import jdk.jfr.internal.EventControl;
-import jdk.jfr.internal.InheritableRecordingContextBinding;
 import jdk.jfr.internal.JVM;
-import jdk.jfr.internal.NonInheritableRecordingContextBinding;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.RecordingContextBinding;
@@ -62,10 +60,9 @@ public abstract class EventHandler {
 
     // Accessed by generated code in event class
     public final boolean shouldCommit(long duration) {
-        RecordingContextBinding current;
-        return isEnabled() && duration >= platformEventType.getThresholdTicks() &&
-                ((current = InheritableRecordingContextBinding.current()) == null || current.matchesFilter() ||
-                 (current = NonInheritableRecordingContextBinding.current()) == null || current.matchesFilter());
+        return isEnabled() &&
+                duration >= platformEventType.getThresholdTicks() &&
+                RecordingContextFilterEngine.matches(RecordingContextBinding.current());
     }
 
     // Accessed by generated code in event class

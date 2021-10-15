@@ -162,7 +162,7 @@ jlong JNICALL jfr_recording_context_new(JNIEnv* env, jobject jvm, jobjectArray e
 
 void JNICALL jfr_recording_context_delete(JNIEnv* env, jobject jvm, jlong id);
 
-void JNICALL jfr_recording_context_set(JNIEnv* env, jobject jvm, jlong id, jboolean is_inheritable);
+void JNICALL jfr_recording_context_set(JNIEnv* env, jobject jvm, jlong id);
 
 jboolean JNICALL jfr_recording_context_contains_key(JNIEnv* env, jobject jvm, jlong context, jstring key);
 

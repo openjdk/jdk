@@ -781,20 +781,13 @@ class JavaThread: public Thread {
 #if INCLUDE_JFR
   // JFR Recording Context support
  private:
-  JfrContextBinding* _inheritable_jfr_context_binding;
-  JfrContextBinding* _noninheritable_jfr_context_binding;
+  JfrContextBinding* _jfr_context_binding;
  public:
-  JfrContextBinding* jfr_context_binding(bool is_inheritable) {
-    return is_inheritable ?
-      _inheritable_jfr_context_binding :
-      _noninheritable_jfr_context_binding;
+  JfrContextBinding* jfr_context_binding() {
+    return _jfr_context_binding;
   }
-  void set_jfr_context_binding(JfrContextBinding* context, bool is_inheritable) {
-    if (is_inheritable) {
-      _inheritable_jfr_context_binding = context;
-    } else {
-      _noninheritable_jfr_context_binding = context;
-    }
+  void set_jfr_context_binding(JfrContextBinding* context) {
+    _jfr_context_binding = context;
   }
 #endif
 

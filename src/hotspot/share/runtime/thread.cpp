@@ -1001,8 +1001,7 @@ JavaThread::JavaThread() :
   _monitor_chunks(nullptr),
 
 #if INCLUDE_JFR
-  _inheritable_jfr_context_binding(nullptr),
-  _noninheritable_jfr_context_binding(nullptr),
+  _jfr_context_binding(nullptr),
 #endif
 
   _suspend_flags(0),

@@ -49,14 +49,14 @@ bool JfrContextBinding::contains_key(const char* key) {
   return false;
 }
 
-void JfrContextBinding::set_current(JfrContextBinding* current, jboolean is_inheritable) {
+void JfrContextBinding::set_current(JfrContextBinding* current) {
   JavaThread *thread = JavaThread::current();
-  thread->set_jfr_context_binding(current, is_inheritable);
+  thread->set_jfr_context_binding(current);
 }
 
-JfrContextBinding* JfrContextBinding::current(jboolean is_inheritable) {
+JfrContextBinding* JfrContextBinding::current() {
   JavaThread *thread = JavaThread::current();
-  return thread->jfr_context_binding(is_inheritable);
+  return thread->jfr_context_binding();
 }
 
 bool JfrContextBinding::current_matches_filter() {
@@ -64,8 +64,6 @@ bool JfrContextBinding::current_matches_filter() {
   if (!thread) { return true; }
   JavaThread *jthread = thread->is_Java_thread() ? JavaThread::cast(thread) : NULL;
   if (!jthread) { return true; }
-  JfrContextBinding *inheritable = jthread->jfr_context_binding(true),
-                    *noninheritable = jthread->jfr_context_binding(false);
-  return (inheritable == NULL || inheritable->_matches_filter) ||
-          (noninheritable == NULL || noninheritable->_matches_filter);
+  JfrContextBinding *binding = jthread->jfr_context_binding();
+  return binding == NULL || binding->_matches_filter;
 }

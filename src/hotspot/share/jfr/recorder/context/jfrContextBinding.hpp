@@ -58,8 +58,8 @@ class JfrContextBinding : public JfrCHeapObj {
   }
 
 
-  static JfrContextBinding* current(jboolean is_inheritable);
-  static void set_current(JfrContextBinding* context, jboolean is_inheritable);
+  static JfrContextBinding* current();
+  static void set_current(JfrContextBinding* context);
 
   static bool current_matches_filter();
 };
