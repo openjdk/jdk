@@ -121,13 +121,12 @@ protected:
   uint _max_num_elems;
   uint _alignment;
 
-public:
   static const uint BufferAlignment = 4;
   static const uint MinimumBufferSize = 8;
   static const uint MaximumBufferSize =  UINT_MAX / 2;
 
-  G1SegmentedArrayAllocOptions(uint elem_size, uint initial_num_elems = MinimumBufferSize,
-                               uint max_num_elems = MaximumBufferSize, uint alignment = BufferAlignment) :
+public:
+  G1SegmentedArrayAllocOptions(uint elem_size, uint initial_num_elems, uint max_num_elems, uint alignment) :
     _elem_size(elem_size),
     _initial_num_elems(initial_num_elems),
     _max_num_elems(max_num_elems),

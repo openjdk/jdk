@@ -120,7 +120,9 @@ template <class Elem>
 void G1CardSetAllocator<Elem>::print(outputStream* os) {
   uint num_allocated_nodes = _segmented_array.num_allocated_nodes();
   uint num_available_nodes = _segmented_array.num_available_nodes();
-  const G1SegmentedArrayBuffer<mtGCCardSet>* first_array_buffer = _segmented_array.first_array_buffer();
+  uint highest = _segmented_array.first_array_buffer() != nullptr
+               ? _segmented_array.first_array_buffer()->num_elems()
+               : 0;
   uint num_buffers = _segmented_array.num_buffers();
   os->print("MA " PTR_FORMAT ": %u elems pending (allocated %u available %u) used %.3f highest %u buffers %u size %zu ",
             p2i(this),
@@ -128,7 +130,7 @@ void G1CardSetAllocator<Elem>::print(outputStream* os) {
             num_allocated_nodes,
             num_available_nodes,
             percent_of(num_allocated_nodes - _num_pending_nodes, num_available_nodes),
-            first_array_buffer != nullptr ? first_array_buffer->num_elems() : 0,
+            highest,
             num_buffers,
             mem_size());
 }

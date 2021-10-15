@@ -113,8 +113,7 @@ public:
   // Number of distinctly sized memory objects on the card set heap.
   // Currently contains CHT-Nodes, ArrayOfCards, BitMaps, Howl
   static constexpr uint num_mem_object_types() { return 4; }
-  // Returns the memory allocation options for the memory objects on the card set heap. The returned
-  // array must be freed by the caller.
+  // Returns the memory allocation options for the memory objects on the card set heap.
   const G1CardSetAllocOptions* mem_object_alloc_options(uint idx);
 
   // For a given memory object, get a descriptive name.

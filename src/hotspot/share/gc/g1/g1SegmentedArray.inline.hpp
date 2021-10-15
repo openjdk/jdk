@@ -207,8 +207,7 @@ void G1SegmentedArray<Elem, flag>::drop_all() {
 
 template <class Elem, MEMFLAGS flag>
 Elem* G1SegmentedArray<Elem, flag>::allocate() {
-  uint es = elem_size();
-  assert(es > 0, "instance size not set.");
+  assert(elem_size() > 0, "instance size not set.");
 
   G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
   if (cur == nullptr) {
