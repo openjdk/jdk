@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.Set;
 import javax.annotation.processing.Filer;
-import javax.lang.model.element.Element;
 
 import static javax.tools.JavaFileObject.Kind;
 
@@ -345,21 +344,21 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * representing the specified class of the specified kind in the
      * given package-oriented location.
      *
-     * <p>Optionally, this file manager might consider the sibling as
-     * a hint for where to place the output.  The exact semantics of
-     * this hint is unspecified.  The JDK compiler, javac, for
-     * example, will place class files in the same directories as
-     * originating source files unless a class file output directory
-     * is provided.  To facilitate this behavior, javac might provide
-     * the originating source file as sibling when calling this
-     * method.
+     * <p>The provided {@code originatingFiles} represent files that
+     * where in, an unspecified way, used to create the content of
+     * the file created by this method. See {@code originatingElements}
+     * in {@link Filer#createSourceFile}.
+     *
+     * @implSpec The default implementation calls
+     * {@link #getJavaFileForOutput(javax.tools.JavaFileManager.Location, java.lang.String, javax.tools.JavaFileObject.Kind, javax.tools.FileObject) }
+     * with the first element of the {@code originatingFiles}, if any, as a {@code sibling}.
      *
      * @param location a package-oriented location
      * @param className the name of a class
      * @param kind the kind of file, must be one of {@link
      * JavaFileObject.Kind#SOURCE SOURCE} or {@link
      * JavaFileObject.Kind#CLASS CLASS}
-     * @param originatingFiles the files which are contributing to this newly created file (see {@code originatingElements} in {@link Filer#createSourceFile}
+     * @param originatingFiles the files which are contributing to this newly created file
      * @return a file object for output
      * @throws IllegalArgumentException if sibling is not known to
      * this file manager, or if the location is not known to this file
@@ -372,13 +371,14 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws IllegalStateException {@link #close} has been called
      * and this file manager cannot be reopened
      * @since 18
+     * @see Filer#createSourceFile
      */
     default JavaFileObject getJavaFileForOutputForOriginatingFiles(Location location,
                                         String className,
                                         Kind kind,
                                         FileObject... originatingFiles)
         throws IOException {
-        return getJavaFileForOutput(location, className, kind, originatingFiles != null && originatingFiles.length > 0 ? originatingFiles[0] : null);
+        return getJavaFileForOutput(location, className, kind, siblingFrom(originatingFiles));
     }
 
     /**
@@ -478,14 +478,10 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * representing the specified <a href="JavaFileManager.html#relative_name">relative
      * name</a> in the specified package in the given location.
      *
-     * <p>Optionally, this file manager might consider the sibling as
-     * a hint for where to place the output.  The exact semantics of
-     * this hint is unspecified.  The JDK compiler, javac, for
-     * example, will place class files in the same directories as
-     * originating source files unless a class file output directory
-     * is provided.  To facilitate this behavior, javac might provide
-     * the originating source file as sibling when calling this
-     * method.
+     * <p>The provided {@code originatingFiles} represent files that
+     * where in, an unspecified way, used to create the content of
+     * the file created by this method. See {@code originatingElements}
+     * in {@link Filer#createResource}.
      *
      * <p>If the returned object represents a {@linkplain
      * JavaFileObject.Kind#SOURCE source} or {@linkplain
@@ -494,13 +490,17 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      *
      * <p>Informally, the file object returned by this method is
      * located in the concatenation of the location, package name, and
-     * relative name or next to the sibling argument.  See {@link
-     * #getFileForInput getFileForInput} for an example.
+     * relative name or in a location inferred from the {@code originatingFiles}.
+     * See {@link #getFileForInput getFileForInput} for an example.
+     *
+     * @implSpec The default implementation calls
+     * {@link #getFileForOutput(javax.tools.JavaFileManager.Location, java.lang.String, java.lang.String, javax.tools.FileObject)
+     * with the first element of the {@code originatingFiles}, if any, as a {@code sibling}.
      *
      * @param location an output location
      * @param packageName a package name
      * @param relativeName a relative name
-     * @param originatingFiles the files which are contributing to this newly created file (see {@code originatingElements} in {@link Filer#createResource})
+     * @param originatingFiles the files which are contributing to this newly created file
      * @return a file object
      * @throws IllegalArgumentException if sibling is not known to
      * this file manager, or if the location is not known to this file
@@ -513,13 +513,14 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      * @since 18
+     * @see Filer#createResource
      */
     default FileObject getFileForOutputForOriginatingFiles(Location location,
                                 String packageName,
                                 String relativeName,
                                 FileObject... originatingFiles)
         throws IOException {
-        return getFileForOutput(location, packageName, relativeName, originatingFiles != null && originatingFiles.length > 0 ? originatingFiles[0] : null);
+        return getFileForOutput(location, packageName, relativeName, siblingFrom(originatingFiles));
     }
 
     /**
@@ -684,6 +685,10 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     default boolean contains(Location location, FileObject fo) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    private static FileObject siblingFrom(FileObject[] originatingFiles) {
+        return originatingFiles != null && originatingFiles.length > 0 ? originatingFiles[0] : null;
     }
 
 }
