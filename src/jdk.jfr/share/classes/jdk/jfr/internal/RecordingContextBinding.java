@@ -45,6 +45,8 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
     private final RecordingContextBinding previous;
     private RecordingContextBinding next;
 
+    private boolean matchesFilter;
+
     private final Set<RecordingContextEntry> entries;
 
     private final NativeBindingWrapper nativeWrapper;
@@ -63,8 +65,10 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
         this.entries = Collections.unmodifiableSet(entries);
 
+        this.matchesFilter = RecordingContextFilterEngine.matches(this);
+
         this.nativeWrapper = new NativeBindingWrapper(
-            this.previous != null ? this.previous.nativeWrapper : null, entries, isInheritable());
+            this.previous != null ? this.previous.nativeWrapper : null, entries, matchesFilter, isInheritable());
 
         this.closer = cleaner.register(
             this, new NativeBindingCleaner(this.nativeWrapper));
@@ -78,6 +82,10 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
         return entries;
     }
 
+    public boolean matchesFilter() {
+        return matchesFilter;
+    }
+
     protected abstract boolean isInheritable();
 
     public boolean containsKey(RecordingContextKey key) {
@@ -86,7 +94,8 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
     protected static void set(RecordingContextBinding context, boolean isInheritable) {
         NativeBindingWrapper.setCurrent(
-            context != null ? context.nativeWrapper : null, isInheritable);
+            context != null ? context.nativeWrapper : null,
+            isInheritable);
     }
 
     @Override
@@ -109,10 +118,16 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
         private final long id;
         private final NativeBindingWrapper previous;
+        private final boolean matchesFilter;
         private final boolean isInheritable;
 
-        public NativeBindingWrapper(NativeBindingWrapper previous, Set<RecordingContextEntry> entries, boolean isInheritable) {
+        public NativeBindingWrapper(
+                NativeBindingWrapper previous,
+                Set<RecordingContextEntry> entries,
+                boolean matchesFilter,
+                boolean isInheritable) {
             this.previous = previous;
+            this.matchesFilter = matchesFilter;
             this.isInheritable = isInheritable;
 
             // convert entries to an array of contiguous pair of String
@@ -126,7 +141,7 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
             }
 
             this.id = JVM.getJVM().recordingContextNew(
-                            Objects.requireNonNull(entriesAsStrings));
+                            Objects.requireNonNull(entriesAsStrings), matchesFilter);
 
             setCurrent(this, this.isInheritable);
         }
@@ -141,6 +156,7 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
         @Override
         public void close() {
+            assert previous == null || previous.isInheritable == isInheritable;
             setCurrent(previous, isInheritable);
         }
 

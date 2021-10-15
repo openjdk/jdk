@@ -26,9 +26,10 @@
 #include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/recorder/context/jfrContextBinding.hpp"
 
-JfrContextBinding::JfrContextBinding(const char** entries, jsize entries_len)
+JfrContextBinding::JfrContextBinding(const char** entries, jsize entries_len, bool matches_filter)
     : _entries_len(entries_len),
-        _entries(JfrCHeapObj::new_array<JfrContextEntry>(_entries_len)) {
+      _entries(JfrCHeapObj::new_array<JfrContextEntry>(_entries_len)),
+      _matches_filter(matches_filter) {
   assert(entries != NULL, "invariant");
   for (int i = 0; i < _entries_len; i++) {
     _entries[i] = JfrContextEntry(entries[i * 2 + 0], entries[i * 2 + 1]);
@@ -56,4 +57,15 @@ void JfrContextBinding::set_current(JfrContextBinding* current, jboolean is_inhe
 JfrContextBinding* JfrContextBinding::current(jboolean is_inheritable) {
   JavaThread *thread = JavaThread::current();
   return thread->jfr_context_binding(is_inheritable);
+}
+
+bool JfrContextBinding::current_matches_filter() {
+  Thread *thread = Thread::current_or_null();
+  if (!thread) { return true; }
+  JavaThread *jthread = thread->is_Java_thread() ? JavaThread::cast(thread) : NULL;
+  if (!jthread) { return true; }
+  JfrContextBinding *inheritable = jthread->jfr_context_binding(true),
+                    *noninheritable = jthread->jfr_context_binding(false);
+  return (inheritable == NULL || inheritable->_matches_filter) ||
+          (noninheritable == NULL || noninheritable->_matches_filter);
 }

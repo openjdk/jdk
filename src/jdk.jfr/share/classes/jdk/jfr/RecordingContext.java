@@ -35,6 +35,7 @@ import jdk.jfr.internal.InheritableRecordingContextBinding;
 import jdk.jfr.internal.NonInheritableRecordingContextBinding;
 import jdk.jfr.internal.RecordingContextBinding;
 import jdk.jfr.internal.RecordingContextEntry;
+import jdk.jfr.internal.RecordingContextFilterEngine;
 
 /**
  * Provide a RecordingContext to store variables that are passed around synchronous

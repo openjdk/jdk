@@ -34,9 +34,13 @@ class JfrContextBinding : public JfrCHeapObj {
  private:
   jsize _entries_len;
   JfrContextEntry* _entries;
+  bool _matches_filter;
 
  public:
-  JfrContextBinding(const char** entries /* of size entries_len * 2 */, jsize entries_len);
+  JfrContextBinding(
+    const char** entries /* of size entries_len * 2 */,
+    jsize entries_len,
+    bool matches_filter);
   ~JfrContextBinding();
 
   jlong id() { return (jlong)this; }
@@ -53,8 +57,11 @@ class JfrContextBinding : public JfrCHeapObj {
     }
   }
 
+
   static JfrContextBinding* current(jboolean is_inheritable);
   static void set_current(JfrContextBinding* context, jboolean is_inheritable);
+
+  static bool current_matches_filter();
 };
 
 #endif // SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTBINDING_HPP

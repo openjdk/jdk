@@ -76,7 +76,7 @@ public final class EventControl {
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
 
     private final ArrayList<SettingInfo> settingInfos = new ArrayList<>();
-    private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
+    private final ArrayList<NamedControl> namedControls = new ArrayList<>(6);
     private final PlatformEventType type;
     private final String idName;
 

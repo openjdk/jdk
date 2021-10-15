@@ -186,6 +186,9 @@ class JfrEvent {
     } else if (_end_time == 0) {
       set_endtime(JfrTicks::now());
     }
+    if (T::hasContext && !JfrContextBinding::current_matches_filter()) {
+      return false;
+    }
     if (T::isInstant || T::isRequestable) {
       return T::hasThrottle ? JfrEventThrottler::accept(T::eventId, _untimed ? 0 : _start_time) : true;
     }

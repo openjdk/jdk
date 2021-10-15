@@ -42,6 +42,7 @@ import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingContext;
+import jdk.jfr.RecordingContextFilter;
 import jdk.jfr.RecordingContextKey;
 import jdk.jfr.StackTrace;
 import jdk.jfr.consumer.RecordedContext;
@@ -59,6 +60,8 @@ import jdk.test.lib.jfr.Events;
  * @run main/othervm jdk.jfr.event.profiling.TestFullContext
  */
 public class TestFullContext {
+
+    private static boolean success = true;
 
     private final static RecordingContextKey contextKey1 =
         RecordingContextKey.inheritableForName("Key1");
@@ -79,7 +82,7 @@ public class TestFullContext {
     }
 
     public static void main(String[] args) throws Throwable {
-        runTestWithContexts(
+        test(
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
@@ -87,14 +90,86 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 1);
+                assertEquals(events.size(), 2);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value1"));
                 return true;
             }
         );
 
-        runTestWithContexts(
+        test(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value1")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .hasKey(contextKey1)
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 2);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.name(), "Key1Value1"));
+                return true;
+            }
+        );
+
+        test(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value1")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .hasEntry(contextKey1, "Key1Value1")
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 2);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.name(), "Key1Value1"));
+                return true;
+            }
+        );
+
+        test(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value1")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .hasEntry(contextKey1, "Key1Value1_no")
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 1);
+                return true;
+            }
+        );
+
+        test(
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value1")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .hasKey(contextKey2)
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 1);
+                return true;
+            }
+        );
+
+        test(
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
@@ -103,7 +178,7 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 1);
+                assertEquals(events.size(), 2);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value2",
                     contextKey2.name(), "Key2Value2"));
@@ -111,7 +186,7 @@ public class TestFullContext {
             }
         );
 
-        runTestWithContexts(
+        test(
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
@@ -120,14 +195,14 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 1);
+                assertEquals(events.size(), 2);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value3/2"));
                 return true;
             }
         );
 
-        runTestWithContexts(
+        test(
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
@@ -138,7 +213,7 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 1);
+                assertEquals(events.size(), 2);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value4",
                     contextKey2.name(), "Key2Value4"));
@@ -146,7 +221,7 @@ public class TestFullContext {
             }
         );
 
-        runTestWithContexts(
+        test(
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
@@ -157,30 +232,54 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 1);
+                assertEquals(events.size(), 2);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value5/2"));
                 return true;
             }
         );
+
+        if (!success) {
+            System.exit(1);
+        }
     }
 
-    private static void runTestWithContexts(
+    private static void test(
+        Supplier<RecordingContextHolder> contextsFactory,
+        ThrowingPredicate<List<RecordedEvent>, Throwable> validation) throws Throwable {
+        test(contextsFactory, () -> RecordingContextFilter.Config.createFilter().build(), validation);
+    }
+
+    private static void test(
             Supplier<RecordingContextHolder> contextsFactory,
+            Supplier<RecordingContextFilter> filterFactory,
             ThrowingPredicate<List<RecordedEvent>, Throwable> validation) throws Throwable {
-        try (Recording recording = new Recording()) {
-            recording.enable("TestEvent");
-            recording.start();
+        try {
+            try (Recording recording = new Recording()) {
+                recording.enable("TestEvent");
+                recording.start();
 
-            try (RecordingContextHolder contexts = contextsFactory.get()) {
-                new TestEvent().commit();
+                RecordingContextFilter prev = RecordingContextFilter.Config.getContextFilter();
+                try {
+                    RecordingContextFilter.Config.setContextFilter(filterFactory.get());
+                    try (RecordingContextHolder contexts = contextsFactory.get()) {
+                        new TestEvent().commit();
+                    }
+
+                    new TestEvent().commit();
+                } finally {
+                    RecordingContextFilter.Config.setContextFilter(prev);
+                }
+
+                recording.stop();
+
+                if (!validation.test(fromRecording(recording))) {
+                    throw new Exception("failed");
+                }
             }
-
-            recording.stop();
-
-            if (!validation.test(fromRecording(recording))) {
-                throw new RuntimeException("failed");
-            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+            success = false;
         }
     }
 
@@ -201,13 +300,7 @@ public class TestFullContext {
     private static List<RecordedContextEntry> getContextEntries(RecordedEvent event) throws Throwable {
         RecordedContext context = event.getContext();
         if (context == null) throw new Exception("no context on " + event);
-        List<RecordedContextEntry> entries = context.getEntries();
-        if (entries.isEmpty()) throw new Exception("empty context on " + event);
-        return entries;
-    }
-
-    private static RecordedContextEntry getFirstContextEntry(RecordedEvent event) throws Throwable {
-        return getContextEntries(event).get(0);
+        return context.getEntries();
     }
 
     private static List<RecordedEvent> fromRecording(Recording recording) throws Throwable {
