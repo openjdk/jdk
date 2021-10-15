@@ -141,7 +141,6 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
 
     /**
      * Returns the memory address associated with this variable argument list.
-     * @throws UnsupportedOperationException if this variable argument list has been allocated using heap segments.
      * @throws IllegalStateException if the scope associated with this variable argument list has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
      * @return The memory address associated with this variable argument list.

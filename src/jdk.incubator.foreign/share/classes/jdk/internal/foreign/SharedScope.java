@@ -143,13 +143,13 @@ class SharedScope extends ResourceScopeImpl {
         @Override
         void add(ResourceCleanup cleanup) {
             while (true) {
-                ResourceCleanup prev = (ResourceCleanup) FST.getAcquire(this);
-                cleanup.next = prev;
-                ResourceCleanup newSegment = (ResourceCleanup) FST.compareAndExchangeRelease(this, prev, cleanup);
-                if (newSegment == ResourceCleanup.CLOSED_LIST) {
+                ResourceCleanup prev = (ResourceCleanup) FST.getVolatile(this);
+                if (prev == ResourceCleanup.CLOSED_LIST) {
                     // too late
                     throw new IllegalStateException("Already closed");
-                } else if (newSegment == prev) {
+                }
+                cleanup.next = prev;
+                if (FST.compareAndSet(this, prev, cleanup)) {
                     return; //victory
                 }
                 // keep trying
@@ -165,9 +165,9 @@ class SharedScope extends ResourceScopeImpl {
                 //ok now we're really closing down
                 ResourceCleanup prev = null;
                 while (true) {
-                    prev = (ResourceCleanup) FST.getAcquire(this);
+                    prev = (ResourceCleanup) FST.getVolatile(this);
                     // no need to check for DUMMY, since only one thread can get here!
-                    if (FST.weakCompareAndSetRelease(this, prev, ResourceCleanup.CLOSED_LIST)) {
+                    if (FST.compareAndSet(this, prev, ResourceCleanup.CLOSED_LIST)) {
                         break;
                     }
                 }
