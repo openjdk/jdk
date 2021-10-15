@@ -75,7 +75,7 @@ ReferenceProcessor* G1FullCollector::reference_processor() {
 
 uint G1FullCollector::calc_active_workers() {
   G1CollectedHeap* heap = G1CollectedHeap::heap();
-  uint max_worker_count = heap->workers()->total_workers();
+  uint max_worker_count = heap->workers()->max_workers();
   // Only calculate number of workers if UseDynamicNumberOfGCThreads
   // is enabled, otherwise use max.
   if (!UseDynamicNumberOfGCThreads) {
@@ -102,7 +102,7 @@ uint G1FullCollector::calc_active_workers() {
   log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, "
                       "adaptive workers: %u, used limited workers: %u)",
                       worker_count, heap_waste_worker_limit, active_worker_limit, used_worker_limit);
-  worker_count = heap->workers()->update_active_workers(worker_count);
+  worker_count = heap->workers()->set_active_workers(worker_count);
   log_info(gc, task)("Using %u workers of %u for full compaction", worker_count, max_worker_count);
 
   return worker_count;
@@ -224,8 +224,7 @@ void G1FullCollector::complete_collection() {
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
-    // Set as Invalid by default.
-    _region_attr_table.verify_is_invalid(hr->hrm_index());
+    _region_attr_table.set_free(hr->hrm_index());
   } else if (hr->is_closed_archive()) {
     _region_attr_table.set_skip_marking(hr->hrm_index());
   } else if (hr->is_pinned()) {
@@ -249,8 +248,9 @@ public:
     G1IsAliveClosure is_alive(&_collector);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1FullKeepAliveClosure keep_alive(_collector.marker(index));
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     G1FollowStackClosure* complete_gc = _collector.marker(index)->stack_closure();
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_gc);
   }
 };
 
@@ -332,7 +332,7 @@ void G1FullCollector::restore_marks() {
   _preserved_marks_set.reclaim();
 }
 
-void G1FullCollector::run_task(AbstractGangTask* task) {
+void G1FullCollector::run_task(WorkerTask* task) {
   _heap->workers()->run_task(task, _num_workers);
 }
 

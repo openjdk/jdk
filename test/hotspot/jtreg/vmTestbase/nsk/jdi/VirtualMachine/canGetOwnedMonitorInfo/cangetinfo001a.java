@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package nsk.jdi.VirtualMachine.canGetOwnedMonitorInfo;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -60,7 +59,7 @@ public class cangetinfo001a {
 
     //====================================================== test program
 
-    private static Threadcangetinfo001a thread2 = null;
+    private static Thread thread2 = null;
 
     //----------------------------------------------------   main method
 
@@ -97,8 +96,8 @@ public class cangetinfo001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         thread2 = new
-                              Threadcangetinfo001a("Thread2");
+                         thread2 = JDIThreadFactory.newThread(new
+                              Threadcangetinfo001a("Thread2"));
                          log1("       thread2 is created");
 
 
@@ -154,13 +153,10 @@ public class cangetinfo001a {
 }
 
 
-class Threadcangetinfo001a extends Thread {
+class Threadcangetinfo001a extends NamedTask {
 
     public Threadcangetinfo001a(String threadName) {
         super(threadName);
-    }
-    public Threadcangetinfo001a(ThreadGroup groupName, String threadName) {
-        super(groupName, threadName);
     }
 
     public static Object waitnotifyObj = new Object();

@@ -26,6 +26,7 @@
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
+#include "gc/serial/serialStringDedup.inline.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"
@@ -142,7 +143,8 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   : Generation(rs, initial_size),
     _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
-    _should_allocate_from_space(false)
+    _should_allocate_from_space(false),
+    _string_dedup_requests()
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
                 (HeapWord*)_virtual_space.high());
@@ -601,6 +603,8 @@ void DefNewGeneration::collect(bool   full,
   // Verify that the usage of keep_alive didn't copy any objects.
   assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
+  _string_dedup_requests.flush();
+
   if (!_promotion_failed) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
@@ -705,6 +709,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
     obj = cast_to_oop(to()->allocate(s));
   }
 
+  bool new_obj_is_tenured = false;
   // Otherwise try allocating obj tenured
   if (obj == NULL) {
     obj = _old_gen->promote(old, s);
@@ -712,6 +717,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
       handle_promotion_failure(old);
       return old;
     }
+    new_obj_is_tenured = true;
   } else {
     // Prefetch beyond obj
     const intx interval = PrefetchCopyIntervalInBytes;
@@ -728,6 +734,11 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   // Done, insert forward pointer to obj in this header
   old->forward_to(obj);
 
+  if (SerialStringDedup::is_candidate_from_evacuation(obj, new_obj_is_tenured)) {
+    // Record old; request adds a new weak reference, which reference
+    // processing expects to refer to a from-space object.
+    _string_dedup_requests.add(old);
+  }
   return obj;
 }
 

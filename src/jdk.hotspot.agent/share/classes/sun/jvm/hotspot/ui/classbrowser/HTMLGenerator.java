@@ -675,9 +675,9 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                              buf.beginTag("tr");
                              if (hasLineNumbers) {
                                 int lineNumber = method.getLineNumberFromBCI(curBci);
-                                buf.cell(Integer.toString(lineNumber) + spaces);
+                                buf.cell(lineNumber + spaces);
                              }
-                             buf.cell(Integer.toString(curBci) + spaces);
+                             buf.cell(curBci + spaces);
 
                              buf.beginTag("td");
                              String instrStr = null;
@@ -983,7 +983,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
       public void epilogue() {
       }
-   };
+   }
 
    protected String genHTMLForRawDisassembly(sun.jvm.hotspot.debugger.Address addr,
                                              int size,
@@ -1007,7 +1007,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          Formatter tmpBuf = new Formatter(genHTML);
          long startPc = addressToLong(addr);
          tmpBuf.append("0x");
-         tmpBuf.append(Long.toHexString(startPc + visitor.getInstructionSize()).toString());
+         tmpBuf.append(Long.toHexString(startPc + visitor.getInstructionSize()));
          tmpBuf.append(",0x");
          tmpBuf.append(Long.toHexString(startPc));
          if (prevPCs != null) {

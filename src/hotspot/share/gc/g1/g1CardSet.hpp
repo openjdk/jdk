@@ -47,7 +47,10 @@ enum G1AddCardResult {
 };
 
 class G1CardSetConfiguration {
+  // Holds the number of bits required to cover the maximum card index for the
+  // regions covered by this card set.
   uint _inline_ptr_bits_per_card;
+
   uint _num_cards_in_array;
   uint _num_cards_in_howl_bitmap;
   uint _num_buckets_in_howl;
@@ -254,7 +257,7 @@ private:
   G1AddCardResult add_to_howl(CardSetPtr parent_card_set, uint card_region, uint card_in_region, bool increment_total = true);
 
   G1CardSetHashTableValue* get_or_add_card_set(uint card_region, bool* should_grow_table);
-  CardSetPtr get_card_set(uint card_region);
+  G1CardSetHashTableValue* get_card_set(uint card_region);
 
   // Iterate over cards of a card set container during transfer of the cards from
   // one container to another. Executes

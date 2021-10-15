@@ -717,8 +717,8 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
   }
 
   // Get off stack monitors. (e.g. acquired via jni MonitorEnter).
-  JvmtiMonitorClosure jmc(java_thread, calling_thread, owned_monitors_list, this);
-  ObjectSynchronizer::monitors_iterate(&jmc);
+  JvmtiMonitorClosure jmc(calling_thread, owned_monitors_list, this);
+  ObjectSynchronizer::monitors_iterate(&jmc, java_thread);
   err = jmc.error();
 
   return err;
@@ -1450,34 +1450,32 @@ JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
     // to the list.
     return;
   }
-  if (mon->owner() == _java_thread ) {
-    // Filter out on stack monitors collected during stack walk.
-    oop obj = mon->object();
-    bool found = false;
-    for (int j = 0; j < _owned_monitors_list->length(); j++) {
-      jobject jobj = ((jvmtiMonitorStackDepthInfo*)_owned_monitors_list->at(j))->monitor;
-      oop check = JNIHandles::resolve(jobj);
-      if (check == obj) {
-        // On stack monitor already collected during the stack walk.
-        found = true;
-        break;
-      }
+  // Filter out on stack monitors collected during stack walk.
+  oop obj = mon->object();
+  bool found = false;
+  for (int j = 0; j < _owned_monitors_list->length(); j++) {
+    jobject jobj = ((jvmtiMonitorStackDepthInfo*)_owned_monitors_list->at(j))->monitor;
+    oop check = JNIHandles::resolve(jobj);
+    if (check == obj) {
+      // On stack monitor already collected during the stack walk.
+      found = true;
+      break;
     }
-    if (found == false) {
-      // This is off stack monitor (e.g. acquired via jni MonitorEnter).
-      jvmtiError err;
-      jvmtiMonitorStackDepthInfo *jmsdi;
-      err = _env->allocate(sizeof(jvmtiMonitorStackDepthInfo), (unsigned char **)&jmsdi);
-      if (err != JVMTI_ERROR_NONE) {
-        _error = err;
-        return;
-      }
-      Handle hobj(Thread::current(), obj);
-      jmsdi->monitor = _env->jni_reference(_calling_thread, hobj);
-      // stack depth is unknown for this monitor.
-      jmsdi->stack_depth = -1;
-      _owned_monitors_list->append(jmsdi);
+  }
+  if (found == false) {
+    // This is off stack monitor (e.g. acquired via jni MonitorEnter).
+    jvmtiError err;
+    jvmtiMonitorStackDepthInfo *jmsdi;
+    err = _env->allocate(sizeof(jvmtiMonitorStackDepthInfo), (unsigned char **)&jmsdi);
+    if (err != JVMTI_ERROR_NONE) {
+      _error = err;
+      return;
     }
+    Handle hobj(Thread::current(), obj);
+    jmsdi->monitor = _env->jni_reference(_calling_thread, hobj);
+    // stack depth is unknown for this monitor.
+    jmsdi->stack_depth = -1;
+    _owned_monitors_list->append(jmsdi);
   }
 }
 

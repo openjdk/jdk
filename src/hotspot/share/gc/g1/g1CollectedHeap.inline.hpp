@@ -29,8 +29,10 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -142,6 +144,10 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   card_table()->g1_mark_as_young(mr);
 }
 
+inline G1ScannerTasksQueueSet* G1CollectedHeap::task_queues() const {
+  return _task_queues;
+}
+
 inline G1ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
@@ -178,6 +184,10 @@ void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
   _region_attr.set_humongous(index, region_at(index)->rem_set()->is_tracked());
 }
 
+void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
+  _region_attr.set_new_survivor_region(r->hrm_index());
+}
+
 void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_has_remset(r->hrm_index(), r->rem_set()->is_tracked());
 }
@@ -191,98 +201,6 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
-bool G1CollectedHeap::evacuation_failed() const {
-  return num_regions_failed_evacuation() > 0;
-}
-
-bool G1CollectedHeap::evacuation_failed(uint region_idx) const {
-  return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
-}
-
-uint G1CollectedHeap::num_regions_failed_evacuation() const {
-  return Atomic::load(&_num_regions_failed_evacuation);
-}
-
-bool G1CollectedHeap::notify_region_failed_evacuation(uint const region_idx) {
-  bool result = _regions_failed_evacuation.par_set_bit(region_idx, memory_order_relaxed);
-  if (result) {
-    Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
-  }
-  return result;
-}
-
-#ifndef PRODUCT
-// Support for G1EvacuationFailureALot
-
-inline bool
-G1CollectedHeap::evacuation_failure_alot_for_gc_type(bool for_young_gc,
-                                                     bool during_concurrent_start,
-                                                     bool mark_or_rebuild_in_progress) {
-  bool res = false;
-  if (mark_or_rebuild_in_progress) {
-    res |= G1EvacuationFailureALotDuringConcMark;
-  }
-  if (during_concurrent_start) {
-    res |= G1EvacuationFailureALotDuringConcurrentStart;
-  }
-  if (for_young_gc) {
-    res |= G1EvacuationFailureALotDuringYoungGC;
-  } else {
-    // GCs are mixed
-    res |= G1EvacuationFailureALotDuringMixedGC;
-  }
-  return res;
-}
-
-inline void
-G1CollectedHeap::set_evacuation_failure_alot_for_current_gc() {
-  if (G1EvacuationFailureALot) {
-    // Note we can't assert that _evacuation_failure_alot_for_current_gc
-    // is clear here. It may have been set during a previous GC but that GC
-    // did not copy enough objects (i.e. G1EvacuationFailureALotCount) to
-    // trigger an evacuation failure and clear the flags and and counts.
-
-    // Check if we have gone over the interval.
-    const size_t gc_num = total_collections();
-    const size_t elapsed_gcs = gc_num - _evacuation_failure_alot_gc_number;
-
-    _evacuation_failure_alot_for_current_gc = (elapsed_gcs >= G1EvacuationFailureALotInterval);
-
-    // Now check if G1EvacuationFailureALot is enabled for the current GC type.
-    const bool in_young_only_phase = collector_state()->in_young_only_phase();
-    const bool in_concurrent_start_gc = collector_state()->in_concurrent_start_gc();
-    const bool mark_or_rebuild_in_progress = collector_state()->mark_or_rebuild_in_progress();
-
-    _evacuation_failure_alot_for_current_gc &=
-      evacuation_failure_alot_for_gc_type(in_young_only_phase,
-                                          in_concurrent_start_gc,
-                                          mark_or_rebuild_in_progress);
-  }
-}
-
-inline bool G1CollectedHeap::evacuation_should_fail() {
-  if (!G1EvacuationFailureALot || !_evacuation_failure_alot_for_current_gc) {
-    return false;
-  }
-  // G1EvacuationFailureALot is in effect for current GC
-  // Access to _evacuation_failure_alot_count is not atomic;
-  // the value does not have to be exact.
-  if (++_evacuation_failure_alot_count < G1EvacuationFailureALotCount) {
-    return false;
-  }
-  _evacuation_failure_alot_count = 0;
-  return true;
-}
-
-inline void G1CollectedHeap::reset_evacuation_should_fail() {
-  if (G1EvacuationFailureALot) {
-    _evacuation_failure_alot_gc_number = total_collections();
-    _evacuation_failure_alot_count = 0;
-    _evacuation_failure_alot_for_current_gc = false;
-  }
-}
-#endif  // #ifndef PRODUCT
-
 inline bool G1CollectedHeap::is_in_young(const oop obj) {
   if (obj == NULL) {
     return false;
@@ -290,11 +208,22 @@ inline bool G1CollectedHeap::is_in_young(const oop obj) {
   return heap_region_containing(obj)->is_young();
 }
 
+inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
+  return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
+}
+
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
   if (obj == NULL) {
     return false;
   }
   return is_obj_dead(obj, heap_region_containing(obj));
+}
+
+inline bool G1CollectedHeap::is_obj_ill(const oop obj, const HeapRegion* hr) const {
+  return
+    !hr->obj_allocated_since_next_marking(obj) &&
+    !is_marked_next(obj) &&
+    !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {

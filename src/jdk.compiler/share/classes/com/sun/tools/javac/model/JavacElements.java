@@ -571,6 +571,12 @@ public class JavacElements implements Elements {
             }
         }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    public TypeElement getOutermostTypeElement(Element e) {
+        Symbol sym = cast(Symbol.class, e);
+        return sym.outermostClass();
+    }
+
     /**
      * Returns all annotations of an element, whether
      * inherited or directly present.

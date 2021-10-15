@@ -2489,7 +2489,7 @@ void SuperWord::output() {
         Node* in1 = low_adr->in(1);
         Node* in2 = p->at(0)->in(2);
         // If rotation count is non-constant or greater than 8bit value create a vector.
-        if (!in2->is_Con() || -0x80 > in2->get_int() || in2->get_int() >= 0x80) {
+        if (!in2->is_Con() || !Matcher::supports_vector_constant_rotates(in2->get_int())) {
           in2 =  vector_opd(p, 2);
         }
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));

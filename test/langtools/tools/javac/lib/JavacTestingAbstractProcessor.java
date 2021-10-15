@@ -21,9 +21,11 @@
  * questions.
  */
 
+import java.io.Writer;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import static javax.lang.model.SourceVersion.*;
 
@@ -263,5 +265,61 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         protected TypeKindVisitor(R defaultValue) {
             super(defaultValue);
         }
+    }
+
+    /**
+     * Vacuous implementation of javax.lang.model.util.Elements to aid
+     * in test development. Methods with defaults in the interface are
+     * *not* overridden to allow them to be tested.
+     */
+    public static class VacuousElements implements Elements {
+        public VacuousElements() {}
+
+        @Override
+        public PackageElement getPackageElement(CharSequence name) {return null;}
+
+        @Override
+        public TypeElement getTypeElement(CharSequence name) {return null;}
+
+        @Override
+        public Map<? extends ExecutableElement, ? extends AnnotationValue>
+                                                          getElementValuesWithDefaults(AnnotationMirror a) {return null;}
+        @Override
+        public String getDocComment(Element e) {return null;}
+
+        @Override
+        public boolean isDeprecated(Element e) {return false;}
+
+        @Override
+        public  Name getBinaryName(TypeElement type) {return null;}
+
+        @Override
+        public PackageElement getPackageOf(Element e) {return null;}
+
+        @Override
+        public List<? extends Element> getAllMembers(TypeElement type) {return null;}
+
+        @Override
+        public List<? extends AnnotationMirror> getAllAnnotationMirrors(Element e) {return null;}
+
+        @Override
+        public boolean hides(Element hider, Element hidden) {return false;}
+
+        @Override
+        public boolean overrides(ExecutableElement overrider,
+                             ExecutableElement overridden,
+                             TypeElement type) {return false;}
+
+        @Override
+        public String getConstantExpression(Object value) {return null;}
+
+        @Override
+        public void printElements(Writer w, Element... elements) {}
+
+        @Override
+        public Name getName(CharSequence cs)  {return null;}
+
+        @Override
+        public boolean isFunctionalInterface(TypeElement type) {return false;}
     }
 }

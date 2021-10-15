@@ -53,7 +53,6 @@ define_pd_global(intx,  StackRedPages,            DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx,  StackShadowPages,         DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx,  StackReservedPages,       DEFAULT_STACK_RESERVED_PAGES);
 
-define_pd_global(intx,  InlineFrequencyCount,     50);
 #if  defined(COMPILER1) || defined(COMPILER2)
 define_pd_global(intx,  InlineSmallCode,          1500);
 #endif

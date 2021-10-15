@@ -568,7 +568,7 @@ public class ObjectOutputStream
      * Object (as opposed to type Serializable) to allow for cases where
      * non-serializable objects are replaced by serializable ones.
      *
-     * <p>When a subclass is replacing objects it must insure that either a
+     * <p>When a subclass is replacing objects it must ensure that either a
      * complementary substitution must be made during deserialization or that
      * the substituted object is compatible with every field where the
      * reference will be stored.  Objects whose type is not a subclass of the
@@ -1419,7 +1419,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes representation of a "ordinary" (i.e., not a String, Class,
+     * Writes representation of an "ordinary" (i.e., not a String, Class,
      * ObjectStreamClass, array, or enum constant) serializable object to the
      * stream.
      */

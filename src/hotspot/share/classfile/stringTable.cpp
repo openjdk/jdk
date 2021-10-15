@@ -72,11 +72,12 @@ inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
   return HeapShared::decode_from_archive(v);
 }
 
-static CompactHashtable<
+typedef CompactHashtable<
   const jchar*, oop,
   read_string_from_compact_hashtable,
-  java_lang_String::equals
-> _shared_table;
+  java_lang_String::equals> SharedStringTable;
+
+static SharedStringTable _shared_table;
 #endif
 
 // --------------------------------------------------------------------------
@@ -761,7 +762,7 @@ public:
 };
 
 void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_strings) {
-  assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
+  assert(HeapShared::can_write(), "must be");
 
   _shared_table.reset();
   CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
@@ -779,9 +780,47 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
     _shared_table.reset();
-  } else if (!HeapShared::closed_regions_mapped()) {
+  } else if (!HeapShared::are_archived_strings_available()) {
     _shared_table.reset();
   }
+
+}
+
+class SharedStringTransfer {
+  JavaThread* _current;
+public:
+  SharedStringTransfer(JavaThread* current) : _current(current) {}
+
+  void do_value(oop string) {
+    JavaThread* THREAD = _current;
+    ExceptionMark rm(THREAD);
+    HandleMark hm(THREAD);
+    StringTable::intern(string, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // The archived constant pools contains strings that must be in the interned string table.
+      // If we fail here, it means the VM runs out of memory during bootstrap, so there's no point
+      // of trying to recover from here.
+      vm_exit_during_initialization("Failed to transfer shared strings to interned string table");
+    }
+  }
+};
+
+// If the CDS archive heap is loaded (not mapped) into the old generation,
+// it's possible for the shared strings to move due to full GC, making the
+// _shared_table invalid. Therefore, we proactively copy all the shared
+// strings into the _local_table, which can deal with oop relocation.
+void StringTable::transfer_shared_strings_to_local_table() {
+  assert(HeapShared::is_loaded(), "must be");
+  EXCEPTION_MARK;
+
+  // Reset _shared_table so that during the transfer, StringTable::intern()
+  // will not look up from there. Instead, it will create a new entry in
+  // _local_table for each element in shared_table_copy.
+  SharedStringTable shared_table_copy = _shared_table;
+  _shared_table.reset();
+
+  SharedStringTransfer transfer(THREAD);
+  shared_table_copy.iterate(&transfer);
 }
 
 #endif //INCLUDE_CDS_JAVA_HEAP

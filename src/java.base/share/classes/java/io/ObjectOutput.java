@@ -61,7 +61,7 @@ public interface ObjectOutput extends DataOutput, AutoCloseable {
      * @param     b the data to be written
      * @throws    IOException If an I/O error has occurred.
      */
-    public void write(byte b[]) throws IOException;
+    public void write(byte[] b) throws IOException;
 
     /**
      * Writes a sub array of bytes.
@@ -70,7 +70,7 @@ public interface ObjectOutput extends DataOutput, AutoCloseable {
      * @param     len       the number of bytes that are written
      * @throws    IOException If an I/O error has occurred.
      */
-    public void write(byte b[], int off, int len) throws IOException;
+    public void write(byte[] b, int off, int len) throws IOException;
 
     /**
      * Flushes the stream. This will write any buffered

@@ -905,7 +905,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   //   Progress defined as current size less than 20% larger than previous size.
   if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
       future_unroll_cnt > LoopUnrollMin &&
-      (future_unroll_cnt - 1) * (100 / LoopPercentProfileLimit) > cl->profile_trip_cnt() &&
+      (future_unroll_cnt - 1) * (100.0 / LoopPercentProfileLimit) > cl->profile_trip_cnt() &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
     return false;
   }

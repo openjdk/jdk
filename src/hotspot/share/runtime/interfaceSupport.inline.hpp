@@ -76,59 +76,48 @@ class InterfaceSupport: AllStatic {
 class ThreadStateTransition : public StackObj {
  protected:
   JavaThread* _thread;
+
  public:
-  ThreadStateTransition(JavaThread *thread) {
-    _thread = thread;
+  ThreadStateTransition(JavaThread *thread) : _thread(thread) {
     assert(thread != NULL, "must be active Java thread");
     assert(thread == Thread::current(), "must be current thread");
   }
 
-  // Change threadstate in a manner, so safepoint can detect changes.
-  // Time-critical: called on exit from every runtime routine
-  static inline void transition(JavaThread *thread, JavaThreadState from, JavaThreadState to) {
-    assert(from != _thread_in_Java, "use transition_from_java");
-    assert(from != _thread_in_native, "use transition_from_native");
-    assert((from & 1) == 0 && (to & 1) == 0, "odd numbers are transitions states");
-    assert(thread->thread_state() == from, "coming from wrong thread state");
-
-    // Check NoSafepointVerifier
-    // This also clears unhandled oops if CheckUnhandledOops is used.
-    thread->check_possible_safepoint();
-
-    // Change to transition state and ensure it is seen by the VM thread.
-    thread->set_thread_state_fence((JavaThreadState)(from + 1));
-
-    SafepointMechanism::process_if_requested(thread);
-    thread->set_thread_state(to);
-  }
-
-  // Same as above, but assumes from = _thread_in_Java. This is simpler, since we
-  // never block on entry to the VM. This will break the code, since e.g. preserve arguments
-  // have not been setup.
   static inline void transition_from_java(JavaThread *thread, JavaThreadState to) {
     assert(thread->thread_state() == _thread_in_Java, "coming from wrong thread state");
+    assert(to == _thread_in_vm || to == _thread_in_native, "invalid transition");
     thread->set_thread_state(to);
   }
 
-  static inline void transition_from_native(JavaThread *thread, JavaThreadState to) {
-    assert((to & 1) == 0, "odd numbers are transitions states");
+  // We never install asynchronous exceptions when coming (back) in to the runtime
+  // from native code because the runtime is not set up to handle exceptions floating
+  // around at arbitrary points.
+  static inline void transition_from_native(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {
     assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
-    assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
+    assert(to == _thread_in_vm || to == _thread_in_Java, "invalid transition");
+    assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native transition");
 
-    // Change to transition state and ensure it is seen by the VM thread.
-    thread->set_thread_state_fence(_thread_in_native_trans);
-
-    // We never install asynchronous exceptions when coming (back) in
-    // to the runtime from native code because the runtime is not set
-    // up to handle exceptions floating around at arbitrary points.
-    SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
+    thread->set_thread_state_fence(_thread_in_vm);
+    SafepointMechanism::process_if_requested_with_exit_check(thread, to != _thread_in_Java ? false : check_asyncs);
     thread->set_thread_state(to);
   }
 
- protected:
-   void trans(JavaThreadState from, JavaThreadState to)  { transition(_thread, from, to); }
-   void trans_from_java(JavaThreadState to)              { transition_from_java(_thread, to); }
-   void trans_from_native(JavaThreadState to)            { transition_from_native(_thread, to); }
+  static inline void transition_from_vm(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {
+    assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
+    if (to == _thread_in_Java) {
+      SafepointMechanism::process_if_requested_with_exit_check(thread, check_asyncs);
+      thread->set_thread_state(to);
+    } else {
+      assert(to == _thread_in_native || to == _thread_blocked, "invalid transition");
+      // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
+      thread->check_possible_safepoint();
+
+      // Once we are in native/blocked vm expects stack to be walkable
+      thread->frame_anchor()->make_walkable(thread);
+      OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
+      thread->set_thread_state(to);
+    }
+  }
 };
 
 class ThreadInVMForHandshake : public ThreadStateTransition {
@@ -158,16 +147,15 @@ class ThreadInVMfromJava : public ThreadStateTransition {
   bool _check_asyncs;
  public:
   ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true) : ThreadStateTransition(thread), _check_asyncs(check_asyncs) {
-    trans_from_java(_thread_in_vm);
+    transition_from_java(thread, _thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
     if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
       _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
-    trans(_thread_in_vm, _thread_in_Java);
     // We prevent asynchronous exceptions from being installed on return to Java in situations
     // where we can't tolerate them. See bugs: 4324348, 4854693, 4998314, 5040492, 5050705.
-    if (_thread->has_special_runtime_exit_condition()) _thread->handle_special_runtime_exit_condition(_check_asyncs);
+    transition_from_vm(_thread, _thread_in_Java, _check_asyncs);
   }
 };
 
@@ -191,7 +179,7 @@ class ThreadInVMfromUnknown {
   }
   ~ThreadInVMfromUnknown()  {
     if (_thread) {
-      ThreadStateTransition::transition(_thread, _thread_in_vm, _thread_in_native);
+      ThreadStateTransition::transition_from_vm(_thread, _thread_in_native);
     }
   }
 };
@@ -201,17 +189,12 @@ class ThreadInVMfromNative : public ThreadStateTransition {
   ResetNoHandleMark __rnhm;
  public:
   ThreadInVMfromNative(JavaThread* thread) : ThreadStateTransition(thread) {
-    trans_from_native(_thread_in_vm);
+    transition_from_native(thread, _thread_in_vm);
   }
   ~ThreadInVMfromNative() {
-    assert(_thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     // We cannot assert !_thread->owns_locks() since we have valid cases where
     // we call known native code using this wrapper holding locks.
-    _thread->check_possible_safepoint();
-    // Once we are in native vm expects stack to be walkable
-    _thread->frame_anchor()->make_walkable(_thread);
-    OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
-    _thread->set_thread_state(_thread_in_native);
+    transition_from_vm(_thread, _thread_in_native);
   }
 };
 
@@ -219,17 +202,11 @@ class ThreadInVMfromNative : public ThreadStateTransition {
 class ThreadToNativeFromVM : public ThreadStateTransition {
  public:
   ThreadToNativeFromVM(JavaThread *thread) : ThreadStateTransition(thread) {
-    // We are leaving the VM at this point and going directly to native code.
-    // Block, if we are in the middle of a safepoint synchronization.
     assert(!thread->owns_locks(), "must release all locks when leaving VM");
-    thread->frame_anchor()->make_walkable(thread);
-    trans(_thread_in_vm, _thread_in_native);
-    // Check for pending. async. exceptions or suspends.
-    if (_thread->has_special_runtime_exit_condition()) _thread->handle_special_runtime_exit_condition(false);
+    transition_from_vm(thread, _thread_in_native);
   }
-
   ~ThreadToNativeFromVM() {
-    trans_from_native(_thread_in_vm);
+    transition_from_native(_thread, _thread_in_vm);
     assert(!_thread->is_pending_jni_exception_check(), "Pending JNI Exception Check");
     // We don't need to clear_walkable because it will happen automagically when we return to java
   }
@@ -247,12 +224,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
  public:
   ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr = emptyOp, bool allow_suspend = false)
     : ThreadStateTransition(thread), _pr(pr), _allow_suspend(allow_suspend) {
-    assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
-    thread->check_possible_safepoint();
-    // Once we are blocked vm expects stack to be walkable
-    thread->frame_anchor()->make_walkable(thread);
-    OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
-    thread->set_thread_state(_thread_blocked);
+    transition_from_vm(thread, _thread_blocked);
   }
   ~ThreadBlockInVMPreprocess() {
     assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");

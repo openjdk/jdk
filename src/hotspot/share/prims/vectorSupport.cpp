@@ -374,6 +374,26 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_LROTATE: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:  return Op_RotateLeft;
+        default: fatal("LROTATE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_RROTATE: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:  return Op_RotateRight;
+        default: fatal("RROTATE: %s", type2name(bt));
+      }
+      break;
+    }
     case VECTOR_OP_MASK_LASTTRUE: {
       switch (bt) {
         case T_BYTE:  // fall-through

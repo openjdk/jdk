@@ -282,6 +282,12 @@ public abstract class BaseOptions {
      */
     private String tagletPath = null;
 
+    /**
+     * Argument for command-line option {@code --snippet-path}.
+     * The path for external snippets.
+     */
+    private String snippetPath = null;
+
     //</editor-fold>
 
     private final BaseConfiguration config;
@@ -550,6 +556,14 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         tagletPath = args.get(0);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--snippet-path", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        snippetPath = args.get(0);
                         return true;
                     }
                 },
@@ -960,6 +974,14 @@ public abstract class BaseOptions {
      */
     public String tagletPath() {
         return tagletPath;
+    }
+
+    /**
+     * Argument for command-line option {@code --snippet-path}.
+     * The path for external snippets.
+     */
+    public String snippetPath() {
+        return snippetPath;
     }
 
     protected abstract static class Option implements Doclet.Option, Comparable<Option> {

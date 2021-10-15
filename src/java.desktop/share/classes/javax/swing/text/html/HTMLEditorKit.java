@@ -61,7 +61,6 @@ import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleAction;
 import javax.accessibility.AccessibleContext;
 import javax.swing.Action;
-import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JViewport;
 import javax.swing.SizeRequirements;
@@ -848,13 +847,12 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     Rectangle bounds;
                     TextUI ui = html.getUI();
                     try {
-                        Shape lBounds = ui.modelToView(html, offset,
+                        Rectangle lBounds = ui.modelToView(html, offset,
                                                    Position.Bias.Forward);
-                        Shape rBounds = ui.modelToView(html, offset + 1,
+                        Rectangle rBounds = ui.modelToView(html, offset + 1,
                                                    Position.Bias.Backward);
-                        bounds = lBounds.getBounds();
-                        bounds.add((rBounds instanceof Rectangle) ?
-                                    (Rectangle)rBounds : rBounds.getBounds());
+                        bounds = lBounds;
+                        bounds.add(rBounds);
                     } catch (BadLocationException ble) {
                         bounds = null;
                     }
@@ -885,18 +883,14 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             if (e != null && offset > 0 && e.getStartOffset() == offset) {
                 try {
                     TextUI ui = editor.getUI();
-                    Shape s1 = ui.modelToView(editor, offset,
-                                              Position.Bias.Forward);
-                    if (s1 == null) {
+                    Rectangle r1 = ui.modelToView(editor, offset,
+                                                  Position.Bias.Forward);
+                    if (r1 == null) {
                         return false;
                     }
-                    Rectangle r1 = (s1 instanceof Rectangle) ? (Rectangle)s1 :
-                                    s1.getBounds();
-                    Shape s2 = ui.modelToView(editor, e.getEndOffset(),
-                                              Position.Bias.Backward);
-                    if (s2 != null) {
-                        Rectangle r2 = (s2 instanceof Rectangle) ? (Rectangle)s2 :
-                                    s2.getBounds();
+                    Rectangle r2 = ui.modelToView(editor, e.getEndOffset(),
+                                                  Position.Bias.Backward);
+                    if (r2 != null) {
                         r1.add(r2);
                     }
                     return r1.contains(x, y);
@@ -1332,7 +1326,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 } else if (kind == HTML.Tag.IMPLIED) {
                     String ws = (String) elem.getAttributes().getAttribute(
                         CSS.Attribute.WHITE_SPACE);
-                    if ((ws != null) && ws.equals("pre")) {
+                    if ("pre".equals(ws)) {
                         return new LineView(elem);
                     }
                     return new javax.swing.text.html.ParagraphView(elem);
@@ -1517,9 +1511,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 //if parent == null unregister component listener
                 if (parent == null) {
                     if (cachedViewPort != null) {
-                        Object cachedObject;
+                        JViewport cachedObject;
                         if ((cachedObject = cachedViewPort.get()) != null) {
-                            ((JComponent)cachedObject).removeComponentListener(this);
+                            cachedObject.removeComponentListener(this);
                         }
                         cachedViewPort = null;
                     }

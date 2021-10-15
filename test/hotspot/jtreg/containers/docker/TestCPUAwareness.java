@@ -52,7 +52,7 @@ public class TestCPUAwareness {
         }
 
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
-        DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             // cpuset, period, shares, expected Active Processor Count

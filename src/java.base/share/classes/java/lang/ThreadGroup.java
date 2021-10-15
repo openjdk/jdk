@@ -399,7 +399,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @since   1.0
      */
-    public int enumerate(Thread list[]) {
+    public int enumerate(Thread[] list) {
         checkAccess();
         return enumerate(list, 0, true);
     }
@@ -437,12 +437,12 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @since   1.0
      */
-    public int enumerate(Thread list[], boolean recurse) {
+    public int enumerate(Thread[] list, boolean recurse) {
         checkAccess();
         return enumerate(list, 0, recurse);
     }
 
-    private int enumerate(Thread list[], int n, boolean recurse) {
+    private int enumerate(Thread[] list, int n, boolean recurse) {
         int ngroupsSnapshot = 0;
         ThreadGroup[] groupsSnapshot = null;
         synchronized (this) {
@@ -533,7 +533,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @since   1.0
      */
-    public int enumerate(ThreadGroup list[]) {
+    public int enumerate(ThreadGroup[] list) {
         checkAccess();
         return enumerate(list, 0, true);
     }
@@ -571,12 +571,12 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @since   1.0
      */
-    public int enumerate(ThreadGroup list[], boolean recurse) {
+    public int enumerate(ThreadGroup[] list, boolean recurse) {
         checkAccess();
         return enumerate(list, 0, recurse);
     }
 
-    private int enumerate(ThreadGroup list[], int n, boolean recurse) {
+    private int enumerate(ThreadGroup[] list, int n, boolean recurse) {
         int ngroupsSnapshot = 0;
         ThreadGroup[] groupsSnapshot = null;
         synchronized (this) {

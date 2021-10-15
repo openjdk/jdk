@@ -226,7 +226,7 @@ TEST_VM_F(LogConfigurationTest, reconfigure_decorators) {
 
   // Now reconfigure logging on stderr with no decorators
   set_log_config("stderr", "all=off", "none");
-  EXPECT_TRUE(is_described("#1: stderr all=off none (reconfigured)\n")) << "Expecting no decorators";
+  EXPECT_TRUE(is_described("#1: stderr all=off none foldmultilines=false (reconfigured)\n")) << "Expecting no decorators";
 }
 
 class ConcurrentLogsite : public TestRunnable {
