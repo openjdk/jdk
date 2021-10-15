@@ -29,7 +29,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires (vm.debug == true)
- * @run driver ErrorFileLocksTest
+ * @run driver TestErrorFileMutex
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 import java.io.*;
 import java.util.regex.Pattern;
 
-public class ErrorFileLocksTest {
+public class TestErrorFileMutex {
 
   public static void do_test() throws Exception {
 
@@ -57,8 +57,8 @@ public class ErrorFileLocksTest {
     ErrorFileScanner.scanHsErrorFileForContent(f, new Pattern[] {
             Pattern.compile("# *Internal Error.*"),
             Pattern.compile(".*VM Mutex/Monitor currently owned by a thread:.*"),
-            Pattern.compile(".*Threads_lock - owner thread:.*"),
-            Pattern.compile(".*ErrorTest_lock - owner thread:.*")
+            Pattern.compile(".*ErrorTest_lock - owner thread:.*"),
+            Pattern.compile(".*Threads_lock - owner thread:.*")
     });
   }
 
