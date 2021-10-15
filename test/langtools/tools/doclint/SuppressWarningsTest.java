@@ -137,5 +137,4 @@ public class SuppressWarningsTest {
         log.println("Error: " + message);
         errorCount++;
     }
-
 }

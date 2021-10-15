@@ -284,30 +284,38 @@ public class Env {
             }
         }
 
-        // check the local @SuppressWarnings annotation, caching the results;
-        // the supported strings are: "doclint" and "doclint:GROUP,..." for each GROUP
-        Set<Messages.Group> set = suppressWarnings.get(e);
-        if (set == null) {
-            var gMap = Arrays.stream(Messages.Group.values())
-                    .collect(Collectors.toMap(Messages.Group::optName, Function.identity()));
-            set = EnumSet.noneOf(Messages.Group.class);
-            for (String arg : getSuppressWarningsValue(e)) {
-                if (arg.equals("doclint")) {
-                    set = EnumSet.allOf(Messages.Group.class);
-                    break;
-                } else if (arg.startsWith("doclint:")){
-                    final int len = "doclint:".length();
-                    for (String a: arg.substring(len).split(",")) {
-                        Messages.Group argGroup = gMap.get(a);
-                        if (argGroup != null) {
-                            set.add(argGroup);
-                        }
+        // check the local @SuppressWarnings annotation, caching the results
+        return suppressWarnings.computeIfAbsent(e, this::getSuppressedGroups).contains(g);
+    }
+
+    /**
+     * Returns the set of groups for an element for which messages should be suppressed.
+     * The set is determined by examining the arguments for any {@code @SuppressWarnings}
+     * annotation that may be present on the element.
+     * The supported strings are: "doclint" and "doclint:GROUP,..." for each GROUP
+     *
+     * @param e the element
+     * @return  the set
+     */
+    private Set<Messages.Group> getSuppressedGroups(Element e) {
+        var gMap = Arrays.stream(Messages.Group.values())
+                .collect(Collectors.toMap(Messages.Group::optName, Function.identity()));
+        var set = EnumSet.noneOf(Messages.Group.class);
+        for (String arg : getSuppressWarningsValue(e)) {
+            if (arg.equals("doclint")) {
+                set = EnumSet.allOf(Messages.Group.class);
+                break;
+            } else if (arg.startsWith("doclint:")) {
+                final int len = "doclint:".length();
+                for (String a : arg.substring(len).split(",")) {
+                    Messages.Group argGroup = gMap.get(a);
+                    if (argGroup != null) {
+                        set.add(argGroup);
                     }
                 }
             }
-            suppressWarnings.put(e, set);
         }
-        return set.contains(g);
+        return set;
     }
 
     /**
@@ -328,10 +336,9 @@ public class Env {
                         if (av.getValue() instanceof List<?> list) {
                             List<String> result = new ArrayList<>();
                             for (var item : list) {
-                                if (item instanceof AnnotationValue avItem) {
-                                    if (avItem.getValue() instanceof String s) {
-                                        result.add(s);
-                                    }
+                                if (item instanceof AnnotationValue avItem
+                                        && avItem.getValue() instanceof String s) {
+                                    result.add(s);
                                 }
                             }
                             return result;
