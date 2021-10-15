@@ -45,10 +45,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URL;
-import java.nio.charset.CharacterCodingException;
+import java.nio.charset.*;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
-import java.nio.charset.Charset;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSource;
@@ -2018,9 +2017,13 @@ public final class System {
      */
     private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
        if (enc != null) {
+            Charset cs;
             try {
-                return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
-            } catch (UnsupportedEncodingException uee) {}
+                cs = Charset.forName(enc);
+            } catch (IllegalCharsetNameException | UnsupportedCharsetException unused) {
+                cs = StandardCharsets.UTF_8;
+            }
+            return new PrintStream(new BufferedOutputStream(fos, 128), true, cs);
         }
         return new PrintStream(new BufferedOutputStream(fos, 128), true);
     }

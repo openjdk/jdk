@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.nio.fs;
 
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.*;
 import java.nio.file.*;
 import java.nio.charset.Charset;
@@ -37,8 +40,17 @@ import sun.security.action.GetPropertyAction;
 class Util {
     private Util() { }
 
-    private static final Charset jnuEncoding = Charset.forName(
-        GetPropertyAction.privilegedGetProperty("sun.jnu.encoding"));
+    private static final Charset jnuEncoding;
+    static {
+        Charset cs;
+        try {
+            cs = Charset.forName(
+                    GetPropertyAction.privilegedGetProperty("sun.jnu.encoding"));
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException ignore) {
+            cs = StandardCharsets.UTF_8;
+        }
+        jnuEncoding = cs;
+    }
 
     /**
      * Returns {@code Charset} corresponding to the sun.jnu.encoding property
