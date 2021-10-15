@@ -32,13 +32,11 @@ class JfrContextBinding : public JfrCHeapObj {
   friend class JfrContextRepository;
 
  private:
-  JfrContextBinding* _previous;
   jsize _entries_len;
   JfrContextEntry* _entries;
 
  public:
-  JfrContextBinding(JfrContextBinding* previous,
-    const char** entries /* of size entries_len * 2 */, jsize entries_len);
+  JfrContextBinding(const char** entries /* of size entries_len * 2 */, jsize entries_len);
   ~JfrContextBinding();
 
   jlong id() { return (jlong)this; }
@@ -48,9 +46,6 @@ class JfrContextBinding : public JfrCHeapObj {
 
   template<class ITER>
   void iterate(ITER* iter) {
-    if (_previous != NULL) {
-      _previous->iterate(iter);
-    }
     for (int i = 0; i < _entries_len; i++) {
       if (!iter->do_entry(&_entries[i])) {
         return;

@@ -26,8 +26,9 @@
 package jdk.jfr;
 
 import java.util.Objects;
+import java.util.Collections;
 import java.util.Set;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.concurrent.Callable;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.InheritableRecordingContextBinding;
@@ -93,10 +94,22 @@ public final class RecordingContext implements AutoCloseable {
     // initialize
     public static class Builder {
 
-        Builder() {}
+        final Set<RecordingContextEntry> inheritableEntries;
+        final Set<RecordingContextEntry> noninheritableEntries;
 
-        final Set<RecordingContextEntry> inheritableEntries = new HashSet<>();
-        final Set<RecordingContextEntry> noninheritableEntries = new HashSet<>();
+        Builder() {
+            RecordingContextBinding current;
+
+            inheritableEntries = new LinkedHashSet<>();
+            if ((current = InheritableRecordingContextBinding.current()) != null) {
+                inheritableEntries.addAll(current.entries());
+            }
+
+            noninheritableEntries = new LinkedHashSet<>();
+            if ((current = NonInheritableRecordingContextBinding.current()) != null) {
+                noninheritableEntries.addAll(current.entries());
+            }
+        }
 
         // build and set current context
         public Builder where(RecordingContextKey key, String value) {

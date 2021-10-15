@@ -26,8 +26,8 @@
 #include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/recorder/context/jfrContextBinding.hpp"
 
-JfrContextBinding::JfrContextBinding(JfrContextBinding* previous, const char** entries, jsize entries_len)
-    : _previous(previous), _entries_len(entries_len),
+JfrContextBinding::JfrContextBinding(const char** entries, jsize entries_len)
+    : _entries_len(entries_len),
         _entries(JfrCHeapObj::new_array<JfrContextEntry>(_entries_len)) {
   assert(entries != NULL, "invariant");
   for (int i = 0; i < _entries_len; i++) {
@@ -40,9 +40,6 @@ JfrContextBinding::~JfrContextBinding() {
 }
 
 bool JfrContextBinding::contains_key(const char* key) {
-  if (_previous != NULL && _previous->contains_key(key)) {
-    return true;
-  }
   for (int i = 0; i < _entries_len; i++) {
     if (_entries[i].contains_key(key)) {
       return true;

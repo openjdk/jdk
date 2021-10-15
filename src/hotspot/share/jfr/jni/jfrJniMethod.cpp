@@ -196,7 +196,7 @@ NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstr
   return id;
 NO_TRANSITION_END
 
-NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jlong prev_id, jobjectArray entries))
+NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jobjectArray entries))
   ResourceMark rm;
   jsize entries_len = env->GetArrayLength(entries);
   const char** entries_utf = NEW_RESOURCE_ARRAY(const char*, entries_len);
@@ -205,7 +205,7 @@ NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jlong p
     entries_utf[i] = entry != NULL ?
       env->GetStringUTFChars(entry, NULL) : NULL;
   }
-  JfrContextBinding* binding = new JfrContextBinding(JfrContextBinding::find(prev_id), entries_utf, entries_len / 2);
+  JfrContextBinding* binding = new JfrContextBinding(entries_utf, entries_len / 2);
   assert(binding != NULL, "invariant");
   for (int i = 0; i < entries_len; i++) {
     jstring entry = (jstring)env->GetObjectArrayElement(entries, i);

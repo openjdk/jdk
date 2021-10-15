@@ -27,6 +27,7 @@ package jdk.jfr.internal;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import jdk.jfr.RecordingContextKey;
@@ -44,6 +45,8 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
     private final RecordingContextBinding previous;
     private RecordingContextBinding next;
 
+    private final Set<RecordingContextEntry> entries;
+
     private final NativeBindingWrapper nativeWrapper;
 
     private final Cleanable closer;
@@ -58,6 +61,8 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
             this.previous.next = this;
         }
 
+        this.entries = Collections.unmodifiableSet(entries);
+
         this.nativeWrapper = new NativeBindingWrapper(
             this.previous != null ? this.previous.nativeWrapper : null, entries, isInheritable());
 
@@ -67,6 +72,10 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
 
     protected RecordingContextBinding previous() {
         return previous;
+    }
+
+    public Set<RecordingContextEntry> entries() {
+        return entries;
     }
 
     protected abstract boolean isInheritable();
@@ -116,7 +125,7 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
                 i += 1;
             }
 
-            this.id = JVM.getJVM().recordingContextNew(this.previous != null ? this.previous.id : 0,
+            this.id = JVM.getJVM().recordingContextNew(
                             Objects.requireNonNull(entriesAsStrings));
 
             setCurrent(this, this.isInheritable);
