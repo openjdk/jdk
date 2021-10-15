@@ -621,7 +621,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
     // If we have a JvmtiThreadState, then we've reached the point where
     // threads can exist so create a ThreadsListHandle to protect them.
     ThreadsListHandle tlh;
-    for (; state != NULL; state = state->next()) {
+    for (; state != nullptr; state = state->next()) {
       any_env_thread_enabled |= recompute_thread_enabled(state);
     }
   }
