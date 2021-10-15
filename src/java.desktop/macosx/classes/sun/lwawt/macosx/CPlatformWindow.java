@@ -1027,7 +1027,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         execute(ptr -> nativeSetEnabled(ptr, !blocked));
         if (!blocked) {
-            execute(ptr -> nativePushNSWindowToFront(ptr));
+            orderAboveSiblings();
         }
 
         checkBlockingAndOrder();
