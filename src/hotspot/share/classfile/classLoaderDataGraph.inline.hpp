@@ -56,12 +56,8 @@ void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
-#ifdef ASSERT
-  // To avoid false positive, following assertion should read up-to-date counter.
-  OrderAccess::storeload();
-  assert(count <= num_instance_classes(), "Sanity");
-#endif
-  Atomic::sub(&_num_instance_classes, count, memory_order_relaxed);
+  size_t old_count = Atomic::fetch_and_add(&_num_instance_classes, -count, memory_order_relaxed);
+  assert(old_count >= count, "Sanity");
 }
 
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
@@ -69,12 +65,8 @@ void ClassLoaderDataGraph::inc_array_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
-#ifdef ASSERT
-  // To avoid false positive, following assertion should read up-to-date counter.
-  OrderAccess::storeload();
-  assert(count <= num_array_classes(), "Sanity");
-#endif
-  Atomic::sub(&_num_array_classes, count, memory_order_relaxed);
+  size_t old_count = Atomic::fetch_and_add(&_num_array_classes, -count, memory_order_relaxed);
+  assert(old_count >= count, "Sanity");
 }
 
 bool ClassLoaderDataGraph::should_clean_metaspaces_and_reset() {
