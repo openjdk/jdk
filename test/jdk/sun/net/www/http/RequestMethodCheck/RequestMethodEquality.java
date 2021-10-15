@@ -29,7 +29,8 @@
  * @library /test/lib
  * @modules java.base/sun.net.www.http:+open
  *          java.base/sun.net.www.protocol.http
- * @run testng RequestMethodEquality
+ * @build java.base/sun.net.www.http.HttpClientAccess
+ * @run testng/othervm RequestMethodEquality
  */
 
 import com.sun.net.httpserver.HttpExchange;
@@ -41,6 +42,7 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import sun.net.www.http.HttpClient;
+import sun.net.www.http.HttpClientAccess;
 import sun.net.www.http.KeepAliveCache;
 import sun.net.www.protocol.http.HttpURLConnection;
 
@@ -91,12 +93,8 @@ public class RequestMethodEquality {
             inCache.setBoolean(freshClient, true); // allows the assertion in HttpClient.New to pass
 
             // Injecting a mock KeepAliveCache that the HttpClient can use
-            KeepAliveCache kac = new KeepAliveCache();
+            KeepAliveCache kac = new HttpClientAccess().getKeepAliveCache();
             kac.put(url, null, freshClient);
-
-            Field kacField = HttpClient.class.getDeclaredField("kac");
-            kacField.setAccessible(true);
-            kacField.set(freshClient, kac);
 
             // The 'new' keyword is important here as the original code
             // used '==' rather than String.equals to compare request methods
