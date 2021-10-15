@@ -334,19 +334,19 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      *     the length+1 of this {@code SerialBlob} object.
      * @param bytes the array of bytes to be written to the {@code BLOB}
      *     value
-     * @param offset the offset into the array {@code bytes} at which
+     * @param offset the offset into the array {@code byte}s at which
      *     to start reading the bytes to be set. The first offset position is
      *     {@code 0}; must not be less than {@code 0} nor greater
-     *     than the length of the array {@code bytes}
+     *     than the length of the array {@code byte}s
      * @param length the number of bytes to be written to the
-     *     {@code BLOB} value from the array of bytes {@code bytes}
+     *     {@code BLOB} value from the array of bytes {@code byte}s
      *
      * @return the number of bytes written
      * @throws SerialException if there is an error accessing the
      *     {@code BLOB} value; if an invalid position is set; if an
      *     invalid offset value is set; or the combined values of the
      *     {@code length} and {@code offset} is greater than the length of
-     *     {@code bytes};
+     *     {@code byte}s;
      * if {@code free} had previously been called on this object
      * @throws SQLException if there is an error accessing the {@code BLOB}
      *         value from the database.
