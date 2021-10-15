@@ -56,7 +56,7 @@ typedef const ClassLoaderData* CldPtr;
 typedef const Method* MethodPtr;
 typedef const Symbol* SymbolPtr;
 typedef const JfrSymbolTable::SymbolEntry* SymbolEntryPtr;
-typedef const JfrSymbolTable::CStringEntry* CStringEntryPtr;
+typedef const JfrSymbolTable::StringEntry* StringEntryPtr;
 
 static JfrCheckpointWriter* _writer = NULL;
 static JfrCheckpointWriter* _leakp_writer = NULL;
@@ -920,7 +920,7 @@ void set_serialized<JfrSymbolTable::SymbolEntry>(SymbolEntryPtr ptr) {
 }
 
 template <>
-void set_serialized<JfrSymbolTable::CStringEntry>(CStringEntryPtr ptr) {
+void set_serialized<JfrSymbolTable::StringEntry>(StringEntryPtr ptr) {
   assert(ptr != NULL, "invariant");
   ptr->set_serialized();
   assert(ptr->is_serialized(), "invariant");
@@ -948,7 +948,7 @@ int write__symbol__leakp(JfrCheckpointWriter* writer, const void* e) {
   return write_symbol(writer, entry, true);
 }
 
-static int write_cstring(JfrCheckpointWriter* writer, CStringEntryPtr entry, bool leakp) {
+static int write_string(JfrCheckpointWriter* writer, StringEntryPtr entry, bool leakp) {
   assert(writer != NULL, "invariant");
   assert(entry != NULL, "invariant");
   writer->write(entry->id());
@@ -956,34 +956,34 @@ static int write_cstring(JfrCheckpointWriter* writer, CStringEntryPtr entry, boo
   return 1;
 }
 
-int write__cstring(JfrCheckpointWriter* writer, const void* e) {
+int write__string(JfrCheckpointWriter* writer, const void* e) {
   assert(e != NULL, "invariant");
-  CStringEntryPtr entry = (CStringEntryPtr)e;
+  StringEntryPtr entry = (StringEntryPtr)e;
   set_serialized(entry);
-  return write_cstring(writer, entry, false);
+  return write_string(writer, entry, false);
 }
 
-int write__cstring__leakp(JfrCheckpointWriter* writer, const void* e) {
+int write__string__leakp(JfrCheckpointWriter* writer, const void* e) {
   assert(e != NULL, "invariant");
-  CStringEntryPtr entry = (CStringEntryPtr)e;
-  return write_cstring(writer, entry, true);
+  StringEntryPtr entry = (StringEntryPtr)e;
+  return write_string(writer, entry, true);
 }
 
 typedef SymbolPredicate<SymbolEntryPtr, false> SymPredicate;
 typedef JfrPredicatedTypeWriterImplHost<SymbolEntryPtr, SymPredicate, write__symbol> SymbolEntryWriterImpl;
 typedef JfrTypeWriterHost<SymbolEntryWriterImpl, TYPE_SYMBOL> SymbolEntryWriter;
-typedef SymbolPredicate<CStringEntryPtr, false> CStringPredicate;
-typedef JfrPredicatedTypeWriterImplHost<CStringEntryPtr, CStringPredicate, write__cstring> CStringEntryWriterImpl;
-typedef JfrTypeWriterHost<CStringEntryWriterImpl, TYPE_SYMBOL> CStringEntryWriter;
+typedef SymbolPredicate<StringEntryPtr, false> StringPredicate;
+typedef JfrPredicatedTypeWriterImplHost<StringEntryPtr, StringPredicate, write__string> StringEntryWriterImpl;
+typedef JfrTypeWriterHost<StringEntryWriterImpl, TYPE_SYMBOL> StringEntryWriter;
 
 typedef SymbolPredicate<SymbolEntryPtr, true> LeakSymPredicate;
 typedef JfrPredicatedTypeWriterImplHost<SymbolEntryPtr, LeakSymPredicate, write__symbol__leakp> LeakSymbolEntryWriterImpl;
 typedef JfrTypeWriterHost<LeakSymbolEntryWriterImpl, TYPE_SYMBOL> LeakSymbolEntryWriter;
 typedef CompositeFunctor<SymbolEntryPtr, LeakSymbolEntryWriter, SymbolEntryWriter> CompositeSymbolWriter;
-typedef SymbolPredicate<CStringEntryPtr, true> LeakCStringPredicate;
-typedef JfrPredicatedTypeWriterImplHost<CStringEntryPtr, LeakCStringPredicate, write__cstring__leakp> LeakCStringEntryWriterImpl;
-typedef JfrTypeWriterHost<LeakCStringEntryWriterImpl, TYPE_SYMBOL> LeakCStringEntryWriter;
-typedef CompositeFunctor<CStringEntryPtr, LeakCStringEntryWriter, CStringEntryWriter> CompositeCStringWriter;
+typedef SymbolPredicate<StringEntryPtr, true> LeakStringPredicate;
+typedef JfrPredicatedTypeWriterImplHost<StringEntryPtr, LeakStringPredicate, write__string__leakp> LeakStringEntryWriterImpl;
+typedef JfrTypeWriterHost<LeakStringEntryWriterImpl, TYPE_SYMBOL> LeakStringEntryWriter;
+typedef CompositeFunctor<StringEntryPtr, LeakStringEntryWriter, StringEntryWriter> CompositeStringWriter;
 
 static void write_symbols_with_leakp() {
   assert(_leakp_writer != NULL, "invariant");
@@ -991,12 +991,12 @@ static void write_symbols_with_leakp() {
   LeakSymbolEntryWriter lsw(_leakp_writer, _class_unload);
   CompositeSymbolWriter csw(&lsw, &sw);
   _artifacts->iterate_symbols(csw);
-  CStringEntryWriter ccsw(_writer, _class_unload, true); // skip header
-  LeakCStringEntryWriter lccsw(_leakp_writer, _class_unload, true); // skip header
-  CompositeCStringWriter cccsw(&lccsw, &ccsw);
-  _artifacts->iterate_cstrings(cccsw);
-  sw.add(ccsw.count());
-  lsw.add(lccsw.count());
+  StringEntryWriter sew(_writer, _class_unload, true); // skip header
+  LeakStringEntryWriter lsew(_leakp_writer, _class_unload, true); // skip header
+  CompositeStringWriter csew(&lsew, &sew);
+  _artifacts->iterate_strings(csew);
+  sw.add(sew.count());
+  lsw.add(lsew.count());
   _artifacts->tally(sw);
 }
 
@@ -1008,9 +1008,9 @@ static void write_symbols() {
   }
   SymbolEntryWriter sw(_writer, _class_unload);
   _artifacts->iterate_symbols(sw);
-  CStringEntryWriter csw(_writer, _class_unload, true); // skip header
-  _artifacts->iterate_cstrings(csw);
-  sw.add(csw.count());
+  StringEntryWriter sew(_writer, _class_unload, true); // skip header
+  _artifacts->iterate_strings(sew);
+  sw.add(sew.count());
   _artifacts->tally(sw);
 }
 

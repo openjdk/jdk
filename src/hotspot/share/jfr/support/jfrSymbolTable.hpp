@@ -65,24 +65,24 @@ class ListEntry : public JfrHashtableEntry<T, IdType> {
 class JfrSymbolTable : public JfrCHeapObj {
   template <typename, typename, template<typename, typename> class, typename, size_t>
   friend class HashTableHost;
-  typedef HashTableHost<const Symbol*, traceid, ListEntry, JfrSymbolTable> SymbolTable;
-  typedef HashTableHost<const char*, traceid, ListEntry, JfrSymbolTable> CStringTable;
+  typedef HashTableHost<const Symbol*, traceid, ListEntry, JfrSymbolTable> Symbols;
+  typedef HashTableHost<const char*, traceid, ListEntry, JfrSymbolTable> Strings;
   friend class JfrArtifactSet;
 
  public:
-  typedef SymbolTable::HashEntry SymbolEntry;
-  typedef CStringTable::HashEntry CStringEntry;
+  typedef Symbols::HashEntry SymbolEntry;
+  typedef Strings::HashEntry StringEntry;
 
   static traceid add(const Symbol* sym);
   static traceid add(const char* str);
 
  private:
-  SymbolTable* _symbol_table;
-  CStringTable* _cstring_table;
+  Symbols* _symbols;
+  Strings* _strings;
   const SymbolEntry* _symbol_list;
-  const CStringEntry* _cstring_list;
+  const StringEntry* _string_list;
   const Symbol* _symbol_query;
-  const char* _cstring_query;
+  const char* _string_query;
   traceid _id_counter;
   bool _class_unload;
 
@@ -102,9 +102,9 @@ class JfrSymbolTable : public JfrCHeapObj {
   traceid mark(uintptr_t hash, const char* str, bool leakp);
   traceid bootstrap_name(bool leakp);
 
-  bool has_entries() const { return has_symbol_entries() || has_cstring_entries(); }
+  bool has_entries() const { return has_symbol_entries() || has_string_entries(); }
   bool has_symbol_entries() const { return _symbol_list != NULL; }
-  bool has_cstring_entries() const { return _cstring_list != NULL; }
+  bool has_string_entries() const { return _string_list != NULL; }
 
   traceid mark_hidden_klass_name(const InstanceKlass* k, bool leakp);
   bool is_hidden_klass(const Klass* k);
@@ -114,9 +114,9 @@ class JfrSymbolTable : public JfrCHeapObj {
   void on_link(const SymbolEntry* entry);
   bool on_equals(uintptr_t hash, const SymbolEntry* entry);
   void on_unlink(const SymbolEntry* entry);
-  void on_link(const CStringEntry* entry);
-  bool on_equals(uintptr_t hash, const CStringEntry* entry);
-  void on_unlink(const CStringEntry* entry);
+  void on_link(const StringEntry* entry);
+  bool on_equals(uintptr_t hash, const StringEntry* entry);
+  void on_unlink(const StringEntry* entry);
 
   template <typename T>
   static traceid add_impl(const T* sym);
@@ -130,8 +130,8 @@ class JfrSymbolTable : public JfrCHeapObj {
   }
 
   template <typename Functor>
-  void iterate_cstrings(Functor& functor) {
-    iterate(functor, _cstring_list);
+  void iterate_strings(Functor& functor) {
+    iterate(functor, _string_list);
   }
 
   template <typename Functor, typename T>

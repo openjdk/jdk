@@ -229,7 +229,7 @@ class JfrArtifactSet : public JfrCHeapObj {
 
   const JfrSymbolTable::SymbolEntry* map_symbol(const Symbol* symbol) const;
   const JfrSymbolTable::SymbolEntry* map_symbol(uintptr_t hash) const;
-  const JfrSymbolTable::CStringEntry* map_cstring(uintptr_t hash) const;
+  const JfrSymbolTable::StringEntry* map_string(uintptr_t hash) const;
 
   bool has_klass_entries() const;
   int entries() const;
@@ -253,8 +253,8 @@ class JfrArtifactSet : public JfrCHeapObj {
   }
 
   template <typename T>
-  void iterate_cstrings(T& functor) {
-    _symbol_table->iterate_cstrings(functor);
+  void iterate_strings(T& functor) {
+    _symbol_table->iterate_strings(functor);
   }
 
   template <typename Writer>

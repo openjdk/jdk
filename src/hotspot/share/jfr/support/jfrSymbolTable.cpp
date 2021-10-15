@@ -46,7 +46,7 @@ static uintptr_t string_hash(const char* str) {
   return java_lang_String::hash_code(reinterpret_cast<const jbyte*>(str), static_cast<int>(strlen(str)));
 }
 
-static JfrSymbolTable::CStringEntry* bootstrap = NULL;
+static JfrSymbolTable::StringEntry* bootstrap = NULL;
 
 static JfrSymbolTable* _instance = NULL;
 
@@ -72,51 +72,51 @@ void JfrSymbolTable::destroy() {
 }
 
 JfrSymbolTable::JfrSymbolTable() :
-  _symbol_table(new SymbolTable(this)),
-  _cstring_table(new CStringTable(this)),
+  _symbols(new Symbols(this)),
+  _strings(new Strings(this)),
   _symbol_list(NULL),
-  _cstring_list(NULL),
+  _string_list(NULL),
   _symbol_query(NULL),
-  _cstring_query(NULL),
+  _string_query(NULL),
   _id_counter(1),
   _class_unload(false) {
-  assert(_symbol_table != NULL, "invariant");
-  assert(_cstring_table != NULL, "invariant");
-  bootstrap = new CStringEntry(0, (const char*)&BOOTSTRAP_LOADER_NAME);
+  assert(_symbols != NULL, "invariant");
+  assert(_strings != NULL, "invariant");
+  bootstrap = new StringEntry(0, (const char*)&BOOTSTRAP_LOADER_NAME);
   assert(bootstrap != NULL, "invariant");
   bootstrap->set_id(create_symbol_id(1));
-  _cstring_list = bootstrap;
+  _string_list = bootstrap;
 }
 
 JfrSymbolTable::~JfrSymbolTable() {
   clear();
-  delete _symbol_table;
-  delete _cstring_table;
+  delete _symbols;
+  delete _strings;
   delete bootstrap;
 }
 
 void JfrSymbolTable::clear() {
-  assert(_symbol_table != NULL, "invariant");
-  if (_symbol_table->has_entries()) {
-    _symbol_table->clear_entries();
+  assert(_symbols != NULL, "invariant");
+  if (_symbols->has_entries()) {
+    _symbols->clear_entries();
   }
-  assert(!_symbol_table->has_entries(), "invariant");
+  assert(!_symbols->has_entries(), "invariant");
 
-  assert(_cstring_table != NULL, "invariant");
-  if (_cstring_table->has_entries()) {
-    _cstring_table->clear_entries();
+  assert(_strings != NULL, "invariant");
+  if (_strings->has_entries()) {
+    _strings->clear_entries();
   }
-  assert(!_cstring_table->has_entries(), "invariant");
+  assert(!_strings->has_entries(), "invariant");
 
   _symbol_list = NULL;
   _id_counter = 1;
 
   _symbol_query = NULL;
-  _cstring_query = NULL;
+  _string_query = NULL;
 
   assert(bootstrap != NULL, "invariant");
   bootstrap->reset();
-  _cstring_list = bootstrap;
+  _string_list = bootstrap;
 }
 
 void JfrSymbolTable::set_class_unload(bool class_unload) {
@@ -155,7 +155,7 @@ void JfrSymbolTable::on_unlink(const SymbolEntry* entry) {
   const_cast<Symbol*>(entry->literal())->decrement_refcount();
 }
 
-static const char* resource_to_cstring(const char* resource_str) {
+static const char* resource_to_c_heap_string(const char* resource_str) {
   assert(resource_str != NULL, "invariant");
   const size_t length = strlen(resource_str);
   char* const c_string = JfrCHeapObj::new_array<char>(length + 1);
@@ -164,11 +164,11 @@ static const char* resource_to_cstring(const char* resource_str) {
   return c_string;
 }
 
-void JfrSymbolTable::on_link(const CStringEntry* entry) {
+void JfrSymbolTable::on_link(const StringEntry* entry) {
   assign_id(entry);
-  const_cast<CStringEntry*>(entry)->set_literal(resource_to_cstring(entry->literal()));
-  entry->set_list_next(_cstring_list);
-  _cstring_list = entry;
+  const_cast<StringEntry*>(entry)->set_literal(resource_to_c_heap_string(entry->literal()));
+  entry->set_list_next(_string_list);
+  _string_list = entry;
 }
 
 static bool string_compare(const char* query, const char* candidate) {
@@ -178,14 +178,14 @@ static bool string_compare(const char* query, const char* candidate) {
   return strncmp(query, candidate, length) == 0;
 }
 
-bool JfrSymbolTable::on_equals(uintptr_t hash, const CStringEntry* entry) {
+bool JfrSymbolTable::on_equals(uintptr_t hash, const StringEntry* entry) {
   assert(entry != NULL, "invariant");
   assert(entry->hash() == hash, "invariant");
-  assert(_cstring_query != NULL, "invariant");
-  return string_compare(_cstring_query, entry->literal());
+  assert(_string_query != NULL, "invariant");
+  return string_compare(_string_query, entry->literal());
 }
 
-void JfrSymbolTable::on_unlink(const CStringEntry* entry) {
+void JfrSymbolTable::on_unlink(const StringEntry* entry) {
   assert(entry != NULL, "invariant");
   JfrCHeapObj::free(const_cast<char*>(entry->literal()), strlen(entry->literal() + 1));
 }
@@ -205,9 +205,9 @@ traceid JfrSymbolTable::mark(const Symbol* sym, bool leakp /* false */) {
 
 traceid JfrSymbolTable::mark(uintptr_t hash, const Symbol* sym, bool leakp) {
   assert(sym != NULL, "invariant");
-  assert(_symbol_table != NULL, "invariant");
+  assert(_symbols != NULL, "invariant");
   _symbol_query = sym;
-  const SymbolEntry& entry = _symbol_table->lookup_put(hash, sym);
+  const SymbolEntry& entry = _symbols->lookup_put(hash, sym);
   if (_class_unload) {
     entry.set_unloading();
   }
@@ -223,9 +223,9 @@ traceid JfrSymbolTable::mark(const char* str, bool leakp /* false*/) {
 
 traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
   assert(str != NULL, "invariant");
-  assert(_cstring_table != NULL, "invariant");
-  _cstring_query = str;
-  const CStringEntry& entry = _cstring_table->lookup_put(hash, str);
+  assert(_strings != NULL, "invariant");
+  _string_query = str;
+  const StringEntry& entry = _strings->lookup_put(hash, str);
   if (_class_unload) {
     entry.set_unloading();
   }
