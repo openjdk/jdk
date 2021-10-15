@@ -230,11 +230,9 @@ static jmethodID sjm_getAccessibleName = NULL;
     NSArray *selectedColumns = [self getTableSelectedInfo:sun_lwawt_macosx_CAccessibility_JAVA_AX_COLS];
     NSMutableArray *selectedCells = [NSMutableArray arrayWithCapacity:[selectedRows count] * [selectedColumns count]];
     for (NSNumber *row in selectedRows) {
-        for (NSNumber *col in selectedColumns ) {
+        for (NSNumber *col in selectedColumns) {
             CellAccessibility *cell = [self accessibilityCellForColumn:[col integerValue] row:[row integerValue]];
-//            if ([self isAccessibleChildSelectedFromIndex:[cell accessibilityIndex]]) {
-                [selectedCells addObject:cell];
-//            }
+            [selectedCells addObject:cell];
         }
     }
     return [NSArray arrayWithArray:selectedCells];
