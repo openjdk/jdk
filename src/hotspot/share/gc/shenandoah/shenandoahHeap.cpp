@@ -966,6 +966,11 @@ void ShenandoahHeap::coalesce_and_fill_old_regions() {
     virtual void heap_region_do(ShenandoahHeapRegion* region) override {
       // old region is not in the collection set and was not immediately trashed
       if (region->is_old() && region->is_active() && !region->is_humongous()) {
+        // Reset the coalesce and fill boundary because this is a global collect
+        // and cannot be preempted by young collects. We want to be sure the entire
+        // region is coalesced here and does not resume from a previously interrupted
+        // or completed coalescing.
+        region->reset_coalesce_and_fill_boundary();
         region->oop_fill_and_coalesce();
       }
     }
