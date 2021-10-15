@@ -2012,10 +2012,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
-  product(intx, ScopeLocalCacheSize, 16,                                    \
-          "Size of the cache for scoped values")                            \
-           range(0, max_intx)                                               \
-                                                                            \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \
                "1 - always, >1 every nth interval)")                        \

@@ -692,7 +692,6 @@ class JavaThread: public Thread {
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
   OopHandle      _threadObj;                     // The Java level thread object
-  OopHandle      _scopeLocalCache;
 
 #ifdef ASSERT
  private:
@@ -1090,8 +1089,6 @@ class JavaThread: public Thread {
   // (or for threads attached via JNI)
   oop threadObj() const;
   void set_threadObj(oop p);
-  oop scopeLocalCache() const;
-  void set_scopeLocalCache(oop p);
 
   // Prepare thread and add to priority queue.  If a priority is
   // not specified, use the priority of the thread object. Threads_lock

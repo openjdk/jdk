@@ -772,15 +772,6 @@ void JavaThread::set_threadObj(oop p) {
   _threadObj = OopHandle(_thread_oop_storage, p);
 }
 
-oop JavaThread::scopeLocalCache() const {
-  return _scopeLocalCache.resolve();
-}
-
-void JavaThread::set_scopeLocalCache(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
-  _scopeLocalCache.replace(p);
-}
-
 OopStorage* JavaThread::thread_oop_storage() {
   assert(_thread_oop_storage != NULL, "not yet initialized");
   return _thread_oop_storage;

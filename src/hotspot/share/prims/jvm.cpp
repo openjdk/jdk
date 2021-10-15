@@ -3094,24 +3094,6 @@ JVM_ENTRY(void, JVM_Interrupt(JNIEnv* env, jobject jthread))
   }
 JVM_END
 
-JVM_ENTRY(jobject, JVM_ScopeLocalCache(JNIEnv* env, jclass threadClass))
-  oop theCache = thread->scopeLocalCache();
-  if (theCache) {
-    arrayOop objs = arrayOop(theCache);
-    assert(objs->length() == ScopeLocalCacheSize * 2, "wrong length");
-  }
-  return JNIHandles::make_local(THREAD, theCache);
-JVM_END
-
-JVM_ENTRY(void, JVM_SetScopeLocalCache(JNIEnv* env, jclass threadClass,
-                                   jobject theCache))
-  arrayOop objs = arrayOop(JNIHandles::resolve(theCache));
-  if (objs != NULL) {
-    assert(objs->length() == ScopeLocalCacheSize * 2, "wrong length");
-  }
-  thread->set_scopeLocalCache(objs);
-JVM_END
-
 // Return true iff the current thread has locked the object passed in
 
 JVM_ENTRY(jboolean, JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj))
