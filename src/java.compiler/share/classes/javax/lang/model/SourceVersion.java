@@ -492,4 +492,40 @@ public enum SourceVersion {
             return false;
         }
     }
+
+    /**
+     * {@return The latest source version that is usable under the
+     * runtime version argument} If the runtime version's {@linkplain
+     * Runtime.Version#feature() feature} is greater than the feature
+     * of the platform's {@linkplain Runtime#version() version}, an
+     * {@code IllegalArgumentException} is thrown.
+     *
+     * <p>Because the source versions of the Java programming language
+     * have so far followed a linear progression, only the feature
+     * component of a runtime version is queried to determine the
+     * mapping to a source version. If that linearity changes in the
+     * future, other components of the runtime version may influence
+     * the result.
+     *
+     * @apiNote
+     * An expression to convert from an integer value, for example
+     * {@code 17}, to the corresponding source version, {@code
+     * RELEASE_17}, is<br>:
+     *
+     * {@code SourceVersion.valueOf(Runtime.Version.parse(Integer.toString(17)))
+     *
+     * @param rv runtime version to map to a source version
+     * @throws IllegalArgumentException if the feature of version
+     * argument is greater than the feature of the platform version.
+     */
+    public static SourceVersion valueOf(Runtime.Version rv) {
+        int feature = rv.feature();
+        if (feature > Runtime.version().feature()) {
+            throw new IllegalArgumentException("No matching SourceVersion for " + rv);
+        } else {
+            // Could also implement this as a switch where a case was
+            // added with each new release.
+            return valueOf("RELEASE_" + feature);
+        }
+    }
 }
