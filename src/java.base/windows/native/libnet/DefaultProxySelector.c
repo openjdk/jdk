@@ -230,16 +230,12 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
         auto_proxy_options.dwFlags = WINHTTP_AUTOPROXY_AUTO_DETECT;
         auto_proxy_options.fAutoLogonIfChallenged = TRUE;
         use_auto_proxy = TRUE;
-    } else if (ie_proxy_config.lpszAutoConfigUrl != NULL) {
+    }
+    if (ie_proxy_config.lpszAutoConfigUrl != NULL) {
         /* Windows uses PAC file */
         auto_proxy_options.lpszAutoConfigUrl = ie_proxy_config.lpszAutoConfigUrl;
-        auto_proxy_options.dwFlags = WINHTTP_AUTOPROXY_CONFIG_URL;
+        auto_proxy_options.dwFlags |= WINHTTP_AUTOPROXY_CONFIG_URL;
         use_auto_proxy = TRUE;
-    } else if (ie_proxy_config.lpszProxy != NULL) {
-        /* Windows uses manually entered proxy. */
-        use_auto_proxy = FALSE;
-        win_bypass_proxy = ie_proxy_config.lpszProxyBypass;
-        win_proxy = ie_proxy_config.lpszProxy;
     }
 
     if (use_auto_proxy) {
@@ -252,6 +248,12 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
             win_proxy = proxy_info.lpszProxy;
             win_bypass_proxy = proxy_info.lpszProxyBypass;
         }
+    }
+
+    if (!use_auto_proxy && ie_proxy_config.lpszProxy != NULL) {
+        /* Windows uses manually entered proxy. */
+        win_bypass_proxy = ie_proxy_config.lpszProxyBypass;
+        win_proxy = ie_proxy_config.lpszProxy;
     }
 
     /* Check the bypass entry. */
