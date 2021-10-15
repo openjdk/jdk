@@ -31,6 +31,8 @@
 
 import java.net.*;
 import java.io.*;
+
+import jdk.test.lib.net.HttpHeaderParser;
 import jdk.test.lib.net.URIBuilder;
 
 public class NTLMTest
@@ -158,6 +160,7 @@ public class NTLMTest
             OutputStream os = s.getOutputStream();
 
             for (int i=start; i<end; i++) {
+                HttpHeaderParser httpHeaderParser = new HttpHeaderParser(s.getInputStream());
                 //System.out.println("Input :" + header);
                 //System.out.println("Output:" + resp[i]);
                 os.write(resp[i].getBytes("ASCII"));

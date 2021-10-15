@@ -36,15 +36,18 @@ public class HttpHeaderParser {
     private Map <String, List<String>>  headerMap = new LinkedHashMap<>();
     private InputStream is;
     private List <String> keyList = new ArrayList<>();
-    private String requestDetails;
+    private String requestOrStatusLine;
 
     public HttpHeaderParser(InputStream is) throws IOException {
         this.is = is;
         String headerString = "";
             BufferedReader br = new BufferedReader(new InputStreamReader(this.is));
+            //First line is either request line or status line
+            requestOrStatusLine = br.readLine().strip();
+
             while(true) {
                 headerString = br.readLine();
-                if(headerString == null || headerString.isBlank()) {
+                if(headerString == null || headerString.isEmpty()) {
                     break;
                 }
                 if(headerString.contains(": ")) {
@@ -53,12 +56,14 @@ public class HttpHeaderParser {
                     String headerValue = headerString.substring(headerString.indexOf(": ") + 2);
                     String [] valueArray = headerValue.split(",");
                     for(String value : valueArray) {
-                        values.add(value.trim());
+                        values.add(value.strip());
                     }
-                    headerMap.put(key.trim(), values);
-                    keyList.add(key.trim());
-                } else {
-                    requestDetails = headerString.trim();
+                    if(!headerMap.containsKey(key.strip())) {
+                        headerMap.put(key.strip(), values);
+                        keyList.add(key.strip());
+                    } else {
+                        headerMap.get(key.strip()).addAll(values);
+                    }
                 }
             }
     }
@@ -74,6 +79,6 @@ public class HttpHeaderParser {
     }
 
     public String getRequestDetails() {
-        return requestDetails;
+        return requestOrStatusLine;
     }
 }
