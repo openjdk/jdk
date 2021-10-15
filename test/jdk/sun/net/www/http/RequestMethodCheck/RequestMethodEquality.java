@@ -57,11 +57,13 @@ public class RequestMethodEquality {
     private static final String TEST_CONTEXT = "/reqmethodtest";
     private HttpServer server;
     private CustomHandler handler;
+    private HttpClientAccess httpClientAccess;
 
     @BeforeTest
     public void setup() throws Exception {
         handler = new CustomHandler();
         server = createServer(handler);
+        httpClientAccess = new HttpClientAccess();
     }
 
     @AfterTest
@@ -93,7 +95,7 @@ public class RequestMethodEquality {
             inCache.setBoolean(freshClient, true); // allows the assertion in HttpClient.New to pass
 
             // Injecting a mock KeepAliveCache that the HttpClient can use
-            KeepAliveCache kac = new HttpClientAccess().getKeepAliveCache();
+            KeepAliveCache kac = httpClientAccess.getKeepAliveCache();
             kac.put(url, null, freshClient);
 
             // The 'new' keyword is important here as the original code
