@@ -121,8 +121,8 @@ public class TestFullContext {
             events -> {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 1);
-                // assertContext(events.get(0), Map.of(
-                //     contextKey1.getName(), "Key1Value3/2"));
+                assertContext(events.get(0), Map.of(
+                    contextKey1.getName(), "Key1Value3/2"));
                 return true;
             }
         );

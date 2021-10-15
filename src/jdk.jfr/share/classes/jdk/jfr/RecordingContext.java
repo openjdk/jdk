@@ -102,11 +102,10 @@ public final class RecordingContext implements AutoCloseable {
         public Builder where(RecordingContextKey key, String value) {
             Set<RecordingContextEntry> set = key.isInheritable() ?
                 inheritableEntries : noninheritableEntries;
-            
-            if (set.contains(key)) {
-                set.remove(key);
-            }
-            set.add(new RecordingContextEntry(key, value));
+
+            RecordingContextEntry entry = new RecordingContextEntry(key, value);
+            set.remove(entry);
+            set.add(entry);
 
             return this;
         }
