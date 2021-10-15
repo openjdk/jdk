@@ -37,7 +37,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
@@ -91,7 +91,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;
 
-  WorkGang _workers;
+  WorkerThreads _workers;
 
   virtual void initialize_serviceability();
 
@@ -118,9 +118,7 @@ class ParallelScavengeHeap : public CollectedHeap {
     _eden_pool(NULL),
     _survivor_pool(NULL),
     _old_pool(NULL),
-    _workers("GC Thread",
-             ParallelGCThreads,
-             false /* are_ConcurrentGC_threads */) { }
+    _workers("GC Thread", ParallelGCThreads) { }
 
   // For use by VM operations
   enum CollectionType {
@@ -245,7 +243,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 
-  virtual WorkGang* safepoint_workers() { return &_workers; }
+  virtual WorkerThreads* safepoint_workers() { return &_workers; }
 
   PreGenGCValues get_pre_gc_values() const;
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
@@ -272,7 +270,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }
 
-  WorkGang& workers() {
+  WorkerThreads& workers() {
     return _workers;
   }
 };

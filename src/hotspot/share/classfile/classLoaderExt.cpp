@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
-#include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -33,7 +32,6 @@
 #include "classfile/klassFactory.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
@@ -46,9 +44,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
-#include "services/threadService.hpp"
 #include "utilities/stringUtils.hpp"
 
 jshort ClassLoaderExt::_app_class_paths_start_index = ClassLoaderExt::max_classpath_index;
@@ -249,91 +245,4 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
   }
   result->set_shared_classpath_index(classpath_index);
   result->set_shared_class_loader_type(classloader_type);
-}
-
-// Load the class of the given name from the location given by path. The path is specified by
-// the "source:" in the class list file (see classListParser.cpp), and can be a directory or
-// a JAR file.
-InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS) {
-  assert(name != NULL, "invariant");
-  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
-  ResourceMark rm(THREAD);
-  const char* class_name = name->as_C_string();
-  const char* file_name = file_name_for_class_name(class_name,
-                                                   name->utf8_length());
-  assert(file_name != NULL, "invariant");
-
-  // Lookup stream for parsing .class file
-  ClassFileStream* stream = NULL;
-  ClassPathEntry* e = find_classpath_entry_from_cache(THREAD, path);
-  if (e == NULL) {
-    THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
-  }
-
-  {
-    PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
-                               THREAD->get_thread_stat()->perf_timers_addr(),
-                               PerfClassTraceTime::CLASS_LOAD);
-    stream = e->open_stream(THREAD, file_name);
-  }
-
-  if (stream == NULL) {
-    // open_stream could return NULL even when no exception has be thrown (JDK-8263632).
-    THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
-    return NULL;
-  }
-  stream->set_verify(true);
-
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  Handle protection_domain;
-  ClassLoadInfo cl_info(protection_domain);
-  InstanceKlass* k = KlassFactory::create_from_stream(stream,
-                                                      name,
-                                                      loader_data,
-                                                      cl_info,
-                                                      CHECK_NULL);
-  return k;
-}
-
-struct CachedClassPathEntry {
-  const char* _path;
-  ClassPathEntry* _entry;
-};
-
-static GrowableArray<CachedClassPathEntry>* cached_path_entries = NULL;
-
-ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(JavaThread* current, const char* path) {
-  // This is called from dump time so it's single threaded and there's no need for a lock.
-  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
-  if (cached_path_entries == NULL) {
-    cached_path_entries = new (ResourceObj::C_HEAP, mtClass) GrowableArray<CachedClassPathEntry>(20, mtClass);
-  }
-  CachedClassPathEntry ccpe;
-  for (int i=0; i<cached_path_entries->length(); i++) {
-    ccpe = cached_path_entries->at(i);
-    if (strcmp(ccpe._path, path) == 0) {
-      if (i != 0) {
-        // Put recent entries at the beginning to speed up searches.
-        cached_path_entries->remove_at(i);
-        cached_path_entries->insert_before(0, ccpe);
-      }
-      return ccpe._entry;
-    }
-  }
-
-  struct stat st;
-  if (os::stat(path, &st) != 0) {
-    // File or directory not found
-    return NULL;
-  }
-  ClassPathEntry* new_entry = NULL;
-
-  new_entry = create_class_path_entry(current, path, &st, false, false);
-  if (new_entry == NULL) {
-    return NULL;
-  }
-  ccpe._path = strdup(path);
-  ccpe._entry = new_entry;
-  cached_path_entries->insert_before(0, ccpe);
-  return new_entry;
 }

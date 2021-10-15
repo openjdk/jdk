@@ -890,7 +890,7 @@ public class JmodTask {
             // filter modules resolved from the system module finder
             this.modules = config.modules().stream()
                 .map(ResolvedModule::name)
-                .filter(mn -> roots.contains(mn) && !system.find(mn).isPresent())
+                .filter(mn -> roots.contains(mn) && system.find(mn).isEmpty())
                 .collect(Collectors.toSet());
 
             this.hashesBuilder = new ModuleHashesBuilder(config, modules);

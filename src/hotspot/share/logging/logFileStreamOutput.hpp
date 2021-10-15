@@ -64,6 +64,7 @@ class LogFileStreamOutput : public LogOutput {
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
   virtual int write(const LogDecorations& decorations, const char* msg);
   virtual int write(LogMessageBuffer::Iterator msg_iterator);
+  virtual void describe(outputStream* out);
 };
 
 class LogStdoutOutput : public LogFileStreamOutput {

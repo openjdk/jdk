@@ -405,9 +405,8 @@ void G1BlockOffsetTablePart::zero_bottom_entry_raw() {
   _bot->set_offset_array_raw(bottom_index, 0);
 }
 
-HeapWord* G1BlockOffsetTablePart::initialize_threshold() {
+void G1BlockOffsetTablePart::initialize_threshold() {
   _next_offset_threshold = _hr->bottom() + BOTConstants::N_words;
-  return _next_offset_threshold;
 }
 
 void G1BlockOffsetTablePart::set_for_starts_humongous(HeapWord* obj_top, size_t fill_size) {

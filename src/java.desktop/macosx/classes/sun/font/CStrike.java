@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.font;
 import java.awt.Rectangle;
 import java.awt.geom.*;
 import java.util.*;
-
-import sun.awt.SunHints;
 
 public final class CStrike extends PhysicalStrike {
 
@@ -444,9 +442,7 @@ public final class CStrike extends PhysicalStrike {
 
             // clean up everyone else
             if (generalCache != null) {
-                final Iterator<Long> i = generalCache.values().iterator();
-                while (i.hasNext()) {
-                    final long longValue = i.next().longValue();
+                for (long longValue : generalCache.values()) {
                     if (longValue != -1 && longValue != 0) {
                         removeGlyphInfoFromCache(longValue);
                         StrikeCache.freeLongPointer(longValue);

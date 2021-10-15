@@ -267,11 +267,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       assert(young_space()->contains(new_obj), "Attempt to push non-promoted obj");
     }
 
-    log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
-                                    new_obj_is_tenured ? "copying" : "tenuring",
-                                    new_obj->klass()->internal_name(),
-                                    p2i((void *)o), p2i((void *)new_obj), new_obj->size());
-
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than
     // _min_array_size_for_chunking, and most of them will be arrays.

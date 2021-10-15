@@ -285,7 +285,7 @@ class LibraryCallKit : public GraphKit {
   Node* get_state_from_digest_object(Node *digestBase_object, const char* state_type);
   Node* get_digest_length_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
-  bool inline_encodeISOArray();
+  bool inline_encodeISOArray(bool ascii);
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();

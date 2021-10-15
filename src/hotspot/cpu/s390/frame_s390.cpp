@@ -628,8 +628,6 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
   }
 }
 
-
-void frame::pd_ps() {}
 #endif // !PRODUCT
 
 intptr_t *frame::initial_deoptimization_info() {
