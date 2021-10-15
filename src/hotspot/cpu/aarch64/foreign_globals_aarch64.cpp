@@ -23,11 +23,15 @@
  */
 
 #include "precompiled.hpp"
+#include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
+#include "opto/matcher.hpp"
 #include "prims/foreign_globals.hpp"
 #include "prims/foreign_globals.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 
 bool ABIDescriptor::is_volatile_reg(Register reg) const {
   return _integer_argument_registers.contains(reg)
@@ -47,15 +51,15 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) cons
   ABIDescriptor abi;
   constexpr Register (*to_Register)(int) = as_Register;
 
-  objArrayOop inputStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.inputStorage_offset));
+  objArrayOop inputStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.inputStorage_offset));
   loadArray(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, to_Register);
   loadArray(inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_FloatRegister);
 
-  objArrayOop outputStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.outputStorage_offset));
+  objArrayOop outputStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.outputStorage_offset));
   loadArray(outputStorage, INTEGER_TYPE, abi._integer_return_registers, to_Register);
   loadArray(outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_FloatRegister);
 
-  objArrayOop volatileStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.volatileStorage_offset));
+  objArrayOop volatileStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.volatileStorage_offset));
   loadArray(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, to_Register);
   loadArray(volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_FloatRegister);
 
@@ -73,11 +77,11 @@ const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) con
   layout.stack_args = layout_oop->long_field(BL.stack_args_offset);
   layout.arguments_next_pc = layout_oop->long_field(BL.arguments_next_pc_offset);
 
-  typeArrayOop input_offsets = cast<typeArrayOop>(layout_oop->obj_field(BL.input_type_offsets_offset));
+  typeArrayOop input_offsets = oop_cast<typeArrayOop>(layout_oop->obj_field(BL.input_type_offsets_offset));
   layout.arguments_integer = (size_t) input_offsets->long_at(INTEGER_TYPE);
   layout.arguments_vector = (size_t) input_offsets->long_at(VECTOR_TYPE);
 
-  typeArrayOop output_offsets = cast<typeArrayOop>(layout_oop->obj_field(BL.output_type_offsets_offset));
+  typeArrayOop output_offsets = oop_cast<typeArrayOop>(layout_oop->obj_field(BL.output_type_offsets_offset));
   layout.returns_integer = (size_t) output_offsets->long_at(INTEGER_TYPE);
   layout.returns_vector = (size_t) output_offsets->long_at(VECTOR_TYPE);
 
@@ -89,4 +93,97 @@ const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) con
 const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
   ShouldNotCallThis();
   return {};
+}
+
+enum class RegType {
+  INTEGER = 0,
+  VECTOR = 1,
+  STACK = 3
+};
+
+VMReg ForeignGlobals::vmstorage_to_vmreg(int type, int index) {
+  switch(static_cast<RegType>(type)) {
+    case RegType::INTEGER: return ::as_Register(index)->as_VMReg();
+    case RegType::VECTOR: return ::as_FloatRegister(index)->as_VMReg();
+    case RegType::STACK: return VMRegImpl::stack2reg(index LP64_ONLY(* 2));
+  }
+  return VMRegImpl::Bad();
+}
+
+int RegSpiller::pd_reg_size(VMReg reg) {
+  if (reg->is_Register()) {
+    return 8;
+  } else if (reg->is_FloatRegister()) {
+    bool use_sve = Matcher::supports_scalable_vector();
+    if (use_sve) {
+      return Matcher::scalable_vector_reg_size(T_BYTE);
+    }
+    return 16;
+  }
+  return 0; // stack and BAD
+}
+
+void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMReg reg) {
+  if (reg->is_Register()) {
+    masm->spill(reg->as_Register(), true, offset);
+  } else if (reg->is_FloatRegister()) {
+    bool use_sve = Matcher::supports_scalable_vector();
+    if (use_sve) {
+      masm->spill_sve_vector(reg->as_FloatRegister(), offset, Matcher::scalable_vector_reg_size(T_BYTE));
+    } else {
+      masm->spill(reg->as_FloatRegister(), masm->Q, offset);
+    }
+  } else {
+    // stack and BAD
+  }
+}
+
+void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
+  if (reg->is_Register()) {
+    masm->unspill(reg->as_Register(), true, offset);
+  } else if (reg->is_FloatRegister()) {
+    bool use_sve = Matcher::supports_scalable_vector();
+    if (use_sve) {
+      masm->unspill_sve_vector(reg->as_FloatRegister(), offset, Matcher::scalable_vector_reg_size(T_BYTE));
+    } else {
+      masm->unspill(reg->as_FloatRegister(), masm->Q, offset);
+    }
+  } else {
+    // stack and BAD
+  }
+}
+
+void ArgumentShuffle::pd_generate(MacroAssembler* masm) const {
+  for (int i = 0; i < _moves.length(); i++) {
+    Move move = _moves.at(i);
+    BasicType arg_bt     = move.bt;
+    VMRegPair from_vmreg = move.from;
+    VMRegPair to_vmreg   = move.to;
+
+    masm->block_comment(err_msg("bt=%s", null_safe_string(type2name(arg_bt))));
+    switch (arg_bt) {
+      case T_BOOLEAN:
+      case T_BYTE:
+      case T_SHORT:
+      case T_CHAR:
+      case T_INT:
+        masm->move32_64(from_vmreg, to_vmreg);
+        break;
+
+      case T_FLOAT:
+        masm->float_move(from_vmreg, to_vmreg);
+        break;
+
+      case T_DOUBLE:
+        masm->double_move(from_vmreg, to_vmreg);
+        break;
+
+      case T_LONG :
+        masm->long_move(from_vmreg, to_vmreg);
+        break;
+
+      default:
+        fatal("found in upcall args: %s", type2name(arg_bt));
+    }
+  }
 }

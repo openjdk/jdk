@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
+#ifndef SHARE_OOPS_OOPCAST_INLINE_HPP
+#define SHARE_OOPS_OOPCAST_INLINE_HPP
 
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "code/vmreg.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/oop.inline.hpp"
 
-void VMRegImpl::set_regName() {
-  Register reg = ::as_Register(0);
-  int i;
-  for (i = 0; i < ConcreteRegisterImpl::max_gpr; reg = reg->successor()) {
-    for (int j = 0; j < (1 << ConcreteRegisterImpl::log_vmregs_per_gpr); j++) {
-      regName[i++] = reg->name();
-    }
-  }
-#ifndef __SOFTFP__
-  FloatRegister freg = ::as_FloatRegister(0);
-  for ( ; i < ConcreteRegisterImpl::max_fpr ; ) {
-    for (int j = 0; j < (1 << ConcreteRegisterImpl::log_vmregs_per_fpr); j++) {
-      regName[i++] = freg->name();
-    }
-    freg = freg->successor();
-  }
-#endif
-
-  for ( ; i < ConcreteRegisterImpl::number_of_registers ; i ++ ) {
-    regName[i] = "NON-GPR-FPR";
-  }
+template<typename T>
+static bool is_oop_type(oop theOop) {
+  static_assert(sizeof(T) == 0, "No is_oop_type specialization found for this type");
+  return false;
 }
+template<>
+inline bool is_oop_type<instanceOop>(oop theOop) { return theOop->is_instance(); }
+template<>
+inline bool is_oop_type<arrayOop>(oop theOop) { return theOop->is_array(); }
+template<>
+inline bool is_oop_type<objArrayOop>(oop theOop) { return theOop->is_objArray(); }
+template<>
+inline bool is_oop_type<typeArrayOop>(oop theOop) { return theOop->is_typeArray(); }
+
+template<typename R>
+R oop_cast(oop theOop) {
+  assert(is_oop_type<R>(theOop), "Invalid cast");
+  return (R) theOop;
+}
+
+#endif // SHARE_OOPS_OOPCAST_INLINE_HPP

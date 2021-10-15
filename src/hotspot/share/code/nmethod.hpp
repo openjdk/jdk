@@ -207,7 +207,6 @@ class nmethod : public CompiledMethod {
   int _scopes_data_offset;
   int _scopes_pcs_offset;
   int _dependencies_offset;
-  int _native_invokers_offset;
   int _handler_table_offset;
   int _nul_chk_table_offset;
 #if INCLUDE_JVMCI
@@ -309,8 +308,7 @@ class nmethod : public CompiledMethod {
           ExceptionHandlerTable* handler_table,
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
-          int comp_level,
-          const GrowableArrayView<RuntimeStub*>& native_invokers
+          int comp_level
 #if INCLUDE_JVMCI
           , char* speculations,
           int speculations_len,
@@ -358,8 +356,7 @@ class nmethod : public CompiledMethod {
                               ExceptionHandlerTable* handler_table,
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
-                              int comp_level,
-                              const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY
+                              int comp_level
 #if INCLUDE_JVMCI
                               , char* speculations = NULL,
                               int speculations_len = 0,
@@ -408,9 +405,7 @@ class nmethod : public CompiledMethod {
   PcDesc* scopes_pcs_begin      () const          { return (PcDesc*)(header_begin() + _scopes_pcs_offset   ); }
   PcDesc* scopes_pcs_end        () const          { return (PcDesc*)(header_begin() + _dependencies_offset) ; }
   address dependencies_begin    () const          { return           header_begin() + _dependencies_offset  ; }
-  address dependencies_end      () const          { return           header_begin() + _native_invokers_offset ; }
-  RuntimeStub** native_invokers_begin() const     { return (RuntimeStub**)(header_begin() + _native_invokers_offset) ; }
-  RuntimeStub** native_invokers_end  () const     { return (RuntimeStub**)(header_begin() + _handler_table_offset); }
+  address dependencies_end      () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
@@ -525,8 +520,6 @@ class nmethod : public CompiledMethod {
 
   void copy_values(GrowableArray<jobject>* oops);
   void copy_values(GrowableArray<Metadata*>* metadata);
-
-  void free_native_invokers();
 
   // Relocation support
 private:
@@ -664,7 +657,6 @@ public:
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
   void print_value_on(outputStream* st) const;
-  void print_native_invokers();
   void print_handler_table();
   void print_nul_chk_table();
   void print_recorded_oop(int log_n, int index);

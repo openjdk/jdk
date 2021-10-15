@@ -3866,6 +3866,7 @@ int jdk_internal_invoke_NativeEntryPoint::_returnMoves_offset;
 int jdk_internal_invoke_NativeEntryPoint::_need_transition_offset;
 int jdk_internal_invoke_NativeEntryPoint::_method_type_offset;
 int jdk_internal_invoke_NativeEntryPoint::_name_offset;
+int jdk_internal_invoke_NativeEntryPoint::_invoker_offset;
 
 #define NEP_FIELDS_DO(macro) \
   macro(_shadow_space_offset,    k, "shadowSpace",    int_signature, false); \
@@ -3873,7 +3874,8 @@ int jdk_internal_invoke_NativeEntryPoint::_name_offset;
   macro(_returnMoves_offset,     k, "returnMoves",    long_array_signature, false); \
   macro(_need_transition_offset, k, "needTransition", bool_signature, false); \
   macro(_method_type_offset,     k, "methodType",     java_lang_invoke_MethodType_signature, false); \
-  macro(_name_offset,            k, "name",           string_signature, false);
+  macro(_name_offset,            k, "name",           string_signature, false); \
+  macro(_invoker_offset,         k, "invoker",        long_signature, false);
 
 bool jdk_internal_invoke_NativeEntryPoint::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
@@ -3912,6 +3914,10 @@ oop jdk_internal_invoke_NativeEntryPoint::method_type(oop entry) {
 
 oop jdk_internal_invoke_NativeEntryPoint::name(oop entry) {
   return entry->obj_field(_name_offset);
+}
+
+jlong jdk_internal_invoke_NativeEntryPoint::invoker(oop entry) {
+  return entry->long_field(_invoker_offset);
 }
 
 oop java_lang_invoke_MethodHandle::type(oop mh) {

@@ -50,13 +50,18 @@ JNI_ENTRY(jlong, PI_generateAdapter(JNIEnv* env, jclass _unused, jobject abi, jo
   return (jlong) ProgrammableInvoker::generate_adapter(abi, layout);
 JNI_END
 
+JVM_ENTRY(jboolean, PI_SupportsNativeInvoker(JNIEnv *env, jclass unused))
+  return (jboolean) ProgrammableInvoker::supports_native_invoker();
+JVM_END
+
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 #define FOREIGN_ABI "Ljdk/internal/foreign/abi"
 
 static JNINativeMethod PI_methods[] = {
   {CC "invokeNative",    CC "(JJ)V",                                                             FN_PTR(PI_invokeNative)   },
-  {CC "generateAdapter", CC "(" FOREIGN_ABI "/ABIDescriptor;" FOREIGN_ABI "/BufferLayout;" ")J", FN_PTR(PI_generateAdapter)}
+  {CC "generateAdapter", CC "(" FOREIGN_ABI "/ABIDescriptor;" FOREIGN_ABI "/BufferLayout;" ")J", FN_PTR(PI_generateAdapter)},
+  {CC "supportsNativeInvoker", CC "()Z", FN_PTR(PI_SupportsNativeInvoker)},
 };
 
 JNI_ENTRY(void, JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass PI_class))

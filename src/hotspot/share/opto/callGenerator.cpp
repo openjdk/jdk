@@ -1155,19 +1155,27 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
 
     case vmIntrinsics::_linkToNative:
     {
-      Node* addr_n = kit.argument(1); // target address
+      Node* addr_n = kit.argument(0); // target address
       Node* nep_n = kit.argument(callee->arg_size() - 1); // NativeEntryPoint
       // This check needs to be kept in sync with the one in CallStaticJavaNode::Ideal
       if (addr_n->Opcode() == Op_ConL && nep_n->Opcode() == Op_ConP) {
         input_not_const = false;
-        const TypeLong* addr_t = addr_n->bottom_type()->is_long();
+
         const TypeOopPtr* nep_t = nep_n->bottom_type()->is_oopptr();
-        address addr = (address) addr_t->get_con();
         ciNativeEntryPoint* nep = nep_t->const_oop()->as_native_entry_point();
-        return new NativeCallGenerator(callee, addr, nep);
+
+        if (!nep->need_transition()) {
+          const TypeLong* addr_t = addr_n->bottom_type()->is_long();
+          address addr = (address) addr_t->get_con();
+
+          return new NativeCallGenerator(callee, addr, nep);
+        } else {
+          print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                        "Not inlining non-trivial call");
+        }
       } else {
         print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
-                               "NativeEntryPoint not constant");
+                               "NativeEntryPoint or address not constant");
       }
     }
     break;

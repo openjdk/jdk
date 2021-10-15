@@ -130,10 +130,9 @@ public interface JavaLangInvokeAccess {
      * Will allow JIT to intrinsify.
      *
      * @param nep the native entry point
-     * @param fallback the fallback handle
      * @return the native method handle
      */
-    MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback);
+    MethodHandle nativeMethodHandle(NativeEntryPoint nep);
 
     /**
      * Ensure given method handle is customized

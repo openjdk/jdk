@@ -27,6 +27,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "prims/foreign_globals.hpp"
 
+class RuntimeStub;
 class ProgrammableInvoker: AllStatic {
 private:
   static constexpr CodeBuffer::csize_t native_invoker_size = 1024;
@@ -45,6 +46,14 @@ public:
 
   static void invoke_native(Stub stub, address buff, JavaThread* thread);
   static address generate_adapter(jobject abi, jobject layout);
+
+  static RuntimeStub* make_native_invoker(BasicType*,
+                                          int num_args,
+                                          BasicType ret_bt,
+                                          int shadow_space_bytes,
+                                          const GrowableArray<VMReg>& input_registers,
+                                          const GrowableArray<VMReg>& output_registers);
+  static bool supports_native_invoker();
 };
 
 #endif // SHARE_VM_PRIMS_UNIVERSALNATIVEINVOKER_HPP

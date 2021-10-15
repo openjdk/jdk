@@ -25,8 +25,10 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "prims/foreign_globals.hpp"
 #include "prims/foreign_globals.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 bool ABIDescriptor::is_volatile_reg(Register reg) const {
     return _integer_argument_registers.contains(reg)
@@ -46,17 +48,17 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) cons
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;
 
-  objArrayOop inputStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.inputStorage_offset));
+  objArrayOop inputStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.inputStorage_offset));
   loadArray(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, as_Register);
   loadArray(inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_XMMRegister);
 
-  objArrayOop outputStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.outputStorage_offset));
+  objArrayOop outputStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.outputStorage_offset));
   loadArray(outputStorage, INTEGER_TYPE, abi._integer_return_registers, as_Register);
   loadArray(outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_XMMRegister);
-  objArrayOop subarray = cast<objArrayOop>(outputStorage->obj_at(X87_TYPE));
+  objArrayOop subarray = oop_cast<objArrayOop>(outputStorage->obj_at(X87_TYPE));
   abi._X87_return_registers_noof = subarray->length();
 
-  objArrayOop volatileStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.volatileStorage_offset));
+  objArrayOop volatileStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.volatileStorage_offset));
   loadArray(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, as_Register);
   loadArray(volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_XMMRegister);
 
@@ -74,11 +76,11 @@ const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) con
   layout.stack_args = layout_oop->long_field(BL.stack_args_offset);
   layout.arguments_next_pc = layout_oop->long_field(BL.arguments_next_pc_offset);
 
-  typeArrayOop input_offsets = cast<typeArrayOop>(layout_oop->obj_field(BL.input_type_offsets_offset));
+  typeArrayOop input_offsets = oop_cast<typeArrayOop>(layout_oop->obj_field(BL.input_type_offsets_offset));
   layout.arguments_integer = (size_t) input_offsets->long_at(INTEGER_TYPE);
   layout.arguments_vector = (size_t) input_offsets->long_at(VECTOR_TYPE);
 
-  typeArrayOop output_offsets = cast<typeArrayOop>(layout_oop->obj_field(BL.output_type_offsets_offset));
+  typeArrayOop output_offsets = oop_cast<typeArrayOop>(layout_oop->obj_field(BL.output_type_offsets_offset));
   layout.returns_integer = (size_t) output_offsets->long_at(INTEGER_TYPE);
   layout.returns_vector = (size_t) output_offsets->long_at(VECTOR_TYPE);
   layout.returns_x87 = (size_t) output_offsets->long_at(X87_TYPE);
@@ -90,8 +92,8 @@ const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) con
 
 const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
   oop conv_oop = JNIHandles::resolve_non_null(jconv);
-  objArrayOop arg_regs_oop = cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.arg_regs_offset));
-  objArrayOop ret_regs_oop = cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.ret_regs_offset));
+  objArrayOop arg_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.arg_regs_offset));
+  objArrayOop ret_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.ret_regs_offset));
 
   CallRegs result;
   result._args_length = arg_regs_oop->length();
@@ -104,15 +106,104 @@ const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
     oop storage = arg_regs_oop->obj_at(i);
     jint index = storage->int_field(VMS.index_offset);
     jint type = storage->int_field(VMS.type_offset);
-    result._arg_regs[i] = VMRegImpl::vmStorageToVMReg(type, index);
+    result._arg_regs[i] = vmstorage_to_vmreg(type, index);
   }
 
   for (int i = 0; i < result._rets_length; i++) {
     oop storage = ret_regs_oop->obj_at(i);
     jint index = storage->int_field(VMS.index_offset);
     jint type = storage->int_field(VMS.type_offset);
-    result._ret_regs[i] = VMRegImpl::vmStorageToVMReg(type, index);
+    result._ret_regs[i] = vmstorage_to_vmreg(type, index);
   }
 
   return result;
+}
+
+enum class RegType {
+  INTEGER = 0,
+  VECTOR = 1,
+  X87 = 2,
+  STACK = 3
+};
+
+VMReg ForeignGlobals::vmstorage_to_vmreg(int type, int index) {
+  switch(static_cast<RegType>(type)) {
+    case RegType::INTEGER: return ::as_Register(index)->as_VMReg();
+    case RegType::VECTOR: return ::as_XMMRegister(index)->as_VMReg();
+    case RegType::STACK: return VMRegImpl::stack2reg(index LP64_ONLY(* 2)); // numbering on x64 goes per 64-bits
+    case RegType::X87: break;
+  }
+  return VMRegImpl::Bad();
+}
+
+int RegSpiller::pd_reg_size(VMReg reg) {
+  if (reg->is_Register()) {
+    return 8;
+  } else if (reg->is_XMMRegister()) {
+    return 16;
+  }
+  return 0; // stack and BAD
+}
+
+void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMReg reg) {
+  if (reg->is_Register()) {
+    masm->movptr(Address(rsp, offset), reg->as_Register());
+  } else if (reg->is_XMMRegister()) {
+    masm->movdqu(Address(rsp, offset), reg->as_XMMRegister());
+  } else {
+    // stack and BAD
+  }
+}
+
+void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
+  if (reg->is_Register()) {
+    masm->movptr(reg->as_Register(), Address(rsp, offset));
+  } else if (reg->is_XMMRegister()) {
+    masm->movdqu(reg->as_XMMRegister(), Address(rsp, offset));
+  } else {
+    // stack and BAD
+  }
+}
+
+void ArgumentShuffle::pd_generate(MacroAssembler* masm) const {
+  for (int i = 0; i < _moves.length(); i++) {
+    Move move = _moves.at(i);
+    BasicType arg_bt     = move.bt;
+    VMRegPair from_vmreg = move.from;
+    VMRegPair to_vmreg   = move.to;
+
+    masm->block_comment(err_msg("bt=%s", null_safe_string(type2name(arg_bt))));
+    switch (arg_bt) {
+      case T_BOOLEAN:
+      case T_BYTE:
+      case T_SHORT:
+      case T_CHAR:
+      case T_INT:
+        masm->move32_64(from_vmreg, to_vmreg);
+        break;
+
+      case T_FLOAT:
+        if (to_vmreg.first()->is_Register()) { // Windows vararg call
+          masm->movq(to_vmreg.first()->as_Register(), from_vmreg.first()->as_XMMRegister());
+        } else {
+          masm->float_move(from_vmreg, to_vmreg);
+        }
+        break;
+
+      case T_DOUBLE:
+        if (to_vmreg.first()->is_Register()) { // Windows vararg call
+          masm->movq(to_vmreg.first()->as_Register(), from_vmreg.first()->as_XMMRegister());
+        } else {
+          masm->double_move(from_vmreg, to_vmreg);
+        }
+        break;
+
+      case T_LONG:
+        masm->long_move(from_vmreg, to_vmreg);
+        break;
+
+      default:
+        fatal("found in upcall args: %s", type2name(arg_bt));
+    }
+  }
 }

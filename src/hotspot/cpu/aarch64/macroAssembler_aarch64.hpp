@@ -27,10 +27,13 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+class OopMap;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -104,7 +107,8 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
+  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
+  void rt_call(address dest, Register tmp = rscratch1);
 
   // Helper functions for statistics gathering.
   // Unconditional atomic increment.
@@ -703,6 +707,20 @@ public:
   // The pointer will be loaded into the thread register.
   void get_thread(Register thread);
 
+  // support for argument shuffling
+  void move32_64(VMRegPair src, VMRegPair dst);
+  void float_move(VMRegPair src, VMRegPair dst);
+  void long_move(VMRegPair src, VMRegPair dst);
+  void double_move(VMRegPair src, VMRegPair dst);
+  void object_move(
+                   OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
+
 
   // Support for VM calls
   //
@@ -955,7 +973,7 @@ public:
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
-  void verify_sve_vector_length();
+  void verify_sve_vector_length(Register tmp = rscratch1);
   void reinitialize_ptrue() {
     if (UseSVE > 0) {
       sve_ptrue(ptrue, B);

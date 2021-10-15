@@ -622,7 +622,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
-                  _native_invokers(comp_arena(), 1, 0, NULL),
                   _print_inlining_stream(NULL),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
@@ -896,7 +895,6 @@ Compile::Compile( ciEnv* ci_env,
     _initial_gvn(NULL),
     _for_igvn(NULL),
     _number_of_mh_late_inlines(0),
-    _native_invokers(),
     _print_inlining_stream(NULL),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
@@ -5060,10 +5058,6 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
   _debug_network_printer->print(phase_name, (Node*)C->root());
 }
 #endif
-
-void Compile::add_native_invoker(RuntimeStub* stub) {
-  _native_invokers.append(stub);
-}
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
   if (type != NULL && phase->type(value)->higher_equal(type)) {

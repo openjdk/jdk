@@ -32,6 +32,7 @@
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -39,6 +40,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -1441,8 +1443,11 @@ static void gen_special_dispatch(MacroAssembler* masm,
     member_arg_pos = method->size_of_parameters() - 1;  // trailing MemberName argument
     member_reg = rbx;  // known to be free at this point
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
-  } else if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+  } else if (iid == vmIntrinsics::_invokeBasic) {
     has_receiver = true;
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    member_arg_pos = method->size_of_parameters() - 1;  // trailing NativeEntryPoint argument
+    member_reg = rbx;  // known to be free at this point
   } else {
     fatal("unexpected intrinsic id %d", vmIntrinsics::as_int(iid));
   }
@@ -3067,263 +3072,6 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
 }
 
-#ifdef COMPILER2
-static const int native_invoker_code_size = MethodHandles::adapter_code_size;
-
-class NativeInvokerGenerator : public StubCodeGenerator {
-  address _call_target;
-  int _shadow_space_bytes;
-
-  const GrowableArray<VMReg>& _input_registers;
-  const GrowableArray<VMReg>& _output_registers;
-
-  int _frame_complete;
-  int _framesize;
-  OopMapSet* _oop_maps;
-public:
-  NativeInvokerGenerator(CodeBuffer* buffer,
-                         address call_target,
-                         int shadow_space_bytes,
-                         const GrowableArray<VMReg>& input_registers,
-                         const GrowableArray<VMReg>& output_registers)
-   : StubCodeGenerator(buffer, PrintMethodHandleStubs),
-     _call_target(call_target),
-     _shadow_space_bytes(shadow_space_bytes),
-     _input_registers(input_registers),
-     _output_registers(output_registers),
-     _frame_complete(0),
-     _framesize(0),
-     _oop_maps(NULL) {
-    assert(_output_registers.length() <= 1
-           || (_output_registers.length() == 2 && !_output_registers.at(1)->is_valid()), "no multi-reg returns");
-
-  }
-
-  void generate();
-
-  int spill_size_in_bytes() const {
-    if (_output_registers.length() == 0) {
-      return 0;
-    }
-    VMReg reg = _output_registers.at(0);
-    assert(reg->is_reg(), "must be a register");
-    if (reg->is_Register()) {
-      return 8;
-    } else if (reg->is_XMMRegister()) {
-      if (UseAVX >= 3) {
-        return 64;
-      } else if (UseAVX >= 1) {
-        return 32;
-      } else {
-        return 16;
-      }
-    } else {
-      ShouldNotReachHere();
-    }
-    return 0;
-  }
-
-  void spill_out_registers() {
-    if (_output_registers.length() == 0) {
-      return;
-    }
-    VMReg reg = _output_registers.at(0);
-    assert(reg->is_reg(), "must be a register");
-    MacroAssembler* masm = _masm;
-    if (reg->is_Register()) {
-      __ movptr(Address(rsp, 0), reg->as_Register());
-    } else if (reg->is_XMMRegister()) {
-      if (UseAVX >= 3) {
-        __ evmovdqul(Address(rsp, 0), reg->as_XMMRegister(), Assembler::AVX_512bit);
-      } else if (UseAVX >= 1) {
-        __ vmovdqu(Address(rsp, 0), reg->as_XMMRegister());
-      } else {
-        __ movdqu(Address(rsp, 0), reg->as_XMMRegister());
-      }
-    } else {
-      ShouldNotReachHere();
-    }
-  }
-
-  void fill_out_registers() {
-    if (_output_registers.length() == 0) {
-      return;
-    }
-    VMReg reg = _output_registers.at(0);
-    assert(reg->is_reg(), "must be a register");
-    MacroAssembler* masm = _masm;
-    if (reg->is_Register()) {
-      __ movptr(reg->as_Register(), Address(rsp, 0));
-    } else if (reg->is_XMMRegister()) {
-      if (UseAVX >= 3) {
-        __ evmovdqul(reg->as_XMMRegister(), Address(rsp, 0), Assembler::AVX_512bit);
-      } else if (UseAVX >= 1) {
-        __ vmovdqu(reg->as_XMMRegister(), Address(rsp, 0));
-      } else {
-        __ movdqu(reg->as_XMMRegister(), Address(rsp, 0));
-      }
-    } else {
-      ShouldNotReachHere();
-    }
-  }
-
-  int frame_complete() const {
-    return _frame_complete;
-  }
-
-  int framesize() const {
-    return (_framesize >> (LogBytesPerWord - LogBytesPerInt));
-  }
-
-  OopMapSet* oop_maps() const {
-    return _oop_maps;
-  }
-
-private:
-#ifdef ASSERT
-bool target_uses_register(VMReg reg) {
-  return _input_registers.contains(reg) || _output_registers.contains(reg);
-}
-#endif
-};
-
-RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
-                                                int shadow_space_bytes,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers) {
-  int locs_size  = 64;
-  CodeBuffer code("nep_invoker_blob", native_invoker_code_size, locs_size);
-  NativeInvokerGenerator g(&code, call_target, shadow_space_bytes, input_registers, output_registers);
-  g.generate();
-  code.log_section_sizes("nep_invoker_blob");
-
-  RuntimeStub* stub =
-    RuntimeStub::new_runtime_stub("nep_invoker_blob",
-                                  &code,
-                                  g.frame_complete(),
-                                  g.framesize(),
-                                  g.oop_maps(), false);
-  return stub;
-}
-
-void NativeInvokerGenerator::generate() {
-  assert(!(target_uses_register(r15_thread->as_VMReg()) || target_uses_register(rscratch1->as_VMReg())), "Register conflict");
-
-  enum layout {
-    rbp_off,
-    rbp_off2,
-    return_off,
-    return_off2,
-    framesize // inclusive of return address
-  };
-
-  _framesize = align_up(framesize + ((_shadow_space_bytes + spill_size_in_bytes()) >> LogBytesPerInt), 4);
-  assert(is_even(_framesize/2), "sp not 16-byte aligned");
-
-  _oop_maps  = new OopMapSet();
-  MacroAssembler* masm = _masm;
-
-  address start = __ pc();
-
-  __ enter();
-
-  // return address and rbp are already in place
-  __ subptr(rsp, (_framesize-4) << LogBytesPerInt); // prolog
-
-  _frame_complete = __ pc() - start;
-
-  address the_pc = __ pc();
-
-  __ set_last_Java_frame(rsp, rbp, (address)the_pc);
-  OopMap* map = new OopMap(_framesize, 0);
-  _oop_maps->add_gc_map(the_pc - start, map);
-
-  // State transition
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native);
-
-  __ call(RuntimeAddress(_call_target));
-
-  __ restore_cpu_control_state_after_jni();
-
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
-
-  // Force this write out before the read below
-  __ membar(Assembler::Membar_mask_bits(
-          Assembler::LoadLoad | Assembler::LoadStore |
-          Assembler::StoreLoad | Assembler::StoreStore));
-
-  Label L_after_safepoint_poll;
-  Label L_safepoint_poll_slow_path;
-
-  __ safepoint_poll(L_safepoint_poll_slow_path, r15_thread, true /* at_return */, false /* in_nmethod */);
-  __ cmpl(Address(r15_thread, JavaThread::suspend_flags_offset()), 0);
-  __ jcc(Assembler::notEqual, L_safepoint_poll_slow_path);
-
-  __ bind(L_after_safepoint_poll);
-
-  // change thread state
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
-
-  __ block_comment("reguard stack check");
-  Label L_reguard;
-  Label L_after_reguard;
-  __ cmpl(Address(r15_thread, JavaThread::stack_guard_state_offset()), StackOverflow::stack_guard_yellow_reserved_disabled);
-  __ jcc(Assembler::equal, L_reguard);
-  __ bind(L_after_reguard);
-
-  __ reset_last_Java_frame(r15_thread, true);
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ ret(0);
-
-  //////////////////////////////////////////////////////////////////////////////
-
-  __ block_comment("{ L_safepoint_poll_slow_path");
-  __ bind(L_safepoint_poll_slow_path);
-  __ vzeroupper();
-
-  spill_out_registers();
-
-  __ mov(c_rarg0, r15_thread);
-  __ mov(r12, rsp); // remember sp
-  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // align stack as required by ABI
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
-  __ mov(rsp, r12); // restore sp
-  __ reinit_heapbase();
-
-  fill_out_registers();
-
-  __ jmp(L_after_safepoint_poll);
-  __ block_comment("} L_safepoint_poll_slow_path");
-
-  //////////////////////////////////////////////////////////////////////////////
-
-  __ block_comment("{ L_reguard");
-  __ bind(L_reguard);
-  __ vzeroupper();
-
-  spill_out_registers();
-
-  __ mov(r12, rsp); // remember sp
-  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // align stack as required by ABI
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
-  __ mov(rsp, r12); // restore sp
-  __ reinit_heapbase();
-
-  fill_out_registers();
-
-  __ jmp(L_after_reguard);
-
-  __ block_comment("} L_reguard");
-
-  //////////////////////////////////////////////////////////////////////////////
-
-  __ flush();
-}
-#endif // COMPILER2
-
 //------------------------------Montgomery multiplication------------------------
 //
 
@@ -3723,12 +3471,3 @@ void OptoRuntime::generate_exception_blob() {
 }
 #endif // COMPILER2
 
-void SharedRuntime::compute_move_order(const BasicType* in_sig_bt,
-                                       int total_in_args, const VMRegPair* in_regs,
-                                       int total_out_args, VMRegPair* out_regs,
-                                       GrowableArray<int>& arg_order,
-                                       VMRegPair tmp_vmreg) {
-  ComputeMoveOrder order(total_in_args, in_regs,
-                         total_out_args, out_regs,
-                         in_sig_bt, arg_order, tmp_vmreg);
-}

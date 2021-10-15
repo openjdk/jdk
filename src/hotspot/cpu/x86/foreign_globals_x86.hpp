@@ -27,6 +27,8 @@
 #include "asm/macroAssembler.hpp"
 #include "utilities/growableArray.hpp"
 
+class outputStream;
+
 constexpr size_t xmm_reg_size = 16; // size of XMM reg
 
 struct ABIDescriptor {

@@ -51,16 +51,3 @@ void VMRegImpl::set_regName() {
     regName[i] = "NON-GPR-FPR";
   }
 }
-
-#define INTEGER_TYPE 0
-#define VECTOR_TYPE 1
-#define STACK_TYPE 3
-
-VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
-  switch(type) {
-    case INTEGER_TYPE: return ::as_Register(index)->as_VMReg();
-    case VECTOR_TYPE: return ::as_FloatRegister(index)->as_VMReg();
-    case STACK_TYPE: return VMRegImpl::stack2reg(index LP64_ONLY(* 2));
-  }
-  return VMRegImpl::Bad();
-}

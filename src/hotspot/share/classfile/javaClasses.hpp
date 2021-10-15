@@ -1048,6 +1048,7 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static int _need_transition_offset;
   static int _method_type_offset;
   static int _name_offset;
+  static int _invoker_offset;
 
   static void compute_offsets();
 
@@ -1061,6 +1062,7 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static jboolean   need_transition(oop entry);
   static oop        method_type(oop entry);
   static oop        name(oop entry);
+  static jlong      invoker(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1076,6 +1078,7 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static int need_transition_offset_in_bytes() { return _need_transition_offset; }
   static int method_type_offset_in_bytes()     { return _method_type_offset;     }
   static int name_offset_in_bytes()            { return _name_offset;            }
+  static int invoker_offset_in_bytes()         { return _invoker_offset;         }
 };
 
 // Interface to java.lang.invoke.MemberName objects

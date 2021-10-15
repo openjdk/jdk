@@ -30,6 +30,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -296,20 +297,30 @@ address MacroAssembler::target_addr_for_insn_or_null(address insn_addr, unsigned
   return MacroAssembler::target_addr_for_insn(insn_addr, insn);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp) {
   if (acquire) {
-    lea(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
-    ldar(rscratch1, rscratch1);
+    lea(tmp, Address(rthread, JavaThread::polling_word_offset()));
+    ldar(tmp, tmp);
   } else {
-    ldr(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
+    ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   }
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use the sp instead to perform the stack watermark check.
-    cmp(in_nmethod ? sp : rfp, rscratch1);
+    cmp(in_nmethod ? sp : rfp, tmp);
     br(Assembler::HI, slow_path);
   } else {
-    tbnz(rscratch1, log2i_exact(SafepointMechanism::poll_bit()), slow_path);
+    tbnz(tmp, log2i_exact(SafepointMechanism::poll_bit()), slow_path);
+  }
+}
+
+void MacroAssembler::rt_call(address dest, Register tmp) {
+  CodeBlob *cb = CodeCache::find_blob(dest);
+  if (cb) {
+    far_call(RuntimeAddress(dest));
+  } else {
+    lea(tmp, RuntimeAddress(dest));
+    blr(tmp);
   }
 }
 
@@ -5276,13 +5287,13 @@ void MacroAssembler::cache_wbsync(bool is_pre) {
   }
 }
 
-void MacroAssembler::verify_sve_vector_length() {
+void MacroAssembler::verify_sve_vector_length(Register tmp) {
   // Make sure that native code does not change SVE vector length.
   if (!UseSVE) return;
   Label verify_ok;
-  movw(rscratch1, zr);
-  sve_inc(rscratch1, B);
-  subsw(zr, rscratch1, VM_Version::get_initial_sve_vector_length());
+  movw(tmp, zr);
+  sve_inc(tmp, B);
+  subsw(zr, tmp, VM_Version::get_initial_sve_vector_length());
   br(EQ, verify_ok);
   stop("Error: SVE vector length has changed since jvm startup");
   bind(verify_ok);
@@ -5442,3 +5453,183 @@ void MacroAssembler::check_return_address(Register return_reg) {
   }
 }
 #endif
+
+// The java_calling_convention describes stack locations as ideal slots on
+// a frame with no abi restrictions. Since we must observe abi restrictions
+// (like the placement of the register window) the slots must be biased by
+// the following value.
+static int reg2offset_in(VMReg r) {
+  // Account for saved rfp and lr
+  // This should really be in_preserve_stack_slots
+  return (r->reg2stack() + 4) * VMRegImpl::stack_slot_size;
+}
+
+static int reg2offset_out(VMReg r) {
+  return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
+}
+
+// On 64 bit we will store integer like items to the stack as
+// 64 bits items (Aarch64 abi) even though java would only store
+// 32bits for a parameter. On 32bit it will simply be 32 bits
+// So this routine will do 32->32 on 32bit and 32->64 on 64bit
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      ldr(rscratch1, Address(rfp, reg2offset_in(src.first())));
+      str(rscratch1, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      // stack to reg
+      ldrsw(dst.first()->as_Register(), Address(rfp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    // Do we really have to sign extend???
+    // __ movslq(src.first()->as_Register(), src.first()->as_Register());
+    str(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
+  } else {
+    if (dst.first() != src.first()) {
+      sxtw(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+// An oop arg. Must pass a handle not the oop itself
+void MacroAssembler::object_move(
+                        OopMap* map,
+                        int oop_handle_offset,
+                        int framesize_in_slots,
+                        VMRegPair src,
+                        VMRegPair dst,
+                        bool is_receiver,
+                        int* receiver_offset) {
+
+  // must pass a handle. First figure out the location we use as a handle
+
+  Register rHandle = dst.first()->is_stack() ? rscratch2 : dst.first()->as_Register();
+
+  // See if oop is NULL if it is we need no handle
+
+  if (src.first()->is_stack()) {
+
+    // Oop is already on the stack as an argument
+    int offset_in_older_frame = src.first()->reg2stack() + SharedRuntime::out_preserve_stack_slots();
+    map->set_oop(VMRegImpl::stack2reg(offset_in_older_frame + framesize_in_slots));
+    if (is_receiver) {
+      *receiver_offset = (offset_in_older_frame + framesize_in_slots) * VMRegImpl::stack_slot_size;
+    }
+
+    ldr(rscratch1, Address(rfp, reg2offset_in(src.first())));
+    lea(rHandle, Address(rfp, reg2offset_in(src.first())));
+    // conditionally move a NULL
+    cmp(rscratch1, zr);
+    csel(rHandle, zr, rHandle, Assembler::EQ);
+  } else {
+
+    // Oop is in an a register we must store it to the space we reserve
+    // on the stack for oop_handles and pass a handle if oop is non-NULL
+
+    const Register rOop = src.first()->as_Register();
+    int oop_slot;
+    if (rOop == j_rarg0)
+      oop_slot = 0;
+    else if (rOop == j_rarg1)
+      oop_slot = 1;
+    else if (rOop == j_rarg2)
+      oop_slot = 2;
+    else if (rOop == j_rarg3)
+      oop_slot = 3;
+    else if (rOop == j_rarg4)
+      oop_slot = 4;
+    else if (rOop == j_rarg5)
+      oop_slot = 5;
+    else if (rOop == j_rarg6)
+      oop_slot = 6;
+    else {
+      assert(rOop == j_rarg7, "wrong register");
+      oop_slot = 7;
+    }
+
+    oop_slot = oop_slot * VMRegImpl::slots_per_word + oop_handle_offset;
+    int offset = oop_slot*VMRegImpl::stack_slot_size;
+
+    map->set_oop(VMRegImpl::stack2reg(oop_slot));
+    // Store oop in handle area, may be NULL
+    str(rOop, Address(sp, offset));
+    if (is_receiver) {
+      *receiver_offset = offset;
+    }
+
+    cmp(rOop, zr);
+    lea(rHandle, Address(sp, offset));
+    // conditionally move a NULL
+    csel(rHandle, zr, rHandle, Assembler::EQ);
+  }
+
+  // If arg is on the stack then place it otherwise it is already in correct reg.
+  if (dst.first()->is_stack()) {
+    str(rHandle, Address(sp, reg2offset_out(dst.first())));
+  }
+}
+
+// A float arg may have to do float reg int reg conversion
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
+  assert(src.first()->is_stack() && dst.first()->is_stack() ||
+         src.first()->is_reg() && dst.first()->is_reg(), "Unexpected error");
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      ldrw(rscratch1, Address(rfp, reg2offset_in(src.first())));
+      strw(rscratch1, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      ShouldNotReachHere();
+    }
+  } else if (src.first() != dst.first()) {
+    if (src.is_single_phys_reg() && dst.is_single_phys_reg())
+      fmovs(dst.first()->as_FloatRegister(), src.first()->as_FloatRegister());
+    else
+      ShouldNotReachHere();
+  }
+}
+
+// A long move
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      ldr(rscratch1, Address(rfp, reg2offset_in(src.first())));
+      str(rscratch1, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      // stack to reg
+      ldr(dst.first()->as_Register(), Address(rfp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    // Do we really have to sign extend???
+    // __ movslq(src.first()->as_Register(), src.first()->as_Register());
+    str(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
+  } else {
+    if (dst.first() != src.first()) {
+      mov(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+
+// A double move
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
+  assert(src.first()->is_stack() && dst.first()->is_stack() ||
+         src.first()->is_reg() && dst.first()->is_reg(), "Unexpected error");
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      ldr(rscratch1, Address(rfp, reg2offset_in(src.first())));
+      str(rscratch1, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      ShouldNotReachHere();
+    }
+  } else if (src.first() != dst.first()) {
+    if (src.is_single_phys_reg() && dst.is_single_phys_reg())
+      fmovd(dst.first()->as_FloatRegister(), src.first()->as_FloatRegister());
+    else
+      ShouldNotReachHere();
+  }
+}

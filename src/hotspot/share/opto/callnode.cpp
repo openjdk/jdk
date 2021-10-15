@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
+#include "ci/ciNativeEntryPoint.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -1083,8 +1084,10 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         set_generator(NULL);
       }
     } else if (iid == vmIntrinsics::_linkToNative) {
-      if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP /* NEP */
-          && in(TypeFunc::Parms + 1)->Opcode() == Op_ConL /* address */) {
+      Node* nep_node = in(TypeFunc::Parms + callee->arg_size() - 1);
+      if (nep_node->Opcode() == Op_ConP /* NEP */
+          && in(TypeFunc::Parms + 0)->Opcode() == Op_ConL /* address */
+          && !nep_node->bottom_type()->is_oopptr()->const_oop()->as_native_entry_point()->need_transition()) {
         phase->C->prepend_late_inline(cg);
         set_generator(NULL);
       }
