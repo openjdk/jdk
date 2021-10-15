@@ -2194,11 +2194,29 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
         jthread resumer = node->thread;
         jthread resumee = getResumee(resumer);
 
+        /*
+         * The current thread "resumer" is about to call j.l.Thread.resume() for
+         * "resumee". The call has been intercepted by means of an internal
+         * breakpoint in Thread.resume() because the resume has to be
+         * synchronized with suspend/resumes performed by the debugger: in
+         * blockOnDebuggerSuspend() "resumer" checks suspendCount under
+         * threadLock and waits on it if necessary to become 0. It returns from
+         * blockOnDebuggerSuspend() still holding threadLock in order to prevent
+         * the debugger from suspending resumee again. trackAppResume() installs
+         * tracking of the Thread.resume() call and only after this threadLock
+         * can be released. Subsequent suspend requests by the debugger block
+         * as long as any Thread.resume() call is active (see pendingAppResume()).
+         */
         node->pendingAppResumeBreakpoint = JNI_FALSE;
 
-        /* trackAppResume() needs handlerLock */
+        /*
+         * As explained above the current thread acquires threadLock to
+         * synchronize with the debugger (see above). In addition handlerLock is
+         * required by trackAppResume(). For proper lock ordering we have to
+         * acquire it already here before threadLock.
+         */
         debugMonitorExit(threadLock);
-        eventHandler_lock(); /* for proper lock order */
+        eventHandler_lock();
         debugMonitorEnter(threadLock);
         if (resumee != NULL) {
             /*
@@ -2207,6 +2225,12 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
              */
             blockOnDebuggerSuspend(resumee);
         }
+
+        /*
+         * Reaching here we know that resumee is not suspended by the
+         * debugger. We still hold threadLock and we only release it after
+         * trackAppResume() has installed the tracking
+         */
 
         if (resumer != NULL) {
             /*
