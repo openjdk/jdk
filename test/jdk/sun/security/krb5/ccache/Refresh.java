@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8028780
- * @summary JDK KRB5 module throws OutOfMemoryError when CCache is corrupt
+ * @bug 8049520
+ * @summary FileCredentialsCache loads cache once and is never refreshed
  * @modules java.security.jgss/sun.security.krb5
  *          java.security.jgss/sun.security.krb5.internal.ccache:+open
  * @library /test/lib
