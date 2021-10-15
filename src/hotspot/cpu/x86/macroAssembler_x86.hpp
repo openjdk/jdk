@@ -1305,6 +1305,7 @@ public:
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
                int comparison, bool is_signed, int vector_len, Register scratch_reg);
 
+  void evpbroadcast(BasicType type, XMMRegister dst, Register src, int vector_len);
 
   // Emit comparison instruction for the specified comparison predicate.
   void vpcmpCCW(XMMRegister dst, XMMRegister nds, XMMRegister src, ComparisonPredicate cond, Width width, int vector_len, Register scratch_reg);
@@ -1885,6 +1886,11 @@ public:
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+
+  void generate_fill_avx3(BasicType type, bool aligned,
+                          Register to, Register value, Register count,
+                          Register rtmp, XMMRegister xtmp);
+
 #endif // COMPILER2_OR_JVMCI
 
 #endif // _LP64
