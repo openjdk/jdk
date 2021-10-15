@@ -40,17 +40,17 @@ public final class RecordingContextEntry {
         this.value = value;
     }
 
-    public RecordingContextKey getKey() {
+    public RecordingContextKey key() {
         return key;
     }
 
-    public String getValue() {
+    public String value() {
         return value;
     }
 
     @Override
     public int hashCode() {
-        return key.hashCode();
+        return Objects.hash(key);
     }
 
     @Override
@@ -58,6 +58,6 @@ public final class RecordingContextEntry {
         if (this == o) return true;
         if (o == null) return false;
         if (!(o instanceof RecordingContextEntry that)) return false;
-        return that.key.equals(this.key);
+        return Objects.equals(that.key, this.key);
     }
 }

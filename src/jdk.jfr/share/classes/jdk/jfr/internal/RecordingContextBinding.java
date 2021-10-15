@@ -72,7 +72,7 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
     protected abstract boolean isInheritable();
 
     public boolean containsKey(RecordingContextKey key) {
-        return nativeWrapper.containsKey(Objects.requireNonNull(key).getName());
+        return nativeWrapper.containsKey(Objects.requireNonNull(key).name());
     }
 
     protected static void set(RecordingContextBinding context, boolean isInheritable) {
@@ -111,8 +111,8 @@ public abstract sealed class RecordingContextBinding implements AutoCloseable
             String[] entriesAsStrings = new String[entries.size() * 2];
             int i = 0;
             for (RecordingContextEntry entry : entries) {
-                entriesAsStrings[i * 2 + 0] = entry.getKey().getName();
-                entriesAsStrings[i * 2 + 1] = entry.getValue();
+                entriesAsStrings[i * 2 + 0] = entry.key().name();
+                entriesAsStrings[i * 2 + 1] = entry.value();
                 i += 1;
             }
 

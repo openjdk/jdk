@@ -89,7 +89,7 @@ public class TestFullContext {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 1);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.getName(), "Key1Value1"));
+                    contextKey1.name(), "Key1Value1"));
                 return true;
             }
         );
@@ -105,8 +105,8 @@ public class TestFullContext {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 1);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.getName(), "Key1Value2",
-                    contextKey2.getName(), "Key2Value2"));
+                    contextKey1.name(), "Key1Value2",
+                    contextKey2.name(), "Key2Value2"));
                 return true;
             }
         );
@@ -122,7 +122,7 @@ public class TestFullContext {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 1);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.getName(), "Key1Value3/2"));
+                    contextKey1.name(), "Key1Value3/2"));
                 return true;
             }
         );
@@ -140,8 +140,8 @@ public class TestFullContext {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 1);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.getName(), "Key1Value4",
-                    contextKey2.getName(), "Key2Value4"));
+                    contextKey1.name(), "Key1Value4",
+                    contextKey2.name(), "Key2Value4"));
                 return true;
             }
         );
@@ -159,7 +159,7 @@ public class TestFullContext {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 1);
                 // assertContext(events.get(0), Map.of(
-                //     contextKey1.getName(), "Key1Value5/2"));
+                //     contextKey1.name(), "Key1Value5/2"));
                 return true;
             }
         );

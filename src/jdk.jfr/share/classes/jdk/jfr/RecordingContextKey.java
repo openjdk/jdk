@@ -56,7 +56,7 @@ public final class RecordingContextKey {
             NonInheritableRecordingContextBinding.current().containsKey(this);
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -66,7 +66,7 @@ public final class RecordingContextKey {
 
     @Override
     public int hashCode() {
-        return name.hashCode();
+        return Objects.hash(name);
     }
 
     @Override
@@ -74,6 +74,6 @@ public final class RecordingContextKey {
         if (this == o) return true;
         if (o == null) return false;
         if (!(o instanceof RecordingContextKey that)) return false;
-        return that.name.equals(this.name);
+        return Objects.equals(this.name, that.name);
     }
 }
