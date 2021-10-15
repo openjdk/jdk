@@ -42,7 +42,7 @@ public:
     _oop.set_mark(m);
   }
 
-  static markWord originalMark() { return markWord(markWord::lock_mask_in_place); }
+  static markWord originalMark() { return markWord(markWord::unlocked_value); }
   static markWord changedMark()  { return markWord(0x4711); }
 };
 
