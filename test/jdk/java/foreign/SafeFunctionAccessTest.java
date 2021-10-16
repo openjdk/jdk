@@ -94,7 +94,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
                 }
             }
             try {
-                handle.invoke(segments[0], segments[1], segments[2], segments[3], segments[4], segments[5]);
+                handle.invokeWithArguments(segments);
                 fail();
             } catch (IllegalStateException ex) {
                 assertTrue(ex.getMessage().contains("Already closed"));
