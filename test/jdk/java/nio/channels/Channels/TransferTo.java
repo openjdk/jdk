@@ -161,6 +161,9 @@ public class TransferTo {
         }
     }
 
+    /*
+     * Creates an array of random size (between min and min + maxRandomAdditive) filled with random bytes
+     */
     private static byte[] createRandomBytes(int min, int maxRandomAdditive) {
         byte[] bytes = new byte[min + (maxRandomAdditive == 0 ? 0 : RND.nextInt(maxRandomAdditive))];
         RND.nextBytes(bytes);
@@ -175,6 +178,9 @@ public class TransferTo {
         OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception;
     }
 
+    /*
+     * Creates a provider for an output stream which does not wrap a channel
+     */
     private static OutputStreamProvider defaultOutput() {
         return new OutputStreamProvider() {
             @Override
@@ -186,6 +192,9 @@ public class TransferTo {
         };
     }
 
+    /*
+     * Creates a provider for an input stream which wraps a file channel
+     */
     private static InputStreamProvider fileChannelInput() {
         return new InputStreamProvider() {
             @Override
@@ -198,6 +207,9 @@ public class TransferTo {
         };
     }
 
+    /*
+     * Creates a provider for an input stream which wraps a readable byte channel but is not a file channel
+     */
     private static InputStreamProvider readableByteChannelInput() {
         return new InputStreamProvider() {
             @Override
@@ -207,6 +219,9 @@ public class TransferTo {
         };
     }
 
+    /*
+     * Creates a provider for an output stream which wraps a file channel
+     */
     private static OutputStreamProvider fileChannelOutput() {
         return new OutputStreamProvider() {
             public OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception {
