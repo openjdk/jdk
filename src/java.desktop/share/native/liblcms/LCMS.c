@@ -116,6 +116,26 @@ void LCMS_freeTransform(JNIEnv *env, jlong ID)
 }
 
 /*
+ * Throw an IllegalArgumentException and init the cause.
+ */
+static void ThrowIllegalArgumentException(JNIEnv *env, const char *msg) {
+    jthrowable cause = (*env)->ExceptionOccurred(env);
+    if (cause) {
+        (*env)->ExceptionClear(env);
+    }
+    jstring str = JNU_NewStringPlatform(env, msg);
+    if (str != NULL) {
+        jobject x = JNU_NewObjectByName(env,
+                                "java/lang/IllegalArgumentException",
+                                "(Ljava/lang/String;Ljava/lang/Throwable;)V",
+                                str, cause);
+        if (x != NULL) {
+            (*env)->Throw(env, x);
+        }
+    }
+}
+
+/*
  * Class:     sun_java2d_cmm_lcms_LCMS
  * Method:    createNativeTransform
  * Signature: ([JIIZIZLjava/lang/Object;)J
@@ -216,7 +236,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
     cmsHPROFILE pf;
 
     if (JNU_IsNull(env, data)) {
-        JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
+        ThrowIllegalArgumentException(env, "Invalid profile data");
         return 0L;
     }
 
@@ -234,9 +254,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
     (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
     if (pf == NULL) {
-        if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
-            JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
-        }
+        ThrowIllegalArgumentException(env, "Invalid profile data");
     } else {
         /* Sanity check: try to save the profile in order
          * to force basic validation.
@@ -245,9 +263,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
         if (!cmsSaveProfileToMem(pf, NULL, &pfSize) ||
             pfSize < sizeof(cmsICCHeader))
         {
-            if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
-                JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
-            }
+            ThrowIllegalArgumentException(env, "Invalid profile data");
             cmsCloseProfile(pf);
             pf = NULL;
         }
@@ -430,7 +446,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     sig.j = tagSig;
 
     if (JNU_IsNull(env, data)) {
-        JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
+        ThrowIllegalArgumentException(env, "Can not write tag data.");
         return;
     }
 
@@ -458,9 +474,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     (*env)->ReleaseByteArrayElements(env, data, dataArray, 0);
 
     if (!status) {
-        if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
-            JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
-        }
+        ThrowIllegalArgumentException(env, "Can not write tag data.");
     } else if (pfReplace != NULL) {
         cmsCloseProfile(sProf->pf);
         sProf->pf = pfReplace;
