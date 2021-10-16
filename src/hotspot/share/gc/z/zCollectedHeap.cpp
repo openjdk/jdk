@@ -266,7 +266,7 @@ void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }
 
-WorkGang* ZCollectedHeap::safepoint_workers() {
+WorkerThreads* ZCollectedHeap::safepoint_workers() {
   return _runtime_workers.workers();
 }
 

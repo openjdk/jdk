@@ -378,6 +378,12 @@ static jobject sAccessibilityClass = NULL;
     NSAccessibilityPostNotification([[self accessibilitySelectedRows] firstObject], NSAccessibilityRowCollapsedNotification);
 }
 
+- (void)postSelectedCellsChanged
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    NSAccessibilityPostNotification(self, NSAccessibilitySelectedCellsChangedNotification);
+}
+
 - (BOOL)isEqual:(id)anObject
 {
     if (![anObject isKindOfClass:[self class]]) return NO;
@@ -1226,6 +1232,22 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_treeNodeCollapsed
 {
     JNI_COCOA_ENTER(env);
         [ThreadUtilities performOnMainThread:@selector(postTreeNodeCollapsed)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    selectedCellsChanged
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectedCellsChanged
+  (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postSelectedCellsChanged)
                          on:(CommonComponentAccessibility *)jlong_to_ptr(element)
                          withObject:nil
                          waitUntilDone:NO];

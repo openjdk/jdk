@@ -34,7 +34,8 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/verifyOption.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/numberSeq.hpp"
@@ -325,8 +326,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // ensure, that no task starts doing work before all data
   // structures (local and global) have been re-initialized. When they
   // exit it, they are free to start working again.
-  WorkGangBarrierSync     _first_overflow_barrier_sync;
-  WorkGangBarrierSync     _second_overflow_barrier_sync;
+  WorkerThreadsBarrierSync     _first_overflow_barrier_sync;
+  WorkerThreadsBarrierSync     _second_overflow_barrier_sync;
 
   // This is set by any task, when an overflow on the global data
   // structures is detected
@@ -354,7 +355,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
-  WorkGang* _concurrent_workers;
+  WorkerThreads* _concurrent_workers;
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
@@ -440,9 +441,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
 
-  // Clear the next marking bitmap in parallel using the given WorkGang. If may_yield is
+  // Clear the next marking bitmap in parallel using the given WorkerThreads. If may_yield is
   // true, periodically insert checks to see if this method should exit prematurely.
-  void clear_next_bitmap(WorkGang* workers, bool may_yield);
+  void clear_next_bitmap(WorkerThreads* workers, bool may_yield);
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
@@ -534,7 +535,7 @@ public:
   void cleanup_for_next_mark();
 
   // Clear the next marking bitmap during safepoint.
-  void clear_next_bitmap(WorkGang* workers);
+  void clear_next_bitmap(WorkerThreads* workers);
 
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
