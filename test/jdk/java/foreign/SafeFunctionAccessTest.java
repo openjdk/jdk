@@ -70,6 +70,43 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
         handle.invokeExact(segment);
     }
 
+    @Test
+    public void testClosedStructAddr_6() throws Throwable {
+        MethodHandle handle = CLinker.systemCLinker().downcallHandle(
+                LOOKUP.lookup("addr_func_6").get(),
+                FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER));
+        for (int i = 0 ; i < 6 ; i++) {
+            MemorySegment[] segments = new MemorySegment[]{
+                    MemorySegment.allocateNative(POINT, ResourceScope.newImplicitScope()),
+                    MemorySegment.allocateNative(POINT, ResourceScope.newImplicitScope()),
+                    MemorySegment.allocateNative(POINT, ResourceScope.newImplicitScope()),
+                    MemorySegment.allocateNative(POINT, ResourceScope.newImplicitScope()),
+                    MemorySegment.allocateNative(POINT, ResourceScope.newImplicitScope()),
+                    MemorySegment.allocateNative(POINT, ResourceScope.newImplicitScope())
+            };
+            // check liveness
+            segments[i].scope().close();
+            for (int j = 0 ; j < 6 ; j++) {
+                if (i == j) {
+                    assertFalse(segments[j].scope().isAlive());
+                } else {
+                    assertTrue(segments[j].scope().isAlive());
+                }
+            }
+            try {
+                handle.invoke(segments[0], segments[1], segments[2], segments[3], segments[4], segments[5]);
+                fail();
+            } catch (IllegalStateException ex) {
+                assertTrue(ex.getMessage().contains("Already closed"));
+            }
+            for (int j = 0 ; j < 6 ; j++) {
+                if (i != j) {
+                    segments[j].scope().close(); // should succeed!
+                }
+            }
+        }
+    }
+
     @Test(expectedExceptions = IllegalStateException.class)
     public void testClosedVaList() throws Throwable {
         VaList list;
