@@ -120,7 +120,7 @@ void LCMS_freeTransform(JNIEnv *env, jlong ID)
  */
 static void ThrowIllegalArgumentException(JNIEnv *env, const char *msg) {
     jthrowable cause = (*env)->ExceptionOccurred(env);
-    if (cause) {
+    if (cause != NULL) {
         (*env)->ExceptionClear(env);
     }
     jstring str = JNU_NewStringPlatform(env, msg);
