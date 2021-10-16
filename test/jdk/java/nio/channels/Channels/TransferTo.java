@@ -66,6 +66,9 @@ public class TransferTo {
 
     private static final Random RND = RandomFactory.getRandom();
 
+    /*
+     * Provides test scenarios, i. e. combinations of input and output streams to be tested.
+     */
     @DataProvider
     public static Object[][] streamCombinations() throws Exception {
         return new Object[][] {
