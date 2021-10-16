@@ -26,7 +26,6 @@
 #define SHARE_JFR_UTILITIES_JFREPOCHQUEUE_INLINE_HPP
 
 #include "jfr/utilities/jfrEpochQueue.hpp"
-
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -48,11 +47,27 @@ bool JfrEpochQueue<ElementPolicy>::initialize(size_t min_buffer_size, size_t fre
 
 template <template <typename> class ElementPolicy>
 inline typename JfrEpochQueue<ElementPolicy>::BufferPtr
+JfrEpochQueue<ElementPolicy>::renew_enqueue_buffer(Thread* thread) {
+  assert(thread != nullptr, "invariant");
+  BufferPtr buffer = _policy.thread_local_storage(thread);
+  if (buffer == nullptr) {
+    buffer = _storage->acquire(0, thread);
+    _policy.set_thread_local_storage(buffer, thread);
+    return buffer;
+  }
+  _storage->release(buffer);
+  buffer = _storage->acquire(0, thread);
+  _policy.set_thread_local_storage(buffer, thread);
+  return buffer;
+}
+
+template <template <typename> class ElementPolicy>
+inline typename JfrEpochQueue<ElementPolicy>::BufferPtr
 JfrEpochQueue<ElementPolicy>::storage_for_element(JfrEpochQueue<ElementPolicy>::TypePtr t, size_t element_size) {
   assert(_policy.element_size(t) == element_size, "invariant");
   Thread* const thread = Thread::current();
   BufferPtr buffer = _policy.thread_local_storage(thread);
-  if (buffer == NULL) {
+  if (buffer == nullptr) {
     buffer = _storage->acquire(element_size, thread);
     _policy.set_thread_local_storage(buffer, thread);
   } else if (buffer->free_size() < element_size) {
@@ -67,10 +82,10 @@ JfrEpochQueue<ElementPolicy>::storage_for_element(JfrEpochQueue<ElementPolicy>::
 
 template <template <typename> class ElementPolicy>
 void JfrEpochQueue<ElementPolicy>::enqueue(JfrEpochQueue<ElementPolicy>::TypePtr t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   size_t element_size = _policy.element_size(t);
   BufferPtr buffer = storage_for_element(t, element_size);
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   _policy.store_element(t, buffer);
   buffer->set_pos(element_size);
 }
@@ -83,7 +98,7 @@ JfrEpochQueue<ElementPolicy>::ElementDispatch<Callback>::ElementDispatch(Callbac
 template <template <typename> class ElementPolicy>
 template <typename Callback>
 size_t JfrEpochQueue<ElementPolicy>::ElementDispatch<Callback>::operator()(const u1* element, bool previous_epoch) {
-  assert(element != NULL, "invariant");
+  assert(element != nullptr, "invariant");
   return _policy(element, _callback, previous_epoch);
 }
 

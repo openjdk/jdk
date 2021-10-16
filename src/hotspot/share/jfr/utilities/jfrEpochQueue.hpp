@@ -27,6 +27,8 @@
 
 #include "jfr/recorder/storage/jfrEpochStorage.hpp"
 
+class Thread;
+
 /*
  * An ElmentPolicy template template argument provides the implementation for how elements
  * associated with the queue is encoded and managed by exposing the following members:
@@ -43,7 +45,7 @@
  *  size_t operator()(const u1* next_element, Callback& callback, bool previous_epoch = false);
  */
 template <template <typename> class ElementPolicy>
-class JfrEpochQueue : public JfrCHeapObj {
+class JfrEpochQueue : public ElementPolicy<typename JfrEpochStorage::Buffer> {
  public:
   typedef JfrEpochStorage::Buffer Buffer;
   typedef JfrEpochStorage::BufferPtr BufferPtr;
@@ -53,6 +55,7 @@ class JfrEpochQueue : public JfrCHeapObj {
   ~JfrEpochQueue();
   bool initialize(size_t min_buffer_size, size_t free_list_cache_count_limit, size_t cache_prealloc_count);
   void enqueue(TypePtr t);
+  BufferPtr renew_enqueue_buffer(Thread* thread);
   template <typename Callback>
   void iterate(Callback& callback, bool previous_epoch = false);
  private:
