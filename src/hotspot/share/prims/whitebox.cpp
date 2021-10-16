@@ -2074,6 +2074,8 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
   if (thread_oop != NULL) {
     ThreadsListHandle tlh;
     JavaThread* target = java_lang_Thread::thread(thread_oop);
+    // Sometimes 'target' is NULL and this test code expects
+    // Handshake::execute(HandshakeClosure,...) to handle it.
     Handshake::execute(&rmc, &tlh, target);
   }
   return rmc.executed();
@@ -2107,6 +2109,8 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     if (thread_oop != NULL) {
       ThreadsListHandle tlh;
       JavaThread* target = java_lang_Thread::thread(thread_oop);
+      // Sometimes 'target' is NULL and this test code expects
+      // Handshake::execute(HandshakeClosure,...) to handle it.
       Handshake::execute(&tsc, &tlh, target);
     }
   }
