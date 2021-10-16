@@ -125,12 +125,12 @@ static void ThrowIllegalArgumentException(JNIEnv *env, const char *msg) {
     }
     jstring str = JNU_NewStringPlatform(env, msg);
     if (str != NULL) {
-        jobject x = JNU_NewObjectByName(env,
+        jobject iae = JNU_NewObjectByName(env,
                                 "java/lang/IllegalArgumentException",
                                 "(Ljava/lang/String;Ljava/lang/Throwable;)V",
                                 str, cause);
-        if (x != NULL) {
-            (*env)->Throw(env, x);
+        if (iae != NULL) {
+            (*env)->Throw(env, iae);
         }
     }
 }
