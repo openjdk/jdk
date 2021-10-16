@@ -795,8 +795,6 @@ private:
 
   void wait_for_root_region_scanning();
 
-  void finalize_concurrent_bot_update();
-
   // Perform an incremental collection at a safepoint, possibly
   // followed by a by-policy upgrade to a full collection.  Returns
   // false if unable to do the collection due to the GC locker being

@@ -182,10 +182,6 @@ public:
 
   void update();
 
-  // Check whether the entry for addr points to a block that cannot covers addr.
-  // (If addr is at a card boundary, this indicates the entry needs to be udpated.)
-  // Return such block (or NULL otherwise).
-  HeapWord* need_update(HeapWord* addr) const;
   void update(HeapWord* addr);
 
   void verify() const;

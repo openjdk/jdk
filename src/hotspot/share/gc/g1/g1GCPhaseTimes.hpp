@@ -174,7 +174,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_ref_proc_time_ms;
 
   double _cur_collection_start_sec;
-  double _concurrent_bot_update_finalize_time_ms;
   double _root_region_scan_wait_time_ms;
 
   double _external_accounted_time_ms;
@@ -308,10 +307,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_ref_proc_time_ms = ms;
   }
 
-  void record_concurrent_bot_update_finalize_time(double time_ms) {
-    _concurrent_bot_update_finalize_time_ms = time_ms;
-  }
-
   void record_root_region_scan_wait_time(double time_ms) {
     _root_region_scan_wait_time_ms = time_ms;
   }
@@ -394,10 +389,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double cur_expand_heap_time_ms() {
     return _cur_expand_heap_time_ms;
-  }
-
-  double concurrent_bot_update_finalize_time_ms() {
-    return _concurrent_bot_update_finalize_time_ms;
   }
 
   double root_region_scan_wait_time_ms() {

@@ -170,7 +170,6 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->finalize_concurrent_bot_update();
   _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
 

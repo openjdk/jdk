@@ -114,7 +114,6 @@ Mutex*   FreeList_lock                = NULL;
 Mutex*   OldSets_lock                 = NULL;
 Mutex*   Uncommit_lock                = NULL;
 Monitor* RootRegionScan_lock          = NULL;
-Monitor* ConcurrentBOTUpdate_lock     = NULL;
 
 Mutex*   Management_lock              = NULL;
 Monitor* MonitorDeflation_lock        = NULL;
@@ -225,7 +224,6 @@ void mutex_init() {
     def(OldSets_lock               , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(Uncommit_lock              , PaddedMutex  , leaf + 1 ,   true,  _safepoint_check_never);
     def(RootRegionScan_lock        , PaddedMonitor, leaf     ,   true,  _safepoint_check_never);
-    def(ConcurrentBOTUpdate_lock   , PaddedMonitor, leaf     ,   true,  _safepoint_check_never);
 
     def(MarkStackFreeList_lock     , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(MarkStackChunkList_lock    , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);

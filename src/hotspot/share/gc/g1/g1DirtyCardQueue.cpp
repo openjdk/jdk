@@ -27,6 +27,7 @@
 #include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentBOTUpdate.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"

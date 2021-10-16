@@ -1662,13 +1662,6 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
   HeapWord* start = _ct->addr_for(card_ptr);
   // And find the region containing it.
   HeapRegion* r = _g1h->heap_region_containing(start);
-  if (G1UseConcurrentBOTUpdate) {
-    G1ConcurrentBOTUpdate* concurrent_bot_update = _g1h->concurrent_bot_update();
-    if (concurrent_bot_update->in_progress() && r->is_old()) {
-      // Update BOT if this card points into a plab, which causes the BOT to be inaccurate.
-      concurrent_bot_update->update_bot_before_refine(r, start);
-    }
-  }
   // This reload of the top is safe even though it happens after the full
   // fence, because top is stable for old, archive and unfiltered humongous
   // regions, so it must return the same value as the previous load when
