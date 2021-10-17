@@ -113,7 +113,7 @@ final class DESKey implements SecretKey {
         for (int i = 1; i < this.key.length; i++) {
             retval += this.key[i] * i;
         }
-        return(retval ^= "des".hashCode());
+        return(retval ^ "des".hashCode());
     }
 
     public boolean equals(Object obj) {

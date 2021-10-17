@@ -112,7 +112,7 @@ final class DESedeKey implements SecretKey {
         for (int i = 1; i < this.key.length; i++) {
             retval += this.key[i] * i;
         }
-        return(retval ^= "desede".hashCode());
+        return(retval ^ "desede".hashCode());
     }
 
     public boolean equals(Object obj) {
