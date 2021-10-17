@@ -322,7 +322,7 @@ public interface Processor {
     void init(ProcessingEnvironment processingEnv);
 
     /**
-     * Processes a set of annotation interfaces on type elements
+     * Processes a set of annotation interfaces on {@linkplain RoundEnvironment#getRootElements() root elements}
      * originating from the prior round and returns whether or not
      * these annotation interfaces are claimed by this processor.  If {@code
      * true} is returned, the annotation interfaces are claimed and subsequent
