@@ -127,6 +127,34 @@ public class TransferTo {
     }
 
     /*
+     * Special test for file-to-file transfer of more than two GB.
+     * This test covers multiple iterations of FileChannel.transerTo(FileChannel),
+     * which ChannelInputStream.transferTo() only applies in this particular case,
+     * and cannot get tested using a single byte[] due to size limitation of arrays.
+     */
+    @Test
+    public void testMoreThanTwoGB() throws IOException {
+        // preparing two temporary files which will be compared at the end of the test
+        Path sourceFile = Files.createTempFile(null, null);
+        Path targetFile = Files.createTempFile(null, null);
+
+        // writing 3 GB of random bytes into source file
+        for (int i = 0; i < 3 * 1024; i++)
+            Files.write(sourceFile, createRandomBytes(1024 * 1024, 0), StandardOpenOption.APPEND);
+
+        // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
+        InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
+        OutputStream outputStream = Channels.newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE));
+        long count = inputStream.transferTo(outputStream);
+
+        // comparing reported transferred bytes, must be 3 GB
+        assertEquals(count, 3L * 1024 * 1024 * 1024);
+
+        // comparing content of both files, failing in case of any difference
+        assertEquals(Files.mismatch(sourceFile, targetFile), -1);
+    }
+
+    /*
      * Asserts that the transferred content is correct, i. e. compares the actually transferred bytes
      * to the expected assumption. The position of the input and output stream before the transfer is
      * the start of stream (BOF).
