@@ -2188,7 +2188,7 @@ bool LibraryCallKit::inline_number_compareUnsigned(BasicType bt) {
 
   Node* case_gt = _gvn.transform(new IfFalseNode(if_eq));
   val->init_req(3, intcon(1));
-  reg->init_req(3, case_ge);
+  reg->init_req(3, case_gt);
 
   set_result(reg, val);
 
