@@ -81,10 +81,10 @@ public class TestDialogTypeAhead {
     public void init()
     {
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
-            public void eventDispatched(AWTEvent e) {
-                System.err.println(e.toString());
-            }
-        }, AWTEvent.KEY_EVENT_MASK);
+                public void eventDispatched(AWTEvent e) {
+                    System.err.println(e.toString());
+                }
+            }, AWTEvent.KEY_EVENT_MASK);
 
         KeyboardFocusManager.setCurrentKeyboardFocusManager(new TestKFM());
 
@@ -96,37 +96,37 @@ public class TestDialogTypeAhead {
         d.pack();
 
         ok.addKeyListener(new KeyAdapter() {
-            public void keyPressed(KeyEvent e) {
-                System.err.println("OK pressed");
-                // Typed-ahead key events should only be accepted if
-                // they arrive after FOCUS_GAINED
-                if (gotFocus) {
-                    pressSema.release();
-                }
+                public void keyPressed(KeyEvent e) {
+                    System.err.println("OK pressed");
+                    // Typed-ahead key events should only be accepted if
+                    // they arrive after FOCUS_GAINED
+                    if (gotFocus) {
+                        pressSema.release();
+                    }
 
-            }
-        });
+                }
+            });
         ok.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) {
-                gotFocus = true;
-                System.err.println("Ok got focus");
-            }
-        });
+                public void focusGained(FocusEvent e) {
+                    gotFocus = true;
+                    System.err.println("Ok got focus");
+                }
+            });
         f.add(b);
         f.pack();
         b.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                System.err.println("B pressed");
-                d.setVisible(true);
-                EventQueue.invokeLater(new Runnable() {
-                    public void run() {
-                        waitTillShown(d);
-                        TestDialogTypeAhead.this.d.toFront();
-                        TestDialogTypeAhead.this.moveMouseOver(d);
-                    }
-                });
-            }
-        });
+                public void actionPerformed(ActionEvent e) {
+                    System.err.println("B pressed");
+                    d.setVisible(true);
+                    EventQueue.invokeLater(new Runnable() {
+                            public void run() {
+                                waitTillShown(d);
+                                TestDialogTypeAhead.this.d.toFront();
+                                TestDialogTypeAhead.this.moveMouseOver(d);
+                            }
+                        });
+                }
+            });
 
     }//End  init()
 
@@ -202,10 +202,10 @@ public class TestDialogTypeAhead {
         }
         final Semaphore sema = new Semaphore(0);
         final FocusAdapter fa = new FocusAdapter() {
-            public void focusGained(FocusEvent fe) {
-                sema.release();
-            }
-        };
+                public void focusGained(FocusEvent fe) {
+                    sema.release();
+                }
+            };
         comp.addFocusListener(fa);
         comp.requestFocusInWindow();
         if (comp.isFocusOwner()) {
