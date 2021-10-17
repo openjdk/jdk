@@ -33,7 +33,6 @@
 import java.awt.AWTEvent;
 import java.awt.Button;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.DefaultKeyboardFocusManager;
 import java.awt.Dialog;
 import java.awt.Dimension;
@@ -70,14 +69,13 @@ public class TestDialogTypeAhead {
             app.init();
             app.start();
         } finally {
-            if (f != null) {
-                f.dispose();
-            }
             if (d != null) {
                 d.dispose();
             }
+            if (f != null) {
+                f.dispose();
+            }
         }
-        System.err.println("Done with test in main");
     }
 
     public void init()
@@ -103,8 +101,6 @@ public class TestDialogTypeAhead {
                 // Typed-ahead key events should only be accepted if
                 // they arrive after FOCUS_GAINED
                 if (gotFocus) {
-                    System.err.println("pressSema raised");
-                    //pressSema.raise();
                     pressSema.release();
                 }
 
@@ -122,7 +118,7 @@ public class TestDialogTypeAhead {
             public void actionPerformed(ActionEvent e) {
                 System.err.println("B pressed");
                 d.setVisible(true);
-                EventQueue.invokeLater (new Runnable() {
+                EventQueue.invokeLater(new Runnable() {
                     public void run() {
                         waitTillShown(d);
                         TestDialogTypeAhead.this.d.toFront();
@@ -156,9 +152,8 @@ public class TestDialogTypeAhead {
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
         robot.waitForIdle();
-        boolean acquired = false;
+        boolean acquired;
         try {
-            //robotSema.doWait(1000);
             acquired = robotSema.tryAcquire(1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ie) {
             throw new RuntimeException("Interrupted!");
@@ -171,22 +166,14 @@ public class TestDialogTypeAhead {
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
         robot.waitForIdle();
-        System.err.println("After typing ahead");
-        acquired=false;
         try {
-            System.err.println("Before pressSema pressed");
             acquired = pressSema.tryAcquire(3000, TimeUnit.MILLISECONDS);
-            System.err.println("pressSema pressed");
         } catch (InterruptedException ie) {
             throw new RuntimeException("Interrupted!");
         }
         if (!acquired) {
             throw new RuntimeException("Type-ahead doesn't work");
         }
-
-        System.err.println("Done with the test");
-        robotSema=null;
-        pressSema=null;
     }// start()
 
     private void moveMouseOver(Component c) {
@@ -250,4 +237,3 @@ public class TestDialogTypeAhead {
         }
     }
 }// class TestDialogTypeAhead
-
