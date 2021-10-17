@@ -525,6 +525,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_reverseBytes_s:
   case vmIntrinsics::_reverseBytes_c:           return inline_number_methods(intrinsic_id());
 
+  case vmIntrinsics::_compareUnsigned_i:        return inline_number_compareUnsigned(T_INT);
+  case vmIntrinsics::_compareUnsigned_l:        return inline_number_compareUnsigned(T_LONG);
+
   case vmIntrinsics::_getCallerClass:           return inline_native_Reflection_getCallerClass();
 
   case vmIntrinsics::_Reference_get:            return inline_reference_get();
@@ -2155,6 +2158,40 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
+  return true;
+}
+
+//----------------------inline_number_compareUnsigned-------------------------
+// inline int      Integer.compareUnsigned(int, int)
+// inline int         Long.compareUnsigned(long, long)
+bool LibraryCallKit::inline_number_compareUnsigned(BasicType bt) {
+  Node* arg0 = argument(0);
+  Node* arg1 = bt == T_INT ? argument(1) : argument(2);
+
+  RegionNode* reg = new RegionNode(4);
+  PhiNode*    val = new PhiNode(reg, TypeInt::CC);
+
+  Node* cmp = _gvn.transform(CmpNode::make(arg0, arg1, bt, true));
+
+  Node* bol_lt = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+  IfNode* if_lt = create_and_map_if(control(), bol_lt, PROB_FAIR, COUNT_UNKNOWN);
+  Node* case_lt = _gvn.transform(new IfTrueNode(if_lt));
+  val->init_req(1, intcon(-1));
+  reg->init_req(1, case_lt);
+
+  Node* case_ge = _gvn.transform(new IfFalseNode(if_lt));
+  Node* bol_eq = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+  IfNode* if_eq = create_and_map_if(case_ge, bol_eq, PROB_FAIR, COUNT_UNKNOWN);
+  Node* case_eq = _gvn.transform(new IfTrueNode(if_eq));
+  val->init_req(2, intcon(0));
+  reg->init_req(2, case_eq);
+
+  Node* case_gt = _gvn.transform(new IfFalseNode(if_eq));
+  val->init_req(3, intcon(1));
+  reg->init_req(3, case_ge);
+
+  set_result(reg, val);
+
   return true;
 }
 

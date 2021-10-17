@@ -219,6 +219,11 @@ class methodHandle;
   do_intrinsic(_reverseBytes_s,           java_lang_Short,        reverseBytes_name,        short_short_signature, F_S) \
     /*  (symbol reverseBytes_name defined above) */                                                                     \
                                                                                                                         \
+  do_intrinsic(_compareUnsigned_l,        java_lang_Long,         compareUnsigned_name,     compareUnsigned_l_signature, F_S) \
+   do_name(     compareUnsigned_name,                            "compareUnsigned")                                     \
+   do_signature(compareUnsigned_l_signature,                     "(JJ)I")                                               \
+  do_intrinsic(_compareUnsigned_i,        java_lang_Integer,      compareUnsigned_name,     int2_int_signature,  F_S)   \
+                                                                                                                        \
   do_intrinsic(_identityHashCode,         java_lang_System,       identityHashCode_name, object_int_signature,   F_S)   \
    do_name(     identityHashCode_name,                           "identityHashCode")                                    \
   do_intrinsic(_currentTimeMillis,        java_lang_System,       currentTimeMillis_name, void_long_signature,   F_S)   \
