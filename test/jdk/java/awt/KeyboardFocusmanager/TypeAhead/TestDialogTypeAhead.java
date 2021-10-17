@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,32 @@
   @key headful
   @bug 4799136
   @summary Tests that type-ahead for dialog works and doesn't block program
-  @library    ../../regtesthelpers
-  @modules java.desktop/sun.awt
-  @build      Util
   @run main TestDialogTypeAhead
 */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.lang.reflect.InvocationTargetException;
+
+import java.awt.AWTEvent;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.DefaultKeyboardFocusManager;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 public class TestDialogTypeAhead {
     //Declare things used in the test, like buttons and labels here
@@ -42,24 +59,34 @@ public class TestDialogTypeAhead {
     static Button b;
     static Dialog d;
     static Button ok;
-    static Semaphore pressSema = new Semaphore();
-    static Semaphore robotSema = new Semaphore();
+    static Semaphore pressSema = new Semaphore(0);
+    static Semaphore robotSema = new Semaphore(0);
     static volatile boolean gotFocus = false;
     static Robot robot;
 
     public static void main(final String[] args) {
         TestDialogTypeAhead app = new TestDialogTypeAhead();
-        app.init();
-        app.start();
+        try {
+            app.init();
+            app.start();
+        } finally {
+            if (f != null) {
+                f.dispose();
+            }
+            if (d != null) {
+                d.dispose();
+            }
+        }
+        System.err.println("Done with test in main");
     }
 
     public void init()
     {
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
-                public void eventDispatched(AWTEvent e) {
-                    System.err.println(e.toString());
-                }
-            }, AWTEvent.KEY_EVENT_MASK);
+            public void eventDispatched(AWTEvent e) {
+                System.err.println(e.toString());
+            }
+        }, AWTEvent.KEY_EVENT_MASK);
 
         KeyboardFocusManager.setCurrentKeyboardFocusManager(new TestKFM());
 
@@ -71,40 +98,39 @@ public class TestDialogTypeAhead {
         d.pack();
 
         ok.addKeyListener(new KeyAdapter() {
-                public void keyPressed(KeyEvent e) {
-                    System.err.println("OK pressed");
-                    d.dispose();
-                    f.dispose();
-                    // Typed-ahead key events should only be accepted if
-                    // they arrive after FOCUS_GAINED
-                    if (gotFocus) {
-                        pressSema.raise();
-                    }
+            public void keyPressed(KeyEvent e) {
+                System.err.println("OK pressed");
+                // Typed-ahead key events should only be accepted if
+                // they arrive after FOCUS_GAINED
+                if (gotFocus) {
+                    System.err.println("pressSema raised");
+                    //pressSema.raise();
+                    pressSema.release();
                 }
-            });
+
+            }
+        });
         ok.addFocusListener(new FocusAdapter() {
-                public void focusGained(FocusEvent e) {
-                    gotFocus = true;
-                    System.err.println("Ok got focus");
-                }
-            });
+            public void focusGained(FocusEvent e) {
+                gotFocus = true;
+                System.err.println("Ok got focus");
+            }
+        });
         f.add(b);
         f.pack();
         b.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    System.err.println("B pressed");
-
-                    EventQueue.invokeLater(new Runnable() {
-                            public void run() {
-                                waitTillShown(d);
-                                TestDialogTypeAhead.this.d.toFront();
-                                TestDialogTypeAhead.this.moveMouseOver(d);
-                            }
-                        });
-
-                    d.setVisible(true);
-                }
-            });
+            public void actionPerformed(ActionEvent e) {
+                System.err.println("B pressed");
+                d.setVisible(true);
+                EventQueue.invokeLater (new Runnable() {
+                    public void run() {
+                        waitTillShown(d);
+                        TestDialogTypeAhead.this.d.toFront();
+                        TestDialogTypeAhead.this.moveMouseOver(d);
+                    }
+                });
+            }
+        });
 
     }//End  init()
 
@@ -112,6 +138,7 @@ public class TestDialogTypeAhead {
     {
         try {
             robot = new Robot();
+            robot.setAutoDelay(100);
         } catch (Exception e) {
             throw new RuntimeException("Can't create robot:" + e);
         }
@@ -121,57 +148,52 @@ public class TestDialogTypeAhead {
         System.err.println("b is shown");
         f.toFront();
         moveMouseOver(f);
-        waitForIdle();
+        robot.waitForIdle();
         makeFocused(b);
-        waitForIdle();
+        robot.waitForIdle();
         System.err.println("b is focused");
 
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
+        robot.waitForIdle();
+        boolean acquired = false;
         try {
-            robotSema.doWait(1000);
+            //robotSema.doWait(1000);
+            acquired = robotSema.tryAcquire(1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ie) {
             throw new RuntimeException("Interrupted!");
         }
-        if (!robotSema.getState()) {
+        if (!acquired) {
             throw new RuntimeException("robotSema hasn't been triggered");
         }
 
         System.err.println("typing ahead");
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
-        waitForIdle();
+        robot.waitForIdle();
+        System.err.println("After typing ahead");
+        acquired=false;
         try {
-            pressSema.doWait(3000);
+            System.err.println("Before pressSema pressed");
+            acquired = pressSema.tryAcquire(3000, TimeUnit.MILLISECONDS);
+            System.err.println("pressSema pressed");
         } catch (InterruptedException ie) {
             throw new RuntimeException("Interrupted!");
         }
-        if (!pressSema.getState()) {
+        if (!acquired) {
             throw new RuntimeException("Type-ahead doesn't work");
         }
 
+        System.err.println("Done with the test");
+        robotSema=null;
+        pressSema=null;
     }// start()
 
-    private void moveMouseOver(Container c) {
+    private void moveMouseOver(Component c) {
         Point p = c.getLocationOnScreen();
         Dimension d = c.getSize();
-        robot.mouseMove(p.x + (int)(d.getWidth()/2), p.y + (int)(d.getHeight()/2));
-    }
-    private void waitForIdle() {
-        try {
-            robot.waitForIdle();
-            EventQueue.invokeAndWait( new Runnable() {
-                                            public void run() {
-                                                // dummy implementation
-                                            }
-                                        } );
-        } catch(InterruptedException ite) {
-            System.err.println("Robot.waitForIdle, non-fatal exception caught:");
-            ite.printStackTrace();
-        } catch(InvocationTargetException ine) {
-            System.err.println("Robot.waitForIdle, non-fatal exception caught:");
-            ine.printStackTrace();
-        }
+        robot.mouseMove(p.x + (int)(d.getWidth()/2),
+                p.y + (int)(d.getHeight()/2));
     }
 
     private void waitTillShown(Component c) {
@@ -191,57 +213,28 @@ public class TestDialogTypeAhead {
         if (comp.isFocusOwner()) {
             return;
         }
-        final Semaphore sema = new Semaphore();
+        final Semaphore sema = new Semaphore(0);
         final FocusAdapter fa = new FocusAdapter() {
-                public void focusGained(FocusEvent fe) {
-                    sema.raise();
-                }
-            };
+            public void focusGained(FocusEvent fe) {
+                sema.release();
+            }
+        };
         comp.addFocusListener(fa);
         comp.requestFocusInWindow();
         if (comp.isFocusOwner()) {
             return;
         }
         try {
-            sema.doWait(3000);
+            sema.tryAcquire(3000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
         comp.removeFocusListener(fa);
         if (!comp.isFocusOwner()) {
-            throw new RuntimeException("Can't make " + comp + " focused, current owner is " + KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner());
-        }
-    }
-
-    static class Semaphore {
-        boolean state = false;
-        int waiting = 0;
-        public Semaphore() {
-        }
-        public synchronized void doWait() throws InterruptedException {
-            if (state) {
-                return;
-            }
-            waiting++;
-            wait();
-            waiting--;
-        }
-        public synchronized void doWait(int timeout) throws InterruptedException {
-            if (state) {
-                return;
-            }
-            waiting++;
-            wait(timeout);
-            waiting--;
-        }
-        public synchronized void raise() {
-            state = true;
-            if (waiting > 0) {
-                notifyAll();
-            }
-        }
-        public synchronized boolean getState() {
-            return state;
+            throw new RuntimeException("Can't make " + comp + " focused,"
+                    + "current owner is "
+                    + KeyboardFocusManager
+                    .getCurrentKeyboardFocusManager().getFocusOwner());
         }
     }
 
@@ -252,7 +245,7 @@ public class TestDialogTypeAhead {
             super.enqueueKeyEvents(after, untilFocused);
 
             if (untilFocused == TestDialogTypeAhead.this.ok) {
-                TestDialogTypeAhead.this.robotSema.raise();
+                TestDialogTypeAhead.this.robotSema.release();
             }
         }
     }
