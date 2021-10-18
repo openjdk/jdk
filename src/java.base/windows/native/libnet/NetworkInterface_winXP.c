@@ -110,27 +110,24 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
 
     if (ret != ERROR_SUCCESS) {
         free (adapterInfo);
-        if (ret == ERROR_INSUFFICIENT_BUFFER) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                "IP Helper Library GetAdaptersAddresses function failed "
-                "with ERROR_INSUFFICIENT_BUFFER");
-        } else if (ret == ERROR_ADDRESS_NOT_ASSOCIATED ) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                "IP Helper Library GetAdaptersAddresses function failed "
-                "with ERROR_ADDRESS_NOT_ASSOCIATED");
-        } else {
-            char error_msg_buf[100];
-            int _sr;
-            _sr = _snprintf_s(error_msg_buf, sizeof(error_msg_buf),
-                _TRUNCATE, "IP Helper Library GetAdaptersAddresses "
-                            "function failed with error == %d", ret);
-            if (_sr != -1) {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", error_msg_buf);
-            } else {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                    "IP Helper Library GetAdaptersAddresses function failure");
-            }
+        switch (ret) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env, "IP Helper Library GetAdaptersAddresses function failed: invalid parameter");
+                break;
+            case ERROR_NOT_ENOUGH_MEMORY:
+                JNU_ThrowOutOfMemoryError(env, "IP Helper Library GetAdaptersAddresses function failed: not enough memory");
+                break;
+            case ERROR_NO_DATA:
+                // not an error
+                *adapters = NULL;
+                return ERROR_SUCCESS;
+            default:
+                SetLastError(ret);
+                JNU_ThrowByNameWithMessageAndLastError(env, JNU_JAVANETPKG "SocketException",
+                        "IP Helper Library GetAdaptersAddresses function failed");
+                break;
         }
+
         return -1;
     }
     *adapters = adapterInfo;
@@ -179,26 +176,21 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
 
     if (val != ERROR_SUCCESS) {
         free (adapterInfo);
-        if (val == ERROR_INSUFFICIENT_BUFFER) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                "IP Helper Library GetAdaptersAddresses function failed "
-                "with ERROR_INSUFFICIENT_BUFFER");
-        } else if (val == ERROR_ADDRESS_NOT_ASSOCIATED ) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                "IP Helper Library GetAdaptersAddresses function failed "
-                "with ERROR_ADDRESS_NOT_ASSOCIATED");
-        } else {
-            char error_msg_buf[100];
-            int _sr;
-            _sr = _snprintf_s(error_msg_buf, sizeof(error_msg_buf),
-                _TRUNCATE, "IP Helper Library GetAdaptersAddresses function failed "
-                           "with error == %d", val);
-            if (_sr != -1) {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", error_msg_buf);
-            } else {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                    "IP Helper Library GetAdaptersAddresses function failure");
-            }
+        switch (val) {
+            case ERROR_INVALID_PARAMETER:
+                JNU_ThrowInternalError(env, "IP Helper Library GetAdaptersAddresses function failed: invalid parameter");
+                break;
+            case ERROR_NOT_ENOUGH_MEMORY:
+                JNU_ThrowOutOfMemoryError(env, "IP Helper Library GetAdaptersAddresses function failed: not enough memory");
+                break;
+            case ERROR_NO_DATA:
+                // not an error
+                break;
+            default:
+                SetLastError(val);
+                JNU_ThrowByNameWithMessageAndLastError(env, JNU_JAVANETPKG "SocketException",
+                        "IP Helper Library GetAdaptersAddresses function failed");
+                break;
         }
         return NULL;
     }
