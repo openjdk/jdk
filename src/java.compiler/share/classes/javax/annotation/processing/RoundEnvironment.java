@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ public interface RoundEnvironment {
     boolean errorRaised();
 
     /**
-     * Returns the {@linkplain Processor root elements} for annotation processing {@linkplain Filer generated}
-     * by the prior round.
+     * Returns the {@linkplain Processor root elements} for annotation
+     * processing {@linkplain Filer generated} by the prior round.
      *
      * @apiNote
      * Root elements correspond to the top-level declarations in
