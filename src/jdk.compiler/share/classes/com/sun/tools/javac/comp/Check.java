@@ -4528,7 +4528,7 @@ public class Check {
                     // even if compiled with a serializable child class.
                     case METHOD -> {
                         var method = (MethodSymbol)enclosed;
-                        name = enclosed.getSimpleName().toString();
+                        name = method.getSimpleName().toString();
                         if (serialMethodNames.contains(name)) {
                             switch (name) {
                             case "writeObject"      -> checkWriteObject(tree, e, method);
@@ -4546,7 +4546,6 @@ public class Check {
 
             return null;
         }
-
 
         boolean canBeSerialized(Type type) {
             return type.isPrimitive() || rs.isSerializable(type);
@@ -4672,13 +4671,12 @@ public class Check {
          * abstract, static, final, synchronized, native, strictfp
          */
 
-        private void checkWriteObject(JCClassDecl tree, Element e, ExecutableElement executable) {
+        private void checkWriteObject(JCClassDecl tree, Element e, MethodSymbol method) {
             // The "synchronized" modifier is seen in the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
             // private void writeObject(ObjectOutputStream stream) throws IOException
-            MethodSymbol method = (MethodSymbol)executable;
             checkPrivateNonStaticMethod(tree, method);
             checkReturnType(tree, e, method, syms.voidType);
             checkOneArg(tree, e, method, syms.objectOutputStreamType);
@@ -4686,27 +4684,25 @@ public class Check {
             checkExternalizable(tree, e, method);
         }
 
-        private void checkWriteReplace(JCClassDecl tree, Element e, ExecutableElement executable) {
+        private void checkWriteReplace(JCClassDecl tree, Element e, MethodSymbol method) {
             // ANY-ACCESS-MODIFIER Object writeReplace() throws
             // ObjectStreamException
 
             // Excluding abstract, could have a more complicated
             // rule based on abstract-ness of the class?
-            MethodSymbol method = (MethodSymbol)executable;
             checkConcreteInstanceMethod(tree, e, method);
             checkReturnType(tree, e, method, syms.objectType);
             checkNoArgs(tree, e, method);
             checkExceptions(tree, e, method, syms.objectStreamExceptionType);
         }
 
-        private void checkReadObject(JCClassDecl tree, Element e, ExecutableElement executable) {
+        private void checkReadObject(JCClassDecl tree, Element e, MethodSymbol method) {
             // The "synchronized" modifier is seen in the wild on
             // readObject and writeObject methods and is generally
             // innocuous.
 
             // private void readObject(ObjectInputStream stream)
             //   throws IOException, ClassNotFoundException
-            MethodSymbol method = (MethodSymbol)executable;
             checkPrivateNonStaticMethod(tree, method);
             checkReturnType(tree, e, method, syms.voidType);
             checkOneArg(tree, e, method, syms.objectInputStreamType);
@@ -4714,9 +4710,8 @@ public class Check {
             checkExternalizable(tree, e, method);
         }
 
-        private void checkReadObjectNoData(JCClassDecl tree, Element e, ExecutableElement executable) {
+        private void checkReadObjectNoData(JCClassDecl tree, Element e, MethodSymbol method) {
             // private void readObjectNoData() throws ObjectStreamException
-            MethodSymbol method = (MethodSymbol)executable;
             checkPrivateNonStaticMethod(tree, method);
             checkReturnType(tree, e, method, syms.voidType);
             checkNoArgs(tree, e, method);
@@ -4724,13 +4719,12 @@ public class Check {
             checkExternalizable(tree, e, method);
         }
 
-        private void checkReadResolve(JCClassDecl tree, Element e, ExecutableElement executable) {
+        private void checkReadResolve(JCClassDecl tree, Element e, MethodSymbol method) {
             // ANY-ACCESS-MODIFIER Object readResolve()
             // throws ObjectStreamException
 
             // Excluding abstract, could have a more complicated
             // rule based on abstract-ness of the class?
-            MethodSymbol method = (MethodSymbol)executable;
             checkConcreteInstanceMethod(tree, e, method);
             checkReturnType(tree,e, method, syms.objectType);
             checkNoArgs(tree, e, method);
