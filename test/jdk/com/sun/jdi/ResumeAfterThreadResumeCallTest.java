@@ -37,7 +37,10 @@
  *                  breakpoint in Thread.resume() so the JDWP agent receives a
  *                  breakpoint event. It finds that "resumee" is suspended because
  *                  of JDWP actions. The resume() call would interfere with the
- *                  debugger therefore "main" is blocked in JDWP's blockOnDebuggerSuspend().
+ *                  debugger therefore "main" is blocked.
+ *
+ *          Debugger: Tests if the suspended "resumee" can be suspended a second
+ *                    time and resumes it again.
  *
  *          Debugger: Resumes "resumee" by calling ThreadReference.resume().
  *                    The JDWP agent notifies "main" about it.
@@ -178,8 +181,20 @@ public class ResumeAfterThreadResumeCallTest extends TestScaffold {
             if (!resumedResumee) {
                 // main thread should still be blocked.
                 Asserts.assertFalse(mainThreadReturnedFromResumeCall, "main Thread was not blocked");
-                log("Resuming \"resumee\" will unblock the main thread.");
+
+                // Test suspending the already suspended resumee thread.
+                Asserts.assertTrue(resumee.isSuspended(), "\"resumee\" is not suspended.");
+                log("Check if suspended \"resumee\" can be suspended a 2nd time.");
+                resumee.suspend();
+                log("resumee.isSuspended() -> " + resumee.isSuspended());
+                log("Resuming \"resumee\"");
                 resumee.resume();
+                Asserts.assertTrue(resumee.isSuspended(), "\"resumee\" is not suspended.");
+
+                // Really resume the resumee thread.
+                log("Resuming \"resumee\" a 2nd time will unblock the main thread.");
+                resumee.resume();
+                Asserts.assertFalse(resumee.isSuspended(), "\"resumee\" is still suspended.");
                 resumedResumee = true;
             }
             log("Sleeping " + sleepTime + "ms");
