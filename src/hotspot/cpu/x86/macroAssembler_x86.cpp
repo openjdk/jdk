@@ -5213,7 +5213,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
      MaxVectorSize >=32 &&
      VM_Version::supports_avx512vlbw() &&
      VM_Version::supports_bmi2()) {
-    generate_fill_avx3(t, aligned, to, value, count, rtmp, xtmp);
+    generate_fill_avx3(t, to, value, count, rtmp, xtmp);
     return;
   }
 #endif
@@ -8278,7 +8278,7 @@ void MacroAssembler::fill64_masked_avx(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
                                        Register temp, bool use64byteVector) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = { T_BYTE, T_SHORT,  T_INT,   T_LONG};
+  BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   if (!use64byteVector) {
     fill32_avx(dst, disp, xmm);
     subptr(length, 32 >> shift);
@@ -8297,7 +8297,7 @@ void MacroAssembler::fill32_masked_avx(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
                                        Register temp) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = { T_BYTE, T_SHORT,  T_INT,   T_LONG};
+  BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   LP64_ONLY(mov64(temp, -1L)) NOT_LP64(movl(temp, -1));
   bzhiq(temp, temp, length);
   kmov(mask, temp);
@@ -8322,9 +8322,8 @@ void MacroAssembler::fill64_avx(Register dst, int disp, XMMRegister xmm, bool us
 }
 
 #ifdef _LP64
-void MacroAssembler::generate_fill_avx3(BasicType type, bool aligned,
-                                        Register to, Register value, Register count,
-                                        Register rtmp, XMMRegister xtmp) {
+void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register value,
+                                        Register count, Register rtmp, XMMRegister xtmp) {
   Label L_exit;
   Label L_fill_start;
   Label L_fill_64_bytes;
@@ -8344,8 +8343,10 @@ void MacroAssembler::generate_fill_avx3(BasicType type, bool aligned,
       break;
     case T_INT:   shift = 2;
       break;
+    /* Uncomment when LONG fill stubs are supported.
     case T_LONG:  shift = 3;
       break;
+    */
     default:
       fatal("Unhandled type: %s\n", type2name(type));
   }
@@ -8382,7 +8383,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, bool aligned,
 
     bind(L_fill_128_bytes);
     cmpq(count, 128 >> shift);
-    jcc(Assembler::greater, L_fill_128_bytes_loop_pre_header);
+    jccb(Assembler::greater, L_fill_128_bytes_loop_pre_header);
     fill64_avx(to, 0, xtmp);
     fill32_avx(to, 64, xtmp);
     subq(count, 96 >> shift);
@@ -8411,6 +8412,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, bool aligned,
     bind(L_fill_128_bytes_loop_header);
     subq(count, 128 >> shift);
 
+    align32();
     bind(L_fill_128_bytes_loop);
       fill64_avx(to, 0, xtmp);
       fill64_avx(to, 64, xtmp);
@@ -8451,7 +8453,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, bool aligned,
 
     bind(L_fill_192_bytes_zmm);
     cmpq(count, 192 >> shift);
-    jcc(Assembler::greater, L_fill_192_bytes_loop_pre_header_zmm);
+    jccb(Assembler::greater, L_fill_192_bytes_loop_pre_header_zmm);
     fill64_avx(to, 0, xtmp, true);
     fill64_avx(to, 64, xtmp, true);
     subq(count, 128 >> shift);
@@ -8480,6 +8482,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, bool aligned,
     bind(L_fill_192_bytes_loop_header_zmm);
     subq(count, 192 >> shift);
 
+    align32();
     bind(L_fill_192_bytes_loop_zmm);
       fill64_avx(to, 0, xtmp, true);
       fill64_avx(to, 64, xtmp, true);

@@ -1887,9 +1887,8 @@ public:
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
 
-  void generate_fill_avx3(BasicType type, bool aligned,
-                          Register to, Register value, Register count,
-                          Register rtmp, XMMRegister xtmp);
+  void generate_fill_avx3(BasicType type, Register to, Register value,
+                          Register count, Register rtmp, XMMRegister xtmp);
 
 #endif // COMPILER2_OR_JVMCI
 

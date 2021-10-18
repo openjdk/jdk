@@ -2116,10 +2116,11 @@ class StubGenerator: public StubCodeGenerator {
     const Register to       = c_rarg0;  // destination array address
     const Register value    = c_rarg1;  // value
     const Register count    = c_rarg2;  // elements count
+    __ mov(r11, count);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ generate_fill(t, aligned, to, value, count, rax, xmm0);
+    __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
 
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
