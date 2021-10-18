@@ -583,13 +583,13 @@ public final class Console implements Flushable
             }
             if (csname != null) {
                 try {
-                    cs = Charset.forName(csname);
+                    cs = Charset.forName(csname, null);
                 } catch (Exception ignored) { }
             }
         }
         if (cs == null) {
             try {
-                cs = Charset.forName(StaticProperty.nativeEncoding());
+                cs = Charset.forName(StaticProperty.nativeEncoding(), Charset.defaultCharset());
             } catch (Exception ignored) {
                 cs = Charset.defaultCharset();
             }
