@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This microbenchmark model producer-consumer.
+ * This microbenchmark models producer-consumer.
  * The consumer goes to 1ms sleep if data is not available.
  * To avoid this it uses Thread.onSpinWait() to wait for data from the producer.
  */
@@ -81,7 +81,7 @@ public class ThreadOnSpinWaitProducerConsumer {
 
                 if (goToSleep) {
                     while (consumed) {
-                      Thread.sleep(1);
+                        Thread.sleep(1);
                     }
                 }
                 int v = counter.get();
