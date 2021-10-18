@@ -237,7 +237,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     /*
      * InputStream for the socket connection to get target VM
      */
-    private class SocketInputStream extends InputStream {
+    private static class SocketInputStream extends InputStream {
         int s = -1;
 
         public SocketInputStream(int s) {

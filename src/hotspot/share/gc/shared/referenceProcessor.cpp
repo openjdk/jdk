@@ -705,12 +705,12 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
 
   proxy_task.prepare_run_task(task, num_queues(), processing_is_mt() ? RefProcThreadModel::Multi : RefProcThreadModel::Single, marks_oops_alive);
   if (processing_is_mt()) {
-    WorkGang* gang = Universe::heap()->safepoint_workers();
-    assert(gang != NULL, "can not dispatch multi threaded without a work gang");
-    assert(gang->active_workers() >= num_queues(),
+    WorkerThreads* workers = Universe::heap()->safepoint_workers();
+    assert(workers != NULL, "can not dispatch multi threaded without workers");
+    assert(workers->active_workers() >= num_queues(),
            "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
-           num_queues(), gang->active_workers());
-    gang->run_task(&proxy_task, num_queues());
+           num_queues(), workers->active_workers());
+    workers->run_task(&proxy_task, num_queues());
   } else {
     for (unsigned i = 0; i < _max_num_queues; ++i) {
       proxy_task.work(i);

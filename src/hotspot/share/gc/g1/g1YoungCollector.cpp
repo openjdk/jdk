@@ -54,7 +54,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/ticks.hpp"
@@ -270,7 +270,7 @@ ReferenceProcessor* G1YoungCollector::ref_processor_stw() const {
   return _g1h->ref_processor_stw();
 }
 
-WorkGang* G1YoungCollector::workers() const {
+WorkerThreads* G1YoungCollector::workers() const {
   return _g1h->workers();
 }
 
@@ -323,7 +323,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   }
 }
 
-class G1PrepareEvacuationTask : public AbstractGangTask {
+class G1PrepareEvacuationTask : public WorkerTask {
   class G1PrepareRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1PrepareEvacuationTask* _parent_task;
@@ -460,7 +460,7 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
-    AbstractGangTask("Prepare Evacuation"),
+    WorkerTask("Prepare Evacuation"),
     _g1h(g1h),
     _claimer(_g1h->workers()->active_workers()),
     _humongous_total(0),
@@ -495,18 +495,18 @@ public:
   }
 };
 
-Tickspan G1YoungCollector::run_task_timed(AbstractGangTask* task) {
+Tickspan G1YoungCollector::run_task_timed(WorkerTask* task) {
   Ticks start = Ticks::now();
   workers()->run_task(task);
   return Ticks::now() - start;
 }
 
 void G1YoungCollector::set_young_collection_default_active_worker_threads(){
-  uint active_workers = WorkerPolicy::calc_active_workers(workers()->total_workers(),
+  uint active_workers = WorkerPolicy::calc_active_workers(workers()->max_workers(),
                                                           workers()->active_workers(),
                                                           Threads::number_of_non_daemon_threads());
-  active_workers = workers()->update_active_workers(active_workers);
-  log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
+  active_workers = workers()->set_active_workers(active_workers);
+  log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
@@ -625,7 +625,7 @@ public:
   size_t term_attempts() const { return _term_attempts; }
 };
 
-class G1EvacuateRegionsBaseTask : public AbstractGangTask {
+class G1EvacuateRegionsBaseTask : public WorkerTask {
 protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _per_thread_states;
@@ -673,7 +673,7 @@ public:
                             G1ParScanThreadStateSet* per_thread_states,
                             G1ScannerTasksQueueSet* task_queues,
                             uint num_workers) :
-    AbstractGangTask(name),
+    WorkerTask(name),
     _g1h(G1CollectedHeap::heap()),
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
@@ -757,7 +757,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
                                       has_optional_evacuation_work);
     task_time = run_task_timed(&g1_par_task);
     // Closing the inner scope will execute the destructor for the
-    // G1RootProcessor object. By subtracting the WorkGang task from the total
+    // G1RootProcessor object. By subtracting the WorkerThreads task from the total
     // time of this scope, we get the "NMethod List Cleanup" time. This list is
     // constructed during "STW two-phase nmethod root processing", see more in
     // nmethod.hpp
@@ -1104,12 +1104,12 @@ void G1YoungCollector::collect() {
   // Young GC internal pause timing
   G1YoungGCNotifyPauseMark npm(this);
 
-  // Verification may use the gang workers, so they must be set up before.
+  // Verification may use the workers, so they must be set up before.
   // Individual parallel phases may override this.
   set_young_collection_default_active_worker_threads();
 
   // Wait for root region scan here to make sure that it is done before any
-  // use of the STW work gang to maximize cpu use (i.e. all cores are available
+  // use of the STW workers to maximize cpu use (i.e. all cores are available
   // just to do that).
   wait_for_root_region_scanning();
 
