@@ -131,7 +131,8 @@ class MethodHandleStatics {
     }
 
     /**
-     * If requested, logs the result of resolving the species type to stdout.
+     * If requested, logs the result of resolving the species type to stdout
+     * and the CDS subsystem.
      */
     /*non-public*/
     static void traceSpeciesType(String cn, Class<?> salvage) {
