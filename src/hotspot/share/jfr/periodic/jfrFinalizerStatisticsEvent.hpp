@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,17 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
-#define SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
+#ifndef SHARE_JFR_PERIODIC_JFRFINALIZERSTATISTICSEVENT_HPP
+#define SHARE_JFR_PERIODIC_JFRFINALIZERSTATISTICSEVENT_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/ostream.hpp"
 
-//
-// Responsible for creating an hs_err<pid>.jfr file in exceptional shutdown situations (crash, OOM)
-//
-class JfrEmergencyDump : AllStatic {
+class InstanceKlass;
+
+class JfrFinalizerStatisticsEvent : AllStatic {
  public:
-  static const char* chunk_path(const char* repository_path);
-  static void on_vm_error(const char* repository_path);
-  static void on_vm_error_report(outputStream* st, const char* repository_path);
-  static void on_vm_shutdown(bool exception_handler);
+  static void send_unload_event(const InstanceKlass* ik) NOT_MANAGEMENT_RETURN;
+  static void generate_events() NOT_MANAGEMENT_RETURN;
 };
 
-#endif // SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
+#endif // SHARE_JFR_PERIODIC_JFRFINALIZERSTATISTICSEVENT_HPP
