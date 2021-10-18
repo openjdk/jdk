@@ -287,7 +287,7 @@ void Mutex::remove_from_global_list() {
   // Remove mutex from print_owned_locks_on_error array
   ThreadCritical tc;
   Mutex* old_next = _next_mutex;
-  assert(old_next != nullptr, "only static mutexes don't have a next");
+  assert(old_next != nullptr, "this list can never be empty");
   old_next->_prev_mutex = _prev_mutex;
   if (_prev_mutex == nullptr) {
     _mutex_array = old_next;
