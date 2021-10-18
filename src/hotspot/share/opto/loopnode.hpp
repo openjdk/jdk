@@ -1303,7 +1303,8 @@ public:
   BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
                          int scale, Node* offset,
                          Node* init, Node* limit, jint stride,
-                         Node* range, bool upper, bool &overflow);
+                         Node* range, bool upper, bool &overflow,
+                         bool negate);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
