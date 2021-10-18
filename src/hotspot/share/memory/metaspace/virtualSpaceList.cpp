@@ -223,6 +223,7 @@ void VirtualSpaceList::verify() const {
 
 // Returns true if this pointer is contained in one of our nodes.
 bool VirtualSpaceList::contains(const MetaWord* p) const {
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   const VirtualSpaceNode* vsn = _first_node;
   while (vsn != NULL) {
     if (vsn->contains(p)) {
