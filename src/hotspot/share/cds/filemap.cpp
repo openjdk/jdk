@@ -173,9 +173,17 @@ FileMapInfo::FileMapInfo(bool is_static) {
   if (_is_static) {
     assert(_current_info == NULL, "must be singleton"); // not thread safe
     _current_info = this;
+    _full_path = Arguments::GetSharedArchivePath();
   } else {
     assert(_dynamic_archive_info == NULL, "must be singleton"); // not thread safe
     _dynamic_archive_info = this;
+    _full_path = Arguments::GetSharedDynamicArchivePath();
+    if (AutoCreateSharedArchive) {
+      if (!validate_archive()) {
+        // regenerate shared archive at exit
+        DynamicDumpSharedSpaces = true;
+      }
+    }
   }
   _file_offset = 0;
   _file_open = false;
@@ -189,6 +197,22 @@ FileMapInfo::~FileMapInfo() {
     assert(_dynamic_archive_info == this, "must be singleton"); // not thread safe
     _dynamic_archive_info = NULL;
   }
+  if (_file_open) {
+    os::close(_fd);
+  }
+}
+
+// Do preliminary validation on archive. More checks are in initialization.
+bool FileMapInfo::validate_archive() {
+  if (!os::file_exists(_full_path)) {
+    return false;
+  }
+  // validate header info
+  if (!check_archive(_full_path, _is_static)) {
+    return false;
+  }
+
+  return true;
 }
 
 void FileMapInfo::populate_header(size_t core_region_alignment) {
@@ -1095,6 +1119,10 @@ public:
       FREE_C_HEAP_ARRAY(char, *target);
       return false;
     }
+    if (*(*target + name_size - 1) != '\0' || strlen(*target) != name_size - 1) {
+      log_info(cds)("Base archive name is damaged");
+      return false;
+    }
     if (!os::file_exists(*target)) {
       log_info(cds)("Base archive %s does not exist", *target);
       FREE_C_HEAP_ARRAY(char, *target);
@@ -1126,7 +1154,9 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
     }
   } else {
     if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
-      vm_exit_during_initialization("Not a top shared archive", archive_name);
+      if (!AutoCreateSharedArchive) {
+        vm_exit_during_initialization("Not a top shared archive", archive_name);
+      }
       return false;
     }
     unsigned int name_size = header->_base_archive_name_size;
@@ -2297,13 +2327,16 @@ bool FileMapInfo::initialize() {
     return false;
   }
 
-  if (!open_for_read()) {
-    return false;
-  }
-  if (!init_from_file(_fd)) {
-    return false;
-  }
-  if (!validate_header()) {
+  // AutoCreateSharedArchive
+  if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
+    if (_is_static) {
+      FileMapInfo::fail_continue("Initialize static archive failed.");
+    } else {
+      FileMapInfo::fail_continue("Initialize dynamic archive failed.");
+      if (AutoCreateSharedArchive) {
+        DynamicDumpSharedSpaces = true;
+      }
+    }
     return false;
   }
   return true;

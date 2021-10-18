@@ -38,6 +38,13 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileTime;
+
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
@@ -59,6 +66,12 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
                throw new RuntimeException("Failed to set file name in absolute for prompting message");
            }
         }
+    }
+
+    static FileTime getLastModifiedTimeFor(String fileName) throws IOException {
+        Path p = Paths.get(fileName);
+        BasicFileAttributes bfa = Files.getFileAttributeView(p, BasicFileAttributeView.class).readAttributes();
+        return bfa.lastModifiedTime();
     }
 
     static void test() throws Exception {
@@ -103,16 +116,20 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         pid = app.getPid();
         localFileName = subDir + File.separator + "MyDynamicDump.jsa";
         test(localFileName, pid, noBoot,  EXPECT_PASS);
-        app.stopApp();
-        // cannot dynamically dump twice, restart
-        app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo");
-        pid = app.getPid();
+        FileTime time0 = getLastModifiedTimeFor(localFileName);
+        // do dynamic dump again, but set dir not writable, the process will exit.
         outputDirFile.setWritable(false);
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
         outputDirFile.setWritable(true);
-        app.stopApp();
-        // MyDynamicDump.jsa should exist
+        // MyDynamicDump.jsa should exist but not modified.
         checkFileExistence(localFileName, true);
+        FileTime time1 = getLastModifiedTimeFor(localFileName);
+        if (time1.compareTo(time0) != 0) {
+            throw new RuntimeException("A new archive file created, it should not be created");
+        }
+        if (app.getProcess().isAlive()) {
+            app.stopApp();
+        }
         File rmFile = new File(localFileName);
         rmFile.delete();
         outputDirFile.delete();

@@ -139,7 +139,8 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         runTwo(baseArchiveName, wrongBasePathOffset,
                appJar, mainClass, 1,
                new String[] {"An error has occurred while processing the shared archive file.",
-                             "Header checksum verification failed",
+                             "Base archive name is damaged",
+                             "Error occurred during initialization of VM",
                              "Unable to use shared archive"});
         // 5. Make base archive name not terminated with '\0'
         System.out.println("\n5. Make base archive name not terminated with '\0'");
@@ -152,8 +153,8 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
 
         runTwo(baseArchiveName, wrongBaseName,
                appJar, mainClass, 1,
-               new String[] {"Base archive " + baseArchiveName,
-                             " does not exist",
-                             "Header checksum verification failed"});
+               new String[] {"Base archive name is damaged",
+                             "Error occurred during initialization of VM",
+                             "Unable to use shared archive"});
     }
 }

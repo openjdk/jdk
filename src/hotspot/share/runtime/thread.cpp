@@ -3268,7 +3268,7 @@ void JavaThread::invoke_shutdown_hooks() {
   // Link all classes for dynamic CDS dumping before vm exit.
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
-  if (DynamicDumpSharedSpaces) {
+  if (DynamicDumpSharedSpaces && Arguments::GetSharedDynamicArchivePath() != nullptr) {
     DynamicArchive::prepare_for_dynamic_dumping();
   }
 #endif

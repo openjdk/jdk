@@ -3130,6 +3130,17 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     return JNI_ERR;
   }
 
+  if (AutoCreateSharedArchive) {
+    if (SharedArchiveFile == NULL) {
+      log_info(cds)("-XX:+AutoCreateSharedArchive must work with a valid SharedArchiveFile");
+      return JNI_ERR;
+    }
+    if (ArchiveClassesAtExit != NULL) {
+      log_info(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
+      return JNI_ERR;
+    }
+  }
+
   if (ArchiveClassesAtExit == NULL && !RecordDynamicDumpInfo) {
     FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
   } else {
@@ -3491,6 +3502,17 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   *top_archive_path = cur_path;
 }
 
+void Arguments::set_dynamic_archive_path(const char* archive_name) {
+  assert(UseSharedSpaces, "Base archive must be shared");
+  if (SharedDynamicArchivePath != archive_name) {
+    if (SharedDynamicArchivePath != nullptr) {
+      os::free(SharedDynamicArchivePath);
+    }
+    SharedDynamicArchivePath = (archive_name != nullptr ? os::strdup_check_oom(archive_name, mtArguments)
+                                                        : nullptr);
+  }
+}
+
 bool Arguments::init_shared_archive_paths() {
   if (ArchiveClassesAtExit != NULL) {
     if (DumpSharedSpaces) {
@@ -3507,6 +3529,7 @@ bool Arguments::init_shared_archive_paths() {
       SharedDynamicArchivePath = nullptr;
     }
   }
+
   if (SharedArchiveFile == NULL) {
     SharedArchivePath = get_default_shared_archive_path();
   } else {
@@ -3524,6 +3547,7 @@ bool Arguments::init_shared_archive_paths() {
         }
       }
     }
+
     if (!is_dumping_archive()){
       if (archives > 2) {
         vm_exit_during_initialization(
@@ -3537,6 +3561,11 @@ bool Arguments::init_shared_archive_paths() {
           SharedArchivePath = temp_archive_path;
         } else {
           SharedDynamicArchivePath = temp_archive_path;
+        }
+        // +AutoCreateSharedArchive, regenerate the dynamic archive base on default archive.
+        if (AutoCreateSharedArchive && !os::file_exists(SharedArchivePath)) {
+          SharedDynamicArchivePath = temp_archive_path;
+          SharedArchivePath = get_default_shared_archive_path();
         }
       } else {
         extract_shared_archive_paths((const char*)SharedArchiveFile,
