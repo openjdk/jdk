@@ -78,11 +78,7 @@ final class MethodHandleAccessorFactory {
                 }
             }
             var dmh = getDirectMethod(method, callerSensitive);
-            if (callerSensitive) {
-                return DirectMethodHandleAccessor.callerSensitiveMethodAccessor(method, dmh);
-            } else {
-                return DirectMethodHandleAccessor.methodAccessor(method, dmh);
-            }
+            return DirectMethodHandleAccessor.methodAccessor(method, dmh);
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
         }

@@ -44,20 +44,12 @@ import static jdk.internal.reflect.MethodHandleAccessorFactory.LazyStaticHolder.
 
 class DirectMethodHandleAccessor extends MethodAccessorImpl {
     /**
-     * Creates a MethodAccessorImpl for a non-native and non-caller-sensitive method.
+     * Creates a MethodAccessorImpl for a non-native method.
      */
     static MethodAccessorImpl methodAccessor(Method method, MethodHandle target) {
-        assert !Modifier.isNative(method.getModifiers()) && !Reflection.isCallerSensitive(method);
+        assert !Modifier.isNative(method.getModifiers());
 
         return new DirectMethodHandleAccessor(method, target, false);
-    }
-
-    /**
-     * Creates a MethodAccessorImpl for a caller-sensitive method.
-     */
-    static MethodAccessorImpl callerSensitiveMethodAccessor(Method method, MethodHandle dmh) {
-        assert Reflection.isCallerSensitive(method);
-        return new DirectMethodHandleAccessor(method, dmh, false);
     }
 
     /**
@@ -89,25 +81,25 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
     private static final int NONZERO_BIT = 0x8000_0000;
 
     private final Class<?> declaringClass;
-    private final int paramFlags;
+    private final int paramCount;
+    private final int flags;
     private final MethodHandle target;
 
     DirectMethodHandleAccessor(Method method, MethodHandle target, boolean hasCallerParameter) {
         this.declaringClass = method.getDeclaringClass();
-        this.paramFlags = (method.getParameterCount() & PARAM_COUNT_MASK) |
-                          (hasCallerParameter ? HAS_CALLER_PARAM_BIT : 0) |
-                          (Modifier.isStatic(method.getModifiers()) ? IS_STATIC_BIT : 0) |
-                          NONZERO_BIT;
+        this.paramCount = method.getParameterCount();
+        this.flags = (hasCallerParameter ? HAS_CALLER_PARAM_BIT : 0) |
+                     (Modifier.isStatic(method.getModifiers()) ? IS_STATIC_BIT : 0);
         this.target = target;
     }
 
     @Override
     @ForceInline
     public Object invoke(Object obj, Object[] args) throws InvocationTargetException {
-        if ((paramFlags & IS_STATIC_BIT) == 0) {
+        if (!isStatic()) {
             checkReceiver(obj);
         }
-        checkArgumentCount(paramFlags & PARAM_COUNT_MASK, args);
+        checkArgumentCount(paramCount, args);
         try {
             return invokeImpl(obj, args);
         } catch (ClassCastException | WrongMethodTypeException e) {
@@ -131,10 +123,10 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
     @Override
     @ForceInline
     public Object invoke(Object obj, Object[] args, Class<?> caller) throws InvocationTargetException {
-        if ((paramFlags & IS_STATIC_BIT) == 0) {
+        if (!isStatic()) {
             checkReceiver(obj);
         }
-        checkArgumentCount(paramFlags & PARAM_COUNT_MASK, args);
+        checkArgumentCount(paramCount, args);
         try {
             return invokeImpl(obj, args, caller);
         } catch (ClassCastException | WrongMethodTypeException e) {
@@ -158,7 +150,7 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
     @Hidden
     @ForceInline
     private Object invokeImpl(Object obj, Object[] args) throws Throwable {
-        return switch (paramFlags & PARAM_COUNT_MASK) {
+        return switch (paramCount) {
             case 0 -> target.invokeExact(obj);
             case 1 -> target.invokeExact(obj, args[0]);
             case 2 -> target.invokeExact(obj, args[0], args[1]);
@@ -170,9 +162,9 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
     @Hidden
     @ForceInline
     private Object invokeImpl(Object obj, Object[] args, Class<?> caller) throws Throwable {
-        if ((paramFlags & HAS_CALLER_PARAM_BIT) > 0) {
+        if (hasCallerParameter()) {
             // caller-sensitive method is invoked through method with caller parameter
-            return switch (paramFlags & PARAM_COUNT_MASK) {
+            return switch (paramCount) {
                 case 0 -> target.invokeExact(obj, caller);
                 case 1 -> target.invokeExact(obj, args[0], caller);
                 case 2 -> target.invokeExact(obj, args[0], args[1], caller);
@@ -190,6 +182,14 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
                 throw new InvocationTargetException(e);
             }
         }
+    }
+
+    private boolean isStatic() {
+        return (flags & IS_STATIC_BIT) == IS_STATIC_BIT;
+    }
+
+    private boolean hasCallerParameter() {
+        return (flags & HAS_CALLER_PARAM_BIT) == HAS_CALLER_PARAM_BIT;
     }
 
     private boolean isIllegalArgument(RuntimeException ex) {
