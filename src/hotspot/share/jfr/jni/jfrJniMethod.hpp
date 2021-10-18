@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,10 @@ jdouble JNICALL jfr_time_conv_factor(JNIEnv* env, jobject jvm);
 jlong JNICALL jfr_type_id(JNIEnv* env, jobject jvm, jclass jc);
 
 void JNICALL jfr_set_repository_location(JNIEnv* env, jobject repo, jstring location);
+
+void JNICALL jfr_set_dump_path(JNIEnv* env, jobject jvm, jstring dumppath);
+
+jstring JNICALL jfr_get_dump_path(JNIEnv* env, jobject jvm);
 
 jobject JNICALL jfr_get_event_writer(JNIEnv* env, jclass cls);
 
