@@ -102,9 +102,9 @@ class FinalizerTableConfig : public AllStatic {
 
 typedef ConcurrentHashTable<FinalizerTableConfig, mtServiceability> FinalizerHashtable;
 static FinalizerHashtable* _table = nullptr;
-static constexpr const size_t DEFAULT_TABLE_SIZE = 2048;
+static const size_t DEFAULT_TABLE_SIZE = 2048;
 // 2^24 is max size, like StringTable.
-static constexpr const size_t MAX_SIZE = 24;
+static const size_t MAX_SIZE = 24;
 static volatile bool _has_work = false;
 
 static size_t ceil_log2(size_t value) {
