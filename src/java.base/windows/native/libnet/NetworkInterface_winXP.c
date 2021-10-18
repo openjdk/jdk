@@ -229,7 +229,7 @@ static int ipinflen = 2048;
  */
 int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
 {
-    DWORD ret, flags;
+    int ret, flags;
     MIB_IPADDRTABLE *tableP;
     IP_ADAPTER_ADDRESSES *ptr, *adapters=NULL;
     ULONG len=ipinflen, count=0;
