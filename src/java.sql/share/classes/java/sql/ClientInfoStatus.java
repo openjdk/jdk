@@ -36,7 +36,7 @@ import java.util.*;
 public enum ClientInfoStatus {
 
     /**
-     * The client info property could not be set for some unknown reason
+     * The client info property could not be set for some unknown reason.
      * @since 1.6
      */
     REASON_UNKNOWN,
