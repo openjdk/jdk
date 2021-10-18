@@ -172,7 +172,7 @@ public:
 // synchronization.
 template <class Elem, MEMFLAGS flag>
 class G1SegmentedArray {
-  // G1CardSetAllocOptions provides parameters for allocation buffer
+  // G1SegmentedArrayAllocOptions provides parameters for allocation buffer
   // sizing and expansion.
   const G1SegmentedArrayAllocOptions* _alloc_options;
 
