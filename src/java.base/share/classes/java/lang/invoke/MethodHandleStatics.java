@@ -131,16 +131,12 @@ class MethodHandleStatics {
     }
 
     /**
-     * If requested, logs the result of resolving the species type to stdout
-     * and the CDS subsystem.
+     * If requested, logs the result of resolving the species type to stdout.
      */
     /*non-public*/
     static void traceSpeciesType(String cn, Class<?> salvage) {
         if (TRACE_RESOLVE) {
             System.out.println("[SPECIES_RESOLVE] " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
-        }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceSpeciesType("[SPECIES_RESOLVE]", cn);
         }
     }
     // handy shared exception makers (they simplify the common case code)
