@@ -120,17 +120,21 @@ public final class Options {
     }
 
     public static synchronized void setDumpPath(SafePath path) {
-        if (path.toFile().canWrite()) {
-            try {
+        try {
+            if (path.toFile().canWrite()) {
                 jvm.setDumpPath(path.toPath().toRealPath(NOFOLLOW_LINKS).toString());
-            } catch (IOException e) {
+            } else {
                 if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
-                    Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Error occurred in path resolution: " + e.toString());
+                    Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Cannot write JFR emergency dump to " + path.toString());
                 }
             }
-        } else {
+        } catch (IOException e) {
             if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
-                Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Cannot write JFR emergency dump to " + path.toString());
+                Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Error occurred in path resolution: " + e.toString());
+            }
+        } catch (SecurityException e) {
+            if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
+                Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Cannot check emergency dump path: " + e.toString());
             }
         }
     }
