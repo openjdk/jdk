@@ -25,7 +25,7 @@
   @test
   @bug 6594374
   @summary  Confirm that the orientation is as specified.
-  @run main/manual=yesno DialogOrient
+  @run main/manual DialogOrient
 */
 
 import java.awt.*;

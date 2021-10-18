@@ -1311,13 +1311,17 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
       strncpy(machine, "", sizeof(machine));
   }
 
-  const char* emulated = "";
 #if defined(__APPLE__) && !defined(ZERO)
   if (VM_Version::is_cpu_emulated()) {
-    emulated = " (EMULATED)";
+    snprintf(buf, buflen, "\"%s\" %s (EMULATED) %d MHz", model, machine, mhz);
+  } else {
+    NOT_AARCH64(snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz));
+    // aarch64 CPU doesn't report its speed
+    AARCH64_ONLY(snprintf(buf, buflen, "\"%s\" %s", model, machine));
   }
+#else
+  snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz);
 #endif
-  snprintf(buf, buflen, "\"%s\" %s%s %d MHz", model, machine, emulated, mhz);
 }
 
 void os::print_memory_info(outputStream* st) {

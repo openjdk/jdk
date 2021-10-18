@@ -25,17 +25,17 @@
 #ifndef SHARE_GC_G1_G1FULLGCTASK_HPP
 #define SHARE_GC_G1_G1FULLGCTASK_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "utilities/ticks.hpp"
 
 class G1FullCollector;
 
-class G1FullGCTask : public AbstractGangTask {
+class G1FullGCTask : public WorkerTask {
   G1FullCollector* _collector;
 
 protected:
   G1FullGCTask(const char* name, G1FullCollector* collector) :
-    AbstractGangTask(name),
+    WorkerTask(name),
     _collector(collector) { }
 
   G1FullCollector* collector() { return _collector; }

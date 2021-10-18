@@ -76,7 +76,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
         public SoftAudioPusher pusher = null;
         public AudioInputStream jitter_stream = null;
         public SourceDataLine sourceDataLine = null;
-        public volatile long silent_samples = 0;
+        public volatile long silent_samples;
         private int framesize = 0;
         private final WeakReference<AudioInputStream> weak_stream_link;
         private final AudioFloatConverter converter;

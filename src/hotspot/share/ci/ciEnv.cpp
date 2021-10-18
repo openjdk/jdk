@@ -636,8 +636,15 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
   }
 
   // It is known to be accessible, since it was found in the constant pool.
+  ciKlass* ciKlass = get_klass(klass);
   is_accessible = true;
-  return get_klass(klass);
+#ifndef PRODUCT
+  if (ReplayCompiles && ciKlass == _unloaded_ciinstance_klass) {
+    // Klass was unresolved at replay dump time and therefore not accessible.
+    is_accessible = false;
+  }
+#endif
+  return ciKlass;
 }
 
 // ------------------------------------------------------------------

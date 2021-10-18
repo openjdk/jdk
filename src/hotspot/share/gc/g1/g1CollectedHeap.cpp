@@ -32,7 +32,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetFreeMemoryTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -138,7 +138,7 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
-void G1CollectedHeap::run_batch_task(G1BatchedGangTask* cl) {
+void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   uint num_workers = MAX2(1u, MIN2(cl->num_workers_estimate(), workers()->active_workers()));
   cl->set_max_workers(num_workers);
   workers()->run_task(cl, num_workers);
@@ -498,9 +498,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
 void G1CollectedHeap::begin_archive_alloc_range(bool open) {
   assert_at_safepoint_on_vm_thread();
-  if (_archive_allocator == NULL) {
-    _archive_allocator = G1ArchiveAllocator::create_allocator(this, open);
-  }
+  assert(_archive_allocator == nullptr, "should not be initialized");
+  _archive_allocator = G1ArchiveAllocator::create_allocator(this, open);
 }
 
 bool G1CollectedHeap::is_archive_alloc_too_large(size_t word_size) {
@@ -512,9 +511,9 @@ bool G1CollectedHeap::is_archive_alloc_too_large(size_t word_size) {
 
 HeapWord* G1CollectedHeap::archive_mem_allocate(size_t word_size) {
   assert_at_safepoint_on_vm_thread();
-  assert(_archive_allocator != NULL, "_archive_allocator not initialized");
+  assert(_archive_allocator != nullptr, "_archive_allocator not initialized");
   if (is_archive_alloc_too_large(word_size)) {
-    return NULL;
+    return nullptr;
   }
   return _archive_allocator->archive_mem_allocate(word_size);
 }
@@ -522,13 +521,13 @@ HeapWord* G1CollectedHeap::archive_mem_allocate(size_t word_size) {
 void G1CollectedHeap::end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
                                               size_t end_alignment_in_bytes) {
   assert_at_safepoint_on_vm_thread();
-  assert(_archive_allocator != NULL, "_archive_allocator not initialized");
+  assert(_archive_allocator != nullptr, "_archive_allocator not initialized");
 
   // Call complete_archive to do the real work, filling in the MemRegion
   // array with the archive regions.
   _archive_allocator->complete_archive(ranges, end_alignment_in_bytes);
   delete _archive_allocator;
-  _archive_allocator = NULL;
+  _archive_allocator = nullptr;
 }
 
 bool G1CollectedHeap::check_archive_addresses(MemRegion* ranges, size_t count) {
@@ -1274,7 +1273,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   return NULL;
 }
 
-bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, double* expand_time_ms) {
+bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
@@ -1449,7 +1448,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _verifier(NULL),
   _summary_bytes_used(0),
   _bytes_used_during_gc(0),
-  _archive_allocator(NULL),
+  _archive_allocator(nullptr),
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
   _old_evac_stats("Old", OldPLABSize, PLABWeight),
   _monitoring_support(nullptr),
@@ -1683,7 +1682,7 @@ jint G1CollectedHeap::initialize() {
     _humongous_reclaim_candidates.initialize(reserved(), granularity);
   }
 
-  _workers = new WorkGang("GC Thread", ParallelGCThreads);
+  _workers = new WorkerThreads("GC Thread", ParallelGCThreads);
   if (_workers == NULL) {
     return JNI_ENOMEM;
   }
@@ -1861,9 +1860,7 @@ void G1CollectedHeap::iterate_hcc_closure(G1CardTableEntryClosure* cl, uint work
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
   size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
-  if (_archive_allocator != NULL) {
-    result += _archive_allocator->used();
-  }
+  assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   return result;
 }
 
@@ -3197,9 +3194,7 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
 
   if (!free_list_only) {
     set_used(cl.total_used());
-    if (_archive_allocator != NULL) {
-      _archive_allocator->clear_used();
-    }
+    assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   }
   assert_used_and_recalculate_used_equal(this);
 }
@@ -3277,6 +3272,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionA
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
       _verifier->check_bitmaps("Survivor Region Allocation", new_alloc_region);
+      register_new_survivor_region_with_region_attr(new_alloc_region);
     } else {
       new_alloc_region->set_old();
       _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);
@@ -3393,9 +3389,7 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
     set_used(recalculate_used());
 
-    if (_archive_allocator != NULL) {
-      _archive_allocator->clear_used();
-    }
+    assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   } else {
     // The "used" of the the collection set have already been subtracted
     // when they were freed.  Add in the bytes used.

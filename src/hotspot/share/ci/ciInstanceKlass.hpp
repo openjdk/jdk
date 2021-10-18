@@ -43,6 +43,7 @@ class ciInstanceKlass : public ciKlass {
   friend class ciExceptionHandler;
   friend class ciMethod;
   friend class ciField;
+  friend class ciReplay;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };

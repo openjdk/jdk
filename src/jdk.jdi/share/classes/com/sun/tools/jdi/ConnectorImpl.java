@@ -51,9 +51,8 @@ abstract class ConnectorImpl implements Connector {
         Map<String,Argument> defaults = new LinkedHashMap<>();
         Collection<Argument> values = defaultArguments.values();
 
-        Iterator<Argument> iter = values.iterator();
-        while (iter.hasNext()) {
-            ArgumentImpl argument = (ArgumentImpl)iter.next();
+        for (Argument a : values) {
+            ArgumentImpl argument = (ArgumentImpl)a;
             defaults.put(argument.name(), (Argument)argument.clone());
         }
         return defaults;
