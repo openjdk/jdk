@@ -7,7 +7,7 @@
 import java.io.*;
 
 interface InterfaceFields extends Serializable {
-    public static final long serialVersionUID = 12345;
+    public static final int serialVersionUID = 12345;
 
     public static final ObjectStreamField[] serialPersistentFields = {};
 }

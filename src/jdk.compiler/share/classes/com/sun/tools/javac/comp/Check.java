@@ -4791,11 +4791,18 @@ public class Check {
                     String name = null;
                     switch(enclosed.getKind()) {
                     case FIELD -> {
-                        name = enclosed.getSimpleName().toString();
-                        if (serialFieldNames.contains(name)) {
+                        var field = (VarSymbol)enclosed;
+                        name = field.getSimpleName().toString();
+                        switch(name) {
+                        case "serialPersistentFields" -> {
                             log.warning(LintCategory.SERIAL,
-                                        TreeInfo.diagnosticPositionFor((Symbol)enclosed, tree),
-                                        Warnings.IneffectualSerialFieldInterface(name));
+                                        TreeInfo.diagnosticPositionFor(field, tree),
+                                        Warnings.IneffectualSerialFieldInterface);
+                        }
+
+                        case "serialVersionUID" -> {
+                            checkSerialVersionUID(tree, e, field);
+                        }
                         }
                     }
 

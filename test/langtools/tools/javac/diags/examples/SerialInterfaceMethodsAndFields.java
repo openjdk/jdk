@@ -30,7 +30,7 @@
 import java.io.*;
 
 interface SerialInterfaceMethodsAndFields extends Serializable {
-    public static final long serialVersionUID = 1234;
+    public static final ObjectStreamField[] serialPersistentFields = {};
     public void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException;
     public void readObjectNoData() throws ObjectStreamException;
