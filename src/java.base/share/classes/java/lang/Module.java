@@ -120,7 +120,8 @@ public final class Module implements AnnotatedElement {
     Module(ModuleLayer layer,
            ClassLoader loader,
            ModuleDescriptor descriptor,
-           URI uri)
+           URI uri,
+           boolean defineToVM)
     {
         this.layer = layer;
         this.name = descriptor.name();
@@ -134,7 +135,9 @@ public final class Module implements AnnotatedElement {
         String vs = Objects.toString(version, null);
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
-        defineModule0(this, isOpen, vs, loc, packages);
+        if (defineToVM) {
+            defineModule0(this, isOpen, vs, loc, packages);
+        }
         if (loader == null || loader == ClassLoaders.platformClassLoader()) {
             // boot/builtin modules are always native
             implAddEnableNativeAccess();
@@ -1126,9 +1129,17 @@ public final class Module implements AnnotatedElement {
      */
     static Map<String, Module> defineModules(Configuration cf,
                                              Function<String, ClassLoader> clf,
-                                             ModuleLayer layer)
+                                             ModuleLayer layer) {
+        return defineModules(cf, clf, layer, true, false);
+    }
+
+    private static Map<String, Module> defineModules(Configuration cf,
+                                                     Function<String, ClassLoader> clf,
+                                                     ModuleLayer layer,
+                                                     boolean defineToVM,
+                                                     boolean isBootLayerOverride)
     {
-        boolean isBootLayer = (ModuleLayer.boot() == null);
+        boolean isBootLayer = (ModuleLayer.boot() == null) || isBootLayerOverride;
 
         int numModules = cf.modules().size();
         int cap = (int)(numModules / 0.75f + 1.0f);
@@ -1180,7 +1191,7 @@ public final class Module implements AnnotatedElement {
                 m = Object.class.getModule();
             } else {
                 URI uri = mref.location().orElse(null);
-                m = new Module(layer, loader, descriptor, uri);
+                m = new Module(layer, loader, descriptor, uri, defineToVM);
             }
             nameToModule.put(name, m);
             modules[index] = m;
@@ -1220,22 +1231,24 @@ public final class Module implements AnnotatedElement {
                 reads.add(m2);
 
                 // update VM view
-                addReads0(m, m2);
+                if (defineToVM) {
+                    addReads0(m, m2);
+                }
             }
             m.reads = reads;
 
             // automatic modules read all unnamed modules
             if (descriptor.isAutomatic()) {
-                m.implAddReads(ALL_UNNAMED_MODULE, true);
+                m.implAddReads(ALL_UNNAMED_MODULE, defineToVM);
             }
 
             // exports and opens, skipped for open and automatic
             if (!descriptor.isOpen() && !descriptor.isAutomatic()) {
                 if (isBootLayer && descriptor.opens().isEmpty()) {
                     // no open packages, no qualified exports to modules in parent layers
-                    initExports(m, nameToModule);
+                    initExports(m, nameToModule, defineToVM);
                 } else {
-                    initExportsAndOpens(m, nameToSource, nameToModule, layer.parents());
+                    initExportsAndOpens(m, nameToSource, nameToModule, layer.parents(), defineToVM);
                 }
             }
         }
@@ -1295,8 +1308,9 @@ public final class Module implements AnnotatedElement {
      *
      * @param m the module
      * @param nameToModule map of module name to Module (for qualified exports)
+     * @param syncVM indicates whether the VM state should be updated
      */
-    private static void initExports(Module m, Map<String, Module> nameToModule) {
+    private static void initExports(Module m, Map<String, Module> nameToModule, boolean syncVM) {
         Map<String, Set<Module>> exportedPackages = new HashMap<>();
 
         for (Exports exports : m.getDescriptor().exports()) {
@@ -1307,7 +1321,9 @@ public final class Module implements AnnotatedElement {
                 for (String target : exports.targets()) {
                     Module m2 = nameToModule.get(target);
                     if (m2 != null) {
-                        addExports0(m, source, m2);
+                        if (syncVM) {
+                            addExports0(m, source, m2);
+                        }
                         targets.add(m2);
                     }
                 }
@@ -1316,7 +1332,9 @@ public final class Module implements AnnotatedElement {
                 }
             } else {
                 // unqualified exports
-                addExportsToAll0(m, source);
+                if (syncVM) {
+                    addExportsToAll0(m, source);
+                }
                 exportedPackages.put(source, EVERYONE_SET);
             }
         }
@@ -1333,11 +1351,13 @@ public final class Module implements AnnotatedElement {
      * @param nameToModule map of module name to Module for modules in the layer
      *                     under construction
      * @param parents the parent layers
+     * @param syncVM indicates whether the VM state should be updated
      */
     private static void initExportsAndOpens(Module m,
                                             Map<String, Module> nameToSource,
                                             Map<String, Module> nameToModule,
-                                            List<ModuleLayer> parents) {
+                                            List<ModuleLayer> parents,
+                                            boolean syncVM) {
         ModuleDescriptor descriptor = m.getDescriptor();
         Map<String, Set<Module>> openPackages = new HashMap<>();
         Map<String, Set<Module>> exportedPackages = new HashMap<>();
@@ -1352,7 +1372,9 @@ public final class Module implements AnnotatedElement {
                 for (String target : opens.targets()) {
                     Module m2 = findModule(target, nameToSource, nameToModule, parents);
                     if (m2 != null) {
-                        addExports0(m, source, m2);
+                        if (syncVM) {
+                            addExports0(m, source, m2);
+                        }
                         targets.add(m2);
                     }
                 }
@@ -1361,7 +1383,9 @@ public final class Module implements AnnotatedElement {
                 }
             } else {
                 // unqualified opens
-                addExportsToAll0(m, source);
+                if (syncVM) {
+                    addExportsToAll0(m, source);
+                }
                 openPackages.put(source, EVERYONE_SET);
             }
         }
@@ -1383,7 +1407,9 @@ public final class Module implements AnnotatedElement {
                     if (m2 != null) {
                         // skip qualified export if already open to m2
                         if (openToTargets == null || !openToTargets.contains(m2)) {
-                            addExports0(m, source, m2);
+                            if (syncVM) {
+                                addExports0(m, source, m2);
+                            }
                             targets.add(m2);
                         }
                     }
@@ -1393,7 +1419,9 @@ public final class Module implements AnnotatedElement {
                 }
             } else {
                 // unqualified exports
-                addExportsToAll0(m, source);
+                if (syncVM) {
+                    addExportsToAll0(m, source);
+                }
                 exportedPackages.put(source, EVERYONE_SET);
             }
         }
