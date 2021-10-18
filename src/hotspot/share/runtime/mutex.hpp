@@ -92,6 +92,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   Mutex* _next_mutex;
   Mutex* _prev_mutex;
 
+  void add_to_global_list();
+  void remove_from_global_list();
+
  protected:                              // Monitor-Mutex metadata
   os::PlatformMonitor _lock;             // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor

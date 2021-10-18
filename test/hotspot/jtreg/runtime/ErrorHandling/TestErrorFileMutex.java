@@ -56,7 +56,7 @@ public class TestErrorFileMutex {
 
     ErrorFileScanner.scanHsErrorFileForContent(f, new Pattern[] {
             Pattern.compile("# *Internal Error.*"),
-            Pattern.compile(".*VM Mutex/Monitor currently owned by a thread:.*"),
+            Pattern.compile(".*VM Mutexes/Monitors currently owned by a thread:.*"),
             Pattern.compile(".*ErrorTest_lock - owner thread:.*"),
             Pattern.compile(".*Threads_lock - owner thread:.*")
     });
