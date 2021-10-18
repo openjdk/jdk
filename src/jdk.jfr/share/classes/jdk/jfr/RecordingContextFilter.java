@@ -26,7 +26,6 @@
 package jdk.jfr;
 
 import java.util.Objects;
-import java.util.function.BiPredicate;
 
 import jdk.jfr.internal.RecordingContextBinding;
 import jdk.jfr.internal.RecordingContextEntry;
@@ -66,142 +65,63 @@ public final class RecordingContextFilter {
         private RecordingContextPredicate predicate;
 
         Builder() {
-            this.predicate = new NoopPredicate();
+            this.predicate = RecordingContextPredicate.NOOP;
         }
 
         public Builder hasContext() {
-            predicate = new AndPredicate(predicate, new HasContextPredicate());
+            predicate = predicate.and(
+                "[HasContextPredicate]",
+                b -> {
+                    return b != null;
+                });
             return this;
         }
 
-        private static record HasContextPredicate() implements RecordingContextPredicate {
-
-            HasContextPredicate {
-            }
-
-            @Override
-            public boolean test(RecordingContextBinding b) {
-                return b != null;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("[HasContextPredicate]");
-            }
-        }
         public Builder hasNoContext() {
-            predicate = new AndPredicate(predicate, new HasNoContextPredicate());
+            predicate = predicate.and(
+                "[HasNoContextPredicate]",
+                b -> {
+                    return b == null;
+                });
             return this;
-        }
-
-        private static record HasNoContextPredicate() implements RecordingContextPredicate {
-
-            HasNoContextPredicate {
-            }
-
-            @Override
-            public boolean test(RecordingContextBinding b) {
-                return b == null;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("[HasNoContextPredicate]");
-            }
         }
 
         public Builder hasKey(RecordingContextKey key) {
-            predicate = new AndPredicate(predicate, new HasKeyPredicate(key));
-            return this;
-        }
-
-        private static record HasKeyPredicate(RecordingContextKey key) implements RecordingContextPredicate {
-
-            HasKeyPredicate {
-                Objects.requireNonNull(key);
-            }
-
-            @Override
-            public boolean test(RecordingContextBinding b) {
-                if (b == null) {
-                    // If there is no context, we do not filter on this predicate
-                    return true;
-                }
-                for (RecordingContextEntry e : b.entries()) {
-                    if (Objects.equals(e.key(), key)) {
+            Objects.requireNonNull(key);
+            predicate = predicate.and(
+                String.format("[HasKeyPredicate: key=%s]", key.name()),
+                b -> {
+                    if (b == null) {
+                        // If there s no context, we do not filter on this predicate
                         return true;
                     }
-                }
-                return false;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("[HasKeyPredicate: key=%s]", key.name());
-            }
+                    for (RecordingContextEntry e : b.entries()) {
+                        if (Objects.equals(e.key(), key)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+            return this;
         }
 
         public Builder hasEntry(RecordingContextKey key, String value) {
-            predicate = new AndPredicate(predicate, new HasEntryPredicate(key, value));
-            return this;
-        }
-
-        private static record HasEntryPredicate(RecordingContextKey key, String value) implements RecordingContextPredicate {
-
-            HasEntryPredicate {
-                Objects.requireNonNull(key);
-            }
-
-            @Override
-            public boolean test(RecordingContextBinding b) {
-                if (b == null) {
-                    // If there is no context, we do not filter on this predicate
-                    return true;
-                }
-                for (RecordingContextEntry e : b.entries()) {
-                    if (Objects.equals(e.key(), key) && Objects.equals(e.value(), value)) {
+            Objects.requireNonNull(key);
+            predicate = predicate.and(
+                String.format("[HasEntryPredicate: key=%s, value=%s]", key.name(), value),
+                b -> {
+                    if (b == null) {
+                        // If there s no context, we do not filter on this predicate
                         return true;
                     }
-                }
-                return false;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("[HasEntryPredicate: key=%s, value=%s]", key.name(), value);
-            }
-        }
-
-        private static record AndPredicate(RecordingContextPredicate predicateLeft, RecordingContextPredicate predicateRight)
-                implements RecordingContextPredicate {
-
-            AndPredicate {
-                Objects.requireNonNull(predicateLeft);
-                Objects.requireNonNull(predicateRight);
-            }
-
-            @Override
-            public boolean test(RecordingContextBinding b) {
-                return predicateLeft.test(b) && predicateRight.test(b);
-            }
-
-            @Override
-            public String toString() {
-                return String.format("[AndPredicate: %s AND %s]", predicateLeft.toString(), predicateRight.toString());
-            }
-        }
-
-        private static record NoopPredicate() implements RecordingContextPredicate {
-
-            @Override
-            public boolean test(RecordingContextBinding b) {
-                return true;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("[NoopPredicate]");
-            }
+                    for (RecordingContextEntry e : b.entries()) {
+                        if (Objects.equals(e.key(), key) && Objects.equals(e.value(), value)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+            return this;
         }
 
         public RecordingContextFilter build() {

@@ -25,11 +25,43 @@
 
 package jdk.jfr.internal;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
  * @since 17
  */
-public interface RecordingContextPredicate
-        extends Predicate<RecordingContextBinding> {
+public class RecordingContextPredicate implements Predicate<RecordingContextBinding> {
+
+    private final String str;
+    private final Predicate<RecordingContextBinding> predicate;
+
+    private RecordingContextPredicate(String str, Predicate<RecordingContextBinding> predicate) {
+        this.str = Objects.requireNonNull(str);
+        this.predicate = Objects.requireNonNull(predicate);
+    }
+
+    public static final RecordingContextPredicate NOOP =
+        new RecordingContextPredicate("[NoopPredicate]", b -> true);
+
+    @Override
+    public boolean test(RecordingContextBinding b) {
+        return predicate.test(b);
+    }
+
+    @Override
+    public String toString() {
+        return str;
+    }
+
+    public RecordingContextPredicate and(String str, Predicate<RecordingContextBinding> predicate) {
+        if (this == NOOP) {
+            return new RecordingContextPredicate(str, predicate);
+        }
+        return new RecordingContextPredicate(
+            String.format("[AndPredicate: %s AND %s]", Objects.toString(this), str),
+            b -> {
+                return this.predicate.test(b) && predicate.test(b);
+            });
+    }
 }
