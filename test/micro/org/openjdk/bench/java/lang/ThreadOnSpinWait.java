@@ -24,58 +24,29 @@ package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.CompilerControl;
-import org.openjdk.jmh.annotations.Group;
-import org.openjdk.jmh.annotations.GroupThreads;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Three threads counting up to maxNum(default: 1 000 000). Two of them do pauses.
- * One thread counts without a pause.
- */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class ThreadOnSpinWait {
-    @Param({"1000000"})
-    public int maxNum;
-
     @Benchmark
-    @Group("count")
-    @GroupThreads(1)
-    public void withOnSpinWait() {
-        for (int i = 0; i < maxNum; ++i) {
-            nowork(i);
-            Thread.onSpinWait();
-        }
+    @Threads(1)
+    public void testOnSpinWait() {
+        Thread.onSpinWait();
     }
 
     @Benchmark
-    @Group("count")
-    @GroupThreads(1)
-    public void withSleep0() throws InterruptedException {
-        for (int i = 0; i < maxNum; ++i) {
-            nowork(i);
-            Thread.sleep(0);
-        }
+    @Threads(1)
+    public void testSleep0() throws InterruptedException {
+        Thread.sleep(0);
     }
 
     @Benchmark
-    @Group("count")
-    @GroupThreads(1)
-    public void withoutPause() {
-        for (int i = 0; i < maxNum; ++i) {
-            nowork(i);
-        }
-    }
-
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public static void nowork(int v) {
+    @Threads(1)
+    public void testEmpty() {
     }
 }
