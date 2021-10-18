@@ -458,6 +458,7 @@ public class InetAddress implements java.io.Serializable {
         }
         if (VM.isBooted()) {
             RESOLVER_LOCK.lock();
+            boolean bootstrapSet = false;
             try {
                 cns = resolver;
                 if (cns != null) {
@@ -466,9 +467,10 @@ public class InetAddress implements java.io.Serializable {
                 // Protection against provider calling InetAddress APIs during initialization
                 if (bootstrapResolver != null) {
                     return bootstrapResolver;
-                } else {
-                    bootstrapResolver = BUILTIN_RESOLVER;
                 }
+                bootstrapResolver = BUILTIN_RESOLVER;
+                bootstrapSet = true;
+
                 if (HOSTS_FILE_NAME != null) {
                     // The default resolver service is already host file resolver
                     cns = BUILTIN_RESOLVER;
@@ -483,7 +485,11 @@ public class InetAddress implements java.io.Serializable {
                 InetAddress.resolver = cns;
                 return cns;
             } finally {
-                bootstrapResolver = null;
+                // We want to clear bootstrap resolver reference only after an attempt to
+                // instantiate a resolver has been completed.
+                if (bootstrapSet) {
+                    bootstrapResolver = null;
+                }
                 RESOLVER_LOCK.unlock();
             }
         } else {
