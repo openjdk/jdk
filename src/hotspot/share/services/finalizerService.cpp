@@ -55,12 +55,12 @@ uintptr_t FinalizerEntry::total_finalizers_run() const {
 }
 
 void FinalizerEntry::on_register() {
-  Atomic::inc(&_objects_on_heap);
+  Atomic::inc(&_objects_on_heap, memory_order_relaxed);
 }
 
 void FinalizerEntry::on_complete() {
-  Atomic::inc(&_total_finalizers_run);
-  Atomic::dec(&_objects_on_heap);
+  Atomic::inc(&_total_finalizers_run, memory_order_relaxed);
+  Atomic::dec(&_objects_on_heap, memory_order_relaxed);
 }
 
 static inline uintx hash_function(const InstanceKlass* ik) {
