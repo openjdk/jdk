@@ -22,41 +22,31 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTBINDING_HPP
-#define SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTBINDING_HPP
-
+#include "precompiled.hpp"
+#include "runtime/thread.hpp"
 #include "jfr/recorder/context/jfrContext.hpp"
-#include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/recorder/context/jfrContextFilter.hpp"
 
-class JfrContextBinding : public JfrCHeapObj {
-  friend class JfrContextRepository;
+void JfrContextFilter::set_current(JfrContextFilter* current) {
+  JavaThread *thread = JavaThread::current();
+  thread->set_jfr_context_filter(current);
+}
 
- private:
-  jsize _entries_len;
-  JfrContextEntry* _entries;
+JfrContextFilter* JfrContextFilter::current() {
+  Thread *thread = Thread::current_or_null();
+  if (!thread || !thread->is_Java_thread()) return NULL;
+  return JavaThread::cast(thread)->jfr_context_filter();
+}
 
- public:
-  JfrContextBinding(
-    const char** entries /* of size entries_len * 2 */,
-    jsize entries_len);
-  ~JfrContextBinding();
+void JfrContextFilter::configure(JfrEventId event_id, bool matches_filter) {
+  JfrContextFilter *current = JfrContextFilter::current();
+  if (!current) current = new JfrContextFilter();
+  current->_matches_filter = matches_filter;
+  JfrContextFilter::set_current(current);
+}
 
-  jlong id() { return (jlong)this; }
-  static JfrContextBinding* find(jlong id) { return (JfrContextBinding*)id; }
-
-  bool contains_key(const char* key);
-
-  template<class ITER>
-  void iterate(ITER* iter) {
-    for (int i = 0; i < _entries_len; i++) {
-      if (!iter->do_entry(&_entries[i])) {
-        return;
-      }
-    }
-  }
-
-  static JfrContextBinding* current();
-  static void set_current(JfrContextBinding* context);
-};
-
-#endif // SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTBINDING_HPP
+bool JfrContextFilter::accept(JfrEventId event_id) {
+  JfrContextFilter *current = JfrContextFilter::current();
+  if (!current) return true;
+  return current->_matches_filter;
+}

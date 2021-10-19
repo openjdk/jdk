@@ -27,9 +27,12 @@ package jdk.jfr.internal;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import jdk.jfr.RecordingContextKey;
 import jdk.jfr.internal.JVM;
 
@@ -42,11 +45,11 @@ public final class RecordingContextBinding implements AutoCloseable {
 
     private final static Cleaner cleaner = Cleaner.create();
 
+    private final static List<Consumer<RecordingContextBinding>> contextChangeListeners = new ArrayList<>();
+
     // double linked-list of contexts
     private final RecordingContextBinding previous;
     private RecordingContextBinding next;
-
-    private boolean matchesFilter;
 
     private final Set<RecordingContextEntry> entries;
 
@@ -66,23 +69,13 @@ public final class RecordingContextBinding implements AutoCloseable {
 
         this.entries = Collections.unmodifiableSet(entries);
 
-        this.matchesFilter = RecordingContextFilterEngine.matches(this);
-
         this.nativeWrapper = new NativeBindingWrapper(
-            this.previous != null ? this.previous.nativeWrapper : null, entries, matchesFilter);
+            this.previous != null ? this.previous.nativeWrapper : null, entries);
 
         this.closer = cleaner.register(
             this, new NativeBindingCleaner(this.nativeWrapper));
 
-        current.set(this);
-    }
-
-    /**
-     * Used for snapshotting
-     */
-    public static void setCurrent(RecordingContextBinding context) {
-        NativeBindingWrapper.setCurrent(context != null ? context.nativeWrapper : null);
-        current.set(context);
+        setCurrent(this);
     }
 
     public static RecordingContextBinding current() {
@@ -99,6 +92,15 @@ public final class RecordingContextBinding implements AutoCloseable {
 
     public boolean containsKey(RecordingContextKey key) {
         return nativeWrapper.containsKey(Objects.requireNonNull(key).name());
+
+    }
+
+    public static void addContextChangeListener(Consumer<RecordingContextBinding> c) {
+        contextChangeListeners.add(c);
+    }
+
+    public static void removeContextChangeListener(Consumer<RecordingContextBinding> c) {
+        contextChangeListeners.remove(c);
     }
 
     @Override
@@ -116,21 +118,32 @@ public final class RecordingContextBinding implements AutoCloseable {
             previous.next = null;
         }
 
-        current.set(previous);
+        setCurrent(previous);
+    }
+
+    /**
+     * Used for snapshotting
+     */
+    public static void setCurrent(RecordingContextBinding context) {
+        NativeBindingWrapper.setCurrent(context != null ? context.nativeWrapper : null);
+        current.set(context);
+
+        for (Consumer<RecordingContextBinding> listener : contextChangeListeners) {
+            listener.accept(context);
+        }
     }
 
     static class NativeBindingWrapper implements AutoCloseable {
 
         private final long id;
         private final NativeBindingWrapper previous;
-        private final boolean matchesFilter;
+
+        private boolean closed = false;
 
         public NativeBindingWrapper(
                 NativeBindingWrapper previous,
-                Set<RecordingContextEntry> entries,
-                boolean matchesFilter) {
+                Set<RecordingContextEntry> entries) {
             this.previous = previous;
-            this.matchesFilter = matchesFilter;
 
             // convert entries to an array of contiguous pair of String
             //  [ "key1", "value1", "key2", "value2", ... ]
@@ -143,9 +156,7 @@ public final class RecordingContextBinding implements AutoCloseable {
             }
 
             this.id = JVM.getJVM().recordingContextNew(
-                            Objects.requireNonNull(entriesAsStrings), matchesFilter);
-
-            setCurrent(this);
+                            Objects.requireNonNull(entriesAsStrings));
         }
 
         public boolean containsKey(String key) {
@@ -153,16 +164,22 @@ public final class RecordingContextBinding implements AutoCloseable {
         }
 
         public static void setCurrent(NativeBindingWrapper context) {
-            JVM.getJVM().recordingContextSet(context != null ? context.id : 0);
+            if (context == null) {
+                JVM.getJVM().recordingContextSet(0);
+            } else {
+                if (context.closed) {
+                    throw new IllegalStateException("context is closed");
+                }
+                JVM.getJVM().recordingContextSet(context.id);
+            }
         }
 
         @Override
         public void close() {
-            setCurrent(previous);
-        }
-
-        public void delete() {
-            JVM.getJVM().recordingContextDelete(id);
+            if (!closed) {
+                JVM.getJVM().recordingContextDelete(id);
+                closed = true;
+            }
         }
     }
 
@@ -175,7 +192,7 @@ public final class RecordingContextBinding implements AutoCloseable {
         }
 
         public void run() {
-            this.nativeWrapper.delete();
+            this.nativeWrapper.close();
         }
     }
 }

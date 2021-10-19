@@ -1002,6 +1002,7 @@ JavaThread::JavaThread() :
 
 #if INCLUDE_JFR
   _jfr_context_binding(nullptr),
+  _jfr_context_filter(nullptr),
 #endif
 
   _suspend_flags(0),

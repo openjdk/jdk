@@ -35,7 +35,6 @@ import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.RecordingContextBinding;
-import jdk.jfr.internal.RecordingContextFilterEngine;
 import jdk.jfr.internal.StringPool;
 
 // Users should not be subclass for security reasons.
@@ -62,7 +61,7 @@ public abstract class EventHandler {
     public final boolean shouldCommit(long duration) {
         return isEnabled() &&
                 duration >= platformEventType.getThresholdTicks() &&
-                RecordingContextFilterEngine.matches(RecordingContextBinding.current());
+                platformEventType.matchesFilter();
     }
 
     // Accessed by generated code in event class

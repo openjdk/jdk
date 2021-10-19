@@ -28,6 +28,7 @@
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/context/jfrContextFilter.hpp"
 #include "jfr/recorder/context/jfrContextRepository.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
@@ -186,7 +187,7 @@ class JfrEvent {
     } else if (_end_time == 0) {
       set_endtime(JfrTicks::now());
     }
-    if (T::hasContext && !JfrContextBinding::current_matches_filter()) {
+    if (T::hasContext && !JfrContextFilter::accept(T::eventId)) {
       return false;
     }
     if (T::isInstant || T::isRequestable) {

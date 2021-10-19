@@ -143,7 +143,7 @@ public class TestFullContext {
                         .build()),
             () ->
                 RecordingContextFilter.Config.createFilter()
-                    .hasEntry(contextKey1, "Key1Value1_no")
+                    .hasEntry(contextKey1, "")
                     .build(),
             events -> {
                 events.forEach(System.out::println);
@@ -254,12 +254,13 @@ public class TestFullContext {
             Supplier<RecordingContextHolder> contextsFactory,
             Supplier<RecordingContextFilter> filterFactory,
             ThrowingPredicate<List<RecordedEvent>, Throwable> validation) throws Throwable {
+        System.out.printf("=============== Before%n");
         try {
             try (Recording recording = new Recording()) {
                 recording.enable("TestEvent");
                 recording.start();
 
-                RecordingContextFilter prev = RecordingContextFilter.Config.getContextFilter();
+                RecordingContextFilter prev = RecordingContextFilter.Config.contextFilter();
                 try {
                     RecordingContextFilter.Config.setContextFilter(filterFactory.get());
                     try (RecordingContextHolder contexts = contextsFactory.get()) {
@@ -278,9 +279,10 @@ public class TestFullContext {
                 }
             }
         } catch (Throwable t) {
-            t.printStackTrace();
+            t.printStackTrace(System.out);
             success = false;
         }
+        System.out.printf("=============== After%n");
     }
 
     private static record RecordingContextHolder(List<RecordingContext> contexts) implements AutoCloseable {

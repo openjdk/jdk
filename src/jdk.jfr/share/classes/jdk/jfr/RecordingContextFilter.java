@@ -51,8 +51,8 @@ public final class RecordingContextFilter {
             RecordingContextFilterEngine.setContextFilter(filter, filter != null ? filter.predicate : null);
         }
 
-        public static RecordingContextFilter getContextFilter() {
-            return RecordingContextFilterEngine.getContextFilter();
+        public static RecordingContextFilter contextFilter() {
+            return RecordingContextFilterEngine.contextFilter();
         }
 
         public static RecordingContextFilter.Builder createFilter() {

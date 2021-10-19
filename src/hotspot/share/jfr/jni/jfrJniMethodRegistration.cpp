@@ -94,10 +94,11 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getHandler", (char*)"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)jfr_get_handler,
       (char*)"setHandler", (char*)"(Ljava/lang/Class;Ljdk/jfr/internal/handlers/EventHandler;)Z", (void*)jfr_set_handler,
       (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string,
-      (char*)"recordingContextNew", (char*)"([Ljava/lang/String;Z)J", (void*)jfr_recording_context_new,
+      (char*)"recordingContextNew", (char*)"([Ljava/lang/String;)J", (void*)jfr_recording_context_new,
       (char*)"recordingContextDelete", (char*)"(J)V", (void*)jfr_recording_context_delete,
       (char*)"recordingContextSet", (char*)"(J)V", (void*)jfr_recording_context_set,
-      (char*)"recordingContextContainsKey", (char*)"(JLjava/lang/String;)Z", (void*)jfr_recording_context_contains_key
+      (char*)"recordingContextContainsKey", (char*)"(JLjava/lang/String;)Z", (void*)jfr_recording_context_contains_key,
+      (char*)"recordingContextFilterSet", (char*)"(Z)V", (void*)jfr_recording_context_filter_set
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

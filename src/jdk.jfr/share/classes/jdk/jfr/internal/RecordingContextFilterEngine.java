@@ -26,6 +26,7 @@
 package jdk.jfr.internal;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 import jdk.jfr.RecordingContextFilter;
 
 /**
@@ -33,21 +34,49 @@ import jdk.jfr.RecordingContextFilter;
  */
 public final class RecordingContextFilterEngine {
 
+    private static final ThreadLocal<Boolean> current = ThreadLocal.withInitial(() -> true);
+
+    private static final Consumer<RecordingContextBinding> onContextChangeListener =
+        RecordingContextFilterEngine::onRecordingContextChange;
+
     private static RecordingContextFilter filter;
     private static RecordingContextPredicate predicate;
 
     public static void setContextFilter(
             RecordingContextFilter filter,
             RecordingContextPredicate predicate) {
-        RecordingContextFilterEngine.filter = filter;
-        RecordingContextFilterEngine.predicate = predicate;
+
+        synchronized (RecordingContextFilterEngine.class) {
+            if (RecordingContextFilterEngine.filter == null && filter != null) {
+                RecordingContextBinding.addContextChangeListener(onContextChangeListener);
+            }
+            if (filter == null) {
+                RecordingContextBinding.removeContextChangeListener(onContextChangeListener);
+            }
+
+            RecordingContextFilterEngine.filter = filter;
+            RecordingContextFilterEngine.predicate = predicate;
+        }
     }
 
-    public static RecordingContextFilter getContextFilter() {
+    public static RecordingContextFilter contextFilter() {
         return filter;
     }
 
-    public static boolean matches(RecordingContextBinding b) {
-        return predicate == null || predicate.test(b);
+    private static void onRecordingContextChange(RecordingContextBinding b) {
+        RecordingContextPredicate predicate;
+        synchronized (RecordingContextFilterEngine.class) {
+            // need to synchronize with setContextFilter as to avoid this
+            // listener to be called before it was fully initialized
+            predicate = RecordingContextFilterEngine.predicate;
+        }
+
+        boolean match = predicate == null || predicate.test(b);
+        JVM.getJVM().recordingContextFilterSet(match);
+        current.set(match);
+    }
+
+    public static boolean matchCurrentBinding() {
+        return current.get();
     }
 }

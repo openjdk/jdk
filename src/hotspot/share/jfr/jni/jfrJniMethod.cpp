@@ -32,6 +32,8 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/context/jfrContextBinding.hpp"
+#include "jfr/recorder/context/jfrContextFilter.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -196,7 +198,7 @@ NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstr
   return id;
 NO_TRANSITION_END
 
-NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jobjectArray entries, jboolean matches_filter))
+NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jobjectArray entries))
   ResourceMark rm;
   jsize entries_len = env->GetArrayLength(entries);
   const char** entries_utf = NEW_RESOURCE_ARRAY(const char*, entries_len);
@@ -205,7 +207,7 @@ NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jobject
     entries_utf[i] = entry != NULL ?
       env->GetStringUTFChars(entry, NULL) : NULL;
   }
-  JfrContextBinding* binding = new JfrContextBinding(entries_utf, entries_len / 2, matches_filter);
+  JfrContextBinding* binding = new JfrContextBinding(entries_utf, entries_len / 2);
   assert(binding != NULL, "invariant");
   for (int i = 0; i < entries_len; i++) {
     jstring entry = (jstring)env->GetObjectArrayElement(entries, i);
@@ -231,6 +233,10 @@ NO_TRANSITION(jboolean, jfr_recording_context_contains_key(JNIEnv* env, jobject 
   jboolean res = binding->contains_key(key_name);
   env->ReleaseStringUTFChars(key, key_name);
   return res;
+NO_TRANSITION_END
+
+NO_TRANSITION(void, jfr_recording_context_filter_set(JNIEnv* env, jobject jvm, jboolean matches_filter))
+  JfrContextFilter::configure(/*FIXME*/JfrEventId(LAST_EVENT_ID+1), matches_filter);
 NO_TRANSITION_END
 
 /*

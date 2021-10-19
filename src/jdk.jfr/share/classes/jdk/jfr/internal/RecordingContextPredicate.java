@@ -36,7 +36,7 @@ public class RecordingContextPredicate implements Predicate<RecordingContextBind
     private final String str;
     private final Predicate<RecordingContextBinding> predicate;
 
-    private RecordingContextPredicate(String str, Predicate<RecordingContextBinding> predicate) {
+    RecordingContextPredicate(String str, Predicate<RecordingContextBinding> predicate) {
         this.str = Objects.requireNonNull(str);
         this.predicate = Objects.requireNonNull(predicate);
     }

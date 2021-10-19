@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.hpp"
 #include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/recorder/context/jfrContextBinding.hpp"
 
-JfrContextBinding::JfrContextBinding(const char** entries, jsize entries_len, bool matches_filter)
+JfrContextBinding::JfrContextBinding(const char** entries, jsize entries_len)
     : _entries_len(entries_len),
-      _entries(JfrCHeapObj::new_array<JfrContextEntry>(_entries_len)),
-      _matches_filter(matches_filter) {
+      _entries(JfrCHeapObj::new_array<JfrContextEntry>(_entries_len)) {
   assert(entries != NULL, "invariant");
   for (int i = 0; i < _entries_len; i++) {
     _entries[i] = JfrContextEntry(entries[i * 2 + 0], entries[i * 2 + 1]);
@@ -55,15 +55,7 @@ void JfrContextBinding::set_current(JfrContextBinding* current) {
 }
 
 JfrContextBinding* JfrContextBinding::current() {
-  JavaThread *thread = JavaThread::current();
-  return thread->jfr_context_binding();
-}
-
-bool JfrContextBinding::current_matches_filter() {
   Thread *thread = Thread::current_or_null();
-  if (!thread) { return true; }
-  JavaThread *jthread = thread->is_Java_thread() ? JavaThread::cast(thread) : NULL;
-  if (!jthread) { return true; }
-  JfrContextBinding *binding = jthread->jfr_context_binding();
-  return binding == NULL || binding->_matches_filter;
+  if (!thread || !thread->is_Java_thread()) return NULL;
+  return JavaThread::cast(thread)->jfr_context_binding();
 }

@@ -22,41 +22,24 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTBINDING_HPP
-#define SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTBINDING_HPP
+#ifndef SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTFILTER_HPP
+#define SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTFILTER_HPP
 
-#include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 
-class JfrContextBinding : public JfrCHeapObj {
-  friend class JfrContextRepository;
-
+class JfrContextFilter : public JfrCHeapObj {
  private:
-  jsize _entries_len;
-  JfrContextEntry* _entries;
+  bool _matches_filter;
+
+  static JfrContextFilter* current();
+  static void set_current(JfrContextFilter* context);
 
  public:
-  JfrContextBinding(
-    const char** entries /* of size entries_len * 2 */,
-    jsize entries_len);
-  ~JfrContextBinding();
+  JfrContextFilter() {}
+  ~JfrContextFilter() {}
 
-  jlong id() { return (jlong)this; }
-  static JfrContextBinding* find(jlong id) { return (JfrContextBinding*)id; }
-
-  bool contains_key(const char* key);
-
-  template<class ITER>
-  void iterate(ITER* iter) {
-    for (int i = 0; i < _entries_len; i++) {
-      if (!iter->do_entry(&_entries[i])) {
-        return;
-      }
-    }
-  }
-
-  static JfrContextBinding* current();
-  static void set_current(JfrContextBinding* context);
+  static bool accept(JfrEventId event_id);
+  static void configure(JfrEventId event_id, bool matches_filter);
 };
 
-#endif // SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTBINDING_HPP
+#endif // SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTFILTER_HPP

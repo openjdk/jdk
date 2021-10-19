@@ -52,6 +52,7 @@
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/recorder/context/jfrContextBinding.hpp"
+#include "jfr/recorder/context/jfrContextFilter.hpp"
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
@@ -782,12 +783,19 @@ class JavaThread: public Thread {
   // JFR Recording Context support
  private:
   JfrContextBinding* _jfr_context_binding;
+  JfrContextFilter* _jfr_context_filter;
  public:
   JfrContextBinding* jfr_context_binding() {
     return _jfr_context_binding;
   }
   void set_jfr_context_binding(JfrContextBinding* context) {
     _jfr_context_binding = context;
+  }
+  JfrContextFilter* jfr_context_filter() {
+    return _jfr_context_filter;
+  }
+  void set_jfr_context_filter(JfrContextFilter* filter) {
+    _jfr_context_filter = filter;
   }
 #endif
 

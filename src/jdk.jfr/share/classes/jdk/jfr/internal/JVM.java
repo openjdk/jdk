@@ -633,7 +633,7 @@ public final class JVM {
      *
      * @param entries the entries in the current recording context binding
      */
-    public native long recordingContextNew(String[] entries, boolean matchesFilter);
+    public native long recordingContextNew(String[] entries);
 
     /**
      * 
@@ -657,4 +657,10 @@ public final class JVM {
      * @return whether the current context contains the given key
      */
     public native boolean recordingContextContainsKey(long id, String key);
+
+    /**
+     * @param matches_filter whether the current context matches the
+     *                       RecordingContextFilter on the current thread
+     */
+    public native void recordingContextFilterSet(boolean matches_filter);
 }
