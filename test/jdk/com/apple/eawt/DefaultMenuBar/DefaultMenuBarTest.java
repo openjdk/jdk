@@ -27,9 +27,7 @@
  * @bug 8007267
  * @summary [macosx] com.apple.eawt.Application.setDefaultMenuBar is not working
  * @requires (os.family == "mac")
- * @author leonid.romanov@oracle.com
- * @modules java.desktop/sun.awt
- *          java.desktop/com.apple.eawt
+ * @modules java.desktop/com.apple.eawt
  * @run main DefaultMenuBarTest
  */
 
@@ -50,11 +48,7 @@ public class DefaultMenuBarTest {
         }
 
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+        SwingUtilities.invokeAndWait(DefaultMenuBarTest::createAndShowGUI);
 
         Robot robot = new Robot();
         robot.setAutoDelay(100);
@@ -77,13 +71,7 @@ public class DefaultMenuBarTest {
         JMenuItem newItem = new JMenuItem("Open");
 
         newItem.setAccelerator(ks);
-        newItem.addActionListener(
-            new ActionListener(){
-                public void actionPerformed(ActionEvent e) {
-                    listenerCallCounter++;
-                }
-            }
-        );
+        newItem.addActionListener(e -> listenerCallCounter++);
         menu.add(newItem);
 
         JMenuBar defaultMenu = new JMenuBar();
@@ -105,7 +93,7 @@ public class DefaultMenuBarTest {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }
