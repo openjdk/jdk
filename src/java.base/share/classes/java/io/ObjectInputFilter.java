@@ -638,7 +638,7 @@ public interface ObjectInputFilter {
                     configLog.log(ERROR,
                             "Error configuring filter: {0}", (Object) re);
                     // Do not continue if configuration not initialized
-                    throw new ExceptionInInitializerError(re);
+                    throw re;
                 }
             }
             serialFilter = filter;
