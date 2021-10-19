@@ -47,7 +47,6 @@ import sun.net.www.http.KeepAliveCache;
 import sun.net.www.protocol.http.HttpURLConnection;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -91,9 +90,7 @@ public class RequestMethodEquality {
             HttpClient freshClient = HttpClient.New(url, Proxy.NO_PROXY, firstConnectTimeout, true, conn);
             freshClient.closeServer(); // ensures that the call to HttpClient.available() fails
 
-            Field inCache = HttpClient.class.getDeclaredField("inCache");
-            inCache.setAccessible(true);
-            inCache.setBoolean(freshClient, true); // allows the assertion in HttpClient.New to pass
+            httpClientAccess.setInCache(freshClient, true); // allows the assertion in HttpClient.New to pass
 
             // Injecting a mock KeepAliveCache that the HttpClient can use
             KeepAliveCache kac = httpClientAccess.getKeepAliveCache();

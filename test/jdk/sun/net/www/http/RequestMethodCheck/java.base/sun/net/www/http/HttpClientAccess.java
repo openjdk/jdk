@@ -28,4 +28,8 @@ public class HttpClientAccess {
         // kac is a protected static field in HttpClient
         return HttpClient.kac;
     }
+
+    public void setInCache(HttpClient client, boolean inCache) {
+        client.inCache = inCache;
+    }
 }
