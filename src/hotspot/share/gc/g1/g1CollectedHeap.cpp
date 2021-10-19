@@ -2691,7 +2691,7 @@ bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const 
 }
 
 #ifndef PRODUCT
-void G1CollectedHeap::verify_region_attr_remset_update() {
+void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
   class VerifyRegionAttrRemSet : public HeapRegionClosure {
   public:
     virtual bool do_heap_region(HeapRegion* r) {
