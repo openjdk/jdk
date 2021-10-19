@@ -275,7 +275,6 @@ void mutex_init() {
   def(Terminator_lock              , PaddedMonitor, safepoint,      true);
   def(InitCompleted_lock           , PaddedMonitor, nosafepoint,    true);
   def(Notify_lock                  , PaddedMonitor, safepoint,      true);
-  def(JNICritical_lock             , PaddedMonitor, safepoint,      true); // used for JNI critical regions
   def(AdapterHandlerLibrary_lock   , PaddedMutex  , safepoint,      true);
 
   def(Heap_lock                    , PaddedMonitor, safepoint,      false); // Doesn't safepoint check during termination.
@@ -306,6 +305,7 @@ void mutex_init() {
 
 #if INCLUDE_JFR
   def(JfrBuffer_lock               , PaddedMutex  , nosafepoint,       true);
+  def(JfrMsg_lock                  , PaddedMonitor, nosafepoint-3,     true);
   def(JfrStacktrace_lock           , PaddedMutex  , stackwatermark-1,  true);
   def(JfrThreadSampler_lock        , PaddedMonitor, nosafepoint,       true);
 #endif
@@ -365,10 +365,7 @@ void mutex_init() {
   defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock,              true);
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock, false);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock,               true);
-
-#if INCLUDE_JFR
-  defl(JfrMsg_lock                 , PaddedMonitor, Module_lock,               true);
-#endif
+  defl(JNICritical_lock            , PaddedMonitor, MultiArray_lock,           true); // used for JNI critical regions
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {

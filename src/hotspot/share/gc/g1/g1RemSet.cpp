@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
@@ -406,7 +406,7 @@ public:
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    WorkGang* workers = g1h->workers();
+    WorkerThreads* workers = g1h->workers();
     uint const max_workers = workers->active_workers();
 
     uint const start_pos = num_regions * worker_id / max_workers;
@@ -1102,7 +1102,7 @@ public:
   }
 };
 
-class G1MergeHeapRootsTask : public AbstractGangTask {
+class G1MergeHeapRootsTask : public WorkerTask {
 
   class G1MergeCardSetStats {
     size_t _merged[G1GCPhaseTimes::MergeRSContainersSentinel];
@@ -1371,7 +1371,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
 
 public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
-    AbstractGangTask("G1 Merge Heap Roots"),
+    WorkerTask("G1 Merge Heap Roots"),
     _hr_claimer(num_workers),
     _scan_state(scan_state),
     _dirty_card_buffers(),
@@ -1490,7 +1490,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     }
   }
 
-  WorkGang* workers = g1h->workers();
+  WorkerThreads* workers = g1h->workers();
   size_t const increment_length = g1h->collection_set()->increment_length();
 
   uint const num_workers = initial_evacuation ? workers->active_workers() :
@@ -1738,7 +1738,7 @@ void G1RemSet::print_summary_info() {
   }
 }
 
-class G1RebuildRemSetTask: public AbstractGangTask {
+class G1RebuildRemSetTask: public WorkerTask {
   // Aggregate the counting data that was constructed concurrently
   // with marking.
   class G1RebuildRemSetHeapRegionClosure : public HeapRegionClosure {
@@ -1974,7 +1974,7 @@ public:
   G1RebuildRemSetTask(G1ConcurrentMark* cm,
                       uint n_workers,
                       uint worker_id_offset) :
-      AbstractGangTask("G1 Rebuild Remembered Set"),
+      WorkerTask("G1 Rebuild Remembered Set"),
       _hr_claimer(n_workers),
       _cm(cm),
       _worker_id_offset(worker_id_offset) {
@@ -1991,7 +1991,7 @@ public:
 };
 
 void G1RemSet::rebuild_rem_set(G1ConcurrentMark* cm,
-                               WorkGang* workers,
+                               WorkerThreads* workers,
                                uint worker_id_offset) {
   uint num_workers = workers->active_workers();
 

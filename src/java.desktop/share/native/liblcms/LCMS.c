@@ -70,17 +70,6 @@ typedef union {
     jint j;
 } TagSignature_t, *TagSignature_p;
 
-static jfieldID Trans_renderType_fID;
-static jfieldID IL_isIntPacked_fID;
-static jfieldID IL_dataType_fID;
-static jfieldID IL_pixelType_fID;
-static jfieldID IL_dataArray_fID;
-static jfieldID IL_offset_fID;
-static jfieldID IL_nextRowOffset_fID;
-static jfieldID IL_width_fID;
-static jfieldID IL_height_fID;
-static jfieldID IL_imageAtOnce_fID;
-
 JavaVM *javaVM;
 
 void errorHandler(cmsContext ContextID, cmsUInt32Number errorCode,
@@ -461,44 +450,34 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     }
 }
 
-void* getILData (JNIEnv *env, jobject img, jint* pDataType,
-                 jobject* pDataObject) {
-    void* result = NULL;
-    *pDataType = (*env)->GetIntField (env, img, IL_dataType_fID);
-    *pDataObject = (*env)->GetObjectField(env, img, IL_dataArray_fID);
-    switch (*pDataType) {
+static void *getILData(JNIEnv *env, jobject data, jint type) {
+    switch (type) {
         case DT_BYTE:
-            result = (*env)->GetByteArrayElements (env, *pDataObject, 0);
-            break;
+            return (*env)->GetByteArrayElements(env, data, 0);
         case DT_SHORT:
-            result = (*env)->GetShortArrayElements (env, *pDataObject, 0);
-            break;
+            return (*env)->GetShortArrayElements(env, data, 0);
         case DT_INT:
-            result = (*env)->GetIntArrayElements (env, *pDataObject, 0);
-            break;
+            return (*env)->GetIntArrayElements(env, data, 0);
         case DT_DOUBLE:
-            result = (*env)->GetDoubleArrayElements (env, *pDataObject, 0);
-            break;
+            return (*env)->GetDoubleArrayElements(env, data, 0);
+        default:
+            return NULL;
     }
-
-    return result;
 }
 
-void releaseILData (JNIEnv *env, void* pData, jint dataType,
-                    jobject dataObject) {
-    switch (dataType) {
+static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data) {
+    switch (type) {
         case DT_BYTE:
-            (*env)->ReleaseByteArrayElements(env,dataObject,(jbyte*)pData,0);
+            (*env)->ReleaseByteArrayElements(env, data, (jbyte *) pData, 0);
             break;
         case DT_SHORT:
-            (*env)->ReleaseShortArrayElements(env,dataObject,(jshort*)pData, 0);
+            (*env)->ReleaseShortArrayElements(env, data, (jshort *) pData, 0);
             break;
         case DT_INT:
-            (*env)->ReleaseIntArrayElements(env,dataObject,(jint*)pData,0);
+            (*env)->ReleaseIntArrayElements(env, data, (jint *) pData, 0);
             break;
         case DT_DOUBLE:
-            (*env)->ReleaseDoubleArrayElements(env,dataObject,(jdouble*)pData,
-                                               0);
+            (*env)->ReleaseDoubleArrayElements(env, data, (jdouble *) pData, 0);
             break;
     }
 }
@@ -506,31 +485,15 @@ void releaseILData (JNIEnv *env, void* pData, jint dataType,
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
  * Method:    colorConvert
- * Signature: (Lsun/java2d/cmm/lcms/LCMSTransform;Lsun/java2d/cmm/lcms/LCMSImageLayout;Lsun/java2d/cmm/lcms/LCMSImageLayout;)V
+ * Signature: (JIIIIIIZZLjava/lang/Object;Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
-  (JNIEnv *env, jclass cls, jlong ID, jobject src, jobject dst)
+  (JNIEnv *env, jclass cls, jlong ID, jint width, jint height, jint srcOffset,
+   jint srcNextRowOffset, jint dstOffset, jint dstNextRowOffset,
+   jboolean srcAtOnce, jboolean dstAtOnce,
+   jobject srcData, jobject dstData, jint srcDType, jint dstDType)
 {
     cmsHTRANSFORM sTrans = jlong_to_ptr(ID);
-    int srcDType, dstDType;
-    int srcOffset, srcNextRowOffset, dstOffset, dstNextRowOffset;
-    int width, height, i;
-    void* inputBuffer;
-    void* outputBuffer;
-    char* inputRow;
-    char* outputRow;
-    jobject srcData, dstData;
-    jboolean srcAtOnce = JNI_FALSE, dstAtOnce = JNI_FALSE;
-
-    srcOffset = (*env)->GetIntField (env, src, IL_offset_fID);
-    srcNextRowOffset = (*env)->GetIntField (env, src, IL_nextRowOffset_fID);
-    dstOffset = (*env)->GetIntField (env, dst, IL_offset_fID);
-    dstNextRowOffset = (*env)->GetIntField (env, dst, IL_nextRowOffset_fID);
-    width = (*env)->GetIntField (env, src, IL_width_fID);
-    height = (*env)->GetIntField (env, src, IL_height_fID);
-
-    srcAtOnce = (*env)->GetBooleanField(env, src, IL_imageAtOnce_fID);
-    dstAtOnce = (*env)->GetBooleanField(env, dst, IL_imageAtOnce_fID);
 
     if (sTrans == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_colorConvert: transform == NULL");
@@ -539,30 +502,27 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
         return;
     }
 
-
-    inputBuffer = getILData (env, src, &srcDType, &srcData);
-
+    void *inputBuffer = getILData(env, srcData, srcDType);
     if (inputBuffer == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "");
         // An exception should have already been thrown.
         return;
     }
 
-    outputBuffer = getILData (env, dst, &dstDType, &dstData);
-
+    void *outputBuffer = getILData(env, dstData, dstDType);
     if (outputBuffer == NULL) {
         releaseILData(env, inputBuffer, srcDType, srcData);
         // An exception should have already been thrown.
         return;
     }
 
-    inputRow = (char*)inputBuffer + srcOffset;
-    outputRow = (char*)outputBuffer + dstOffset;
+    char *inputRow = (char *) inputBuffer + srcOffset;
+    char *outputRow = (char *) outputBuffer + dstOffset;
 
     if (srcAtOnce && dstAtOnce) {
         cmsDoTransform(sTrans, inputRow, outputRow, width * height);
     } else {
-        for (i = 0; i < height; i++) {
+        for (int i = 0; i < height; i++) {
             cmsDoTransform(sTrans, inputRow, outputRow, width);
             inputRow += srcNextRowOffset;
             outputRow += dstNextRowOffset;
@@ -605,61 +565,6 @@ JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
         return cmmProfile;
     }
     return NULL;
-}
-
-/*
- * Class:     sun_java2d_cmm_lcms_LCMS
- * Method:    initLCMS
- * Signature: (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;)V
- */
-JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_initLCMS
-  (JNIEnv *env, jclass cls, jclass Trans, jclass IL, jclass Pf)
-{
-    /* TODO: move initialization of the IDs to the static blocks of
-     * corresponding classes to avoid problems with invalidating ids by class
-     * unloading
-     */
-    Trans_renderType_fID = (*env)->GetFieldID (env, Trans, "renderType", "I");
-    if (Trans_renderType_fID == NULL) {
-        return;
-    }
-    IL_isIntPacked_fID = (*env)->GetFieldID (env, IL, "isIntPacked", "Z");
-    if (IL_isIntPacked_fID == NULL) {
-        return;
-    }
-    IL_dataType_fID = (*env)->GetFieldID (env, IL, "dataType", "I");
-    if (IL_dataType_fID == NULL) {
-        return;
-    }
-    IL_pixelType_fID = (*env)->GetFieldID (env, IL, "pixelType", "I");
-    if (IL_pixelType_fID == NULL) {
-        return;
-    }
-    IL_dataArray_fID = (*env)->GetFieldID(env, IL, "dataArray",
-                                          "Ljava/lang/Object;");
-    if (IL_dataArray_fID == NULL) {
-        return;
-    }
-    IL_width_fID = (*env)->GetFieldID (env, IL, "width", "I");
-    if (IL_width_fID == NULL) {
-        return;
-    }
-    IL_height_fID = (*env)->GetFieldID (env, IL, "height", "I");
-    if (IL_height_fID == NULL) {
-        return;
-    }
-    IL_offset_fID = (*env)->GetFieldID (env, IL, "offset", "I");
-    if (IL_offset_fID == NULL) {
-        return;
-    }
-    IL_imageAtOnce_fID = (*env)->GetFieldID (env, IL, "imageAtOnce", "Z");
-    if (IL_imageAtOnce_fID == NULL) {
-        return;
-    }
-    IL_nextRowOffset_fID = (*env)->GetFieldID (env, IL, "nextRowOffset", "I");
-    if (IL_nextRowOffset_fID == NULL) {
-        return;
-    }
 }
 
 static cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)

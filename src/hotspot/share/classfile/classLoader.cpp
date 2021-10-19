@@ -1138,7 +1138,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
 
   const char* const class_name = name->as_C_string();
 
-  EventMark m("loading class %s", class_name);
+  EventMarkClassLoading m("Loading class %s", class_name);
 
   const char* const file_name = file_name_for_class_name(class_name,
                                                          name->utf8_length());
