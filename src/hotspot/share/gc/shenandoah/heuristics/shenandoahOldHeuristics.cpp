@@ -35,7 +35,8 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahGeneration* generatio
     _hidden_next_old_collection_candidate(0),
     _old_coalesce_and_fill_candidates(0),
     _first_coalesce_and_fill_candidate(0),
-    _trigger_heuristic(trigger_heuristic)
+    _trigger_heuristic(trigger_heuristic),
+    _promotion_failed(false)
 {
 }
 
