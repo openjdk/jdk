@@ -2717,7 +2717,7 @@ run:
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
         int field_offset = cache->f2_as_index();
-        obj->byte_field_put(field_offset, STACK_INT(-1) & 1);
+        obj->byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
       }
