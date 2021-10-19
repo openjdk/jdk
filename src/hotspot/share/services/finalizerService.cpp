@@ -26,9 +26,13 @@
 #include "utilities/macros.hpp"
 #if INCLUDE_MANAGEMENT
 #include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
+#include "classfile/symbolTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/synchronizer.hpp"
@@ -37,13 +41,70 @@
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/debug.hpp"
 
+static const char* allocate(oop string) {
+  char* str = nullptr;
+  const typeArrayOop value = java_lang_String::value(string);
+  if (value != nullptr) {
+    const int length = java_lang_String::utf8_length(string, value);
+    str = NEW_C_HEAP_ARRAY(char, length, mtServiceability);
+    java_lang_String::as_utf8_string(string, value, str, length + 1);
+  }
+  return str;
+}
+
+static int compute_field_offset(const Klass* klass, const char* field_name, const char* field_signature) {
+  assert(klass != nullptr, "invariant");
+  Symbol* const name = SymbolTable::new_symbol(field_name);
+  assert(name != nullptr, "invariant");
+  Symbol* const signature = SymbolTable::new_symbol(field_signature);
+  assert(signature != nullptr, "invariant");
+  assert(klass->is_instance_klass(), "invariant");
+  fieldDescriptor fd;
+  InstanceKlass::cast(klass)->find_field(name, signature, false, &fd);
+  return fd.offset();
+}
+
+static const char* location_no_frag_string(oop codesource) {
+  assert(codesource != nullptr, "invariant");
+  static int loc_no_frag_offset = compute_field_offset(codesource->klass(), "locationNoFragString", "Ljava/lang/String;");
+  oop string = codesource->obj_field(loc_no_frag_offset);
+  return string != nullptr ? allocate(string) : nullptr;
+}
+
+static oop codesource(oop pd) {
+  assert(pd != nullptr, "invariant");
+  static int codesource_offset = compute_field_offset(pd->klass(), "codesource", "Ljava/security/CodeSource;");
+  return pd->obj_field(codesource_offset);
+}
+
+static const char* get_codesource(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  oop pd = java_lang_Class::protection_domain(ik->java_mirror());
+  if (pd == nullptr) {
+    return nullptr;
+  }
+  oop cs = codesource(pd);
+  return cs != nullptr ? location_no_frag_string(cs) : nullptr;
+}
+
 FinalizerEntry::FinalizerEntry(const InstanceKlass* ik) :
     _ik(ik),
+    _codesource(get_codesource(ik)),
     _objects_on_heap(0),
     _total_finalizers_run(0) {}
 
+FinalizerEntry::~FinalizerEntry() {
+  if (_codesource != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _codesource);
+  }
+}
+
 const InstanceKlass* FinalizerEntry::klass() const {
   return _ik;
+}
+
+const char* FinalizerEntry::codesource() const {
+  return _codesource;
 }
 
 uintptr_t FinalizerEntry::objects_on_heap() const {
