@@ -46,7 +46,7 @@ static const char* allocate(oop string) {
   const typeArrayOop value = java_lang_String::value(string);
   if (value != nullptr) {
     const int length = java_lang_String::utf8_length(string, value);
-    str = NEW_C_HEAP_ARRAY(char, length, mtServiceability);
+    str = NEW_C_HEAP_ARRAY(char, length + 1, mtServiceability);
     java_lang_String::as_utf8_string(string, value, str, length + 1);
   }
   return str;
@@ -94,9 +94,7 @@ FinalizerEntry::FinalizerEntry(const InstanceKlass* ik) :
     _total_finalizers_run(0) {}
 
 FinalizerEntry::~FinalizerEntry() {
-  if (_codesource != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _codesource);
-  }
+  FREE_C_HEAP_ARRAY(char, _codesource);
 }
 
 const InstanceKlass* FinalizerEntry::klass() const {
