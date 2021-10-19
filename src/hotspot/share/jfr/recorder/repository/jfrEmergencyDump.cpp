@@ -167,7 +167,9 @@ static void report(outputStream* st, bool emergency_file_opened, const char* rep
 }
 
 void JfrEmergencyDump::set_dump_path(const char* dump_path) {
-  if (dump_path != NULL) {
+  if (dump_path == NULL || *dump_path == '\0') {
+    os::get_current_directory(_dump_path, sizeof(_dump_path));
+  } else {
     if (strlen(dump_path) < JVM_MAXPATHLEN) {
       strncpy(_dump_path, dump_path, JVM_MAXPATHLEN);
       _dump_path[JVM_MAXPATHLEN - 1] = '\0';

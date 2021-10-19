@@ -55,7 +55,7 @@ public final class Options {
     private static final int DEFAULT_STACK_DEPTH = 64;
     private static final boolean DEFAULT_SAMPLE_THREADS = true;
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
-    private static final SafePath DEFAULT_DUMP_PATH = new SafePath(".");
+    private static final SafePath DEFAULT_DUMP_PATH = null;
 
     private static long memorySize;
     private static long globalBufferSize;
@@ -121,18 +121,17 @@ public final class Options {
 
     public static synchronized void setDumpPath(SafePath path) {
         try {
-            if (SecuritySupport.isWritable(path)) {
-                jvm.setDumpPath(SecuritySupport.toRealPath(path, NOFOLLOW_LINKS).toString());
-            } else {
-                if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
-                    Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Cannot write JFR emergency dump to " + path.toString());
+            if (path != null) {
+                if (SecuritySupport.isWritable(path)) {
+                    path = SecuritySupport.toRealPath(path, NOFOLLOW_LINKS);
+                } else {
+                    throw new IOException("Cannot write JFR emergency dump to " + path.toString());
                 }
             }
         } catch (IOException e) {
-            if (Logger.shouldLog(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN)) {
-                Logger.log(LogTag.JFR_SYSTEM_SETTING, LogLevel.WARN, "Error occurred in path resolution: " + e.toString());
-            }
+            throw new IllegalArgumentException(e);
         }
+        jvm.setDumpPath(path == null ? null : path.toString());
     }
 
     public static synchronized SafePath getDumpPath() {

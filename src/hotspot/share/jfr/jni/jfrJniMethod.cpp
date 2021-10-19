@@ -317,9 +317,13 @@ JVM_ENTRY_NO_ENV(void, jfr_set_repository_location(JNIEnv* env, jobject repo, js
 JVM_END
 
 NO_TRANSITION(void, jfr_set_dump_path(JNIEnv* env, jobject jvm, jstring dumppath))
-  const char* dump_path = env->GetStringUTFChars(dumppath, NULL);
-  JfrEmergencyDump::set_dump_path(dump_path);
-  env->ReleaseStringUTFChars(dumppath, dump_path);
+  if (dumppath == NULL) {
+    JfrEmergencyDump::set_dump_path(NULL);
+  } else {
+    const char* dump_path = env->GetStringUTFChars(dumppath, NULL);
+    JfrEmergencyDump::set_dump_path(dump_path);
+    env->ReleaseStringUTFChars(dumppath, dump_path);
+  }
 NO_TRANSITION_END
 
 NO_TRANSITION(jstring, jfr_get_dump_path(JNIEnv* env, jobject jvm))

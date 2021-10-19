@@ -92,13 +92,6 @@ public class TestDumpOnCrash {
             dumppath.toFile().delete();
         }
 
-        // Test with illegal dumppath
-        Path illegalpath = Path.of("silverbullet");
-        test(CrasherIllegalAccess.class, "", true, illegalpath.toString(), null);
-        test(CrasherIllegalAccess.class, "", false, illegalpath.toString(), null);
-        test(CrasherHalt.class, "", true, illegalpath.toString(), null);
-        test(CrasherHalt.class, "", false, illegalpath.toString(), null);
-
         // Test is excluded until 8219680 is fixed
         // @ignore 8219680
         // test(CrasherSig.class, "FPE", true);
