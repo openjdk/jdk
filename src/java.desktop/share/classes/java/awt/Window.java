@@ -404,8 +404,8 @@ public class Window extends Container implements Accessible {
      * These fields are initialized in the native peer code
      * or via AWTAccessor's WindowAccessor.
      */
-    private transient volatile int securityWarningWidth = 0;
-    private transient volatile int securityWarningHeight = 0;
+    private transient volatile int securityWarningWidth;
+    private transient volatile int securityWarningHeight;
 
     static {
         /* ensure that the necessary native libraries are loaded */
@@ -417,11 +417,11 @@ public class Window extends Container implements Accessible {
         @SuppressWarnings("removal")
         String s = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.awt.syncLWRequests"));
-        systemSyncLWRequests = (s != null && s.equals("true"));
+        systemSyncLWRequests = "true".equals(s);
         @SuppressWarnings("removal")
         String s2 = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.awt.Window.locationByPlatform"));
-        locationByPlatformProp = (s2 != null && s2.equals("true"));
+        locationByPlatformProp = "true".equals(s2);
     }
 
     /**

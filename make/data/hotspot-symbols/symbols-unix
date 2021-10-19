@@ -183,6 +183,7 @@ JVM_ReferenceRefersTo
 JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
+JVM_ReportFinalizationComplete
 JVM_ResumeThread
 JVM_SetArrayElement
 JVM_SetClassSigners

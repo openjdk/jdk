@@ -76,6 +76,7 @@ public class Navigation {
     private Content userHeader;
     private final String rowListTitle;
     private final Content searchLabel;
+    private final String searchPlaceholder;
     private SubNavLinks subNavLinks;
 
     public enum PageMode {
@@ -131,6 +132,7 @@ public class Navigation {
         this.links = new Links(path);
         this.rowListTitle = configuration.getDocResources().getText("doclet.Navigation");
         this.searchLabel = contents.getContent("doclet.search");
+        this.searchPlaceholder = configuration.getDocResources().getText("doclet.search_placeholder");
     }
 
     public Navigation setNavLinkModule(Content navLinkModule) {
@@ -595,10 +597,11 @@ public class Navigation {
     }
 
     private void addSearch(Content tree) {
-        String search = "search";
         String reset = "reset";
-        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT, search);
-        HtmlTree inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON, reset);
+        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT)
+                .put(HtmlAttr.PLACEHOLDER, searchPlaceholder);
+        HtmlTree inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON)
+                .put(HtmlAttr.VALUE, reset);
         HtmlTree searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch,
                 HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(), searchLabel));
         searchDiv.add(inputText);

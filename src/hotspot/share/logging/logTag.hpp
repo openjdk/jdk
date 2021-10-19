@@ -71,6 +71,7 @@
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
   DEBUG_ONLY(LOG_TAG(foreign)) \
   LOG_TAG(free) \
@@ -196,8 +197,7 @@
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
-  LOG_TAG(vtablestubs) \
-  LOG_TAG(workgang)
+  LOG_TAG(vtablestubs)
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 

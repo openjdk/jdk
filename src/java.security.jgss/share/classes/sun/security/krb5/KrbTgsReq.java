@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,9 +316,7 @@ public class KrbTgsReq {
                                             additionalTickets);
 
         byte[] temp = reqBody.asn1Encode(Krb5.KRB_TGS_REQ);
-        // if the checksum type is one of the keyed checksum types,
-        // use session key.
-        Checksum cksum  = new Checksum(Checksum.CKSUMTYPE_DEFAULT, temp, key,
+        Checksum cksum  = new Checksum(-1, temp, key,
                 KeyUsage.KU_PA_TGS_REQ_CKSUM);
 
         // Usage will be KeyUsage.KU_PA_TGS_REQ_AUTHENTICATOR

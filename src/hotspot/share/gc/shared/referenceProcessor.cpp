@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -215,13 +216,16 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   phase_times.set_total_time_ms((os::elapsedTime() - start_time) * 1000);
 
+  // Elements on discovered lists were pushed to the pending list.
+  verify_no_references_recorded();
+
   return stats;
 }
 
-void BarrierEnqueueDiscoveredFieldClosure::enqueue(oop reference, oop value) {
-  HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(reference,
-                                            java_lang_ref_Reference::discovered_offset(),
-                                            value);
+void BarrierEnqueueDiscoveredFieldClosure::enqueue(HeapWord* discovered_field_addr, oop value) {
+  assert(Universe::heap()->is_in(discovered_field_addr), PTR_FORMAT " not in heap", p2i(discovered_field_addr));
+  HeapAccess<AS_NO_KEEPALIVE>::oop_store(discovered_field_addr,
+                                         value);
 }
 
 void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
@@ -255,9 +259,8 @@ void DiscoveredListIterator::remove() {
   } else {
     new_next = _next_discovered;
   }
-  // Remove Reference object from discovered list. Note that G1 does not need a
-  // pre-barrier here because we know the Reference has already been found/marked,
-  // that's how it ended up in the discovered list in the first place.
+  // Remove Reference object from discovered list. We do not need barriers here,
+  // as we only remove. We will do the barrier when we actually advance the cursor.
   RawAccess<>::oop_store(_prev_discovered_addr, new_next);
   _removed++;
   _refs_list.dec_length(1);
@@ -277,7 +280,11 @@ void DiscoveredListIterator::clear_referent() {
 }
 
 void DiscoveredListIterator::enqueue() {
-  _enqueue->enqueue(_current_discovered, _next_discovered);
+  if (_prev_discovered_addr != _refs_list.adr_head()) {
+    _enqueue->enqueue(_prev_discovered_addr, _current_discovered);
+  } else {
+    RawAccess<>::oop_store(_prev_discovered_addr, _current_discovered);
+  }
 }
 
 void DiscoveredListIterator::complete_enqueue() {
@@ -286,7 +293,16 @@ void DiscoveredListIterator::complete_enqueue() {
     // Swap refs_list into pending list and set obj's
     // discovered to what we read from the pending list.
     oop old = Universe::swap_reference_pending_list(_refs_list.head());
-    _enqueue->enqueue(_prev_discovered, old);
+    _enqueue->enqueue(java_lang_ref_Reference::discovered_addr_raw(_prev_discovered), old);
+  }
+}
+
+inline void log_preclean_ref(const DiscoveredListIterator& iter, const char* reason) {
+  if (log_develop_is_enabled(Trace, gc, ref)) {
+    ResourceMark rm;
+    log_develop_trace(gc, ref)("Precleaning %s reference " PTR_FORMAT ": %s",
+                               reason, p2i(iter.obj()),
+                               iter.obj()->klass()->internal_name());
   }
 }
 
@@ -692,12 +708,12 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
 
   proxy_task.prepare_run_task(task, num_queues(), processing_is_mt() ? RefProcThreadModel::Multi : RefProcThreadModel::Single, marks_oops_alive);
   if (processing_is_mt()) {
-    WorkGang* gang = Universe::heap()->safepoint_workers();
-    assert(gang != NULL, "can not dispatch multi threaded without a work gang");
-    assert(gang->active_workers() >= num_queues(),
+    WorkerThreads* workers = Universe::heap()->safepoint_workers();
+    assert(workers != NULL, "can not dispatch multi threaded without workers");
+    assert(workers->active_workers() >= num_queues(),
            "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
-           num_queues(), gang->active_workers());
-    gang->run_task(&proxy_task, num_queues());
+           num_queues(), workers->active_workers());
+    workers->run_task(&proxy_task, num_queues());
   } else {
     for (unsigned i = 0; i < _max_num_queues; ++i) {
       proxy_task.work(i);
@@ -1125,14 +1141,15 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
   }
 }
 
-// Walk the given discovered ref list, and remove all reference objects
-// whose referents are still alive, whose referents are NULL or which
-// are not active (have a non-NULL next field). NOTE: When we are
-// thus precleaning the ref lists (which happens single-threaded today),
-// we do not disable refs discovery to honor the correct semantics of
-// java.lang.Reference. As a result, we need to be careful below
-// that ref removal steps interleave safely with ref discovery steps
-// (in this thread).
+// Walk the given discovered ref list, and remove all reference objects whose
+// referents are still alive or NULL. NOTE: When we are precleaning the
+// ref lists, we do not disable refs discovery to honor the correct semantics of
+// java.lang.Reference. Therefore, as we iterate over the discovered list (DL)
+// and drop elements from it, newly discovered refs can be discovered and added
+// to the DL. Because precleaning is implemented single-threaded today, for
+// each per-thread DL, the insertion of refs (calling `complete_gc`) happens
+// after the iteration. The clear separation means no special synchronization
+// is needed.
 bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
                                                      BoolObjectClosure* is_alive,
                                                      OopClosure*        keep_alive,
@@ -1145,11 +1162,12 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
       return true;
     }
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
-    if (iter.referent() == NULL || iter.is_referent_alive()) {
-      // The referent has been cleared, or is alive; we need to trace
-      // and mark its cohort.
-      log_develop_trace(gc, ref)("Precleaning Reference (" INTPTR_FORMAT ": %s)",
-                                 p2i(iter.obj()), iter.obj()->klass()->internal_name());
+    if (iter.referent() == nullptr) {
+      log_preclean_ref(iter, "cleared");
+      iter.remove();
+      iter.move_to_next();
+    } else if (iter.is_referent_alive()) {
+      log_preclean_ref(iter, "reachable");
       // Remove Reference object from list
       iter.remove();
       // Keep alive its cohort.

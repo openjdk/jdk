@@ -53,6 +53,11 @@
     }
 }
 
+- (NSInteger)accessibilityIndex
+{
+    return self->fIndex;
+}
+
 - (NSRect)accessibilityFrame
 {
     return [super accessibilityFrame];
