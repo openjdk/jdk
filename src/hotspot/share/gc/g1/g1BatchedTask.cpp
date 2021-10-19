@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "runtime/atomic.hpp"
@@ -40,30 +40,30 @@ const char* G1AbstractSubTask::name() const {
   return g1h->phase_times()->phase_name(_tag);
 }
 
-bool G1BatchedGangTask::try_claim_serial_task(int& task) {
+bool G1BatchedTask::try_claim_serial_task(int& task) {
   task = Atomic::fetch_and_add(&_num_serial_tasks_done, 1);
   return task < _serial_tasks.length();
 }
 
-void G1BatchedGangTask::add_serial_task(G1AbstractSubTask* task) {
+void G1BatchedTask::add_serial_task(G1AbstractSubTask* task) {
   assert(task != nullptr, "must be");
   _serial_tasks.push(task);
 }
 
-void G1BatchedGangTask::add_parallel_task(G1AbstractSubTask* task) {
+void G1BatchedTask::add_parallel_task(G1AbstractSubTask* task) {
   assert(task != nullptr, "must be");
   _parallel_tasks.push(task);
 }
 
-G1BatchedGangTask::G1BatchedGangTask(const char* name, G1GCPhaseTimes* phase_times) :
-  AbstractGangTask(name),
+G1BatchedTask::G1BatchedTask(const char* name, G1GCPhaseTimes* phase_times) :
+  WorkerTask(name),
   _num_serial_tasks_done(0),
   _phase_times(phase_times),
   _serial_tasks(),
   _parallel_tasks() {
 }
 
-uint G1BatchedGangTask::num_workers_estimate() const {
+uint G1BatchedTask::num_workers_estimate() const {
   double sum = 0.0;
   for (G1AbstractSubTask* task : _serial_tasks) {
     sum += task->worker_cost();
@@ -74,7 +74,7 @@ uint G1BatchedGangTask::num_workers_estimate() const {
   return ceil(sum);
 }
 
-void G1BatchedGangTask::set_max_workers(uint max_workers) {
+void G1BatchedTask::set_max_workers(uint max_workers) {
   for (G1AbstractSubTask* task : _serial_tasks) {
     task->set_max_workers(max_workers);
   }
@@ -83,7 +83,7 @@ void G1BatchedGangTask::set_max_workers(uint max_workers) {
   }
 }
 
-void G1BatchedGangTask::work(uint worker_id) {
+void G1BatchedTask::work(uint worker_id) {
   int t = 0;
   while (try_claim_serial_task(t)) {
     G1AbstractSubTask* task = _serial_tasks.at(t);
@@ -96,7 +96,7 @@ void G1BatchedGangTask::work(uint worker_id) {
   }
 }
 
-G1BatchedGangTask::~G1BatchedGangTask() {
+G1BatchedTask::~G1BatchedTask() {
   assert(Atomic::load(&_num_serial_tasks_done) >= _serial_tasks.length(),
          "Only %d tasks of %d claimed", Atomic::load(&_num_serial_tasks_done), _serial_tasks.length());
 

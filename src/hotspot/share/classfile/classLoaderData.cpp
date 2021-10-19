@@ -353,6 +353,9 @@ void ClassLoaderData::methods_do(void f(Method*)) {
 }
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
+  // To call this, one must have the MultiArray_lock held, but the _klasses list still has lock free reads.
+  assert_locked_or_safepoint(MultiArray_lock);
+
   // Lock-free access requires load_acquire
   for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     // Do not filter ArrayKlass oops here...

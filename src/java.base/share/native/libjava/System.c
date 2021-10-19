@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,15 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     PUTPROP(propArray, _path_separator_NDX, sprops->path_separator);
     PUTPROP(propArray, _line_separator_NDX, sprops->line_separator);
 
+#ifdef MACOSX
+    /*
+     * Since sun_jnu_encoding is now hard-coded to UTF-8 on Mac, we don't
+     * want to use it to overwrite file.encoding
+     */
     PUTPROP(propArray, _file_encoding_NDX, sprops->encoding);
+#else
+    PUTPROP(propArray, _file_encoding_NDX, sprops->sun_jnu_encoding);
+#endif
     PUTPROP(propArray, _sun_jnu_encoding_NDX, sprops->sun_jnu_encoding);
 
     /*

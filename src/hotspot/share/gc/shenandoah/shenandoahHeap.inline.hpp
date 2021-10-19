@@ -64,11 +64,11 @@ inline bool ShenandoahHeap::has_forwarded_objects() const {
   return _gc_state.is_set(HAS_FORWARDED);
 }
 
-inline WorkGang* ShenandoahHeap::workers() const {
+inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
 }
 
-inline WorkGang* ShenandoahHeap::safepoint_workers() {
+inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
   return _safepoint_workers;
 }
 

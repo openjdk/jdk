@@ -806,7 +806,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         private final MXBeanMapping valueMapping;
     }
 
-    private final class CompositeMapping extends NonNullMXBeanMapping {
+    private static final class CompositeMapping extends NonNullMXBeanMapping {
         CompositeMapping(Class<?> targetClass,
                          CompositeType compositeType,
                          String[] itemNames,

@@ -54,7 +54,8 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -277,7 +278,7 @@ public:
   }
 };
 
-class ScavengeRootsTask : public AbstractGangTask {
+class ScavengeRootsTask : public WorkerTask {
   StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_strong_par_state;
   SequentialSubTasksDone _subtasks;
@@ -292,7 +293,7 @@ public:
                     HeapWord* gen_top,
                     uint active_workers,
                     bool is_empty) :
-      AbstractGangTask("ScavengeRootsTask"),
+      WorkerTask("ScavengeRootsTask"),
       _strong_roots_scope(active_workers),
       _subtasks(ParallelRootType::sentinel),
       _old_gen(old_gen),
@@ -463,10 +464,10 @@ bool PSScavenge::invoke_no_policy() {
     HeapWord* old_top = old_gen->object_space()->top();
 
     const uint active_workers =
-      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().max_workers(),
                                         ParallelScavengeHeap::heap()->workers().active_workers(),
                                         Threads::number_of_non_daemon_threads());
-    ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
+    ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);
 
     PSPromotionManager::pre_scavenge();
 
@@ -652,8 +653,6 @@ bool PSScavenge::invoke_no_policy() {
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
-
-    NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
 
     // Re-verify object start arrays
     if (VerifyObjectStartArray &&

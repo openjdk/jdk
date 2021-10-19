@@ -242,9 +242,7 @@ public final class PrinterStateReasons
 
         public int size() {
             int result = 0;
-            Iterator<PrinterStateReason> iter = iterator();
-            while (iter.hasNext()) {
-                iter.next();
+            for (PrinterStateReason ignored : this) {
                 ++ result;
             }
             return result;

@@ -88,13 +88,13 @@
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-class ShenandoahPretouchHeapTask : public AbstractGangTask {
+class ShenandoahPretouchHeapTask : public WorkerTask {
 private:
   ShenandoahRegionIterator _regions;
   const size_t _page_size;
 public:
   ShenandoahPretouchHeapTask(size_t page_size) :
-    AbstractGangTask("Shenandoah Pretouch Heap"),
+    WorkerTask("Shenandoah Pretouch Heap"),
     _page_size(page_size) {}
 
   virtual void work(uint worker_id) {
@@ -108,7 +108,7 @@ public:
   }
 };
 
-class ShenandoahPretouchBitmapTask : public AbstractGangTask {
+class ShenandoahPretouchBitmapTask : public WorkerTask {
 private:
   ShenandoahRegionIterator _regions;
   char* _bitmap_base;
@@ -116,7 +116,7 @@ private:
   const size_t _page_size;
 public:
   ShenandoahPretouchBitmapTask(char* bitmap_base, size_t bitmap_size, size_t page_size) :
-    AbstractGangTask("Shenandoah Pretouch Bitmap"),
+    WorkerTask("Shenandoah Pretouch Bitmap"),
     _bitmap_base(bitmap_base),
     _bitmap_size(bitmap_size),
     _page_size(page_size) {}
@@ -495,7 +495,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
   _max_workers = MAX2(_max_workers, 1U);
-  _workers = new ShenandoahWorkGang("Shenandoah GC Threads", _max_workers);
+  _workers = new ShenandoahWorkerThreads("Shenandoah GC Threads", _max_workers);
   if (_workers == NULL) {
     vm_exit_during_initialization("Failed necessary allocation.");
   } else {
@@ -503,7 +503,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   }
 
   if (ParallelGCThreads > 1) {
-    _safepoint_workers = new ShenandoahWorkGang("Safepoint Cleanup Thread",
+    _safepoint_workers = new ShenandoahWorkerThreads("Safepoint Cleanup Thread",
                                                 ParallelGCThreads);
     _safepoint_workers->initialize_workers();
   }
@@ -513,13 +513,13 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 #pragma warning( pop )
 #endif
 
-class ShenandoahResetBitmapTask : public AbstractGangTask {
+class ShenandoahResetBitmapTask : public WorkerTask {
 private:
   ShenandoahRegionIterator _regions;
 
 public:
   ShenandoahResetBitmapTask() :
-    AbstractGangTask("Shenandoah Reset Bitmap") {}
+    WorkerTask("Shenandoah Reset Bitmap") {}
 
   void work(uint worker_id) {
     ShenandoahHeapRegion* region = _regions.next();
@@ -612,7 +612,7 @@ void ShenandoahHeap::post_initialize() {
   _workers->threads_do(&init_gclabs);
 
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
-  // Now, we will let WorkGang to initialize gclab when new worker is created.
+  // Now, we will let WorkerThreads to initialize gclab when new worker is created.
   _workers->set_initialize_gclab();
   if (_safepoint_workers != NULL) {
     _safepoint_workers->threads_do(&init_gclabs);
@@ -953,7 +953,7 @@ public:
   }
 };
 
-class ShenandoahEvacuationTask : public AbstractGangTask {
+class ShenandoahEvacuationTask : public WorkerTask {
 private:
   ShenandoahHeap* const _sh;
   ShenandoahCollectionSet* const _cs;
@@ -962,7 +962,7 @@ public:
   ShenandoahEvacuationTask(ShenandoahHeap* sh,
                            ShenandoahCollectionSet* cs,
                            bool concurrent) :
-    AbstractGangTask("Shenandoah Evacuation"),
+    WorkerTask("Shenandoah Evacuation"),
     _sh(sh),
     _cs(cs),
     _concurrent(concurrent)
@@ -1483,7 +1483,7 @@ void ShenandoahHeap::heap_region_iterate(ShenandoahHeapRegionClosure* blk) const
   }
 }
 
-class ShenandoahParallelHeapRegionTask : public AbstractGangTask {
+class ShenandoahParallelHeapRegionTask : public WorkerTask {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahHeapRegionClosure* const _blk;
@@ -1494,7 +1494,7 @@ private:
 
 public:
   ShenandoahParallelHeapRegionTask(ShenandoahHeapRegionClosure* blk) :
-          AbstractGangTask("Shenandoah Parallel Region Operation"),
+          WorkerTask("Shenandoah Parallel Region Operation"),
           _heap(ShenandoahHeap::heap()), _blk(blk), _index(0) {}
 
   void work(uint worker_id) {
@@ -2010,13 +2010,13 @@ ShenandoahVerifier* ShenandoahHeap::verifier() {
 }
 
 template<bool CONCURRENT>
-class ShenandoahUpdateHeapRefsTask : public AbstractGangTask {
+class ShenandoahUpdateHeapRefsTask : public WorkerTask {
 private:
   ShenandoahHeap* _heap;
   ShenandoahRegionIterator* _regions;
 public:
   ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions) :
-    AbstractGangTask("Shenandoah Update References"),
+    WorkerTask("Shenandoah Update References"),
     _heap(ShenandoahHeap::heap()),
     _regions(regions) {
   }

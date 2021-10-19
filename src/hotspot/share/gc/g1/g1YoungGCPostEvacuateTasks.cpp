@@ -125,7 +125,7 @@ public:
 
 G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
-  G1BatchedGangTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
+  G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   bool evacuation_failed = evac_failure_regions->evacuation_failed();
 
@@ -306,7 +306,7 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
   PreservedMarksSet* _preserved_marks;
-  AbstractGangTask* _task;
+  WorkerTask* _task;
 
 public:
   RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
@@ -672,7 +672,7 @@ public:
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacInfo* evacuation_info,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
-  G1BatchedGangTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
+  G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new ResetHotCardCacheTask());
   add_serial_task(new PurgeCodeRootsTask());
