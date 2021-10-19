@@ -588,6 +588,17 @@ var getJibProfilesProfiles = function (input, common, data) {
             ])
         },
 
+        "linux-aarch64-zero": {
+            target_os: "linux",
+            target_cpu: "aarch64",
+            dependencies: ["devkit", "gtest"],
+            configure_args: concat(common.configure_args_64bit, [
+                "--with-zlib=system",
+                "--with-jvm-variants=zero",
+                "--enable-libffi-bundling"
+            ])
+        },
+
         "linux-x86-zero": {
             target_os: "linux",
             target_cpu: "x86",
