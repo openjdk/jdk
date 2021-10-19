@@ -112,10 +112,14 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
         free (adapterInfo);
         switch (ret) {
             case ERROR_INVALID_PARAMETER:
-                JNU_ThrowInternalError(env, "IP Helper Library GetAdaptersAddresses function failed: invalid parameter");
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "invalid parameter");
                 break;
             case ERROR_NOT_ENOUGH_MEMORY:
-                JNU_ThrowOutOfMemoryError(env, "IP Helper Library GetAdaptersAddresses function failed: not enough memory");
+                JNU_ThrowOutOfMemoryError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "not enough memory");
                 break;
             case ERROR_NO_DATA:
                 // not an error
@@ -123,8 +127,9 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
                 return ERROR_SUCCESS;
             default:
                 SetLastError(ret);
-                JNU_ThrowByNameWithMessageAndLastError(env, JNU_JAVANETPKG "SocketException",
-                        "IP Helper Library GetAdaptersAddresses function failed");
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetAdaptersAddresses function failed");
                 break;
         }
 
@@ -178,18 +183,23 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
         free (adapterInfo);
         switch (val) {
             case ERROR_INVALID_PARAMETER:
-                JNU_ThrowInternalError(env, "IP Helper Library GetAdaptersAddresses function failed: invalid parameter");
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "invalid parameter");
                 break;
             case ERROR_NOT_ENOUGH_MEMORY:
-                JNU_ThrowOutOfMemoryError(env, "IP Helper Library GetAdaptersAddresses function failed: not enough memory");
+                JNU_ThrowOutOfMemoryError(env,
+                    "IP Helper Library GetAdaptersAddresses function failed: "
+                    "not enough memory");
                 break;
             case ERROR_NO_DATA:
                 // not an error
                 break;
             default:
                 SetLastError(val);
-                JNU_ThrowByNameWithMessageAndLastError(env, JNU_JAVANETPKG "SocketException",
-                        "IP Helper Library GetAdaptersAddresses function failed");
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetAdaptersAddresses function failed");
                 break;
         }
         return NULL;

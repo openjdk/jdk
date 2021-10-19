@@ -202,12 +202,15 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
         free(tableP);
         switch (ret) {
             case ERROR_INVALID_PARAMETER:
-                JNU_ThrowInternalError(env, "IP Helper Library GetIfTable function failed: invalid parameter");
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetIfTable function failed: "
+                    "invalid parameter");
                 break;
             default:
                 SetLastError(ret);
-                JNU_ThrowByNameWithMessageAndLastError(env, JNU_JAVANETPKG "SocketException",
-                        "IP Helper Library GetIfTable function failed");
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetIfTable function failed");
                 break;
         }
         // this different error code is to handle the case when we call
@@ -315,7 +318,8 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
             // it should not fail, because we have called it once before
             if (MultiByteToWideChar(CP_OEMCP, 0, ifrowP->bDescr,
                    ifrowP->dwDescrLen, curr->displayName, wlen) == 0) {
-                JNU_ThrowInternalError(env, "Cannot get multibyte char for interface display name");
+                JNU_ThrowInternalError(env,
+                    "Cannot get multibyte char for interface display name");
                 free_netif(netifP);
                 free(tableP);
                 free(curr->name);
@@ -397,12 +401,15 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
         }
         switch (ret) {
             case ERROR_INVALID_PARAMETER:
-                JNU_ThrowInternalError(env, "IP Helper Library GetIpAddrTable function failed: invalid parameter");
+                JNU_ThrowInternalError(env,
+                    "IP Helper Library GetIpAddrTable function failed: "
+                    "invalid parameter");
                 break;
             default:
                 SetLastError(ret);
-                JNU_ThrowByNameWithMessageAndLastError(env, JNU_JAVANETPKG "SocketException",
-                        "IP Helper Library GetIpAddrTable function failed");
+                JNU_ThrowByNameWithMessageAndLastError(env,
+                    JNU_JAVANETPKG "SocketException",
+                    "IP Helper Library GetIpAddrTable function failed");
                 break;
         }
         // this different error code is to handle the case when we call
