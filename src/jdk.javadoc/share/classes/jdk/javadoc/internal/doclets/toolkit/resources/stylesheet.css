@@ -586,10 +586,10 @@ ul.ui-autocomplete {
     position:fixed;
     z-index:999999;
 }
-ul.ui-autocomplete  li {
+ul.ui-autocomplete li {
     float:left;
     clear:both;
-    width:100%;
+    min-width:100%;
 }
 .result-highlight {
     font-weight:bold;
