@@ -145,8 +145,8 @@ import sun.security.action.GetIntegerAction;
  * entire graphs.
  *
  * <p>Serializable classes that require special handling during the
- * serialization and deserialization process should implement the following
- * methods:
+ * serialization and deserialization process should implement methods
+ * with the following signatures:
  *
  * <pre>
  * private void writeObject(java.io.ObjectOutputStream stream)
@@ -156,6 +156,12 @@ import sun.security.action.GetIntegerAction;
  * private void readObjectNoData()
  *     throws ObjectStreamException;
  * </pre>
+ *
+ * <p>The method name, modifiers, return type, and number and type of
+ * parameters must match exactly for the method to be used by
+ * serialization or deserialization. The methods should only be
+ * declared to throw checked exceptions consistent with these
+ * signatures.
  *
  * <p>The readObject method is responsible for reading and restoring the state
  * of the object for its particular class using data written to the stream by
