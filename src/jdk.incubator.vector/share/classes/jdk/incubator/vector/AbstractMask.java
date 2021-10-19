@@ -64,6 +64,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
     }
 
     @Override
+    @ForceInline
     public boolean laneIsSet(int i) {
         int length = length();
         Objects.checkIndex(i, length);

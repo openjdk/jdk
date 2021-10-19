@@ -33,7 +33,6 @@
 #include "classfile_constants.h"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
-#include "utilities/globalDefinitions_vecApi.hpp"
 
 #include <cstddef>
 
