@@ -944,7 +944,7 @@ a.snippet-copy {
 a.snippet-copy img {
     width: 18px;
     height: 18px;
-    padding: 0.04em 0;
+    padding: 0.05em 0;
     opacity: 50%;
     transition: opacity 0.2s;
 }
@@ -969,7 +969,7 @@ a.snippet-copy::before {
     opacity: 80%;
     transition: opacity 0.2s;
     white-space: nowrap;
-    top: -0.04em;
+    top: -0.01em;
     right: 1.5em;
     display: none;
 }
