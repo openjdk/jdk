@@ -23,10 +23,8 @@
 
 /*
  * @test
- * @bug 8251496
- * @summary Test that UnmodifiableHeaders is in fact immutable
- * @modules jdk.httpserver/sun.net.httpserver:+open
- * @run testng/othervm UnmodifiableHeadersTest
+ * @summary Tests for Request
+ * @run testng RequestTest
  */
 
 import java.io.InputStream;
@@ -36,54 +34,70 @@ import java.net.URI;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpPrincipal;
-import org.testng.annotations.DataProvider;
+import com.sun.net.httpserver.*;
 import org.testng.annotations.Test;
-import sun.net.httpserver.UnmodifiableHeaders;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 
-public class UnmodifiableHeadersTest {
+public class RequestTest {
 
     @Test
-    public static void testEquality() {
+    public void testAddToEmpty() {
         var headers = new Headers();
-        var unmodifiableHeaders1 = new UnmodifiableHeaders(headers);
-        assertEquals(unmodifiableHeaders1, headers);
-        assertEquals(unmodifiableHeaders1.hashCode(), headers.hashCode());
-        assertEquals(unmodifiableHeaders1.get("Foo"), headers.get("Foo"));
-
-        headers.add("Foo", "Bar");
-        var unmodifiableHeaders2 = new UnmodifiableHeaders(headers);
-        assertEquals(unmodifiableHeaders2, headers);
-        assertEquals(unmodifiableHeaders2.hashCode(), headers.hashCode());
-        assertEquals(unmodifiableHeaders2.get("Foo"), headers.get("Foo"));
+        Request request = new TestHttpExchange(headers);
+        request = request.with("Foo", List.of("Bar"));
+        assertEquals(request.getRequestHeaders().size(), 1);
+        assertEquals(request.getRequestHeaders().get("Foo"), List.of("Bar"));
+        assertReadOnly(request.getRequestHeaders());
     }
 
-    @DataProvider
-    public Object[][] headers() {
+    @Test
+    public void testAddition() {
         var headers = new Headers();
         headers.add("Foo", "Bar");
-        var exchange = new TestHttpExchange(headers);
-
-        return new Object[][] {
-            { exchange.getRequestHeaders() },
-            { Headers.of("Foo", "Bar") },
-            { Headers.of(Map.of("Foo", List.of("Bar"))) },
-        };
+        Request request = new TestHttpExchange(headers);
+        request = request.with("X-Foo", List.of("Bar"));
+        assertEquals(request.getRequestHeaders().size(), 2);
+        assertEquals(request.getRequestHeaders().get("Foo"), List.of("Bar"));
+        assertEquals(request.getRequestHeaders().get("X-Foo"), List.of("Bar"));
+        assertReadOnly(request.getRequestHeaders());
     }
 
-    @Test(dataProvider = "headers")
-    public static void testUnmodifiableHeaders(Headers headers) {
+    @Test
+    public void testAddWithExisting() {
+        final String headerName = "Foo";
+        var headers = new Headers();
+        headers.add(headerName, "Bar");
+        Request request = new TestHttpExchange(headers);
+        request = request.with(headerName, List.of("blahblahblah"));
+        assertEquals(request.getRequestHeaders().size(), 1);
+        assertEquals(request.getRequestHeaders().get(headerName), List.of("Bar"));
+        assertReadOnly(request.getRequestHeaders());
+    }
+
+    @Test
+    public void testAddSeveral() {
+        var headers = new Headers();
+        headers.add("Foo", "Bar");
+        Request request = new TestHttpExchange(headers);
+        request = request.with("Larry", List.of("a"))
+                         .with("Curly", List.of("b"))
+                         .with("Moe",   List.of("c"));
+        assertEquals(request.getRequestHeaders().size(), 4);
+        assertEquals(request.getRequestHeaders().getFirst("Foo"), "Bar");
+        assertEquals(request.getRequestHeaders().getFirst("Larry"), "a");
+        assertEquals(request.getRequestHeaders().getFirst("Curly"), "b");
+        assertEquals(request.getRequestHeaders().getFirst("Moe"  ), "c");
+        assertReadOnly(request.getRequestHeaders());
+    }
+
+    static final Class<UnsupportedOperationException> UOP = UnsupportedOperationException.class;
+
+    static void assertReadOnly(Headers headers) {
         assertUnsupportedOperation(headers);
         assertUnmodifiableCollection(headers);
         assertUnmodifiableList(headers);
     }
-
-    static final Class<UnsupportedOperationException> UOP = UnsupportedOperationException.class;
 
     static void assertUnsupportedOperation(Headers headers) {
         assertThrows(UOP, () -> headers.add("a", "b"));
@@ -121,12 +135,10 @@ public class UnmodifiableHeadersTest {
     }
 
     static class TestHttpExchange extends StubHttpExchange {
-        final UnmodifiableHeaders headers;
-
+        final Headers headers;
         TestHttpExchange(Headers headers) {
-            this.headers = new UnmodifiableHeaders(headers);
+            this.headers = headers;
         }
-
         @Override
         public Headers getRequestHeaders() {
             return headers;

@@ -27,8 +27,9 @@ exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
 sun/tools/jstatd sun/tools/jcmd \
 sun/tools/jinfo sun/tools/jmap sun/tools/jps sun/tools/jstack sun/tools/jstat \
-com/sun/tools/attach sun/security/mscapi java/util/Arrays/largeMemory \
-java/util/BitSet/stream javax/rmi java/net/httpclient/websocket
+com/sun/tools/attach sun/security/mscapi java/util/stream java/util/Arrays/largeMemory \
+java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
+com/sun/net/httpserver/simpleserver
 
 # Group definitions
 groups=TEST.groups
