@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class ArraysFill {
 
-    @Param({"16", "31", "59", "89", "126", "250", "511", "1021", "2047", "4095", "8195", "65536"})
+    @Param({"10", "16", "31", "59", "89", "126", "250", "266", "511", "1021", "2047", "2048", "4095", "8195"})
     public int size;
 
     public byte[] testByteArray;
