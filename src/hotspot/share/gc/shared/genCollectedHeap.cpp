@@ -798,8 +798,6 @@ void GenCollectedHeap::full_process_roots(bool is_adjust_phase,
 
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
   WeakProcessor::oops_do(root_closure);
-  _young_gen->ref_processor()->weak_oops_do(root_closure);
-  _old_gen->ref_processor()->weak_oops_do(root_closure);
 }
 
 bool GenCollectedHeap::no_allocs_since_save_marks() {
