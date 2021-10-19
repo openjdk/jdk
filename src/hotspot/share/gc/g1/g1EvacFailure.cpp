@@ -36,6 +36,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopForwarding.hpp"
 
 class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   G1CollectedHeap* _g1h;

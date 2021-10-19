@@ -63,6 +63,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopForwarding.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"

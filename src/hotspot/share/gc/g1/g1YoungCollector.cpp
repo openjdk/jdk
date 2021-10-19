@@ -57,6 +57,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oopForwarding.hpp"
 #include "utilities/ticks.hpp"
 
 #if TASKQUEUE_STATS
