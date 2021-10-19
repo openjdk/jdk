@@ -1086,7 +1086,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 // Then the standard R.C.E. transforms can take those as inputs and further compute the necessary minimum and maximum
 // values for the 32-bit counter j within which the range checks can be eliminated.
 
-// So, given j*K+Q <u32 R, we need to find some j*K+L2 <u32 R2, where L2 and R2 fit in 32 bits, and the 32-bit operations do
+// So, given j*K+Q <u R, we need to find some j*K+L2 <u32 R2, where L2 and R2 fit in 32 bits, and the 32-bit operations do
 // not overflow. We also need to cover the cases where i*K+L (= j*K+Q) overflows to a 64-bit negative, since that is
 // allowed as an input to the R.C., as long as the R.C. as a whole fails.
 
@@ -1094,7 +1094,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 
 // For each R.C. j*K+Q <u32 R, the range of mathematical values of j*K+Q in the sub-loop is [Q_min, Q_max), where
 // Q_min=Q and Q_max=Z2*K+Q.  Making the upper limit Q_max be exclusive helps it integrate correctly with the strict
-// comparisions against R and R2.  Sometimes a very high R will be replaced by an R2 derived from the more moderate
+// comparisons against R and R2.  Sometimes a very high R will be replaced by an R2 derived from the more moderate
 // Q_max, and replacing one exclusive limit by another exclusive limit avoids off-by-one complexities.
 
 // N.B. If (S*K)<0 then the formulas for Q_min and Q_max may differ; the values may need to be swapped and adjusted to
