@@ -82,13 +82,13 @@ public class VersionTest {
         // -version option is specified at the end with other options
         SecurityTools.jarsigner("-keystore ks -storepass changeit" +
                 " -signedjar signeda.jar a.jar ee -version")
-                .shouldContain("jar signed.")
+                .shouldNotContain("jar signed.")
                 .shouldContain("jarsigner ")
                 .shouldHaveExitValue(0);
 
         // -version option is specified at the beginning with other options
         SecurityTools.jarsigner("-version -verify a.jar")
-                .shouldContain("jar is unsigned.")
+                .shouldNotContain("jar is unsigned.")
                 .shouldContain("jarsigner ")
                 .shouldHaveExitValue(0);
     }

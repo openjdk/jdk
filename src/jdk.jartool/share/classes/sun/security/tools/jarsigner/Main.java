@@ -309,10 +309,6 @@ public class Main {
             Event.clearReportListener(Event.ReporterCategory.CRLCHECK);
         }
 
-        if (version) {
-            doPrintVersion();
-        }
-
         if (strict) {
             int exitCode = 0;
             if (disabledAlg != 0 || chainNotValidated || hasExpiredCert
@@ -511,10 +507,12 @@ public class Main {
             }
         }
 
-        // To handle "jarsigner -version" command
-        if (args.length == 1 && version) {
+        /*
+         * When `-version` is specified but `-help` is not specified, jarsigner
+         * will only print the program version and ignore other options if any.
+         */
+        if (version) {
             doPrintVersion();
-            System.exit(0);
         }
 
         // -certs must always be specified with -verbose
@@ -610,6 +608,7 @@ public class Main {
 
     static void doPrintVersion() {
         System.out.println("jarsigner " + System.getProperty("java.version"));
+        System.exit(0);
     }
 
     static void fullusage() {
