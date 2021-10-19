@@ -79,22 +79,16 @@ static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
 #if defined(__linux__) || defined(MACOSX)
 
 /*
- * remove repeated path separators ('/') in the giving 'path'.
+ * remove repeated path separators ('/') in the given 'path'.
  */
 static void
-removeDuplicateSlashes(char* path)
+removeDuplicateSlashes(char *path)
 {
     char *left = path;
     char *right = path;
     char *end = path + strlen(path);
-    /*
-     * Find first '//'
-     */
-    for (; right < end; right++) {
-        if (*right == '/' && *(right + 1) == '/') break;
-    }
 
-    for (left = right; right < end; right++) {
+    for (; right < end; right++) {
         // Skip sequence of multiple path-separators.
         while (*right == '/' && *(right + 1) == '/') {
             right++;
