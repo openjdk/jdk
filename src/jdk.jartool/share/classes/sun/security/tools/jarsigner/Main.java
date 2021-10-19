@@ -340,6 +340,8 @@ public class Main {
         /* parse flags */
         int n = 0;
 
+        if (args.length == 0) fullusage();
+
         String confFile = null;
         String command = "-sign";
         for (n=0; n < args.length; n++) {

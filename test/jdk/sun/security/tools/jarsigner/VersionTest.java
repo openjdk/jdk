@@ -73,6 +73,12 @@ public class VersionTest {
                 .shouldContain("[-version]                  print the program version")
                 .shouldHaveExitValue(0);
 
+        SecurityTools.jarsigner()
+                .shouldContain("Usage: jarsigner [options] jar-file alias")
+                .shouldContain("[-verify]                   verify a signed JAR file")
+                .shouldContain("[-version]                  print the program version")
+                .shouldHaveExitValue(0);
+
         SecurityTools.keytool("-genkeypair -keystore ks -storepass changeit" +
                 " -keyalg rsa -dname CN=ee -alias ee")
                 .shouldHaveExitValue(0);
