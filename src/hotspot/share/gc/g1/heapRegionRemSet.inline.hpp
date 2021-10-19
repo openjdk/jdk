@@ -62,7 +62,7 @@ inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
 }
 
 void HeapRegionRemSet::split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const {
-  uintptr_t offset = pointer_delta(from, _heap_base_address, 1);
+  size_t offset = pointer_delta(from, _heap_base_address, 1);
   card_region = offset >> _split_card_shift;
   card_within_region = (offset & _split_card_mask) >> CardTable::card_shift;
   assert(card_within_region < ((uint)1 << G1CardSetContainer::LogCardsPerRegionLimit), "must be");

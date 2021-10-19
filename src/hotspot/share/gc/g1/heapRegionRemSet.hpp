@@ -55,7 +55,7 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   static uint _split_card_shift;
   // When splitting addresses into region and card within that region, the mask
   // to get the offset within the region.
-  static uintptr_t _split_card_mask;
+  static size_t _split_card_mask;
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
@@ -89,7 +89,7 @@ public:
     return _card_set.occupied();
   }
 
-  static void initialize(HeapWord* heap_base_address);
+  static void initialize(MemRegion reserved);
 
   // Coarsening statistics since VM start.
   static G1CardSetCoarsenStats coarsen_stats() { return G1CardSet::coarsen_stats(); }

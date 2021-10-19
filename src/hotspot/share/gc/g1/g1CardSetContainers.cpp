@@ -27,5 +27,5 @@
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// The only limitation there is is from the G1CardSetArray.
+// The only limitation is from the G1CardSetArray.
 uint G1CardSetContainer::LogCardsPerRegionLimit = sizeof(G1CardSetArray::EntryDataType) * BitsPerByte;
