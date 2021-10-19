@@ -414,7 +414,6 @@
 #define MAYBE_POST_FIELD_MODIFICATION(obj) {                        \
   if (JVMTI_ENABLED) {                                              \
     int* count_addr;                                                \
-    oop obj;                                                        \
     /* Check to see if a field modification watch has been set */   \
     /* before we take the time to call into the VM.            */   \
     count_addr = (int*)JvmtiExport::get_field_modification_count_addr(); \
