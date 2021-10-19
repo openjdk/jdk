@@ -155,6 +155,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ifeq ($(call check-jvm-feature, zgc), true)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
         $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/z/z_$(HOTSPOT_TARGET_CPU).ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/z/z_$(HOTSPOT_TARGET_CPU_ARCH).ad \
       )))
   endif
 
