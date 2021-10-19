@@ -420,7 +420,7 @@
     count_addr = (int*)JvmtiExport::get_field_modification_count_addr(); \
     if (*count_addr > 0) {                                          \
       oop target;                                                   \
-      if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {       \
+      if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {       \
         target = NULL;                                              \
       } else {                                                      \
         target = obj;                                               \
