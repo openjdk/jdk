@@ -393,7 +393,6 @@ class InstanceKlass: public Klass {
   // array klasses
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
   inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
-  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
   inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
 
   // methods

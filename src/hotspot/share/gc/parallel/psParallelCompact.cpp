@@ -1923,8 +1923,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     old_gen->object_space()->check_mangled_unused_area_complete();
   }
 
-  NOT_PRODUCT(ref_processor()->verify_no_references_recorded());
-
   collection_exit.update();
 
   heap->print_heap_after_gc();
@@ -2161,8 +2159,6 @@ class PSAdjustTask final : public WorkerTask {
 
   enum PSAdjustSubTask {
     PSAdjustSubTask_code_cache,
-    PSAdjustSubTask_old_ref_process,
-    PSAdjustSubTask_young_ref_process,
 
     PSAdjustSubTask_num_elements
   };
@@ -2203,16 +2199,6 @@ public:
     if (_sub_tasks.try_claim_task(PSAdjustSubTask_code_cache)) {
       CodeBlobToOopClosure adjust_code(&adjust, CodeBlobToOopClosure::FixRelocations);
       CodeCache::blobs_do(&adjust_code);
-    }
-    if (_sub_tasks.try_claim_task(PSAdjustSubTask_old_ref_process)) {
-      PSParallelCompact::ref_processor()->weak_oops_do(&adjust);
-    }
-    if (_sub_tasks.try_claim_task(PSAdjustSubTask_young_ref_process)) {
-      // Roots were visited so references into the young gen in roots
-      // may have been scanned.  Process them also.
-      // Should the reference processor have a span that excludes
-      // young gen objects?
-      PSScavenge::reference_processor()->weak_oops_do(&adjust);
     }
     _sub_tasks.all_tasks_claimed();
   }

@@ -305,6 +305,7 @@ void mutex_init() {
 
 #if INCLUDE_JFR
   def(JfrBuffer_lock               , PaddedMutex  , nosafepoint,       true);
+  def(JfrMsg_lock                  , PaddedMonitor, nosafepoint-3,     true);
   def(JfrStacktrace_lock           , PaddedMutex  , stackwatermark-1,  true);
   def(JfrThreadSampler_lock        , PaddedMonitor, nosafepoint,       true);
 #endif
@@ -365,10 +366,6 @@ void mutex_init() {
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock, false);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock,               true);
   defl(JNICritical_lock            , PaddedMonitor, MultiArray_lock,           true); // used for JNI critical regions
-
-#if INCLUDE_JFR
-  defl(JfrMsg_lock                 , PaddedMonitor, Module_lock,               true);
-#endif
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {
