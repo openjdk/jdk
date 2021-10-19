@@ -64,6 +64,7 @@ import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileManager;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
+import jdk.dynalink.linker.support.Lookup;
 import toolbox.JavacTask;
 import toolbox.TestRunner;
 import toolbox.TestRunner.Test;
@@ -275,63 +276,19 @@ public class TestOriginatingElements extends TestRunner {
     }
 
     @Test
-    public void testVacuousElements(Path outerBase) throws Exception {
+    public void testVacuousJavaFileManager(Path outerBase) throws Exception {
         List<String> log = new ArrayList<>();
         JavaFileObject expectedOut = new SimpleJavaFileObject(new URI("Out.java"), JavaFileObject.Kind.SOURCE) {};
-        JavaFileManager fm = new JavaFileManager() {
-            @Override
-            public ClassLoader getClassLoader(JavaFileManager.Location location) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
-            public Iterable<JavaFileObject> list(JavaFileManager.Location location, String packageName, Set<JavaFileObject.Kind> kinds, boolean recurse) throws IOException {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
-            public String inferBinaryName(JavaFileManager.Location location, JavaFileObject file) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
-            public boolean isSameFile(FileObject a, FileObject b) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
-            public boolean handleOption(String current, Iterator<String> remaining) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
-            public boolean hasLocation(JavaFileManager.Location location) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
-            public JavaFileObject getJavaFileForInput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind) throws IOException {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
+        JavaFileManager fm = new MinimalJavaFileManager() {
             @Override
             public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
                 log.add("getJavaFileForOutput(" + location + ", " + className + ", " + kind + ", " + sibling);
                 return expectedOut;
             }
             @Override
-            public FileObject getFileForInput(JavaFileManager.Location location, String packageName, String relativeName) throws IOException {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
             public FileObject getFileForOutput(JavaFileManager.Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
                 log.add("getFileForOutput(" + location + ", " + packageName + ", " + relativeName  + ", " + sibling);
                 return expectedOut;
-            }
-            @Override
-            public void flush() throws IOException {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
-            public void close() throws IOException {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            @Override
-            public int isSupportedOption(String option) {
-                throw new UnsupportedOperationException("Not supported yet.");
             }
         };
 
@@ -363,6 +320,161 @@ public class TestOriginatingElements extends TestRunner {
                      fm.getFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test", "Test.java"));
         assertEquals(List.of("getFileForOutput(CLASS_OUTPUT, test, Test.java, null"), log); log.clear();
     }
+
+    @Test
+    public void testForwardingJavaFileManager(Path outerBase) throws Exception {
+        List<String> log = new ArrayList<>();
+        JavaFileObject expectedOut = new SimpleJavaFileObject(new URI("Out.java"), JavaFileObject.Kind.SOURCE) {};
+
+        FileObject fo1 = new SimpleJavaFileObject(new URI("Test1.java"), JavaFileObject.Kind.SOURCE) {
+            @Override
+            public String toString() {
+                return "Test1 - FO";
+            }
+        };
+        FileObject fo2 = new SimpleJavaFileObject(new URI("Test2.java"), JavaFileObject.Kind.SOURCE) {
+            @Override
+            public String toString() {
+                return "Test2 - FO";
+            }
+        };
+
+        JavaFileManager forwardingWithOverride = new ForwardingJavaFileManager<>(new MinimalJavaFileManager() {
+            @Override
+            public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
+                log.add("getJavaFileForOutput(" + location + ", " + className + ", " + kind + ", " + sibling);
+                return expectedOut;
+            }
+            @Override
+            public JavaFileObject getJavaFileForOutputForOriginatingFiles(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject... originatingFiles) throws IOException {
+                throw new AssertionError("Should not be called.");
+            }
+            @Override
+            public FileObject getFileForOutput(JavaFileManager.Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
+                log.add("getFileForOutput(" + location + ", " + packageName + ", " + relativeName  + ", " + sibling);
+                return expectedOut;
+            }
+            @Override
+            public FileObject getFileForOutputForOriginatingFiles(JavaFileManager.Location location, String packageName, String relativeName, FileObject... originatingFiles) throws IOException {
+                throw new AssertionError("Should not be called.");
+            }
+        }) {
+            @Override
+            public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
+                return super.getJavaFileForOutput(location, className, kind, sibling);
+            }
+            @Override
+            public FileObject getFileForOutput(JavaFileManager.Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
+                return super.getFileForOutput(location, packageName, relativeName, sibling);
+            }
+        };
+
+        assertEquals(expectedOut,
+                     forwardingWithOverride.getJavaFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test.Test", JavaFileObject.Kind.SOURCE, fo1, fo2));
+        assertEquals(List.of("getJavaFileForOutput(CLASS_OUTPUT, test.Test, SOURCE, Test1 - FO"), log); log.clear();
+
+        assertEquals(expectedOut,
+                     forwardingWithOverride.getJavaFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test.Test", JavaFileObject.Kind.SOURCE));
+        assertEquals(List.of("getJavaFileForOutput(CLASS_OUTPUT, test.Test, SOURCE, null"), log); log.clear();
+
+        assertEquals(expectedOut,
+                     forwardingWithOverride.getFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test", "Test.java", fo1, fo2));
+        assertEquals(List.of("getFileForOutput(CLASS_OUTPUT, test, Test.java, Test1 - FO"), log); log.clear();
+        assertEquals(expectedOut,
+                     forwardingWithOverride.getFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test", "Test.java"));
+        assertEquals(List.of("getFileForOutput(CLASS_OUTPUT, test, Test.java, null"), log); log.clear();
+
+        JavaFileManager forwardingWithOutOverride = new ForwardingJavaFileManager<>(new MinimalJavaFileManager() {
+            @Override
+            public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
+                throw new AssertionError("Should not be called.");
+            }
+            @Override
+            public JavaFileObject getJavaFileForOutputForOriginatingFiles(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject... originatingFiles) throws IOException {
+                log.add("getJavaFileForOutputForOriginatingFiles(" + location + ", " + className + ", " + kind + ", " + List.of(originatingFiles));
+                return expectedOut;
+            }
+            @Override
+            public FileObject getFileForOutput(JavaFileManager.Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
+                throw new AssertionError("Should not be called.");
+            }
+            @Override
+            public FileObject getFileForOutputForOriginatingFiles(JavaFileManager.Location location, String packageName, String relativeName, FileObject... originatingFiles) throws IOException {
+                log.add("getFileForOutputForOriginatingFiles(" + location + ", " + packageName + ", " + relativeName  + ", " + List.of(originatingFiles));
+                return expectedOut;
+            }
+        }) {};
+
+        assertEquals(expectedOut,
+                     forwardingWithOutOverride.getJavaFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test.Test", JavaFileObject.Kind.SOURCE, fo1, fo2));
+        assertEquals(List.of("getJavaFileForOutputForOriginatingFiles(CLASS_OUTPUT, test.Test, SOURCE, [Test1 - FO, Test2 - FO]"), log); log.clear();
+
+        assertEquals(expectedOut,
+                     forwardingWithOutOverride.getJavaFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test.Test", JavaFileObject.Kind.SOURCE));
+        assertEquals(List.of("getJavaFileForOutputForOriginatingFiles(CLASS_OUTPUT, test.Test, SOURCE, []"), log); log.clear();
+
+        assertEquals(expectedOut,
+                     forwardingWithOutOverride.getFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test", "Test.java", fo1, fo2));
+        assertEquals(List.of("getFileForOutputForOriginatingFiles(CLASS_OUTPUT, test, Test.java, [Test1 - FO, Test2 - FO]"), log); log.clear();
+        assertEquals(expectedOut,
+                     forwardingWithOutOverride.getFileForOutputForOriginatingFiles(StandardLocation.CLASS_OUTPUT, "test", "Test.java"));
+        assertEquals(List.of("getFileForOutputForOriginatingFiles(CLASS_OUTPUT, test, Test.java, []"), log); log.clear();
+    }
+
+    class MinimalJavaFileManager implements JavaFileManager {
+            @Override
+            public ClassLoader getClassLoader(JavaFileManager.Location location) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public Iterable<JavaFileObject> list(JavaFileManager.Location location, String packageName, Set<JavaFileObject.Kind> kinds, boolean recurse) throws IOException {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public String inferBinaryName(JavaFileManager.Location location, JavaFileObject file) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public boolean isSameFile(FileObject a, FileObject b) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public boolean handleOption(String current, Iterator<String> remaining) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public boolean hasLocation(JavaFileManager.Location location) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public JavaFileObject getJavaFileForInput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind) throws IOException {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public FileObject getFileForInput(JavaFileManager.Location location, String packageName, String relativeName) throws IOException {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public FileObject getFileForOutput(JavaFileManager.Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public void flush() throws IOException {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public void close() throws IOException {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+            @Override
+            public int isSupportedOption(String option) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+        };
 
     private void assertEquals(Object expected, Object actual) throws AssertionError {
         if (!expected.equals(actual)) {
