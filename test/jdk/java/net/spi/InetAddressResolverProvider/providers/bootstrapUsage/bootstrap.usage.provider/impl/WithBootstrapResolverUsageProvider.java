@@ -71,6 +71,6 @@ public class WithBootstrapResolverUsageProvider extends InetAddressResolverProvi
 
     @Override
     public String name() {
-        return "ProviderWithInetAddressUsageInGet";
+        return "WithBootstrapResolverUsageProvider";
     }
 }

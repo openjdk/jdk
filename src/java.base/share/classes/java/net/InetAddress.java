@@ -228,7 +228,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  *      {@linkplain ServiceLoader#load(java.lang.Class, java.lang.ClassLoader) implementation specific}.
  *      The first provider found will be used to instantiate the {@link InetAddressResolver InetAddressResolver}
  *      by invoking the {@link InetAddressResolverProvider#get(InetAddressResolverProvider.Configuration)}
- *      method. The instantiated {@code InetAddressResolver} will be installed as the system-wide
+ *      method. The returned {@code InetAddressResolver} will be installed as the system-wide
  *      resolver.
  *  <li>If the previous step fails to find any resolver provider the
  *      built-in resolver will be set as the system-wide resolver.
@@ -863,6 +863,9 @@ public class InetAddress implements java.io.Serializable {
                 host = addr.getHostAddress();
                 return host;
             }
+        // 'resolver.lookUpHostName' and 'InetAddress.getAllByName0' delegate to the system-wide resolver,
+        // which could be a custom one. At that point we treat any unexpected RuntimeException thrown by
+        // the resolver as we would treat an UnknownHostException or an unmatched host name.
         } catch (RuntimeException | UnknownHostException e) {
             host = addr.getHostAddress();
         }
@@ -1067,6 +1070,7 @@ public class InetAddress implements java.io.Serializable {
         public Stream<InetAddress> lookupAddresses(String host, LookupPolicy policy)
                 throws UnknownHostException {
             Objects.requireNonNull(host);
+            Objects.requireNonNull(policy);
             return Arrays.stream(impl.lookupAllHostAddr(host, policy));
         }
 
@@ -1206,38 +1210,38 @@ public class InetAddress implements java.io.Serializable {
                 throw new UnknownHostException("Unable to resolve host " + host
                         + " as hosts file " + hostsFile + " not found ");
             }
-            // Check number of found addresses:
-            // If none found - throw an exception
-            boolean noAddressFound = inetAddresses.isEmpty();
-            // needIPv4 == false and needIPv6 is not a valid combination. See LookupPolicy.of.
-            if (needIPv4 != needIPv6) {
-                if (needIPv4) {
-                    noAddressFound = inet4Addresses.isEmpty();
-                } else {
-                    noAddressFound = inet6Addresses.isEmpty();
-                }
-            }
-            if (noAddressFound) {
-                throw new UnknownHostException("Unable to resolve host " + host
-                        + " in hosts file " + hostsFile);
-            }
-
-            // If both address types are requested
-            if (needIPv4 == needIPv6) {
-                if (systemAddressesOrder(flags)) {
-                    return inetAddresses.stream();
-                } else if (ipv6AddressesFirst(flags)) {
-                    return Stream.concat(inet6Addresses.stream(), inet4Addresses.stream());
-                } else if (ipv4AddressesFirst(flags)) {
-                    return Stream.concat(inet4Addresses.stream(), inet6Addresses.stream());
-                }
-            }
-            // Only IPv4 addresses are requested
-            if (needIPv4) {
+            // Check if only IPv4 addresses are requested
+            if (needIPv4 && !needIPv6) {
+                checkResultsList(inet4Addresses, host);
                 return inet4Addresses.stream();
             }
-            // Only IPv6 addresses are requested
-            return inet6Addresses.stream();
+            // Check if only IPv6 addresses are requested
+            if (!needIPv4 && needIPv6) {
+                checkResultsList(inet6Addresses, host);
+                return inet6Addresses.stream();
+            }
+            // If both type of addresses are requested:
+            // First, check if there is any results. Then arrange
+            // addresses according to LookupPolicy value.
+            checkResultsList(inetAddresses, host);
+            if (ipv6AddressesFirst(flags)) {
+                return Stream.concat(inet6Addresses.stream(), inet4Addresses.stream());
+            } else if (ipv4AddressesFirst(flags)) {
+                return Stream.concat(inet4Addresses.stream(), inet6Addresses.stream());
+            }
+            // Only "system" addresses order is possible at this stage
+            assert systemAddressesOrder(flags);
+            return inetAddresses.stream();
+        }
+
+        // Checks if result list with addresses is not empty.
+        // If it is empty throw an UnknownHostException.
+        private void checkResultsList(List<InetAddress> addressesList, String hostName)
+                throws UnknownHostException {
+            if (addressesList.isEmpty()) {
+                throw new UnknownHostException("Unable to resolve host " + hostName
+                        + " in hosts file " + hostsFile);
+            }
         }
 
         private String removeComments(String hostsEntry) {
