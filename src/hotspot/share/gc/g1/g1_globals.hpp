@@ -29,9 +29,12 @@
 
 // Enable evacuation failure injector by default in non-product builds.
 
-#if !defined(EVAC_FAILURE_INJECTOR) && !defined(PRODUCT)
+#ifdef EVAC_FAILURE_INJECTOR
+#error "EVAC_FAILURE_INJECTOR already defined"
+#endif
+#ifndef PRODUCT
 #define EVAC_FAILURE_INJECTOR 1
-#elif !defined(EVAC_FAILURE_INJECTOR)
+#else
 #define EVAC_FAILURE_INJECTOR 0
 #endif
 

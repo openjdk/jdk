@@ -29,6 +29,7 @@
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
