@@ -2696,10 +2696,10 @@ void G1CollectedHeap::verify_region_attr_remset_update() {
   public:
     virtual bool do_heap_region(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      bool const needs_remset_update = g1h->region_attr(r->bottom()).needs_remset_update();
-      assert(r->rem_set()->is_tracked() == needs_remset_update,
+      bool const remset_is_tracked = g1h->region_attr(r->bottom()).remset_is_tracked();
+      assert(r->rem_set()->is_tracked() == remset_is_tracked,
              "Region %u remset tracking status (%s) different to region attribute (%s)",
-             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(needs_remset_update));
+             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(remset_is_tracked));
       return false;
     }
   } cl;
