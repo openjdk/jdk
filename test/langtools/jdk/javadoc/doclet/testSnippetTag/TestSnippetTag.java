@@ -857,7 +857,7 @@ public class TestSnippetTag extends JavadocTester {
                         <div class="block">
                         <div class="snippet-container"><a href="#" class="snippet-copy" onclick="cop\
                         ySnippet(this)" aria-label="Copy" data-copied="Copied!"><img src="../copy.sv\
-                        g" alt="Copy"></a>                                         
+                        g" alt="Copy"></a>
                         <pre class="snippet">
                         %s</pre>
                         </div>""".formatted(id, t.expectedOutput()));
