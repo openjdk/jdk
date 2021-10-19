@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,28 @@
 /*
   @test
   @key headful
-  @bug 4811096
+  @bug 4811096 8225777
   @summary Tests whether mixing works on Dialogs
-  @author anthony.petrov@...: area=awt.mixing
   @library ../regtesthelpers
   @build Util
   @run main MixingOnDialog
 */
 
 
-/**
+/*
  * MixingOnDialog.java
  *
  * summary:  Tests whether awt.Button and swing.JButton mix correctly
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Button;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import javax.swing.JButton;
+
 import test.java.awt.regtesthelpers.Util;
 
 
@@ -59,25 +63,12 @@ public class MixingOnDialog
         final JButton light = new JButton("  LW Button  ");
 
         // Actions for the buttons add appropriate number to the test sequence
-        heavy.addActionListener(new java.awt.event.ActionListener()
-                {
-                    public void actionPerformed(java.awt.event.ActionEvent e) {
-                        heavyClicked = true;
-                    }
-                }
-                );
-
-        light.addActionListener(new java.awt.event.ActionListener()
-                {
-                    public void actionPerformed(java.awt.event.ActionEvent e) {
-                        lightClicked = true;
-                    }
-                }
-                );
+        heavy.addActionListener(e -> heavyClicked = true);
+        light.addActionListener(e -> lightClicked = true);
 
         // Overlap the buttons
-        heavy.setBounds(30, 30, 200, 200);
-        light.setBounds(10, 10, 50, 50);
+        heavy.setBounds(130, 130, 200, 200);
+        light.setBounds(110, 110, 50, 50);
 
         // Put the components into the frame
         d.setLayout(null);
@@ -98,8 +89,8 @@ public class MixingOnDialog
         robot.mouseMove(heavyLoc.x + 5, heavyLoc.y + 5);
 
         // Now perform the click at this point
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         // If the buttons are correctly mixed, the test sequence
