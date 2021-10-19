@@ -79,14 +79,20 @@ public class VersionTest {
 
         JarUtils.createJarFile(Path.of("a.jar"), Path.of("."), Path.of("."));
 
-        // -version option is specified at the end with other options
+        /*
+         * -version is specified but -help is not specified, jarsigner
+         * will only print the program version and ignore other options.
+         */
         SecurityTools.jarsigner("-keystore ks -storepass changeit" +
                 " -signedjar signeda.jar a.jar ee -version")
                 .shouldNotContain("jar signed.")
                 .shouldContain("jarsigner ")
                 .shouldHaveExitValue(0);
 
-        // -version option is specified at the beginning with other options
+        /*
+         * -version is specified but -help is not specified, jarsigner
+         * will only print the program version and ignore other options.
+         */
         SecurityTools.jarsigner("-version -verify a.jar")
                 .shouldNotContain("jar is unsigned.")
                 .shouldContain("jarsigner ")
