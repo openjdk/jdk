@@ -25,13 +25,14 @@ package jdk.jfr.event.profiling;
 
 import static jdk.test.lib.Asserts.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.function.Supplier;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jdk.jfr.Category;
@@ -90,7 +91,7 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 2);
+                assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value1"));
                 return true;
@@ -109,7 +110,7 @@ public class TestFullContext {
                     .build(),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 2);
+                assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value1"));
                 return true;
@@ -128,7 +129,7 @@ public class TestFullContext {
                     .build(),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 2);
+                assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value1"));
                 return true;
@@ -178,7 +179,7 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 2);
+                assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value2",
                     contextKey2.name(), "Key2Value2"));
@@ -195,7 +196,7 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 2);
+                assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value3/2"));
                 return true;
@@ -213,7 +214,7 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 2);
+                assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value4",
                     contextKey2.name(), "Key2Value4"));
@@ -232,7 +233,7 @@ public class TestFullContext {
                         .build()),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 2);
+                assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
                     contextKey1.name(), "Key1Value5/2"));
                 return true;
@@ -263,8 +264,17 @@ public class TestFullContext {
                 RecordingContextFilter prev = RecordingContextFilter.Config.contextFilter();
                 try {
                     RecordingContextFilter.Config.setContextFilter(filterFactory.get());
-                    try (RecordingContextHolder contexts = contextsFactory.get()) {
+                    try (RecordingContextHolder contextHolder = contextsFactory.get()) {
                         new TestEvent().commit();
+
+                        RecordingContext.Snapshot s = contextHolder.contexts().get(0).snapshot();
+                        Thread t = new Thread(() -> {
+                            try (RecordingContext.Activation a = s.activate()) {
+                                new TestEvent().commit();
+                            }
+                        });
+                        t.start();
+                        t.join();
                     }
 
                     new TestEvent().commit();
@@ -286,6 +296,10 @@ public class TestFullContext {
     }
 
     private static record RecordingContextHolder(List<RecordingContext> contexts) implements AutoCloseable {
+
+        RecordingContextHolder {
+            Objects.checkIndex(0, contexts.size());
+        }
 
         public static RecordingContextHolder of(RecordingContext... contexts) {
             return new RecordingContextHolder(List.of(contexts));

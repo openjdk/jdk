@@ -43,7 +43,7 @@ import jdk.jfr.internal.RecordingContextFilterEngine;
  */
 public final class RecordingContext implements AutoCloseable {
 
-    final RecordingContextBinding binding;
+    private final RecordingContextBinding binding;
 
     RecordingContext(RecordingContextBinding binding) {
         this.binding = binding;
@@ -51,10 +51,38 @@ public final class RecordingContext implements AutoCloseable {
 
     // snapshot + run
     public static class Snapshot {
-        final RecordingContextBinding binding;
+
+        private final RecordingContextBinding binding;
 
         Snapshot() {
             this.binding = RecordingContextBinding.current();
+        }
+
+        public Activation activate() {
+            return new Activation(this);
+        }
+    }
+
+    public static class Activation implements AutoCloseable {
+
+        private final RecordingContextBinding prev;
+        private final boolean set;
+
+        Activation(Snapshot snapshot) {
+            this.prev = RecordingContextBinding.current();
+            if (this.prev == snapshot.binding) {
+                set = false;
+            } else {
+                RecordingContextBinding.setCurrent(snapshot.binding);
+                set = true;
+            }
+        }
+
+        @Override
+        public void close() {
+            if (set) {
+                RecordingContextBinding.setCurrent(prev);
+            }
         }
     }
 
@@ -63,28 +91,14 @@ public final class RecordingContext implements AutoCloseable {
     }
 
     public static <R> R callWithSnapshot(Callable<R> op, Snapshot s) throws Exception {
-        RecordingContextBinding prev = RecordingContextBinding.current();
-        if (prev == s.binding) {
+        try (Activation a = s.activate()) {
             return op.call();
-        }
-        try {
-            RecordingContextBinding.setCurrent(s.binding);
-            return op.call();
-        } finally {
-            RecordingContextBinding.setCurrent(prev);
         }
     }
 
     public static void runWithSnapshot(Runnable op, Snapshot s) {
-        RecordingContextBinding prev = RecordingContextBinding.current();
-        if (prev == s.binding) {
+        try (Activation a = s.activate()) {
             op.run();
-        }
-        try {
-            RecordingContextBinding.setCurrent(s.binding);
-            op.run();
-        } finally {
-            RecordingContextBinding.setCurrent(prev);
         }
     }
 
