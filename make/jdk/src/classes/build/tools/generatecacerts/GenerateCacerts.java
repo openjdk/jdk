@@ -51,7 +51,7 @@ public class GenerateCacerts {
 
     public static void store(String dir, OutputStream stream) throws Exception {
 
-        CertificateFactory cf = CertificateFactory.getInstance("X509");
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
         KeyStore ks = KeyStore.getInstance("pkcs12");
         ks.load(null, null);
