@@ -1050,20 +1050,29 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 }
 
 // One execution of the inner loop covers a sub-range of the entire iteration range of the loop: [A,Z), aka [A=init,
-// Z=limit). If the loop has at least one trip (which is the case here), the iteration variable always takes A as its
+// Z=limit). If the loop has at least one trip (which is the case here), the iteration variable i always takes A as its
 // first value, followed by A+S (S is the stride), next A+2S, etc. The limit is exclusive, so that the final value B of
 // i is never Z.  It will be B=Z-1 if S=1, or B=Z+1 if S=-1.  If |S|>1 the formula for the last value requires a floor
-// operation, specifically B=floor((Z-sgn(S)-A)/S)*S+A.
+// operation, specifically B=floor((Z-sgn(S)-A)/S)*S+A.  Thus i ranges as i:[A,B] or i:[A,Z) or i:[A,Z-U) for some U<S.
+
+// N.B. We handle only the case of positive S currently, so comments about S<0 are not operative at present.  Also,
+// we only support positive index scale value (K > 0) to simplify the logic for clamping 32-bit bounds (L2, R2).
+// For restrictions on S and K, see the guards in extract_long_range_checks.
 
 // Within the loop there may be many range checks.  Each such range check (R.C.) is of the form 0 <= i*K+L < R, where K
 // is a scale factor applied to the loop iteration variable i, and L is some offset; K, L, and R are loop-invariant.
 // Because R is never negative, this check can always be simplified to an unsigned check i*K+L <u R.
 
 // When a long loop over a 64-bit variable i (outer_iv) is decomposed into a series of shorter sub-loops over a 32-bit
-// variable j (inner_iv), the above computations are adjusted so that some of them can be done using 32-bit arithmetic.
-// Suppose the next unprocessed iteration value (for i) is some specific C. The iteration range for the sub-loops is
-// [A2 = 0, Z2) or [A2 = 0, B2]. We have C=B2+S, where B2 is the post-limit iteration value from the previous 32-bit
-// sub-loop, or else is C=A from the whole loop if this is the first sub-loop.
+// variable j (inner_iv), j ranges over a shorter interval j:[0,Z2), where the limit is chosen to prevent various cases
+// of 32-bit overflow (including multiplications j*K below).  In the sub-loop the logical value i is offset from j by a
+// 64-bit constant C, so i ranges in i:C+[0,Z2).
+
+// The union of all the C+[0,Z2) ranges from the sub-loops must be identical to the whole range [A,B].  Assuming S>0,
+// the first C must be A itself, and the next C value is the previous C+Z2.  In each sub-loop, j counts up from zero
+// and exits just before i=C+Z2.
+
+// (N.B. If S<0 the formulas are different, because all the loops count downward.)
 
 // Returning to range checks, we see that each i*K+L <u R expands to (C+j)*K+L <u R, or j*K+Q <u R, where Q=(C*K+L).
 // (Recall that K and L and R are loop-invariant scale, offset and range values for a particular R.C.)  This is still a
@@ -1072,18 +1081,24 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 // PhaseIdealLoop::add_constraint.)
 
 // We must transform this comparison so that it gets the same answer, but by means of a 32-bit R.C. (using j not i) of
-// the form j*K+L2 <u R2.  Note that L2 and R2 must be loop-invariant, but only with respect to the sub-loop.  Thus, the
+// the form j*K+L2 <u32 R2.  Note that L2 and R2 must be loop-invariant, but only with respect to the sub-loop.  Thus, the
 // problem reduces to computing values for L2 and R2 (for each R.C. in the loop) in the loop header for the sub-loop.
-// Then the standard R.C.E. transforms can take those as inputs and further computes the necessary minimum and maximum
+// Then the standard R.C.E. transforms can take those as inputs and further compute the necessary minimum and maximum
 // values for the 32-bit counter j within which the range checks can be eliminated.
 
-// So, given j*K+Q <u R, we need to find some j*K+L2 <u R2, where L2 and R2 fit in 32 bits, and the 32-bit operations do
+// So, given j*K+Q <u32 R, we need to find some j*K+L2 <u32 R2, where L2 and R2 fit in 32 bits, and the 32-bit operations do
 // not overflow. We also need to cover the cases where i*K+L (= j*K+Q) overflows to a 64-bit negative, since that is
 // allowed as an input to the R.C., as long as the R.C. as a whole fails.
 
-// To prevent the multiplication j*K from overflowing, we adjust the sub-loop limit Z2 closer to zero.
+// If 32-bit multiplication j*K might overflow, we adjust the sub-loop limit Z2 closer to zero to reduce j's range.
 
-// For each R.C. j*K+Q <u R, the range of mathematical values of j*K+Q in the sub-loop is [Q_min, Q_max)
+// For each R.C. j*K+Q <u32 R, the range of mathematical values of j*K+Q in the sub-loop is [Q_min, Q_max), where
+// Q_min=Q and Q_max=Z2*K+Q.  Making the upper limit Q_max be exclusive helps it integrate correctly with the strict
+// comparisions against R and R2.  Sometimes a very high R will be replaced by an R2 derived from the more moderate
+// Q_max, and replacing one exclusive limit by another exclusive limit avoids off-by-one complexities.
+
+// N.B. If (S*K)<0 then the formulas for Q_min and Q_max may differ; the values may need to be swapped and adjusted to
+// the correct type of bound (inclusive or exclusive).
 
 // Case A: Some Negatives (but no overflow).
 // Number line:
@@ -1092,7 +1107,9 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 // |    .     .    .  Q_min..0..Q_max  .    .     .    |  small mixed
 //
 // if Q_min <s64 0, then use this test:
-// j*K + Q_min <u32 clamp(R, 0, Q_max)
+// j*K + s32_trunc(Q_min) <u32 clamp(R, 0, Q_max)
+
+// If the 32-bit truncation loses information, no harm is done, since certainly the clamp also returns R2=zero.
 
 // Case B: No Negatives.
 // Number line:
@@ -1102,18 +1119,33 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 //
 // if both Q_min, Q_max >=s64 0, then use this test:
 // j*K + 0 <u32 clamp(R, Q_min, Q_max) - Q_min
+// or equivalently:
+// j*K + 0 <u32 clamp(R - Q_min, 0, Q_max - Q_min)
 
-// Case C: Overflow in the int:N domain
+// Case C: Overflow in the 64-bit domain
 // Number line:
 // |..Q_max-2^64   .    .    0    .    .    .   Q_min..|  s64 overflow
 //
 // if Q_min >=s64 0 but Q_max <s64 0, then use this test:
 // j*K + 0 <u32 clamp(R, Q_min, R) - Q_min
+// or equivalently:
+// j*K + 0 <u32 clamp(R - Q_min, 0, R - Q_min)
+// or also equivalently:
+// j*K + 0 <u32 max(0, R - Q_min)
+//
+// Here the clamp function is a simple 64-bit min/max:
+// clamp(X, L, H) := max(L, min(X, H))
+// When degenerately L > H, it returns L not H.
 //
 // Tests above can be merged into a single one:
 // L_clamp = Q_min < 0 ? 0 : Q_min
 // H_clamp = Q_max < Q_min ? R : Q_max
 // j*K + Q_min - L_clamp <u32 clamp(R, L_clamp, H_clamp) - L_clamp
+// or equivalently:
+// j*K + Q_min - L_clamp <u32 clamp(R - L_clamp, 0, H_clamp - L_clamp)
+//
+// Readers may find the equivalent forms easier to reason about, but the forms given first generate better code.
+
 void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
                                                  Node* inner_iters_actual_int, Node* inner_phi,
                                                  Node* iv_add, LoopNode* inner_head) {
