@@ -1103,7 +1103,28 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 
 HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
   ShenandoahHeapLocker locker(lock());
-  return _free_set->allocate(req, in_new_region);
+  HeapWord* result = _free_set->allocate(req, in_new_region);
+  if (result != NULL && req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
+    // Register the newly allocated object while we're holding the global lock since there's no synchronization
+    // built in to the implementation of register_object().  There are potential races when multiple independent
+    // threads are allocating objects, some of which might span the same card region.  For example, consider
+    // a card table's memory region within which three objects are being allocated by three different threads:
+    //
+    // objects being "concurrently" allocated:
+    //    [-----a------][-----b-----][--------------c------------------]
+    //            [---- card table memory range --------------]
+    //
+    // Before any objects are allocated, this card's memory range holds no objects.  Note that:
+    //   allocation of object a wants to set the has-object, first-start, and last-start attributes of the preceding card region.
+    //   allocation of object b wants to set the has-object, first-start, and last-start attributes of this card region.
+    //   allocation of object c also wants to set the has-object, first-start, and last-start attributes of this card region.
+    //
+    // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as last-start
+    // representing object b while first-start represents object c.  This is why we need to require all register_object()
+    // invocations to be "mutually exclusive" with respect to each card's memory range.
+    ShenandoahHeap::heap()->card_scan()->register_object(result);
+  }
+  return result;
 }
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size,

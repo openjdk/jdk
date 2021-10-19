@@ -63,7 +63,8 @@ void ShenandoahDegenGC::vmop_degenerated() {
 }
 
 void ShenandoahDegenGC::entry_degenerated() {
-  const char* msg = degen_event_message(_degen_point);
+  char msg[1024];
+  degen_event_message(_degen_point, msg, sizeof(msg));
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::degen_gc, true /* log_heap_usage */);
   EventMark em("%s", msg);
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
@@ -110,16 +111,22 @@ void ShenandoahDegenGC::op_degenerated() {
       // space. It makes little sense to wait for Full GC to reclaim as much as it can, when
       // we can do the most aggressive degen cycle, which includes processing references and
       // class unloading, unless those features are explicitly disabled.
-      //
 
+
+      // Note that we can only do this for "outside-cycle" degens, otherwise we would risk
+      // changing the cycle parameters mid-cycle during concurrent -> degenerated handover.
+      heap->set_unload_classes((!heap->mode()->is_generational() || _generation->generation_mode() == GLOBAL) && _generation->heuristics()->can_unload_classes());
+
+      if (_generation->generation_mode() == YOUNG || (_generation->generation_mode() == GLOBAL && ShenandoahVerify)) {
+        // Swap remembered sets for young, or if the verifier will run during a global collect
+        _generation->swap_remembered_set();
+      }
+
+    case _degenerated_roots:
       // Degenerated from concurrent root mark, reset the flag for STW mark
       if (heap->is_concurrent_mark_in_progress()) {
         heap->cancel_concurrent_mark();
       }
-
-      // Note that we can only do this for "outside-cycle" degens, otherwise we would risk
-      // changing the cycle parameters mid-cycle during concurrent -> degenerated handover.
-      heap->set_unload_classes(_generation->heuristics()->can_unload_classes());
 
       op_reset();
 
@@ -354,22 +361,8 @@ void ShenandoahDegenGC::op_degenerated_futile() {
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }
 
-const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) const {
-  switch (point) {
-    case _degenerated_unset:
-      return "Pause Degenerated GC (<UNSET>)";
-    case _degenerated_outside_cycle:
-      return "Pause Degenerated GC (Outside of Cycle)";
-    case _degenerated_mark:
-      return "Pause Degenerated GC (Mark)";
-    case _degenerated_evac:
-      return "Pause Degenerated GC (Evacuation)";
-    case _degenerated_updaterefs:
-      return "Pause Degenerated GC (Update Refs)";
-    default:
-      ShouldNotReachHere();
-      return "ERROR";
-  }
+void ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point, char* buf, size_t len) const {
+  jio_snprintf(buf, len, "Pause Degenerated %s GC (%s)", _generation->name(), ShenandoahGC::degen_point_to_string(point));
 }
 
 void ShenandoahDegenGC::upgrade_to_full() {

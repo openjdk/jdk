@@ -63,7 +63,7 @@ private:
   void op_degenerated_futile();
   void op_degenerated_fail();
 
-  const char* degen_event_message(ShenandoahDegenPoint point) const;
+  void degen_event_message(ShenandoahDegenPoint point, char* buf, size_t len) const;
   void upgrade_to_full();
 };
 

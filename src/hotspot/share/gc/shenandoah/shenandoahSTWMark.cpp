@@ -114,6 +114,11 @@ void ShenandoahSTWMark::mark() {
 
   {
     // Mark
+    if (_generation->generation_mode() == YOUNG) {
+      // But only scan the remembered set for young generation.
+      _generation->scan_remembered_set();
+    }
+
     StrongRootsScope scope(nworkers);
     ShenandoahSTWMarkTask task(this);
     heap->workers()->run_task(&task);
@@ -121,7 +126,7 @@ void ShenandoahSTWMark::mark() {
     assert(task_queues()->is_empty(), "Should be empty");
   }
 
-  heap->global_generation()->set_mark_complete();
+  _generation->set_mark_complete();
 
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
@@ -138,7 +143,6 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
     case YOUNG: {
       ShenandoahInitMarkRootsClosure<YOUNG> init_mark(task_queues()->queue(worker_id));
       _root_scanner.roots_do(&init_mark, worker_id);
-      _generation->scan_remembered_set();
       break;
     }
     default:
