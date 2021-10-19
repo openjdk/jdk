@@ -345,7 +345,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * given package-oriented location.
      *
      * <p>The provided {@code originatingFiles} represent files that
-     * where in, an unspecified way, used to create the content of
+     * were in, an unspecified way, used to create the content of
      * the file created by this method. See {@code originatingElements}
      * in {@link Filer#createSourceFile}.
      *
@@ -479,7 +479,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * name</a> in the specified package in the given location.
      *
      * <p>The provided {@code originatingFiles} represent files that
-     * where in, an unspecified way, used to create the content of
+     * were in, an unspecified way, used to create the content of
      * the file created by this method. See {@code originatingElements}
      * in {@link Filer#createResource}.
      *
