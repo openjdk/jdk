@@ -365,20 +365,17 @@ public class Krb5InitCredential
             clientPrincipal = null;
         }
 
-        final AccessControlContext acc = AccessController.getContext();
-
         try {
             final GSSCaller realCaller = (caller == GSSCaller.CALLER_UNKNOWN)
                                    ? GSSCaller.CALLER_INITIATE
                                    : caller;
-            return AccessController.doPrivileged(
+            return AccessController.doPrivilegedWithCombiner(
                 new PrivilegedExceptionAction<KerberosTicket>() {
                 public KerberosTicket run() throws Exception {
                     // It's OK to use null as serverPrincipal. TGT is almost
                     // the first ticket for a principal and we use list.
                     return Krb5Util.getInitialTicket(
-                        realCaller,
-                        clientPrincipal, acc);
+                        realCaller, clientPrincipal);
                         }});
         } catch (PrivilegedActionException e) {
             GSSException ge =

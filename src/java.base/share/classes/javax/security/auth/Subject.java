@@ -38,7 +38,7 @@ import java.security.ProtectionDomain;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 
-import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
 import sun.security.util.ResourcesMgr;
 
 /**
@@ -322,8 +322,8 @@ public final class Subject implements java.io.Serializable {
     }
 
     // Store the current subject to a ThreadLocal when a system property is set.
-    private static final boolean USE_TL = GetBooleanAction
-            .privilegedGetProperty("jdk.security.auth.subject.useTL");
+    private static final boolean USE_TL = "true".equalsIgnoreCase(
+            GetPropertyAction.privilegedGetProperty("jdk.security.auth.subject.useTL"));
 
     private static final InheritableThreadLocal<Subject> SUBJECT_THREAD_LOCAL =
             USE_TL ?
@@ -419,7 +419,9 @@ public final class Subject implements java.io.Serializable {
         } else {
             try {
                 PrivilegedExceptionAction<T> pa = () -> action.call();
-                return doAs(subject, pa);
+                @SuppressWarnings("removal")
+                var result = doAs(subject, pa);
+                return result;
             } catch (PrivilegedActionException e) {
                 throw new CompletionException(e.getCause());
             } catch (Exception e) {
@@ -463,8 +465,17 @@ public final class Subject implements java.io.Serializable {
      *                  {@link AuthPermission#AuthPermission(String)
      *                  AuthPermission("doAs")} permission to invoke this
      *                  method.
+     *
+     * @deprecated This method depends on {@link AccessControlContext}
+     *       which, in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, is deprecated
+     *       and subject to removal in a future release. Instead, users can
+     *       call {@link #callAs} to perform the same work, which is based on
+     *       {@link #doAs(Subject, PrivilegedExceptionAction)}
+     *       by default in this implementation.
      */
     @SuppressWarnings("removal")
+    @Deprecated(since="18", forRemoval=true)
     public static <T> T doAs(final Subject subject,
                         final java.security.PrivilegedAction<T> action) {
 
@@ -526,8 +537,16 @@ public final class Subject implements java.io.Serializable {
      *                  {@link AuthPermission#AuthPermission(String)
      *                  AuthPermission("doAs")} permission to invoke this
      *                  method.
+     *
+     * @deprecated This method depends on {@link AccessControlContext}
+     *       which, in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, is deprecated
+     *       and subject to removal in a future release. Instead, users can
+     *       call {@link #callAs} to perform the same work, which is based on
+     *       this method by default in this implementation.
      */
     @SuppressWarnings("removal")
+    @Deprecated(since="18", forRemoval=true)
     public static <T> T doAs(final Subject subject,
                         final java.security.PrivilegedExceptionAction<T> action)
                         throws java.security.PrivilegedActionException {

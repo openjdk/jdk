@@ -30,7 +30,6 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
-import java.security.AccessControlContext;
 
 import sun.security.action.GetBooleanAction;
 import sun.security.jgss.GSSUtil;
@@ -62,12 +61,10 @@ public class Krb5Util {
      * pair from the Subject in the specified AccessControlContext.
      */
     static KerberosTicket getServiceTicket(GSSCaller caller,
-        String clientPrincipal, String serverPrincipal,
-        @SuppressWarnings("removal") AccessControlContext acc) throws LoginException {
+        String clientPrincipal, String serverPrincipal) throws LoginException {
 
-        // Try to get ticket from acc's Subject
         @SuppressWarnings("removal")
-        Subject accSubj = Subject.getSubject(acc);
+        Subject accSubj = Subject.current();
         KerberosTicket ticket =
             SubjectComber.find(accSubj, serverPrincipal, clientPrincipal,
                   KerberosTicket.class);
@@ -83,12 +80,9 @@ public class Krb5Util {
      * a LoginContext.
      */
     static KerberosTicket getInitialTicket(GSSCaller caller,
-            String clientPrincipal,
-            @SuppressWarnings("removal") AccessControlContext acc) throws LoginException {
+            String clientPrincipal) throws LoginException {
 
-        // Try to get ticket from acc's Subject
-        @SuppressWarnings("removal")
-        Subject accSubj = Subject.getSubject(acc);
+        Subject accSubj = Subject.current();
         KerberosTicket ticket =
                 SubjectComber.find(accSubj, null, clientPrincipal,
                         KerberosTicket.class);
@@ -110,11 +104,9 @@ public class Krb5Util {
      * NOTE: This method is also used by JSSE Kerberos Cipher Suites
      */
     public static ServiceCreds getServiceCreds(GSSCaller caller,
-        String serverPrincipal, @SuppressWarnings("removal") AccessControlContext acc)
-                throws LoginException {
+            String serverPrincipal) throws LoginException {
 
-        @SuppressWarnings("removal")
-        Subject accSubj = Subject.getSubject(acc);
+        Subject accSubj = Subject.current();
         ServiceCreds sc = null;
         if (accSubj != null) {
             sc = ServiceCreds.getInstance(accSubj, serverPrincipal);

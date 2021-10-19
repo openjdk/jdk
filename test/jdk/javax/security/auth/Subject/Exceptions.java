@@ -25,7 +25,7 @@
  * @test
  * @bug 8267108
  * @library /test/lib
- * @summary Check that getSubject works after JIT compiler escape analysis.
+ * @summary Check that callAs and doAs throw the specified exceptions
  * @run main/othervm -Djava.security.manager=allow -Djdk.security.auth.subject.useTL=true Exceptions
  * @run main/othervm -Djava.security.manager=allow -Djdk.security.auth.subject.useTL=false Exceptions
  */
