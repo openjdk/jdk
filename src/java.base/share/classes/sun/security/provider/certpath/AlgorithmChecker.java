@@ -74,7 +74,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private final AlgorithmConstraints constraints;
-    private final PublicKey trustedPubKey;
+    private PublicKey trustedPubKey;
     private final Date date;
     private PublicKey prevPubKey;
     private final String variant;
@@ -233,7 +233,8 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             DisabledAlgorithmConstraints dac =
                 (DisabledAlgorithmConstraints)constraints;
             if (prevPubKey != null && prevPubKey == trustedPubKey) {
-                // check constraints of trusted public key
+                // check constraints of trusted public key (make sure
+                // algorithm and size is not restricted)
                 CertPathConstraintsParameters cp =
                     new CertPathConstraintsParameters(trustedPubKey, variant,
                         anchor, date);
@@ -357,19 +358,19 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      */
     void trySetTrustAnchor(TrustAnchor anchor) {
         // Don't bother if the check has started or trust anchor has already
-        // specified.
-        if (prevPubKey == null) {
+        // been specified.
+        if (this.prevPubKey == null) {
             if (anchor == null) {
                 throw new IllegalArgumentException(
                         "The trust anchor cannot be null");
             }
 
-            // Don't bother to change the trustedPubKey.
             if (anchor.getTrustedCert() != null) {
-                prevPubKey = anchor.getTrustedCert().getPublicKey();
+                this.trustedPubKey = anchor.getTrustedCert().getPublicKey();
             } else {
-                prevPubKey = anchor.getCAPublicKey();
+                this.trustedPubKey = anchor.getCAPublicKey();
             }
+            this.prevPubKey = this.trustedPubKey;
             this.anchor = anchor;
         }
     }
