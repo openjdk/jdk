@@ -32,7 +32,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.ProtocolFamily;
 import java.net.StandardProtocolFamily;
-import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
