@@ -494,7 +494,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * See {@link #getFileForInput getFileForInput} for an example.
      *
      * @implSpec The default implementation calls
-     * {@link #getFileForOutput(javax.tools.JavaFileManager.Location, java.lang.String, java.lang.String, javax.tools.FileObject)
+     * {@link #getFileForOutput(javax.tools.JavaFileManager.Location, java.lang.String, java.lang.String, javax.tools.FileObject) }
      * with the first element of the {@code originatingFiles}, if any, as a {@code sibling}.
      *
      * @param location an output location
