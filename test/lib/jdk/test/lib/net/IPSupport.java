@@ -27,12 +27,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.ProtocolFamily;
+import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
+import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -50,19 +51,8 @@ public class IPSupport {
     private static final boolean preferIPv6Addresses;
 
     static {
-        try {
-            InetAddress loopbackIPv4 = InetAddress.getByAddress(
-                    new byte[] {0x7F, 0x00, 0x00, 0x01});
-
-            InetAddress loopbackIPv6 = InetAddress.getByAddress(
-                    new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01});
-
-            hasIPv4 = runPrivilegedAction(() -> hasAddress(loopbackIPv4));
-            hasIPv6 = runPrivilegedAction(() -> hasAddress(loopbackIPv6));
-        } catch (UnknownHostException e) {
-            throw new AssertionError(e);
-        }
+        hasIPv4 = runPrivilegedAction(() -> isSupported(Inet4Address.class));
+        hasIPv6 = runPrivilegedAction(() -> isSupported(Inet6Address.class));
         preferIPv4Stack = runPrivilegedAction(() -> Boolean.parseBoolean(
             System.getProperty("java.net.preferIPv4Stack")));
         preferIPv6Addresses = runPrivilegedAction(() -> Boolean.parseBoolean(
@@ -72,22 +62,13 @@ public class IPSupport {
         }
     }
 
-    private static boolean hasAddress(InetAddress address) {
-        try (Socket socket = new Socket()) {
-            socket.bind(new InetSocketAddress(address, 0));
+    private static boolean isSupported(Class<? extends InetAddress> addressType) {
+        ProtocolFamily family = addressType == Inet4Address.class ?
+                StandardProtocolFamily.INET : StandardProtocolFamily.INET6;
+        try (var sc = SocketChannel.open(family)) {
             return true;
-        } catch (SocketException se) {
-            try {
-                return NetworkInterface.networkInterfaces()
-                        .flatMap(NetworkInterface::inetAddresses)
-                        .map(InetAddress::getClass)
-                        .filter(clz -> clz.equals(address.getClass()))
-                        .findAny().isPresent();
-            } catch (SocketException se2) {
-                return false;
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (IOException | UnsupportedOperationException ex) {
+            return false;
         }
     }
 
