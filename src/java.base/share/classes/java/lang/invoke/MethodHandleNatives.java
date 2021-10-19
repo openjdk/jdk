@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,6 @@ class MethodHandleNatives {
      * The JVM is linking an invokedynamic instruction.  Create a reified call site for it.
      */
     static MemberName linkCallSite(Object callerObj,
-                                   int indexInCP,
                                    Object bootstrapMethodObj,
                                    Object nameObj, Object typeObj,
                                    Object staticArguments,
@@ -317,7 +316,6 @@ class MethodHandleNatives {
 
     // this implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:
     static Object linkDynamicConstant(Object callerObj,
-                                      int indexInCP,
                                       Object bootstrapMethodObj,
                                       Object nameObj, Object typeObj,
                                       Object staticArguments) {
