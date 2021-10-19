@@ -163,6 +163,7 @@ public class Main {
     String tSAPolicyID;
     String tSADigestAlg;
     boolean verify = false; // verify the jar
+    boolean version = false; // print the program version
     String verbose = null; // verbose output when signing/verifying
     boolean showcerts = false; // show certs when verifying
     boolean debug = false; // debug
@@ -308,6 +309,10 @@ public class Main {
             Event.clearReportListener(Event.ReporterCategory.CRLCHECK);
         }
 
+        if (version) {
+            doPrintVersion();
+        }
+
         if (strict) {
             int exitCode = 0;
             if (disabledAlg != 0 || chainNotValidated || hasExpiredCert
@@ -338,14 +343,6 @@ public class Main {
     String[] parseArgs(String args[]) throws Exception {
         /* parse flags */
         int n = 0;
-
-        if (args.length == 0) fullusage();
-        if ((collator.compare(args[0], "-version") == 0)) {
-            if (args.length != 1) {
-                usageTooManyArg();
-            }
-            doPrintVersion();
-        }
 
         String confFile = null;
         String command = "-sign";
@@ -485,6 +482,8 @@ public class Main {
                 externalSF = false;
             } else if (collator.compare(flags, "-verify") ==0) {
                 verify = true;
+            } else if (collator.compare(flags, "-version") ==0) {
+                version = true;
             } else if (collator.compare(flags, "-verbose") ==0) {
                 verbose = (modifier != null) ? modifier : "all";
             } else if (collator.compare(flags, "-sigalg") ==0) {
@@ -510,6 +509,12 @@ public class Main {
                         rb.getString("Illegal.option.") + flags);
                 usage();
             }
+        }
+
+        // To handle "jarsigner -version" command
+        if (args.length == 1 && version) {
+            doPrintVersion();
+            System.exit(0);
         }
 
         // -certs must always be specified with -verbose
@@ -597,12 +602,6 @@ public class Main {
         usage();
     }
 
-    static void usageTooManyArg() {
-        System.out.println(rb.getString(
-                "Option.should.not.be.specified.for.version"));
-        usage();
-    }
-
     static void usage() {
         System.out.println();
         System.out.println(rb.getString("Please.type.jarsigner.help.for.usage"));
@@ -611,7 +610,6 @@ public class Main {
 
     static void doPrintVersion() {
         System.out.println("jarsigner " + System.getProperty("java.version"));
-        System.exit(0);
     }
 
     static void fullusage() {
@@ -651,6 +649,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".verify.verify.a.signed.JAR.file"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".version.print.the.program.version"));
         System.out.println();
         System.out.println(rb.getString
                 (".verbose.suboptions.verbose.output.when.signing.verifying."));
