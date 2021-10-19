@@ -194,9 +194,9 @@ enum X509Authentication implements SSLAuthentication {
         }
     }
 
-    private static final
-            class X509PossessionGenerator implements SSLPossessionGenerator {
-        private final String[] keyTypes;
+    static final class X509PossessionGenerator
+                implements SSLPossessionGenerator {
+        final String[] keyTypes;
 
         private X509PossessionGenerator(String[] keyTypes) {
             this.keyTypes = keyTypes;
