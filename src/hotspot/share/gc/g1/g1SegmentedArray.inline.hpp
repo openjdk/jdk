@@ -90,8 +90,6 @@ G1SegmentedArrayBuffer<flag>* G1SegmentedArrayBufferList<flag>::get() {
   if (result != nullptr) {
     size_t num_buffers = Atomic::sub(&_num_buffers, (size_t)1,memory_order_relaxed);
     size_t mem_size = Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
-    assert(num_buffers >= 0, "Must be");
-    assert(mem_size >= 0, "Must be");
   }
   return result;
 }
@@ -108,8 +106,6 @@ G1SegmentedArrayBuffer<flag>* G1SegmentedArrayBufferList<flag>::get_all(size_t& 
   if (result != nullptr) {
     size_t buffers = Atomic::sub(&_num_buffers, num_buffers, memory_order_relaxed);
     size_t mem = Atomic::sub(&_mem_size, mem_size, memory_order_relaxed);
-    assert(buffers >= 0, "Must be");
-    assert(mem >= 0, "Must be");
   }
   return result;
 }
