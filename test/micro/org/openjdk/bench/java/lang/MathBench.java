@@ -60,7 +60,7 @@ public class MathBench {
     public int int1 = 1, int2 = 2, int42 = 42, int5 = 5;
     public long long1 = 1L, long2 = 2L, long747 = 747L, long13 = 13L;
     public float float1 = 1.0f, float2 = 2.0f, floatNegative99 = -99.0f, float7 = 7.0f, eFloat = 2.718f;
-    public double double1 = 1.0d, double2 = 2.0d, double81 = 81.0d, doubleNegative12 = -12.0d, double4Dot1 = 4.1d;
+    public double double1 = 1.0d, double2 = 2.0d, double81 = 81.0d, doubleNegative12 = -12.0d, double4Dot1 = 4.1d, double0Dot5 = 0.5d;
 
     @Setup
     public void setupValues() {
@@ -406,6 +406,38 @@ public class MathBench {
     @Benchmark
     public double  powDouble() {
         return  Math.pow(double4Dot1, double2);
+    }
+
+    @Benchmark
+    public double  powDoubleLoop() {
+        double sum = 0.0;
+        for (int i = 0; i < 1000; i++) {
+            for (int j = 0; j < 1000; j++) {
+                sum += i + Math.pow(j * 1.0, i * 1.0);
+            }
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public double  powDouble0Dot5() {
+        return  Math.pow(double4Dot1, double0Dot5);
+    }
+
+    @Benchmark
+    public double  powDouble0Dot5Const() {
+        return  Math.pow(double4Dot1, 0.5);
+    }
+
+    @Benchmark
+    public double  powDouble0Dot5Loop() {
+        double sum = 0.0;
+        for (int i = 0; i < 1000; i++) {
+            for (int j = 0; j < 1000; j++) {
+                sum += i + Math.pow(j * 1.0, 0.5);
+            }
+        }
+        return sum;
     }
 
     @Benchmark

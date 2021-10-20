@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 7166896
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug7166896Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug7166896Test
  * @run testng/othervm parsers.Bug7166896Test
  * @summary Test DocumentBuilder.parse(String uri) supports IPv6 format.
  */

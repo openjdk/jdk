@@ -228,10 +228,9 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
       holder->is_in_package("jdk/internal/vm/vector") || holder->is_in_package("jdk/incubator/vector") ||
       holder->is_in_package("java/lang"))
     return true;
-  // Trust hidden classes and VM unsafe anonymous classes. They are created via
-  // Lookup.defineHiddenClass or the private jdk.internal.misc.Unsafe API and
+  // Trust hidden classes. They are created via Lookup.defineHiddenClass and
   // can't be serialized, so there is no hacking of finals going on with them.
-  if (holder->is_hidden() || holder->is_unsafe_anonymous())
+  if (holder->is_hidden())
     return true;
   // Trust final fields in all boxed classes
   if (holder->is_box_klass())

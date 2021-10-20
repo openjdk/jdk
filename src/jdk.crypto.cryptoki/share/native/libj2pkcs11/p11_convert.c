@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -1160,6 +1160,73 @@ cleanup:
 }
 
 /*
+ * converts the Java CK_SALSA20_CHACHA20_POLY1305_PARAMS object to a
+ * CK_SALSA20_CHACHA20_POLY1305_PARAMS pointer
+ *
+ * @param env - used to call JNI functions to get the Java classes and objects
+ * @param jParam - the Java CK_SALSA20_CHACHA20_POLY1305_PARAMS object to
+ *         convert
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_SALSA20_CHACHA20_POLY1305_PARAMS structure
+ */
+CK_SALSA20_CHACHA20_POLY1305_PARAMS_PTR
+jSalsaChaChaPolyParamsToCKSalsaChaChaPolyParamPtr(
+        JNIEnv *env, jobject jParam, CK_ULONG *pLength)
+{
+    CK_SALSA20_CHACHA20_POLY1305_PARAMS_PTR ckParamPtr;
+    jclass jParamsClass;
+    jfieldID fieldID;
+    jobject jNonce, jAad;
+
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
+
+    // retrieve java values
+    jParamsClass = (*env)->FindClass(env,
+            CLASS_SALSA20_CHACHA20_POLY1305_PARAMS);
+    if (jParamsClass == NULL) { return NULL; }
+    if (!(*env)->IsInstanceOf(env, jParam, jParamsClass)) {
+        return NULL;
+    }
+    fieldID = (*env)->GetFieldID(env, jParamsClass, "nonce", "[B");
+    if (fieldID == NULL) { return NULL; }
+    jNonce = (*env)->GetObjectField(env, jParam, fieldID);
+    fieldID = (*env)->GetFieldID(env, jParamsClass, "aad", "[B");
+    if (fieldID == NULL) { return NULL; }
+    jAad = (*env)->GetObjectField(env, jParam, fieldID);
+    // allocate memory for CK_SALSA20_CHACHA20_POLY1305_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_SALSA20_CHACHA20_POLY1305_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
+    jByteArrayToCKByteArray(env, jNonce, &(ckParamPtr->pNonce),
+            &(ckParamPtr->ulNonceLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    jByteArrayToCKByteArray(env, jAad, &(ckParamPtr->pAAD),
+            &(ckParamPtr->ulAADLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_SALSA20_CHACHA20_POLY1305_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pNonce);
+    free(ckParamPtr->pAAD);
+    free(ckParamPtr);
+    return NULL;
+}
+
+/*
  * converts a Java CK_MECHANISM object into a CK_MECHANISM pointer
  * pointer.
  *
@@ -1436,6 +1503,11 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
             break;
         case CKM_AES_CCM:
             ckpParamPtr = jCCMParamsToCKCCMParamPtr(env, jParam, ckpLength);
+            break;
+       case CKM_CHACHA20_POLY1305:
+            ckpParamPtr =
+                    jSalsaChaChaPolyParamsToCKSalsaChaChaPolyParamPtr(env,
+                    jParam, ckpLength);
             break;
         case CKM_RSA_PKCS_OAEP:
             ckpParamPtr = jRsaPkcsOaepParamToCKRsaPkcsOaepParamPtr(env, jParam, ckpLength);

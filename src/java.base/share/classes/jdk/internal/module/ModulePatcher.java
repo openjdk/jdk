@@ -50,7 +50,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.Resource;
@@ -84,7 +83,7 @@ public final class ModulePatcher {
                 String mn = e.getKey();
                 List<Path> paths = e.getValue().stream()
                         .map(Paths::get)
-                        .collect(Collectors.toList());
+                        .toList();
                 map.put(mn, paths);
             }
             this.map = map;

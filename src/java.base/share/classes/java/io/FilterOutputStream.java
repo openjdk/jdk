@@ -104,7 +104,7 @@ public class FilterOutputStream extends OutputStream {
      * @see        java.io.FilterOutputStream#write(byte[], int, int)
      */
     @Override
-    public void write(byte b[]) throws IOException {
+    public void write(byte[] b) throws IOException {
         write(b, 0, b.length);
     }
 
@@ -129,7 +129,7 @@ public class FilterOutputStream extends OutputStream {
      * @see        java.io.FilterOutputStream#write(int)
      */
     @Override
-    public void write(byte b[], int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         if ((off | len | (b.length - (len + off)) | (off + len)) < 0)
             throw new IndexOutOfBoundsException();
 

@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "runtime/handles.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -45,7 +45,7 @@ class ArchivedClassLoaderData {
     // system loaders (e.g., if you create a custom JDK image with only java.base).
     if (loader_data != NULL) {
       assert(!loader_data->has_class_mirror_holder(),
-             "loaders for non-strong hidden classes or unsafe anonymous classes not supported");
+             "loaders for non-strong hidden classes not supported");
     }
   }
 public:

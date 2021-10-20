@@ -48,21 +48,21 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
  */
 final class CodeHTML {
 
-    private final String class_name; // name of current class
+    private final String className; // name of current class
 //    private Method[] methods; // Methods to print
     private final PrintWriter file; // file to write to
-    private BitSet goto_set;
-    private final ConstantPool constant_pool;
-    private final ConstantHTML constant_html;
+    private BitSet gotoSet;
+    private final ConstantPool constantPool;
+    private final ConstantHTML constantHtml;
     private static boolean wide = false;
 
 
     CodeHTML(final String dir, final String class_name, final Method[] methods, final ConstantPool constant_pool,
             final ConstantHTML constant_html) throws IOException {
-        this.class_name = class_name;
+        this.className = class_name;
 //        this.methods = methods;
-        this.constant_pool = constant_pool;
-        this.constant_html = constant_html;
+        this.constantPool = constant_pool;
+        this.constantHtml = constant_html;
         file = new PrintWriter(new FileOutputStream(dir + class_name + "_code.html"));
         file.println("<HTML><BODY BGCOLOR=\"#C0C0C0\">");
         for (int i = 0; i < methods.length; i++) {
@@ -231,19 +231,19 @@ final class CodeHTML {
             case Const.PUTFIELD:
             case Const.PUTSTATIC:
                 index = bytes.readShort();
-                final ConstantFieldref c1 = (ConstantFieldref) constant_pool.getConstant(index,
+                final ConstantFieldref c1 = (ConstantFieldref) constantPool.getConstant(index,
                         Const.CONSTANT_Fieldref);
                 class_index = c1.getClassIndex();
-                name = constant_pool.getConstantString(class_index, Const.CONSTANT_Class);
+                name = constantPool.getConstantString(class_index, Const.CONSTANT_Class);
                 name = Utility.compactClassName(name, false);
                 index = c1.getNameAndTypeIndex();
-                final String field_name = constant_pool.constantToString(index, Const.CONSTANT_NameAndType);
-                if (name.equals(class_name)) { // Local field
-                    buf.append("<A HREF=\"").append(class_name).append("_methods.html#field")
+                final String field_name = constantPool.constantToString(index, Const.CONSTANT_NameAndType);
+                if (name.equals(className)) { // Local field
+                    buf.append("<A HREF=\"").append(className).append("_methods.html#field")
                             .append(field_name).append("\" TARGET=Methods>").append(field_name)
                             .append("</A>\n");
                 } else {
-                    buf.append(constant_html.referenceConstant(class_index)).append(".").append(
+                    buf.append(constantHtml.referenceConstant(class_index)).append(".").append(
                             field_name);
                 }
                 break;
@@ -253,7 +253,7 @@ final class CodeHTML {
             case Const.INSTANCEOF:
             case Const.NEW:
                 index = bytes.readShort();
-                buf.append(constant_html.referenceConstant(index));
+                buf.append(constantHtml.referenceConstant(index));
                 break;
             /* Operands are references to methods in constant pool
              */
@@ -269,7 +269,7 @@ final class CodeHTML {
                     bytes.readUnsignedByte(); // Reserved
 //                    int nargs = bytes.readUnsignedByte(); // Redundant
 //                    int reserved = bytes.readUnsignedByte(); // Reserved
-                    final ConstantInterfaceMethodref c = (ConstantInterfaceMethodref) constant_pool
+                    final ConstantInterfaceMethodref c = (ConstantInterfaceMethodref) constantPool
                             .getConstant(m_index, Const.CONSTANT_InterfaceMethodref);
                     class_index = c.getClassIndex();
                     index = c.getNameAndTypeIndex();
@@ -277,7 +277,7 @@ final class CodeHTML {
                 } else if (opcode == Const.INVOKEDYNAMIC) { // Special treatment needed
                     bytes.readUnsignedByte(); // Reserved
                     bytes.readUnsignedByte(); // Reserved
-                    final ConstantInvokeDynamic c = (ConstantInvokeDynamic) constant_pool
+                    final ConstantInvokeDynamic c = (ConstantInvokeDynamic) constantPool
                             .getConstant(m_index, Const.CONSTANT_InvokeDynamic);
                     index = c.getNameAndTypeIndex();
                     name = "#" + c.getBootstrapMethodAttrIndex();
@@ -285,21 +285,21 @@ final class CodeHTML {
                     // UNDONE: Java8 now allows INVOKESPECIAL and INVOKESTATIC to
                     // reference EITHER a Methodref OR an InterfaceMethodref.
                     // Not sure if that affects this code or not.  (markro)
-                    final ConstantMethodref c = (ConstantMethodref) constant_pool.getConstant(m_index,
+                    final ConstantMethodref c = (ConstantMethodref) constantPool.getConstant(m_index,
                             Const.CONSTANT_Methodref);
                     class_index = c.getClassIndex();
                     index = c.getNameAndTypeIndex();
                 name = Class2HTML.referenceClass(class_index);
                 }
-                str = Class2HTML.toHTML(constant_pool.constantToString(constant_pool.getConstant(
+                str = Class2HTML.toHTML(constantPool.constantToString(constantPool.getConstant(
                         index, Const.CONSTANT_NameAndType)));
                 // Get signature, i.e., types
-                final ConstantNameAndType c2 = (ConstantNameAndType) constant_pool.getConstant(index,
+                final ConstantNameAndType c2 = (ConstantNameAndType) constantPool.getConstant(index,
                         Const.CONSTANT_NameAndType);
-                signature = constant_pool.constantToString(c2.getSignatureIndex(), Const.CONSTANT_Utf8);
+                signature = constantPool.constantToString(c2.getSignatureIndex(), Const.CONSTANT_Utf8);
                 final String[] args = Utility.methodSignatureArgumentTypes(signature, false);
                 final String type = Utility.methodSignatureReturnType(signature, false);
-                buf.append(name).append(".<A HREF=\"").append(class_name).append("_cp.html#cp")
+                buf.append(name).append(".<A HREF=\"").append(className).append("_cp.html#cp")
                         .append(m_index).append("\" TARGET=ConstantPool>").append(str).append(
                                 "</A>").append("(");
                 // List arguments
@@ -317,30 +317,30 @@ final class CodeHTML {
             case Const.LDC_W:
             case Const.LDC2_W:
                 index = bytes.readShort();
-                buf.append("<A HREF=\"").append(class_name).append("_cp.html#cp").append(index)
+                buf.append("<A HREF=\"").append(className).append("_cp.html#cp").append(index)
                         .append("\" TARGET=\"ConstantPool\">").append(
-                                Class2HTML.toHTML(constant_pool.constantToString(index,
-                                        constant_pool.getConstant(index).getTag()))).append("</a>");
+                                Class2HTML.toHTML(constantPool.constantToString(index,
+                                        constantPool.getConstant(index).getTag()))).append("</a>");
                 break;
             case Const.LDC:
                 index = bytes.readUnsignedByte();
-                buf.append("<A HREF=\"").append(class_name).append("_cp.html#cp").append(index)
+                buf.append("<A HREF=\"").append(className).append("_cp.html#cp").append(index)
                         .append("\" TARGET=\"ConstantPool\">").append(
-                                Class2HTML.toHTML(constant_pool.constantToString(index,
-                                        constant_pool.getConstant(index).getTag()))).append("</a>");
+                                Class2HTML.toHTML(constantPool.constantToString(index,
+                                        constantPool.getConstant(index).getTag()))).append("</a>");
                 break;
             /* Array of references.
              */
             case Const.ANEWARRAY:
                 index = bytes.readShort();
-                buf.append(constant_html.referenceConstant(index));
+                buf.append(constantHtml.referenceConstant(index));
                 break;
             /* Multidimensional array of references.
              */
             case Const.MULTIANEWARRAY:
                 index = bytes.readShort();
                 final int dimensions = bytes.readByte();
-                buf.append(constant_html.referenceConstant(index)).append(":").append(dimensions)
+                buf.append(constantHtml.referenceConstant(index)).append(":").append(dimensions)
                         .append("-dimensional");
                 break;
             /* Increment local variable.
@@ -389,7 +389,7 @@ final class CodeHTML {
      */
     private void findGotos( final ByteSequence bytes, final Code code ) throws IOException {
         int index;
-        goto_set = new BitSet(bytes.available());
+        gotoSet = new BitSet(bytes.available());
         int opcode;
         /* First get Code attribute from method and the exceptions handled
          * (try .. catch) in this method. We only need the line number here.
@@ -397,9 +397,9 @@ final class CodeHTML {
         if (code != null) {
             final CodeException[] ce = code.getExceptionTable();
             for (final CodeException cex : ce) {
-                goto_set.set(cex.getStartPC());
-                goto_set.set(cex.getEndPC());
-                goto_set.set(cex.getHandlerPC());
+                gotoSet.set(cex.getStartPC());
+                gotoSet.set(cex.getEndPC());
+                gotoSet.set(cex.getHandlerPC());
             }
             // Look for local variables and their range
             final Attribute[] attributes = code.getAttributes();
@@ -410,8 +410,8 @@ final class CodeHTML {
                     for (final LocalVariable var : vars) {
                         final int start = var.getStartPC();
                         final int end = start + var.getLength();
-                        goto_set.set(start);
-                        goto_set.set(end);
+                        gotoSet.set(start);
+                        gotoSet.set(end);
                     }
                     break;
                 }
@@ -439,21 +439,21 @@ final class CodeHTML {
                         final int high = bytes.readInt();
                         offset = bytes.getIndex() - 12 - no_pad_bytes - 1;
                         default_offset += offset;
-                        goto_set.set(default_offset);
+                        gotoSet.set(default_offset);
                         for (int j = 0; j < (high - low + 1); j++) {
                             index = offset + bytes.readInt();
-                            goto_set.set(index);
+                            gotoSet.set(index);
                         }
                     } else { // LOOKUPSWITCH
                         final int npairs = bytes.readInt();
                         offset = bytes.getIndex() - 8 - no_pad_bytes - 1;
                         default_offset += offset;
-                        goto_set.set(default_offset);
+                        gotoSet.set(default_offset);
                         for (int j = 0; j < npairs; j++) {
 //                            int match = bytes.readInt();
                             bytes.readInt();
                             index = offset + bytes.readInt();
-                            goto_set.set(index);
+                            gotoSet.set(index);
                         }
                     }
                     break;
@@ -477,13 +477,13 @@ final class CodeHTML {
                 case Const.JSR:
                     //bytes.readByte(); // Skip already read byte
                     index = bytes.getIndex() + bytes.readShort() - 1;
-                    goto_set.set(index);
+                    gotoSet.set(index);
                     break;
                 case Const.GOTO_W:
                 case Const.JSR_W:
                     //bytes.readByte(); // Skip already read byte
                     index = bytes.getIndex() + bytes.readInt() - 1;
-                    goto_set.set(index);
+                    gotoSet.set(index);
                     break;
                 default:
                     bytes.unreadByte();
@@ -513,7 +513,7 @@ final class CodeHTML {
         final Attribute[] attributes = method.getAttributes();
         file.print("<P><B><FONT COLOR=\"#FF0000\">" + access + "</FONT>&nbsp;" + "<A NAME=method"
                 + method_number + ">" + Class2HTML.referenceType(type) + "</A>&nbsp<A HREF=\""
-                + class_name + "_methods.html#method" + method_number + "\" TARGET=Methods>"
+                + className + "_methods.html#method" + method_number + "\" TARGET=Methods>"
                 + html_name + "</A>(");
         for (int i = 0; i < args.length; i++) {
             file.print(Class2HTML.referenceType(args[i]));
@@ -529,7 +529,7 @@ final class CodeHTML {
             for (int i = 0; i < attributes.length; i++) {
                 byte tag = attributes[i].getTag();
                 if (tag != Const.ATTR_UNKNOWN) {
-                    file.print("<LI><A HREF=\"" + class_name + "_attributes.html#method"
+                    file.print("<LI><A HREF=\"" + className + "_attributes.html#method"
                             + method_number + "@" + i + "\" TARGET=Attributes>"
                             + Const.getAttributeName(tag) + "</A></LI>\n");
                 } else {
@@ -542,7 +542,7 @@ final class CodeHTML {
                     file.print("<UL>");
                     for (int j = 0; j < attributes2.length; j++) {
                         tag = attributes2[j].getTag();
-                        file.print("<LI><A HREF=\"" + class_name + "_attributes.html#" + "method"
+                        file.print("<LI><A HREF=\"" + className + "_attributes.html#" + "method"
                                 + method_number + "@" + i + "@" + j + "\" TARGET=Attributes>"
                                 + Const.getAttributeName(tag) + "</A></LI>\n");
                     }
@@ -552,7 +552,7 @@ final class CodeHTML {
             file.println("</UL>");
         }
         if (code != null) { // No code, an abstract method, e.g.
-            //System.out.println(name + "\n" + Utility.codeToString(code, constant_pool, 0, -1));
+            //System.out.println(name + "\n" + Utility.codeToString(code, constantPool, 0, -1));
             // Print the byte code
             try (ByteSequence stream = new ByteSequence(code)) {
                 stream.mark(stream.available());
@@ -568,7 +568,7 @@ final class CodeHTML {
                      * Set an anchor mark if this line is targetted by a goto, jsr, etc. Defining an anchor for every
                      * line is very inefficient!
                      */
-                    if (goto_set.get(offset)) {
+                    if (gotoSet.get(offset)) {
                         anchor = "<A NAME=code" + method_number + "@" + offset + "></A>";
                     }
                     String anchor2;

@@ -41,6 +41,7 @@ class Thread;
 
 class ObjectSampleCheckpoint : AllStatic {
   friend class EventEmitter;
+  friend class ObjectSampler;
   friend class PathToGcRootsOperation;
   friend class StackTraceBlobInstaller;
  private:
@@ -48,6 +49,7 @@ class ObjectSampleCheckpoint : AllStatic {
   static int save_mark_words(const ObjectSampler* sampler, ObjectSampleMarker& marker, bool emit_all);
   static void write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer);
   static void write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
+  static void clear();
  public:
   static void on_type_set(JfrCheckpointWriter& writer);
   static void on_type_set_unload(JfrCheckpointWriter& writer);

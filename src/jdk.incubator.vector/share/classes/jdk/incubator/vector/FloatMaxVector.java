@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,15 +324,9 @@ final class FloatMaxVector extends FloatVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Float> toShuffle() {
-        float[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(FloatMaxShuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -381,14 +375,7 @@ final class FloatMaxVector extends FloatVector {
     @Override
     @ForceInline
     public FloatMaxVector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         FloatMaxShuffle Iota = iotaShuffle();
-         VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((float)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (FloatMaxVector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -409,14 +396,7 @@ final class FloatMaxVector extends FloatVector {
     @Override
     @ForceInline
     public FloatMaxVector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         FloatMaxShuffle Iota = iotaShuffle();
-         VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((float)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (FloatMaxVector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -578,31 +558,43 @@ final class FloatMaxVector extends FloatVector {
             return (FloatMaxVector) super.toVectorTemplate();  // specialize
         }
 
-        @Override
+        /**
+         * Helper function for lane-wise mask conversions.
+         * This function kicks in after intrinsic failure.
+         */
         @ForceInline
-        public <E> VectorMask<E> cast(VectorSpecies<E> s) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) s;
-            if (length() != species.laneCount())
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            if (length() != dsp.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new ByteMaxVector.ByteMaxMask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new ShortMaxVector.ShortMaxMask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new IntMaxVector.IntMaxMask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new LongMaxVector.LongMaxMask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new FloatMaxVector.FloatMaxMask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new DoubleMaxVector.DoubleMaxMask(maskArray).check(species);
-            }
+            return  dsp.maskFactory(maskArray).check(dsp);
+        }
 
-            // Should not reach here.
-            throw new AssertionError(species);
+        @Override
+        @ForceInline
+        public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
+            if (VSIZE == species.vectorBitSize()) {
+                Class<?> dtype = species.elementType();
+                Class<?> dmtype = species.maskType();
+                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                    this.getClass(), ETYPE, VLENGTH,
+                    dmtype, dtype, VLENGTH,
+                    this, species,
+                    FloatMaxMask::defaultMaskCast);
+            }
+            return this.defaultMaskCast(species);
+        }
+
+        @Override
+        @ForceInline
+        public FloatMaxMask eq(VectorMask<Float> mask) {
+            Objects.requireNonNull(mask);
+            FloatMaxMask m = (FloatMaxMask)mask;
+            return xor(m.not());
         }
 
         // Unary operations
@@ -643,6 +635,29 @@ final class FloatMaxVector extends FloatVector {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMaxMask.class, int.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, FloatMaxMask.class, int.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((FloatMaxMask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, FloatMaxMask.class, int.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((FloatMaxMask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, FloatMaxMask.class, int.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((FloatMaxMask)m).getBits()));
         }
 
         // Reductions
@@ -724,24 +739,7 @@ final class FloatMaxVector extends FloatVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new ByteMaxVector.ByteMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new ShortMaxVector.ShortMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new IntMaxVector.IntMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new LongMaxVector.LongMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new FloatMaxVector.FloatMaxShuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new DoubleMaxVector.DoubleMaxShuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -769,6 +767,8 @@ final class FloatMaxVector extends FloatVector {
     FloatVector fromArray0(float[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

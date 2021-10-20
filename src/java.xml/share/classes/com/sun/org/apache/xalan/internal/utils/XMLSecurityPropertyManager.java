@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 package com.sun.org.apache.xalan.internal.utils;
 
-
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkConstants;
 
 /**
  * This class manages security related properties
@@ -40,9 +39,9 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
      */
     public static enum Property {
         ACCESS_EXTERNAL_DTD(XMLConstants.ACCESS_EXTERNAL_DTD,
-                XalanConstants.EXTERNAL_ACCESS_DEFAULT),
+                JdkConstants.EXTERNAL_ACCESS_DEFAULT),
         ACCESS_EXTERNAL_STYLESHEET(XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
-                XalanConstants.EXTERNAL_ACCESS_DEFAULT);
+                JdkConstants.EXTERNAL_ACCESS_DEFAULT);
 
         final String name;
         final String defaultValue;
@@ -94,9 +93,9 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
      */
     private void readSystemProperties() {
         getSystemProperty(Property.ACCESS_EXTERNAL_DTD,
-                XalanConstants.SP_ACCESS_EXTERNAL_DTD);
+                JdkConstants.SP_ACCESS_EXTERNAL_DTD);
         getSystemProperty(Property.ACCESS_EXTERNAL_STYLESHEET,
-                XalanConstants.SP_ACCESS_EXTERNAL_STYLESHEET);
+                JdkConstants.SP_ACCESS_EXTERNAL_STYLESHEET);
     }
 
 }

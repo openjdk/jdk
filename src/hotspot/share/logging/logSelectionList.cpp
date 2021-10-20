@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "logging/logSelectionList.hpp"
 #include "logging/logTagSet.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 static const char* DefaultExpressionString = "all";
 

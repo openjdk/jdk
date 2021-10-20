@@ -24,6 +24,7 @@
 
 package org.openjdk.bench.jdk.incubator.foreign;
 
+import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -55,7 +56,7 @@ public class BulkOps {
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
     static final long unsafe_addr = unsafe.allocateMemory(ALLOC_SIZE);
-    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE);
+    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, ResourceScope.newConfinedScope());
 
     static final int[] bytes = new int[ELEM_SIZE];
     static final MemorySegment bytesSegment = MemorySegment.ofArray(bytes);
@@ -63,14 +64,14 @@ public class BulkOps {
 
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
     static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;
-    static final MemorySegment mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL);
-    static final MemorySegment mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL);
+    static final MemorySegment mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL, ResourceScope.newConfinedScope());
+    static final MemorySegment mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL, ResourceScope.newConfinedScope());
     static final ByteBuffer mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
     static final ByteBuffer mismatchBufferLarge2 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
 
     // mismatch at first byte
-    static final MemorySegment mismatchSegmentSmall1 = MemorySegment.allocateNative(7);
-    static final MemorySegment mismatchSegmentSmall2 = MemorySegment.allocateNative(7);
+    static final MemorySegment mismatchSegmentSmall1 = MemorySegment.allocateNative(7, ResourceScope.newConfinedScope());
+    static final MemorySegment mismatchSegmentSmall2 = MemorySegment.allocateNative(7, ResourceScope.newConfinedScope());
     static final ByteBuffer mismatchBufferSmall1 = ByteBuffer.allocateDirect(7);
     static final ByteBuffer mismatchBufferSmall2 = ByteBuffer.allocateDirect(7);
     static {

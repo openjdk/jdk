@@ -116,7 +116,7 @@ public final class ProviderList {
                         new HashMap<PreferencesEntry, MechanismFactory>(5);
     private HashSet<Oid> mechs = new HashSet<Oid>(5);
 
-    final private GSSCaller caller;
+    private final GSSCaller caller;
 
     public ProviderList(GSSCaller caller, boolean useNative) {
         this.caller = caller;

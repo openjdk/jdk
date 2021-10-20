@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.reflect
  * @build java.base/java.util.CSM csm/*
  * @run main/othervm csm/jdk.test.CallerSensitiveTest
- * @run main/othervm csm/jdk.test.CallerSensitiveTest sm
+ * @run main/othervm -Djava.security.manager=allow csm/jdk.test.CallerSensitiveTest sm
  */
 public class Main {
 }

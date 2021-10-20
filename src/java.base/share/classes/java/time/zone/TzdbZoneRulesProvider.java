@@ -130,8 +130,7 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
             throw new ZoneRulesException("Unknown time-zone ID: " + zoneId);
         }
         try {
-            if (obj instanceof byte[]) {
-                byte[] bytes = (byte[]) obj;
+            if (obj instanceof byte[] bytes) {
                 DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes));
                 obj = Ser.read(dis);
                 regionToRules.put(zoneId, obj);

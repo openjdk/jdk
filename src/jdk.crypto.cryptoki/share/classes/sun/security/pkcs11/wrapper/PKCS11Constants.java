@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -1043,130 +1043,7 @@ public interface PKCS11Constants {
     public static final long  CKF_EXTENSION          = 0x80000000L;
 
     /* Identifies the return value of a Cryptoki function */
-    public static final long  CKR_OK                 = 0x00000000L;
-    public static final long  CKR_CANCEL             = 0x00000001L;
-    public static final long  CKR_HOST_MEMORY        = 0x00000002L;
-    public static final long  CKR_SLOT_ID_INVALID    = 0x00000003L;
-
-    public static final long  CKR_GENERAL_ERROR      = 0x00000005L;
-    public static final long  CKR_FUNCTION_FAILED    = 0x00000006L;
-
-    public static final long  CKR_ARGUMENTS_BAD      = 0x00000007L;
-    public static final long  CKR_NO_EVENT           = 0x00000008L;
-    public static final long  CKR_NEED_TO_CREATE_THREADS
-                                                     = 0x00000009L;
-    public static final long  CKR_CANT_LOCK          = 0x0000000AL;
-
-    public static final long  CKR_ATTRIBUTE_READ_ONLY       = 0x00000010L;
-    public static final long  CKR_ATTRIBUTE_SENSITIVE       = 0x00000011L;
-    public static final long  CKR_ATTRIBUTE_TYPE_INVALID    = 0x00000012L;
-    public static final long  CKR_ATTRIBUTE_VALUE_INVALID   = 0x00000013L;
-    public static final long  CKR_ACTION_PROHIBITED         = 0x0000001BL;
-
-    public static final long  CKR_DATA_INVALID              = 0x00000020L;
-    public static final long  CKR_DATA_LEN_RANGE            = 0x00000021L;
-    public static final long  CKR_DEVICE_ERROR              = 0x00000030L;
-    public static final long  CKR_DEVICE_MEMORY             = 0x00000031L;
-    public static final long  CKR_DEVICE_REMOVED            = 0x00000032L;
-    public static final long  CKR_ENCRYPTED_DATA_INVALID    = 0x00000040L;
-    public static final long  CKR_ENCRYPTED_DATA_LEN_RANGE  = 0x00000041L;
-    public static final long  CKR_AEAD_DECRYPT_FAILED       = 0x00000042L;
-    public static final long  CKR_FUNCTION_CANCELED         = 0x00000050L;
-    public static final long  CKR_FUNCTION_NOT_PARALLEL     = 0x00000051L;
-
-    public static final long  CKR_FUNCTION_NOT_SUPPORTED    = 0x00000054L;
-
-    public static final long  CKR_KEY_HANDLE_INVALID        = 0x00000060L;
-
-    public static final long  CKR_KEY_SIZE_RANGE            = 0x00000062L;
-    public static final long  CKR_KEY_TYPE_INCONSISTENT     = 0x00000063L;
-
-    public static final long  CKR_KEY_NOT_NEEDED                 = 0x00000064L;
-    public static final long  CKR_KEY_CHANGED                    = 0x00000065L;
-    public static final long  CKR_KEY_NEEDED                     = 0x00000066L;
-    public static final long  CKR_KEY_INDIGESTIBLE               = 0x00000067L;
-    public static final long  CKR_KEY_FUNCTION_NOT_PERMITTED     = 0x00000068L;
-    public static final long  CKR_KEY_NOT_WRAPPABLE              = 0x00000069L;
-    public static final long  CKR_KEY_UNEXTRACTABLE              = 0x0000006AL;
-
-    public static final long  CKR_MECHANISM_INVALID              = 0x00000070L;
-    public static final long  CKR_MECHANISM_PARAM_INVALID        = 0x00000071L;
-
-    public static final long  CKR_OBJECT_HANDLE_INVALID          = 0x00000082L;
-    public static final long  CKR_OPERATION_ACTIVE               = 0x00000090L;
-    public static final long  CKR_OPERATION_NOT_INITIALIZED      = 0x00000091L;
-    public static final long  CKR_PIN_INCORRECT                  = 0x000000A0L;
-    public static final long  CKR_PIN_INVALID                    = 0x000000A1L;
-    public static final long  CKR_PIN_LEN_RANGE                  = 0x000000A2L;
-
-    public static final long  CKR_PIN_EXPIRED                    = 0x000000A3L;
-    public static final long  CKR_PIN_LOCKED                     = 0x000000A4L;
-
-    public static final long  CKR_SESSION_CLOSED                 = 0x000000B0L;
-    public static final long  CKR_SESSION_COUNT                  = 0x000000B1L;
-    public static final long  CKR_SESSION_HANDLE_INVALID         = 0x000000B3L;
-    public static final long  CKR_SESSION_PARALLEL_NOT_SUPPORTED = 0x000000B4L;
-    public static final long  CKR_SESSION_READ_ONLY              = 0x000000B5L;
-    public static final long  CKR_SESSION_EXISTS                 = 0x000000B6L;
-
-    public static final long  CKR_SESSION_READ_ONLY_EXISTS       = 0x000000B7L;
-    public static final long  CKR_SESSION_READ_WRITE_SO_EXISTS   = 0x000000B8L;
-
-    public static final long  CKR_SIGNATURE_INVALID              = 0x000000C0L;
-    public static final long  CKR_SIGNATURE_LEN_RANGE            = 0x000000C1L;
-    public static final long  CKR_TEMPLATE_INCOMPLETE            = 0x000000D0L;
-    public static final long  CKR_TEMPLATE_INCONSISTENT          = 0x000000D1L;
-    public static final long  CKR_TOKEN_NOT_PRESENT              = 0x000000E0L;
-    public static final long  CKR_TOKEN_NOT_RECOGNIZED           = 0x000000E1L;
-    public static final long  CKR_TOKEN_WRITE_PROTECTED          = 0x000000E2L;
-    public static final long  CKR_UNWRAPPING_KEY_HANDLE_INVALID  = 0x000000F0L;
-    public static final long  CKR_UNWRAPPING_KEY_SIZE_RANGE      = 0x000000F1L;
-    public static final long  CKR_UNWRAPPING_KEY_TYPE_INCONSISTENT
-                                                                 = 0x000000F2L;
-    public static final long  CKR_USER_ALREADY_LOGGED_IN         = 0x00000100L;
-    public static final long  CKR_USER_NOT_LOGGED_IN             = 0x00000101L;
-    public static final long  CKR_USER_PIN_NOT_INITIALIZED       = 0x00000102L;
-    public static final long  CKR_USER_TYPE_INVALID              = 0x00000103L;
-
-    public static final long  CKR_USER_ANOTHER_ALREADY_LOGGED_IN = 0x00000104L;
-    public static final long  CKR_USER_TOO_MANY_TYPES            = 0x00000105L;
-
-    public static final long  CKR_WRAPPED_KEY_INVALID            = 0x00000110L;
-    public static final long  CKR_WRAPPED_KEY_LEN_RANGE          = 0x00000112L;
-    public static final long  CKR_WRAPPING_KEY_HANDLE_INVALID    = 0x00000113L;
-    public static final long  CKR_WRAPPING_KEY_SIZE_RANGE        = 0x00000114L;
-    public static final long  CKR_WRAPPING_KEY_TYPE_INCONSISTENT = 0x00000115L;
-    public static final long  CKR_RANDOM_SEED_NOT_SUPPORTED      = 0x00000120L;
-
-    public static final long  CKR_RANDOM_NO_RNG                  = 0x00000121L;
-
-    public static final long  CKR_DOMAIN_PARAMS_INVALID          = 0x00000130L;
-
-    public static final long  CKR_CURVE_NOT_SUPPORTED            = 0x00000140L;
-
-    public static final long  CKR_BUFFER_TOO_SMALL               = 0x00000150L;
-    public static final long  CKR_SAVED_STATE_INVALID            = 0x00000160L;
-    public static final long  CKR_INFORMATION_SENSITIVE          = 0x00000170L;
-    public static final long  CKR_STATE_UNSAVEABLE               = 0x00000180L;
-
-    public static final long  CKR_CRYPTOKI_NOT_INITIALIZED       = 0x00000190L;
-    public static final long  CKR_CRYPTOKI_ALREADY_INITIALIZED   = 0x00000191L;
-    public static final long  CKR_MUTEX_BAD                      = 0x000001A0L;
-    public static final long  CKR_MUTEX_NOT_LOCKED               = 0x000001A1L;
-
-    public static final long  CKR_NEW_PIN_MODE                   = 0x000001B0L;
-    public static final long  CKR_NEXT_OTP                       = 0x000001B1L;
-
-    public static final long  CKR_EXCEEDED_MAX_ITERATIONS        = 0x000001B5L;
-    public static final long  CKR_FIPS_SELF_TEST_FAILED          = 0x000001B6L;
-    public static final long  CKR_LIBRARY_LOAD_FAILED            = 0x000001B7L;
-    public static final long  CKR_PIN_TOO_WEAK                   = 0x000001B8L;
-    public static final long  CKR_PUBLIC_KEY_INVALID             = 0x000001B9L;
-    public static final long  CKR_FUNCTION_REJECTED              = 0x00000200L;
-    public static final long  CKR_TOKEN_RESOURCE_EXCEEDED        = 0x00000201L;
-    public static final long  CKR_OPERATION_CANCEL_FAILED        = 0x00000202L;
-
-    public static final long  CKR_VENDOR_DEFINED                 = 0x80000000L;
+    // These CKR_xxx constants are stored/defined in PKCS11Exception class
 
     /* Uncomment when actually used
     public static final long  CKF_END_OF_MESSAGE      = 0x00000001L;

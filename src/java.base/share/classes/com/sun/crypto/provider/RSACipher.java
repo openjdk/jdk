@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,10 +211,7 @@ public final class RSACipher extends CipherSpi {
         } catch (InvalidAlgorithmParameterException iape) {
             // never thrown when null parameters are used;
             // but re-throw it just in case
-            InvalidKeyException ike =
-                new InvalidKeyException("Wrong parameters");
-            ike.initCause(iape);
-            throw ike;
+            throw new InvalidKeyException("Wrong parameters", iape);
         }
     }
 
@@ -237,10 +234,7 @@ public final class RSACipher extends CipherSpi {
                         params.getParameterSpec(OAEPParameterSpec.class);
                 init(opmode, key, random, spec);
             } catch (InvalidParameterSpecException ipse) {
-                InvalidAlgorithmParameterException iape =
-                    new InvalidAlgorithmParameterException("Wrong parameter");
-                iape.initCause(ipse);
-                throw iape;
+                throw new InvalidAlgorithmParameterException("Wrong parameter", ipse);
             }
         }
     }
@@ -261,7 +255,8 @@ public final class RSACipher extends CipherSpi {
             encrypt = false;
             break;
         default:
-            throw new InvalidKeyException("Unknown mode: " + opmode);
+            // should never happen; checked by Cipher.init()
+            throw new AssertionError("Unknown mode: " + opmode);
         }
         RSAKey rsaKey = RSAKeyFactory.toRSAKey(key);
         if (rsaKey instanceof RSAPublicKey) {

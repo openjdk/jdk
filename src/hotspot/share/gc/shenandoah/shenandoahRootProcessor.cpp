@@ -31,7 +31,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
@@ -77,62 +76,6 @@ void ShenandoahThreadRoots::threads_do(ThreadClosure* tc, uint worker_id) {
 
 ShenandoahThreadRoots::~ShenandoahThreadRoots() {
   Threads::assert_all_threads_claimed();
-}
-
-ShenandoahStringDedupRoots::ShenandoahStringDedupRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
-  if (ShenandoahStringDedup::is_enabled()) {
-    StringDedup::gc_prologue(false);
-  }
-}
-
-ShenandoahStringDedupRoots::~ShenandoahStringDedupRoots() {
-  if (ShenandoahStringDedup::is_enabled()) {
-    StringDedup::gc_epilogue();
-  }
-}
-
-void ShenandoahStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id) {
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::parallel_oops_do(_phase, is_alive, keep_alive, worker_id);
-  }
-}
-
-ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase) :
-  _phase(phase) {
-}
-
-void ShenandoahConcurrentStringDedupRoots::prologue() {
-  if (ShenandoahStringDedup::is_enabled()) {
-    StringDedupTable_lock->lock_without_safepoint_check();
-    StringDedupQueue_lock->lock_without_safepoint_check();
-    StringDedup::gc_prologue(true);
-  }
-}
-
-void ShenandoahConcurrentStringDedupRoots::epilogue() {
-  if (ShenandoahStringDedup::is_enabled()) {
-    StringDedup::gc_epilogue();
-    StringDedupQueue_lock->unlock();
-    StringDedupTable_lock->unlock();
-  }
-}
-
-void ShenandoahConcurrentStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id) {
-  if (ShenandoahStringDedup::is_enabled()) {
-    assert_locked_or_safepoint_weak(StringDedupQueue_lock);
-    assert_locked_or_safepoint_weak(StringDedupTable_lock);
-
-    StringDedupUnlinkOrOopsDoClosure sd_cl(is_alive, keep_alive);
-    {
-      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
-      StringDedupQueue::unlink_or_oops_do(&sd_cl);
-    }
-
-    {
-      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
-      StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
-    }
-  }
 }
 
 ShenandoahCodeCacheRoots::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
@@ -181,9 +124,8 @@ ShenandoahSTWRootScanner::ShenandoahSTWRootScanner(ShenandoahPhaseTimings::Phase
    ShenandoahRootProcessor(phase),
    _thread_roots(phase, ShenandoahHeap::heap()->workers()->active_workers() > 1),
    _code_roots(phase),
-   _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()),
+   _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
    _vm_roots(phase),
-   _dedup_roots(phase),
    _unload_classes(ShenandoahHeap::heap()->unload_classes()) {
 }
 
@@ -202,7 +144,7 @@ ShenandoahConcurrentMarkThreadClosure::ShenandoahConcurrentMarkThreadClosure(Oop
 
 void ShenandoahConcurrentMarkThreadClosure::do_thread(Thread* thread) {
   assert(thread->is_Java_thread(), "Must be");
-  JavaThread* const jt = thread->as_Java_thread();
+  JavaThread* const jt = JavaThread::cast(thread);
 
   StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
 }
@@ -212,7 +154,7 @@ ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
    ShenandoahRootProcessor(phase),
    _java_threads(phase, n_workers),
   _vm_roots(phase),
-  _cld_roots(phase, n_workers),
+  _cld_roots(phase, n_workers, false /*heap iteration*/),
   _codecache_snapshot(NULL),
   _phase(phase) {
   if (!ShenandoahHeap::heap()->unload_classes()) {
@@ -260,7 +202,7 @@ void ShenandoahConcurrentRootScanner::update_tlab_stats() {
     for (uint i = 0; i < _java_threads.length(); i ++) {
       Thread* thr = _java_threads.thread_at(i);
       if (thr->is_Java_thread()) {
-        ShenandoahStackWatermark* wm = StackWatermarkSet::get<ShenandoahStackWatermark>(thr->as_Java_thread(), StackWatermarkKind::gc);
+        ShenandoahStackWatermark* wm = StackWatermarkSet::get<ShenandoahStackWatermark>(JavaThread::cast(thr), StackWatermarkKind::gc);
         total.update(wm->stats());
       }
     }
@@ -271,20 +213,18 @@ void ShenandoahConcurrentRootScanner::update_tlab_stats() {
 ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
   _vm_roots(phase),
-  _cld_roots(phase, n_workers),
+  _cld_roots(phase, n_workers, false /*heap iteration*/),
   _thread_roots(phase, n_workers > 1),
   _weak_roots(phase),
-  _dedup_roots(phase),
   _code_roots(phase) {
 }
 
 ShenandoahRootAdjuster::ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
   _vm_roots(phase),
-  _cld_roots(phase, n_workers),
+  _cld_roots(phase, n_workers, false /*heap iteration*/),
   _thread_roots(phase, n_workers > 1),
   _weak_roots(phase),
-  _dedup_roots(phase),
   _code_roots(phase) {
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress(), "Full GC only");
 }
@@ -301,7 +241,6 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(oops, worker_id);
   _weak_roots.oops_do<OopClosure>(oops, worker_id);
-  _dedup_roots.oops_do(&always_true, oops, worker_id);
   _cld_roots.cld_do(&adjust_cld_closure, worker_id);
 
   // Process heavy-weight/fully parallel roots the last
@@ -309,25 +248,18 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   _thread_roots.oops_do(oops, NULL, worker_id);
 }
 
-ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
+ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner(uint n_workers) :
    ShenandoahRootProcessor(ShenandoahPhaseTimings::heap_iteration_roots),
    _thread_roots(ShenandoahPhaseTimings::heap_iteration_roots, false /*is par*/),
    _vm_roots(ShenandoahPhaseTimings::heap_iteration_roots),
-   _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, 1),
+   _cld_roots(ShenandoahPhaseTimings::heap_iteration_roots, n_workers, true /*heap iteration*/),
    _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
-   _dedup_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
-   _dedup_roots.prologue();
  }
 
-ShenandoahHeapIterationRootScanner::~ShenandoahHeapIterationRootScanner() {
-  _dedup_roots.epilogue();
-}
-
  void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
-   assert(Thread::current()->is_VM_thread(), "Only by VM thread");
-   // Must use _claim_none to avoid interfering with concurrent CLDG iteration
-   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
+   // Must use _claim_other to avoid interfering with concurrent CLDG iteration
+   CLDToOopClosure clds(oops, ClassLoaderData::_claim_other);
    MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
    ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
    AlwaysTrueClosure always_true;
@@ -337,7 +269,6 @@ ShenandoahHeapIterationRootScanner::~ShenandoahHeapIterationRootScanner() {
    // Process light-weight/limited parallel roots then
    _vm_roots.oops_do(oops, 0);
    _weak_roots.oops_do<OopClosure>(oops, 0);
-   _dedup_roots.oops_do(&always_true, oops, 0);
    _cld_roots.cld_do(&clds, 0);
 
    // Process heavy-weight/fully parallel roots the last

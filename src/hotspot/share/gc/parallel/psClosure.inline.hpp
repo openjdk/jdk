@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 #ifndef SHARE_GC_PARALLEL_PSCLOSURE_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSCLOSURE_INLINE_HPP
+
+// No psClosure.hpp
 
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
@@ -88,13 +90,8 @@ public:
     if (PSScavenge::should_scavenge(p)) {
       assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
 
-      oop o = *p;
-      oop new_obj;
-      if (o->is_forwarded()) {
-        new_obj = o->forwardee();
-      } else {
-        new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
-      }
+      oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
+      oop new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
       if (PSScavenge::is_obj_in_young(new_obj)) {

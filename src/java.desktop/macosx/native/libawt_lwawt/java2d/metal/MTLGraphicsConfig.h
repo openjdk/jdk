@@ -47,10 +47,4 @@ typedef struct _MTLGraphicsConfigInfo {
     MTLContext          *context;
 } MTLGraphicsConfigInfo;
 
-// From "Metal Feature Set Tables"
-// There are 2 GPU families for mac - MTLGPUFamilyMac1 and MTLGPUFamilyMac2
-// Both of them support "Maximum 2D texture width and height" of 16384 pixels
-// Note : there is no API to get this value, hence hardcoding by reading from the table
-#define MaxTextureSize 16384
-
 #endif /* MTLGraphicsConfig_h_Included */

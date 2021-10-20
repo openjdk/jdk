@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -312,6 +313,16 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
 //------------------------------------------------------------------------------
 // frame::verify_deopt_original_pc
 //
@@ -563,7 +574,6 @@ frame::frame(void* sp, void* fp, void* pc) {
   init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
 }
 
-void frame::pd_ps() {}
 #endif
 
 intptr_t *frame::initial_deoptimization_info() {

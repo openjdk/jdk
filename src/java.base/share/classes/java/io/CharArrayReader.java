@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.nio.CharBuffer;
 import java.util.Objects;
 
 /**
@@ -45,7 +46,7 @@ public class CharArrayReader extends Reader {
     protected int markedPos = 0;
 
     /**
-     *  The index of the end of this buffer.  There is not valid
+     *  The index of the end of this buffer.  There is no valid
      *  data at or beyond this index.
      */
     protected int count;
@@ -147,6 +148,23 @@ public class CharArrayReader extends Reader {
                 return 0;
             }
             System.arraycopy(buf, pos, cbuf, off, len);
+            pos += len;
+            return len;
+        }
+    }
+
+    @Override
+    public int read(CharBuffer target) throws IOException {
+        synchronized (lock) {
+            ensureOpen();
+
+            if (pos >= count) {
+                return -1;
+            }
+
+            int avail = count - pos;
+            int len = Math.min(avail, target.remaining());
+            target.put(buf, pos, len);
             pos += len;
             return len;
         }

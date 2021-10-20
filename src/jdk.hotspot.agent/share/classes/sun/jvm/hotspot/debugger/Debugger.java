@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,11 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
       interface, returns a CDebugger object; otherwise returns
       null. */
   public CDebugger getCDebugger() throws DebuggerException;
+
+  /**
+   * Find address and executable which contains symbol.
+   */
+  public String findSymbol(String symbol);
 
   /** the following methods are intended only for RemoteDebuggerClient */
   public long getJBooleanSize();

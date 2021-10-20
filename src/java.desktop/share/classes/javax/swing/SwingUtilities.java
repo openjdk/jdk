@@ -75,9 +75,10 @@ public class SwingUtilities implements SwingConstants
      * Returns true if <code>setTransferHandler</code> should change the
      * <code>DropTarget</code>.
      */
+    @SuppressWarnings("removal")
     private static boolean getSuppressDropTarget() {
         if (!checkedSuppressDropSupport) {
-            suppressDropSupport = Boolean.valueOf(
+            suppressDropSupport = Boolean.parseBoolean(
                 AccessController.doPrivileged(
                     new GetPropertyAction("suppressSwingDropSupport")));
             checkedSuppressDropSupport = true;

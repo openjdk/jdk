@@ -33,9 +33,10 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
@@ -83,7 +84,7 @@ void InterfaceSupport::gc_alot() {
   Thread *thread = Thread::current();
   if (!thread->is_Java_thread()) return; // Avoid concurrent calls
   // Check for new, not quite initialized thread. A thread in new mode cannot initiate a GC.
-  JavaThread *current_thread = thread->as_Java_thread();
+  JavaThread *current_thread = JavaThread::cast(thread);
   if (current_thread->active_handles() == NULL) return;
 
   // Short-circuit any possible re-entrant gc-a-lot attempt

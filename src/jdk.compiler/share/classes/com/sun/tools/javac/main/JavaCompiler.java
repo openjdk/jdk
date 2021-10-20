@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,17 +161,6 @@ public class JavaCompiler {
      */
     protected static enum CompilePolicy {
         /**
-         * Just attribute the parse trees.
-         */
-        ATTR_ONLY,
-
-        /**
-         * Just attribute and do flow analysis on the parse trees.
-         * This should catch most user errors.
-         */
-        CHECK_ONLY,
-
-        /**
          * Attribute everything, then do flow analysis for everything,
          * then desugar everything, and only then generate output.
          * This means no output will be generated if there are any
@@ -198,10 +187,6 @@ public class JavaCompiler {
         static CompilePolicy decode(String option) {
             if (option == null)
                 return DEFAULT_COMPILE_POLICY;
-            else if (option.equals("attr"))
-                return ATTR_ONLY;
-            else if (option.equals("check"))
-                return CHECK_ONLY;
             else if (option.equals("simple"))
                 return SIMPLE;
             else if (option.equals("byfile"))
@@ -443,11 +428,7 @@ public class JavaCompiler {
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
-        if (options.isSet("should-stop.at") &&
-            CompileState.valueOf(options.get("should-stop.at")) == CompileState.ATTR)
-            compilePolicy = CompilePolicy.ATTR_ONLY;
-        else
-            compilePolicy = CompilePolicy.decode(options.get("compilePolicy"));
+        compilePolicy = CompilePolicy.decode(options.get("compilePolicy"));
 
         implicitSourcePolicy = ImplicitSourcePolicy.decode(options.get("-implicit"));
 
@@ -948,14 +929,6 @@ public class JavaCompiler {
 
             if (!CompileState.ATTR.isAfter(shouldStopPolicyIfNoError)) {
                 switch (compilePolicy) {
-                case ATTR_ONLY:
-                    attribute(todo);
-                    break;
-
-                case CHECK_ONLY:
-                    flow(attribute(todo));
-                    break;
-
                 case SIMPLE:
                     generate(desugar(flow(attribute(todo))));
                     break;
@@ -1086,8 +1059,8 @@ public class JavaCompiler {
                 for (List<JCTree> defs = unit.defs;
                      defs.nonEmpty();
                      defs = defs.tail) {
-                    if (defs.head instanceof JCClassDecl)
-                        cdefs.append((JCClassDecl)defs.head);
+                    if (defs.head instanceof JCClassDecl classDecl)
+                        cdefs.append(classDecl);
                 }
             }
             rootClasses = cdefs.toList();
@@ -1577,8 +1550,8 @@ public class JavaCompiler {
                 //emit standard Java source file, only for compilation
                 //units enumerated explicitly on the command line
                 JCClassDecl cdef = (JCClassDecl)env.tree;
-                if (untranslated instanceof JCClassDecl &&
-                    rootClasses.contains((JCClassDecl)untranslated)) {
+                if (untranslated instanceof JCClassDecl classDecl &&
+                    rootClasses.contains(classDecl)) {
                     results.add(new Pair<>(env, cdef));
                 }
                 return;

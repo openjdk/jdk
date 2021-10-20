@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,9 +79,9 @@ import sun.security.util.SecurityConstants;
  * permitted.
  * <p>
  * Environments using a security manager will typically set the security
- * manager at startup. In the JDK implementation, this is done by setting
- * the system property {@code java.security.manager} on the command line to
- * the class name of the security manager. It can also be set to the empty
+ * manager at startup. In the JDK implementation, this is done by setting the
+ * system property {@systemProperty java.security.manager} on the command line
+ * to the class name of the security manager. It can also be set to the empty
  * String ("") or the special token "{@code default}" to use the
  * default {@code java.lang.SecurityManager}. If a class name is specified,
  * it must be {@code java.lang.SecurityManager} or a public subclass and have
@@ -313,7 +313,12 @@ import sun.security.util.SecurityConstants;
  * @see     java.security.ProtectionDomain
  *
  * @since   1.0
+ * @deprecated The Security Manager is deprecated and subject to removal in a
+ *       future release. There is no replacement for the Security Manager.
+ *       See <a href="https://openjdk.java.net/jeps/411">JEP 411</a> for
+ *       discussion and alternatives.
  */
+@Deprecated(since="17", forRemoval=true)
 public class SecurityManager {
 
     /*
@@ -340,6 +345,7 @@ public class SecurityManager {
      */
     public SecurityManager() {
         synchronized(SecurityManager.class) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 // ask the currently installed security manager if we
@@ -385,6 +391,7 @@ public class SecurityManager {
      *   java.lang.Object) checkRead
      * @see     java.security.AccessControlContext AccessControlContext
      */
+    @SuppressWarnings("removal")
     public Object getSecurityContext() {
         return AccessController.getContext();
     }
@@ -404,6 +411,7 @@ public class SecurityManager {
      *            {@code null}.
      * @since     1.2
      */
+    @SuppressWarnings("removal")
     public void checkPermission(Permission perm) {
         java.security.AccessController.checkPermission(perm);
     }
@@ -439,6 +447,7 @@ public class SecurityManager {
      * @see java.security.AccessControlContext#checkPermission(java.security.Permission)
      * @since      1.2
      */
+    @SuppressWarnings("removal")
     public void checkPermission(Permission perm, Object context) {
         if (context instanceof AccessControlContext) {
             ((AccessControlContext)context).checkPermission(perm);
@@ -1081,10 +1090,9 @@ public class SecurityManager {
      * @throws     NullPointerException if the address argument is
      *             {@code null}.
      * @since      1.1
-     * @deprecated Use #checkPermission(java.security.Permission) instead
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
-    @Deprecated(since="1.4")
+    @Deprecated(since="1.4", forRemoval=true)
     public void checkMulticast(InetAddress maddr, byte ttl) {
         String host = maddr.getHostAddress();
         if (!host.startsWith("[") && host.indexOf(':') != -1) {
@@ -1332,6 +1340,7 @@ public class SecurityManager {
              * Do we need to update our property array?
              */
             if (!packageAccessValid) {
+                @SuppressWarnings("removal")
                 String tmpPropertyStr =
                     AccessController.doPrivileged(
                         new PrivilegedAction<>() {
@@ -1431,6 +1440,7 @@ public class SecurityManager {
              * Do we need to update our property array?
              */
             if (!packageDefinitionValid) {
+                @SuppressWarnings("removal")
                 String tmpPropertyStr =
                     AccessController.doPrivileged(
                         new PrivilegedAction<>() {

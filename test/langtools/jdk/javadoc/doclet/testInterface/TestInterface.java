@@ -150,7 +150,7 @@ public class TestInterface extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
                     >()</div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="InterfaceWithStaticMembers.html#staticMethod()">Inter\
                     faceWithStaticMembers</a></code></span></div>
                     <div class="block">A static method</div>
@@ -199,14 +199,14 @@ public class TestInterface extends JavadocTester {
                 ator.OfInt</a>&lt;<a href="Spliterator.OfInt.html" title="type parameter in Spli\
                 terator.OfInt">Integer</a>&gt;, <a href="Spliterator.OfPrimitive.html" title="in\
                 terface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.OfPrimitive\
-                .html" title="type parameter in Spliterator.OfPrimitive">T</a>,&#8203;<a href="S\
-                pliterator.OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T\
-                _CONS</a>,&#8203;<a href="Spliterator.OfPrimitive.html" title="type parameter in\
-                 Spliterator.OfPrimitive">T_SPLITR</a> extends <a href="Spliterator.OfPrimitive.\
-                html" title="interface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Splitera\
-                tor.OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T</a>,&#\
-                8203;<a href="Spliterator.OfPrimitive.html" title="type parameter in Spliterator\
-                .OfPrimitive">T_CONS</a>,&#8203;<a href="Spliterator.OfPrimitive.html" title="ty\
-                pe parameter in Spliterator.OfPrimitive">T_SPLITR</a>&gt;&gt;</code>""");
+                .html" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><a href="Spl\
+                iterator.OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T_C\
+                ONS</a>,<wbr><a href="Spliterator.OfPrimitive.html" title="type parameter in Spl\
+                iterator.OfPrimitive">T_SPLITR</a> extends <a href="Spliterator.OfPrimitive.html\
+                " title="interface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.\
+                OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><\
+                a href="Spliterator.OfPrimitive.html" title="type parameter in Spliterator.OfPri\
+                mitive">T_CONS</a>,<wbr><a href="Spliterator.OfPrimitive.html" title="type param\
+                eter in Spliterator.OfPrimitive">T_SPLITR</a>&gt;&gt;</code>""");
     }
 }

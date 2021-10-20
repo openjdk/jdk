@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ public class TestGarbageCollectorMXBean {
         final long initialCapacity = Long.parseLong(args[0]) * M;
         final long maxCapacity = Long.parseLong(args[1]) * M;
         final AtomicInteger cycles = new AtomicInteger();
+        final AtomicInteger pauses = new AtomicInteger();
         final AtomicInteger errors = new AtomicInteger();
 
         final NotificationListener listener = (Notification notification, Object ignored) -> {
@@ -85,35 +86,62 @@ public class TestGarbageCollectorMXBean {
             log("  MemoryUsageAfterGC: " + memoryUsageAfterGC);
             log("");
 
-            if (name.equals("ZGC")) {
+            if (name.equals("ZGC Cycles")) {
                 cycles.incrementAndGet();
+
+                if (!action.equals("end of GC cycle")) {
+                    log("ERROR: Action");
+                    errors.incrementAndGet();
+                }
+
+                if (memoryUsageBeforeGC.getInit() != initialCapacity) {
+                    log("ERROR: MemoryUsageBeforeGC.init");
+                    errors.incrementAndGet();
+                }
+
+                if (memoryUsageBeforeGC.getUsed() > initialCapacity) {
+                    log("ERROR: MemoryUsageBeforeGC.used");
+                    errors.incrementAndGet();
+                }
+
+                if (memoryUsageBeforeGC.getCommitted() != initialCapacity) {
+                    log("ERROR: MemoryUsageBeforeGC.committed");
+                    errors.incrementAndGet();
+                }
+
+                if (memoryUsageBeforeGC.getMax() != maxCapacity) {
+                    log("ERROR: MemoryUsageBeforeGC.max");
+                    errors.incrementAndGet();
+                }
+            } else if (name.equals("ZGC Pauses")) {
+                pauses.incrementAndGet();
+
+                if (!action.equals("end of GC pause")) {
+                    log("ERROR: Action");
+                    errors.incrementAndGet();
+                }
+
+                if (memoryUsageBeforeGC.getInit() != 0) {
+                    log("ERROR: MemoryUsageBeforeGC.init");
+                    errors.incrementAndGet();
+                }
+
+                if (memoryUsageBeforeGC.getUsed() != 0) {
+                    log("ERROR: MemoryUsageBeforeGC.used");
+                    errors.incrementAndGet();
+                }
+
+                if (memoryUsageBeforeGC.getCommitted() != 0) {
+                    log("ERROR: MemoryUsageBeforeGC.committed");
+                    errors.incrementAndGet();
+                }
+
+                if (memoryUsageBeforeGC.getMax() != 0) {
+                    log("ERROR: MemoryUsageBeforeGC.max");
+                    errors.incrementAndGet();
+                }
             } else {
                 log("ERROR: Name");
-                errors.incrementAndGet();
-            }
-
-            if (!action.equals("end of major GC")) {
-                log("ERROR: Action");
-                errors.incrementAndGet();
-            }
-
-            if (memoryUsageBeforeGC.getInit() != initialCapacity) {
-                log("ERROR: MemoryUsageBeforeGC.init");
-                errors.incrementAndGet();
-            }
-
-            if (memoryUsageBeforeGC.getUsed() > initialCapacity) {
-                log("ERROR: MemoryUsageBeforeGC.used");
-                errors.incrementAndGet();
-            }
-
-            if (memoryUsageBeforeGC.getCommitted() != initialCapacity) {
-                log("ERROR: MemoryUsageBeforeGC.committed");
-                errors.incrementAndGet();
-            }
-
-            if (memoryUsageBeforeGC.getMax() != maxCapacity) {
-                log("ERROR: MemoryUsageBeforeGC.max");
                 errors.incrementAndGet();
             }
 
@@ -143,6 +171,7 @@ public class TestGarbageCollectorMXBean {
         }
 
         final int minCycles = 5;
+        final int minPauses = minCycles * 3;
 
         // Run GCs
         for (int i = 0; i < minCycles; i++) {
@@ -162,15 +191,23 @@ public class TestGarbageCollectorMXBean {
         }
 
         final int actualCycles = cycles.get();
+        final int actualPauses = pauses.get();
         final int actualErrors = errors.get();
 
         log("   minCycles: " + minCycles);
+        log("   minPauses: " + minPauses);
         log("actualCycles: " + actualCycles);
+        log("actualPauses: " + actualPauses);
         log("actualErrors: " + actualErrors);
 
         // Verify number of cycle events
         if (actualCycles < minCycles) {
             throw new Exception("Unexpected cycles");
+        }
+
+        // Verify number of pause events
+        if (actualPauses < minPauses) {
+            throw new Exception("Unexpected pauses");
         }
 
         // Verify number of errors

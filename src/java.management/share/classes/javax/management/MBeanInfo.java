@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -543,6 +543,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      * This is obviously not an infallible test for immutability,
      * but it works for the public interfaces of the MBean*Info classes.
     */
+    @SuppressWarnings("removal")
     static boolean arrayGettersSafe(Class<?> subclass, Class<?> immutableClass) {
         if (subclass == immutableClass)
             return true;

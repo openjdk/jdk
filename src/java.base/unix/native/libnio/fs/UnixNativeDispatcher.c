@@ -315,6 +315,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
 #endif
 
+    /* supports extended attributes */
+
+#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_)
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_XATTR;
+#endif
+
     return capabilities;
 }
 

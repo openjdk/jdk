@@ -234,8 +234,7 @@ public class PStack extends Tool {
             // after printing stack trace.
             exp.printStackTrace();
          }
-         JavaVFrame[] jvframes = new JavaVFrame[tmp.size()];
-         System.arraycopy(tmp.toArray(), 0, jvframes, 0, jvframes.length);
+         JavaVFrame[] jvframes = tmp.toArray(new JavaVFrame[0]);
          jframeCache.put(cur.getThreadProxy(), jvframes);
          proxyToThread.put(cur.getThreadProxy(), cur);
       }
@@ -286,8 +285,7 @@ public class PStack extends Tool {
             names.add(sb.toString());
          }
       }
-      String[] res = new String[names.size()];
-      System.arraycopy(names.toArray(), 0, res, 0, res.length);
+      String[] res = names.toArray(new String[0]);
       return res;
    }
 

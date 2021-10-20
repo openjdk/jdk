@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ import com.sun.jndi.ldap.pool.PooledConnection;
 import com.sun.jndi.ldap.pool.PoolCallback;
 import com.sun.jndi.ldap.sasl.LdapSasl;
 import com.sun.jndi.ldap.sasl.SaslInputStream;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * LDAP (RFC-1777) and LDAPv3 (RFC-2251) compliant client
@@ -421,9 +424,9 @@ public final class LdapClient implements PooledConnection {
 
         if (pw instanceof String) {
             if (v3) {
-                return ((String)pw).getBytes("UTF8");
+                return ((String)pw).getBytes(UTF_8);
             } else {
-                return ((String)pw).getBytes("8859_1");
+                return ((String)pw).getBytes(ISO_8859_1);
             }
         } else {
             return (byte[])pw;
@@ -1153,7 +1156,7 @@ public final class LdapClient implements PooledConnection {
 
                         // replace any escaped characters in the value
                         byte[] val = isLdapv3 ?
-                            value.getBytes("UTF8") : value.getBytes("8859_1");
+                            value.getBytes(UTF_8) : value.getBytes(ISO_8859_1);
                         ber.encodeOctetString(
                             Filter.unescapeFilterValue(val, 0, val.length),
                             Ber.ASN_OCTET_STR);

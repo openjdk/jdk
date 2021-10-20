@@ -34,6 +34,7 @@
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -46,6 +47,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
@@ -594,7 +596,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
 
 ArrayCopyNode* MemNode::find_array_copy_clone(PhaseTransform* phase, Node* ld_alloc, Node* mem) const {
   if (mem->is_Proj() && mem->in(0) != NULL && (mem->in(0)->Opcode() == Op_MemBarStoreStore ||
-                                                 mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
+                                               mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
     if (ld_alloc != NULL) {
       // Check if there is an array copy for a clone
       Node* mb = mem->in(0);
@@ -1059,7 +1061,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   // This is more general than load from boxing objects.
   if (skip_through_membars(atp, tp, phase->C->eliminate_boxing())) {
     uint alias_idx = atp->index();
-    bool final = !atp->is_rewritable();
     Node* result = NULL;
     Node* current = st;
     // Skip through chains of MemBarNodes checking the MergeMems for
@@ -1067,17 +1068,19 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     // kind of node is encountered.  Loads from final memory can skip
     // through any kind of MemBar but normal loads shouldn't skip
     // through MemBarAcquire since the could allow them to move out of
-    // a synchronized region.
+    // a synchronized region. It is not safe to step over MemBarCPUOrder,
+    // because alias info above them may be inaccurate (e.g., due to
+    // mixed/mismatched unsafe accesses).
+    bool is_final_mem = !atp->is_rewritable();
     while (current->is_Proj()) {
       int opc = current->in(0)->Opcode();
-      if ((final && (opc == Op_MemBarAcquire ||
-                     opc == Op_MemBarAcquireLock ||
-                     opc == Op_LoadFence)) ||
+      if ((is_final_mem && (opc == Op_MemBarAcquire ||
+                            opc == Op_MemBarAcquireLock ||
+                            opc == Op_LoadFence)) ||
           opc == Op_MemBarRelease ||
           opc == Op_StoreFence ||
           opc == Op_MemBarReleaseLock ||
-          opc == Op_MemBarStoreStore ||
-          opc == Op_MemBarCPUOrder) {
+          opc == Op_MemBarStoreStore) {
         Node* mem = current->in(0)->in(TypeFunc::Memory);
         if (mem->is_MergeMem()) {
           MergeMemNode* merge = mem->as_MergeMem();
@@ -1128,8 +1131,17 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
         // Thus, we are able to replace L by V.
       }
       // Now prove that we have a LoadQ matched to a StoreQ, for some Q.
-      if (store_Opcode() != st->Opcode())
+      if (store_Opcode() != st->Opcode()) {
         return NULL;
+      }
+      // LoadVector/StoreVector needs additional check to ensure the types match.
+      if (store_Opcode() == Op_StoreVector) {
+        const TypeVect*  in_vt = st->as_StoreVector()->vect_type();
+        const TypeVect* out_vt = as_LoadVector()->vect_type();
+        if (in_vt != out_vt) {
+          return NULL;
+        }
+      }
       return st->in(MemNode::ValueIn);
     }
 
@@ -1357,10 +1369,10 @@ Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Ty
 // merging a newly allocated object and a load from the cache.
 // We want to replace this load with the original incoming
 // argument to the valueOf call.
-Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
-  assert(phase->C->eliminate_boxing(), "sanity");
+Node* LoadNode::eliminate_autobox(PhaseIterGVN* igvn) {
+  assert(igvn->C->eliminate_boxing(), "sanity");
   intptr_t ignore = 0;
-  Node* base = AddPNode::Ideal_base_and_offset(in(Address), phase, ignore);
+  Node* base = AddPNode::Ideal_base_and_offset(in(Address), igvn, ignore);
   if ((base == NULL) || base->is_Phi()) {
     // Push the loads from the phi that comes from valueOf up
     // through it to allow elimination of the loads and the recovery
@@ -1394,7 +1406,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
         if (count > 0 && elements[0]->is_Con() &&
             (count == 1 ||
              (count == 2 && elements[1]->Opcode() == Op_LShiftX &&
-                            elements[1]->in(2) == phase->intcon(shift)))) {
+                            elements[1]->in(2) == igvn->intcon(shift)))) {
           ciObjArray* array = base_type->const_oop()->as_obj_array();
           // Fetch the box object cache[0] at the base of the array and get its value
           ciInstance* box = array->obj_at(0)->as_instance();
@@ -1421,43 +1433,45 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
            // Add up all the offsets making of the address of the load
             Node* result = elements[0];
             for (int i = 1; i < count; i++) {
-              result = phase->transform(new AddXNode(result, elements[i]));
+              result = igvn->transform(new AddXNode(result, elements[i]));
             }
             // Remove the constant offset from the address and then
-            result = phase->transform(new AddXNode(result, phase->MakeConX(-(int)offset)));
+            result = igvn->transform(new AddXNode(result, igvn->MakeConX(-(int)offset)));
             // remove the scaling of the offset to recover the original index.
-            if (result->Opcode() == Op_LShiftX && result->in(2) == phase->intcon(shift)) {
+            if (result->Opcode() == Op_LShiftX && result->in(2) == igvn->intcon(shift)) {
               // Peel the shift off directly but wrap it in a dummy node
               // since Ideal can't return existing nodes
-              result = new RShiftXNode(result->in(1), phase->intcon(0));
+              igvn->_worklist.push(result); // remove dead node later
+              result = new RShiftXNode(result->in(1), igvn->intcon(0));
             } else if (result->is_Add() && result->in(2)->is_Con() &&
                        result->in(1)->Opcode() == Op_LShiftX &&
-                       result->in(1)->in(2) == phase->intcon(shift)) {
+                       result->in(1)->in(2) == igvn->intcon(shift)) {
               // We can't do general optimization: ((X<<Z) + Y) >> Z ==> X + (Y>>Z)
               // but for boxing cache access we know that X<<Z will not overflow
               // (there is range check) so we do this optimizatrion by hand here.
-              Node* add_con = new RShiftXNode(result->in(2), phase->intcon(shift));
-              result = new AddXNode(result->in(1)->in(1), phase->transform(add_con));
+              igvn->_worklist.push(result); // remove dead node later
+              Node* add_con = new RShiftXNode(result->in(2), igvn->intcon(shift));
+              result = new AddXNode(result->in(1)->in(1), igvn->transform(add_con));
             } else {
-              result = new RShiftXNode(result, phase->intcon(shift));
+              result = new RShiftXNode(result, igvn->intcon(shift));
             }
 #ifdef _LP64
             if (bt != T_LONG) {
-              result = new ConvL2INode(phase->transform(result));
+              result = new ConvL2INode(igvn->transform(result));
             }
 #else
             if (bt == T_LONG) {
-              result = new ConvI2LNode(phase->transform(result));
+              result = new ConvI2LNode(igvn->transform(result));
             }
 #endif
             // Boxing/unboxing can be done from signed & unsigned loads (e.g. LoadUB -> ... -> LoadB pair).
             // Need to preserve unboxing load type if it is unsigned.
             switch(this->Opcode()) {
               case Op_LoadUB:
-                result = new AndINode(phase->transform(result), phase->intcon(0xFF));
+                result = new AndINode(igvn->transform(result), igvn->intcon(0xFF));
                 break;
               case Op_LoadUS:
-                result = new AndINode(phase->transform(result), phase->intcon(0xFFFF));
+                result = new AndINode(igvn->transform(result), igvn->intcon(0xFFFF));
                 break;
             }
             return result;
@@ -1612,7 +1626,14 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       the_clone = x;            // Remember for possible deletion.
       // Alter data node to use pre-phi inputs
       if (this->in(0) == region) {
-        x->set_req(0, in);
+        if (mem->is_Phi() && (mem->in(0) == region) && mem->in(i)->in(0) != NULL &&
+            MemNode::all_controls_dominate(address, region)) {
+          // Enable other optimizations such as loop predication which does not work
+          // if we directly pin the node to node `in`
+          x->set_req(0, mem->in(i)->in(0)); // Use same control as memory
+        } else {
+          x->set_req(0, in);
+        }
       } else {
         x->set_req(0, NULL);
       }
@@ -1741,7 +1762,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // try to optimize our memory input
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
-      set_req(MemNode::Memory, opt_mem);
+      set_req_X(MemNode::Memory, opt_mem, phase);
       if (phase->type( opt_mem ) == Type::TOP) return NULL;
       return this;
     }
@@ -1750,7 +1771,8 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         (t_oop->is_known_instance_field() ||
          t_oop->is_ptr_to_boxed_value())) {
       PhaseIterGVN *igvn = phase->is_IterGVN();
-      if (igvn != NULL && igvn->_worklist.member(opt_mem)) {
+      assert(igvn != NULL, "must be PhaseIterGVN when can_reshape is true");
+      if (igvn->_worklist.member(opt_mem)) {
         // Delay this transformation until memory Phi is processed.
         igvn->_worklist.push(this);
         return NULL;
@@ -1760,7 +1782,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (result != NULL) return result;
 
       if (t_oop->is_ptr_to_boxed_value()) {
-        Node* result = eliminate_autobox(phase);
+        Node* result = eliminate_autobox(igvn);
         if (result != NULL) return result;
       }
     }
@@ -1815,16 +1837,9 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // just return a prior value, which is done by Identity calls.
     if (can_see_stored_value(prev_mem, phase)) {
       // Make ready for step (d):
-      set_req(MemNode::Memory, prev_mem);
+      set_req_X(MemNode::Memory, prev_mem, phase);
       return this;
     }
-  }
-
-  AllocateNode* alloc = is_new_object_mark_load(phase);
-  if (alloc != NULL && alloc->Opcode() == Op_Allocate && UseBiasedLocking) {
-    InitializeNode* init = alloc->initialization();
-    Node* control = init->proj_out(0);
-    return alloc->make_ideal_mark(phase, address, control, mem);
   }
 
   return progress ? this : NULL;
@@ -1964,7 +1979,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         return con_type;
       }
     }
-  } else if (tp->base() == Type::KlassPtr) {
+  } else if (tp->base() == Type::KlassPtr || tp->base() == Type::InstKlassPtr || tp->base() == Type::AryKlassPtr) {
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects
             tp->is_klassptr()->klass()->is_java_lang_Object() ||
@@ -2089,7 +2104,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   }
 
   Node* alloc = is_new_object_mark_load(phase);
-  if (alloc != NULL && !(alloc->Opcode() == Op_Allocate && UseBiasedLocking)) {
+  if (alloc != NULL) {
     return TypeX::make(markWord::prototype().value());
   }
 
@@ -3292,13 +3307,15 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
   case Op_Initialize:        return new InitializeNode(C, atp, pn);
   case Op_MemBarStoreStore:  return new MemBarStoreStoreNode(C, atp, pn);
+  case Op_Blackhole:         return new BlackholeNode(C, atp, pn);
   default: ShouldNotReachHere(); return NULL;
   }
 }
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
   if (outcnt() != 2) {
-    return;
+    assert(Opcode() == Op_Initialize, "Only seen when there are no use of init memory");
+    assert(outcnt() == 1, "Only control then");
   }
   if (trailing_store() || trailing_load_store()) {
     MemBarNode* leading = leading_membar();
@@ -3307,8 +3324,12 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
       leading->remove(igvn);
     }
   }
-  igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
-  igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+  if (proj_out_or_null(TypeFunc::Memory) != NULL) {
+    igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
+  }
+  if (proj_out_or_null(TypeFunc::Control) != NULL) {
+    igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+  }
 }
 
 //------------------------------Ideal------------------------------------------
@@ -3525,6 +3546,27 @@ MemBarNode* MemBarNode::leading_membar() const {
   assert(mb->_pair_idx == _pair_idx, "bad leading membar");
   return mb;
 }
+
+#ifndef PRODUCT
+void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
+  st->print("blackhole ");
+  bool first = true;
+  for (uint i = 0; i < req(); i++) {
+    Node* n = in(i);
+    if (n != NULL && OptoReg::is_valid(ra->get_reg_first(n))) {
+      if (first) {
+        first = false;
+      } else {
+        st->print(", ");
+      }
+      char buf[128];
+      ra->dump_register(n, buf);
+      st->print("%s", buf);
+    }
+  }
+  st->cr();
+}
+#endif
 
 //===========================InitializeNode====================================
 // SUMMARY:

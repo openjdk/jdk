@@ -110,22 +110,22 @@ public final class ServicePermission extends Permission
     /**
      * Initiate a security context to the specified service
      */
-    private final static int INITIATE   = 0x1;
+    private static final int INITIATE   = 0x1;
 
     /**
      * Accept a security context
      */
-    private final static int ACCEPT     = 0x2;
+    private static final int ACCEPT     = 0x2;
 
     /**
      * All actions
      */
-    private final static int ALL        = INITIATE|ACCEPT;
+    private static final int ALL        = INITIATE|ACCEPT;
 
     /**
      * No actions.
      */
-    private final static int NONE    = 0x0;
+    private static final int NONE    = 0x0;
 
     // the actions mask
     private transient int mask;

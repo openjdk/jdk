@@ -364,27 +364,25 @@ final class BasicPermissionCollection
      */
     @Override
     public void add(Permission permission) {
-        if (! (permission instanceof BasicPermission))
+        if (!(permission instanceof BasicPermission basicPermission))
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
         if (isReadOnly())
             throw new SecurityException("attempt to add a Permission to a readonly PermissionCollection");
-
-        BasicPermission bp = (BasicPermission) permission;
 
         // make sure we only add new BasicPermissions of the same class
         // Also check null for compatibility with deserialized form from
         // previous versions.
         if (permClass == null) {
             // adding first permission
-            permClass = bp.getClass();
+            permClass = basicPermission.getClass();
         } else {
-            if (bp.getClass() != permClass)
+            if (basicPermission.getClass() != permClass)
                 throw new IllegalArgumentException("invalid permission: " +
                                                 permission);
         }
 
-        String canonName = bp.getCanonicalName();
+        String canonName = basicPermission.getCanonicalName();
         perms.put(canonName, permission);
 
         // No sync on all_allowed; staleness OK
@@ -405,13 +403,11 @@ final class BasicPermissionCollection
      */
     @Override
     public boolean implies(Permission permission) {
-        if (! (permission instanceof BasicPermission))
+        if (!(permission instanceof BasicPermission basicPermission))
             return false;
 
-        BasicPermission bp = (BasicPermission) permission;
-
         // random subclasses of BasicPermission do not imply each other
-        if (bp.getClass() != permClass)
+        if (basicPermission.getClass() != permClass)
             return false;
 
         // short circuit if the "*" Permission was added
@@ -422,7 +418,7 @@ final class BasicPermissionCollection
         // Check for full match first. Then work our way up the
         // path looking for matches on a.b..*
 
-        String path = bp.getCanonicalName();
+        String path = basicPermission.getCanonicalName();
         //System.out.println("check "+path);
 
         Permission x = perms.get(path);

@@ -406,9 +406,9 @@ class BlockOffsetArrayContigSpace: public BlockOffsetArray {
   void set_contig_space(ContiguousSpace* sp) { set_space((Space*)sp); }
 
   // Initialize the threshold for an empty heap.
-  HeapWord* initialize_threshold();
+  void initialize_threshold();
   // Zero out the entry for _bottom (offset will be zero)
-  void      zero_bottom_entry();
+  void zero_bottom_entry();
 
   // Return the next threshold, the point at which the table should be
   // updated.

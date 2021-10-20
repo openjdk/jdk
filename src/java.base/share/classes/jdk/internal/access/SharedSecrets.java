@@ -26,9 +26,11 @@
 package jdk.internal.access;
 
 import javax.crypto.SealedObject;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
+import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
 import java.util.jar.JarFile;
 import java.io.Console;
@@ -76,7 +78,9 @@ public class SharedSecrets {
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaSecurityAccess javaSecurityAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
+    private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
+    private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -396,6 +400,28 @@ public class SharedSecrets {
             access = javaSecuritySignatureAccess;
         }
         return access;
+    }
+
+    public static void setJavaSecuritySpecAccess(JavaSecuritySpecAccess jssa) {
+        javaSecuritySpecAccess = jssa;
+    }
+
+    public static JavaSecuritySpecAccess getJavaSecuritySpecAccess() {
+        if (javaSecuritySpecAccess == null) {
+            ensureClassInitialized(EncodedKeySpec.class);
+        }
+        return javaSecuritySpecAccess;
+    }
+
+    public static void setJavaxCryptoSpecAccess(JavaxCryptoSpecAccess jcsa) {
+        javaxCryptoSpecAccess = jcsa;
+    }
+
+    public static JavaxCryptoSpecAccess getJavaxCryptoSpecAccess() {
+        if (javaxCryptoSpecAccess == null) {
+            ensureClassInitialized(SecretKeySpec.class);
+        }
+        return javaxCryptoSpecAccess;
     }
 
     public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {

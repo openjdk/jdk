@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PARMARKBITMAP_INLINE_HPP
 
 #include "gc/parallel/parMarkBitMap.hpp"
+
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 

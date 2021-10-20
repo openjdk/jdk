@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6977201
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6977201Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug6977201Test
  * @run testng/othervm validation.tck.Bug6977201Test
  * @summary Test Validator interprets regex "" correctly.
  */

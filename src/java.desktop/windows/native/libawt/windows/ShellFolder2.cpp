@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -880,7 +880,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIcon
     LPCTSTR pathStr = JNU_GetStringPlatformChars(env, absolutePath, NULL);
     JNU_CHECK_EXCEPTION_RETURN(env, 0);
     if (fn_SHGetFileInfo(pathStr, 0L, &fileInfo, sizeof(fileInfo),
-                         SHGFI_ICON | (getLargeIcon ? 0 : SHGFI_SMALLICON)) != 0) {
+                         SHGFI_ICON | (getLargeIcon ? SHGFI_LARGEICON : SHGFI_SMALLICON)) != 0) {
         hIcon = fileInfo.hIcon;
     }
     JNU_ReleaseStringPlatformChars(env, absolutePath, pathStr);
@@ -912,15 +912,54 @@ JNIEXPORT jint JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconIndex
     return (jint)index;
 }
 
+/*
+ * Class:     sun.awt.shell.Win32ShellFolder2
+ * Method:    hiResIconAvailable
+ * Signature: (JJ)Z
+ */
+JNIEXPORT jboolean JNICALL Java_sun_awt_shell_Win32ShellFolder2_hiResIconAvailable
+    (JNIEnv* env, jclass cls, jlong pIShellFolderL, jlong relativePIDL)
+{
+    IShellFolder* pIShellFolder = (IShellFolder*)pIShellFolderL;
+    LPITEMIDLIST pidl = (LPITEMIDLIST)relativePIDL;
+    if (pIShellFolder == NULL || pidl == NULL) {
+        return FALSE;
+    }
+    HRESULT hres;
+    IExtractIconW* pIcon;
+    hres = pIShellFolder->GetUIObjectOf(NULL, 1, const_cast<LPCITEMIDLIST*>(&pidl),
+                                        IID_IExtractIconW, NULL, (void**)&pIcon);
+    if (SUCCEEDED(hres)) {
+        WCHAR szBuf[MAX_PATH];
+        INT index;
+        UINT flags;
+        UINT uFlags = GIL_FORSHELL | GIL_ASYNC;
+        hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
+        if (SUCCEEDED(hres)) {
+            pIcon->Release();
+            return wcscmp(szBuf, L"*") != 0;
+        } else if (hres == E_PENDING) {
+            uFlags = GIL_DEFAULTICON;
+            hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
+            if (SUCCEEDED(hres)) {
+                pIcon->Release();
+                return wcscmp(szBuf, L"*") != 0;
+            }
+        }
+        pIcon->Release();
+    }
+    return FALSE;
+}
+
 
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
  * Method:    extractIcon
- * Signature: (JJZZ)J
+ * Signature: (JJIZ)J
  */
 JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
     (JNIEnv* env, jclass cls, jlong pIShellFolderL, jlong relativePIDL,
-                                jboolean getLargeIcon, jboolean getDefaultIcon)
+                                jint size, jboolean getDefaultIcon)
 {
     IShellFolder* pIShellFolder = (IShellFolder*)pIShellFolderL;
     LPITEMIDLIST pidl = (LPITEMIDLIST)relativePIDL;
@@ -941,16 +980,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         UINT uFlags = getDefaultIcon ? GIL_DEFAULTICON : GIL_FORSHELL | GIL_ASYNC;
         hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
         if (SUCCEEDED(hres)) {
-            HICON hIconLarge;
-            hres = pIcon->Extract(szBuf, index, &hIconLarge, &hIcon, (16 << 16) + 32);
-            if (SUCCEEDED(hres)) {
-                if (getLargeIcon) {
-                    fn_DestroyIcon((HICON)hIcon);
-                    hIcon = hIconLarge;
-                } else {
-                    fn_DestroyIcon((HICON)hIconLarge);
-                }
+            if (size < 24) {
+                size = 16;
             }
+            hres = pIcon->Extract(szBuf, index, &hIcon, NULL, size);
         } else if (hres == E_PENDING) {
             pIcon->Release();
             return E_PENDING;
@@ -980,7 +1013,7 @@ JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolder2_disposeIcon
 JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
     (JNIEnv* env, jclass cls, jlong hicon)
 {
-    const int MAX_ICON_SIZE = 128;
+    const int MAX_ICON_SIZE = 256;
     int iconSize = 0;
     jintArray iconBits = NULL;
 
@@ -1121,11 +1154,11 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getSystemIcon
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
  * Method:    getIconResource
- * Signature: (Ljava/lang/String;IIIZ)J
+ * Signature: (Ljava/lang/String;III)J
  */
 JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
     (JNIEnv* env, jclass cls, jstring libName, jint iconID,
-     jint cxDesired, jint cyDesired, jboolean useVGAColors)
+     jint cxDesired, jint cyDesired)
 {
     const char *pLibName = env->GetStringUTFChars(libName, NULL);
     JNU_CHECK_EXCEPTION_RETURN(env, 0);
@@ -1134,10 +1167,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
         env->ReleaseStringUTFChars(libName, pLibName);
     }
     if (libHandle != NULL) {
-        UINT fuLoad = (useVGAColors && !IS_WINXP) ? LR_VGACOLOR : 0;
         return ptr_to_jlong(LoadImage(libHandle, MAKEINTRESOURCE(iconID),
                                       IMAGE_ICON, cxDesired, cyDesired,
-                                      fuLoad));
+                                      0));
     }
     return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,8 +99,7 @@ Java_sun_nio_ch_WindowsSelectorImpl_00024SubSelector_poll0(JNIEnv *env, jobject 
            readfds->fd_array[read_count] = fds[i].fd;
            read_count++;
         }
-        if (fds[i].events & (POLLOUT | POLLCONN))
-        {
+        if (fds[i].events & POLLOUT) {
            writefds->fd_array[write_count] = fds[i].fd;
            write_count++;
         }
@@ -189,20 +188,4 @@ Java_sun_nio_ch_WindowsSelectorImpl_resetWakeupSocket0(JNIEnv *env, jclass this,
     } else {
         recv(scinFd, bytes, WAKEUP_SOCKET_BUF_SIZE, 0);
     }
-}
-
-JNIEXPORT jboolean JNICALL
-Java_sun_nio_ch_WindowsSelectorImpl_discardUrgentData(JNIEnv* env, jobject this,
-                                                      jint s)
-{
-    char data[8];
-    jboolean discarded = JNI_FALSE;
-    int n;
-    do {
-        n = recv(s, (char*)&data, sizeof(data), MSG_OOB);
-        if (n > 0) {
-            discarded = JNI_TRUE;
-        }
-    } while (n > 0);
-    return discarded;
 }

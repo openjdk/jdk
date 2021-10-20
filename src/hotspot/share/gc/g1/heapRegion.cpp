@@ -34,7 +34,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "logging/log.hpp"
@@ -48,7 +48,6 @@
 #include "utilities/powerOfTwo.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
-int    HeapRegion::LogOfHRGrainWords = 0;
 int    HeapRegion::LogCardsPerRegion = 0;
 size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
@@ -84,9 +83,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
   LogOfHRGrainBytes = region_size_log;
 
-  guarantee(LogOfHRGrainWords == 0, "we should only set it once");
-  LogOfHRGrainWords = LogOfHRGrainBytes - LogHeapWordSize;
-
   guarantee(GrainBytes == 0, "we should only set it once");
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
@@ -94,7 +90,6 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
-  guarantee((size_t) 1 << LogOfHRGrainWords == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
@@ -109,8 +104,8 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
-  set_evacuation_failed(false);
   set_old();
+  _next_marked_bytes = 0;
 }
 
 void HeapRegion::unlink_from_list() {
@@ -122,8 +117,6 @@ void HeapRegion::unlink_from_list() {
 void HeapRegion::hr_clear(bool clear_space) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");
-  assert(!in_collection_set(),
-         "Should not clear heap region %u in the collection set", hrm_index());
 
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
@@ -138,7 +131,6 @@ void HeapRegion::hr_clear(bool clear_space) {
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
 
-  _evacuation_failed = false;
   _gc_efficiency = -1.0;
 }
 
@@ -234,19 +226,19 @@ void HeapRegion::clear_humongous() {
 
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetTable* bot,
-                       MemRegion mr) :
+                       MemRegion mr,
+                       G1CardSetConfiguration* config) :
   _bottom(mr.start()),
   _end(mr.end()),
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::leaf, "HeapRegion par alloc lock", true),
+  _par_alloc_lock(Mutex::service-2, "HeapRegionParAlloc_lock"),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
   _hrm_index(hrm_index),
   _type(),
   _humongous_start_region(NULL),
-  _evacuation_failed(false),
   _index_in_opt_cset(InvalidCSetIndex),
   _next(NULL), _prev(NULL),
 #ifdef ASSERT
@@ -261,7 +253,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new HeapRegionRemSet(bot, this);
+  _rem_set = new HeapRegionRemSet(this, config);
   initialize();
 }
 
@@ -721,7 +713,8 @@ void HeapRegion::verify(VerifyOption vo,
     p += obj_size;
   }
 
-  if (!is_young() && !is_empty()) {
+  // Only regions in old generation contain valid BOT.
+  if (!is_empty() && !is_young()) {
     _bot_part.verify();
   }
 
@@ -739,61 +732,6 @@ void HeapRegion::verify(VerifyOption vo,
                           "does not match top " PTR_FORMAT, p2i(p), p2i(top()));
     *failures = true;
     return;
-  }
-
-  HeapWord* the_end = end();
-  // Do some extra BOT consistency checking for addresses in the
-  // range [top, end). BOT look-ups in this range should yield
-  // top. No point in doing that if top == end (there's nothing there).
-  if (p < the_end) {
-    // Look up top
-    HeapWord* addr_1 = p;
-    HeapWord* b_start_1 = block_start_const(addr_1);
-    if (b_start_1 != p) {
-      log_error(gc, verify)("BOT look up for top: " PTR_FORMAT " "
-                            " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
-                            p2i(addr_1), p2i(b_start_1), p2i(p));
-      *failures = true;
-      return;
-    }
-
-    // Look up top + 1
-    HeapWord* addr_2 = p + 1;
-    if (addr_2 < the_end) {
-      HeapWord* b_start_2 = block_start_const(addr_2);
-      if (b_start_2 != p) {
-        log_error(gc, verify)("BOT look up for top + 1: " PTR_FORMAT " "
-                              " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
-                              p2i(addr_2), p2i(b_start_2), p2i(p));
-        *failures = true;
-        return;
-      }
-    }
-
-    // Look up an address between top and end
-    size_t diff = pointer_delta(the_end, p) / 2;
-    HeapWord* addr_3 = p + diff;
-    if (addr_3 < the_end) {
-      HeapWord* b_start_3 = block_start_const(addr_3);
-      if (b_start_3 != p) {
-        log_error(gc, verify)("BOT look up for top + diff: " PTR_FORMAT " "
-                              " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
-                              p2i(addr_3), p2i(b_start_3), p2i(p));
-        *failures = true;
-        return;
-      }
-    }
-
-    // Look up end - 1
-    HeapWord* addr_4 = the_end - 1;
-    HeapWord* b_start_4 = block_start_const(addr_4);
-    if (b_start_4 != p) {
-      log_error(gc, verify)("BOT look up for end - 1: " PTR_FORMAT " "
-                            " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
-                            p2i(addr_4), p2i(b_start_4), p2i(p));
-      *failures = true;
-      return;
-    }
   }
 
   verify_strong_code_roots(vo, failures);
@@ -860,13 +798,12 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
-HeapWord* HeapRegion::initialize_threshold() {
-  return _bot_part.initialize_threshold();
+void HeapRegion::initialize_bot_threshold() {
+  _bot_part.initialize_threshold();
 }
 
-HeapWord* HeapRegion::cross_threshold(HeapWord* start, HeapWord* end) {
+void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
   _bot_part.alloc_block(start, end);
-  return _bot_part.threshold();
 }
 
 void HeapRegion::object_iterate(ObjectClosure* blk) {

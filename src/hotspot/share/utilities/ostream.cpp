@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "classfile/classListWriter.hpp"
+#include "cds/classListWriter.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"

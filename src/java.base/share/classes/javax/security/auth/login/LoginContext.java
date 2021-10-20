@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,7 @@ public class LoginContext {
     private Map<String,?> state = new HashMap<String,Object>();
 
     private Configuration config;
+    @SuppressWarnings("removal")
     private AccessControlContext creatorAcc = null;  // customized config only
     private ModuleInfo[] moduleStack;
     private ClassLoader contextClassLoader = null;
@@ -222,6 +223,7 @@ public class LoginContext {
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("logincontext", "\t[LoginContext]");
 
+    @SuppressWarnings("removal")
     private void init(String name) throws LoginException {
 
         SecurityManager sm = System.getSecurityManager();
@@ -288,6 +290,7 @@ public class LoginContext {
         });
     }
 
+    @SuppressWarnings("removal")
     private void loadDefaultCallbackHandler() throws LoginException {
 
         // get the default handler class
@@ -407,6 +410,7 @@ public class LoginContext {
      *          the caller does not additionally have
      *          AuthPermission("createLoginContext.other")
      */
+    @SuppressWarnings("removal")
     public LoginContext(String name, CallbackHandler callbackHandler)
     throws LoginException {
         init(name);
@@ -446,6 +450,7 @@ public class LoginContext {
      *          the caller does not additionally have
      *          AuthPermission("createLoginContext.other")
      */
+    @SuppressWarnings("removal")
     public LoginContext(String name, Subject subject,
                         CallbackHandler callbackHandler) throws LoginException {
         this(name, subject);
@@ -490,6 +495,7 @@ public class LoginContext {
      *
      * @since 1.5
      */
+    @SuppressWarnings("removal")
     public LoginContext(String name, Subject subject,
                         CallbackHandler callbackHandler,
                         Configuration config) throws LoginException {
@@ -657,6 +663,7 @@ public class LoginContext {
      * This version is called if the caller did not instantiate
      * the LoginContext with a Configuration object.
      */
+    @SuppressWarnings("removal")
     private void invokePriv(final String methodName) throws LoginException {
         try {
             java.security.AccessController.doPrivileged
@@ -684,6 +691,7 @@ public class LoginContext {
                     // locate and instantiate the LoginModule
                     //
                     String name = moduleStack[i].entry.getLoginModuleName();
+                    @SuppressWarnings("removal")
                     ServiceLoader<LoginModule> sc = AccessController.doPrivileged(
                             (PrivilegedAction<ServiceLoader<LoginModule>>)
                                     () -> ServiceLoader.load(
@@ -885,15 +893,17 @@ public class LoginContext {
      */
     private static class SecureCallbackHandler implements CallbackHandler {
 
+        @SuppressWarnings("removal")
         private final java.security.AccessControlContext acc;
         private final CallbackHandler ch;
 
-        SecureCallbackHandler(java.security.AccessControlContext acc,
+        SecureCallbackHandler(@SuppressWarnings("removal") java.security.AccessControlContext acc,
                         CallbackHandler ch) {
             this.acc = acc;
             this.ch = ch;
         }
 
+        @SuppressWarnings("removal")
         public void handle(final Callback[] callbacks)
                 throws java.io.IOException, UnsupportedCallbackException {
             try {

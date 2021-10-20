@@ -32,9 +32,9 @@ import sun.awt.CGraphicsDevice;
 import sun.java2d.SurfaceData;
 import sun.java2d.metal.MTLLayer;
 import sun.java2d.opengl.CGLLayer;
+import sun.lwawt.macosx.CFLayer;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.PlatformWindow;
-import sun.lwawt.macosx.CFRetainedResource;
 import sun.util.logging.PlatformLogger;
 
 
@@ -46,12 +46,12 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     private static final PlatformLogger focusLogger = PlatformLogger.getLogger(
             "sun.lwawt.macosx.focus.CPlatformEmbeddedFrame");
 
-    private CFRetainedResource windowLayer;
+    private CFLayer windowLayer;
     private LWWindowPeer peer;
     private CEmbeddedFrame target;
 
-    private volatile int screenX = 0;
-    private volatile int screenY = 0;
+    private volatile int screenX;
+    private volatile int screenY;
 
     @Override // PlatformWindow
     public void initialize(Window target, final LWWindowPeer peer, PlatformWindow owner) {
@@ -71,20 +71,12 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public long getLayerPtr() {
-        if (CGraphicsDevice.usingMetalPipeline()) {
-            return ((MTLLayer)windowLayer).getPointer();
-        } else {
-            return ((CGLLayer)windowLayer).getPointer();
-        }
+        return windowLayer.getPointer();
     }
 
     @Override
     public void dispose() {
-        if (CGraphicsDevice.usingMetalPipeline()) {
-            ((MTLLayer)windowLayer).dispose();
-        } else {
-            ((CGLLayer)windowLayer).dispose();
-        }
+        windowLayer.dispose();
     }
 
     @Override
@@ -115,20 +107,12 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public SurfaceData getScreenSurface() {
-        if ( CGraphicsDevice.usingMetalPipeline()) {
-            return ((MTLLayer)windowLayer).getSurfaceData();
-        } else {
-            return ((CGLLayer)windowLayer).getSurfaceData();
-        }
+        return windowLayer.getSurfaceData();
     }
 
     @Override
     public SurfaceData replaceSurfaceData() {
-        if (CGraphicsDevice.usingMetalPipeline()) {
-            return ((MTLLayer)windowLayer).replaceSurfaceData();
-        } else {
-            return ((CGLLayer)windowLayer).replaceSurfaceData();
-        }
+        return windowLayer.replaceSurfaceData();
     }
 
     @Override

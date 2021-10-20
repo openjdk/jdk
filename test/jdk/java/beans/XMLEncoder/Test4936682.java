@@ -25,6 +25,7 @@
  * @test
  * @bug 4936682
  * @summary Tests encoding of reference to target
+ * @run main/othervm -Djava.security.manager=allow Test4936682
  * @author Sergey Malenkov
  */
 

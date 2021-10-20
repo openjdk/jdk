@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,6 +403,7 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
      * @param module the module for which the logger should be created.
      * @return a Logger suitable for use in the given module.
      */
+    @SuppressWarnings("removal")
     private static java.util.logging.Logger demandJULLoggerFor(final String name,
                                                                Module module) {
         final LogManager manager = LogManager.getLogManager();
@@ -429,6 +430,7 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
      */
     @Override
     protected Logger demandLoggerFor(String name, Module module) {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -443,6 +445,7 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
 
     // Hook for tests
     public static LogManagerAccess getLogManagerAccess() {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(LOGGING_CONTROL_PERMISSION);
@@ -455,6 +458,7 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
 
     private static volatile LogManagerAccess logManagerAccess;
     public static void setLogManagerAccess(LogManagerAccess accesLoggers) {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(LOGGING_CONTROL_PERMISSION);

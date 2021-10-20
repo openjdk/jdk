@@ -76,7 +76,7 @@ class WorkerDataArrayTest : public ::testing::Test {
 
   static const char* prepend_with(const char* str, const char* orig) {
     stringStream out;
-    out.print("%-25s", str);
+    out.print("%-30s", str);
     out.print("%s", orig);
     return out.as_string();
   }

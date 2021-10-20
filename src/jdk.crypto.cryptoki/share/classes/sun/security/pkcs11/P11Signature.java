@@ -42,6 +42,7 @@ import sun.security.rsa.RSAPadding;
 
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 import sun.security.util.KeyUtil;
 
 /**
@@ -143,20 +144,20 @@ final class P11Signature extends SignatureSpi {
     private boolean p1363Format = false;
 
     // constant for signing mode
-    private final static int M_SIGN   = 1;
+    private static final int M_SIGN   = 1;
     // constant for verification mode
-    private final static int M_VERIFY = 2;
+    private static final int M_VERIFY = 2;
 
     // constant for type digesting, we do the hashing ourselves
-    private final static int T_DIGEST = 1;
+    private static final int T_DIGEST = 1;
     // constant for type update, token does everything
-    private final static int T_UPDATE = 2;
+    private static final int T_UPDATE = 2;
     // constant for type raw, used with RawDSA and NONEwithECDSA only
-    private final static int T_RAW    = 3;
+    private static final int T_RAW    = 3;
 
     // PKCS#11 spec for CKM_ECDSA states that the length should not be longer
     // than 1024 bits", but this is a little arbitrary
-    private final static int RAW_ECDSA_MAX = 128;
+    private static final int RAW_ECDSA_MAX = 128;
 
 
     P11Signature(Token token, String algorithm, long mechanism)
@@ -314,7 +315,7 @@ final class P11Signature extends SignatureSpi {
                 }
             }
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
                 // call. If the operation inside the token was already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
@@ -322,9 +323,8 @@ final class P11Signature extends SignatureSpi {
                 return;
             }
             if (mode == M_VERIFY) {
-                long errorCode = e.getErrorCode();
-                if ((errorCode == CKR_SIGNATURE_INVALID) ||
-                     (errorCode == CKR_SIGNATURE_LEN_RANGE)) {
+                if (e.match(CKR_SIGNATURE_INVALID) ||
+                         e.match(CKR_SIGNATURE_LEN_RANGE)) {
                      // expected since signature is incorrect
                      return;
                 }
@@ -726,16 +726,9 @@ final class P11Signature extends SignatureSpi {
             return true;
         } catch (PKCS11Exception pe) {
             doCancel = false;
-            long errorCode = pe.getErrorCode();
-            if (errorCode == CKR_SIGNATURE_INVALID) {
-                return false;
-            }
-            if (errorCode == CKR_SIGNATURE_LEN_RANGE) {
-                // return false rather than throwing an exception
-                return false;
-            }
-            // ECF bug?
-            if (errorCode == CKR_DATA_LEN_RANGE) {
+            if (pe.match(CKR_SIGNATURE_INVALID) ||
+                    pe.match(CKR_SIGNATURE_LEN_RANGE) ||
+                    pe.match(CKR_DATA_LEN_RANGE)) { // ECF bug?
                 return false;
             }
             throw new ProviderException(pe);

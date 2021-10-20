@@ -423,12 +423,8 @@ public final class Optional<T> {
             return true;
         }
 
-        if (!(obj instanceof Optional)) {
-            return false;
-        }
-
-        Optional<?> other = (Optional<?>) obj;
-        return Objects.equals(value, other.value);
+        return obj instanceof Optional<?> other
+                && Objects.equals(value, other.value);
     }
 
     /**

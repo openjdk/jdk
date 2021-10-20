@@ -40,7 +40,7 @@ import java.security.interfaces.*;
 import sun.security.pkcs11.wrapper.*;
 import sun.security.util.KnownOIDs;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * RSASSA-PSS Signature implementation class. This class currently supports the
@@ -68,7 +68,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 final class P11PSSSignature extends SignatureSpi {
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     // mappings of digest algorithms and their output length in bytes
     private static final Hashtable<String, Integer> DIGEST_LENGTHS =
@@ -153,14 +153,14 @@ final class P11PSSSignature extends SignatureSpi {
     private int bytesProcessed = 0;
 
     // constant for signing mode
-    private final static int M_SIGN   = 1;
+    private static final int M_SIGN   = 1;
     // constant for verification mode
-    private final static int M_VERIFY = 2;
+    private static final int M_VERIFY = 2;
 
     // constant for type digesting, we do the hashing ourselves
-    private final static int T_DIGEST = 1;
+    private static final int T_DIGEST = 1;
     // constant for type update, token does everything
-    private final static int T_UPDATE = 2;
+    private static final int T_UPDATE = 2;
 
     P11PSSSignature(Token token, String algorithm, long mechId)
             throws NoSuchAlgorithmException, PKCS11Exception {
@@ -298,7 +298,7 @@ final class P11PSSSignature extends SignatureSpi {
                 }
             }
         } catch (PKCS11Exception e) {
-            if (e.getErrorCode() == CKR_OPERATION_NOT_INITIALIZED) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
                 // Cancel Operation may be invoked after an error on a PKCS#11
                 // call. If the operation inside the token was already cancelled,
                 // do not fail here. This is part of a defensive mechanism for
@@ -705,16 +705,9 @@ final class P11PSSSignature extends SignatureSpi {
             return true;
         } catch (PKCS11Exception pe) {
             doCancel = false;
-            long errorCode = pe.getErrorCode();
-            if (errorCode == CKR_SIGNATURE_INVALID) {
-                return false;
-            }
-            if (errorCode == CKR_SIGNATURE_LEN_RANGE) {
-                // return false rather than throwing an exception
-                return false;
-            }
-            // ECF bug?
-            if (errorCode == CKR_DATA_LEN_RANGE) {
+            if (pe.match(CKR_SIGNATURE_INVALID) ||
+                    pe.match(CKR_SIGNATURE_LEN_RANGE) ||
+                    pe.match(CKR_DATA_LEN_RANGE)) {
                 return false;
             }
             throw new ProviderException(pe);

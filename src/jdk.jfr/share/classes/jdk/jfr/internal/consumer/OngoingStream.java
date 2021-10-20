@@ -61,7 +61,7 @@ public final class OngoingStream extends EventByteStream {
         this.blockSize = blockSize;
         this.startTimeNanos = startTimeNanos;
         this.endTimeNanos = endTimeNanos;
-        this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null);
+        this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null, false);
     }
 
     @Override

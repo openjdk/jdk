@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -222,25 +222,6 @@ ifeq ($(MEMORY_SIZE), )
   MEMORY_SIZE := 1024
 endif
 
-# Setup LD for AOT support
-ifneq ($(DEVKIT_HOME), )
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-    LD_JAOTC := $(DEVKIT_HOME)/VC/bin/x64/link.exe
-    LIBRARY_PREFIX :=
-    SHARED_LIBRARY_SUFFIX := .dll
-  else ifeq ($(OPENJDK_TARGET_OS), linux)
-    LD_JAOTC := $(DEVKIT_HOME)/bin/ld
-    LIBRARY_PREFIX := lib
-    SHARED_LIBRARY_SUFFIX := .so
-  else ifeq ($(OPENJDK_TARGET_OS), macosx)
-    LD_JAOTC := $(DEVKIT_HOME)/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
-    LIBRARY_PREFIX := lib
-    SHARED_LIBRARY_SUFFIX := .dylib
-  endif
-else
-  LD := ld
-endif
-
 ifneq ($(wildcard $(JDK_IMAGE_DIR)/template.xml), )
   TEST_OPTS_JCOV := true
   JCOV_IMAGE_DIR := $(JDK_IMAGE_DIR)
@@ -286,9 +267,6 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     OPENJDK_TARGET_CPU_ENDIAN := $(OPENJDK_TARGET_CPU_ENDIAN), \
     NUM_CORES := $(NUM_CORES), \
     MEMORY_SIZE := $(MEMORY_SIZE), \
-    LD_JAOTC := $(LD_JAOTC), \
-    LIBRARY_PREFIX := $(LIBRARY_PREFIX), \
-    SHARED_LIBRARY_SUFFIX := $(SHARED_LIBRARY_SUFFIX), \
     include $(TOPDIR)/make/RunTestsPrebuiltSpec.gmk, \
     TEST_OPTS_JCOV := $(TEST_OPTS_JCOV), \
     $(CUSTOM_NEW_SPEC_LINE), \

@@ -214,10 +214,27 @@ public class NonBlocking {
                     if (l < 0) {
                         return l;
                     } else {
-                        ByteBuffer bytes = ByteBuffer.wrap(buf, 0, l);
+                        ByteBuffer currentBytes;
+                        if (bytes.hasRemaining()) {
+                            int transfer = bytes.remaining();
+                            byte[] newBuf = new byte[l + transfer];
+                            bytes.get(newBuf, 0, transfer);
+                            System.arraycopy(buf, 0, newBuf, transfer, l);
+                            currentBytes = ByteBuffer.wrap(newBuf);
+                            bytes.position(0);
+                            bytes.limit(0);
+                        } else {
+                            currentBytes = ByteBuffer.wrap(buf, 0, l);
+                        }
                         CharBuffer chars = CharBuffer.wrap(b);
-                        decoder.decode(bytes, chars, false);
+                        decoder.decode(currentBytes, chars, false);
                         chars.flip();
+                        if (currentBytes.hasRemaining()) {
+                            int pos = bytes.position();
+                            bytes.limit(bytes.limit() + currentBytes.remaining());
+                            bytes.put(currentBytes);
+                            bytes.position(pos);
+                        }
                         return chars.remaining();
                     }
                 }

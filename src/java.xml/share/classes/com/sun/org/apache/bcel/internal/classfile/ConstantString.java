@@ -35,7 +35,7 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class ConstantString extends Constant implements ConstantObject {
 
-    private int string_index; // Identical to ConstantClass except for this name
+    private int stringIndex; // Identical to ConstantClass except for this name
 
 
     /**
@@ -58,11 +58,11 @@ public final class ConstantString extends Constant implements ConstantObject {
 
 
     /**
-     * @param string_index Index of Constant_Utf8 in constant pool
+     * @param stringIndex Index of Constant_Utf8 in constant pool
      */
-    public ConstantString(final int string_index) {
+    public ConstantString(final int stringIndex) {
         super(Const.CONSTANT_String);
-        this.string_index = string_index;
+        this.stringIndex = stringIndex;
     }
 
 
@@ -88,7 +88,7 @@ public final class ConstantString extends Constant implements ConstantObject {
     @Override
     public void dump( final DataOutputStream file ) throws IOException {
         file.writeByte(super.getTag());
-        file.writeShort(string_index);
+        file.writeShort(stringIndex);
     }
 
 
@@ -96,15 +96,15 @@ public final class ConstantString extends Constant implements ConstantObject {
      * @return Index in constant pool of the string (ConstantUtf8).
      */
     public int getStringIndex() {
-        return string_index;
+        return stringIndex;
     }
 
 
     /**
-     * @param string_index the index into the constant of the string value
+     * @param stringIndex the index into the constant of the string value
      */
-    public void setStringIndex( final int string_index ) {
-        this.string_index = string_index;
+    public void setStringIndex( final int stringIndex ) {
+        this.stringIndex = stringIndex;
     }
 
 
@@ -113,7 +113,7 @@ public final class ConstantString extends Constant implements ConstantObject {
      */
     @Override
     public String toString() {
-        return super.toString() + "(string_index = " + string_index + ")";
+        return super.toString() + "(stringIndex = " + stringIndex + ")";
     }
 
 
@@ -121,7 +121,7 @@ public final class ConstantString extends Constant implements ConstantObject {
      */
     @Override
     public Object getConstantValue( final ConstantPool cp ) {
-        final Constant c = cp.getConstant(string_index, Const.CONSTANT_Utf8);
+        final Constant c = cp.getConstant(stringIndex, Const.CONSTANT_Utf8);
         return ((ConstantUtf8) c).getBytes();
     }
 

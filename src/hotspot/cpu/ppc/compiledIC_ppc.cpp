@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -164,7 +164,7 @@ int CompiledStaticCall::reloc_to_interp_stub() {
 }
 
 void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
-  address stub = find_stub(/*is_aot*/ false);
+  address stub = find_stub();
   guarantee(stub != NULL, "stub not found");
 
   if (TraceICs) {
@@ -210,7 +210,7 @@ void CompiledDirectStaticCall::verify() {
   _call->verify_alignment();
 
   // Verify stub.
-  address stub = find_stub(/*is_aot*/ false);
+  address stub = find_stub();
   assert(stub != NULL, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + IC_pos_in_java_to_interp_stub);

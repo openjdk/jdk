@@ -1,8 +1,0 @@
-grant {
-   permission com.sun.rmi.rmid.ExecOptionPermission
-	"-Djava.security.manager=*";
-   permission com.sun.rmi.rmid.ExecOptionPermission
-	"-Djava.security.policy=*";
-   permission com.sun.rmi.rmid.ExecOptionPermission
-	"-Djava.ext.dirs=*";
-};

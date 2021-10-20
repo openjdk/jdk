@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.xpath.ptests.XPathFactoryTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.xpath.ptests.XPathFactoryTest
  * @run testng/othervm javax.xml.xpath.ptests.XPathFactoryTest
  */
 @Listeners({jaxp.library.BasePolicy.class})

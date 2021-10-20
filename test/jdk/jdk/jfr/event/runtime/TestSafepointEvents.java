@@ -44,7 +44,7 @@ import sun.hotspot.WhiteBox;
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+FlightRecorder -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   jdk.jfr.event.runtime.TestSafepointEvents
  */
 public class TestSafepointEvents {

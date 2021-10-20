@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,12 +32,12 @@ import jdk.xml.internal.SecuritySupport;
  *
  * @see     Code
  * @see LineNumber
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public final class LineNumberTable extends Attribute {
 
     private static final int MAX_LINE_LENGTH = 72;
-    private LineNumber[] line_number_table; // Table of line/numbers pairs
+    private LineNumber[] lineNumberTable; // Table of line/numbers pairs
 
 
     /*
@@ -52,13 +52,13 @@ public final class LineNumberTable extends Attribute {
     /*
      * @param name_index Index of name
      * @param length Content length in bytes
-     * @param line_number_table Table of line/numbers pairs
+     * @param lineNumberTable Table of line/numbers pairs
      * @param constant_pool Array of constants
      */
     public LineNumberTable(final int name_index, final int length, final LineNumber[] line_number_table,
             final ConstantPool constant_pool) {
         super(Const.ATTR_LINE_NUMBER_TABLE, name_index, length, constant_pool);
-        this.line_number_table = line_number_table;
+        this.lineNumberTable = line_number_table;
     }
 
     /**
@@ -73,9 +73,9 @@ public final class LineNumberTable extends Attribute {
             throws IOException {
         this(name_index, length, (LineNumber[]) null, constant_pool);
         final int line_number_table_length = input.readUnsignedShort();
-        line_number_table = new LineNumber[line_number_table_length];
+        lineNumberTable = new LineNumber[line_number_table_length];
         for (int i = 0; i < line_number_table_length; i++) {
-            line_number_table[i] = new LineNumber(input);
+            lineNumberTable[i] = new LineNumber(input);
         }
     }
 
@@ -100,8 +100,8 @@ public final class LineNumberTable extends Attribute {
     @Override
     public void dump( final DataOutputStream file ) throws IOException {
         super.dump(file);
-        file.writeShort(line_number_table.length);
-        for (final LineNumber lineNumber : line_number_table) {
+        file.writeShort(lineNumberTable.length);
+        for (final LineNumber lineNumber : lineNumberTable) {
             lineNumber.dump(file);
         }
     }
@@ -110,14 +110,14 @@ public final class LineNumberTable extends Attribute {
      * @return Array of (pc offset, line number) pairs.
      */
     public LineNumber[] getLineNumberTable() {
-        return line_number_table;
+        return lineNumberTable;
     }
 
     /**
-     * @param line_number_table the line number entries for this table
+     * @param lineNumberTable the line number entries for this table
      */
-    public void setLineNumberTable( final LineNumber[] line_number_table ) {
-        this.line_number_table = line_number_table;
+    public void setLineNumberTable( final LineNumber[] lineNumberTable ) {
+        this.lineNumberTable = lineNumberTable;
     }
 
     /**
@@ -128,12 +128,12 @@ public final class LineNumberTable extends Attribute {
         final StringBuilder buf = new StringBuilder();
         final StringBuilder line = new StringBuilder();
 
-        for (int i = 0; i < line_number_table.length; i++) {
-            line.append(line_number_table[i].toString());
-            if (i < line_number_table.length - 1) {
+        for (int i = 0; i < lineNumberTable.length; i++) {
+            line.append(lineNumberTable[i].toString());
+            if (i < lineNumberTable.length - 1) {
                 line.append(", ");
             }
-            if ((line.length() > MAX_LINE_LENGTH) && (i < line_number_table.length - 1)) {
+            if ((line.length() > MAX_LINE_LENGTH) && (i < lineNumberTable.length - 1)) {
                 line.append(SecuritySupport.NEWLINE);
                 buf.append(line);
                 line.setLength(0);
@@ -151,7 +151,7 @@ public final class LineNumberTable extends Attribute {
      */
     public int getSourceLine( final int pos ) {
         int l = 0;
-        int r = line_number_table.length - 1;
+        int r = lineNumberTable.length - 1;
         if (r < 0) {
             return -1;
         }
@@ -161,9 +161,9 @@ public final class LineNumberTable extends Attribute {
          */
         do {
             final int i = (l + r) >>> 1;
-            final int j = line_number_table[i].getStartPC();
+            final int j = lineNumberTable[i].getStartPC();
             if (j == pos) {
-                return line_number_table[i].getLineNumber();
+                return lineNumberTable[i].getLineNumber();
             } else if (pos < j) {
                 r = i - 1;
             } else {
@@ -184,7 +184,7 @@ public final class LineNumberTable extends Attribute {
         if (min_index < 0) {
             return -1;
         }
-        return line_number_table[min_index].getLineNumber();
+        return lineNumberTable[min_index].getLineNumber();
     }
 
     /**
@@ -193,17 +193,18 @@ public final class LineNumberTable extends Attribute {
     @Override
     public Attribute copy( final ConstantPool _constant_pool ) {
         // TODO could use the lower level constructor and thereby allow
-        // line_number_table to be made final
+        // lineNumberTable to be made final
         final LineNumberTable c = (LineNumberTable) clone();
-        c.line_number_table = new LineNumber[line_number_table.length];
-        for (int i = 0; i < line_number_table.length; i++) {
-            c.line_number_table[i] = line_number_table[i].copy();
+        c.lineNumberTable = new LineNumber[lineNumberTable.length];
+        for (int i = 0; i < lineNumberTable.length; i++) {
+            c.lineNumberTable[i] = lineNumberTable[i].copy();
         }
         c.setConstantPool(_constant_pool);
         return c;
     }
 
+
     public int getTableLength() {
-        return line_number_table == null ? 0 : line_number_table.length;
+        return lineNumberTable == null ? 0 : lineNumberTable.length;
     }
 }

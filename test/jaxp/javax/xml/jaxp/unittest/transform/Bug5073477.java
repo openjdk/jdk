@@ -35,7 +35,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 5073477
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug5073477
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug5073477
  * @run testng/othervm transform.Bug5073477
  * @summary Test DOMResult.setNextSibling works correctly.
  */

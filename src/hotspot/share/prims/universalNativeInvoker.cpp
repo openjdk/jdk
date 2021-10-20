@@ -31,8 +31,11 @@ ProgrammableInvoker::Generator::Generator(CodeBuffer* code, const ABIDescriptor*
     _layout(layout) {}
 
 void ProgrammableInvoker::invoke_native(Stub stub, address buff, JavaThread* thread) {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
   ThreadToNativeFromVM ttnfvm(thread);
+  // We need WXExec because we are about to call a generated stub. Like in VM
+  // entries, the thread state should be changed while we are still in WXWrite.
+  // See JDK-8265292.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
   stub(buff);
 }
 
@@ -56,7 +59,8 @@ static JNINativeMethod PI_methods[] = {
   {CC "generateAdapter", CC "(" FOREIGN_ABI "/ABIDescriptor;" FOREIGN_ABI "/BufferLayout;" ")J", FN_PTR(PI_generateAdapter)}
 };
 
-JNI_LEAF(void, JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass PI_class))
+JNI_ENTRY(void, JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass PI_class))
+  ThreadToNativeFromVM ttnfv(thread);
   int status = env->RegisterNatives(PI_class, PI_methods, sizeof(PI_methods)/sizeof(JNINativeMethod));
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
             "register jdk.internal.foreign.abi.programmable.ProgrammableInvoker natives");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,7 +468,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @return the location for the named module
      *
      * @throws IOException if an I/O error occurred
-     * @throws UnsupportedOperationException if this operation if not supported by this file manager
+     * @throws UnsupportedOperationException if this operation is not supported by this file manager
      * @throws IllegalArgumentException if the location is neither an output location nor a
      * module-oriented location
      * @since 9
@@ -491,7 +491,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @return the module containing the file
      *
      * @throws IOException if an I/O error occurred
-     * @throws UnsupportedOperationException if this operation if not supported by this file manager
+     * @throws UnsupportedOperationException if this operation is not supported by this file manager
      * @throws IllegalArgumentException if the location is neither an output location nor a
      * module-oriented location
      * @since 9
@@ -516,7 +516,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @return a service loader for the given service class
      *
      * @throws IOException if an I/O error occurred
-     * @throws UnsupportedOperationException if this operation if not supported by this file manager
+     * @throws UnsupportedOperationException if this operation is not supported by this file manager
      * @since 9
      */ // TODO: describe failure modes
     default <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws  IOException {
@@ -533,7 +533,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @return the name of the module
      *
      * @throws IOException if an I/O error occurred
-     * @throws UnsupportedOperationException if this operation if not supported by this file manager
+     * @throws UnsupportedOperationException if this operation is not supported by this file manager
      * @throws IllegalArgumentException if the location is not one known to this file manager
      * @since 9
      */ // TODO: describe failure modes
@@ -552,7 +552,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @return  a series of sets of locations containing modules
      *
      * @throws IOException if an I/O error occurred
-     * @throws UnsupportedOperationException if this operation if not supported by this file manager
+     * @throws UnsupportedOperationException if this operation is not supported by this file manager
      * @throws IllegalArgumentException if the location is not a module-oriented location
      * @since 9
      */ // TODO: describe failure modes

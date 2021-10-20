@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,9 @@ public class FileChannelImpl
     // Access to FileDescriptor internals
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
+
+    // Maximum direct transfer size
+    private static final int MAX_DIRECT_TRANSFER_SIZE;
 
     // Used to make native read and write calls
     private final FileDispatcher nd;
@@ -582,6 +585,15 @@ public class FileChannelImpl
         if (!((target instanceof FileChannelImpl) || isSelChImpl))
             return IOStatus.UNSUPPORTED;
 
+        if (target == this) {
+            long posThis = position();
+            if (posThis - count + 1 <= position &&
+                position - count + 1 <= posThis &&
+                !nd.canTransferToFromOverlappedMap()) {
+                return IOStatus.UNSUPPORTED_CASE;
+            }
+        }
+
         // Trusted target: Use a mapped buffer
         long remaining = count;
         while (remaining > 0L) {
@@ -622,18 +634,18 @@ public class FileChannelImpl
         return count - remaining;
     }
 
-    private long transferToArbitraryChannel(long position, int icount,
+    private long transferToArbitraryChannel(long position, long count,
                                             WritableByteChannel target)
         throws IOException
     {
         // Untrusted target: Use a newly-erased buffer
-        int c = Math.min(icount, TRANSFER_SIZE);
+        int c = (int)Math.min(count, TRANSFER_SIZE);
         ByteBuffer bb = ByteBuffer.allocate(c);
         long tw = 0;                    // Total bytes written
         long pos = position;
         try {
-            while (tw < icount) {
-                bb.limit(Math.min((int)(icount - tw), TRANSFER_SIZE));
+            while (tw < count) {
+                bb.limit((int)Math.min(count - tw, TRANSFER_SIZE));
                 int nr = read(bb, pos);
                 if (nr <= 0)
                     break;
@@ -672,22 +684,23 @@ public class FileChannelImpl
         long sz = size();
         if (position > sz)
             return 0;
-        int icount = (int)Math.min(count, Integer.MAX_VALUE);
-        if ((sz - position) < icount)
-            icount = (int)(sz - position);
 
+        if ((sz - position) < count)
+            count = sz - position;
+
+        // Attempt a direct transfer, if the kernel supports it, limiting
+        // the number of bytes according to which platform
+        int icount = (int)Math.min(count, MAX_DIRECT_TRANSFER_SIZE);
         long n;
-
-        // Attempt a direct transfer, if the kernel supports it
         if ((n = transferToDirectly(position, icount, target)) >= 0)
             return n;
 
         // Attempt a mapped transfer, but only to trusted channel types
-        if ((n = transferToTrustedChannel(position, icount, target)) >= 0)
+        if ((n = transferToTrustedChannel(position, count, target)) >= 0)
             return n;
 
         // Slow path for untrusted targets
-        return transferToArbitraryChannel(position, icount, target);
+        return transferToArbitraryChannel(position, count, target);
     }
 
     private long transferFromFileChannel(FileChannelImpl src,
@@ -699,6 +712,14 @@ public class FileChannelImpl
         synchronized (src.positionLock) {
             long pos = src.position();
             long max = Math.min(count, src.size() - pos);
+
+            if (src == this) {
+                if (position() - max + 1 <= pos &&
+                    pos - max + 1 <= position() &&
+                    !nd.canTransferToFromOverlappedMap()) {
+                    return IOStatus.UNSUPPORTED_CASE;
+                }
+            }
 
             long remaining = max;
             long p = pos;
@@ -775,9 +796,12 @@ public class FileChannelImpl
             throw new IllegalArgumentException();
         if (position > size())
             return 0;
-        if (src instanceof FileChannelImpl)
-           return transferFromFileChannel((FileChannelImpl)src,
-                                          position, count);
+
+        if (src instanceof FileChannelImpl fci) {
+            long n = transferFromFileChannel(fci, position, count);
+            if (n >= 0)
+                return n;
+        }
 
         return transferFromArbitraryChannel(src, position, count);
     }
@@ -1348,11 +1372,15 @@ public class FileChannelImpl
     private native long transferTo0(FileDescriptor src, long position,
                                     long count, FileDescriptor dst);
 
+    // Retrieves the maximum size of a transfer
+    private static native int maxDirectTransferSize0();
+
     // Caches fieldIDs
     private static native long initIDs();
 
     static {
         IOUtil.load();
         allocationGranularity = initIDs();
+        MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
     }
 }

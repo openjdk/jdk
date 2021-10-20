@@ -24,11 +24,22 @@
 #ifndef SHARE_PRIMS_FOREIGN_GLOBALS
 #define SHARE_PRIMS_FOREIGN_GLOBALS
 
+#include "code/vmreg.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 #include CPU_HEADER(foreign_globals)
+
+struct CallRegs {
+  VMReg* _arg_regs;
+  int _args_length;
+
+  VMReg* _ret_regs;
+  int _rets_length;
+
+  void calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const;
+};
 
 class ForeignGlobals {
 private:
@@ -42,6 +53,7 @@ private:
 
   struct {
     int index_offset;
+    int type_offset;
   } VMS;
 
   struct {
@@ -52,6 +64,11 @@ private:
     int input_type_offsets_offset;
     int output_type_offsets_offset;
   } BL;
+
+  struct {
+    int arg_regs_offset;
+    int ret_regs_offset;
+  } CallConvOffsets;
 
   ForeignGlobals();
 
@@ -65,9 +82,11 @@ private:
 
   const ABIDescriptor parse_abi_descriptor_impl(jobject jabi) const;
   const BufferLayout parse_buffer_layout_impl(jobject jlayout) const;
+  const CallRegs parse_call_regs_impl(jobject jconv) const;
 public:
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
   static const BufferLayout parse_buffer_layout(jobject jlayout);
+  static const CallRegs parse_call_regs(jobject jconv);
 };
 
 #endif // SHARE_PRIMS_FOREIGN_GLOBALS

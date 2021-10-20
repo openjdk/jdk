@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,38 +68,6 @@ public class DistributionPointFetcher {
      * an X509CRLSelector with certificateChecking set.
      */
     public static Collection<X509CRL> getCRLs(X509CRLSelector selector,
-            boolean signFlag, PublicKey prevKey, String provider,
-            List<CertStore> certStores, boolean[] reasonsMask,
-            Set<TrustAnchor> trustAnchors, Date validity, String variant)
-            throws CertStoreException
-    {
-        return getCRLs(selector, signFlag, prevKey, null, provider, certStores,
-                reasonsMask, trustAnchors, validity, variant);
-    }
-    /**
-     * Return the X509CRLs matching this selector. The selector must be
-     * an X509CRLSelector with certificateChecking set.
-     */
-    // Called by com.sun.deploy.security.RevocationChecker
-    public static Collection<X509CRL> getCRLs(X509CRLSelector selector,
-                                              boolean signFlag,
-                                              PublicKey prevKey,
-                                              String provider,
-                                              List<CertStore> certStores,
-                                              boolean[] reasonsMask,
-                                              Set<TrustAnchor> trustAnchors,
-                                              Date validity)
-        throws CertStoreException
-    {
-        return getCRLs(selector, signFlag, prevKey, null, provider, certStores,
-                reasonsMask, trustAnchors, validity, Validator.VAR_GENERIC);
-    }
-
-    /**
-     * Return the X509CRLs matching this selector. The selector must be
-     * an X509CRLSelector with certificateChecking set.
-     */
-    public static Collection<X509CRL> getCRLs(X509CRLSelector selector,
                                               boolean signFlag,
                                               PublicKey prevKey,
                                               X509Certificate prevCert,
@@ -108,7 +76,8 @@ public class DistributionPointFetcher {
                                               boolean[] reasonsMask,
                                               Set<TrustAnchor> trustAnchors,
                                               Date validity,
-                                              String variant)
+                                              String variant,
+                                              TrustAnchor anchor)
         throws CertStoreException
     {
         X509Certificate cert = selector.getCertificateChecking();
@@ -137,7 +106,7 @@ public class DistributionPointFetcher {
                 DistributionPoint point = t.next();
                 Collection<X509CRL> crls = getCRLs(selector, certImpl,
                     point, reasonsMask, signFlag, prevKey, prevCert, provider,
-                    certStores, trustAnchors, validity, variant);
+                    certStores, trustAnchors, validity, variant, anchor);
                 results.addAll(crls);
             }
             if (debug != null) {
@@ -162,7 +131,8 @@ public class DistributionPointFetcher {
         X509CertImpl certImpl, DistributionPoint point, boolean[] reasonsMask,
         boolean signFlag, PublicKey prevKey, X509Certificate prevCert,
         String provider, List<CertStore> certStores,
-        Set<TrustAnchor> trustAnchors, Date validity, String variant)
+        Set<TrustAnchor> trustAnchors, Date validity, String variant,
+        TrustAnchor anchor)
             throws CertStoreException {
 
         // check for full name
@@ -225,7 +195,7 @@ public class DistributionPointFetcher {
                 selector.setIssuerNames(null);
                 if (selector.match(crl) && verifyCRL(certImpl, point, crl,
                         reasonsMask, signFlag, prevKey, prevCert, provider,
-                        trustAnchors, certStores, validity, variant)) {
+                        trustAnchors, certStores, validity, variant, anchor)) {
                     crls.add(crl);
                 }
             } catch (IOException | CRLException e) {
@@ -335,7 +305,8 @@ public class DistributionPointFetcher {
         X509CRL crl, boolean[] reasonsMask, boolean signFlag,
         PublicKey prevKey, X509Certificate prevCert, String provider,
         Set<TrustAnchor> trustAnchors, List<CertStore> certStores,
-        Date validity, String variant) throws CRLException, IOException {
+        Date validity, String variant, TrustAnchor anchor)
+        throws CRLException, IOException {
 
         if (debug != null) {
             debug.println("DistributionPointFetcher.verifyCRL: " +
@@ -682,7 +653,7 @@ public class DistributionPointFetcher {
 
         // check the crl signature algorithm
         try {
-            AlgorithmChecker.check(prevKey, crl, variant);
+            AlgorithmChecker.check(prevKey, crl, variant, anchor);
         } catch (CertPathValidatorException cpve) {
             if (debug != null) {
                 debug.println("CRL signature algorithm check failed: " + cpve);

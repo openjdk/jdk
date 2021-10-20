@@ -30,7 +30,9 @@
  *   but where no huge pages are configured, these tests are still useful. They
  *   will test correct initialization. Later reserve calls will fail and fall
  *   back to small pages (while complaining loudly) but this should not affect
- *   the gtests.
+ *   the gtests. When tests complain, they would spew a lot of warning messages,
+ *   which could blow out the test runner Java heaps. This is why we are running
+ *   with -XX:-PrintWarnings.
  */
 
 /* @test id=use-large-pages
@@ -40,7 +42,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages
+ * @run main/native GTestWrapper --gtest_filter=os* -XX:-PrintWarnings -XX:+UseLargePages
  */
 
 /* @test id=use-large-pages-1G
@@ -51,7 +53,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages -XX:LargePageSizeInBytes=1G
+ * @run main/native GTestWrapper --gtest_filter=os* -XX:-PrintWarnings -XX:+UseLargePages -XX:LargePageSizeInBytes=1G
  */
 
 /* @test id=use-large-pages-sysV
@@ -61,5 +63,5 @@
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseLargePages -XX:+UseSHM
+ * @run main/native GTestWrapper --gtest_filter=os* -XX:-PrintWarnings -XX:+UseLargePages -XX:+UseSHM
  */

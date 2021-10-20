@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
 #define SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
 
+#include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
+
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"

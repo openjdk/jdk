@@ -35,10 +35,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.inline.hpp"
 
-bool EdgeUtils::is_leak_edge(const Edge& edge) {
-  return (const Edge*)edge.pointee()->mark().to_pointer() == &edge;
-}
-
 static bool is_static_field(const oop ref_owner, const InstanceKlass* ik, int offset) {
   assert(ref_owner != NULL, "invariant");
   assert(ik != NULL, "invariant");

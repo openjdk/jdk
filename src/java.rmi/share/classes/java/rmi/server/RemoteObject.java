@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,12 +212,6 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      *
      * If this object is an instance of
      * <code>RemoteStub</code> or <code>RemoteObjectInvocationHandler</code>
-     * that was returned from any of
-     * the <code>java.rmi.activation.Activatable.exportObject</code> methods,
-     * the external ref type name is <code>"ActivatableRef"</code>.
-     *
-     * If this object is an instance of
-     * <code>RemoteStub</code> or <code>RemoteObjectInvocationHandler</code>
      * that was returned from
      * the <code>RemoteObject.toStub</code> method (and the argument passed
      * to <code>toStub</code> was not itself a <code>RemoteStub</code>),
@@ -318,43 +312,6 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      *
      * </ul>
      *
-     * <p>For <code>"ActivatableRef"</code> with a
-     * <code>null</code> nested remote reference:
-     *
-     * <ul>
-     *
-     * <li>an instance of
-     * <code>java.rmi.activation.ActivationID</code>,
-     * written by passing it to an invocation of
-     * <code>writeObject</code> on the stream instance
-     *
-     * <li>a zero-length string (<code>""</code>),
-     * written by {@link java.io.ObjectOutput#writeUTF(String)}
-     *
-     * </ul>
-     *
-     * <p>For <code>"ActivatableRef"</code> with a
-     * non-<code>null</code> nested remote reference:
-     *
-     * <ul>
-     *
-     * <li>an instance of
-     * <code>java.rmi.activation.ActivationID</code>,
-     * written by passing it to an invocation of
-     * <code>writeObject</code> on the stream instance
-     *
-     * <li>the external ref type name of the nested remote reference,
-     * which must be <code>"UnicastRef2"</code>,
-     * written by {@link java.io.ObjectOutput#writeUTF(String)}
-     *
-     * <li>the external form of the nested remote reference,
-     * written by invoking its <code>writeExternal</code> method
-     * with the stream instance
-     * (see the description of the external form for
-     * <code>"UnicastRef2"</code> above)
-     *
-     * </ul>
-     *
      * <p>For <code>"UnicastServerRef"</code> and
      * <code>"UnicastServerRef2"</code>, no data is written by the
      * <code>writeExternal</code> method or read by the
@@ -412,8 +369,8 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      *
      * <p>If the external ref type name is
      * <code>"UnicastRef"</code>, <code>"UnicastServerRef"</code>,
-     * <code>"UnicastRef2"</code>, <code>"UnicastServerRef2"</code>,
-     * or <code>"ActivatableRef"</code>, a corresponding
+     * <code>"UnicastRef2"</code>, or <code>"UnicastServerRef2"</code>,
+     * a corresponding
      * implementation-specific class must be found, and its
      * <code>readExternal</code> method must read the serial data
      * for that external ref type name as specified to be written

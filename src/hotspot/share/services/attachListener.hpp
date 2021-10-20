@@ -29,6 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"

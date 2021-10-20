@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,11 @@ public interface XPath {
      * @param <T> The class type that will be returned by the XPath expression.
      * @param expression The XPath expression.
      * @param item The context the XPath expression will be evaluated in.
-     * @param type The class type expected to be returned by the XPath expression.
+     * @param type The class type expected to be returned by the XPath expression,
+     * must be one of the types described in section
+     * <a href="package-summary.html#XPath.Datatypes.Class">3.2 Class types</a>
+     * in the package summary.
+     *
      *
      * @return The result of evaluating the expression.
      *
@@ -440,7 +444,10 @@ public interface XPath {
      * @param <T> The class type that will be returned by the XPath expression.
      * @param expression The XPath expression.
      * @param source The input source of the document to evaluate over.
-     * @param type The class type expected to be returned by the XPath expression.
+     * @param type The class type expected to be returned by the XPath expression,
+     * must be one of the types described in section
+     * <a href="package-summary.html#XPath.Datatypes.Class">3.2 Class types</a>
+     * in the package summary.
      *
      * @return The result of evaluating the expression.
      *

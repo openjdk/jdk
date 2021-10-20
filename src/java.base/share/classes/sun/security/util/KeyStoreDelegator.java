@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,10 @@ public class KeyStoreDelegator extends KeyStoreSpi {
         Class<? extends KeyStoreSpi> secondaryKeyStore) {
 
         // Check whether compatibility mode has been disabled
-        compatModeEnabled = "true".equalsIgnoreCase(
-            AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                Security.getProperty(KEYSTORE_TYPE_COMPAT)));
+        @SuppressWarnings("removal")
+        var prop = AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                        Security.getProperty(KEYSTORE_TYPE_COMPAT));
+        compatModeEnabled = "true".equalsIgnoreCase(prop);
 
         if (compatModeEnabled) {
             this.primaryType = primaryType;

@@ -39,7 +39,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6949607
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.Bug6949607Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.Bug6949607Test
  * @run testng/othervm sax.Bug6949607Test
  * @summary Test Attributes.getValue returns null when parameter uri is empty.
  */

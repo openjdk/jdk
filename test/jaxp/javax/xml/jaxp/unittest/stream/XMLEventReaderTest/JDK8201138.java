@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8201138
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.JDK8201138
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.JDK8201138
  * @run testng/othervm stream.XMLEventReaderTest.JDK8201138
  * @summary Verifies a fix that set the type and data properly in the loop
  */

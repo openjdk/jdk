@@ -82,10 +82,9 @@ public class ECFieldFp implements ECField {
      */
     public boolean equals(Object obj) {
         if (this == obj)  return true;
-        if (obj instanceof ECFieldFp) {
-            return (p.equals(((ECFieldFp)obj).p));
-        }
-        return false;
+
+        return obj instanceof ECFieldFp other
+                && p.equals(other.p);
     }
 
     /**

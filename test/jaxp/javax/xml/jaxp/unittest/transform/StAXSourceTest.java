@@ -61,7 +61,7 @@ import org.testng.annotations.Test;
  * @modules java.xml/com.sun.xml.internal.stream
  * @clean MyXMLInputFactoryImpl MyXMLStreamReader
  * @build MyXMLInputFactoryImpl MyXMLStreamReader
- * @run testng/othervm -DrunSecMngr=true transform.StAXSourceTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.StAXSourceTest
  * @run testng/othervm transform.StAXSourceTest
  * @summary Test parsing from StAXSource.
  */

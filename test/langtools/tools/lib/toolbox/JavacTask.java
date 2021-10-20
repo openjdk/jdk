@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.processing.Processor;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -60,6 +61,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private List<JavaFileObject> fileObjects;
     private JavaFileManager fileManager;
     private Consumer<com.sun.source.util.JavacTask> callback;
+    private List<Processor> procs;
 
     private JavaCompiler compiler;
     private StandardJavaFileManager internalFileManager;
@@ -256,6 +258,14 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
+     * Sets the the annotation processors to be used.
+     */
+    public JavacTask processors(Processor... procs) {
+        this.procs = List.of(procs);
+        return this;
+    }
+
+    /**
      * Sets the file manager to be used by this task.
      * @param fileManager the file manager
      * @return this task object
@@ -358,6 +368,9 @@ public class JavacTask extends AbstractTask<JavacTask> {
                     allOpts,
                     classes,
                     allFiles);
+            if (procs != null) {
+                task.setProcessors(procs);
+            }
             JavacTaskImpl taskImpl = (JavacTaskImpl) task;
             if (callback != null) {
                 callback.accept(taskImpl);

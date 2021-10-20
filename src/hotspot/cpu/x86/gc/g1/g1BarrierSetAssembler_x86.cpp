@@ -329,7 +329,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   __ bind(runtime);
   // save the live input values
   __ push(store_addr);
-  __ push(new_val);
 #ifdef _LP64
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, r15_thread);
 #else
@@ -337,7 +336,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
   __ pop(thread);
 #endif
-  __ pop(new_val);
   __ pop(store_addr);
 
   __ bind(done);
@@ -422,7 +420,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
   Register pre_val_reg = stub->pre_val()->as_register();
 
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
   __ cmpptr(pre_val_reg, (int32_t)NULL_WORD);

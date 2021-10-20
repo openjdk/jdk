@@ -123,16 +123,12 @@ public final class Timestamp implements Serializable {
      * @return true if the timestamp are considered equal, false otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj == null || (!(obj instanceof Timestamp))) {
-            return false;
-        }
-        Timestamp that = (Timestamp)obj;
-
-        if (this == that) {
+        if (this == obj) {
             return true;
         }
-        return (timestamp.equals(that.getTimestamp()) &&
-            signerCertPath.equals(that.getSignerCertPath()));
+        return obj instanceof Timestamp other
+                && (timestamp.equals(other.getTimestamp()) &&
+                signerCertPath.equals(other.getSignerCertPath()));
     }
 
     /**

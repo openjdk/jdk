@@ -44,13 +44,9 @@ import static sun.security.action.GetPropertyAction.*;
  * This class contains misc helper functions to support creation of memory segments.
  */
 public final class Utils {
-
     // used when testing invoke exact behavior of memory access handles
     private static final boolean SHOULD_ADAPT_HANDLES
         = Boolean.parseBoolean(privilegedGetProperty("jdk.internal.foreign.SHOULD_ADAPT_HANDLES", "true"));
-
-    private static final String foreignRestrictedAccess = Optional.ofNullable(VM.getSavedProperty("foreign.restricted"))
-            .orElse("deny");
 
     private static final MethodHandle SEGMENT_FILTER;
     public static final MethodHandle MH_bitsToBytesOrThrowForOffset;
@@ -107,27 +103,6 @@ public final class Utils {
         return (AbstractMemorySegmentImpl)segment;
     }
 
-    public static void checkRestrictedAccess(String method) {
-        switch (foreignRestrictedAccess) {
-            case "deny" -> throwIllegalAccessError(foreignRestrictedAccess, method);
-            case "warn" -> System.err.println("WARNING: Accessing restricted foreign method: " + method);
-            case "debug" -> {
-                StringBuilder sb = new StringBuilder("DEBUG: restricted foreign method: \" + method");
-                StackWalker.getInstance().forEach(f -> sb.append(System.lineSeparator())
-                        .append("\tat ")
-                        .append(f));
-                System.err.println(sb.toString());
-            }
-            case "permit" -> {}
-            default -> throwIllegalAccessError(foreignRestrictedAccess, method);
-        }
-    }
-
-    private static void throwIllegalAccessError(String value, String method) {
-        throw new IllegalAccessError("Illegal access to restricted foreign method: " + method +
-                " ; system property 'foreign.restricted' is set to '" + value + "'");
-    }
-
     public static void checkPrimitiveCarrierCompat(Class<?> carrier, MemoryLayout layout) {
         checkLayoutType(layout, ValueLayout.class);
         if (!isValidPrimitiveCarrier(carrier))
@@ -150,5 +125,4 @@ public final class Utils {
         if (!layoutType.isInstance(layout))
             throw new IllegalArgumentException("Expected a " + layoutType.getSimpleName() + ": " + layout);
     }
-
 }

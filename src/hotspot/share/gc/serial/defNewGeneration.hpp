@@ -31,6 +31,7 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.hpp"
@@ -138,6 +139,8 @@ protected:
   ContiguousSpace* _to_space;
 
   STWGCTimer* _gc_timer;
+
+  StringDedup::Requests _string_dedup_requests;
 
   enum SomeProtectedConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
@@ -308,9 +311,8 @@ protected:
                        bool   clear_all_soft_refs,
                        size_t size,
                        bool   is_tlab);
-  HeapWord* expand_and_allocate(size_t size,
-                                bool is_tlab,
-                                bool parallel = false);
+
+  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   oop copy_to_survivor_space(oop old);
   uint tenuring_threshold() { return _tenuring_threshold; }
@@ -342,7 +344,10 @@ protected:
   // If any overflow happens, revert to previous new size.
   size_t adjust_for_thread_increase(size_t new_size_candidate,
                                     size_t new_size_before,
-                                    size_t alignment) const;
+                                    size_t alignment,
+                                    size_t thread_increase_size) const;
+
+  size_t calculate_thread_increase_size(int threads_count) const;
 
 
   // Scavenge support

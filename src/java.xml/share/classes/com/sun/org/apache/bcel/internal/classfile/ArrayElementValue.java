@@ -30,17 +30,17 @@ import java.io.IOException;
 public class ArrayElementValue extends ElementValue
 {
     // For array types, this is the array
-    private final ElementValue[] evalues;
+    private final ElementValue[] elementValues;
 
     @Override
     public String toString()
     {
         final StringBuilder sb = new StringBuilder();
         sb.append("{");
-        for (int i = 0; i < evalues.length; i++)
+        for (int i = 0; i < elementValues.length; i++)
         {
-            sb.append(evalues[i]);
-            if ((i + 1) < evalues.length) {
+            sb.append(elementValues[i]);
+            if ((i + 1) < elementValues.length) {
                 sb.append(",");
             }
         }
@@ -52,18 +52,18 @@ public class ArrayElementValue extends ElementValue
     {
         super(type, cpool);
         if (type != ARRAY) {
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Only element values of type array can be built with this ctor - type specified: " + type);
         }
-        this.evalues = datums;
+        this.elementValues = datums;
     }
 
     @Override
     public void dump(final DataOutputStream dos) throws IOException
     {
         dos.writeByte(super.getType()); // u1 type of value (ARRAY == '[')
-        dos.writeShort(evalues.length);
-        for (final ElementValue evalue : evalues) {
+        dos.writeShort(elementValues.length);
+        for (final ElementValue evalue : elementValues) {
             evalue.dump(dos);
         }
     }
@@ -73,10 +73,10 @@ public class ArrayElementValue extends ElementValue
     {
         final StringBuilder sb = new StringBuilder();
         sb.append("[");
-        for (int i = 0; i < evalues.length; i++)
+        for (int i = 0; i < elementValues.length; i++)
         {
-            sb.append(evalues[i].stringifyValue());
-            if ((i + 1) < evalues.length) {
+            sb.append(elementValues[i].stringifyValue());
+            if ((i + 1) < elementValues.length) {
                 sb.append(",");
             }
         }
@@ -86,11 +86,11 @@ public class ArrayElementValue extends ElementValue
 
     public ElementValue[] getElementValuesArray()
     {
-        return evalues;
+        return elementValues;
     }
 
     public int getElementValuesArraySize()
     {
-        return evalues.length;
+        return elementValues.length;
     }
 }

@@ -329,7 +329,7 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof ThaiBuddhistEra == false) {
+        if (!(era instanceof ThaiBuddhistEra)) {
             throw new ClassCastException("Era must be BuddhistEra");
         }
         return (era == ThaiBuddhistEra.BE ? yearOfEra : 1 - yearOfEra);
@@ -348,21 +348,21 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
     //-----------------------------------------------------------------------
     @Override
     public ValueRange range(ChronoField field) {
-        switch (field) {
-            case PROLEPTIC_MONTH: {
+        return switch (field) {
+            case PROLEPTIC_MONTH -> {
                 ValueRange range = PROLEPTIC_MONTH.range();
-                return ValueRange.of(range.getMinimum() + YEARS_DIFFERENCE * 12L, range.getMaximum() + YEARS_DIFFERENCE * 12L);
+                yield ValueRange.of(range.getMinimum() + YEARS_DIFFERENCE * 12L, range.getMaximum() + YEARS_DIFFERENCE * 12L);
             }
-            case YEAR_OF_ERA: {
+            case YEAR_OF_ERA -> {
                 ValueRange range = YEAR.range();
-                return ValueRange.of(1, -(range.getMinimum() + YEARS_DIFFERENCE) + 1, range.getMaximum() + YEARS_DIFFERENCE);
+                yield ValueRange.of(1, -(range.getMinimum() + YEARS_DIFFERENCE) + 1, range.getMaximum() + YEARS_DIFFERENCE);
             }
-            case YEAR: {
+            case YEAR -> {
                 ValueRange range = YEAR.range();
-                return ValueRange.of(range.getMinimum() + YEARS_DIFFERENCE, range.getMaximum() + YEARS_DIFFERENCE);
+                yield ValueRange.of(range.getMinimum() + YEARS_DIFFERENCE, range.getMaximum() + YEARS_DIFFERENCE);
             }
-        }
-        return field.range();
+            default -> field.range();
+        };
     }
 
     //-----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6515172 8148766
  * @summary Check that availableProcessors reports the correct value when running in a cpuset on linux
  * @requires os.family == "linux"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver AvailableProcessors
@@ -87,6 +88,7 @@ public class AvailableProcessors {
                 System.out.println("Final command line: " +
                                    ProcessTools.getCommandLine(pb));
                 OutputAnalyzer output = ProcessTools.executeProcess(pb);
+                output.shouldHaveExitValue(0);
                 output.shouldContain(SUCCESS_STRING);
             }
         }

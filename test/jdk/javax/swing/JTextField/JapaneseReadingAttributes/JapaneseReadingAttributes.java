@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class JapaneseReadingAttributes {
     private static void setupUI() {
         String description = " 1. Go to \"Language Preferences -> Add a Language"
                             + "\" and add \"Japanese\"\n"
-                            + " 2. Set current IM to \"Japanese\" \n"
+                            + " 2. Set current IM to \"Japanese\" and IME option to \"Full width Katakana\" \n"
                             + " 3. Try typing in the text field to ensure"
                             + " that Japanese IME has been successfully"
                             + " selected \n"

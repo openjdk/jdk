@@ -39,7 +39,7 @@ import jdk.test.lib.Platform;
  * @build  sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Xbatch -XX:StartFlightRecording=dumponexit=true jdk.jfr.event.runtime.TestThrowableInstrumentation
+ *                   -Xbatch -XX:StartFlightRecording:dumponexit=true jdk.jfr.event.runtime.TestThrowableInstrumentation
  */
 public class TestThrowableInstrumentation {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();

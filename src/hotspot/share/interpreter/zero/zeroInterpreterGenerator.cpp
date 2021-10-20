@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
-#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/zero/bytecodeInterpreter.hpp"

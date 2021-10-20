@@ -34,6 +34,7 @@ import java.security.InvalidKeyException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.Arrays;
 
 /**
  * This class enables a programmer to create an object and protect its
@@ -171,10 +172,11 @@ public class SealedObject implements Serializable {
          */
         try {
             this.encryptedContent = c.doFinal(content);
-        }
-        catch (BadPaddingException ex) {
+        } catch (BadPaddingException ex) {
             // if sealing is encryption only
             // Should never happen??
+        } finally {
+            Arrays.fill(content, (byte)0);
         }
 
         // Save the parameters

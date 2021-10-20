@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestDSAKeyLength
- * @run main/othervm TestDSAKeyLength sm
+ * @run main/othervm -Djava.security.manager=allow TestDSAKeyLength sm
  */
 
 import java.security.InvalidKeyException;

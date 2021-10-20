@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,70 +188,21 @@ public class BasicTypeDataBase implements TypeDataBase {
       return false;
     }
 
-    // The first implementation searched three locations for this vtbl
-    // value; scanning through the entire object was considered, but
-    // we thought we knew where we were looking, and looking only in
-    // these specific locations should reduce the probability of
-    // mistaking random bits as a pointer (although, realistically
-    // speaking, the likelihood of finding a match between the bit
-    // pattern of, for example, a double and the vtbl is vanishingly
-    // small.)
-    //    1. The first word of the object (should handle MSVC++ as
-    //    well as the solstudio compilers with compatibility set to
-    //    v5.0 or greater)
-    //    2. and 3. The last two Address-aligned words of the part of
-    //    the object defined by its topmost polymorphic superclass.
-    //    This should handle the solstudio compilers, v4.2 or
-    //    earlier, as well as any other compilers which place the vptr
-    //    at the end of the user-defined fields of the first base
-    //    class with virtual functions.
-    //
-    // Unfortunately this algorithm did not work properly for the
-    // specific case of the ThreadShadow/Thread inheritance situation,
-    // because the Solaris compiler seems to cleverly eliminate the
-    // vtbl for ThreadShadow since the only virtual is empty. (We
-    // should get rid of the ThreadShadow and fix the include
-    // databases, but need to postpone this for the present.) The
-    // current solution performs the three-location check for this
-    // class and all of its known superclasses rather than just the
-    // topmost polymorphic one.
-
-    Type curType = type;
-
+    // See if the vtable at the first address of the object matches the vtable of the
+    // specified type. Note this code used to be much more complex in order to support
+    // Solaris. It included looking at the last 2 words of the object and also trying
+    // to match on all supertypes of the specified type. This turned out to be buggy,
+    // and was removed since Solaris is no longer supported. See JDK-8269830.
     try {
-      while (curType != null) {
-        // Using the size information we have for this type, check the
-        // three locations described above.
-
-        // (1)
-        if (vtblAddr.equals(addr.getAddressAt(0))) {
-          return true;
+      if (vtblAddr.equals(addr.getAddressAt(0))) {
+        return true;
+      } else {
+        if (DEBUG) {
+          System.err.println("BasicTypeDataBase.addressTypeIsEqualToType: all vptr tests failed for type " +  type.getName());
         }
-
-        // (2)
-        long offset = curType.getSize();
-        // I don't think this should be misaligned under any
-        // circumstances, but I'm not sure (FIXME: also not sure which
-        // way to go here, up or down -- assuming down)
-        offset -= (offset % getAddressSize());
-        if (offset <= 0) {
-          return false;
-        }
-        if (vtblAddr.equals(addr.getAddressAt(offset))) {
-          return true;
-        }
-        offset -= getAddressSize();
-        if (offset <= 0) {
-          return false;
-        }
-        if (vtblAddr.equals(addr.getAddressAt(offset))) {
-          return true;
-        }
-
-        curType = curType.getSuperclass();
+        return false;
       }
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       // Any UnmappedAddressExceptions, etc. are a good indication
       // that the pointer is not of the specified type
       if (DEBUG) {
@@ -261,13 +212,6 @@ public class BasicTypeDataBase implements TypeDataBase {
 
       return false;
     }
-
-    if (DEBUG) {
-      System.err.println("BasicTypeDataBase.addressTypeIsEqualToType: all vptr tests failed for type " +
-                         type.getName());
-    }
-
-    return false;
   }
 
   public Type findDynamicTypeForAddress(Address addr, Type baseType) {

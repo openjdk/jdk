@@ -269,6 +269,40 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     return new SubINode( add1, in2->in(1) );
   }
 
+  // Associative
+  if (op1 == Op_MulI && op2 == Op_MulI) {
+    Node* sub_in1 = NULL;
+    Node* sub_in2 = NULL;
+    Node* mul_in = NULL;
+
+    if (in1->in(1) == in2->in(1)) {
+      // Convert "a*b-a*c into a*(b-c)
+      sub_in1 = in1->in(2);
+      sub_in2 = in2->in(2);
+      mul_in = in1->in(1);
+    } else if (in1->in(2) == in2->in(1)) {
+      // Convert a*b-b*c into b*(a-c)
+      sub_in1 = in1->in(1);
+      sub_in2 = in2->in(2);
+      mul_in = in1->in(2);
+    } else if (in1->in(2) == in2->in(2)) {
+      // Convert a*c-b*c into (a-b)*c
+      sub_in1 = in1->in(1);
+      sub_in2 = in2->in(1);
+      mul_in = in1->in(2);
+    } else if (in1->in(1) == in2->in(2)) {
+      // Convert a*b-c*a into a*(b-c)
+      sub_in1 = in1->in(2);
+      sub_in2 = in2->in(1);
+      mul_in = in1->in(1);
+    }
+
+    if (mul_in != NULL) {
+      Node* sub = phase->transform(new SubINode(sub_in1, sub_in2));
+      return new MulINode(mul_in, sub);
+    }
+  }
+
   // Convert "0-(A>>31)" into "(A>>>31)"
   if ( op2 == Op_RShiftI ) {
     Node *in21 = in2->in(1);
@@ -393,6 +427,40 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new SubLNode( add1, in2->in(1) );
   }
 
+  // Associative
+  if (op1 == Op_MulL && op2 == Op_MulL) {
+    Node* sub_in1 = NULL;
+    Node* sub_in2 = NULL;
+    Node* mul_in = NULL;
+
+    if (in1->in(1) == in2->in(1)) {
+      // Convert "a*b-a*c into a*(b+c)
+      sub_in1 = in1->in(2);
+      sub_in2 = in2->in(2);
+      mul_in = in1->in(1);
+    } else if (in1->in(2) == in2->in(1)) {
+      // Convert a*b-b*c into b*(a-c)
+      sub_in1 = in1->in(1);
+      sub_in2 = in2->in(2);
+      mul_in = in1->in(2);
+    } else if (in1->in(2) == in2->in(2)) {
+      // Convert a*c-b*c into (a-b)*c
+      sub_in1 = in1->in(1);
+      sub_in2 = in2->in(1);
+      mul_in = in1->in(2);
+    } else if (in1->in(1) == in2->in(2)) {
+      // Convert a*b-c*a into a*(b-c)
+      sub_in1 = in1->in(2);
+      sub_in2 = in2->in(1);
+      mul_in = in1->in(1);
+    }
+
+    if (mul_in != NULL) {
+      Node* sub = phase->transform(new SubLNode(sub_in1, sub_in2));
+      return new MulLNode(mul_in, sub);
+    }
+  }
+
   // Convert "0L-(A>>63)" into "(A>>>63)"
   if ( op2 == Op_RShiftL ) {
     Node *in21 = in2->in(1);
@@ -464,13 +532,6 @@ Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // return new (phase->C, 3) AddFNode(in(1), phase->makecon( TypeF::make(-t2->getf()) ) );
   }
 
-  // Not associative because of boundary conditions (infinity)
-  if (IdealizedNumerics && !phase->C->method()->is_strict() &&
-      in(2)->is_Add() && in(1) == in(2)->in(1)) {
-    // Convert "x - (x+y)" into "-y"
-    return new SubFNode(phase->makecon(TypeF::ZERO), in(2)->in(2));
-  }
-
   // Cannot replace 0.0-X with -X because a 'fsub' bytecode computes
   // 0.0-0.0 as +0.0, while a 'fneg' bytecode computes -0.0.
   //if( phase->type(in(1)) == TypeF::ZERO )
@@ -504,13 +565,6 @@ Node *SubDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   // Convert "x-c0" into "x+ -c0".
   if( t2->base() == Type::DoubleCon ) { // Might be bottom or top...
     // return new (phase->C, 3) AddDNode(in(1), phase->makecon( TypeD::make(-t2->getd()) ) );
-  }
-
-  // Not associative because of boundary conditions (infinity)
-  if (IdealizedNumerics && !phase->C->method()->is_strict() &&
-      in(2)->is_Add() && in(1) == in(2)->in(1)) {
-    // Convert "x - (x+y)" into "-y"
-    return new SubDNode(phase->makecon(TypeD::ZERO), in(2)->in(2));
   }
 
   // Cannot replace 0.0-X with -X because a 'dsub' bytecode computes

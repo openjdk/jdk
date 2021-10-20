@@ -48,7 +48,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.WriterTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.WriterTest
  * @run testng/othervm stream.XMLStreamWriterTest.WriterTest
  * @summary Test XMLStreamWriter functionality.
  */

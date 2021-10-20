@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ public abstract class Dependencies {
 
             @Override
             public boolean equals(Object obj) {
-                return obj instanceof Node && data.equals(((Node) obj).data);
+                return obj instanceof Node node && data.equals(node.data);
             }
 
             @Override
@@ -401,8 +401,8 @@ public abstract class Dependencies {
 
             @Override
             public void visitNode(Node node, Void arg) {
-                if (node instanceof CompletionNode) {
-                    if (((CompletionNode) node).ck != ck) {
+                if (node instanceof CompletionNode completionNode) {
+                    if (completionNode.ck != ck) {
                         dependencyNodeMap.remove(node.data);
                     }
                 }
@@ -410,8 +410,8 @@ public abstract class Dependencies {
 
             @Override
             public void visitDependency(GraphUtils.DependencyKind dk, Node from, Node to, Void arg) {
-                if (to instanceof CompletionNode) {
-                    if (((CompletionNode) to).ck != ck) {
+                if (to instanceof CompletionNode completionNode) {
+                    if (completionNode.ck != ck) {
                         from.depsByKind.get(dk).remove(to);
                     }
                 }

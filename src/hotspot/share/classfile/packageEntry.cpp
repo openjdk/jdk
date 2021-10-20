@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/archiveUtils.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/archiveUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -197,8 +197,6 @@ PackageEntryTable::~PackageEntryTable() {
 typedef ResourceHashtable<
   const PackageEntry*,
   PackageEntry*,
-  primitive_hash<const PackageEntry*>,
-  primitive_equals<const PackageEntry*>,
   557, // prime number
   ResourceObj::C_HEAP> ArchivedPackageEntries;
 static ArchivedPackageEntries* _archived_packages_entries = NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,8 +286,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 if (options.isSet("accessInternalAPI"))
                     ModuleHelper.addExports(getClass().getModule(), processorClassLoader.getUnnamedModule());
 
-                if (processorClassLoader != null && processorClassLoader instanceof Closeable) {
-                    compiler.closeables = compiler.closeables.prepend((Closeable) processorClassLoader);
+                if (processorClassLoader != null && processorClassLoader instanceof Closeable closeable) {
+                    compiler.closeables = compiler.closeables.prepend(closeable);
                 }
             }
         } catch (SecurityException e) {
@@ -343,7 +343,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             platformProcessors = platformProvider.getAnnotationProcessors()
                                                  .stream()
                                                  .map(PluginInfo::getPlugin)
-                                                 .collect(Collectors.toList());
+                                                 .toList();
         }
         List<Iterator<? extends Processor>> iterators = List.of(processorIterator,
                                                                 platformProcessors.iterator());
@@ -376,8 +376,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * @param e   If non-null, pass this exception to Abort
      */
     private Iterator<Processor> handleServiceLoaderUnavailability(String key, Exception e) {
-        if (fileManager instanceof JavacFileManager) {
-            StandardJavaFileManager standardFileManager = (JavacFileManager) fileManager;
+        if (fileManager instanceof JavacFileManager standardFileManager) {
             Iterable<? extends Path> workingPath = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
                 ? standardFileManager.getLocationAsPaths(ANNOTATION_PROCESSOR_PATH)
                 : standardFileManager.getLocationAsPaths(CLASS_PATH);
@@ -880,8 +879,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
          */
         public void close() {
             if (processorIterator != null &&
-                processorIterator instanceof ServiceIterator) {
-                ((ServiceIterator) processorIterator).close();
+                processorIterator instanceof ServiceIterator serviceIterator) {
+                serviceIterator.close();
             }
         }
     }
@@ -972,7 +971,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * Computes the set of annotations on the symbol in question.
      * Leave class public for external testing purposes.
      */
-    @SuppressWarnings("preview")
     public static class ComputeAnnotationSet extends
         ElementScanner14<Set<TypeElement>, Set<TypeElement>> {
         final Elements elements;

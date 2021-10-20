@@ -620,7 +620,7 @@ final class StackStreamFactory {
             super(walker, FILL_CLASS_REFS_ONLY|GET_CALLER_CLASS);
         }
 
-        final class ClassBuffer extends FrameBuffer<Class<?>> {
+        static final class ClassBuffer extends FrameBuffer<Class<?>> {
             Class<?>[] classes;      // caller class for fast path
             ClassBuffer(int batchSize) {
                 super(batchSize);

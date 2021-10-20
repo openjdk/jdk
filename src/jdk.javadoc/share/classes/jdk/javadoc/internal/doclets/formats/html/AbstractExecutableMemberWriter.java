@@ -41,6 +41,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
@@ -91,7 +92,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            content.add(Entity.ZERO_WIDTH_SPACE);
+            content.add(new HtmlTree(TagName.WBR));
         }
         content.add(signature);
 
@@ -132,13 +133,13 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     /**
      * Add the parameter for the executable member.
      *
-     * @param member the member to write parameter for.
      * @param param the parameter that needs to be written.
+     * @param paramType the type of the parameter.
      * @param isVarArg true if this is a link to var arg.
      * @param tree the content tree to which the parameter information will be added.
      */
-    protected void addParam(ExecutableElement member, VariableElement param, TypeMirror paramType,
-            boolean isVarArg, Content tree) {
+    protected void addParam(VariableElement param, TypeMirror paramType, boolean isVarArg,
+                            Content tree) {
         Content link = writer.getLink(new HtmlLinkInfo(configuration, EXECUTABLE_MEMBER_PARAM,
                 paramType).varargs(isVarArg));
         tree.add(link);
@@ -209,8 +210,8 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addParameters(ExecutableElement member, Content htmltree) {
         Content paramTree = getParameters(member, false);
         if (paramTree.charCount() > 2) {
-            // only add zero-width-space for non-empty parameters
-            htmltree.add(Entity.ZERO_WIDTH_SPACE);
+            // only add <wbr> for non-empty parameters
+            htmltree.add(new HtmlTree(TagName.WBR));
         }
         htmltree.add(paramTree);
     }
@@ -248,7 +249,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                                 .add(" ");
                     }
                 }
-                addParam(member, param, paramType,
+                addParam(param, paramType,
                     (paramstart == parameters.size() - 1) && member.isVarArgs(), paramTree);
                 break;
             }
@@ -267,7 +268,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                             .add(" ");
                 }
             }
-            addParam(member, parameters.get(i), instMeth.getParameterTypes().get(i),
+            addParam(parameters.get(i), instMeth.getParameterTypes().get(i),
                     (i == parameters.size() - 1) && member.isVarArgs(),
                     paramTree);
         }

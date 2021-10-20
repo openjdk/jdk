@@ -141,7 +141,7 @@ abstract class CramMD5Base {
         clearPassword();
     }
 
-    static private final int MD5_BLOCKSIZE = 64;
+    private static final int MD5_BLOCKSIZE = 64;
     /**
      * Hashes its input arguments according to HMAC-MD5 (RFC 2104)
      * and returns the resulting digest in its ASCII representation.
@@ -155,7 +155,7 @@ abstract class CramMD5Base {
      *       opad is the byte 0x5c repeated 64 times
      *       text is the data to be protected
      */
-    final static String HMAC_MD5(byte[] key, byte[] text)
+    static final String HMAC_MD5(byte[] key, byte[] text)
         throws NoSuchAlgorithmException {
 
         MessageDigest md5 = MessageDigest.getInstance("MD5");

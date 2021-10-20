@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"

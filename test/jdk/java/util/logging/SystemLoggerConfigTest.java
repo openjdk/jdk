@@ -50,7 +50,7 @@ import sun.util.logging.PlatformLogger;
  * @summary Tests configuration of loggers.
  * @modules java.logging/sun.util.logging.internal java.base/sun.util.logging
  * @run  main/othervm SystemLoggerConfigTest NOSECURITY
- * @run  main/othervm SystemLoggerConfigTest WITHSECURITY
+ * @run  main/othervm -Djava.security.manager=allow SystemLoggerConfigTest WITHSECURITY
  *
  * @author danielfuchs
  */

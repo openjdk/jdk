@@ -121,7 +121,7 @@ final class EventHandlerCreator {
                 if (internalName != null) {
                     fieldInfos.add(new FieldInfo(fieldName, fieldDescriptor, internalName));
                 } else {
-                    throw new InternalError("Could not locate field " + fieldName + " for event type" + type.getName());
+                    throw new InternalError("Could not locate field " + fieldName + " for event type " + type.getName());
                 }
             }
         }

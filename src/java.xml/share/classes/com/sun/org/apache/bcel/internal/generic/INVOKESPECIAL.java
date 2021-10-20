@@ -34,7 +34,7 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * <PRE>Stack: ..., objectref, [arg1, [arg2 ...]] -&gt; ...</PRE>
  *
  * @see
- * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokespecial">
+ * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokespecial">
  * The invokespecial instruction in The Java Virtual Machine Specification</a>
  */
 public class INVOKESPECIAL extends InvokeInstruction {

@@ -26,13 +26,20 @@
  * @key headful
  * @bug 8073453
  * @summary Focus doesn't move when pressing Shift + Tab keys
- * @author Dmitry Markov
  * @compile SwingFocusTransitionTest.java
  * @run main/othervm SwingFocusTransitionTest
  */
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.LayoutFocusTraversalPolicy;
+import javax.swing.SwingUtilities;
+import java.awt.Component;
+import java.awt.DefaultFocusTraversalPolicy;
+import java.awt.GridLayout;
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
 
 public class SwingFocusTransitionTest {
@@ -44,7 +51,7 @@ public class SwingFocusTransitionTest {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -112,19 +119,21 @@ public class SwingFocusTransitionTest {
         p.add(panel);
 
         frame.add(p);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    private static void checkFocusOwner(final Component component) throws Exception {
+    private static void checkFocusOwner(final Component component)
+            throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 if (component != frame.getFocusOwner()) {
-                    throw new RuntimeException("Test Failed! Incorrect focus owner: " + frame.getFocusOwner() +
+                    throw new RuntimeException("Test Failed! Incorrect focus" +
+                            " owner: " + frame.getFocusOwner() +
                             ", but expected: " + component);
                 }
             }
         });
     }
 }
-

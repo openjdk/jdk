@@ -72,7 +72,9 @@ public class MultiCommand extends AbstractTestBase {
 
             Executable exec = Utils.getRandomElement(METHODS).first;
             MethodDescriptor md;
-            if (validOnly) {
+
+            // Command.quiet discards the method descriptor - can never fail on the method descriptor
+            if (validOnly || cmd == Command.QUIET) {
                 md = AbstractTestBase.getValidMethodDescriptor(exec);
             } else {
                 md = AbstractTestBase.METHOD_GEN.generateRandomDescriptor(exec);

@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary Same as HelloCustom, but add -XX:StartFlightRecording=dumponexit=true to the runtime
+ * @summary Same as HelloCustom, but add -XX:StartFlightRecording:dumponexit=true to the runtime
  *          options. This makes sure that the shared classes are compatible with both
  *          JFR and JVMTI ClassFileLoadHook.
  * @requires vm.hasJFR
@@ -47,6 +47,6 @@ import sun.hotspot.WhiteBox;
 
 public class HelloCustom_JFR {
     public static void main(String[] args) throws Exception {
-        HelloCustom.run("-XX:StartFlightRecording=dumponexit=true", "-Xlog:cds+jvmti=debug");
+        HelloCustom.run("-XX:StartFlightRecording:dumponexit=true", "-Xlog:cds+jvmti=debug");
     }
 }

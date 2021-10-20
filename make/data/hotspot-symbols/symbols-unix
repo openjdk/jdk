@@ -52,6 +52,8 @@ JVM_DefineClass
 JVM_DefineClassWithSource
 JVM_DesiredAssertionStatus
 JVM_DumpAllStacks
+JVM_DumpClassListToFile
+JVM_DumpDynamicArchive
 JVM_DumpThreads
 JVM_FillInStackTrace
 JVM_FindClassFromCaller
@@ -181,6 +183,7 @@ JVM_ReferenceRefersTo
 JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
+JVM_ReportFinalizationComplete
 JVM_ResumeThread
 JVM_SetArrayElement
 JVM_SetClassSigners

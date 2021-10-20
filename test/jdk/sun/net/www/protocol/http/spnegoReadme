@@ -105,7 +105,7 @@ several configurations are needed to perform a success communication:
    It's only needed when you encounter a server which knows Negotiate
    but doesn't know about SPNEGO.
 
-   If http.auth.preference is not set, the internal order choosen is:
+   If http.auth.preference is not set, the internal order chosen is:
       GSS/SPNEGO -> Digest -> BTLM -> Basic
 
    Noticed that Kerberos does not appear in this list, since whenever

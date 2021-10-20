@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,6 +182,7 @@ public class Taskbar {
      *  an {@code RuntimePermission("canProcessApplicationEvents")} permissions.
      */
     private void checkEventsProcessingPermission(){
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission(
@@ -322,7 +323,7 @@ public class Taskbar {
     }
 
     /**
-     * Changes this application's icon to the provided image.
+     * Requests the system to change this application's icon to the provided {@code image}.
      *
      * @param image to change
      * @throws SecurityException if a security manager exists and it denies the
@@ -338,6 +339,10 @@ public class Taskbar {
 
     /**
      * Obtains an image of this application's icon.
+     *
+     * @apiNote The returned icon image may not be equal
+     * to an image set by {@link java.awt.Taskbar#setIconImage},
+     * but should be visually similar.
      *
      * @return an image of this application's icon
      * @throws SecurityException if a security manager exists and it denies the

@@ -33,6 +33,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -383,19 +384,27 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return maskFactory(bits);
     }
 
+#if[BITWISE]
     /*package-private*/
     @ForceInline
-    static boolean doBinTest(int cond, $type$ a, $type$ b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a < b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a > b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError(Integer.toHexString(cond));
+    static $type$ rotateLeft($type$ a, int n) {
+#if[intOrLong]
+        return $Boxtype$.rotateLeft(a, n);
+#else[intOrLong]
+        return ($type$)((((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) << (n & $Boxtype$.SIZE-1)) | (((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) >>> ($Boxtype$.SIZE - (n & $Boxtype$.SIZE-1))));
+#end[intOrLong]
     }
+
+    /*package-private*/
+    @ForceInline
+    static $type$ rotateRight($type$ a, int n) {
+#if[intOrLong]
+        return $Boxtype$.rotateRight(a, n);
+#else[intOrLong]
+        return ($type$)((((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) >>> (n & $Boxtype$.SIZE-1)) | (((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) << ($Boxtype$.SIZE - (n & $Boxtype$.SIZE-1))));
+#end[intOrLong]
+    }
+#end[BITWISE]
 
     /*package-private*/
     @Override
@@ -569,39 +578,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 return broadcast(0).lanewiseTemplate(SUB, this);
             }
 #end[BITWISE]
-#if[FP]
-            if (op == SIN) {
-                return uOp((i, a) -> ($type$) Math.sin(a));
-            } else if (op == COS) {
-                return uOp((i, a) -> ($type$) Math.cos(a));
-            } else if (op == TAN) {
-                return uOp((i, a) -> ($type$) Math.tan(a));
-            } else if (op == ASIN) {
-                return uOp((i, a) -> ($type$) Math.asin(a));
-            } else if (op == ACOS) {
-                return uOp((i, a) -> ($type$) Math.acos(a));
-            } else if (op == ATAN) {
-                return uOp((i, a) -> ($type$) Math.atan(a));
-            } else if (op == EXP) {
-                return uOp((i, a) -> ($type$) Math.exp(a));
-            } else if (op == LOG) {
-                return uOp((i, a) -> ($type$) Math.log(a));
-            } else if (op == LOG10) {
-                return uOp((i, a) -> ($type$) Math.log10(a));
-            } else if (op == CBRT) {
-                return uOp((i, a) -> ($type$) Math.cbrt(a));
-            } else if (op == SINH) {
-                return uOp((i, a) -> ($type$) Math.sinh(a));
-            } else if (op == COSH) {
-                return uOp((i, a) -> ($type$) Math.cosh(a));
-            } else if (op == TANH) {
-                return uOp((i, a) -> ($type$) Math.tanh(a));
-            } else if (op == EXPM1) {
-                return uOp((i, a) -> ($type$) Math.expm1(a));
-            } else if (op == LOG1P) {
-                return uOp((i, a) -> ($type$) Math.log1p(a));
-            }
-#end[FP]
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
@@ -614,8 +590,38 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 case VECTOR_OP_ABS: return v0 ->
                         v0.uOp((i, a) -> ($type$) Math.abs(a));
 #if[FP]
+                case VECTOR_OP_SIN: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.sin(a));
+                case VECTOR_OP_COS: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.cos(a));
+                case VECTOR_OP_TAN: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.tan(a));
+                case VECTOR_OP_ASIN: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.asin(a));
+                case VECTOR_OP_ACOS: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.acos(a));
+                case VECTOR_OP_ATAN: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.atan(a));
+                case VECTOR_OP_EXP: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.exp(a));
+                case VECTOR_OP_LOG: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.log(a));
+                case VECTOR_OP_LOG10: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.log10(a));
                 case VECTOR_OP_SQRT: return v0 ->
                         v0.uOp((i, a) -> ($type$) Math.sqrt(a));
+                case VECTOR_OP_CBRT: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.cbrt(a));
+                case VECTOR_OP_SINH: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.sinh(a));
+                case VECTOR_OP_COSH: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.cosh(a));
+                case VECTOR_OP_TANH: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.tanh(a));
+                case VECTOR_OP_EXPM1: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.expm1(a));
+                case VECTOR_OP_LOG1P: return v0 ->
+                        v0.uOp((i, a) -> ($type$) Math.log1p(a));
 #end[FP]
                 default: return null;
               }}));
@@ -673,12 +679,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 that = that.lanewise(AND, SHIFT_MASK);
             }
 #end[!FP]
-            if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-                $abstractvectortype$ neg = that.lanewise(NEG);
-                $abstractvectortype$ hi = this.lanewise(LSHL, (op == ROR) ? neg : that);
-                $abstractvectortype$ lo = this.lanewise(LSHR, (op == ROR) ? that : neg);
-                return hi.lanewise(OR, lo);
-            } else if (op == AND_NOT) {
+            if (op == AND_NOT) {
                 // FIXME: Support this in the JIT.
                 that = that.lanewise(NOT);
                 op = AND;
@@ -689,15 +690,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 }
             }
 #end[BITWISE]
-#if[FP]
-            if (op == ATAN2) {
-                return bOp(that, (i, a, b) -> ($type$) Math.atan2(a, b));
-            } else if (op == POW) {
-                return bOp(that, (i, a, b) -> ($type$) Math.pow(a, b));
-            } else if (op == HYPOT) {
-                return bOp(that, (i, a, b) -> ($type$) Math.hypot(a, b));
-            }
-#end[FP]
         }
         int opc = opCode(op);
         return VectorSupport.binaryOp(
@@ -730,7 +722,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                         v0.bOp(v1, (i, a, n) -> ($type$)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
+                case VECTOR_OP_RROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
 #end[BITWISE]
+#if[FP]
+                case VECTOR_OP_ATAN2: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> ($type$) Math.atan2(a, b));
+                case VECTOR_OP_POW: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> ($type$) Math.pow(a, b));
+                case VECTOR_OP_HYPOT: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> ($type$) Math.hypot(a, b));
+#end[FP]
                 default: return null;
                 }}));
     }
@@ -886,11 +890,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         assert(opKind(op, VO_SHIFT));
         // As per shift specification for Java, mask the shift count.
         e &= SHIFT_MASK;
-        if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-            $abstractvectortype$ hi = this.lanewise(LSHL, (op == ROR) ? -e : e);
-            $abstractvectortype$ lo = this.lanewise(LSHR, (op == ROR) ? e : -e);
-            return hi.lanewise(OR, lo);
-        }
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
             opc, getClass(), $type$.class, length(),
@@ -903,6 +902,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                         v.uOp((i, a) -> ($type$)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v, n) ->
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
+                case VECTOR_OP_RROTATE: return (v, n) ->
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -2032,17 +2035,22 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
     @ForceInline
-    private static
-    boolean compareWithOp(int cond, $type$ a, $type$ b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a <  b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a >  b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError();
+    private static boolean compareWithOp(int cond, $type$ a, $type$ b) {
+        return switch (cond) {
+            case BT_eq -> a == b;
+            case BT_ne -> a != b;
+            case BT_lt -> a < b;
+            case BT_le -> a <= b;
+            case BT_gt -> a > b;
+            case BT_ge -> a >= b;
+#if[!FP]
+            case BT_ult -> $Boxtype$.compareUnsigned(a, b) < 0;
+            case BT_ule -> $Boxtype$.compareUnsigned(a, b) <= 0;
+            case BT_ugt -> $Boxtype$.compareUnsigned(a, b) > 0;
+            case BT_uge -> $Boxtype$.compareUnsigned(a, b) >= 0;
+#end[!FP]
+            default -> throw new AssertionError();
+        };
     }
 
     /**
@@ -2250,14 +2258,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$ sliceTemplate(int origin, Vector<$Boxtype$> v1) {
         $abstractvectortype$ that = ($abstractvectortype$) v1;
         that.check(this);
-        $type$[] a0 = this.vec();
-        $type$[] a1 = that.vec();
-        $type$[] res = new $type$[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<$Boxtype$> iota = iotaShuffle();
+        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -2279,6 +2284,17 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public abstract
     $abstractvectortype$ slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    $abstractvectortype$ sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<$Boxtype$> iota = iotaShuffle();
+        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2293,21 +2309,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     unsliceTemplate(int origin, Vector<$Boxtype$> w, int part) {
         $abstractvectortype$ that = ($abstractvectortype$) w;
         that.check(this);
-        $type$[] slice = this.vec();
-        $type$[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<$Boxtype$> iota = iotaShuffle();
+        VectorMask<$Boxtype$> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast(($type$)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -2336,6 +2343,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @Override
     public abstract
     $abstractvectortype$ unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    $abstractvectortype$
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<$Boxtype$> iota = iotaShuffle();
+        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast(($type$)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {
@@ -2432,6 +2452,29 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
+    }
+
+    @ForceInline
+    private final
+    VectorShuffle<$Boxtype$> toShuffle0($Type$Species dsp) {
+        $type$[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<$Boxtype$> toShuffleTemplate(Class<?> shuffleType) {
+        $Type$Species vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), $type$.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     $Type$Vector::toShuffle0);
     }
 
     /**
@@ -3363,6 +3406,320 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 #end[byteOrShort]
 
+#if[short]
+    /**
+     * Loads a vector from an array of type {@code char[]}
+     * starting at an offset.
+     * For each vector lane, where {@code N} is the vector lane index, the
+     * array element at index {@code offset + N}
+     * is first cast to a {@code short} value and then
+     * placed into the resulting vector at lane index {@code N}.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array
+     * @return the vector loaded from an array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     */
+    @ForceInline
+    public static
+    $abstractvectortype$ fromCharArray(VectorSpecies<$Boxtype$> species,
+                                       char[] a, int offset) {
+        offset = checkFromIndexSize(offset, species.length(), a.length);
+        $Type$Species vsp = ($Type$Species) species;
+        return vsp.dummyVector().fromCharArray0(a, offset);
+    }
+
+    /**
+     * Loads a vector from an array of type {@code char[]}
+     * starting at an offset and using a mask.
+     * Lanes where the mask is unset are filled with the default
+     * value of {@code $type$} ({#if[FP]?positive }zero).
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the mask lane at index {@code N} is set then the array element at
+     * index {@code offset + N}
+     * is first cast to a {@code short} value and then
+     * placed into the resulting vector at lane index
+     * {@code N}, otherwise the default element value is placed into the
+     * resulting vector at lane index {@code N}.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array
+     * @param m the mask controlling lane selection
+     * @return the vector loaded from an array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     */
+    @ForceInline
+    public static
+    $abstractvectortype$ fromCharArray(VectorSpecies<$Boxtype$> species,
+                                       char[] a, int offset,
+                                       VectorMask<$Boxtype$> m) {
+        $Type$Species vsp = ($Type$Species) species;
+        if (offset >= 0 && offset <= (a.length - species.length())) {
+            $abstractvectortype$ zero = vsp.zero();
+            return zero.blend(zero.fromCharArray0(a, offset), m);
+        }
+
+        // FIXME: optimize
+        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        return vsp.vOp(m, i -> (short) a[offset + i]);
+    }
+
+    /**
+     * Gathers a new vector composed of elements from an array of type
+     * {@code char[]},
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane is loaded from the expression
+     * {@code (short) a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array, may be negative if relative
+     * indexes in the index map compensate to produce a value within the
+     * array bounds
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @return the vector loaded from the indexed elements of the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     * @see $abstractvectortype$#toIntArray()
+     */
+    @ForceInline
+    public static
+    $abstractvectortype$ fromCharArray(VectorSpecies<$Boxtype$> species,
+                                       char[] a, int offset,
+                                       int[] indexMap, int mapOffset) {
+        // FIXME: optimize
+        $Type$Species vsp = ($Type$Species) species;
+        return vsp.vOp(n -> (short) a[offset + indexMap[mapOffset + n]]);
+    }
+
+    /**
+     * Gathers a new vector composed of elements from an array of type
+     * {@code char[]},
+     * under the control of a mask, and
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the lane is set in the mask,
+     * the lane is loaded from the expression
+     * {@code (short) a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     * Unset lanes in the resulting vector are set to zero.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array, may be negative if relative
+     * indexes in the index map compensate to produce a value within the
+     * array bounds
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @param m the mask controlling lane selection
+     * @return the vector loaded from the indexed elements of the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     * @see $abstractvectortype$#toIntArray()
+     */
+    @ForceInline
+    public static
+    $abstractvectortype$ fromCharArray(VectorSpecies<$Boxtype$> species,
+                                       char[] a, int offset,
+                                       int[] indexMap, int mapOffset,
+                                       VectorMask<$Boxtype$> m) {
+        // FIXME: optimize
+        $Type$Species vsp = ($Type$Species) species;
+        return vsp.vOp(m, n -> (short) a[offset + indexMap[mapOffset + n]]);
+    }
+#end[short]
+
+#if[byte]
+    /**
+     * Loads a vector from an array of type {@code boolean[]}
+     * starting at an offset.
+     * For each vector lane, where {@code N} is the vector lane index, the
+     * array element at index {@code offset + N}
+     * is first converted to a {@code byte} value and then
+     * placed into the resulting vector at lane index {@code N}.
+     * <p>
+     * A {@code boolean} value is converted to a {@code byte} value by applying the
+     * expression {@code (byte) (b ? 1 : 0)}, where {@code b} is the {@code boolean} value.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array
+     * @return the vector loaded from an array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     */
+    @ForceInline
+    public static
+    $abstractvectortype$ fromBooleanArray(VectorSpecies<$Boxtype$> species,
+                                          boolean[] a, int offset) {
+        offset = checkFromIndexSize(offset, species.length(), a.length);
+        $Type$Species vsp = ($Type$Species) species;
+        return vsp.dummyVector().fromBooleanArray0(a, offset);
+    }
+
+    /**
+     * Loads a vector from an array of type {@code boolean[]}
+     * starting at an offset and using a mask.
+     * Lanes where the mask is unset are filled with the default
+     * value of {@code $type$} ({#if[FP]?positive }zero).
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the mask lane at index {@code N} is set then the array element at
+     * index {@code offset + N}
+     * is first converted to a {@code byte} value and then
+     * placed into the resulting vector at lane index
+     * {@code N}, otherwise the default element value is placed into the
+     * resulting vector at lane index {@code N}.
+     * <p>
+     * A {@code boolean} value is converted to a {@code byte} value by applying the
+     * expression {@code (byte) (b ? 1 : 0)}, where {@code b} is the {@code boolean} value.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array
+     * @param m the mask controlling lane selection
+     * @return the vector loaded from an array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     */
+    @ForceInline
+    public static
+    $abstractvectortype$ fromBooleanArray(VectorSpecies<$Boxtype$> species,
+                                          boolean[] a, int offset,
+                                          VectorMask<$Boxtype$> m) {
+        $Type$Species vsp = ($Type$Species) species;
+        if (offset >= 0 && offset <= (a.length - species.length())) {
+            $abstractvectortype$ zero = vsp.zero();
+            return zero.blend(zero.fromBooleanArray0(a, offset), m);
+        }
+
+        // FIXME: optimize
+        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        return vsp.vOp(m, i -> (byte) (a[offset + i] ? 1 : 0));
+    }
+
+    /**
+     * Gathers a new vector composed of elements from an array of type
+     * {@code boolean[]},
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane is loaded from the expression
+     * {@code (byte) (a[f(N)] ? 1 : 0)}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array, may be negative if relative
+     * indexes in the index map compensate to produce a value within the
+     * array bounds
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @return the vector loaded from the indexed elements of the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     * @see $abstractvectortype$#toIntArray()
+     */
+    @ForceInline
+    public static
+    $abstractvectortype$ fromBooleanArray(VectorSpecies<$Boxtype$> species,
+                                          boolean[] a, int offset,
+                                          int[] indexMap, int mapOffset) {
+        // FIXME: optimize
+        $Type$Species vsp = ($Type$Species) species;
+        return vsp.vOp(n -> (byte) (a[offset + indexMap[mapOffset + n]] ? 1 : 0));
+    }
+
+    /**
+     * Gathers a new vector composed of elements from an array of type
+     * {@code boolean[]},
+     * under the control of a mask, and
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the lane is set in the mask,
+     * the lane is loaded from the expression
+     * {@code (byte) (a[f(N)] ? 1 : 0)}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     * Unset lanes in the resulting vector are set to zero.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array, may be negative if relative
+     * indexes in the index map compensate to produce a value within the
+     * array bounds
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @param m the mask controlling lane selection
+     * @return the vector loaded from the indexed elements of the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     * @see $abstractvectortype$#toIntArray()
+     */
+    @ForceInline
+    public static
+    $abstractvectortype$ fromBooleanArray(VectorSpecies<$Boxtype$> species,
+                                          boolean[] a, int offset,
+                                          int[] indexMap, int mapOffset,
+                                          VectorMask<$Boxtype$> m) {
+        // FIXME: optimize
+        $Type$Species vsp = ($Type$Species) species;
+        return vsp.vOp(m, n -> (byte) (a[offset + indexMap[mapOffset + n]] ? 1 : 0));
+    }
+#end[byte]
+
     /**
      * Loads a vector from a {@linkplain ByteBuffer byte buffer}
      * starting at an offset into the byte buffer.
@@ -3501,7 +3858,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
     /**
-     * Stores this vector into an array of {@code $type$}
+     * Stores this vector into an array of type {@code $type$[]}
      * starting at offset and using a mask.
      * <p>
      * For each vector lane, where {@code N} is the vector lane index,
@@ -3692,6 +4049,331 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 #end[byteOrShort]
 
+#if[short]
+    /**
+     * Stores this vector into an array of type {@code char[]}
+     * starting at an offset.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first cast to a {@code char} value and then
+     * stored into the array element {@code a[offset+N]}.
+     *
+     * @param a the array, of type {@code char[]}
+     * @param offset the offset into the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     */
+    @ForceInline
+    public final
+    void intoCharArray(char[] a, int offset) {
+        offset = checkFromIndexSize(offset, length(), a.length);
+        $Type$Species vsp = vspecies();
+        VectorSupport.store(
+            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            a, charArrayAddress(a, offset),
+            this,
+            a, offset,
+            (arr, off, v)
+            -> v.stOp(arr, off,
+                      (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));
+    }
+
+    /**
+     * Stores this vector into an array of type {@code char[]}
+     * starting at offset and using a mask.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first cast to a {@code char} value and then
+     * stored into the array element {@code a[offset+N]}.
+     * If the mask lane at {@code N} is unset then the corresponding
+     * array element {@code a[offset+N]} is left unchanged.
+     * <p>
+     * Array range checking is done for lanes where the mask is set.
+     * Lanes where the mask is unset are not stored and do not need
+     * to correspond to legitimate elements of {@code a}.
+     * That is, unset lanes may correspond to array indexes less than
+     * zero or beyond the end of the array.
+     *
+     * @param a the array, of type {@code char[]}
+     * @param offset the offset into the array
+     * @param m the mask controlling lane storage
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     */
+    @ForceInline
+    public final
+    void intoCharArray(char[] a, int offset,
+                       VectorMask<$Boxtype$> m) {
+        if (m.allTrue()) {
+            intoCharArray(a, offset);
+        } else {
+            // FIXME: optimize
+            $Type$Species vsp = vspecies();
+            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            stOp(a, offset, m, (arr, off, i, v) -> arr[off+i] = (char) v);
+        }
+    }
+
+    /**
+     * Scatters this vector into an array of type {@code char[]}
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first cast to a {@code char} value and then
+     * stored into the array
+     * element {@code a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     *
+     * @param a the array
+     * @param offset an offset to combine with the index map offsets
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     * @see $abstractvectortype$#toIntArray()
+     */
+    @ForceInline
+    public final
+    void intoCharArray(char[] a, int offset,
+                       int[] indexMap, int mapOffset) {
+        // FIXME: optimize
+        stOp(a, offset,
+             (arr, off, i, e) -> {
+                 int j = indexMap[mapOffset + i];
+                 arr[off + j] = (char) e;
+             });
+    }
+
+    /**
+     * Scatters this vector into an array of type {@code char[]},
+     * under the control of a mask, and
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the mask lane at index {@code N} is set then
+     * the lane element at index {@code N}
+     * is first cast to a {@code char} value and then
+     * stored into the array
+     * element {@code a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     *
+     * @param a the array
+     * @param offset an offset to combine with the index map offsets
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @param m the mask
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     * @see $abstractvectortype$#toIntArray()
+     */
+    @ForceInline
+    public final
+    void intoCharArray(char[] a, int offset,
+                       int[] indexMap, int mapOffset,
+                       VectorMask<$Boxtype$> m) {
+        // FIXME: optimize
+        stOp(a, offset, m,
+             (arr, off, i, e) -> {
+                 int j = indexMap[mapOffset + i];
+                 arr[off + j] = (char) e;
+             });
+    }
+#end[short]
+
+#if[byte]
+    /**
+     * Stores this vector into an array of type {@code boolean[]}
+     * starting at an offset.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first converted to a {@code boolean} value and then
+     * stored into the array element {@code a[offset+N]}.
+     * <p>
+     * A {@code byte} value is converted to a {@code boolean} value by applying the
+     * expression {@code (b & 1) != 0} where {@code b} is the byte value.
+     *
+     * @param a the array
+     * @param offset the offset into the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     */
+    @ForceInline
+    public final
+    void intoBooleanArray(boolean[] a, int offset) {
+        offset = checkFromIndexSize(offset, length(), a.length);
+        $Type$Species vsp = vspecies();
+        ByteVector normalized = this.and((byte) 1);
+        VectorSupport.store(
+            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            a, booleanArrayAddress(a, offset),
+            normalized,
+            a, offset,
+            (arr, off, v)
+            -> v.stOp(arr, off,
+                      (arr_, off_, i, e) -> arr_[off_ + i] = (e & 1) != 0));
+    }
+
+    /**
+     * Stores this vector into an array of type {@code boolean[]}
+     * starting at offset and using a mask.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first converted to a {@code boolean} value and then
+     * stored into the array element {@code a[offset+N]}.
+     * If the mask lane at {@code N} is unset then the corresponding
+     * array element {@code a[offset+N]} is left unchanged.
+     * <p>
+     * A {@code byte} value is converted to a {@code boolean} value by applying the
+     * expression {@code (b & 1) != 0} where {@code b} is the byte value.
+     * <p>
+     * Array range checking is done for lanes where the mask is set.
+     * Lanes where the mask is unset are not stored and do not need
+     * to correspond to legitimate elements of {@code a}.
+     * That is, unset lanes may correspond to array indexes less than
+     * zero or beyond the end of the array.
+     *
+     * @param a the array
+     * @param offset the offset into the array
+     * @param m the mask controlling lane storage
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     */
+    @ForceInline
+    public final
+    void intoBooleanArray(boolean[] a, int offset,
+                          VectorMask<$Boxtype$> m) {
+        if (m.allTrue()) {
+            intoBooleanArray(a, offset);
+        } else {
+            // FIXME: optimize
+            $Type$Species vsp = vspecies();
+            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            stOp(a, offset, m, (arr, off, i, e) -> arr[off+i] = (e & 1) != 0);
+        }
+    }
+
+    /**
+     * Scatters this vector into an array of type {@code boolean[]}
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first converted to a {@code boolean} value and then
+     * stored into the array
+     * element {@code a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     * <p>
+     * A {@code byte} value is converted to a {@code boolean} value by applying the
+     * expression {@code (b & 1) != 0} where {@code b} is the byte value.
+     *
+     * @param a the array
+     * @param offset an offset to combine with the index map offsets
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     * @see $abstractvectortype$#toIntArray()
+     */
+    @ForceInline
+    public final
+    void intoBooleanArray(boolean[] a, int offset,
+                          int[] indexMap, int mapOffset) {
+        // FIXME: optimize
+        stOp(a, offset,
+             (arr, off, i, e) -> {
+                 int j = indexMap[mapOffset + i];
+                 arr[off + j] = (e & 1) != 0;
+             });
+    }
+
+    /**
+     * Scatters this vector into an array of type {@code boolean[]},
+     * under the control of a mask, and
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the mask lane at index {@code N} is set then
+     * the lane element at index {@code N}
+     * is first converted to a {@code boolean} value and then
+     * stored into the array
+     * element {@code a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     * <p>
+     * A {@code byte} value is converted to a {@code boolean} value by applying the
+     * expression {@code (b & 1) != 0} where {@code b} is the byte value.
+     *
+     * @param a the array
+     * @param offset an offset to combine with the index map offsets
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @param m the mask
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     * @see $abstractvectortype$#toIntArray()
+     */
+    @ForceInline
+    public final
+    void intoBooleanArray(boolean[] a, int offset,
+                          int[] indexMap, int mapOffset,
+                          VectorMask<$Boxtype$> m) {
+        // FIXME: optimize
+        stOp(a, offset, m,
+             (arr, off, i, e) -> {
+                 int j = indexMap[mapOffset + i];
+                 arr[off + j] = (e & 1) != 0;
+             });
+    }
+#end[byte]
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -3798,6 +4480,40 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                     (arr_, off_, i) -> arr_[off_ + i]));
     }
 
+#if[short]
+    /*package-private*/
+    abstract
+    $abstractvectortype$ fromCharArray0(char[] a, int offset);
+    @ForceInline
+    final
+    $abstractvectortype$ fromCharArray0Template(char[] a, int offset) {
+        $Type$Species vsp = vspecies();
+        return VectorSupport.load(
+            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            a, charArrayAddress(a, offset),
+            a, offset, vsp,
+            (arr, off, s) -> s.ldOp(arr, off,
+                                    (arr_, off_, i) -> (short) arr_[off_ + i]));
+    }
+#end[short]
+
+#if[byte]
+    /*package-private*/
+    abstract
+    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset);
+    @ForceInline
+    final
+    $abstractvectortype$ fromBooleanArray0Template(boolean[] a, int offset) {
+        $Type$Species vsp = vspecies();
+        return VectorSupport.load(
+            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            a, booleanArrayAddress(a, offset),
+            a, offset, vsp,
+            (arr, off, s) -> s.ldOp(arr, off,
+                                    (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
+    }
+#end[byte]
+
     @Override
     abstract
     $abstractvectortype$ fromByteArray0(byte[] a, int offset);
@@ -3822,15 +4538,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     final
     $abstractvectortype$ fromByteBuffer0Template(ByteBuffer bb, int offset) {
         $Type$Species vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            bb, offset, vsp,
-            (buf, off, s) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                return s.ldOp(wb, off,
-                        (wb_, o, i) -> wb_.get{#if[byte]?(:$Type$(}o + i * $sizeInBytes$));
-           });
+        return ScopedMemoryAccess.loadFromByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                bb, offset, vsp,
+                (buf, off, s) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off,
+                            (wb_, o, i) -> wb_.get{#if[byte]?(:$Type$(}o + i * $sizeInBytes$));
+                });
     }
 
     // Unchecked storing operations in native byte order.
@@ -3873,15 +4588,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     final
     void intoByteBuffer0(ByteBuffer bb, int offset) {
         $Type$Species vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            this, bb, offset,
-            (buf, off, v) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                v.stOp(wb, off,
-                        (wb_, o, i, e) -> wb_.put{#if[byte]?(:$Type$(}o + i * $sizeInBytes$, e));
-            });
+        ScopedMemoryAccess.storeIntoByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                this, bb, offset,
+                (buf, off, v) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off,
+                            (wb_, o, i, e) -> wb_.put{#if[byte]?(:$Type$(}o + i * $sizeInBytes$, e));
+                });
     }
 
     // End of low-level memory operations.
@@ -3934,6 +4648,30 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     static long arrayAddress($type$[] a, int index) {
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
     }
+
+#if[short]
+    static final int ARRAY_CHAR_SHIFT =
+            31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_CHAR_INDEX_SCALE);
+    static final long ARRAY_CHAR_BASE =
+            Unsafe.ARRAY_CHAR_BASE_OFFSET;
+
+    @ForceInline
+    static long charArrayAddress(char[] a, int index) {
+        return ARRAY_CHAR_BASE + (((long)index) << ARRAY_CHAR_SHIFT);
+    }
+#end[short]
+
+#if[byte]
+    static final int ARRAY_BOOLEAN_SHIFT =
+            31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_BOOLEAN_INDEX_SCALE);
+    static final long ARRAY_BOOLEAN_BASE =
+            Unsafe.ARRAY_BOOLEAN_BASE_OFFSET;
+
+    @ForceInline
+    static long booleanArrayAddress(boolean[] a, int index) {
+        return ARRAY_BOOLEAN_BASE + (((long)index) << ARRAY_BOOLEAN_SHIFT);
+    }
+#end[byte]
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {

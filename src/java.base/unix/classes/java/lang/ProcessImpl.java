@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.security.AccessController;
-import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -101,6 +100,7 @@ final class ProcessImpl extends Process {
                 EnumSet.copyOf(Arrays.asList(launchMechanisms));
         }
 
+        @SuppressWarnings("removal")
         LaunchMechanism launchMechanism() {
             return AccessController.doPrivileged(
                 (PrivilegedAction<LaunchMechanism>) () -> {
@@ -301,6 +301,7 @@ final class ProcessImpl extends Process {
                                    boolean redirectErrorStream)
         throws IOException;
 
+    @SuppressWarnings("removal")
     private ProcessImpl(final byte[] prog,
                 final byte[] argBlock, final int argc,
                 final byte[] envBlock, final int envc,
@@ -321,7 +322,7 @@ final class ProcessImpl extends Process {
         processHandle = ProcessHandleImpl.getInternal(pid);
 
         try {
-            doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 initStreams(fds, forceNullOutputStream);
                 return null;
             });
@@ -508,6 +509,7 @@ final class ProcessImpl extends Process {
 
     @Override
     public ProcessHandle toHandle() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));
