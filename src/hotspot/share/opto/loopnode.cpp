@@ -1214,7 +1214,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     Node* R2 = clamp(R, L_clamp, H_clamp);
     R2 = new SubLNode(R2, L_clamp);
     register_new_node(R2, entry_control);
-    R2 = new ConvL2INode(R2, TypeInt::INT);
+    R2 = new ConvL2INode(R2, TypeInt::POS);
     register_new_node(R2, entry_control);
 
     // Q = Q_min - L_clamp
