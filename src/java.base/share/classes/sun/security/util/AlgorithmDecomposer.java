@@ -103,12 +103,16 @@ public class AlgorithmDecomposer {
         // signature algorithm "SHA256withRSA". So we need to check both
         // "SHA-256" and "SHA256" to make the right constraint checking.
 
+        // no need to check further if algorithm doesn't contain "SHA"
+        if (!algorithm.contains("SHA")) {
+            return elements;
+        }
+
         for (Map.Entry<String, String> e : DECOMPOSED_DIGEST_NAMES.entrySet()) {
             if (elements.contains(e.getValue()) &&
                     !elements.contains(e.getKey())) {
                 elements.add(e.getKey());
-            }
-            if (elements.contains(e.getKey()) &&
+            } else if (elements.contains(e.getKey()) &&
                     !elements.contains(e.getValue())) {
                 elements.add(e.getValue());
             }
@@ -134,15 +138,6 @@ public class AlgorithmDecomposer {
         return Arrays.asList(aliases);
     }
 
-    private static void hasLoop(Set<String> elements, String find, String replace) {
-        if (elements.contains(find)) {
-            if (!elements.contains(replace)) {
-                elements.add(replace);
-            }
-            elements.remove(find);
-        }
-    }
-
     /**
      * Decomposes a standard algorithm name into sub-elements and uses a
      * consistent message digest algorithm name to avoid overly complicated
@@ -155,8 +150,18 @@ public class AlgorithmDecomposer {
 
         Set<String> elements = decomposeImpl(algorithm);
 
+        // no need to check further if algorithm doesn't contain "SHA"
+        if (!algorithm.contains("SHA")) {
+            return elements;
+        }
+
         for (Map.Entry<String, String> e : DECOMPOSED_DIGEST_NAMES.entrySet()) {
-            hasLoop(elements, e.getKey(), e.getValue());
+            if (elements.contains(e.getKey())) {
+                if (!elements.contains(e.getValue())) {
+                    elements.add(e.getValue());
+                }
+                elements.remove(e.getKey());
+            }
         }
 
         return elements;
