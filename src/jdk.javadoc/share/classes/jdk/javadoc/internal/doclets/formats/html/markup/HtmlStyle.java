@@ -577,6 +577,12 @@ public enum HtmlStyle {
     packageSignature,
 
     /**
+     * The class of a {@code span} element containing the type name in a
+     * type signature.
+     */
+    typeNameLabel,
+
+    /**
      * The class of an element containing a type signature.
      */
     typeSignature,
@@ -833,14 +839,12 @@ public enum HtmlStyle {
     // The following constants are used in various places across a variety of pages.
 
     /**
-     * The class af a {@code div} element containing a text block that is part of a
-     * documentation comment.
+     * The class of a {@code div} element containing part of a documentation comment.
      */
     block,
 
     /**
-     * The class of a {@code ul} element containing text blocks of documentation
-     * comments.
+     * The class of a {@code ul} element containing parts of documentation comments.
      */
     blockList,
 
@@ -949,12 +953,6 @@ public enum HtmlStyle {
      * The class of the {@code pre} element presenting a snippet.
      */
     snippet,
-
-    /**
-     * The class of a {@code span} element containing the type name in a
-     * type signature.
-     */
-    typeNameLabel,
 
     /**
      * The class of an {@code a} element for a link to a class or interface.
