@@ -44,7 +44,9 @@ import sun.nio.fs.AbstractFileSystemProvider;
 class UnixDomainSockets {
     private UnixDomainSockets() { }
 
-    static final UnixDomainSocketAddress UNNAMED = UnixDomainSocketAddress.of("");
+    private static class UNNAMEDHolder {
+        static final UnixDomainSocketAddress UNNAMED = UnixDomainSocketAddress.of("");
+    }
 
     private static final boolean supported;
 
@@ -71,7 +73,7 @@ class UnixDomainSockets {
             // Security check passed
         } catch (SecurityException e) {
             // Return unnamed address only if security check fails
-            addr = UNNAMED;
+            addr = getUNNAMED();
         }
         return addr;
     }
@@ -137,6 +139,8 @@ class UnixDomainSockets {
             return UnixDomainSocketAddress.of(path);
         } catch (InvalidPathException e) {
             throw new BindException("Invalid temporary directory");
+        } catch (IllegalArgumentException e) {
+            throw new UnsupportedOperationException("Unix Domain Sockets not supported on non-default file system");
         }
     }
 
@@ -177,5 +181,9 @@ class UnixDomainSockets {
         // Load all required native libs
         IOUtil.load();
         supported = init();
+    }
+
+    static UnixDomainSocketAddress getUNNAMED() {
+        return UNNAMEDHolder.UNNAMED;
     }
 }
