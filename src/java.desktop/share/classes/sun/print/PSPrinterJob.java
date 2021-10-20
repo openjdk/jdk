@@ -1630,7 +1630,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         String osname = System.getProperty("os.name");
         if (osname.equals("Linux") || osname.contains("OS X")) {
             execCmd = new String[ncomps];
-            execCmd[n++] = "/usr/bin/lpr";
+            execCmd[n++] = System.getProperty("sun.print.lprPath", "/usr/bin/lpr");
             if ((pFlags & PRINTER) != 0) {
                 execCmd[n++] = "-P" + printer;
             }
@@ -1652,7 +1652,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         } else {
             ncomps+=1; //add 1 arg for lp
             execCmd = new String[ncomps];
-            execCmd[n++] = "/usr/bin/lp";
+            execCmd[n++] = System.getProperty("sun.print.lpPath", "/usr/bin/lp");
             execCmd[n++] = "-c";           // make a copy of the spool file
             if ((pFlags & PRINTER) != 0) {
                 execCmd[n++] = "-d" + printer;
