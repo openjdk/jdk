@@ -2505,9 +2505,9 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
       if (p_scale != NULL) {
         jint shift_amount = exp->in(2)->get_int();
         if (bt == T_INT) {
-          *p_scale = java_shift_left(1, shift_amount);
+          *p_scale = java_shift_left(1, (juint)shift_amount);
         } else if (bt == T_LONG) {
-          *p_scale = java_shift_left((jlong)1, shift_amount);
+          *p_scale = java_shift_left((jlong)1, (julong)shift_amount);
         }
       }
       return true;
