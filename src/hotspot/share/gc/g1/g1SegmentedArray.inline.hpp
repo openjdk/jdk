@@ -61,8 +61,19 @@ void G1SegmentedArrayBufferList<flag>::bulk_add(G1SegmentedArrayBuffer<flag>& fi
                                                 size_t num,
                                                 size_t mem_size) {
   _list.prepend(first, last);
-  Atomic::add(&_num_buffers, num, memory_order_relaxed);
-  Atomic::add(&_mem_size, mem_size, memory_order_relaxed);
+  size_t buffer = Atomic::add(&_num_buffers, num, memory_order_relaxed);
+  size_t mem = Atomic::add(&_mem_size, mem_size, memory_order_relaxed);
+  assert(buffer >= num, "Must be");
+  assert(mem >= mem_size, "Must be");
+}
+
+template<MEMFLAGS flag>
+void G1SegmentedArrayBufferList<flag>::add(G1SegmentedArrayBuffer<flag>& elem) {
+  _list.prepend(elem);
+  size_t num_buffers = Atomic::add(&_num_buffers, (size_t)1, memory_order_relaxed);
+  size_t mem_size = Atomic::add(&_mem_size, elem.elem_size(), memory_order_relaxed);
+  assert(num_buffers >= (size_t)1, "Must be");
+  assert(mem_size >= elem.elem_size(), "Must be");
 }
 
 template<MEMFLAGS flag>
@@ -77,8 +88,10 @@ G1SegmentedArrayBuffer<flag>* G1SegmentedArrayBufferList<flag>::get() {
 
   G1SegmentedArrayBuffer<flag>* result = _list.pop();
   if (result != nullptr) {
-    Atomic::dec(&_num_buffers, memory_order_relaxed);
-    Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
+    size_t num_buffers = Atomic::sub(&_num_buffers, (size_t)1,memory_order_relaxed);
+    size_t mem_size = Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
+    assert(num_buffers >= 0, "Must be");
+    assert(mem_size >= 0, "Must be");
   }
   return result;
 }
@@ -93,8 +106,10 @@ G1SegmentedArrayBuffer<flag>* G1SegmentedArrayBufferList<flag>::get_all(size_t& 
   mem_size = Atomic::load(&_mem_size);
 
   if (result != nullptr) {
-    Atomic::sub(&_num_buffers, num_buffers, memory_order_relaxed);
-    Atomic::sub(&_mem_size, mem_size, memory_order_relaxed);
+    size_t buffers = Atomic::sub(&_num_buffers, num_buffers, memory_order_relaxed);
+    size_t mem = Atomic::sub(&_mem_size, mem_size, memory_order_relaxed);
+    assert(buffers >= 0, "Must be");
+    assert(mem >= 0, "Must be");
   }
   return result;
 }
@@ -132,8 +147,9 @@ G1SegmentedArrayBuffer<flag>* G1SegmentedArray<Elem, flag>::create_new_buffer(G1
   // Install it as current allocation buffer.
   G1SegmentedArrayBuffer<flag>* old = Atomic::cmpxchg(&_first, prev, next);
   if (old != prev) {
+    // reuse the newly allocated or poped buffer by adding it into free buffer list.
+    _free_buffer_list->add(*next);
     // Somebody else installed the buffer, use that one.
-    delete next;
     return old;
   } else {
     // Did we install the first element in the list? If so, this is also the last.
