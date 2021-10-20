@@ -24,11 +24,11 @@
 /**
  * @test
  * @key headful
- * @bug 8007267
+ * @bug 8007267 8233648
  * @summary [macosx] com.apple.eawt.Application.setDefaultMenuBar is not working
  * @requires (os.family == "mac")
  * @modules java.desktop/com.apple.eawt
- * @run main DefaultMenuBarTest
+ * @run main/othervm DefaultMenuBarTest
  */
 
 import java.awt.Robot;
