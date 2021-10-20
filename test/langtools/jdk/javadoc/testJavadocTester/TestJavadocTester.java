@@ -407,12 +407,12 @@ public class TestJavadocTester extends JavadocTester {
                 .setExpectOrdered(false)
                 .checkUnique("id=\"m1()\"", "id=\"m2()\"", "id=\"m3()\"")   // expect unique
                 .checkUnique("m1()", "m2()", "m3()");                       // expect not unique
-        checkMessages(fix("Passed: p/C.html: id=\"m1()\" is unique",
+        checkMessages("Passed: p/C.html: id=\"m1()\" is unique",
                 "Passed: p/C.html: id=\"m2()\" is unique",
                 "Passed: p/C.html: id=\"m3()\" is unique",
                 "FAILED: p/C.html: m1() is not unique",
                 "FAILED: p/C.html: m2() is not unique",
-                "FAILED: p/C.html: m3() is not unique"));
+                "FAILED: p/C.html: m3() is not unique");
     }
 
     /**

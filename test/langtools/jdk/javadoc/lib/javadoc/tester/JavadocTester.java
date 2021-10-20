@@ -895,22 +895,6 @@ public abstract class JavadocTester {
     }
 
     /**
-     * Searches for the string in the given file and return true
-     * if the string was found.
-     *
-     * @param fileString    the contents of the file to search through
-     * @param stringToFind  the string to search for
-     * @return              true if the string was found
-     */
-    private boolean findString(String fileString, String stringToFind) {
-        // javadoc (should) always use the platform newline sequence,
-        // but in the strings to find it is more convenient to use the Java
-        // newline character. So we translate \n to NL before we search.
-        stringToFind = stringToFind.replace("\n", NL);
-        return fileString.contains(stringToFind);
-    }
-
-    /**
      * Compares the two given files.
      *
      * @param baseDir1 the directory in which to locate the first file
@@ -1052,10 +1036,10 @@ public abstract class JavadocTester {
          */
         public OutputChecker check(String... strings) {
             if (name == null) {
-                out.println("Skipping checks for:\n"
+                out.println("Skipping checks for:" + NL
                         + List.of(strings).stream()
                         .map(s -> "    " + toShortString(s))
-                        .collect(Collectors.joining("\n")));
+                        .collect(Collectors.joining(NL)));
                 return this;
             }
 
@@ -1074,10 +1058,10 @@ public abstract class JavadocTester {
          */
         public OutputChecker check(Pattern... patterns) {
             if (name == null) {
-                out.println("Skipping checks for:\n"
+                out.println("Skipping checks for:" + NL
                         + List.of(patterns).stream()
                         .map(p -> "    " + toShortString(p.pattern()))
-                        .collect(Collectors.joining("\n")));
+                        .collect(Collectors.joining(NL)));
                 return this;
             }
             for (Pattern pattern : patterns) {
