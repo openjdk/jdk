@@ -51,6 +51,7 @@
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jfr/vmStructs_jfr.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -193,6 +194,12 @@
                 volatile_nonstatic_field,                                                                                            \
                 static_field,                                                                                                        \
                 unchecked_nonstatic_field)                                                                                           \
+                                                                                                                                     \
+  /**************/                                                                                                                   \
+  /* JFR fields */                                                                                                                   \
+  /**************/                                                                                                                   \
+                                                                                                                                     \
+  VM_STRUCTS_JFR(nonstatic_field)                                                                                                    \
                                                                                                                                      \
   /******************************************************************/                                                               \
   /* OopDesc and Klass hierarchies (NOTE: MethodData* incomplete)   */                                                               \
@@ -1990,7 +1997,15 @@
                                                                           \
   VM_TYPES_GC(declare_type,                                               \
               declare_toplevel_type,                                      \
-              declare_integer_type)
+              declare_integer_type)                                       \
+                                                                          \
+  /*************/                                                         \
+  /* JFR types */                                                         \
+  /*************/                                                         \
+                                                                          \
+  VM_TYPES_JFR(declare_type,                                              \
+               declare_toplevel_type,                                     \
+               declare_integer_type)
 
 //--------------------------------------------------------------------------------
 // VM_INT_CONSTANTS

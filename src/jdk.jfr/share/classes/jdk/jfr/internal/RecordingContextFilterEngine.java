@@ -25,8 +25,11 @@
 
 package jdk.jfr.internal;
 
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import jdk.jfr.RecordingContextFilter;
 
 /**
@@ -34,17 +37,22 @@ import jdk.jfr.RecordingContextFilter;
  */
 public final class RecordingContextFilterEngine {
 
-    private static final ThreadLocal<Boolean> current = ThreadLocal.withInitial(() -> true);
+    private static final ThreadLocal<Map<Long, Boolean>> current = ThreadLocal.withInitial(() -> null);
 
     private static final Consumer<RecordingContextBinding> onContextChangeListener =
         RecordingContextFilterEngine::onRecordingContextChange;
 
     private static RecordingContextFilter filter;
-    private static RecordingContextPredicate predicate;
+    private static Map<Long, RecordingContextPredicate> predicates;
 
     public static void setContextFilter(
             RecordingContextFilter filter,
-            RecordingContextPredicate predicate) {
+            Map<Long, RecordingContextPredicate> predicates) {
+
+        if (filter != null) {
+            Objects.requireNonNull(predicates);
+            Objects.checkIndex(0, predicates.size());
+        }
 
         synchronized (RecordingContextFilterEngine.class) {
             if (RecordingContextFilterEngine.filter == null && filter != null) {
@@ -52,10 +60,13 @@ public final class RecordingContextFilterEngine {
             }
             if (filter == null) {
                 RecordingContextBinding.removeContextChangeListener(onContextChangeListener);
+                // reset predicates
+                current.set(null);
+                JVM.getJVM().recordingContextFilterSet(null);
             }
 
             RecordingContextFilterEngine.filter = filter;
-            RecordingContextFilterEngine.predicate = predicate;
+            RecordingContextFilterEngine.predicates = predicates;
         }
     }
 
@@ -64,19 +75,52 @@ public final class RecordingContextFilterEngine {
     }
 
     private static void onRecordingContextChange(RecordingContextBinding b) {
-        RecordingContextPredicate predicate;
+        Map<Long, RecordingContextPredicate> predicates;
         synchronized (RecordingContextFilterEngine.class) {
-            // need to synchronize with setContextFilter as to avoid this
-            // listener to be called before it was fully initialized
-            predicate = RecordingContextFilterEngine.predicate;
+            // We need to synchronize with setContextFilter as to avoid
+            // this listener to be called before it was fully initialized
+            predicates = RecordingContextFilterEngine.predicates;
         }
 
-        boolean match = predicate == null || predicate.test(b);
-        JVM.getJVM().recordingContextFilterSet(match);
-        current.set(match);
+        Objects.requireNonNull(predicates);
+        Objects.checkIndex(0, predicates.size());
+
+        Map<Long, Boolean> matches =
+            predicates.entrySet().stream()
+                .map(e -> Map.entry(e.getKey(), e.getValue().test(b)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        current.set(matches);
+
+        final IntegerHolder h = new IntegerHolder();
+        final int[] matchesArray = new int[matches.size() * 2];
+        matches.entrySet().stream()
+            .sorted(Comparator.comparingLong(Map.Entry::getKey))
+            .forEach(e -> {
+                matchesArray[h.i++] = e.getKey().intValue();
+                matchesArray[h.i++] = e.getValue().booleanValue() ? 1 : 0;
+            });
+
+        JVM.getJVM().recordingContextFilterSet(matchesArray);
     }
 
-    public static boolean matchCurrentBinding() {
-        return current.get();
+    private static class IntegerHolder {
+        public int i = 0;
+    }
+
+    public static boolean matchesCurrentBinding(long eventId) {
+        Map<Long, Boolean> matches = current.get();
+        if (matches == null) {
+            // There are no filters, so it matches by default
+            return true;
+        }
+        if (matches.containsKey(eventId)) {
+            return matches.get(eventId);
+        }
+        if (matches.containsKey(-1L)) {
+            return matches.get(-1L);
+        }
+        // There are filters but none of them match
+        return false;
     }
 }

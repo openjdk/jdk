@@ -356,6 +356,6 @@ public final class PlatformEventType extends Type {
     }
 
     public boolean matchesFilter() {
-        return RecordingContextFilterEngine.matchCurrentBinding();
+        return RecordingContextFilterEngine.matchesCurrentBinding(getId());
     }
 }

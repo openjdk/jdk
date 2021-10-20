@@ -37,6 +37,8 @@ class JfrContextBinding;
 
 class JfrContextEntry {
   friend class ObjectSampleCheckpoint;
+  friend class VMStructs;
+
  private:
   char* _name;
   char* _value;

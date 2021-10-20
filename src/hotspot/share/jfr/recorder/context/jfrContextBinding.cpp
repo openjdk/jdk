@@ -27,7 +27,7 @@
 #include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/recorder/context/jfrContextBinding.hpp"
 
-JfrContextBinding::JfrContextBinding(const char** entries, jsize entries_len)
+JfrContextBinding::JfrContextBinding(const char** entries, int entries_len)
     : _entries_len(entries_len),
       _entries(JfrCHeapObj::new_array<JfrContextEntry>(_entries_len)) {
   assert(entries != NULL, "invariant");

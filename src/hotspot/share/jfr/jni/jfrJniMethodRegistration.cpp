@@ -98,7 +98,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"recordingContextDelete", (char*)"(J)V", (void*)jfr_recording_context_delete,
       (char*)"recordingContextSet", (char*)"(J)V", (void*)jfr_recording_context_set,
       (char*)"recordingContextContainsKey", (char*)"(JLjava/lang/String;)Z", (void*)jfr_recording_context_contains_key,
-      (char*)"recordingContextFilterSet", (char*)"(Z)V", (void*)jfr_recording_context_filter_set
+      (char*)"recordingContextFilterSet", (char*)"([I)V", (void*)jfr_recording_context_filter_set
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

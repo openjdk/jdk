@@ -82,7 +82,7 @@ public final class RecordingContextBinding implements AutoCloseable {
         return current.get();
     }
 
-    private RecordingContextBinding previous() {
+    public RecordingContextBinding previous() {
         return previous;
     }
 

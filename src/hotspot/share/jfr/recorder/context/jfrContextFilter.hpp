@@ -29,17 +29,18 @@
 
 class JfrContextFilter : public JfrCHeapObj {
  private:
-  bool _matches_filter;
+  char _matches[LAST_EVENT_ID + 1 /* offset by 1 to store -1 */ + 1];
+  bool _matches_set;
+
+  JfrContextFilter();
+  ~JfrContextFilter();
 
   static JfrContextFilter* current();
   static void set_current(JfrContextFilter* context);
 
  public:
-  JfrContextFilter() {}
-  ~JfrContextFilter() {}
-
   static bool accept(JfrEventId event_id);
-  static void configure(JfrEventId event_id, bool matches_filter);
+  static void configure(int *matches, int matches_len);
 };
 
 #endif // SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXTFILTER_HPP

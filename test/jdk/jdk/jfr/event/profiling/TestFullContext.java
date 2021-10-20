@@ -39,6 +39,7 @@ import jdk.jfr.Category;
 import jdk.jfr.Context;
 import jdk.jfr.Description;
 import jdk.jfr.Event;
+import jdk.jfr.EventType;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.Recording;
@@ -83,68 +84,135 @@ public class TestFullContext {
     }
 
     public static void main(String[] args) throws Throwable {
-        test(
+        test("1",
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
-                        .where(contextKey1, "Key1Value1")
+                        .where(contextKey1, "Key1Value")
                         .build()),
             events -> {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.name(), "Key1Value1"));
+                    contextKey1.name(), "Key1Value"));
                 return true;
             }
         );
 
-        test(
+        test("2",
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
-                        .where(contextKey1, "Key1Value1")
+                        .where(contextKey1, "Key1Value")
                         .build()),
             () ->
                 RecordingContextFilter.Config.createFilter()
-                    .hasKey(contextKey1)
+                    .forAllTypes(b -> {
+                        b.hasKey(contextKey1);
+                    })
                     .build(),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 3);
+                assertEquals(events.size(), 2);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.name(), "Key1Value1"));
+                    contextKey1.name(), "Key1Value"));
                 return true;
             }
         );
 
-        test(
+        test("3",
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
-                        .where(contextKey1, "Key1Value1")
+                        .where(contextKey1, "Key1Value")
                         .build()),
             () ->
                 RecordingContextFilter.Config.createFilter()
-                    .hasEntry(contextKey1, "Key1Value1")
+                    .forType(EventType.getEventType(TestEvent.class), b -> {
+                        b.hasKey(contextKey1);
+                    })
                     .build(),
             events -> {
                 events.forEach(System.out::println);
-                assertEquals(events.size(), 3);
+                assertEquals(events.size(), 2);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.name(), "Key1Value1"));
+                    contextKey1.name(), "Key1Value"));
                 return true;
             }
         );
 
-        test(
+        test("4",
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
-                        .where(contextKey1, "Key1Value1")
+                        .where(contextKey1, "Key1Value")
                         .build()),
             () ->
                 RecordingContextFilter.Config.createFilter()
-                    .hasEntry(contextKey1, "")
+                    .forAllTypes(b -> {
+                        b.hasEntry(contextKey1, "Key1Value");
+                    })
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 2);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.name(), "Key1Value"));
+                return true;
+            }
+        );
+
+        test("5",
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .forType(EventType.getEventType(TestEvent.class), b -> {
+                        b.hasEntry(contextKey1, "Key1Value");
+                    })
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 2);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.name(), "Key1Value"));
+                return true;
+            }
+        );
+
+        test("6",
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .forAllTypes(b -> {
+                        b.hasEntry(contextKey1, "");
+                    })
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 0);
+                return true;
+            }
+        );
+
+        test("7",
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .forType(EventType.getEventType(TestEvent.class), b -> {
+                        b.hasEntry(contextKey1, "");
+                    })
                     .build(),
             events -> {
                 events.forEach(System.out::println);
@@ -153,15 +221,36 @@ public class TestFullContext {
             }
         );
 
-        test(
+        test("8",
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
-                        .where(contextKey1, "Key1Value1")
+                        .where(contextKey1, "Key1Value")
                         .build()),
             () ->
                 RecordingContextFilter.Config.createFilter()
-                    .hasKey(contextKey2)
+                    .forAllTypes(b -> {
+                        b.hasKey(contextKey2);
+                    })
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 0);
+                return true;
+            }
+        );
+
+        test("9",
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .forType(EventType.getEventType(TestEvent.class), b -> {
+                        b.hasKey(contextKey2);
+                    })
                     .build(),
             events -> {
                 events.forEach(System.out::println);
@@ -170,72 +259,112 @@ public class TestFullContext {
             }
         );
 
-        test(
+        test("10",
             () ->
                 RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value")
+                        .build()),
+            () ->
+                RecordingContextFilter.Config.createFilter()
+                    .forType(EventType.getEventType(TestEvent.class), b -> {
+                        b.hasKey(contextKey2);
+                    })
+                    .build(),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 1);
+                return true;
+            }
+        );
+
+        test("11",
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value")
+                        .where(contextKey2, "Key2Value")
+                        .build()),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 3);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.name(), "Key1Value",
+                    contextKey2.name(), "Key2Value"));
+                return true;
+            }
+        );
+
+        test("12",
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value1")
+                        .where(contextKey1, "Key1Value2")
+                        .build()),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 3);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.name(), "Key1Value2"));
+                return true;
+            }
+        );
+
+        test("13",
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value")
+                        .build(),
+                    RecordingContext
+                        .where(contextKey2, "Key2Value")
+                        .build()),
+            events -> {
+                events.forEach(System.out::println);
+                assertEquals(events.size(), 3);
+                assertContext(events.get(0), Map.of(
+                    contextKey1.name(), "Key1Value",
+                    contextKey2.name(), "Key2Value"));
+                return true;
+            }
+        );
+
+        test("14",
+            () ->
+                RecordingContextHolder.of(
+                    RecordingContext
+                        .where(contextKey1, "Key1Value1")
+                        .build(),
                     RecordingContext
                         .where(contextKey1, "Key1Value2")
-                        .where(contextKey2, "Key2Value2")
                         .build()),
             events -> {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.name(), "Key1Value2",
-                    contextKey2.name(), "Key2Value2"));
+                    contextKey1.name(), "Key1Value2"));
                 return true;
             }
         );
 
-        test(
+        test("15",
             () ->
                 RecordingContextHolder.of(
                     RecordingContext
-                        .where(contextKey1, "Key1Value3/1")
-                        .where(contextKey1, "Key1Value3/2")
-                        .build()),
-            events -> {
-                events.forEach(System.out::println);
-                assertEquals(events.size(), 3);
-                assertContext(events.get(0), Map.of(
-                    contextKey1.name(), "Key1Value3/2"));
-                return true;
-            }
-        );
-
-        test(
-            () ->
-                RecordingContextHolder.of(
-                    RecordingContext
-                        .where(contextKey1, "Key1Value4")
+                        .where(contextKey1, "Key1Value1")
                         .build(),
                     RecordingContext
-                        .where(contextKey2, "Key2Value4")
+                        .where(contextKey1, "Key1Value2")
                         .build()),
-            events -> {
-                events.forEach(System.out::println);
-                assertEquals(events.size(), 3);
-                assertContext(events.get(0), Map.of(
-                    contextKey1.name(), "Key1Value4",
-                    contextKey2.name(), "Key2Value4"));
-                return true;
-            }
-        );
-
-        test(
             () ->
-                RecordingContextHolder.of(
-                    RecordingContext
-                        .where(contextKey1, "Key1Value5/1")
-                        .build(),
-                    RecordingContext
-                        .where(contextKey1, "Key1Value5/2")
-                        .build()),
+                RecordingContextFilter.Config.createFilter()
+                    .build(),
             events -> {
                 events.forEach(System.out::println);
                 assertEquals(events.size(), 3);
                 assertContext(events.get(0), Map.of(
-                    contextKey1.name(), "Key1Value5/2"));
+                    contextKey1.name(), "Key1Value2"));
                 return true;
             }
         );
@@ -246,35 +375,47 @@ public class TestFullContext {
     }
 
     private static void test(
-        Supplier<RecordingContextHolder> contextsFactory,
-        ThrowingPredicate<List<RecordedEvent>, Throwable> validation) throws Throwable {
-        test(contextsFactory, () -> RecordingContextFilter.Config.createFilter().build(), validation);
+            String name,
+            Supplier<RecordingContextHolder> contextsFactory,
+            ThrowingPredicate<List<RecordedEvent>, Throwable> validation) throws Throwable {
+        test(name, contextsFactory, () -> null, validation);
     }
 
     private static void test(
+            String name,
             Supplier<RecordingContextHolder> contextsFactory,
             Supplier<RecordingContextFilter> filterFactory,
             ThrowingPredicate<List<RecordedEvent>, Throwable> validation) throws Throwable {
-        System.out.printf("=============== Before%n");
+        System.out.printf("==============================%n");
+        System.out.printf("Test %s%n", name);
+        System.out.printf("==============================%n");
+        System.out.printf("%n");
         try {
             try (Recording recording = new Recording()) {
                 recording.enable("TestEvent");
+                recording.enable("jdk.ThreadSleep");
                 recording.start();
 
                 RecordingContextFilter prev = RecordingContextFilter.Config.contextFilter();
                 try {
-                    RecordingContextFilter.Config.setContextFilter(filterFactory.get());
+                    if (filterFactory == null) {
+                        RecordingContextFilter.Config.setContextFilter(null);
+                    } else {
+                        RecordingContextFilter.Config.setContextFilter(filterFactory.get());
+                    }
                     try (RecordingContextHolder contextHolder = contextsFactory.get()) {
                         new TestEvent().commit();
 
                         RecordingContext.Snapshot s = contextHolder.contexts().get(0).snapshot();
-                        Thread t = new Thread(() -> {
+                        Thread thread = new Thread(() -> {
                             try (RecordingContext.Activation a = s.activate()) {
-                                new TestEvent().commit();
+                                Thread.sleep(1);
+                            } catch (Throwable t) {
+                                t.printStackTrace(System.out);
                             }
                         });
-                        t.start();
-                        t.join();
+                        thread.start();
+                        thread.join();
                     }
 
                     new TestEvent().commit();
@@ -292,7 +433,6 @@ public class TestFullContext {
             t.printStackTrace(System.out);
             success = false;
         }
-        System.out.printf("=============== After%n");
     }
 
     private static record RecordingContextHolder(List<RecordingContext> contexts) implements AutoCloseable {

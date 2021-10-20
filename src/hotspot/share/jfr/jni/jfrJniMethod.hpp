@@ -166,7 +166,7 @@ void JNICALL jfr_recording_context_set(JNIEnv* env, jobject jvm, jlong id);
 
 jboolean JNICALL jfr_recording_context_contains_key(JNIEnv* env, jobject jvm, jlong context, jstring key);
 
-void JNICALL jfr_recording_context_filter_set(JNIEnv* env, jobject jvm, jboolean matches_filter);
+void JNICALL jfr_recording_context_filter_set(JNIEnv* env, jobject jvm, jintArray matches);
 
 
 #ifdef __cplusplus

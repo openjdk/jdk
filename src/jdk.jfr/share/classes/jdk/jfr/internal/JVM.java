@@ -659,8 +659,7 @@ public final class JVM {
     public native boolean recordingContextContainsKey(long id, String key);
 
     /**
-     * @param matches_filter whether the current context matches the
-     *                       RecordingContextFilter on the current thread
+     * @param matches mapping of EventType.getId -> matchesFilter
      */
-    public native void recordingContextFilterSet(boolean matches_filter);
+    public native void recordingContextFilterSet(int[] matches);
 }

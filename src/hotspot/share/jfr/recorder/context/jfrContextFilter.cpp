@@ -27,9 +27,12 @@
 #include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/recorder/context/jfrContextFilter.hpp"
 
-void JfrContextFilter::set_current(JfrContextFilter* current) {
-  JavaThread *thread = JavaThread::current();
-  thread->set_jfr_context_filter(current);
+
+JfrContextFilter::JfrContextFilter()
+    : _matches_set(false) {
+}
+
+JfrContextFilter::~JfrContextFilter() {
 }
 
 JfrContextFilter* JfrContextFilter::current() {
@@ -38,15 +41,41 @@ JfrContextFilter* JfrContextFilter::current() {
   return JavaThread::cast(thread)->jfr_context_filter();
 }
 
-void JfrContextFilter::configure(JfrEventId event_id, bool matches_filter) {
-  JfrContextFilter *current = JfrContextFilter::current();
-  if (!current) current = new JfrContextFilter();
-  current->_matches_filter = matches_filter;
-  JfrContextFilter::set_current(current);
+void JfrContextFilter::set_current(JfrContextFilter* context) {
+  JavaThread *thread = JavaThread::current();
+  thread->set_jfr_context_filter(context);
 }
 
 bool JfrContextFilter::accept(JfrEventId event_id) {
   JfrContextFilter *current = JfrContextFilter::current();
-  if (!current) return true;
-  return current->_matches_filter;
+  if (!current || !current->_matches_set) {
+    // There are no filters, it matches by default
+    return true;
+  }
+  assert(FIRST_EVENT_ID <= event_id && event_id <= LAST_EVENT_ID, "should not reach here");
+  if (current->_matches[event_id + 1] != -1) {
+    return current->_matches[event_id + 1] != 0;
+  }
+  return current->_matches[0] == 1;
+}
+
+void JfrContextFilter::configure(int *matches, int matches_len) {
+  JfrContextFilter *current = JfrContextFilter::current();
+  if (!current) {
+    JfrContextFilter::set_current(current = new JfrContextFilter());
+  }
+  if (!matches) {
+    current->_matches_set = false;
+    return;
+  }
+  assert(matches_len > 0, "invariant");
+  // Because the matches are ordered by event id, and we know the predefined type ids have
+  // lower event ids, we can first deal with them, then with the dynamically declared ones
+  // Set current->_matches
+  memset(current->_matches, (char)-1, sizeof(current->_matches));
+  for (int i = 0; i < matches_len && matches[i+0] <= LAST_EVENT_ID; i += 2) {
+    current->_matches[matches[i+0] + 1] = matches[i+1];
+  }
+  current->_matches_set = true;
+  // Ignore non pre-defined events, we assert on this case in JfrContextFilter::accept
 }

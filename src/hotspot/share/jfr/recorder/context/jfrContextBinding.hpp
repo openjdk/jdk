@@ -30,9 +30,10 @@
 
 class JfrContextBinding : public JfrCHeapObj {
   friend class JfrContextRepository;
+  friend class VMStructs;
 
  private:
-  jsize _entries_len;
+  int _entries_len;
   JfrContextEntry* _entries;
 
  public:

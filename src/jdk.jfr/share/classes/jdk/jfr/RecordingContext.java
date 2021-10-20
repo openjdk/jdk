@@ -90,12 +90,14 @@ public final class RecordingContext implements AutoCloseable {
         return new Snapshot();
     }
 
+    @SuppressWarnings("try")
     public static <R> R callWithSnapshot(Callable<R> op, Snapshot s) throws Exception {
         try (Activation a = s.activate()) {
             return op.call();
         }
     }
 
+    @SuppressWarnings("try")
     public static void runWithSnapshot(Runnable op, Snapshot s) {
         try (Activation a = s.activate()) {
             op.run();
