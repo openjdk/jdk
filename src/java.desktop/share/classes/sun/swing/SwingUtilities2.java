@@ -511,7 +511,7 @@ public class SwingUtilities2 {
         if ( text == null || text.length() <= 0 ) { //no need to paint empty strings
             return;
         }
-        if (isPrinting(g) && !FontUtilities.isMacOSX) {
+        if (isPrinting(g)) {
             Graphics2D g2d = getGraphics2D(g);
             if (g2d != null) {
                 /* The printed text must scale linearly with the UI.
