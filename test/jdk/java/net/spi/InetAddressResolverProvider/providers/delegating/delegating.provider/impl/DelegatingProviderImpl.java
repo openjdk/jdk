@@ -40,18 +40,18 @@ public class DelegatingProviderImpl extends InetAddressResolverProvider {
                 this.getClass().getCanonicalName());
         return new InetAddressResolver() {
             @Override
-            public Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy) throws UnknownHostException {
-                return configuration.builtinResolver().lookupAddresses(host, lookupPolicy);
+            public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy) throws UnknownHostException {
+                return configuration.builtinResolver().lookupByName(host, lookupPolicy);
             }
 
             @Override
-            public String lookupHostName(byte[] addr) throws UnknownHostException {
+            public String lookupByAddress(byte[] addr) throws UnknownHostException {
                 try {
                     if (!changeReverseLookupAddress) {
-                        return configuration.builtinResolver().lookupHostName(addr);
+                        return configuration.builtinResolver().lookupByAddress(addr);
                     } else {
                         // Deliberately supply address bytes array with wrong size
-                        return configuration.builtinResolver().lookupHostName(new byte[]{1, 2, 3});
+                        return configuration.builtinResolver().lookupByAddress(new byte[]{1, 2, 3});
                     }
                 } catch (Throwable t) {
                     lastReverseLookupThrowable = t;

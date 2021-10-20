@@ -41,17 +41,17 @@ public class InetAddressUsageInGetProviderImpl extends InetAddressResolverProvid
         }
         return new InetAddressResolver() {
             @Override
-            public Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy) throws UnknownHostException {
+            public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy) throws UnknownHostException {
                 if (host.equals(localHostName)) {
-                    return configuration.builtinResolver().lookupAddresses(host, lookupPolicy);
+                    return configuration.builtinResolver().lookupByName(host, lookupPolicy);
                 } else {
                     throw new UnknownHostException(host);
                 }
             }
 
             @Override
-            public String lookupHostName(byte[] addr) throws UnknownHostException {
-                return configuration.builtinResolver().lookupHostName(addr);
+            public String lookupByAddress(byte[] addr) throws UnknownHostException {
+                return configuration.builtinResolver().lookupByAddress(addr);
             }
         };
     }

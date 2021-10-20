@@ -48,14 +48,14 @@ public class WithBootstrapResolverUsageProvider extends InetAddressResolverProvi
 
         return new InetAddressResolver() {
             @Override
-            public Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy)
+            public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy)
                     throws UnknownHostException {
                 return Stream.of(InetAddress.getByAddress(host, new byte[]{127, 0, 2, 1}));
             }
 
             @Override
-            public String lookupHostName(byte[] addr) throws UnknownHostException {
-                return configuration.builtinResolver().lookupHostName(addr);
+            public String lookupByAddress(byte[] addr) throws UnknownHostException {
+                return configuration.builtinResolver().lookupByAddress(addr);
             }
         };
     }

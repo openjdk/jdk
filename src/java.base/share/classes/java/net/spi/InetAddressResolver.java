@@ -67,7 +67,7 @@ public interface InetAddressResolver {
      * @throws UnknownHostException if no IP address for the {@code host} could be found
      * @see LookupPolicy
      */
-    Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy) throws UnknownHostException;
+    Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy) throws UnknownHostException;
 
     /**
      * Lookup the host name corresponding to the raw IP address provided.
@@ -83,12 +83,12 @@ public interface InetAddressResolver {
      * @throws UnknownHostException     if no host found for the specified IP address
      * @throws IllegalArgumentException if IP address is of illegal length
      */
-    String lookupHostName(byte[] addr) throws UnknownHostException;
+    String lookupByAddress(byte[] addr) throws UnknownHostException;
 
     /**
      * A {@code LookupPolicy} object describes characteristics that can be applied to a lookup operation.
      * In particular, it is used to specify which ordering and filtering should be performed when
-     * {@linkplain InetAddressResolver#lookupAddresses(String, LookupPolicy) looking up a host addresses}.
+     * {@linkplain InetAddressResolver#lookupByName(String, LookupPolicy) looking up a host addresses}.
      * <p>
      * The default platform-wide lookup policy is constructed by consulting
      * <a href="doc-files/net-properties.html#Ipv4IPv6">System Properties</a> which affect
@@ -157,7 +157,7 @@ public interface InetAddressResolver {
          * @param characteristics value which represents the set of lookup characteristics
          * @return an instance of {@code InetAddressResolver.LookupPolicy}
          * @throws IllegalArgumentException if illegal characteristic bit mask is provided
-         * @see InetAddressResolver#lookupAddresses(String, LookupPolicy)
+         * @see InetAddressResolver#lookupByName(String, LookupPolicy)
          */
         public static final LookupPolicy of(int characteristics) {
             // At least one type of addresses should be requested
@@ -187,7 +187,7 @@ public interface InetAddressResolver {
          * Type and order of address families queried during resolution of host IP addresses.
          *
          * @return a characteristics value
-         * @see InetAddressResolver#lookupAddresses(String, LookupPolicy)
+         * @see InetAddressResolver#lookupByName(String, LookupPolicy)
          */
         public final int characteristics() {
             return characteristics;

@@ -37,7 +37,7 @@ public class ThrowingLookupsProviderImpl extends InetAddressResolverProvider {
 
         return new InetAddressResolver() {
             @Override
-            public Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy)
+            public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy)
                     throws UnknownHostException {
                 if (throwRuntimeException) {
                     System.err.println(name()+" forward lookup: throwing RuntimeException");
@@ -49,7 +49,7 @@ public class ThrowingLookupsProviderImpl extends InetAddressResolverProvider {
             }
 
             @Override
-            public String lookupHostName(byte[] addr) throws UnknownHostException {
+            public String lookupByAddress(byte[] addr) throws UnknownHostException {
                 if (throwRuntimeException) {
                     System.err.println(name()+" reverse lookup: throwing RuntimeException");
                     throw new RuntimeException(RUNTIME_EXCEPTION_MESSAGE);

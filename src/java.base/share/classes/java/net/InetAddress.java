@@ -831,7 +831,7 @@ public class InetAddress implements java.io.Serializable {
         var resolver = resolver();
         try {
             // first lookup the hostname
-            host = resolver.lookupHostName(addr.getAddress());
+            host = resolver.lookupByAddress(addr.getAddress());
 
             /* check to see if calling code is allowed to know
              * the hostname for this IP address, ie, connect to the host
@@ -863,7 +863,7 @@ public class InetAddress implements java.io.Serializable {
                 host = addr.getHostAddress();
                 return host;
             }
-        // 'resolver.lookUpHostName' and 'InetAddress.getAllByName0' delegate to the system-wide resolver,
+        // 'resolver.lookupByAddress' and 'InetAddress.getAllByName0' delegate to the system-wide resolver,
         // which could be a custom one. At that point we treat any unexpected RuntimeException thrown by
         // the resolver as we would treat an UnknownHostException or an unmatched host name.
         } catch (RuntimeException | UnknownHostException e) {
@@ -1067,14 +1067,14 @@ public class InetAddress implements java.io.Serializable {
      */
     private static final class PlatformResolver implements InetAddressResolver {
 
-        public Stream<InetAddress> lookupAddresses(String host, LookupPolicy policy)
+        public Stream<InetAddress> lookupByName(String host, LookupPolicy policy)
                 throws UnknownHostException {
             Objects.requireNonNull(host);
             Objects.requireNonNull(policy);
             return Arrays.stream(impl.lookupAllHostAddr(host, policy));
         }
 
-        public String lookupHostName(byte[] addr)
+        public String lookupByAddress(byte[] addr)
                 throws UnknownHostException {
             if (addr.length != Inet4Address.INADDRSZ && addr.length != Inet6Address.INADDRSZ) {
                 throw new IllegalArgumentException("Invalid address length");
@@ -1115,7 +1115,7 @@ public class InetAddress implements java.io.Serializable {
          * @throws IllegalArgumentException if IP address is of illegal length
          */
         @Override
-        public String lookupHostName(byte[] addr) throws UnknownHostException {
+        public String lookupByAddress(byte[] addr) throws UnknownHostException {
             String hostEntry;
             String host = null;
 
@@ -1167,7 +1167,7 @@ public class InetAddress implements java.io.Serializable {
          * @throws UnknownHostException
          *             if no IP address for the {@code host} could be found
          */
-        public Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy)
+        public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy)
                 throws UnknownHostException {
             String hostEntry;
             String addrStr;
@@ -1657,7 +1657,7 @@ public class InetAddress implements java.io.Serializable {
 
         var resolver = resolver();
         try {
-            addresses = resolver.lookupAddresses(host, PLATFORM_LOOKUP_POLICY);
+            addresses = resolver.lookupByName(host, PLATFORM_LOOKUP_POLICY);
         } catch (RuntimeException | UnknownHostException x) {
             if (host.equalsIgnoreCase("localhost")) {
                 addresses = Stream.of(impl.loopbackAddress());

@@ -37,14 +37,14 @@ public class EmptyResultsProviderImpl extends InetAddressResolverProvider {
 
         return new InetAddressResolver() {
             @Override
-            public Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy)
+            public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy)
                     throws UnknownHostException {
                 return Stream.empty();
             }
 
             @Override
-            public String lookupHostName(byte[] addr) throws UnknownHostException {
-                return configuration.builtinResolver().lookupHostName(addr);
+            public String lookupByAddress(byte[] addr) throws UnknownHostException {
+                return configuration.builtinResolver().lookupByAddress(addr);
             }
         };
     }

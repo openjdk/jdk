@@ -45,7 +45,7 @@ public class ClasspathResolverProviderImpl extends InetAddressResolverProvider {
         System.out.println("The following provider will be used by current test:" + this.getClass().getCanonicalName());
         return new InetAddressResolver() {
             @Override
-            public Stream<InetAddress> lookupAddresses(String host, LookupPolicy lookupPolicy) throws UnknownHostException {
+            public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy) throws UnknownHostException {
                 LOGGER.info("Looking-up addresses for '" + host + "'. Lookup characteristics:" +
                         Integer.toString(lookupPolicy.characteristics(), 2));
                 LOOKUP_HISTORY.add(lookupPolicy);
@@ -53,7 +53,7 @@ public class ClasspathResolverProviderImpl extends InetAddressResolverProvider {
             }
 
             @Override
-            public String lookupHostName(byte[] addr) throws UnknownHostException {
+            public String lookupByAddress(byte[] addr) throws UnknownHostException {
                 LOGGER.info("Looking host name for the following address:" + ResolutionRegistry.addressBytesToString(addr));
                 return registry.lookupAddress(addr);
             }
