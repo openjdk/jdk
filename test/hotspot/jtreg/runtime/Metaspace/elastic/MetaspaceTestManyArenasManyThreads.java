@@ -63,7 +63,7 @@ public class MetaspaceTestManyArenasManyThreads extends MetaspaceTestWithThreads
             Thread.sleep(200);
 
             for (RandomAllocatorThread t: threads) {
-                if (t.allocator.arena.numAllocationFailures > 0) {
+                if (t.allocator.arena.numAllocationFailures > 1000) {
                     t.interrupt();
                     t.join();
                     context.destroyArena(t.allocator.arena);

@@ -53,6 +53,8 @@ public class MetaspaceTestWithThreads {
         // Stop all threads.
         for (Thread t: threads) {
             t.interrupt();
+        }
+        for (Thread t: threads) {
             t.join();
         }
     }

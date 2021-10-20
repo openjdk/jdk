@@ -46,7 +46,9 @@ public class RandomAllocator {
     ArrayList<Allocation> to_dealloc = new ArrayList<>();
 
     long ticks = 0;
-    boolean allocationError = false;
+
+    boolean breatheIn = true;
+    int breatheTicks = 0;
 
     Random localRandom;
 
@@ -57,7 +59,7 @@ public class RandomAllocator {
 
     // Allocate a random amount from the arena. If dice hits right, add this to the deallocation list.
     void allocateRandomly() {
-        allocationError = false;
+        breatheTicks ++;
         long word_size = profile.randomAllocationSize();
         Allocation a = arena.allocate(word_size);
         if (a != null) {
@@ -65,12 +67,15 @@ public class RandomAllocator {
                 to_dealloc.add(a);
             }
         } else {
-            allocationError = true;
+            // On allocation error, breathe out a bit
+            breatheIn = false;
+            breatheTicks = 0;
         }
     }
 
     // Randomly choose one of the allocated in the deallocation list and deallocate it
     void deallocateRandomly() {
+        breatheTicks ++;
         if (to_dealloc.size() == 0) {
             return;
         }
@@ -81,14 +86,19 @@ public class RandomAllocator {
 
     public void tick() {
 
-        if (!allocationError) {
+        if (breatheIn) {
             allocateRandomly();
-            if(rollDice(profile.randomDeallocProbability)) {
+            if (rollDice(profile.randomDeallocProbability)) {
                deallocateRandomly();
             }
         } else {
             deallocateRandomly();
-            allocationError = false;
+            if (breatheTicks > 100) {
+                // After allocation error, breathe out a bit. Stop after 100 deallocations
+                // to breathe in again (should cause us to float just below the ceiling).
+                breatheIn = true;
+                breatheTicks = 0;
+            }
         }
 
         ticks ++;
@@ -100,6 +110,10 @@ public class RandomAllocator {
         this.profile = AllocationProfile.randomProfile();
         // reproducable randoms (we assume each allocator is only used from within one thread, and gets created from the main thread).
         this.localRandom = new Random(RandomHelper.random().nextInt());
+    }
+
+    long numAllocationFailures() {
+        return arena.numAllocationFailures;
     }
 
     @Override

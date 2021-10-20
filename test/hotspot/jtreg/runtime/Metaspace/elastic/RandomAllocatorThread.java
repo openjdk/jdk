@@ -23,7 +23,6 @@
  *
  */
 
-import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
@@ -55,9 +54,7 @@ public class RandomAllocatorThread extends Thread {
         }
 
         while (!Thread.interrupted()) {
-            for (int i = 0; i < 1000; i++) {
-                allocator.tick();
-            }
+            allocator.tick();
         }
 
         // System.out.println("+ [" + id + "] " + allocator);
