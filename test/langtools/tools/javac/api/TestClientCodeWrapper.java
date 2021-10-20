@@ -62,7 +62,8 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
             defaultFileManager = fm;
 
             for (Method m: getMethodsExcept(JavaFileManager.class,
-                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader", "contains", "getFileForOutput")) {
+                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader",
+                        "contains", "getFileForOutput", "siblingFrom")) {
                 test(m);
             }
 
