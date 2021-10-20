@@ -31,7 +31,6 @@ import javax.swing.SwingUtilities;
  * @test
  * @key headful
  * @bug 8012026 8196435
- * @library ../../regtesthelpers
  * @summary Component.getMousePosition() does not work in an applet on MacOS
  * @run main GetMousePositionWithOverlay
  */
