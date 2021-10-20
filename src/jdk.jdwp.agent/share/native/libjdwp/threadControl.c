@@ -756,6 +756,9 @@ blockOnDebuggerSuspend(jthread thread)
     }
 }
 
+/*
+ * The caller is expected to hold threadLock. It will be temporarily released though.
+ */
 static void
 trackAppResume(jthread thread)
 {
@@ -764,11 +767,12 @@ trackAppResume(jthread thread)
     ThreadNode *node;
 
     /*
-     * Set up the tracking of the Thread.resume() call. This requires
-     * handlerLock which has to be acquired before threadLock.
+     * Set up the tracking of the Thread.resume() call.
+     * This requires handlerLock during eventHandler_createInternalThreadOnly()
+     * calls. For proper lock order handlerLock has to be acquired before threadLock.
      */
     debugMonitorExit(threadLock);
-    eventHandler_lock(); /* for proper lock order */
+    eventHandler_lock();
     debugMonitorEnter(threadLock);
 
     fnum = 0;
