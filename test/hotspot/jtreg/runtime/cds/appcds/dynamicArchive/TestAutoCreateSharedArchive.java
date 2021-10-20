@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8261455
  * @summary test -XX:+AutoCreateSharedArchive feature
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -32,6 +33,45 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar TestAutoCreateSharedArchive
+ */
+
+/*
+ * -XX:SharedArchiveFile can be specified in two styles:
+ *
+ *  (A) Test with default base archive -XX:+SharedArchiveFile=<archive>
+ *  (B) Test with the base archive is specified: -XX:SharedArchiveFile=<base>:<file>
+ *  all the following if not explained explicitly, run with flag -XX:+AutoCreateSharedArchive
+ *
+ * 10 Case (A)
+ *
+ * 10.1 run with non-existing archive should automatically create dynamic archive
+ *      If the JDK's default CDS archive cannot be loaded, print out warning, run continue without shared archive
+ *      and no shared archive created at exit.
+ * 10.2 run with the created dynamic archive should pass.
+ * 10.3 run with the created dynamic archive and -XX:+AutoCreateSharedArchive should pass and no shared archive created at exit.
+ *
+ * 11 run with damaged magic should not regenerate dynamic archive.
+ *    Bad magic of the shared archive leads the archive open as static that will not find base archive. With base archive not shared,
+ *    at exit, no shared archive (top) will be generated.
+ * 12 run with a bad versioned archive should create dynamic archive.
+ *    A bad version of the archive still makes the archive open as dynamic so a new archive but failed to share, but base archive
+ *    is shared, so the top archive  will be generated at exit.
+ * 13 run with a bad jvm_ident archive should create dynamic archive
+ *    The reason as 12.
+ * 14 Read base archive from top archive failed
+ *    If stored base archive name is not correct, it will lead the archive opened as static and no shared in runtime,
+ *    also no shared archive created at exit.
+ *
+ * 20 (case B)
+ *
+ * 20.1 dump base archive which will be used for dumping top archive.
+ * 20.2 dump top archive based on base archive obtained in 20.1.
+ * 20.3 run -XX:SharedArchiveFile=<base>:<top> to verify the archives.
+ *
+ * 21 if version of top archive is not correct (not the current version), the archive cannot be shared and will be
+ *    regenerated at exit.
+ * 22 if base archive is not with correct version, both base and top archives will not be shared.
+ *    At exit, there is no shared archive created automatically.
  */
 
 import java.io.IOException;
@@ -77,8 +117,12 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
           archiveFile.delete();
         }
 
-        // 0. run with non-existing archive should automatically create dynamic archive
-        print("0. run with non-existing archive should automatically create dynamic archive");
+        // The list numbers try to match JDK-8272331 (CSR for JDK-8261455) test items but not exactly matched.
+
+        // 10 non-existing archive should automatically create dynamic archive based on default shared archive
+        // if base archive loaded.
+        print("10 Test with default base shared archive");
+        print("10.1 run with non-existing archive should automatically create dynamic archive");
         run(TOP_NAME,
             "-Xshare:auto",
             "-XX:+AutoCreateSharedArchive",
@@ -92,8 +136,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 });
         checkFileExists(TOP_NAME);
 
-        // 1. run with the created dynamic archive should pass
-        print("1. run with the created dynamic archive should pass");
+        // 10.2 run with the created dynamic archive should pass
+        print("10.2 run with the created dynamic archive should pass");
         run(TOP_NAME,
             "-Xlog:cds",
             "-Xlog:class+load",
@@ -104,8 +148,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                       .shouldContain(HELLO_SOURCE);
                 });
 
-        // 2. run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass
-        print("2. run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass");
+        // 10.3 run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass
+        print("10.3 run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass");
         run(TOP_NAME,
             "-Xlog:cds",
             "-Xlog:class+load",
@@ -115,46 +159,17 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             mainAppClass)
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
+                      .shouldNotContain("Dumping shared data to file")
                       .shouldContain(HELLO_SOURCE);
                 });
 
-        // 3. run with a bad versioned archive should create dynamic archive
-        print("3. run with a bad versioned archive should create dynamic archive");
-        archiveFile = new File(TOP_NAME);
-        String modVersion = startNewArchive("modify-version");
-        File copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modVersion);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x00000000);
 
-        run(modVersion,
-            "-Xshare:auto",
-            "-XX:+AutoCreateSharedArchive",
-            "-Xlog:cds",
-            "-Xlog:cds+dynamic=info",
-            "-cp", appJar,
-            mainAppClass)
-            .assertNormalExit(output -> {
-                output.shouldHaveExitValue(0);
-                });
-        checkFileExists(modVersion);
-
-        // 4. run with the new created archive should pass
-        print("4. run with the new created archive should pass");
-        run(modVersion,
-            "-Xlog:cds",
-            "-Xlog:class+load",
-            "-cp", appJar,
-            mainAppClass)
-            .assertNormalExit(output -> {
-                output.shouldHaveExitValue(0)
-                      .shouldContain(HELLO_SOURCE);
-                });
-
-         // 5. run with damaged magic should not regenerate dynamic archive
+         // 11 run with damaged magic should not regenerate dynamic archive
          //    The bad magic will make the archive be opened as static archive
          //    and failed, no shared for base archive either.
-         print("5. run with damaged magic should not regenerate dynamic archive");
+         print("11 run with damaged magic should not regenerate dynamic archive");
          String modMagic = startNewArchive("modify-magic");
-         copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modMagic);
+         File copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modMagic);
          CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetMagic(), 0x1234);
 
          run(modMagic,
@@ -169,10 +184,48 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldNotContain("Dumping shared data to file");
                 });
 
-         // 6. read base archive from top archive failed
+        // 12 run with a bad versioned archive should create dynamic archive
+        print("12 run with a bad versioned archive should create dynamic archive");
+        archiveFile = new File(TOP_NAME);
+        String modVersion = startNewArchive("modify-version");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modVersion);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x00000000);
+
+        run(modVersion,
+            "-Xshare:auto",
+            "-XX:+AutoCreateSharedArchive",
+            "-Xlog:cds",
+            "-Xlog:cds+dynamic=info",
+            "-cp", appJar,
+            mainAppClass)
+            .assertNormalExit(output -> {
+                output.shouldHaveExitValue(0);
+                });
+        checkFileExists(modVersion);
+
+        // 13 run with a bad jvm_indent archive should create dynamic archive
+        print("13 run with a bad jvm_ident archive should create dynamic archive");
+        archiveFile = new File(TOP_NAME);
+        String modJvmIdent = startNewArchive("modify-jvmident");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modJvmIdent);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetJvmIdent(), 0x00000000);
+
+        run(modJvmIdent,
+            "-Xshare:auto",
+            "-XX:+AutoCreateSharedArchive",
+            "-Xlog:cds",
+            "-Xlog:cds+dynamic=info",
+            "-cp", appJar,
+            mainAppClass)
+            .assertNormalExit(output -> {
+                output.shouldHaveExitValue(0);
+                });
+        checkFileExists(modJvmIdent);
+
+         // 14 read base archive from top archive failed
          //    the failure will cause the archive be opened as static
-         //    so no shared both for static and dynamic
-         print("6. read base archive from top archive failed");
+         //    so no shared both for base and top
+         print("14 read base archive from top archive failed");
          String modBaseName = startNewArchive("modify-basename");
          copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modBaseName);
          int nameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
@@ -198,16 +251,18 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldNotContain("Dumping shared data to file");
                 });
 
-         // 7. dump base archive and top archive
-         print("7. dump base archive " + BASE_NAME);
+         // 20 Testing with -XX:SharedArchiveFile=top:base
+         print("20 Testing with -XX:SharedArchiveFile=top:base");
+         // 20.1 dump base archive and top archive
+         print("20.1 dump base archive " + BASE_NAME);
          dumpBaseArchive(BASE_NAME, "-Xlog:cds")
              .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
              });
          checkFileExists(BASE_NAME);
 
-         // 8. dump top based on base
-         print("8. dump top based on base");
+         // 20.2 dump top based on base
+         print("20.2 dump top based on base");
          dump2(BASE_NAME, TOP_NAME,
                "-Xlog:cds",
                "-cp", appJar, mainAppClass)
@@ -217,8 +272,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                        .shouldContain(TOP_NAME);
              });
 
-         // 9. run with base and top"
-         print("9. run with base and top");
+         // 20.3 run with base and top
+         print("20.3 run with base and top");
          run2(BASE_NAME, TOP_NAME,
               "-Xlog:cds",
               "-Xlog:cds+dynamic=info",
@@ -232,8 +287,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
 
 
          File topFile = new File(TOP_NAME);
-         // 10. damaged top, regenerate top
-         print("10. damaged top, regenerate top");
+         // 21 top version is not correct, regenerate top
+         print("21 top version is not correct, regenerate top");
          String modHeader = startNewArchive("modify-header");
          copiedJsa = CDSArchiveUtils.copyArchiveFile(topFile, modHeader);
          CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0xff);
@@ -250,8 +305,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                         .shouldContain(modHeader)
                         .shouldContain("Regenerate MethodHandle Holder classes");
               });
-         // 11. screw up base archive, will not generate top
-         print("11. screw up base archive, will not generate top");
+         // 22 screw up base archive, will not generate top
+         print("22 screw up base archive, will not generate top");
          File baseFile = new File(BASE_NAME);
          String modBase = startNewArchive("modify-base");
          copiedJsa = CDSArchiveUtils.copyArchiveFile(baseFile, modBase);

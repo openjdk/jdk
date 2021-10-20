@@ -503,16 +503,7 @@ void before_exit(JavaThread* thread) {
 #if INCLUDE_CDS
   if (DynamicDumpSharedSpaces) {
     ExceptionMark em(thread);
-    if (AutoCreateSharedArchive) {
-      // for case base:top, or top only
-      const char* archive = Arguments::GetSharedDynamicArchivePath();
-      if (archive == nullptr) {
-        archive = Arguments::GetSharedArchivePath();
-      }
-      DynamicArchive::dump(archive, thread);
-    } else {
-      DynamicArchive::dump(thread);
-    }
+    DynamicArchive::dump(thread);
     if (thread->has_pending_exception()) {
       ResourceMark rm(thread);
       oop pending_exception = thread->pending_exception();

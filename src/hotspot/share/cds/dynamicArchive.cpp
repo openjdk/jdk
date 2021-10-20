@@ -367,22 +367,27 @@ void DynamicArchive::prepare_for_dynamic_dumping() {
   }
 }
 
-void DynamicArchive::dump(const char* archive_name, TRAPS) {
-  assert((UseSharedSpaces && RecordDynamicDumpInfo) || AutoCreateSharedArchive, "already checked in arguments.cpp?");
-
-  HandleMark hm(THREAD);
-  Arguments::set_dynamic_archive_path(archive_name);
-  if (!AutoCreateSharedArchive) {
-    // When dump at exit, prepare_for_dynamic_dumping already called.
+ void DynamicArchive::dump(const char* archive_name, TRAPS) {
+  assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp?");
+  assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp?");
+  assert(!AutoCreateSharedArchive, "Should not call this function, instead call dump(TRAPS)");
+  ArchiveClassesAtExit = archive_name;
+  if (Arguments::init_shared_archive_paths()) {
     prepare_for_dynamic_dumping();
+    if (DynamicDumpSharedSpaces) {
+      dump(CHECK);
+    }
+  } else {
+    ArchiveClassesAtExit = nullptr;
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+              "Could not setup SharedDynamicArchivePath");
   }
-  if (DynamicDumpSharedSpaces) {
-    dump(CHECK);
+  // prevent do dynamic dump at exit.
+  ArchiveClassesAtExit = nullptr;
+  if (!Arguments::init_shared_archive_paths()) {
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+              "Could not restore SharedDynamicArchivePath");
   }
-  // Nullify SharedDynamicArchive to prevent dump at exit.
-  // Set DynamicDumpSharedSpaces to false will cause verification fail after dump.
-  // Note this will issue warning in dump(TRAPS) below at exit if warning enabled.
-  Arguments::set_dynamic_archive_path(nullptr);
 }
 
 void DynamicArchive::dump(TRAPS) {

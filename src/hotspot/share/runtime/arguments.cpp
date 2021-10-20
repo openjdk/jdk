@@ -3502,17 +3502,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   *top_archive_path = cur_path;
 }
 
-void Arguments::set_dynamic_archive_path(const char* archive_name) {
-  assert(UseSharedSpaces, "Base archive must be shared");
-  if (SharedDynamicArchivePath != archive_name) {
-    if (SharedDynamicArchivePath != nullptr) {
-      os::free(SharedDynamicArchivePath);
-    }
-    SharedDynamicArchivePath = (archive_name != nullptr ? os::strdup_check_oom(archive_name, mtArguments)
-                                                        : nullptr);
-  }
-}
-
 bool Arguments::init_shared_archive_paths() {
   if (ArchiveClassesAtExit != NULL) {
     if (DumpSharedSpaces) {
