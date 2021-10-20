@@ -44,30 +44,13 @@
 
 G1CardSet::CardSetPtr G1CardSet::FullCardSet = (G1CardSet::CardSetPtr)-1;
 
-G1CardSetConfiguration::G1CardSetConfiguration() :
-  _inline_ptr_bits_per_card(HeapRegion::LogCardsPerRegion) {
-
-  // Array of Cards card set container size calculation
-  _num_cards_in_array = G1RemSetArrayOfCardsEntries;
-
-  // Full card set container size calculation
-  _max_cards_in_card_set = (uint)HeapRegion::CardsPerRegion;
-  assert(is_power_of_2(_max_cards_in_card_set),
-        "max_cards_in_card_set must be a power of 2: %u", _max_cards_in_card_set);
-  _cards_in_howl_threshold = _max_cards_in_card_set * (double)G1RemSetCoarsenHowlToFullPercent / 100;
-
-  // Howl card set container size calculation.
-  _num_buckets_in_howl = G1RemSetHowlNumBuckets;
-
-  // Howl Bitmap card set container size calculation.
-  _num_cards_in_howl_bitmap = G1CardSetHowl::bitmap_size(_max_cards_in_card_set, _num_buckets_in_howl);
-  _log2_num_cards_in_howl_bitmap = log2i_exact(_num_cards_in_howl_bitmap);
-  _cards_in_howl_bitmap_threshold = _num_cards_in_howl_bitmap * (double)G1RemSetCoarsenHowlBitmapToHowlFullPercent / 100;
-  _bitmap_hash_mask = ~(~(0) << _log2_num_cards_in_howl_bitmap);
-
-  init_card_set_alloc_options();
-
-  log_configuration();
+G1CardSetConfiguration::G1CardSetConfiguration() {
+  init(HeapRegion::LogCardsPerRegion,
+       G1RemSetArrayOfCardsEntries,
+       (double)G1RemSetCoarsenHowlBitmapToHowlFullPercent / 100,
+       0,
+       (double)G1RemSetCoarsenHowlToFullPercent / 100,
+       (uint)HeapRegion::CardsPerRegion);
 }
 
 G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
@@ -75,16 +58,37 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
                                                double cards_in_bitmap_threshold,
                                                uint max_buckets_in_howl,
                                                double cards_in_howl_threshold,
-                                               uint max_cards_in_cardset) :
-  _inline_ptr_bits_per_card(inline_ptr_bits_per_card),
-  _num_cards_in_array(num_cards_in_array),
-  _max_cards_in_card_set(max_cards_in_cardset),
-  _cards_in_howl_threshold(max_cards_in_cardset * cards_in_howl_threshold) {
+                                               uint max_cards_in_cardset) {
+  init(inline_ptr_bits_per_card,
+       num_cards_in_array,
+       cards_in_bitmap_threshold,
+       max_buckets_in_howl,
+       cards_in_howl_threshold,
+       max_cards_in_cardset);
+}
 
+G1CardSetConfiguration::~G1CardSetConfiguration() {
+  FREE_C_HEAP_ARRAY(size_t, _card_set_alloc_options);
+}
+
+void G1CardSetConfiguration::init(uint inline_ptr_bits_per_card,
+                                  uint num_cards_in_array,
+                                  double cards_in_bitmap_threshold,
+                                  uint max_buckets_in_howl,
+                                  double cards_in_howl_threshold,
+                                  uint max_cards_in_cardset) {
+  _inline_ptr_bits_per_card = inline_ptr_bits_per_card;
+  _num_cards_in_array = num_cards_in_array;
+  _max_cards_in_card_set = max_cards_in_cardset;
   assert(is_power_of_2(_max_cards_in_card_set),
-        "max_cards_in_card_set must be a power of 2: %u", _max_cards_in_card_set);
+         "max_cards_in_card_set must be a power of 2: %u", _max_cards_in_card_set);
+  _cards_in_howl_threshold = max_cards_in_cardset * cards_in_howl_threshold;
 
-  _num_buckets_in_howl = G1CardSetHowl::num_buckets(_max_cards_in_card_set, _num_cards_in_array, max_buckets_in_howl);
+  if (max_buckets_in_howl == 0) {
+    _num_buckets_in_howl = G1RemSetHowlNumBuckets;
+  } else {
+    _num_buckets_in_howl = G1CardSetHowl::num_buckets(_max_cards_in_card_set, _num_cards_in_array, max_buckets_in_howl);
+  }
 
   _num_cards_in_howl_bitmap = G1CardSetHowl::bitmap_size(_max_cards_in_card_set, _num_buckets_in_howl);
   _cards_in_howl_bitmap_threshold = _num_cards_in_howl_bitmap * cards_in_bitmap_threshold;
@@ -94,10 +98,6 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   init_card_set_alloc_options();
 
   log_configuration();
-}
-
-G1CardSetConfiguration::~G1CardSetConfiguration() {
-  FREE_C_HEAP_ARRAY(size_t, _card_set_alloc_options);
 }
 
 void G1CardSetConfiguration::init_card_set_alloc_options() {

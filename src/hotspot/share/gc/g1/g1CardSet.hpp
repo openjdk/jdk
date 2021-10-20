@@ -62,6 +62,12 @@ class G1CardSetConfiguration {
   G1CardSetAllocOptions* _card_set_alloc_options;
 
   void init_card_set_alloc_options();
+  void init(uint inline_ptr_bits_per_card,
+            uint num_cards_in_array,
+            double cards_in_bitmap_threshold,
+            uint max_buckets_in_howl,
+            double cards_in_howl_threshold,
+            uint max_cards_in_cardset);
 
   void log_configuration();
 public:
