@@ -47,15 +47,20 @@ public class GetMousePositionWithOverlay {
 
         try {
             SwingUtilities.invokeAndWait(GetMousePositionWithOverlay::constructTestUI);
+            doTest();
         } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                // Do not wrap, just re-throw
+                throw e;
+            } else {
+                throw new RuntimeException("Unexpected Exception! ", e);
+            }
+        } finally {
             dispose();
-            throw new RuntimeException("Unexpected Exception!");
         }
 
         robot.waitForIdle();
 
-        doTest();
-        dispose();
     }
 
     private static void doTest() throws Exception {
@@ -68,13 +73,11 @@ public class GetMousePositionWithOverlay {
 
         Point pos = backFrame.getMousePosition();
         if (pos != null) {
-            dispose();
             throw new RuntimeException("Test failed. Mouse position should be null but was " + pos);
         }
 
         pos = frontFrame.getMousePosition();
         if (pos == null) {
-            dispose();
             throw new RuntimeException("Test failed. Mouse position should not be null");
         }
 
@@ -83,10 +86,8 @@ public class GetMousePositionWithOverlay {
 
         pos = backFrame.getMousePosition();
         if (pos == null) {
-            dispose();
             throw new RuntimeException("Test failed. Mouse position should not be null");
         }
-
     }
 
     private static void dispose() throws Exception {
