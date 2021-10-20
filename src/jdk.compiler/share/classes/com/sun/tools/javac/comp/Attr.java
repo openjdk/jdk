@@ -29,15 +29,12 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementKindVisitor14;
 import javax.tools.JavaFileObject;
 
