@@ -616,23 +616,19 @@ public class FileChannelImpl
         if (!transferToFileChannelSupported)
             return IOStatus.UNSUPPORTED;
 
-        FileDescriptor targetFD = target.fd;
-        if (targetFD == null)
-            return IOStatus.UNSUPPORTED;
-
         if (nd.transferToFileChannelNeedsPositionLock()) {
             synchronized (positionLock) {
                 long pos = position();
                 try {
                     return transferToFileChannelInternal(position, count,
-                                                           target, targetFD);
+                                                         target, target.fd);
                 } finally {
                     position(pos);
                 }
             }
         } else {
             return transferToFileChannelInternal(position, count,
-                                                 target, targetFD);
+                                                 target, target.fd);
         }
     }
 
@@ -1437,8 +1433,8 @@ public class FileChannelImpl
 
     // Transfers from src to dst, or returns IOStatus.UNSUPPORTED (-4)
     // or IOStatus.UNSUPPORTED_CASE (-6) if kernel can't do that
-    private native long transferTo0(FileDescriptor src, long position,
-                                    long count, FileDescriptor dst);
+    private static native long transferTo0(FileDescriptor src, long position,
+                                           long count, FileDescriptor dst);
 
     // Retrieves the maximum size of a transfer
     private static native long maxDirectTransferSize0();
