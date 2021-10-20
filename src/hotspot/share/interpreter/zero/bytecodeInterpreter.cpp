@@ -474,11 +474,13 @@ static inline int fast_put_type(TosState tos) {
  * the method passed in.
  */
 
-// Instantiate two variants of the method for future linking.
-template void BytecodeInterpreter::run<true>(interpreterState istate);
-template void BytecodeInterpreter::run<false>(interpreterState istate);
+// Instantiate variants of the method for future linking.
+template void BytecodeInterpreter::run<false, false>(interpreterState istate);
+template void BytecodeInterpreter::run<false,  true>(interpreterState istate);
+template void BytecodeInterpreter::run< true, false>(interpreterState istate);
+template void BytecodeInterpreter::run< true,  true>(interpreterState istate);
 
-template<bool JVMTI_ENABLED>
+template<bool JVMTI_ENABLED, bool REWRITE_BYTECODES>
 void BytecodeInterpreter::run(interpreterState istate) {
 
   // In order to simplify some tests based on switches set at runtime
@@ -861,7 +863,7 @@ run:
 
       CASE(_iload):
       {
-        if (RewriteFrequentPairs) {
+        if (REWRITE_BYTECODES) {
           // Attempt to rewrite iload, iload -> fast_iload2
           //                    iload, caload -> fast_icaload
           // Normal iloads will be rewritten to fast_iload to avoid checking again.
@@ -934,7 +936,7 @@ run:
       CASE(_aload_0):
       {
         /* Maybe rewrite if following bytecode is one of the supported _fast_Xgetfield bytecodes. */
-        if (RewriteFrequentPairs) {
+        if (REWRITE_BYTECODES) {
           switch (*(pc + 1)) {
             case Bytecodes::_fast_agetfield:
               REWRITE_AT_PC(Bytecodes::_fast_aaccess_0);
@@ -1740,7 +1742,7 @@ run:
             obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
             // Check if we can rewrite non-volatile _getfield to one of the _fast_Xgetfield.
-            if (RewriteBytecodes && !cache->is_volatile()) {
+            if (REWRITE_BYTECODES && !cache->is_volatile()) {
               // Rewrite current BC to _fast_Xgetfield.
               REWRITE_AT_PC(fast_get_type(cache->flag_state()));
             }
@@ -1862,7 +1864,7 @@ run:
             CHECK_NULL(obj);
 
             // Check if we can rewrite non-volatile _putfield to one of the _fast_Xputfield.
-            if (RewriteBytecodes && !cache->is_volatile()) {
+            if (REWRITE_BYTECODES && !cache->is_volatile()) {
               // Rewrite current BC to _fast_Xputfield.
               REWRITE_AT_PC(fast_put_type(cache->flag_state()));
             }
@@ -2428,7 +2430,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             if (cache->is_vfinal()) {
               callee = cache->f2_as_vfinal_method();
-              if (RewriteBytecodes) {
+              if (REWRITE_BYTECODES) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }
