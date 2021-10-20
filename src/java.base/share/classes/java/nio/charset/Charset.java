@@ -538,11 +538,11 @@ public abstract class Charset
      *
      * @param  fallback
      *         fallback charset in case the charset object for the named
-     *         charset is not available
+     *         charset is not available. May be {@code null}
      *
      * @return  A charset object for the named charset, or {@code fallback}
      *          in case the charset object for the named charset is not
-     *          available. May be {@code null}
+     *          available.
      *
      * @throws  IllegalCharsetNameException
      *          If the given charset name is illegal
