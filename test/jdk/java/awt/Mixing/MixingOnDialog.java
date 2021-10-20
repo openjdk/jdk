@@ -79,7 +79,7 @@ public class MixingOnDialog
 
 
         Robot robot = Util.createRobot();
-        robot.setAutoDelay(20);
+        robot.setAutoDelay(100);
 
         Util.waitForIdle(robot);
 
