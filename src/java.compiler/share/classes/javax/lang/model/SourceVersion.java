@@ -494,7 +494,7 @@ public enum SourceVersion {
     }
 
     /**
-     * {@return The latest source version that is usable under the
+     * {@return the latest source version that is usable under the
      * runtime version argument} If the runtime version's {@linkplain
      * Runtime.Version#feature() feature} is greater than the feature
      * of the platform's {@linkplain Runtime#version() version}, an
@@ -508,11 +508,11 @@ public enum SourceVersion {
      * the result.
      *
      * @apiNote
-     * An expression to convert from an integer value, for example
-     * {@code 17}, to the corresponding source version, {@code
-     * RELEASE_17}, is<br>:
+     * An expression to convert from a string value, for example
+     * {@code "17"}, to the corresponding source version, {@code
+     * RELEASE_17}, is:
      *
-     * {@code SourceVersion.valueOf(Runtime.Version.parse(Integer.toString(17)))}
+     * <pre>{@code SourceVersion.valueOf(Runtime.Version.parse("17"))}</pre>
      *
      * @param rv runtime version to map to a source version
      * @throws IllegalArgumentException if the feature of version
@@ -526,6 +526,22 @@ public enum SourceVersion {
             // Could also implement this as a switch where a case was
             // added with each new release.
             return valueOf("RELEASE_" + feature);
+        }
+    }
+
+    /**
+     * {@return the least runtime version that supports this source
+     * version} The returned runtime version has a {@linkplain
+     * Runtime.Version#feature() feature} large enough to support this
+     * source version and has no other elements set.
+     */
+    public Runtime.Version runtimeVersion() {
+        // Runtime.Version was added in JDK 9 for for now, limiting
+        // supported range to 9 and up.
+        if (this.compareTo(RELEASE_9) >= 0) {
+            return Runtime.Version.parse(Integer.toString(ordinal()));
+        } else {
+            return null;
         }
     }
 }
