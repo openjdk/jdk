@@ -35,23 +35,23 @@ import jdk.test.lib.RandomFactory;
  * @library java.base
  * @build jdk.test.lib.RandomFactory
  * @build java.base/jdk.internal.math.*
- * @run main DoubleToDecimalTest 1_000_000
+ * @run main DoubleToDecimalTest 100_000
  */
 public class DoubleToDecimalTest {
 
     private static final int RANDOM_COUNT = 100_000;
 
     public static void main(String[] args) {
-        int count = RANDOM_COUNT;
         if (args.length == 0) {
-            DoubleToDecimalChecker.test(count, RandomFactory.getRandom());
-            return;
+            DoubleToDecimalChecker.test(RANDOM_COUNT, RandomFactory.getRandom());
+        } else {
+            try {
+                int count = Integer.parseInt(args[0].replace("_", ""));
+                DoubleToDecimalChecker.test(count, RandomFactory.getRandom());
+            } catch (NumberFormatException ignored) {
+                DoubleToDecimalChecker.test(RANDOM_COUNT, RandomFactory.getRandom());
+            }
         }
-        try {
-            count = Integer.parseInt(args[0].replace("_", ""));
-        } catch (NumberFormatException ignored) {
-        }
-        DoubleToDecimalChecker.test(count, RandomFactory.getRandom());
     }
 
 }

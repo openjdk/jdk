@@ -40,8 +40,10 @@ class BasicChecker {
         return addError(reason);
     }
 
-    static int errors() {
-        return errors;
+    static void throwOnErrors(String testClassName) {
+        if (errors > 0) {
+            throw new RuntimeException(errors + " errors found in " + testClassName);
+        }
     }
 
 }

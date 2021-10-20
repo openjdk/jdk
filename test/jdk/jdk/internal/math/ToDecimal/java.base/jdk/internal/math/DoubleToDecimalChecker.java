@@ -465,7 +465,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
         addOnFail(C_TINY == DoubleToDecimal.C_TINY, "C_TINY");
     }
 
-    private static void test(int randomCount, Random r) {
+    public static void test(int randomCount, Random r) {
         testConstants();
         testExtremeValues();
         testSomeAnomalies();
@@ -483,24 +483,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
         testRandomMilli(randomCount, r);
         testRandomMicro(randomCount, r);
         testRandomShortDecimals(r);
-    }
-
-    private static final int RANDOM_COUNT = 100_000;
-
-    public static void main(String[] args) {
-        if (args.length == 0) {
-            test(RANDOM_COUNT, new Random());
-        } else {
-            try {
-                int count = Integer.parseInt(args[0].replace("_", ""));
-                test(count, new Random());
-            } catch (NumberFormatException ignored) {
-                test(RANDOM_COUNT, new Random());
-            }
-        }
-        if (errors() > 0) {
-            throw new RuntimeException(errors() + " errors found in DoubleToDecimalChecker");
-        }
+        throwOnErrors("DoubleToDecimalChecker");
     }
 
     /*

@@ -404,28 +404,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
         testMilli();
         testRandomShortDecimals(r);
         testRandom(randomCount, r);
-    }
-
-    private static final int RANDOM_COUNT = 100_000;
-
-    public static void main(String[] args) {
-        if (args.length == 0) {
-            test(RANDOM_COUNT, new Random());
-        } else if (args[0].equals("all")) {
-            testAll();
-        } else if (args[0].equals("positive")) {
-            testPositive();
-        } else {
-            try {
-                int count = Integer.parseInt(args[0].replace("_", ""));
-                test(count, new Random());
-            } catch (NumberFormatException ignored) {
-                test(RANDOM_COUNT, new Random());
-            }
-        }
-        if (errors() > 0) {
-            throw new RuntimeException(errors() + " errors found in FloatToDecimalChecker");
-        }
+        throwOnErrors("FloatToDecimalChecker");
     }
 
 }

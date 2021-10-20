@@ -34,31 +34,27 @@ import jdk.test.lib.RandomFactory;
  * @library java.base
  * @build jdk.test.lib.RandomFactory
  * @build java.base/jdk.internal.math.*
- * @run main FloatToDecimalTest 1_000_000
+ * @run main FloatToDecimalTest 100_000
  */
 public class FloatToDecimalTest {
 
     private static final int RANDOM_COUNT = 100_000;
 
     public static void main(String[] args) {
-        int count = RANDOM_COUNT;
         if (args.length == 0) {
-            FloatToDecimalChecker.test(count, RandomFactory.getRandom());
-            return;
-        }
-        if (args[0].equals("all")) {
+            FloatToDecimalChecker.test(RANDOM_COUNT, RandomFactory.getRandom());
+        } else if (args[0].equals("all")) {
             FloatToDecimalChecker.testAll();
-            return;
-        }
-        if (args[0].equals("positive")) {
+        } else if (args[0].equals("positive")) {
             FloatToDecimalChecker.testPositive();
-            return;
+        } else {
+            try {
+                int count = Integer.parseInt(args[0].replace("_", ""));
+                FloatToDecimalChecker.test(count, RandomFactory.getRandom());
+            } catch (NumberFormatException ignored) {
+                FloatToDecimalChecker.test(RANDOM_COUNT, RandomFactory.getRandom());
+            }
         }
-        try {
-            count = Integer.parseInt(args[0].replace("_", ""));
-        } catch (NumberFormatException ignored) {
-        }
-        FloatToDecimalChecker.test(count, RandomFactory.getRandom());
     }
 
 }

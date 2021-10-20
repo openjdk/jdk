@@ -486,10 +486,7 @@ public class MathUtilsChecker extends BasicChecker {
         testFlog2pow10();
         testPow10();
         testG();
-    }
-
-    public static void main(String[] args) {
-        test();
+        throwOnErrors("MathUtilsChecker");
     }
 
 }
