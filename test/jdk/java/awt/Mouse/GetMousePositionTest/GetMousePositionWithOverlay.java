@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@ import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.Rectangle;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
  * @key headful
  * @bug 8012026 8196435
+ * @library ../../regtesthelpers
  * @summary Component.getMousePosition() does not work in an applet on MacOS
  * @run main GetMousePositionWithOverlay
  */
@@ -42,9 +44,10 @@ public class GetMousePositionWithOverlay {
 
     public static void main(String[] args) throws Throwable {
         robot = new Robot();
+        robot.setAutoDelay(100);
 
-        try{
-            constructTestUI();
+        try {
+            SwingUtilities.invokeAndWait(GetMousePositionWithOverlay::constructTestUI);
         } catch (Exception e) {
             dispose();
             throw new RuntimeException("Unexpected Exception!");
@@ -56,9 +59,8 @@ public class GetMousePositionWithOverlay {
         dispose();
     }
 
-    private static void doTest() {
-
-        frontFrame.toFront();
+    private static void doTest() throws Exception {
+        SwingUtilities.invokeAndWait(() -> frontFrame.toFront());
         robot.waitForIdle();
 
         Rectangle bounds = new Rectangle(frontFrame.getLocationOnScreen(), frontFrame.getSize());
@@ -77,7 +79,7 @@ public class GetMousePositionWithOverlay {
             throw new RuntimeException("Test failed. Mouse position should not be null");
         }
 
-        robot.mouseMove(189, 189);
+        robot.mouseMove(bounds.x + bounds.width + 5, bounds.y + bounds.height + 5);
         robot.waitForIdle();
 
         pos = backFrame.getMousePosition();
@@ -88,24 +90,27 @@ public class GetMousePositionWithOverlay {
 
     }
 
-    private static void dispose() {
+    private static void dispose() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            if (backFrame != null) {
+                backFrame.dispose();
+            }
 
-        if (backFrame != null) {
-            backFrame.dispose();
-        }
-
-        if (frontFrame != null) {
-            frontFrame.dispose();
-        }
+            if (frontFrame != null) {
+                frontFrame.dispose();
+            }
+        });
     }
 
     private static void constructTestUI() {
         backFrame = new Frame();
+        backFrame.setUndecorated(true);
         backFrame.setBounds(100, 100, 100, 100);
         backFrame.setResizable(false);
         backFrame.setVisible(true);
 
         frontFrame = new Frame();
+        frontFrame.setUndecorated(true);
         frontFrame.setBounds(120, 120, 60, 60);
         frontFrame.setResizable(false);
         frontFrame.setVisible(true);
