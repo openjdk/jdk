@@ -373,13 +373,13 @@ public final class Channels {
 
             Objects.checkFromIndexSize(offset, length, dsts.length);
 
+            for (ByteBuffer dst : dsts)
+                if (dst.isReadOnly())
+                    throw new IllegalArgumentException();
+
             long totalBytesRead = 0L;
             int maxIndex = offset + length;
             for (int i = offset; i < maxIndex; i++) {
-                if (dsts[i].isReadOnly()) {
-                    throw new IllegalArgumentException();
-                }
-
                 int rem = dsts[i].remaining();
 
                 if (rem == 0) continue;
