@@ -1056,7 +1056,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 // operation, specifically B=floor((Z-sgn(S)-A)/S)*S+A.  Thus i ranges as i:[A,B] or i:[A,Z) or i:[A,Z-U) for some U<S.
 
 // N.B. We handle only the case of positive S currently, so comments about S<0 are not operative at present.  Also,
-// we only support positive index scale value (K > 0) to simplify the logic for clamping 32-bit bounds (L2, R2).
+// we only support positive index scale value (K > 0) to simplify the logic for clamping 32-bit bounds (L_2, R_2).
 // For restrictions on S and K, see the guards in extract_long_range_checks.
 
 // Within the loop there may be many range checks.  Each such range check (R.C.) is of the form 0 <= i*K+L < R, where K
@@ -1064,13 +1064,13 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 // Because R is never negative, this check can always be simplified to an unsigned check i*K+L <u R.
 
 // When a long loop over a 64-bit variable i (outer_iv) is decomposed into a series of shorter sub-loops over a 32-bit
-// variable j (inner_iv), j ranges over a shorter interval j:[0,Z2), where the limit is chosen to prevent various cases
+// variable j (inner_iv), j ranges over a shorter interval j:[0,Z_2), where the limit is chosen to prevent various cases
 // of 32-bit overflow (including multiplications j*K below).  In the sub-loop the logical value i is offset from j by a
-// 64-bit constant C, so i ranges in i:C+[0,Z2).
+// 64-bit constant C, so i ranges in i:C+[0,Z_2).
 
-// The union of all the C+[0,Z2) ranges from the sub-loops must be identical to the whole range [A,B].  Assuming S>0,
-// the first C must be A itself, and the next C value is the previous C+Z2.  In each sub-loop, j counts up from zero
-// and exits just before i=C+Z2.
+// The union of all the C+[0,Z_2) ranges from the sub-loops must be identical to the whole range [A,B].  Assuming S>0,
+// the first C must be A itself, and the next C value is the previous C+Z_2.  In each sub-loop, j counts up from zero
+// and exits just before i=C+Z_2.
 
 // (N.B. If S<0 the formulas are different, because all the loops count downward.)
 
@@ -1081,20 +1081,20 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 // PhaseIdealLoop::add_constraint.)
 
 // We must transform this comparison so that it gets the same answer, but by means of a 32-bit R.C. (using j not i) of
-// the form j*K+L2 <u32 R2.  Note that L2 and R2 must be loop-invariant, but only with respect to the sub-loop.  Thus, the
-// problem reduces to computing values for L2 and R2 (for each R.C. in the loop) in the loop header for the sub-loop.
+// the form j*K+L_2 <u32 R_2.  Note that L_2 and R_2 must be loop-invariant, but only with respect to the sub-loop.  Thus, the
+// problem reduces to computing values for L_2 and R_2 (for each R.C. in the loop) in the loop header for the sub-loop.
 // Then the standard R.C.E. transforms can take those as inputs and further compute the necessary minimum and maximum
 // values for the 32-bit counter j within which the range checks can be eliminated.
 
-// So, given j*K+Q <u R, we need to find some j*K+L2 <u32 R2, where L2 and R2 fit in 32 bits, and the 32-bit operations do
+// So, given j*K+Q <u R, we need to find some j*K+L_2 <u32 R_2, where L_2 and R_2 fit in 32 bits, and the 32-bit operations do
 // not overflow. We also need to cover the cases where i*K+L (= j*K+Q) overflows to a 64-bit negative, since that is
 // allowed as an input to the R.C., as long as the R.C. as a whole fails.
 
-// If 32-bit multiplication j*K might overflow, we adjust the sub-loop limit Z2 closer to zero to reduce j's range.
+// If 32-bit multiplication j*K might overflow, we adjust the sub-loop limit Z_2 closer to zero to reduce j's range.
 
 // For each R.C. j*K+Q <u32 R, the range of mathematical values of j*K+Q in the sub-loop is [Q_min, Q_max), where
-// Q_min=Q and Q_max=Z2*K+Q.  Making the upper limit Q_max be exclusive helps it integrate correctly with the strict
-// comparisons against R and R2.  Sometimes a very high R will be replaced by an R2 derived from the more moderate
+// Q_min=Q and Q_max=Z_2*K+Q.  Making the upper limit Q_max be exclusive helps it integrate correctly with the strict
+// comparisons against R and R_2.  Sometimes a very high R will be replaced by an R_2 derived from the more moderate
 // Q_max, and replacing one exclusive limit by another exclusive limit avoids off-by-one complexities.
 
 // N.B. If (S*K)<0 then the formulas for Q_min and Q_max may differ; the values may need to be swapped and adjusted to
@@ -1109,7 +1109,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 // if Q_min <s64 0, then use this test:
 // j*K + s32_trunc(Q_min) <u32 clamp(R, 0, Q_max)
 
-// If the 32-bit truncation loses information, no harm is done, since certainly the clamp also returns R2=zero.
+// If the 32-bit truncation loses information, no harm is done, since certainly the clamp also returns R_2=zero.
 
 // Case B: No Negatives.
 // Number line:
@@ -1160,11 +1160,14 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     Node* offset = NULL;
     Node* rc_bol = rc->in(1);
     Node* rc_cmp = rc_bol->in(1);
+    if (rc_cmp->Opcode() == Op_CmpU) {
+      // could be shared and have already been taken care of
+      continue;
+    }
     bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, &scale, &offset, T_LONG);
     assert(ok, "inconsistent: was tested before");
     Node* range = rc_cmp->in(2);
     Node* c = rc->in(0);
-    CallStaticJavaNode* call = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
     Node* entry_control = inner_head->in(LoopNode::EntryControl);
 
     Node* R = range;
@@ -1172,24 +1175,24 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     set_ctrl(K, this->C->root());
     Node* L = offset;
     Node* C = outer_phi;
-    Node* Z2 = new ConvI2LNode(inner_iters_actual_int, TypeLong::LONG);
-    register_new_node(Z2, entry_control);
+    Node* Z_2 = new ConvI2LNode(inner_iters_actual_int, TypeLong::LONG);
+    register_new_node(Z_2, entry_control);
 
     // Start with 64-bit values:
     //   i*K + L <u64 R
     //   (C+j)*K + L <u64 R
-    //   j*K + L2 <u64 R    where L2 = C*K+L
-    Node* L2 = new MulLNode(C, K);
-    register_new_node(L2, entry_control);
-    L2 = new AddLNode(L2, L);
-    register_new_node(L2, entry_control);
+    //   j*K + L_2 <u64 R    where L_2 = C*K+L
+    Node* L_2 = new MulLNode(C, K);
+    register_new_node(L_2, entry_control);
+    L_2 = new AddLNode(L_2, L);
+    register_new_node(L_2, entry_control);
 
     // Compute endpoints of the range of values j*K.
-    //  Q_min = (j=0)*K + L2;  Q_max = (j=Z2)*K + L2
-    Node* Q_min = L2;
-    Node* Q_max = new MulLNode(Z2, K);
+    //  Q_min = (j=0)*K + L_2;  Q_max = (j=Z_2)*K + L_2
+    Node* Q_min = L_2;
+    Node* Q_max = new MulLNode(Z_2, K);
     register_new_node(Q_max, entry_control);
-    Q_max = new AddLNode(Q_max, L2);
+    Q_max = new AddLNode(Q_max, L_2);
     register_new_node(Q_max, entry_control);
 
     // L_clamp = Q_min < 0 ? 0 : Q_min
@@ -1208,14 +1211,14 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     Node* H_clamp = new CMoveLNode(Q_max_bool, Q_max, R, TypeLong::LONG);
     register_new_node(H_clamp, entry_control);
 
-    // R2 = clamp(R, L_clamp, H_clamp) - L_clamp
-    // that is: R2 = clamp(R, L_clamp, H_clamp) if Q_min < 0
-    // or:      R2 = clamp(R, L_clamp, H_clamp) - Q_min if Q_min > 0
-    Node* R2 = clamp(R, L_clamp, H_clamp);
-    R2 = new SubLNode(R2, L_clamp);
-    register_new_node(R2, entry_control);
-    R2 = new ConvL2INode(R2, TypeInt::POS);
-    register_new_node(R2, entry_control);
+    // R_2 = clamp(R, L_clamp, H_clamp) - L_clamp
+    // that is: R_2 = clamp(R, L_clamp, H_clamp) if Q_min < 0
+    // or:      R_2 = clamp(R, L_clamp, H_clamp) - Q_min if Q_min > 0
+    Node* R_2 = clamp(R, L_clamp, H_clamp);
+    R_2 = new SubLNode(R_2, L_clamp);
+    register_new_node(R_2, entry_control);
+    R_2 = new ConvL2INode(R_2, TypeInt::POS);
+    register_new_node(R_2, entry_control);
 
     // Q = Q_min - L_clamp
     // that is: Q = Q_min - 0 if Q_min < 0
@@ -1233,7 +1236,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     Node* scaled_iv_plus_offset = scaled_iv_plus_offset = new AddINode(scaled_iv, Q);
     register_new_node(scaled_iv_plus_offset, c);
 
-    Node* new_rc_cmp = new CmpUNode(scaled_iv_plus_offset, R2);
+    Node* new_rc_cmp = new CmpUNode(scaled_iv_plus_offset, R_2);
     register_new_node(new_rc_cmp, c);
 
     _igvn.replace_input_of(rc_bol, 1, new_rc_cmp);
