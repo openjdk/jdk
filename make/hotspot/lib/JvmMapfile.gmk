@@ -106,7 +106,7 @@ else ifeq ($(call isTargetOs, windows), true)
   # number of exported symbols below that limit.
   #
   # Some usages of C++ lambdas require the vftable symbol of classes that use
-  # the lambda type as a template parameter. The usage of those classes wont
+  # the lambda type as a template parameter. The usage of those classes won't
   # link if their vftable symbols are removed. That's why there's an exception
   # for vftable symbols containing the string 'lambda'.
   #
