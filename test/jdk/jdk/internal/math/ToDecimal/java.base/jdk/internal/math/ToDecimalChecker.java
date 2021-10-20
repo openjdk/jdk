@@ -32,20 +32,21 @@ import static java.math.BigInteger.*;
 
 /*
  * A checker for the Javadoc specification.
- * It just relies on straightforward use of (expensive) BigDecimal arithmetic,
- * not optimized at all.
+ * It just relies on straightforward use of (expensive) BigDecimal arithmetic.
+ * Not optimized for performance.
  */
 abstract class ToDecimalChecker extends BasicChecker {
 
     /* The string to check */
     private final String s;
 
-    /* The decimal parsed from s is c 10^q */
-    private long c;
+    /* The decimal parsed from s is dv = (sgn c) 10^q*/
+    private int sgn;
     private int q;
+    private long c;
 
-    /* The number of digits parsed from s: 10^(len10-1) <= c < 10^len10 */
-    private int len10;
+    /* The number of digits in c: 10^(l-1) <= c < 10^l */
+    private int l;
 
     ToDecimalChecker(String s) {
         this.s = s;
@@ -55,20 +56,16 @@ abstract class ToDecimalChecker extends BasicChecker {
      * Returns e be such that 10^(e-1) <= v < 10^e
      */
     static int e(double v) {
-        /* log10(v) + 1 is a first good approximation of e */
+        /* floor(log10(v)) + 1 is a first good approximation of e */
         int e = (int) Math.floor(Math.log10(v)) + 1;
 
-        /* Full precision search for e such that 10^(e-1) <= c 2^q < 10^e */
+        /* Full precision search for e */
         BigDecimal vp = new BigDecimal(v);
-        BigDecimal low = new BigDecimal(BigInteger.ONE, -(e - 1));
-        while (low.compareTo(vp) > 0) {
+        while (new BigDecimal(ONE, -(e - 1)).compareTo(vp) > 0) {
             e -= 1;
-            low = new BigDecimal(BigInteger.ONE, -(e - 1));
         }
-        BigDecimal high = new BigDecimal(BigInteger.ONE, -e);
-        while (vp.compareTo(high) >= 0) {
+        while (vp.compareTo(new BigDecimal(ONE, -e)) >= 0) {
             e += 1;
-            high = new BigDecimal(BigInteger.ONE, -e);
         }
         return e;
     }
@@ -77,332 +74,297 @@ abstract class ToDecimalChecker extends BasicChecker {
         BigInteger[] qr = ONE.shiftLeft(-qMin)
                 .divideAndRemainder(TEN.pow(-(kMin + 1)));
         BigInteger cTiny = qr[1].signum() > 0 ? qr[0].add(ONE) : qr[0];
-        assertTrue(cTiny.bitLength() < Long.SIZE, "C_TINY");
+        addOnFail(cTiny.bitLength() < Long.SIZE, "C_TINY");
         return cTiny.longValue();
     }
 
-    void assertTrue() {
-        if (isOK()) {
-            return;
-        }
-        String msg = "toString applied to the bits " +
-                hexBits() +
-                " returns " +
-                "\"" + s + "\"" +
-                ", which is not correct according to the specification.";
-        if (FAILURE_THROWS_EXCEPTION) {
-            throw new RuntimeException(msg);
-        }
-        System.err.println(msg);
+    private boolean conversionError(String reason) {
+        return addError("toString(" + hexString() + ")" +
+                " returns incorrect \"" + s + "\" (" + reason + ")");
     }
 
     /*
      * Returns whether s syntactically meets the expected output of
-     * toString. It is restricted to finite positive outputs.
-     * It is an unusually long method but rather straightforward, too.
-     * Many conditionals could be merged, but KISS here.
+     * toString(). It is restricted to finite nonzero outputs.
      */
-    private boolean parse(String t) {
-        try {
-            /* first determine interesting boundaries in the string */
-            StringReader r = new StringReader(t);
+    private boolean failsOnParse() {
+        if (s.length() > maxStringLength()) {
+            return conversionError("too long");
+        }
+        try (StringReader r = new StringReader(s)) {
+            /* 1 character look-ahead */
             int ch = r.read();
 
-            int i = 0;
+            if (ch != '-' && !isDigit(ch)) {
+                return conversionError("does not start with '-' or digit");
+            }
+
+            int m = 0;
+            if (ch == '-') {
+                ++m;
+                ch = r.read();
+            }
+            sgn = m > 0 ? -1 : 1;
+
+            int i = m;
             while (ch == '0') {
                 ++i;
                 ch = r.read();
             }
-            /* i is just after zeroes starting the integer */
+            if (i - m > 1) {
+                return conversionError("more than 1 leading '0'");
+            }
 
             int p = i;
-            while ('0' <= ch && ch <= '9') {
+            while (isDigit(ch)) {
                 c = 10 * c + (ch - '0');
-                if (c < 0) {
-                    return false;
-                }
-                ++len10;
                 ++p;
                 ch = r.read();
             }
-            /* p is just after digits ending the integer */
+            if (p == m) {
+                return conversionError("no integer part");
+            }
+            if (i > m && p > i) {
+                return conversionError("non-zero integer part with leading '0'");
+            }
 
             int fz = p;
             if (ch == '.') {
                 ++fz;
                 ch = r.read();
             }
-            /* fz is just after a decimal '.' */
+            if (fz == p) {
+                return conversionError("no decimal point");
+            }
 
             int f = fz;
             while (ch == '0') {
-                c = 10 * c + (ch - '0');
-                if (c < 0) {
-                    return false;
-                }
-                ++len10;
+                c = 10 * c;
                 ++f;
                 ch = r.read();
             }
-            /* f is just after zeroes starting the fraction */
 
-            if (c == 0) {
-                len10 = 0;
-            }
             int x = f;
-            while ('0' <= ch && ch <= '9') {
+            while (isDigit(ch)) {
                 c = 10 * c + (ch - '0');
-                if (c < 0) {
-                    return false;
-                }
-                ++len10;
                 ++x;
                 ch = r.read();
             }
-            /* x is just after digits ending the fraction */
-
-            int g = x;
-            if (ch == 'E') {
-                ++g;
-                ch = r.read();
-            }
-            /* g is just after an exponent indicator 'E' */
-
-            int ez = g;
-            if (ch == '-') {
-                ++ez;
-                ch = r.read();
-            }
-            /* ez is just after a '-' sign in the exponent */
-
-            int e = ez;
-            while (ch == '0') {
-                ++e;
-                ch = r.read();
-            }
-            /* e is just after zeroes starting the exponent */
-
-            int z = e;
-            while ('0' <= ch && ch <= '9') {
-                q = 10 * q + (ch - '0');
-                if (q < 0) {
-                    return false;
-                }
-                ++z;
-                ch = r.read();
-            }
-            /* z is just after digits ending the exponent */
-
-            /* No other char after the number */
-            if (z != t.length()) {
-                return false;
-            }
-
-            /* The integer must be present */
-            if (p == 0) {
-                return false;
-            }
-
-            /* The decimal '.' must be present */
-            if (fz == p) {
-                return false;
-            }
-
-            /* The fraction must be present */
             if (x == fz) {
-                return false;
+                return conversionError("no fraction");
+            }
+            l = p > i ? x - i - 1 : x - f;
+            if (l > h()) {
+                return conversionError("significand with more than " + h() + " digits");
+            }
+            if (x - fz > 1 && c % 10 == 0) {
+                return conversionError("fraction has more than 1 digit and ends with '0'");
             }
 
-            /* The fraction is not 0 or it consists of exactly one 0 */
-            if (f == x && f - fz > 1) {
-                return false;
+            if (ch == 'e') {
+                return conversionError("exponent indicator is 'e'");
             }
-
-            /* Plain notation, no exponent */
-            if (x == z) {
-                /* At most one 0 starting the integer */
-                if (i > 1) {
-                    return false;
+            if (ch != 'E') {
+                /* Plain notation, no exponent */
+                if (p - m > 7) {
+                    return conversionError("integer part with more than 7 digits");
+                }
+                if (i > m && f - fz > 2) {
+                    return conversionError("pure fraction with more than 2 leading '0'");
+                }
+            } else {
+                if (p - i != 1) {
+                    return conversionError("integer part doesn't have exactly 1 non-zero digit");
                 }
 
-                /* If the integer is 0, at most 2 zeroes start the fraction */
-                if (i == 1 && f - fz > 2) {
-                    return false;
+                ch = r.read();
+                if (ch != '-' && !isDigit(ch)) {
+                    return conversionError("exponent doesn't start with '-' or digit");
                 }
 
-                /* The integer cannot have more than 7 digits */
-                if (p > 7) {
-                    return false;
+                int e = x + 1;
+                if (ch == '-') {
+                    ++e;
+                    ch = r.read();
                 }
 
-                q = fz - x;
+                if (ch == '0') {
+                    return conversionError("exponent with leading '0'");
+                }
 
-                /* OK for plain notation */
-                return true;
+                int z = e;
+                while (isDigit(ch)) {
+                    q = 10 * q + (ch - '0');
+                    ++z;
+                    ch = r.read();
+                }
+                if (z == e) {
+                    return conversionError("no exponent");
+                }
+                if (z - e > 3) {
+                    return conversionError("exponent is out-of-range");
+                }
+
+                if (e > x + 1) {
+                    q = -q;
+                }
+                if (-3 <= q && q < 7) {
+                    return conversionError("exponent lies in [-3, 7)");
+                }
             }
-
-            /* Computerized scientific notation */
-
-            /* The integer has exactly one nonzero digit */
-            if (i != 0 || p != 1) {
-                return false;
+            if (ch >= 0) {
+                return conversionError("extraneous characters after decimal");
             }
-
-            /* There must be an exponent indicator */
-            if (x == g) {
-                return false;
-            }
-
-            /* There must be an exponent */
-            if (ez == z) {
-                return false;
-            }
-
-            /* The exponent must not start with zeroes */
-            if (ez != e) {
-                return false;
-            }
-
-            if (g != ez) {
-                q = -q;
-            }
-
-            /* The exponent must not lie in [-3, 7) */
-            if (-3 <= q && q < 7) {
-                return false;
-            }
-
             q += fz - x;
-
-            /* OK for computerized scientific notation */
-            return true;
         } catch (IOException ex) {
-            /* An IOException on a StringReader??? Please... */
-            return false;
+            return conversionError("unexpected exception (" +  ex.getMessage() + ")!!!");
         }
+        return false;
     }
 
-    private boolean isOK() {
+    private static boolean isDigit(int ch) {
+        return '0' <= ch && ch <= '9';
+    }
+
+    private boolean addOnFail(String expected) {
+        return addOnFail(s.equals(expected), "expected \"" + expected + "\"");
+    }
+
+    boolean check() {
+        if (s.isEmpty()) {
+            return conversionError("empty");
+        }
         if (isNaN()) {
-            return s.equals("NaN");
+            return addOnFail("NaN");
         }
-        String t = s;
-        if (isNegative()) {
-            if (s.isEmpty() || s.charAt(0) != '-') {
-                return false;
-            }
-            negate();
-            t = s.substring(1);
+        if (isNegativeInfinity()) {
+            return addOnFail("-Infinity");
         }
-        if (isInfinity()) {
-            return t.equals("Infinity");
+        if (isPositiveInfinity()) {
+            return addOnFail("Infinity");
         }
-        if (isZero()) {
-            return t.equals("0.0");
+        if (isMinusZero()) {
+            return addOnFail("-0.0");
         }
-        if (!parse(t)) {
-            return false;
+        if (isPlusZero()) {
+            return addOnFail("0.0");
         }
-        if (len10 < 2) {
-            c *= 10;
-            q -= 1;
-            len10 += 1;
-        }
-        if (2 > len10 || len10 > maxLen10()) {
-            return false;
+        if (failsOnParse()) {
+            return true;
         }
 
         /* The exponent is bounded */
-        if (minExp() > q + len10 || q + len10 > maxExp()) {
-            return false;
+        if (minExp() > q + l || q + l > maxExp()) {
+            return conversionError("exponent is out-of-range");
         }
 
         /* s must recover v */
         try {
-            if (!recovers(t)) {
-                return false;
+            if (!recovers(s)) {
+                return conversionError("does not convert to the floating-point value");
             }
-        } catch (NumberFormatException e) {
-            return false;
+        } catch (NumberFormatException ex) {
+            return conversionError("unexpected exception (" +  ex.getMessage() + ")!!!");
+        }
+
+        if (l < 2) {
+            c *= 10;
+            q -= 1;
+            l += 1;
         }
 
         /* Get rid of trailing zeroes, still ensuring at least 2 digits */
-        while (len10 > 2 && c % 10 == 0) {
+        while (l > 2 && c % 10 == 0) {
             c /= 10;
             q += 1;
-            len10 -= 1;
+            l -= 1;
         }
 
-        if (len10 > 2) {
-            /* Try with a shorter number less than v... */
-            if (recovers(BigDecimal.valueOf(c / 10, -q - 1))) {
-                return false;
+        /* dv = (sgn * c) 10^q */
+        if (l > 2) {
+            /* Try with a number shorter than dv of lesser magnitude... */
+            BigDecimal dvd = BigDecimal.valueOf(sgn * (c / 10), -(q + 1));
+            if (recovers(dvd)) {
+                return conversionError("\"" + dvd + "\" is shorter");
             }
-
-            /* ... and with a shorter number greater than v */
-            if (recovers(BigDecimal.valueOf(c / 10 + 1, -q - 1))) {
-                return false;
+            /* ... and with a number shorter than dv of greater magnitude */
+            BigDecimal dvu = BigDecimal.valueOf(sgn * (c / 10 + 1), -(q + 1));
+            if (recovers(dvu)) {
+                return conversionError("\"" + dvu + "\" is shorter");
             }
         }
 
-        /* Try with the decimal predecessor... */
-        BigDecimal dp = c == 10 ?
-                BigDecimal.valueOf(99, -q + 1) :
-                BigDecimal.valueOf(c - 1, -q);
-        if (recovers(dp)) {
-            BigDecimal bv = toBigDecimal();
-            BigDecimal deltav = bv.subtract(BigDecimal.valueOf(c, -q));
-            if (deltav.signum() >= 0) {
-                return true;
+        /*
+         * Check with the predecessor dvp (lesser magnitude)
+         * and successor dvs (greater magnitude) of dv.
+         * If |dv| < |v| dvp is not checked.
+         * If |dv| > |v| dvs is not checked.
+         */
+        BigDecimal v = toBigDecimal();
+        BigDecimal dv = BigDecimal.valueOf(sgn * c, -q);
+        BigDecimal deltav = v.subtract(dv);
+        if (sgn * deltav.signum() < 0) {
+            /* |dv| > |v|, check dvp */
+            BigDecimal dvp =
+                    c == 10L
+                            ? BigDecimal.valueOf(sgn * 99L, -(q - 1))
+                            : BigDecimal.valueOf(sgn * (c - 1), -q);
+            if (recovers(dvp)) {
+                BigDecimal deltavp = dvp.subtract(v);
+                if (sgn * deltavp.signum() >= 0) {
+                    return conversionError("\"" + dvp + "\" is closer");
+                }
+                int cmp = sgn * deltav.compareTo(deltavp);
+                if (cmp < 0) {
+                    return conversionError("\"" + dvp + "\" is closer");
+                }
+                if (cmp == 0 && (c & 0x1) != 0) {
+                    return conversionError("\"" + dvp + "\" is as close but has even significand");
+                }
             }
-            BigDecimal delta = dp.subtract(bv);
-            if (delta.signum() >= 0) {
-                return false;
+        } else if (sgn * deltav.signum() > 0) {
+            /* |dv| < |v|, check dvs */
+            BigDecimal dvs = BigDecimal.valueOf(sgn * (c + 1), -q);
+            if (recovers(dvs)) {
+                BigDecimal deltavs = dvs.subtract(v);
+                if (sgn * deltavs.signum() <= 0) {
+                    return conversionError("\"" + dvs + "\" is closer");
+                }
+                int cmp = sgn * deltav.compareTo(deltavs);
+                if (cmp > 0) {
+                    return conversionError("\"" + dvs + "\" is closer");
+                }
+                if (cmp == 0 && (c & 0x1) != 0) {
+                    return conversionError("\"" + dvs + "\" is as close but has even significand");
+                }
             }
-            int cmp = deltav.compareTo(delta);
-            return cmp > 0 || cmp == 0 && (c & 0x1) == 0;
         }
-
-        /* ... and with the decimal successor */
-        BigDecimal ds = BigDecimal.valueOf(c + 1, -q);
-        if (recovers(ds)) {
-            BigDecimal bv = toBigDecimal();
-            BigDecimal deltav = bv.subtract(BigDecimal.valueOf(c, -q));
-            if (deltav.signum() <= 0) {
-                return true;
-            }
-            BigDecimal delta = ds.subtract(bv);
-            if (delta.signum() <= 0) {
-                return false;
-            }
-            int cmp = deltav.compareTo(delta);
-            return cmp < 0 || cmp == 0 && (c & 0x1) == 0;
-        }
-
-        return true;
+        return false;
     }
+
+    abstract int h();
+
+    abstract int maxStringLength();
 
     abstract BigDecimal toBigDecimal();
 
-    abstract boolean recovers(BigDecimal b);
+    abstract boolean recovers(BigDecimal bd);
 
     abstract boolean recovers(String s);
 
-    abstract String hexBits();
+    abstract String hexString();
 
     abstract int minExp();
 
     abstract int maxExp();
 
-    abstract int maxLen10();
+    abstract boolean isNegativeInfinity();
 
-    abstract boolean isZero();
+    abstract boolean isPositiveInfinity();
 
-    abstract boolean isInfinity();
+    abstract boolean isMinusZero();
 
-    abstract void negate();
-
-    abstract boolean isNegative();
+    abstract boolean isPlusZero();
 
     abstract boolean isNaN();
 

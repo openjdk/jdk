@@ -25,17 +25,23 @@ package jdk.internal.math;
 
 class BasicChecker {
 
-    static final boolean FAILURE_THROWS_EXCEPTION = true;
+    private static int errors;
 
-    static void assertTrue(boolean ok, String valueName) {
-        if (ok) {
-            return;
+    static boolean addError(String reason) {
+        ++errors;
+        System.err.println(reason);
+        return true;
+    }
+
+    static boolean addOnFail(boolean expected, String reason) {
+        if (expected) {
+            return false;
         }
-        String msg = valueName + " is not correct";
-        if (FAILURE_THROWS_EXCEPTION) {
-            throw new RuntimeException(msg);
-        }
-        System.err.println(msg);
+        return addError(reason);
+    }
+
+    static int errors() {
+        return errors;
     }
 
 }

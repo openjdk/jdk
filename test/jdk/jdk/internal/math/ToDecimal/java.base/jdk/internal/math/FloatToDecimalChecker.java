@@ -54,13 +54,24 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
 
     private static final long C_TINY = cTiny(Q_MIN, K_MIN);
 
-    private float v;
-    private final int originalBits;
+    private static final int Z = 1_024;
 
-    private FloatToDecimalChecker(float v, String s) {
-        super(s);
+    private final float v;
+
+    private FloatToDecimalChecker(float v) {
+        super(FloatToDecimal.toString(v));
+//        super(Float.toString(v));
         this.v = v;
-        originalBits = floatToRawIntBits(v);
+    }
+
+    @Override
+    int h() {
+        return H;
+    }
+
+    @Override
+    int maxStringLength() {
+        return H + 6;
     }
 
     @Override
@@ -69,22 +80,18 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
     }
 
     @Override
-    boolean recovers(BigDecimal b) {
-        return b.floatValue() == v;
-    }
-
-    @Override
-    String hexBits() {
-        return String.format("0x%01X__%02X__%02X_%04X",
-                (originalBits >>> 31) & 0x1,
-                (originalBits >>> 23) & 0xFF,
-                (originalBits >>> 16) & 0x7F,
-                originalBits & 0xFFFF);
+    boolean recovers(BigDecimal bd) {
+        return bd.floatValue() == v;
     }
 
     @Override
     boolean recovers(String s) {
         return parseFloat(s) == v;
+    }
+
+    @Override
+    String hexString() {
+        return toHexString(v) + "F";
     }
 
     @Override
@@ -98,28 +105,23 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
     }
 
     @Override
-    int maxLen10() {
-        return H;
+    boolean isNegativeInfinity() {
+        return v == NEGATIVE_INFINITY;
     }
 
     @Override
-    boolean isZero() {
-        return v == 0;
-    }
-
-    @Override
-    boolean isInfinity() {
+    boolean isPositiveInfinity() {
         return v == POSITIVE_INFINITY;
     }
 
     @Override
-    void negate() {
-        v = -v;
+    boolean isMinusZero() {
+        return floatToIntBits(v) == 0x8000_0000;
     }
 
     @Override
-    boolean isNegative() {
-        return originalBits < 0;
+    boolean isPlusZero() {
+        return floatToIntBits(v) == 0x0000_0000;
     }
 
     @Override
@@ -127,26 +129,37 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
         return Float.isNaN(v);
     }
 
-    private static void toDec(float v) {
-        String s = FloatToDecimal.toString(v);
-        new FloatToDecimalChecker(v, s).assertTrue();
+    private static void testDec(float v) {
+        new FloatToDecimalChecker(v).check();
+    }
+
+    /*
+     * Test around v, up to z values below and above v.
+     * Don't care when v is at the extremes,
+     * as any value returned by longBitsToDouble() is valid.
+     */
+    private static void testAround(float v, int z) {
+        int bits = floatToIntBits(v);
+        for (int i = -z; i <= z; ++i) {
+            testDec(intBitsToFloat(bits + i));
+        }
     }
 
     /*
      * MIN_NORMAL is incorrectly rendered by the JDK.
      */
     private static void testExtremeValues() {
-        toDec(NEGATIVE_INFINITY);
-        toDec(-MAX_VALUE);
-        toDec(-MIN_NORMAL);
-        toDec(-MIN_VALUE);
-        toDec(-0.0f);
-        toDec(0.0f);
-        toDec(MIN_VALUE);
-        toDec(MIN_NORMAL);
-        toDec(MAX_VALUE);
-        toDec(POSITIVE_INFINITY);
-        toDec(NaN);
+        testDec(NEGATIVE_INFINITY);
+        testAround(-MAX_VALUE, Z);
+        testAround(-MIN_NORMAL, Z);
+        testAround(-MIN_VALUE, Z);
+        testDec(-0.0f);
+        testDec(0.0f);
+        testAround(MIN_VALUE, Z);
+        testAround(MIN_NORMAL, Z);
+        testAround(MAX_VALUE, Z);
+        testDec(POSITIVE_INFINITY);
+        testDec(NaN);
 
         /*
          * Quiet NaNs have the most significant bit of the mantissa as 1,
@@ -154,16 +167,16 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
          * Exercise 4 combinations of quiet/signaling NaNs and
          * "positive/negative" NaNs.
          */
-        toDec(intBitsToFloat(0x7FC0_0001));
-        toDec(intBitsToFloat(0x7F80_0001));
-        toDec(intBitsToFloat(0xFFC0_0001));
-        toDec(intBitsToFloat(0xFF80_0001));
+        testDec(intBitsToFloat(0x7FC0_0001));
+        testDec(intBitsToFloat(0x7F80_0001));
+        testDec(intBitsToFloat(0xFFC0_0001));
+        testDec(intBitsToFloat(0xFF80_0001));
 
         /*
          * All values treated specially by Schubfach
          */
         for (int c = 1; c < C_TINY; ++c) {
-            toDec(c * MIN_VALUE);
+            testDec(c * MIN_VALUE);
         }
     }
 
@@ -173,7 +186,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
      */
     private static void testPowersOf10() {
         for (int e = E_MIN; e <= E_MAX; ++e) {
-            toDec(parseFloat("1e" + e));
+            testAround(parseFloat("1e" + e), Z);
         }
     }
 
@@ -183,7 +196,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
      */
     private static void testPowersOf2() {
         for (float v = MIN_VALUE; v <= MAX_VALUE; v *= 2) {
-            toDec(v);
+            testAround(v, Z);
         }
     }
 
@@ -205,7 +218,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
 
     private static void testSomeAnomalies() {
         for (String dec : Anomalies) {
-            toDec(parseFloat(dec));
+            testDec(parseFloat(dec));
         }
     }
 
@@ -229,13 +242,13 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
             16_431_059,
 
             16_093_626,
-             9_983_778,
+            9_983_778,
             12_745_034,
             12_706_553,
             11_005_028,
             15_059_547,
             16_015_691,
-             8_667_859,
+            8_667_859,
             14_855_922,
             14_855_922,
             10_144_164,
@@ -245,34 +258,34 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
     private static final int[] PaxsonExponents = {
             -102,
             -103,
-              86,
+            86,
             -138,
             -130,
             -146,
-             -41,
+            -41,
             -145,
             -125,
             -146,
             -102,
-             -61,
+            -61,
 
-              69,
-              25,
-             104,
-              72,
-              45,
-              71,
-             -99,
-              56,
-             -82,
-             -83,
+            69,
+            25,
+            104,
+            72,
+            45,
+            71,
+            -99,
+            56,
+            -82,
+            -83,
             -110,
-              95,
+            95,
     };
 
     private static void testPaxson() {
         for (int i = 0; i < PaxsonSignificands.length; ++i) {
-            toDec(scalb(PaxsonSignificands[i], PaxsonExponents[i]));
+            testDec(scalb(PaxsonSignificands[i], PaxsonExponents[i]));
         }
     }
 
@@ -282,7 +295,34 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
      */
     private static void testInts() {
         for (int i = 1; i < 1 << P - 1; ++i) {
-            toDec(i);
+            testDec(i);
+        }
+    }
+
+    /*
+     * 0.1, 0.2, ..., 999.9 and around
+     */
+    private static void testDeci() {
+        for (int i = 1; i < 10_000; ++i) {
+            testAround(i / 1e1f, 10);
+        }
+    }
+
+    /*
+     * 0.01, 0.02, ..., 99.99 and around
+     */
+    private static void testCenti() {
+        for (int i = 1; i < 10_000; ++i) {
+            testAround(i / 1e2f, 10);
+        }
+    }
+
+    /*
+     * 0.001, 0.002, ..., 9.999 and around
+     */
+    private static void testMilli() {
+        for (int i = 1; i < 10_000; ++i) {
+            testAround(i / 1e3f, 10);
         }
     }
 
@@ -291,7 +331,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
      */
     private static void testRandom(int randomCount, Random r) {
         for (int i = 0; i < randomCount; ++i) {
-            toDec(intBitsToFloat(r.nextInt()));
+            testDec(intBitsToFloat(r.nextInt()));
         }
     }
 
@@ -302,9 +342,9 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
         /* Avoid wrapping around Integer.MAX_VALUE */
         int bits = Integer.MIN_VALUE;
         for (; bits < Integer.MAX_VALUE; ++bits) {
-            toDec(intBitsToFloat(bits));
+            testDec(intBitsToFloat(bits));
         }
-        toDec(intBitsToFloat(bits));
+        testDec(intBitsToFloat(bits));
     }
 
     /*
@@ -314,29 +354,41 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
         /* Avoid wrapping around Integer.MAX_VALUE */
         int bits = 0;
         for (; bits < Integer.MAX_VALUE; ++bits) {
-            toDec(intBitsToFloat(bits));
+            testDec(intBitsToFloat(bits));
         }
-        toDec(intBitsToFloat(bits));
+        testDec(intBitsToFloat(bits));
     }
 
+    /*
+     * Values suggested by Guy Steele
+     */
+    private static void testRandomShortDecimals(Random r) {
+        int e = r.nextInt(E_MAX - E_MIN + 1) + E_MIN;
+        for (int pow10 = 1; pow10 < 10_000; pow10 *= 10) {
+            /* randomly generate an int in [pow10, 10 pow10) */
+            testAround(parseFloat((r.nextInt(9 * pow10) + pow10) + "e" + e), Z);
+        }
+    }
+
+
     private static void testConstants() {
-        assertTrue(P == FloatToDecimal.P, "P");
-        assertTrue((long) (float) C_MIN == C_MIN, "C_MIN");
-        assertTrue((long) (float) C_MAX == C_MAX, "C_MAX");
-        assertTrue(MIN_VALUE == Float.MIN_VALUE, "MIN_VALUE");
-        assertTrue(MIN_NORMAL == Float.MIN_NORMAL, "MIN_NORMAL");
-        assertTrue(MAX_VALUE == Float.MAX_VALUE, "MAX_VALUE");
+        addOnFail(P == FloatToDecimal.P, "P");
+        addOnFail((int) (float) C_MIN == C_MIN, "C_MIN");
+        addOnFail((int) (float) C_MAX == C_MAX, "C_MAX");
+        addOnFail(MIN_VALUE == Float.MIN_VALUE, "MIN_VALUE");
+        addOnFail(MIN_NORMAL == Float.MIN_NORMAL, "MIN_NORMAL");
+        addOnFail(MAX_VALUE == Float.MAX_VALUE, "MAX_VALUE");
 
-        assertTrue(Q_MIN == FloatToDecimal.Q_MIN, "Q_MIN");
-        assertTrue(Q_MAX == FloatToDecimal.Q_MAX, "Q_MAX");
+        addOnFail(Q_MIN == FloatToDecimal.Q_MIN, "Q_MIN");
+        addOnFail(Q_MAX == FloatToDecimal.Q_MAX, "Q_MAX");
 
-        assertTrue(K_MIN == FloatToDecimal.K_MIN, "K_MIN");
-        assertTrue(K_MAX == FloatToDecimal.K_MAX, "K_MAX");
-        assertTrue(H == FloatToDecimal.H, "H");
+        addOnFail(K_MIN == FloatToDecimal.K_MIN, "K_MIN");
+        addOnFail(K_MAX == FloatToDecimal.K_MAX, "K_MAX");
+        addOnFail(H == FloatToDecimal.H, "H");
 
-        assertTrue(E_MIN == FloatToDecimal.E_MIN, "E_MIN");
-        assertTrue(E_MAX == FloatToDecimal.E_MAX, "E_MAX");
-        assertTrue(C_TINY == FloatToDecimal.C_TINY, "C_TINY");
+        addOnFail(E_MIN == FloatToDecimal.E_MIN, "E_MIN");
+        addOnFail(E_MAX == FloatToDecimal.E_MAX, "E_MAX");
+        addOnFail(C_TINY == FloatToDecimal.C_TINY, "C_TINY");
     }
 
     public static void test(int randomCount, Random r) {
@@ -347,19 +399,33 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
         testPowersOf10();
         testPaxson();
         testInts();
+        testDeci();
+        testCenti();
+        testMilli();
+        testRandomShortDecimals(r);
         testRandom(randomCount, r);
     }
 
+    private static final int RANDOM_COUNT = 100_000;
+
     public static void main(String[] args) {
-        if (args.length > 0 && args[0].equals("all")) {
+        if (args.length == 0) {
+            test(RANDOM_COUNT, new Random());
+        } else if (args[0].equals("all")) {
             testAll();
-            return;
-        }
-        if (args.length > 0 && args[0].equals("positive")) {
+        } else if (args[0].equals("positive")) {
             testPositive();
-            return;
+        } else {
+            try {
+                int count = Integer.parseInt(args[0].replace("_", ""));
+                test(count, new Random());
+            } catch (NumberFormatException ignored) {
+                test(RANDOM_COUNT, new Random());
+            }
         }
-        test(1_000_000, new Random());
+        if (errors() > 0) {
+            throw new RuntimeException(errors() + " errors found in FloatToDecimalChecker");
+        }
     }
 
 }
