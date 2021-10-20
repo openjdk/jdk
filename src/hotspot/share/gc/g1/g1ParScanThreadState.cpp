@@ -85,7 +85,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL),
-    NOT_PRODUCT(_evac_failure_inject_counter(0) COMMA)
+    EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions)
@@ -420,7 +420,7 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
   return obj_ptr;
 }
 
-#ifndef PRODUCT
+#if EVAC_FAILURE_INJECTOR
 bool G1ParScanThreadState::inject_evacuation_failure() {
   return _g1h->evac_failure_injector()->evacuation_should_fail(_evac_failure_inject_counter);
 }

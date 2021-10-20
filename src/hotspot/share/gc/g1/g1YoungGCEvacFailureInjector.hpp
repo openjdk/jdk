@@ -25,8 +25,19 @@
 #ifndef SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP
 #define SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP
 
+#include "gc/g1/g1_globals.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#if EVAC_FAILURE_INJECTOR
+#define EVAC_FAILURE_INJECTOR_RETURN
+#define EVAC_FAILURE_INJECTOR_RETURN_(code)
+#define EVAC_FAILURE_INJECTOR_ONLY(code) code
+#else
+#define EVAC_FAILURE_INJECTOR_RETURN { return; }
+#define EVAC_FAILURE_INJECTOR_RETURN_(code) { code }
+#define EVAC_FAILURE_INJECTOR_ONLY(code)
+#endif // EVAC_FAILURE_INJECTOR
 
 // Support for injecting evacuation failures based on the G1EvacuationFailureALot*
 // flags. Analogous to PromotionFailureALot for the other collectors.
@@ -35,9 +46,9 @@
 // inbetween we "arm" the injector to induce evacuation failures after
 // G1EvacuationFailureALotCount successful evacuations.
 //
-// Available only in non-product builds.
+// Available only when EVAC_FAILURE_INJECTOR is defined.
 class G1YoungGCEvacFailureInjector {
-#ifndef PRODUCT
+#if EVAC_FAILURE_INJECTOR
   // Should we inject evacuation failures in the current GC.
   bool _inject_evacuation_failure_for_current_gc;
 
@@ -49,20 +60,20 @@ class G1YoungGCEvacFailureInjector {
 
   bool arm_if_needed_for_gc_type(bool for_young_gc,
                                  bool during_concurrent_start,
-                                 bool mark_or_rebuild_in_progress) PRODUCT_RETURN_( return false; );
+                                 bool mark_or_rebuild_in_progress) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 public:
 
   // Arm the evacuation failure injector if needed for the current
   // GC (based upon the type of GC and which command line flags are set);
-  void arm_if_needed() PRODUCT_RETURN;
+  void arm_if_needed() EVAC_FAILURE_INJECTOR_RETURN;
 
   // Return true if it's time to cause an evacuation failure; the caller
   // provides the (preferably thread-local) counter to minimize performance impact.
-  bool evacuation_should_fail(size_t& counter) PRODUCT_RETURN_( return false; );
+  bool evacuation_should_fail(size_t& counter) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
   // Reset the evacuation failure injection counters. Should be called at
   // the end of an evacuation pause in which an evacuation failure occurred.
-  void reset() PRODUCT_RETURN;
+  void reset() EVAC_FAILURE_INJECTOR_RETURN;
 };
 
 #endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP */
