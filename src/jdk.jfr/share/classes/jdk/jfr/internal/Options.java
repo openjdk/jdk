@@ -119,17 +119,13 @@ public final class Options {
         globalBufferSize = globalBufsize;
     }
 
-    public static synchronized void setDumpPath(SafePath path) {
-        try {
-            if (path != null) {
-                if (SecuritySupport.isWritable(path)) {
-                    path = SecuritySupport.toRealPath(path, NOFOLLOW_LINKS);
-                } else {
-                    throw new IOException("Cannot write JFR emergency dump to " + path.toString());
-                }
+    public static synchronized void setDumpPath(SafePath path) throws IOException {
+        if (path != null) {
+            if (SecuritySupport.isWritable(path)) {
+                path = SecuritySupport.toRealPath(path, NOFOLLOW_LINKS);
+            } else {
+                throw new IOException("Cannot write JFR emergency dump to " + path.toString());
             }
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
         }
         jvm.setDumpPath(path == null ? null : path.toString());
     }
@@ -161,7 +157,11 @@ public final class Options {
         setMemorySize(DEFAULT_MEMORY_SIZE);
         setGlobalBufferSize(DEFAULT_GLOBAL_BUFFER_SIZE);
         setGlobalBufferCount(DEFAULT_GLOBAL_BUFFER_COUNT);
-        setDumpPath(DEFAULT_DUMP_PATH);
+        try {
+            setDumpPath(DEFAULT_DUMP_PATH);
+        } catch (IOException e) {
+            // Ignore (depends on default value in JVM: it would be NULL)
+        }
         setSampleThreads(DEFAULT_SAMPLE_THREADS);
         setStackDepth(DEFAULT_STACK_DEPTH);
         setThreadBufferSize(DEFAULT_THREAD_BUFFER_SIZE);

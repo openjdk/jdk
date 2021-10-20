@@ -25,7 +25,7 @@
 
 package jdk.jfr.internal.dcmd;
 
-
+import java.io.IOException;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.internal.LogLevel;
@@ -108,7 +108,7 @@ final class DCmdConfigure extends AbstractDCmd {
         if (dumpPath != null)  {
             try {
                 Options.setDumpPath(new SafePath(dumpPath));
-            } catch (IllegalArgumentException e) {
+            } catch (IOException e) {
                 throw new DCmdException("Could not set " + dumpPath + " to emergency dump path. " + e.getMessage(), e);
             }
             Logger.log(LogTag.JFR, LogLevel.INFO, "Emergency dump path set to " + dumpPath);
