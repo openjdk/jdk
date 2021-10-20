@@ -1978,7 +1978,7 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
   return count * 2;
 }
 
-// Return the number of dwords poped
+// Return the number of dwords popped
 int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
   int words_pushed = 0;
   bool use_sve = false;
@@ -2053,10 +2053,9 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  const int num_of_regs = PRegisterImpl::number_of_saved_registers;
-  unsigned char regs[num_of_regs];
+  unsigned char regs[PRegisterImpl::number_of_saved_registers];
   int count = 0;
-  for (int reg = 0; reg < num_of_regs; reg++) {
+  for (int reg = 0; reg < PRegisterImpl::number_of_saved_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2075,7 +2074,7 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
   return total_push_bytes / 8;
 }
 
-// Return the number of dwords poped
+// Return the number of dwords popped
 int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
   bool use_sve = false;
   int sve_predicate_size_in_slots = 0;
@@ -2091,10 +2090,9 @@ int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  const int num_of_regs = PRegisterImpl::number_of_saved_registers;
-  unsigned char regs[num_of_regs];
+  unsigned char regs[PRegisterImpl::number_of_saved_registers];
   int count = 0;
-  for (int reg = 0; reg < num_of_regs; reg++) {
+  for (int reg = 0; reg < PRegisterImpl::number_of_saved_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
