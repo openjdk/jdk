@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestArgumentRanges
+ * @test
  * @summary Test that Shenandoah arguments are checked for ranges where applicable
  * @requires vm.gc.Shenandoah
  * @library /test/lib

@@ -59,7 +59,8 @@ public class MethodHandleProxies {
      * even though it re-declares the {@code Object.equals} method and also
      * declares default methods, such as {@code Comparator.reverse}.
      * <p>
-     * The interface must be public.  No additional access checks are performed.
+     * The interface must be public and not {@linkplain Class#isSealed() sealed}.
+     * No additional access checks are performed.
      * <p>
      * The resulting instance of the required type will respond to
      * invocation of the type's uniquely named method by calling
@@ -156,6 +157,8 @@ public class MethodHandleProxies {
     public static <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
             throw newIllegalArgumentException("not a public interface", intfc.getName());
+        if (intfc.isSealed())
+            throw newIllegalArgumentException("a sealed interface", intfc.getName());
         final MethodHandle mh;
         if (System.getSecurityManager() != null) {
             final Class<?> caller = Reflection.getCallerClass();

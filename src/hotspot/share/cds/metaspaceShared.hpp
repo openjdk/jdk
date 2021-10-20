@@ -58,21 +58,25 @@ class MetaspaceShared : AllStatic {
  public:
   enum {
     // core archive spaces
-    rw = 0,  // read-write shared space in the heap
-    ro = 1,  // read-only shared space in the heap
+    rw = 0,  // read-write shared space
+    ro = 1,  // read-only shared space
     bm = 2,  // relocation bitmaps (freed after file mapping is finished)
     num_core_region = 2,       // rw and ro
-    num_non_heap_spaces = 3,   // rw and ro and bm
+    num_non_heap_regions = 3,  // rw and ro and bm
 
-    // mapped java heap regions
-    first_closed_archive_heap_region = bm + 1,
-    max_closed_archive_heap_region = 2,
-    last_closed_archive_heap_region = first_closed_archive_heap_region + max_closed_archive_heap_region - 1,
-    first_open_archive_heap_region = last_closed_archive_heap_region + 1,
-    max_open_archive_heap_region = 2,
-    last_open_archive_heap_region = first_open_archive_heap_region + max_open_archive_heap_region - 1,
+    // java heap regions
+    first_closed_heap_region = bm + 1,
+    max_num_closed_heap_regions = 2,
+    last_closed_heap_region = first_closed_heap_region + max_num_closed_heap_regions - 1,
+    first_open_heap_region = last_closed_heap_region + 1,
+    max_num_open_heap_regions = 2,
+    last_open_heap_region = first_open_heap_region + max_num_open_heap_regions - 1,
+    max_num_heap_regions = max_num_closed_heap_regions + max_num_open_heap_regions,
 
-    last_valid_region = last_open_archive_heap_region,
+    first_archive_heap_region = first_closed_heap_region,
+    last_archive_heap_region = last_open_heap_region,
+
+    last_valid_region = last_open_heap_region,
     n_regions =  last_valid_region + 1 // total number of regions
   };
 
@@ -101,17 +105,12 @@ public:
     _archive_loading_failed = true;
   }
 
-  static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
   // Return true if given address is in the shared metaspace regions (i.e., excluding any
-  // mapped shared heap regions.)
+  // mapped heap regions.)
   static bool is_in_shared_metaspace(const void* p) {
     return MetaspaceObj::is_shared((const MetaspaceObj*)p);
-  }
-
-  static address shared_metaspace_top() {
-    return (address)MetaspaceObj::shared_metaspace_top();
   }
 
   static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
@@ -134,9 +133,9 @@ public:
   }
 
   static bool try_link_class(JavaThread* current, InstanceKlass* ik);
-  static void link_and_cleanup_shared_classes(TRAPS) NOT_CDS_RETURN;
+  static void link_shared_classes(TRAPS) NOT_CDS_RETURN;
   static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
-  static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
+  static bool may_be_eagerly_linked(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
   // Alignment for the 2 core CDS regions (RW/RO) only.

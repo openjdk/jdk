@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,14 +198,17 @@ public abstract class JdbTest {
         return setBreakpointsFromTestSource(launchOptions.sourceFilename, id);
     }
 
-    // transforms class with the specified id (see {@code ClassTransformer})
-    // and executes "redefine" jdb command for {@code launchOptions.debuggeeClass}.
-    // returns reply for the command.
+    // transforms class with the specified id (see {@code ClassTransformer}),
+    // executes "redefine" jdb command for {@code launchOptions.debuggeeClass}
+    // and updates source path by using "use" jdb command.
+    // returns reply for the commands.
     protected List<String> redefineClass(int id, String... compilerOptions) {
         verifySourceFilename();
         String transformedClassFile = ClassTransformer.fromTestSource(launchOptions.sourceFilename)
                 .transform(id, launchOptions.debuggeeClass, compilerOptions);
-        return jdb.command(JdbCommand.redefine(launchOptions.debuggeeClass, transformedClassFile));
+        List<String> reply = jdb.command(JdbCommand.redefine(launchOptions.debuggeeClass, transformedClassFile));
+        reply.addAll(jdb.command(JdbCommand.use(Paths.get(transformedClassFile).getParent().toString())));
+        return reply;
     }
 
     // gets full test source path for the given test filename

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 
 #include "code/relocInfo.hpp"
 #include "utilities/powerOfTwo.hpp"
-
-class BiasedLockingCounters;
 
 // Introduced AddressLiteral and its subclasses to ease portability from
 // x86 and avoid relocation issues
@@ -358,29 +356,6 @@ public:
   void bang_stack_with_offset(int offset) {
     ShouldNotReachHere();
   }
-
-  // Biased locking support
-  // lock_reg and obj_reg must be loaded up with the appropriate values.
-  // swap_reg must be supplied.
-  // tmp_reg must be supplied.
-  // Done label is branched to with condition code EQ set if the lock is
-  // biased and we acquired it. Slow case label is branched to with
-  // condition code NE set if the lock is biased but we failed to acquire
-  // it. Otherwise fall through.
-  // Notes:
-  // - swap_reg and tmp_reg are scratched
-  // - Rtemp was (implicitly) scratched and can now be specified as the tmp2
-  void biased_locking_enter(Register obj_reg, Register swap_reg, Register tmp_reg,
-                            bool swap_reg_contains_mark,
-                            Register tmp2,
-                            Label& done, Label& slow_case,
-                            BiasedLockingCounters* counters = NULL);
-  void biased_locking_exit(Register obj_reg, Register temp_reg, Label& done);
-
-  // Building block for CAS cases of biased locking: makes CAS and records statistics.
-  // Optional slow_case label is used to transfer control if CAS fails. Otherwise leaves condition codes set.
-  void biased_locking_enter_with_cas(Register obj_reg, Register old_mark_reg, Register new_mark_reg,
-                                     Register tmp, Label& slow_case, int* counter_addr);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
 

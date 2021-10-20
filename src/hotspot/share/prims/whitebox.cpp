@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include <new>
-#include "cds/cdsoffsets.hpp"
+#include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -99,7 +99,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/heapRegionManager.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
@@ -995,7 +995,7 @@ bool WhiteBox::validate_cgroup(const char* proc_cgroups,
                                const char* proc_self_cgroup,
                                const char* proc_self_mountinfo,
                                u1* cg_flags) {
-  CgroupInfo cg_infos[4];
+  CgroupInfo cg_infos[CG_INFO_LENGTH];
   return CgroupSubsystemFactory::determine_type(cg_infos, proc_cgroups,
                                                     proc_self_cgroup,
                                                     proc_self_mountinfo, cg_flags);
@@ -1933,15 +1933,23 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
-  return HeapShared::is_archived_object(obj_oop);
+  return Universe::heap()->is_archived_object(obj_oop);
+WB_END
+
+WB_ENTRY(jboolean, WB_IsSharedInternedString(JNIEnv* env, jobject wb, jobject str))
+  ResourceMark rm(THREAD);
+  oop str_oop = JNIHandles::resolve(str);
+  int length;
+  jchar* chars = java_lang_String::as_unicode_string(str_oop, length, CHECK_(false));
+  return StringTable::lookup_shared(chars, length) == str_oop;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
   return (jboolean)MetaspaceShared::is_in_shared_metaspace(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
 WB_END
 
-WB_ENTRY(jboolean, WB_AreSharedStringsIgnored(JNIEnv* env))
-  return !HeapShared::closed_archive_heap_region_mapped();
+WB_ENTRY(jboolean, WB_AreSharedStringsMapped(JNIEnv* env))
+  return HeapShared::closed_regions_mapped();
 WB_END
 
 WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz))
@@ -1966,7 +1974,7 @@ WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
-  return HeapShared::open_archive_heap_region_mapped();
+  return HeapShared::open_regions_mapped();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
@@ -1993,8 +2001,8 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 #endif
 WB_END
 
-WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
-  return HeapShared::is_heap_object_archiving_allowed();
+WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
+  return HeapShared::can_write();
 WB_END
 
 
@@ -2008,21 +2016,74 @@ WB_END
 
 #if INCLUDE_CDS
 
-WB_ENTRY(jint, WB_GetOffsetForName(JNIEnv* env, jobject o, jstring name))
+WB_ENTRY(jint, WB_GetCDSOffsetForName(JNIEnv* env, jobject o, jstring name))
   ResourceMark rm;
   char* c_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
-  int result = CDSOffsets::find_offset(c_name);
-  return (jint)result;
+  jint result = (jint)CDSConstants::get_cds_offset(c_name);
+  return result;
+WB_END
+
+WB_ENTRY(jint, WB_GetCDSConstantForName(JNIEnv* env, jobject o, jstring name))
+  ResourceMark rm;
+  char* c_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
+  jint result = (jint)CDSConstants::get_cds_constant(c_name);
+  return result;
 WB_END
 
 #endif // INCLUDE_CDS
+
+WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thread_handle))
+  class ReadMonitorsClosure : public HandshakeClosure {
+    jboolean _executed;
+
+    void do_thread(Thread* th) {
+      JavaThread* jt = JavaThread::cast(th);
+      ResourceMark rm;
+
+      GrowableArray<MonitorInfo*>* info = new GrowableArray<MonitorInfo*>();
+
+      if (!jt->has_last_Java_frame()) {
+        return;
+      }
+      RegisterMap rmap(jt);
+      for (javaVFrame* vf = jt->last_java_vframe(&rmap); vf != NULL; vf = vf->java_sender()) {
+        GrowableArray<MonitorInfo*> *monitors = vf->monitors();
+        if (monitors != NULL) {
+          int len = monitors->length();
+          // Walk monitors youngest to oldest
+          for (int i = len - 1; i >= 0; i--) {
+            MonitorInfo* mon_info = monitors->at(i);
+            if (mon_info->eliminated()) continue;
+            oop owner = mon_info->owner();
+            if (owner != NULL) {
+              info->append(mon_info);
+            }
+          }
+        }
+      }
+      _executed = true;
+    }
+
+   public:
+    ReadMonitorsClosure() : HandshakeClosure("WB_HandshakeReadMonitors"), _executed(false) {}
+    jboolean executed() const { return _executed; }
+  };
+
+  ReadMonitorsClosure rmc;
+  oop thread_oop = JNIHandles::resolve(thread_handle);
+  if (thread_oop != NULL) {
+    JavaThread* target = java_lang_Thread::thread(thread_oop);
+    Handshake::execute(&rmc, target);
+  }
+  return rmc.executed();
+WB_END
 
 WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle, jboolean all_threads))
   class TraceSelfClosure : public HandshakeClosure {
     jint _num_threads_completed;
 
     void do_thread(Thread* th) {
-      JavaThread* jt = th->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(th);
       ResourceMark rm;
 
       jt->print_on(tty);
@@ -2058,7 +2119,7 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
       // AsynchHandshake handshakes are only executed by target.
       assert(_self == th, "Must be");
       assert(Thread::current() == th, "Must be");
-      JavaThread* jt = th->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(th);
       ResourceMark rm;
       jt->print_on(tty);
       jt->print_stack_on(tty);
@@ -2076,7 +2137,32 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
   }
 WB_END
 
-//Some convenience methods to deal with objects from java
+static volatile int _emulated_lock = 0;
+
+WB_ENTRY(void, WB_LockAndBlock(JNIEnv* env, jobject wb, jboolean suspender))
+  JavaThread* self = JavaThread::current();
+
+  {
+    // Before trying to acquire the lock transition into a safepoint safe state.
+    // Otherwise if either suspender or suspendee blocks for a safepoint
+    // in ~ThreadBlockInVM the other one could loop forever trying to acquire
+    // the lock without allowing the safepoint to progress.
+    ThreadBlockInVM tbivm(self);
+
+    // We will deadlock here if we are 'suspender' and 'suspendee'
+    // suspended in ~ThreadBlockInVM. This verifies we only suspend
+    // at the right place.
+    while (Atomic::cmpxchg(&_emulated_lock, 0, 1) != 0) {}
+    assert(_emulated_lock == 1, "Must be locked");
+
+    // Sleep much longer in suspendee to force situation where
+    // 'suspender' is waiting above to acquire lock.
+    os::naked_short_sleep(suspender ? 1 : 10);
+  }
+  Atomic::store(&_emulated_lock, 0);
+WB_END
+
+// Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
   assert(field_name != NULL && strlen(field_name) > 0, "Field name not valid");
@@ -2126,6 +2212,9 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 
 void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread, JNINativeMethod* method_array, int method_count) {
   ResourceMark rm;
+  Klass* klass = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(wbclass));
+  const char* klass_name = klass->external_name();
+
   ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
 
   //  one by one registration natives for exception catching
@@ -2141,13 +2230,13 @@ void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
         if (env->IsInstanceOf(throwable_obj, no_such_method_error_klass)) {
           // NoSuchMethodError is thrown when a method can't be found or a method is not native.
           // Ignoring the exception since it is not preventing use of other WhiteBox methods.
-          tty->print_cr("Warning: 'NoSuchMethodError' on register of sun.hotspot.WhiteBox::%s%s",
-              method_array[i].name, method_array[i].signature);
+          tty->print_cr("Warning: 'NoSuchMethodError' on register of %s::%s%s",
+              klass_name, method_array[i].name, method_array[i].signature);
         }
       } else {
         // Registration failed unexpectedly.
-        tty->print_cr("Warning: unexpected error on register of sun.hotspot.WhiteBox::%s%s. All methods will be unregistered",
-            method_array[i].name, method_array[i].signature);
+        tty->print_cr("Warning: unexpected error on register of %s::%s%s. All methods will be unregistered",
+            klass_name, method_array[i].name, method_array[i].signature);
         env->UnregisterNatives(wbclass);
         break;
       }
@@ -2301,21 +2390,19 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
 WB_END
 
 WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean update_map))
-  intx tty_token = -1;
-  if (log) {
-    tty_token = ttyLocker::hold_tty();
-    tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
-  }
+  ResourceMark rm; // for verify
+  stringStream st;
   for (StackFrameStream fst(JavaThread::current(), update_map, true); !fst.is_done(); fst.next()) {
     frame* current_frame = fst.current();
     if (log) {
-      current_frame->print_value();
+      current_frame->print_value_on(&st, NULL);
     }
     current_frame->verify(fst.register_map());
   }
   if (log) {
+    tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
+    tty->print_raw(st.as_string());
     tty->print_cr("[WhiteBox::VerifyFrames] Done");
-    ttyLocker::release_tty(tty_token);
   }
 WB_END
 
@@ -2361,7 +2448,7 @@ static JNINativeMethod methods[] = {
   {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
-      CC"(Ljava/lang/String;C[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
+      CC"(Ljava/lang/String;C[Ljdk/test/whitebox/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
   {CC"addToBootstrapClassLoaderSearch0", CC"(Ljava/lang/String;)V",
@@ -2374,7 +2461,8 @@ static JNINativeMethod methods[] = {
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_CDS
-  {CC"getOffsetForName0", CC"(Ljava/lang/String;)I",  (void*)&WB_GetOffsetForName},
+  {CC"getCDSOffsetForName0", CC"(Ljava/lang/String;)I",  (void*)&WB_GetCDSOffsetForName},
+  {CC"getCDSConstantForName0", CC"(Ljava/lang/String;)I",  (void*)&WB_GetCDSConstantForName},
 #endif
 #if INCLUDE_G1GC
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
@@ -2550,8 +2638,9 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetDefaultArchivePath},
   {CC"isSharingEnabled",   CC"()Z",                   (void*)&WB_IsSharingEnabled},
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
+  {CC"isSharedInternedString", CC"(Ljava/lang/String;)Z", (void*)&WB_IsSharedInternedString },
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
-  {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
+  {CC"areSharedStringsMapped",            CC"()Z",    (void*)&WB_AreSharedStringsMapped },
   {CC"getResolvedReferences", CC"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
   {CC"linkClass",          CC"(Ljava/lang/Class;)V",  (void*)&WB_LinkClass},
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
@@ -2559,12 +2648,14 @@ static JNINativeMethod methods[] = {
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
   {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
-  {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
+  {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
+  {CC"handshakeReadMonitors", CC"(Ljava/lang/Thread;)Z", (void*)&WB_HandshakeReadMonitors },
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
   {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
+  {CC"lockAndBlock", CC"(Z)V",                        (void*)&WB_LockAndBlock},
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
   {CC"verifyFrames",                CC"(ZZ)V",            (void*)&WB_VerifyFrames },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",

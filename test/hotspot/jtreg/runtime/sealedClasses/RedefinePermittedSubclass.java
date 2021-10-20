@@ -30,6 +30,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @compile RedefinePermittedSubclass.java
  * @run driver RedefinePermittedSubclass buildagent
  * @run driver/timeout=6000 RedefinePermittedSubclass runtest

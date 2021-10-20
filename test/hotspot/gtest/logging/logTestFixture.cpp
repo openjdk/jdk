@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ LogTestFixture::LogTestFixture() : _n_snapshots(0), _configuration_snapshot(NULL
 }
 
 LogTestFixture::~LogTestFixture() {
-  AsyncLogWriter::flush();
   restore_config();
   clear_snapshot();
   delete_file(TestLogFileName);
@@ -98,14 +97,15 @@ void LogTestFixture::restore_config() {
 
     char* decorators = str;
 
-    char* options = NULL;
     str = strchr(str, ' ');
     if (str != NULL) {
+      // This output has options. However, UL doesn't allow the options of any
+      // output to be changed, so they cannot be modified by the tests,
+      // and also we cannot change them here. So just mark the end of the
+      // decorators.
       *str++ = '\0';
-      options = str;
     }
-
-    set_log_config(name, selection, decorators, options != NULL ? options : "");
+    set_log_config(name, selection, decorators, /* options = */ NULL);
   }
 }
 

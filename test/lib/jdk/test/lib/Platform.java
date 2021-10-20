@@ -79,7 +79,7 @@ public class Platform {
     }
 
     public static boolean isTieredSupported() {
-        return compiler.contains("Tiered Compilers");
+        return (compiler != null) && compiler.contains("Tiered Compilers");
     }
 
     public static boolean isInt() {
@@ -333,11 +333,20 @@ public class Platform {
      * Returns absolute path to directory containing shared libraries in the tested JDK.
      */
     public static Path libDir() {
-        Path dir = Paths.get(testJdk);
+        return libDir(Paths.get(testJdk)).toAbsolutePath();
+    }
+
+    /**
+     * Resolves a given path, to a JDK image, to the directory containing shared libraries.
+     *
+     * @param image the path to a JDK image
+     * @return the resolved path to the directory containing shared libraries
+     */
+    public static Path libDir(Path image) {
         if (Platform.isWindows()) {
-            return dir.resolve("bin").toAbsolutePath();
+            return image.resolve("bin");
         } else {
-            return dir.resolve("lib").toAbsolutePath();
+            return image.resolve("lib");
         }
     }
 
@@ -355,6 +364,8 @@ public class Platform {
             return "client";
         } else if (Platform.isMinimal()) {
             return "minimal";
+        } else if (Platform.isZero()) {
+            return "zero";
         } else {
             throw new Error("TESTBUG: unsupported vm variant");
         }
@@ -369,7 +380,6 @@ public class Platform {
                  isWindows()) &&
                 !isZero()    &&
                 !isMinimal() &&
-                !isAArch64() &&
                 !isARM());
     }
 

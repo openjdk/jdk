@@ -69,9 +69,9 @@ instruct $3V$4`'(vec$5 $7, vmem$4 mem)
   ins_pipe(v$3`_reg_mem'ifelse(eval($4 * 8), 128, 128, 64));
 %}')dnl
 dnl        $1    $2 $3     $4  $5 $6   $7   $8
-VLoadStore(ldrh, H, load,  2,  D, 16,  dst, )
-VLoadStore(ldrs, S, load,  4,  D, 32,  dst, )
-VLoadStore(ldrd, D, load,  8,  D, 64,  dst, )
+VLoadStore(ldrh, H, load,  2,  D, 16,  dst, UseSVE == 0 && )
+VLoadStore(ldrs, S, load,  4,  D, 32,  dst, UseSVE == 0 && )
+VLoadStore(ldrd, D, load,  8,  D, 64,  dst, UseSVE == 0 && )
 VLoadStore(ldrq, Q, load, 16,  X, 128, dst, UseSVE == 0 && )
 VLoadStore(strh, H, store, 2,  D, 16,  src, )
 VLoadStore(strs, S, store, 4,  D, 32,  src, )
@@ -872,7 +872,7 @@ instruct vcmpD(vecD dst, vecD src1, vecD src2, immI cond)
   format %{ "vcmpD  $dst, $src1, $src2\t# vector compare " %}
   ins_cost(INSN_COST);
   ins_encode %{
-    BasicType bt = vector_element_basic_type(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
     assert(type2aelembytes(bt) != 8, "not supported");
     __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
                     as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ false);
@@ -887,7 +887,7 @@ instruct vcmpX(vecX dst, vecX src1, vecX src2, immI cond)
   format %{ "vcmpX  $dst, $src1, $src2\t# vector compare " %}
   ins_cost(INSN_COST);
   ins_encode %{
-    BasicType bt = vector_element_basic_type(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
     __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
                     as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ true);
   %}
@@ -1196,10 +1196,11 @@ dnl
 //-------------------------------- LOAD_IOTA_INDICES----------------------------------
 dnl
 define(`PREDICATE', `ifelse($1, 8,
-`predicate((n->as_Vector()->length() == 2 || n->as_Vector()->length() == 4 ||
-             n->as_Vector()->length() == 8) &&
-             n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);',
-`predicate(n->as_Vector()->length() == 16 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);')')dnl
+`predicate(UseSVE == 0 &&
+           (n->as_Vector()->length() == 2 || n->as_Vector()->length() == 4 ||
+            n->as_Vector()->length() == 8) &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);',
+`predicate(UseSVE == 0 && n->as_Vector()->length() == 16 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);')')dnl
 dnl
 define(`VECTOR_LOAD_CON', `
 instruct loadcon$1B`'(vec$2 dst, immI0 src)
@@ -1466,9 +1467,10 @@ dnl
 define(`VREPLICATE', `
 instruct replicate$3$4$5`'(vec$6 dst, $7 ifelse($7, immI0, zero, $7, immI, con, src))
 %{
-  predicate(ifelse($8, UseSVE == 0 && , $8,
-                   $8, , , $8`
-            ')n->as_Vector()->length() == $3);
+  predicate(UseSVE == 0 && ifelse($8, `',
+                                  n->as_Vector()->length() == $3,
+                                  (n->as_Vector()->length() == $3 ||`
+                            'n->as_Vector()->length() == $8)));
   match(Set dst (Replicate`'ifelse($7, immI0, I, $4) ifelse($7, immI0, zero, $7, immI, con, $7, zero, I, src)));
   ins_cost(INSN_COST);
   format %{ "$1  $dst, $ifelse($7, immI0, zero, $7, immI, con, src)`\t# vector ('ifelse($4$7, SimmI, $3H, $2, eor, 4I, $3$4)`)"' %}
@@ -1494,24 +1496,24 @@ instruct replicate$3$4$5`'(vec$6 dst, $7 ifelse($7, immI0, zero, $7, immI, con, 
                   $7, iRegL, vdup_reg_reg,
                   $4, F, vdup_reg_freg, vdup_reg_dreg)`'ifelse($6, X, 128, 64));
 %}')dnl
-dnl        $1    $2    $3  $4 $5     $6 $7          $8                                $9
-VREPLICATE(dup,  dup,  8,  B, ,      D, iRegIorL2I, n->as_Vector()->length() == 4 ||, B)
-VREPLICATE(dup,  dup,  16, B, ,      X, iRegIorL2I, UseSVE == 0 && ,                  B)
-VREPLICATE(movi, mov,  8,  B, _imm,  D, immI,       n->as_Vector()->length() == 4 ||, B)
-VREPLICATE(movi, mov,  16, B, _imm,  X, immI,       UseSVE == 0 && ,                  B)
-VREPLICATE(dup,  dup,  4,  S, ,      D, iRegIorL2I, n->as_Vector()->length() == 2 ||, H)
-VREPLICATE(dup,  dup,  8,  S, ,      X, iRegIorL2I, UseSVE == 0 && ,                  H)
-VREPLICATE(movi, mov,  4,  S, _imm,  D, immI,       n->as_Vector()->length() == 2 ||, H)
-VREPLICATE(movi, mov,  8,  S,  _imm, X, immI,       UseSVE == 0 && ,                  H)
-VREPLICATE(dup,  dup,  2,  I, ,      D, iRegIorL2I, ,                                 S)
-VREPLICATE(dup,  dup,  4,  I, ,      X, iRegIorL2I, UseSVE == 0 && ,                  S)
-VREPLICATE(movi, mov,  2,  I, _imm,  D, immI,       ,                                 S)
-VREPLICATE(movi, mov,  4,  I,  _imm, X, immI,       UseSVE == 0 && ,                  S)
-VREPLICATE(dup,  dup,  2,  L, ,      X, iRegL,      UseSVE == 0 && ,                  D)
-VREPLICATE(movi, eor,  2,  L, _zero, X, immI0,      UseSVE == 0 && ,                  D)
-VREPLICATE(dup,  dup,  2,  F, ,      D, vRegF,      ,                                 S)
-VREPLICATE(dup,  dup,  4,  F, ,      X, vRegF,      UseSVE == 0 && ,                  S)
-VREPLICATE(dup,  dup,  2,  D, ,      X, vRegD,      UseSVE == 0 && ,                  D)
+dnl        $1    $2    $3  $4 $5     $6 $7          $8 $9
+VREPLICATE(dup,  dup,  8,  B, ,      D, iRegIorL2I, 4, B)
+VREPLICATE(dup,  dup,  16, B, ,      X, iRegIorL2I,  , B)
+VREPLICATE(movi, mov,  8,  B, _imm,  D, immI,       4, B)
+VREPLICATE(movi, mov,  16, B, _imm,  X, immI,        , B)
+VREPLICATE(dup,  dup,  4,  S, ,      D, iRegIorL2I, 2, H)
+VREPLICATE(dup,  dup,  8,  S, ,      X, iRegIorL2I,  , H)
+VREPLICATE(movi, mov,  4,  S, _imm,  D, immI,       2, H)
+VREPLICATE(movi, mov,  8,  S,  _imm, X, immI,        , H)
+VREPLICATE(dup,  dup,  2,  I, ,      D, iRegIorL2I, ,  S)
+VREPLICATE(dup,  dup,  4,  I, ,      X, iRegIorL2I, ,  S)
+VREPLICATE(movi, mov,  2,  I, _imm,  D, immI,       ,  S)
+VREPLICATE(movi, mov,  4,  I,  _imm, X, immI,       ,  S)
+VREPLICATE(dup,  dup,  2,  L, ,      X, iRegL,      ,  D)
+VREPLICATE(movi, eor,  2,  L, _zero, X, immI0,      ,  D)
+VREPLICATE(dup,  dup,  2,  F, ,      D, vRegF,      ,  S)
+VREPLICATE(dup,  dup,  4,  F, ,      X, vRegF,      ,  S)
+VREPLICATE(dup,  dup,  2,  D, ,      X, vRegD,      ,  D)
 dnl
 
 // ====================REDUCTION ARITHMETIC====================================
@@ -1884,8 +1886,8 @@ VLOGICAL(xor, eor,  xor, Xor, 16, B, X)
 dnl
 define(`VSHIFTCNT', `
 instruct vshiftcnt$3$4`'(vec$5 dst, iRegIorL2I cnt) %{
-  predicate(ifelse($3, 8, n->as_Vector()->length_in_bytes() == 4 ||`
-            ')n->as_Vector()->length_in_bytes() == $3);
+  predicate(UseSVE == 0 && (ifelse($3, 8, n->as_Vector()->length_in_bytes() == 4 ||`
+            ')n->as_Vector()->length_in_bytes() == $3));
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "$1  $dst, $cnt\t# shift count vector ($3$4)" %}
@@ -2243,3 +2245,151 @@ instruct vpopcount$1$2`'(vec$5 dst, vec$5 src) %{
 dnl       $1 $2 $3  $4 $5
 VPOPCOUNT(4, I, 16, 8, X)
 VPOPCOUNT(2, I, 8,  4, D)
+dnl
+dnl VMASK_TRUECOUNT($1,     $2 )
+dnl VMASK_TRUECOUNT(suffix, reg)
+define(`VMASK_TRUECOUNT', `
+instruct vmask_truecount$1(iRegINoSp dst, $2 src, $2 tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskTrueCount src));
+  effect(TEMP tmp);
+  ins_cost(2 * INSN_COST);
+  format %{ "addv $tmp, $src\n\t"
+            "umov $dst, $tmp, B, 0\t# vector ($1)" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as bytes with
+    // 0x00/0x01 as element values.
+    __ addv(as_FloatRegister($tmp$$reg), __ T$1, as_FloatRegister($src$$reg));
+    __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+dnl
+define(`ARGLIST',
+`ifelse($1, `_LT8B', `iRegINoSp dst, vecD src, rFlagsReg cr', `iRegINoSp dst, vecD src')')
+dnl
+dnl VMASK_FIRSTTRUE_D($1,     $2,   $3,   $4  )
+dnl VMASK_FIRSTTRUE_D(suffix, cond, cost, size)
+define(`VMASK_FIRSTTRUE_D', `
+instruct vmask_firsttrue$1(ARGLIST($1)) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN &&
+            n->in(1)->bottom_type()->is_vect()->length() $2 8);
+  match(Set dst (VectorMaskFirstTrue src));dnl
+ifelse($1, `_LT8B', `
+  effect(KILL cr);')
+  ins_cost($3 * INSN_COST);
+  format %{ "vmask_firsttrue $dst, $src\t# vector ($4)" %}
+  ins_encode %{
+    // Returns the index of the first active lane of the
+    // vector mask, or VLENGTH if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    //
+    // Computed by reversing the bits and counting the leading
+    // zero bytes.
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    __ lsrw($dst$$Register, $dst$$Register, 3);dnl
+ifelse(`$1', `_LT8B', `
+    __ movw(rscratch1, Matcher::vector_length(this, $src));
+    __ cmpw($dst$$Register, rscratch1);
+    __ cselw($dst$$Register, rscratch1, $dst$$Register, Assembler::GE);')
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+undefine(ARGLIST)dnl
+dnl
+// vector mask reductions
+VMASK_TRUECOUNT(8B,  vecD)
+VMASK_TRUECOUNT(16B, vecX)
+VMASK_FIRSTTRUE_D(_LT8B, <,  7, 4I/4S/2I)
+VMASK_FIRSTTRUE_D(8B,    ==, 4, 8B)
+
+instruct vmask_firsttrue16B(iRegINoSp dst, vecX src) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskFirstTrue src));
+  ins_cost(6 * INSN_COST);
+  format %{ "vmask_firsttrue $dst, $src\t# vector (16B)" %}
+  ins_encode %{
+    // Returns the index of the first active lane of the
+    // vector mask, or 16 (VLENGTH) if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+
+    Label FIRST_TRUE_INDEX;
+
+    // Try to compute the result from lower 64 bits.
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ movw(rscratch1, zr);
+    __ cbnz($dst$$Register, FIRST_TRUE_INDEX);
+
+    // Compute the result from the higher 64 bits.
+    __ fmovhid($dst$$Register, as_FloatRegister($src$$reg));
+    __ movw(rscratch1, 8);
+
+    // Reverse the bits and count the leading zero bytes.
+    __ bind(FIRST_TRUE_INDEX);
+    __ rbit($dst$$Register, $dst$$Register);
+    __ clz($dst$$Register, $dst$$Register);
+    __ addw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_lasttrue8B(iRegINoSp dst, vecD src) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskLastTrue src));
+  ins_cost(4 * INSN_COST);
+  format %{ "vmask_lasttrue $dst, $src\t# vector (8B)" %}
+  ins_encode %{
+    // Returns the index of the last active lane of the
+    // vector mask, or -1 if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    //
+    // Computed by counting the leading zero bytes and
+    // substracting it by 7 (VLENGTH - 1).
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ clz($dst$$Register, $dst$$Register);
+    __ movw(rscratch1, 7);
+    __ subw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_lasttrue16B(iRegINoSp dst, vecX src) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN);
+  match(Set dst (VectorMaskLastTrue src));
+  ins_cost(5 * INSN_COST);
+  format %{ "vmask_lasttrue $dst, $src\t# vector (16B)" %}
+  ins_encode %{
+    // Returns the index of the last active lane of the
+    // vector mask, or -1 if no lane is active.
+    //
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+
+    Label LAST_TRUE_INDEX;
+
+    // Try to compute the result from higher 64 bits.
+    __ fmovhid($dst$$Register, as_FloatRegister($src$$reg));
+    __ movw(rscratch1, 16 - 1);
+    __ cbnz($dst$$Register, LAST_TRUE_INDEX);
+
+    // Compute the result from the lower 64 bits.
+    __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
+    __ movw(rscratch1, 8 - 1);
+
+    // Count the leading zero bytes and substract it by 15 (VLENGTH - 1).
+    __ bind(LAST_TRUE_INDEX);
+    __ clz($dst$$Register, $dst$$Register);
+    __ subw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}

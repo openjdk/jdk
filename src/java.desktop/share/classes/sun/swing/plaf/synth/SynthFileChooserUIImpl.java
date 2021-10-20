@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -789,9 +789,9 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
                 File sf = useShellFolder ? ShellFolder.getShellFolder(canonical)
                                          : canonical;
                 File f = sf;
-                Vector<File> path = new Vector<File>(10);
+                ArrayList<File> path = new ArrayList<File>(10);
                 do {
-                    path.addElement(f);
+                    path.add(f);
                 } while ((f = f.getParentFile()) != null);
 
                 int pathCount = path.size();

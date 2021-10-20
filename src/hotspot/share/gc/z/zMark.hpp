@@ -32,7 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class Thread;
-class ZMarkCache;
+class ZMarkContext;
 class ZPageTable;
 class ZWorkers;
 
@@ -64,15 +64,12 @@ private:
   void follow_partial_array(ZMarkStackEntry entry, bool finalizable);
   void follow_array_object(objArrayOop obj, bool finalizable);
   void follow_object(oop obj, bool finalizable);
-  void mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry);
+  void mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry);
 
-  template <typename T> bool drain(ZMarkStripe* stripe,
-                                   ZMarkThreadLocalStacks* stacks,
-                                   ZMarkCache* cache,
-                                   T* timeout);
-  bool try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
-  bool try_steal_global(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
-  bool try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
+  template <typename T> bool drain(ZMarkContext* context, T* timeout);
+  bool try_steal_local(ZMarkContext* context);
+  bool try_steal_global(ZMarkContext* context);
+  bool try_steal(ZMarkContext* context);
   void idle() const;
   bool flush(bool at_safepoint);
   bool try_proactive_flush();
@@ -84,13 +81,8 @@ private:
   void prepare_work();
   void finish_work();
 
-  void work_without_timeout(ZMarkCache* cache,
-                            ZMarkStripe* stripe,
-                            ZMarkThreadLocalStacks* stacks);
-  void work_with_timeout(ZMarkCache* cache,
-                         ZMarkStripe* stripe,
-                         ZMarkThreadLocalStacks* stacks,
-                         uint64_t timeout_in_micros);
+  void work_without_timeout(ZMarkContext* context);
+  void work_with_timeout(ZMarkContext* context, uint64_t timeout_in_micros);
   void work(uint64_t timeout_in_micros);
 
   void verify_all_stacks_empty() const;

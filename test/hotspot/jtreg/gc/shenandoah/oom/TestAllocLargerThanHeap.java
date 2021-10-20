@@ -23,7 +23,7 @@
  */
 
 /**
- * @test TestAllocLargerThanHeap
+ * @test
  * @summary Test that allocation of the object larger than heap fails predictably
  * @requires vm.gc.Shenandoah
  * @library /test/lib

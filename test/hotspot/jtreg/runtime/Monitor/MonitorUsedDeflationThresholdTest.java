@@ -29,6 +29,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @bug 8226416
  * @summary Test the MonitorUsedDeflationThreshold and NoAsyncDeflationProgressMax options.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MonitorUsedDeflationThresholdTest
@@ -93,6 +94,7 @@ public class MonitorUsedDeflationThresholdTest {
                 "MonitorUsedDeflationThresholdTest", "33");
 
             OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
+            output_detail.shouldHaveExitValue(0);
 
             // This mesg means:
             // - AvgMonitorsPerThreadEstimate == 1 reduced in_use_list_ceiling

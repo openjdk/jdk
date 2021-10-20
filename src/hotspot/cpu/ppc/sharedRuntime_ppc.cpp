@@ -2154,14 +2154,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Get the lock box slot's address.
     __ addi(r_box, R1_SP, lock_offset);
 
-#   ifdef ASSERT
-    if (UseBiasedLocking) {
-      // Making the box point to itself will make it clear it went unused
-      // but also be obviously invalid.
-      __ std(r_box, 0, r_box);
-    }
-#   endif // ASSERT
-
     // Try fastpath for locking.
     // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
     __ compiler_fast_lock_object(r_flag, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);

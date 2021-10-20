@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import static java.util.concurrent.CompletableFuture.*;
  *          cause any thread blocked on the socket to throw a SocketException.
  * @run main AsyncClose
  * @run main/othervm -Djava.net.preferIPv4Stack=true AsyncClose
- * @run main/othervm -Djdk.net.usePlainSocketImpl AsyncClose
  */
 
 public class AsyncClose {

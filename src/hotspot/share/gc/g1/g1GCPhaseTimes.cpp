@@ -41,6 +41,8 @@
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
+constexpr const char* G1GCPhaseTimes::GCMergeRSWorkItemsStrings[];
+
 G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _max_gc_threads(max_gc_threads),
   _gc_start_counter(0),
@@ -71,16 +73,14 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeER] = new WorkerDataArray<double>("MergeER", "Eager Reclaim (ms):", max_gc_threads);
 
   _gc_par_phases[MergeRS] = new WorkerDataArray<double>("MergeRS", "Remembered Sets (ms):", max_gc_threads);
-  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Sparse:", MergeRSMergedSparse);
-  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Fine:", MergeRSMergedFine);
-  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Coarse:", MergeRSMergedCoarse);
-  _gc_par_phases[MergeRS]->create_thread_work_items("Dirty Cards:", MergeRSDirtyCards);
+  for (uint i = 0; i < MergeRSContainersSentinel; i++) {
+    _gc_par_phases[MergeRS]->create_thread_work_items(GCMergeRSWorkItemsStrings[i], i);
+  }
 
   _gc_par_phases[OptMergeRS] = new WorkerDataArray<double>("OptMergeRS", "Optional Remembered Sets (ms):", max_gc_threads);
-  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Sparse:", MergeRSMergedSparse);
-  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Fine:", MergeRSMergedFine);
-  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Coarse:", MergeRSMergedCoarse);
-  _gc_par_phases[OptMergeRS]->create_thread_work_items("Dirty Cards:", MergeRSDirtyCards);
+  for (uint i = 0; i < MergeRSContainersSentinel; i++) {
+    _gc_par_phases[OptMergeRS]->create_thread_work_items(GCMergeRSWorkItemsStrings[i], i);
+  }
 
   _gc_par_phases[MergeLB] = new WorkerDataArray<double>("MergeLB", "Log Buffers (ms):", max_gc_threads);
   if (G1HotCardCache::default_use_cache()) {
@@ -134,6 +134,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Reclaimed", EagerlyReclaimNumReclaimed);
 
+  _gc_par_phases[SampleCollectionSetCandidates] = new WorkerDataArray<double>("SampleCandidates", "Sample CSet Candidates (ms):", max_gc_threads);
+
   _gc_par_phases[Termination]->create_thread_work_items("Termination Attempts:");
 
   _gc_par_phases[OptTermination]->create_thread_work_items("Optional Termination Attempts:");
@@ -146,13 +148,17 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>("NonYoungFreeCSet", "Non-Young Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[RebuildFreeList] = new WorkerDataArray<double>("RebuildFreeList", "Parallel Rebuild Free List (ms):", max_gc_threads);
 
+  _gc_par_phases[CLDClearClaimedMarks] = new WorkerDataArray<double>("CLDClearClaimedMarks", "Clear Claimed Marks (ms):", max_gc_threads);
+  _gc_par_phases[ResetMarkingState] = new WorkerDataArray<double>("ResetMarkingState", "Reset Marking State (ms):", max_gc_threads);
+  _gc_par_phases[NoteStartOfMark] = new WorkerDataArray<double>("NoteStartOfMark", "Note Start Of Mark (ms):", max_gc_threads);
+
   reset();
 }
 
 void G1GCPhaseTimes::reset() {
   _cur_collection_initial_evac_time_ms = 0.0;
   _cur_optional_evac_time_ms = 0.0;
-  _cur_collection_code_root_fixup_time_ms = 0.0;
+  _cur_collection_nmethod_list_cleanup_time_ms = 0.0;
   _cur_merge_heap_roots_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
@@ -167,7 +173,6 @@ void G1GCPhaseTimes::reset() {
   _root_region_scan_wait_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
   _recorded_prepare_heap_roots_time_ms = 0.0;
-  _recorded_clear_claimed_marks_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
   _recorded_preserve_cm_referents_time_ms = 0.0;
@@ -189,7 +194,7 @@ void G1GCPhaseTimes::reset() {
   _weak_phase_times.reset();
 }
 
-void G1GCPhaseTimes::note_gc_start() {
+void G1GCPhaseTimes::record_gc_pause_start() {
   _gc_start_counter = os::elapsed_counter();
   reset();
 }
@@ -208,7 +213,7 @@ double G1GCPhaseTimes::worker_time(GCParPhases phase, uint worker) {
   return 0.0;
 }
 
-void G1GCPhaseTimes::note_gc_end() {
+void G1GCPhaseTimes::record_gc_pause_end() {
   _gc_pause_time_ms = TimeHelper::counter_to_millis(os::elapsed_counter() - _gc_start_counter);
 
   double uninitialized = WorkerDataArray<double>::uninitialized();
@@ -283,7 +288,7 @@ size_t G1GCPhaseTimes::get_thread_work_item(GCParPhases phase, uint worker_id, u
 }
 
 // return the average time for a phase in milliseconds
-double G1GCPhaseTimes::average_time_ms(GCParPhases phase) {
+double G1GCPhaseTimes::average_time_ms(GCParPhases phase) const {
   if (_gc_par_phases[phase] == NULL) {
     return 0.0;
   }
@@ -372,6 +377,10 @@ void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
+  const double pre_concurrent_start_ms = average_time_ms(CLDClearClaimedMarks) +
+                                         average_time_ms(ResetMarkingState) +
+                                         average_time_ms(NoteStartOfMark);
+
   const double sum_ms = _root_region_scan_wait_time_ms +
                         _cur_prepare_tlab_time_ms +
                         _cur_concatenate_dirty_card_logs_time_ms +
@@ -379,7 +388,7 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
                         _recorded_non_young_cset_choice_time_ms +
                         _cur_region_register_time +
                         _recorded_prepare_heap_roots_time_ms +
-                        _recorded_clear_claimed_marks_time_ms;
+                        pre_concurrent_start_ms;
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
@@ -392,9 +401,13 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   debug_time("Region Register", _cur_region_register_time);
 
   debug_time("Prepare Heap Roots", _recorded_prepare_heap_roots_time_ms);
-  if (_recorded_clear_claimed_marks_time_ms > 0.0) {
-    debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
+
+  if (pre_concurrent_start_ms > 0.0) {
+    debug_phase(_gc_par_phases[CLDClearClaimedMarks]);
+    debug_phase(_gc_par_phases[ResetMarkingState]);
+    debug_phase(_gc_par_phases[NoteStartOfMark]);
   }
+
   return sum_ms;
 }
 
@@ -444,8 +457,8 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   return _cur_collection_initial_evac_time_ms + _cur_merge_heap_roots_time_ms;
 }
 
-double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
-  const double sum_ms = _cur_collection_code_root_fixup_time_ms +
+double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed) const {
+  const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
@@ -457,7 +470,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 
   info_time("Post Evacuate Collection Set", sum_ms);
 
-  debug_time("Code Roots Fixup", _cur_collection_code_root_fixup_time_ms);
+  debug_time("NMethod List Cleanup", _cur_collection_nmethod_list_cleanup_time_ms);
 
   debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
   _ref_phase_times.print_all_references(2, false);
@@ -468,12 +481,13 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   debug_phase(_gc_par_phases[MergePSS], 1);
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
-  if (G1CollectedHeap::heap()->evacuation_failed()) {
+  if (evacuation_failed) {
     debug_phase(_gc_par_phases[RemoveSelfForwardingPtr], 1);
   }
 
+  trace_phase(_gc_par_phases[RedirtyCards]);
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
-  if (G1CollectedHeap::heap()->evacuation_failed()) {
+  if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
     debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
   }
@@ -484,6 +498,9 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 #endif
   if (G1CollectedHeap::heap()->should_do_eager_reclaim()) {
     debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
+  }
+  if (G1CollectedHeap::heap()->should_sample_collection_set_candidates()) {
+    debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);
   }
   debug_phase(_gc_par_phases[RedirtyCards], 1);
   debug_phase(_gc_par_phases[FreeCollectionSet], 1);
@@ -509,9 +526,10 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
   info_time("Other", _gc_pause_time_ms - accounted_ms);
 }
 
-void G1GCPhaseTimes::print() {
-  note_gc_end();
-
+void G1GCPhaseTimes::print(bool evacuation_failed) {
+  // Check if some time has been recorded for verification and only then print
+  // the message. We do not use Verify*GC here to print because VerifyGCType
+  // further limits actual verification.
   if (_cur_verify_before_time_ms > 0.0) {
     debug_time("Verify Before", _cur_verify_before_time_ms);
   }
@@ -520,9 +538,10 @@ void G1GCPhaseTimes::print() {
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
-  accounted_ms += print_post_evacuate_collection_set();
+  accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
   print_other(accounted_ms);
 
+  // See above comment on the _cur_verify_before_time_ms check.
   if (_cur_verify_after_time_ms > 0.0) {
     debug_time("Verify After", _cur_verify_after_time_ms);
   }

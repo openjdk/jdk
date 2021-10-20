@@ -97,9 +97,9 @@ class outputStream : public ResourceObj {
    void vprint(const char *format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
    void vprint_cr(const char* format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
    void print_raw(const char* str)            { write(str, strlen(str)); }
-   void print_raw(const char* str, int len)   { write(str,         len); }
+   void print_raw(const char* str, size_t len)   { write(str,         len); }
    void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
-   void print_raw_cr(const char* str, int len){ write(str,         len); cr(); }
+   void print_raw_cr(const char* str, size_t len){ write(str,         len); cr(); }
    void print_data(void* data, size_t len, bool with_ascii);
    void put(char ch);
    void sp(int count = 1);

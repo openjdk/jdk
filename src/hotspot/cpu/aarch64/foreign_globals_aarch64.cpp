@@ -45,17 +45,18 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) const {
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;
+  const Register (*to_Register)(int) = as_Register;
 
   objArrayOop inputStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.inputStorage_offset));
-  loadArray(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, as_Register);
+  loadArray(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, to_Register);
   loadArray(inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_FloatRegister);
 
   objArrayOop outputStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.outputStorage_offset));
-  loadArray(outputStorage, INTEGER_TYPE, abi._integer_return_registers, as_Register);
+  loadArray(outputStorage, INTEGER_TYPE, abi._integer_return_registers, to_Register);
   loadArray(outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_FloatRegister);
 
   objArrayOop volatileStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.volatileStorage_offset));
-  loadArray(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, as_Register);
+  loadArray(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, to_Register);
   loadArray(volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_FloatRegister);
 
   abi._stack_alignment_bytes = abi_oop->int_field(ABI.stackAlignment_offset);

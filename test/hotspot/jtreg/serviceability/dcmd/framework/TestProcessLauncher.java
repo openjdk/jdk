@@ -50,7 +50,7 @@ public class TestProcessLauncher {
     }
 
     public TestProcessLauncher(String className) {
-        this(className, new ArgumentHandler(new String[0]));
+        this(className, new ArgumentHandler(new String[] {"-transport.address=dynamic"}));
     }
 
     public Process launch() {
@@ -77,7 +77,11 @@ public class TestProcessLauncher {
 
     public void quit() {
         if (pipe != null) {
-            pipe.println("quit");
+            if (pipe.isConnected()) {
+                pipe.println("quit");
+            } else {
+                System.out.println("WARNING: IOPipe is not connected");
+            }
         }
     }
 

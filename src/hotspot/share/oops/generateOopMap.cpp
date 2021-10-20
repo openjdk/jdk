@@ -2152,7 +2152,7 @@ void GenerateOopMap::error_work(const char *format, va_list ap) {
   os::snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
   Thread* current = Thread::current();
   if (current->can_call_java()) {
-    _exception = Exceptions::new_exception(current->as_Java_thread(),
+    _exception = Exceptions::new_exception(JavaThread::cast(current),
                                            vmSymbols::java_lang_LinkageError(),
                                            msg_buffer2);
   } else {

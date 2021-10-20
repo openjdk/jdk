@@ -435,6 +435,12 @@ class PhaseCFG : public Phase {
   // Compute the instruction global latency with a backwards walk
   void compute_latencies_backwards(VectorSet &visited, Node_Stack &stack);
 
+  // Check if a block between early and LCA block of uses is cheaper by
+  // frequency-based policy, latency-based policy and random-based policy
+  bool is_cheaper_block(Block* LCA, Node* self, uint target_latency,
+                        uint end_latency, double least_freq,
+                        int cand_cnt, bool in_latency);
+
   // Pick a block between early and late that is a cheaper alternative
   // to late. Helper for schedule_late.
   Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
@@ -624,6 +630,8 @@ class PhaseCFG : public Phase {
 #else
   bool trace_opto_pipelining() const { return false; }
 #endif
+
+  bool unrelated_load_in_store_null_block(Node* store, Node* load);
 
   // Check that block b is in the home loop (or an ancestor) of n, if n is a
   // memory writer.

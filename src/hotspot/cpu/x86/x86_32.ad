@@ -1440,6 +1440,16 @@ bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
 }
 
+uint Matcher::int_pressure_limit()
+{
+  return (INTPRESSURE == -1) ? 6 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 6 : FLOATPRESSURE;
+}
+
 bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
   // Use hardware integer DIV instruction when
   // it is faster than a code which use multiply.
@@ -5011,6 +5021,89 @@ define %{
 //               name must have been defined in an 'enc_class' specification
 //               in the encode section of the architecture description.
 
+// Dummy reg-to-reg vector moves. Removed during post-selection cleanup.
+// Load Float
+instruct MoveF2LEG(legRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveLEG2F(regF dst, legRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveF2VL(vlRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveVL2F(regF dst, vlRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+
+
+// Load Double
+instruct MoveD2LEG(legRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveLEG2D(regD dst, legRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveD2VL(vlRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveVL2D(regD dst, vlRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    ShouldNotReachHere();
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 //----------BSWAP-Instruction--------------------------------------------------
 instruct bytes_reverse_int(rRegI dst) %{
   match(Set dst (ReverseBytesI dst));
@@ -5756,46 +5849,6 @@ instruct loadKlass(eRegP dst, memory mem) %{
   ins_pipe( ialu_reg_mem );
 %}
 
-// Load Float
-instruct MoveF2LEG(legRegF dst, regF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveLEG2F(regF dst, legRegF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveD2LEG(legRegD dst, regD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveLEG2D(regD dst, legRegD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Load Double
 instruct loadDPR(regDPR dst, memory mem) %{
   predicate(UseSSE<=1);
@@ -6425,26 +6478,6 @@ instruct storeD(memory mem, regD src) %{
   ins_pipe( pipe_slow );
 %}
 
-// Load Double
-instruct MoveD2VL(vlRegD dst, regD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Double
-instruct MoveVL2D(regD dst, vlRegD src) %{
-  match(Set dst src);
-  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
-  ins_encode %{
-    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Store XMM register to memory (single-precision floating point)
 // MOVSS instruction
 instruct storeF(memory mem, regF src) %{
@@ -6458,25 +6491,6 @@ instruct storeF(memory mem, regF src) %{
   ins_pipe( pipe_slow );
 %}
 
-// Load Float
-instruct MoveF2VL(vlRegF dst, regF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Load Float
-instruct MoveVL2F(regF dst, vlRegF src) %{
-  match(Set dst src);
-  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
-  ins_encode %{
-    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
 
 // Store Float
 instruct storeFPR( memory mem, regFPR1 src) %{
@@ -11470,8 +11484,7 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 // fast clearing of an array
 // Small ClearArray non-AVX512.
 instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-              (UseAVX <= 2 || !VM_Version::supports_avx512vlbw()));
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX <= 2));
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
@@ -11530,11 +11543,10 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe du
 %}
 
 // Small ClearArray AVX512 non-constant length.
-instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-               UseAVX > 2 && VM_Version::supports_avx512vlbw() &&
-               !n->in(2)->bottom_type()->is_int()->is_con());
+instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, legRegD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate(!((ClearArrayNode*)n)->is_large() && (UseAVX > 2));
   match(Set dummy (ClearArray cnt base));
+  ins_cost(125);
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
 
   format %{ $$template
@@ -11593,7 +11605,7 @@ instruct rep_stos_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI z
 
 // Large ClearArray non-AVX512.
 instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(UseAVX <= 2 && ((ClearArrayNode*)n)->is_large());
+  predicate((UseAVX <= 2) && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
   format %{ $$template
@@ -11642,8 +11654,8 @@ instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Unive
 %}
 
 // Large ClearArray AVX512.
-instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(UseAVX > 2 && ((ClearArrayNode*)n)->is_large());
+instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, legRegD tmp, kReg ktmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate((UseAVX > 2) && ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL zero, KILL cr);
   format %{ $$template
@@ -11695,9 +11707,9 @@ instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, regD tmp, kReg ktmp, eAX
 instruct rep_stos_im(immI cnt, kReg ktmp, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-               (UseAVX > 2 && VM_Version::supports_avx512vlbw() &&
-                 n->in(2)->bottom_type()->is_int()->is_con()));
+               ((UseAVX > 2) && VM_Version::supports_avx512vlbw()));
   match(Set dummy (ClearArray cnt base));
+  ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}
   ins_encode %{
@@ -11708,7 +11720,7 @@ instruct rep_stos_im(immI cnt, kReg ktmp, eRegP base, regD tmp, rRegI zero, Univ
 
 instruct string_compareL(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
                          eAXRegI result, regD tmp1, eFlagsReg cr) %{
-  predicate(UseAVX <= 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(!VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11723,7 +11735,7 @@ instruct string_compareL(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
 
 instruct string_compareL_evex(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
                               eAXRegI result, regD tmp1, kReg ktmp, eFlagsReg cr) %{
-  predicate(UseAVX > 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11738,7 +11750,7 @@ instruct string_compareL_evex(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI 
 
 instruct string_compareU(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
                          eAXRegI result, regD tmp1, eFlagsReg cr) %{
-  predicate(UseAVX <= 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(!VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11753,7 +11765,7 @@ instruct string_compareU(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
 
 instruct string_compareU_evex(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
                               eAXRegI result, regD tmp1, kReg ktmp, eFlagsReg cr) %{
-  predicate(UseAVX > 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11768,7 +11780,7 @@ instruct string_compareU_evex(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI 
 
 instruct string_compareLU(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
                           eAXRegI result, regD tmp1, eFlagsReg cr) %{
-  predicate(UseAVX <= 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  predicate(!VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11783,7 +11795,7 @@ instruct string_compareLU(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2
 
 instruct string_compareLU_evex(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
                                eAXRegI result, regD tmp1, kReg ktmp, eFlagsReg cr) %{
-  predicate(UseAVX > 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11798,7 +11810,7 @@ instruct string_compareLU_evex(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI
 
 instruct string_compareUL(eSIRegP str1, eDXRegI cnt1, eDIRegP str2, eCXRegI cnt2,
                           eAXRegI result, regD tmp1, eFlagsReg cr) %{
-  predicate(UseAVX <= 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  predicate(!VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11813,7 +11825,7 @@ instruct string_compareUL(eSIRegP str1, eDXRegI cnt1, eDIRegP str2, eCXRegI cnt2
 
 instruct string_compareUL_evex(eSIRegP str1, eDXRegI cnt1, eDIRegP str2, eCXRegI cnt2,
                                eAXRegI result, regD tmp1, kReg ktmp, eFlagsReg cr) %{
-  predicate(UseAVX > 2 && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -11829,7 +11841,7 @@ instruct string_compareUL_evex(eSIRegP str1, eDXRegI cnt1, eDIRegP str2, eCXRegI
 // fast string equals
 instruct string_equals(eDIRegP str1, eSIRegP str2, eCXRegI cnt, eAXRegI result,
                        regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr) %{
-  predicate(UseAVX <= 2);
+  predicate(!VM_Version::supports_avx512vlbw());
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
 
@@ -11845,7 +11857,7 @@ instruct string_equals(eDIRegP str1, eSIRegP str2, eCXRegI cnt, eAXRegI result,
 
 instruct string_equals_evex(eDIRegP str1, eSIRegP str2, eCXRegI cnt, eAXRegI result,
                             regD tmp1, regD tmp2, kReg ktmp, eBXRegI tmp3, eFlagsReg cr) %{
-  predicate(UseAVX > 2);
+  predicate(VM_Version::supports_avx512vlbw());
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
 
@@ -12023,7 +12035,7 @@ instruct stringL_indexof_char(eDIRegP str1, eDXRegI cnt1, eAXRegI ch,
 instruct array_equalsB(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
                        regD tmp1, regD tmp2, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
 %{
-  predicate(UseAVX <= 2 && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(!VM_Version::supports_avx512vlbw() && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
@@ -12040,7 +12052,7 @@ instruct array_equalsB(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
 instruct array_equalsB_evex(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
                        regD tmp1, regD tmp2, kReg ktmp, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(VM_Version::supports_avx512vlbw() && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
@@ -12057,7 +12069,7 @@ instruct array_equalsB_evex(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
 instruct array_equalsC(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
                        regD tmp1, regD tmp2, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
 %{
-  predicate(UseAVX <= 2 && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(!VM_Version::supports_avx512vlbw() && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
@@ -12074,7 +12086,7 @@ instruct array_equalsC(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
 instruct array_equalsC_evex(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
                             regD tmp1, regD tmp2, kReg ktmp, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
 %{
-  predicate(UseAVX > 2 && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(VM_Version::supports_avx512vlbw() && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
@@ -12091,7 +12103,7 @@ instruct array_equalsC_evex(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
 instruct has_negatives(eSIRegP ary1, eCXRegI len, eAXRegI result,
                       regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
-  predicate(UseAVX <= 2);
+  predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
   match(Set result (HasNegatives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
@@ -12107,7 +12119,7 @@ instruct has_negatives(eSIRegP ary1, eCXRegI len, eAXRegI result,
 instruct has_negatives_evex(eSIRegP ary1, eCXRegI len, eAXRegI result,
                            regD tmp1, regD tmp2, kReg ktmp1, kReg ktmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
-  predicate(UseAVX > 2);
+  predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
   match(Set result (HasNegatives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp1, TEMP ktmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
@@ -12124,7 +12136,7 @@ instruct has_negatives_evex(eSIRegP ary1, eCXRegI len, eAXRegI result,
 // fast char[] to byte[] compression
 instruct string_compress(eSIRegP src, eDIRegP dst, eDXRegI len, regD tmp1, regD tmp2,
                          regD tmp3, regD tmp4, eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
-  predicate(UseAVX <= 2);
+  predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
   match(Set result (StrCompressedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
 
@@ -12140,7 +12152,7 @@ instruct string_compress(eSIRegP src, eDIRegP dst, eDXRegI len, regD tmp1, regD 
 
 instruct string_compress_evex(eSIRegP src, eDIRegP dst, eDXRegI len, regD tmp1, regD tmp2,
                               regD tmp3, regD tmp4, kReg ktmp1, kReg ktmp2, eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
-  predicate(UseAVX > 2);
+  predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
   match(Set result (StrCompressedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP ktmp1, TEMP ktmp2, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
 
@@ -12157,7 +12169,7 @@ instruct string_compress_evex(eSIRegP src, eDIRegP dst, eDXRegI len, regD tmp1, 
 // fast byte[] to char[] inflation
 instruct string_inflate(Universe dummy, eSIRegP src, eDIRegP dst, eDXRegI len,
                         regD tmp1, eCXRegI tmp2, eFlagsReg cr) %{
-  predicate(UseAVX <= 2);
+  predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
 
@@ -12171,7 +12183,7 @@ instruct string_inflate(Universe dummy, eSIRegP src, eDIRegP dst, eDXRegI len,
 
 instruct string_inflate_evex(Universe dummy, eSIRegP src, eDIRegP dst, eDXRegI len,
                              regD tmp1, kReg ktmp, eCXRegI tmp2, eFlagsReg cr) %{
-  predicate(UseAVX > 2);
+  predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
 
@@ -12187,18 +12199,35 @@ instruct string_inflate_evex(Universe dummy, eSIRegP src, eDIRegP dst, eDXRegI l
 instruct encode_iso_array(eSIRegP src, eDIRegP dst, eDXRegI len,
                           regD tmp1, regD tmp2, regD tmp3, regD tmp4,
                           eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
 
-  format %{ "Encode array $src,$dst,$len -> $result    // KILL ECX, EDX, $tmp1, $tmp2, $tmp3, $tmp4, ESI, EDI " %}
+  format %{ "Encode iso array $src,$dst,$len -> $result    // KILL ECX, EDX, $tmp1, $tmp2, $tmp3, $tmp4, ESI, EDI " %}
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
                         $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
-                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register, false);
   %}
   ins_pipe( pipe_slow );
 %}
 
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(eSIRegP src, eDIRegP dst, eDXRegI len,
+                            regD tmp1, regD tmp2, regD tmp3, regD tmp4,
+                            eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
+
+  format %{ "Encode ascii array $src,$dst,$len -> $result    // KILL ECX, EDX, $tmp1, $tmp2, $tmp3, $tmp4, ESI, EDI " %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register, true);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 //----------Control Flow Instructions------------------------------------------
 // Signed compare Instructions
@@ -13667,7 +13696,7 @@ instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eD
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
                  $scr$$Register, $cx1$$Register, $cx2$$Register,
-                 _counters, _rtm_counters, _stack_rtm_counters,
+                 _rtm_counters, _stack_rtm_counters,
                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                  true, ra_->C->profile_rtm());
   %}
@@ -13682,7 +13711,7 @@ instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, _counters, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

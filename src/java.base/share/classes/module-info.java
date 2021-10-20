@@ -199,6 +199,7 @@ module java.base {
         jdk.attach,
         jdk.charsets,
         jdk.compiler,
+        jdk.crypto.cryptoki,
         jdk.incubator.vector,
         jdk.jfr,
         jdk.jshell,
@@ -317,7 +318,8 @@ module java.base {
         jdk.crypto.ec,
         jdk.security.auth;
     exports sun.security.provider.certpath to
-        java.naming;
+        java.naming,
+        jdk.jartool;
     exports sun.security.rsa to
         jdk.crypto.cryptoki;
     exports sun.security.timestamp to

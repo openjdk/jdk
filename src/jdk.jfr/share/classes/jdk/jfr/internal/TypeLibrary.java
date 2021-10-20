@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,10 @@ public final class TypeLibrary {
     private static Type defineType(Class<?> clazz, String superType, boolean eventType) {
         if (!isDefined(clazz)) {
             Name name = clazz.getAnnotation(Name.class);
-            String typeName = name != null ? name.value() : clazz.getName();
+            String typeName = clazz.getName();
+            if (name != null) {
+                typeName = Utils.validTypeName(name.value(), typeName);
+            }
             long id = Type.getTypeId(clazz);
             Type t;
             if (eventType) {
@@ -317,7 +320,6 @@ public final class TypeLibrary {
             createAnnotationType(Timespan.class);
             createAnnotationType(Timestamp.class);
             createAnnotationType(Label.class);
-            defineType(long.class, null, false);
             implicitFieldTypes = true;
         }
         addFields(type, requestable, hasDuration, hasThread, hasStackTrace, hasCutoff);
@@ -363,7 +365,7 @@ public final class TypeLibrary {
         Name name = field.getAnnotation(Name.class);
         String useName = fieldName;
         if (name != null) {
-            useName = name.value();
+            useName = Utils.validJavaIdentifier(name.value(), useName);
         }
         List<jdk.jfr.AnnotationElement> ans = new ArrayList<>();
         for (Annotation a : resolveRepeatedAnnotations(field.getAnnotations())) {

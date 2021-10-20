@@ -38,7 +38,7 @@ import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * PKCS#11 token.
@@ -58,16 +58,21 @@ class Token implements Serializable {
 
     final SunPKCS11 provider;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final PKCS11 p11;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final Config config;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final CK_TOKEN_INFO tokenInfo;
 
     // session manager to pool sessions
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final SessionManager sessionManager;
 
     // template manager to customize the attributes used when creating objects
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final TemplateManager templateManager;
 
     // flag indicating whether we need to explicitly cancel operations
@@ -76,16 +81,20 @@ class Token implements Serializable {
     final boolean explicitCancel;
 
     // translation cache for secret keys
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final KeyCache secretCache;
 
     // translation cache for asymmetric keys (public and private)
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final KeyCache privateCache;
 
     // cached instances of the various key factories, initialized on demand
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private volatile P11KeyFactory rsaFactory, dsaFactory, dhFactory, ecFactory;
 
     // table which maps mechanisms to the corresponding cached
     // MechanismInfo objects
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final Map<Long, CK_MECHANISM_INFO> mechInfoMap;
 
     // single SecureRandomSpi instance we use per token
@@ -94,6 +103,7 @@ class Token implements Serializable {
 
     // single KeyStoreSpi instance we use per provider
     // initialized on demand
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private volatile P11KeyStore keyStore;
 
     // whether this token is a removable token
@@ -390,7 +400,7 @@ class Token implements Serializable {
                                                 mechanism);
                 mechInfoMap.put(mechanism, result);
             } catch (PKCS11Exception e) {
-                if (e.getErrorCode() != CKR_MECHANISM_INVALID) {
+                if (!e.match(CKR_MECHANISM_INVALID)) {
                     throw e;
                 } else {
                     mechInfoMap.put(mechanism, INVALID_MECH);

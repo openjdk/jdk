@@ -33,6 +33,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -380,6 +381,18 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     /*package-private*/
+    @ForceInline
+    static short rotateLeft(short a, int n) {
+        return (short)(((((short)a) & Short.toUnsignedInt((short)-1)) << (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) >>> (Short.SIZE - (n & Short.SIZE-1))));
+    }
+
+    /*package-private*/
+    @ForceInline
+    static short rotateRight(short a, int n) {
+        return (short)(((((short)a) & Short.toUnsignedInt((short)-1)) >>> (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) << (Short.SIZE - (n & Short.SIZE-1))));
+    }
+
+    /*package-private*/
     @Override
     abstract ShortSpecies vspecies();
 
@@ -599,12 +612,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 // This allows the JIT to ignore some ISA details.
                 that = that.lanewise(AND, SHIFT_MASK);
             }
-            if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-                ShortVector neg = that.lanewise(NEG);
-                ShortVector hi = this.lanewise(LSHL, (op == ROR) ? neg : that);
-                ShortVector lo = this.lanewise(LSHR, (op == ROR) ? that : neg);
-                return hi.lanewise(OR, lo);
-            } else if (op == AND_NOT) {
+            if (op == AND_NOT) {
                 // FIXME: Support this in the JIT.
                 that = that.lanewise(NOT);
                 op = AND;
@@ -645,6 +653,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
                         v0.bOp(v1, (i, a, n) -> (short)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (short)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
+                case VECTOR_OP_RROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -791,11 +803,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         assert(opKind(op, VO_SHIFT));
         // As per shift specification for Java, mask the shift count.
         e &= SHIFT_MASK;
-        if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-            ShortVector hi = this.lanewise(LSHL, (op == ROR) ? -e : e);
-            ShortVector lo = this.lanewise(LSHR, (op == ROR) ? e : -e);
-            return hi.lanewise(OR, lo);
-        }
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
             opc, getClass(), short.class, length(),
@@ -808,6 +815,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
                         v.uOp((i, a) -> (short)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (short)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v, n) ->
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
+                case VECTOR_OP_RROTATE: return (v, n) ->
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -3549,15 +3560,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     final
     ShortVector fromByteBuffer0Template(ByteBuffer bb, int offset) {
         ShortSpecies vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            bb, offset, vsp,
-            (buf, off, s) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                return s.ldOp(wb, off,
-                        (wb_, o, i) -> wb_.getShort(o + i * 2));
-           });
+        return ScopedMemoryAccess.loadFromByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                bb, offset, vsp,
+                (buf, off, s) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off,
+                            (wb_, o, i) -> wb_.getShort(o + i * 2));
+                });
     }
 
     // Unchecked storing operations in native byte order.
@@ -3600,15 +3610,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     final
     void intoByteBuffer0(ByteBuffer bb, int offset) {
         ShortSpecies vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            this, bb, offset,
-            (buf, off, v) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                v.stOp(wb, off,
-                        (wb_, o, i, e) -> wb_.putShort(o + i * 2, e));
-            });
+        ScopedMemoryAccess.storeIntoByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                this, bb, offset,
+                (buf, off, v) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off,
+                            (wb_, o, i, e) -> wb_.putShort(o + i * 2, e));
+                });
     }
 
     // End of low-level memory operations.

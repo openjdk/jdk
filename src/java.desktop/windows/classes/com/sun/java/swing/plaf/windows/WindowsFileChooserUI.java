@@ -47,6 +47,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Vector;
@@ -1139,9 +1140,9 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
                 File sf = useShellFolder ? ShellFolder.getShellFolder(canonical)
                                          : canonical;
                 File f = sf;
-                Vector<File> path = new Vector<File>(10);
+                ArrayList<File> path = new ArrayList<File>(10);
                 do {
-                    path.addElement(f);
+                    path.add(f);
                 } while ((f = f.getParentFile()) != null);
 
                 int pathCount = path.size();

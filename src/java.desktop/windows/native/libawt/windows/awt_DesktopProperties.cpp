@@ -752,6 +752,7 @@ void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
                              key, jValue);
     GetEnv()->DeleteLocalRef(jValue);
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
@@ -764,6 +765,7 @@ void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
                              AwtDesktopProperties::setIntegerPropertyID,
                              key, (jint)value);
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
@@ -775,6 +777,7 @@ void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
                              AwtDesktopProperties::setBooleanPropertyID,
                              key, value ? JNI_TRUE : JNI_FALSE);
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
@@ -787,6 +790,7 @@ void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
                              key, GetRValue(value), GetGValue(value),
                              GetBValue(value));
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
@@ -849,6 +853,7 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                               key, fontName, style, pointSize);
                     GetEnv()->DeleteLocalRef(key);
                     GetEnv()->DeleteLocalRef(fontName);
+                    (void)safe_ExceptionOccurred(GetEnv());
                 }
             }
             delete[] face;
@@ -896,6 +901,7 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
                              key, fontName, style, pointSize);
     GetEnv()->DeleteLocalRef(key);
     GetEnv()->DeleteLocalRef(fontName);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventName) {
@@ -913,6 +919,7 @@ void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventNa
                              key, event);
     GetEnv()->DeleteLocalRef(event);
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::PlayWindowsSound(LPCTSTR event) {

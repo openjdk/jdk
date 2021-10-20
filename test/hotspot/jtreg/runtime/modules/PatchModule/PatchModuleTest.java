@@ -25,6 +25,7 @@
  * @test
  * @bug 8130399
  * @summary Make sure --patch-module works for modules besides java.base.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile PatchModuleMain.java

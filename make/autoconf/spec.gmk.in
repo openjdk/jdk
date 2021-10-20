@@ -54,6 +54,9 @@ MAKE := @MAKE@
 # Make sure all shell commands are executed with the C locale
 export LC_ALL := C
 
+# Make sure we override any local CLASSPATH variable
+export CLASSPATH := @CLASSPATH@
+
 # The default make arguments
 MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
     MAKE_LOG_FLAGS="$(MAKE_LOG_FLAGS)" $(MAKE_LOG_VARS)
@@ -355,6 +358,10 @@ BUILD_CDS_ARCHIVE := @BUILD_CDS_ARCHIVE@
 ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
 
 ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
+
+HSDIS_BACKEND := @HSDIS_BACKEND@
+HSDIS_CFLAGS := @HSDIS_CFLAGS@
+HSDIS_LIBS := @HSDIS_LIBS@
 
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
 # it in sync.

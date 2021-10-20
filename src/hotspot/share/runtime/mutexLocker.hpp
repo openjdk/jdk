@@ -35,6 +35,7 @@ extern Mutex*   Patching_lock;                   // a lock used to guard code pa
 extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
+extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
 extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
@@ -53,7 +54,7 @@ extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
 extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
 extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
-extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special
+extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
 extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
@@ -67,9 +68,6 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
-extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
-                                                 // queue shared by
-                                                 // non-Java threads.
 extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
@@ -88,16 +86,12 @@ extern Monitor* Terminator_lock;                 // a lock used to guard termina
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
-extern Mutex*   ProfilePrint_lock;               // a lock used to serialize the printing of profiles
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
 extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize access to sweeper statistics
 
 #ifndef PRODUCT
 extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT safe
 #endif // PRODUCT
-extern Mutex*   Debug1_lock;                     // A bunch of pre-allocated locks that can be used for tracing
-extern Mutex*   Debug2_lock;                     // down synchronization related bugs!
-extern Mutex*   Debug3_lock;
 
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data
@@ -132,13 +126,13 @@ extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::find
 extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
+extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable
 extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
-extern Mutex*   JfrStream_lock;                  // protects JFR stream access
 extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
 #endif
 
@@ -202,8 +196,6 @@ class MutexLocker: public StackObj {
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
-             "Mutexes with rank special or lower should not do safepoint checks");
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
       } else {
@@ -216,8 +208,6 @@ class MutexLocker: public StackObj {
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
-             "Mutexes with rank special or lower should not do safepoint checks");
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check(thread);
       } else {
@@ -260,12 +250,8 @@ class MonitorLocker: public MutexLocker {
   }
 
   bool wait(int64_t timeout = 0) {
-    if (_flag == Mutex::_safepoint_check_flag) {
-      return as_monitor()->wait(timeout);
-    } else {
-      return as_monitor()->wait_without_safepoint_check(timeout);
-    }
-    return false;
+    return _flag == Mutex::_safepoint_check_flag ?
+      as_monitor()->wait(timeout) : as_monitor()->wait_without_safepoint_check(timeout);
   }
 
   void notify_all() {

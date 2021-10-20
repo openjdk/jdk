@@ -71,6 +71,11 @@ public:
   static CHeapBitMap* ptrmap() {
     return _ptrmap;
   }
+
+  static void reset_map_and_vs() {
+    _ptrmap = nullptr;
+    _vs = nullptr;
+  }
 };
 
 // SharedDataRelocator is used to shift pointers in the CDS archive.

@@ -213,7 +213,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     public InputSlot createInputSlot(int index) {
         InputSlot slot = new InputSlot(this, index);
         inputSlots.add(slot);
-        Collections.sort(inputSlots, Slot.slotIndexComparator);
+        inputSlots.sort(Slot.slotIndexComparator);
         return slot;
     }
 
@@ -242,7 +242,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     public OutputSlot createOutputSlot(int index) {
         OutputSlot slot = new OutputSlot(this, index);
         outputSlots.add(slot);
-        Collections.sort(outputSlots, Slot.slotIndexComparator);
+        outputSlots.sort(Slot.slotIndexComparator);
         return slot;
     }
 

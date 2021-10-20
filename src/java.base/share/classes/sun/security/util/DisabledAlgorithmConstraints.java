@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -85,6 +84,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final String PROPERTY_DISABLED_EC_CURVES =
             "jdk.disabled.namedCurves";
 
+    private static final Pattern INCLUDE_PATTERN = Pattern.compile("include " +
+            PROPERTY_DISABLED_EC_CURVES, Pattern.CASE_INSENSITIVE);
+
     private static class CertPathHolder {
         static final DisabledAlgorithmConstraints CONSTRAINTS =
             new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS);
@@ -95,7 +97,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             new DisabledAlgorithmConstraints(PROPERTY_JAR_DISABLED_ALGS);
     }
 
-    private final List<String> disabledAlgorithms;
+    private final Set<String> disabledAlgorithms;
     private final Constraints algorithmConstraints;
 
     public static DisabledAlgorithmConstraints certPathConstraints() {
@@ -130,21 +132,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         disabledAlgorithms = getAlgorithms(propertyName);
 
         // Check for alias
-        int ecindex = -1, i = 0;
         for (String s : disabledAlgorithms) {
-            if (s.regionMatches(true, 0,"include ", 0, 8)) {
-                if (s.regionMatches(true, 8, PROPERTY_DISABLED_EC_CURVES, 0,
-                        PROPERTY_DISABLED_EC_CURVES.length())) {
-                    ecindex = i;
-                    break;
-                }
+            Matcher matcher = INCLUDE_PATTERN.matcher(s);
+            if (matcher.matches()) {
+                disabledAlgorithms.remove(matcher.group());
+                disabledAlgorithms.addAll(
+                        getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
+                break;
             }
-            i++;
-        }
-        if (ecindex > -1) {
-            disabledAlgorithms.remove(ecindex);
-            disabledAlgorithms.addAll(ecindex,
-                    getAlgorithms(PROPERTY_DISABLED_EC_CURVES));
         }
         algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
     }
@@ -332,8 +327,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     "denyAfter\\s+(\\d{4})-(\\d{2})-(\\d{2})");
         }
 
-        public Constraints(String propertyName, List<String> constraintArray) {
-            for (String constraintEntry : constraintArray) {
+        public Constraints(String propertyName, Set<String> constraintSet) {
+            for (String constraintEntry : constraintSet) {
                 if (constraintEntry == null || constraintEntry.isEmpty()) {
                     continue;
                 }
@@ -692,8 +687,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     private static class DenyAfterConstraint extends Constraint {
         private Date denyAfterDate;
-        private static final SimpleDateFormat dateFormat =
-                new SimpleDateFormat("EEE, MMM d HH:mm:ss z yyyy");
 
         DenyAfterConstraint(String algo, int year, int month, int day) {
             Calendar c;
@@ -727,7 +720,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             denyAfterDate = c.getTime();
             if (debug != null) {
                 debug.println("DenyAfterConstraint date set to: " +
-                        dateFormat.format(denyAfterDate));
+                        denyAfterDate);
             }
         }
 
@@ -758,8 +751,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 throw new CertPathValidatorException(
                         "denyAfter constraint check failed: " + algorithm +
                         " used with Constraint date: " +
-                        dateFormat.format(denyAfterDate) + "; params date: " +
-                        dateFormat.format(currentDate) + cp.extendedExceptionMsg(),
+                        denyAfterDate + "; params date: " +
+                        currentDate + cp.extendedExceptionMsg(),
                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
         }
@@ -809,7 +802,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         break;
                     case "signedjar":
                         match =
-                            variant.equals(Validator.VAR_PLUGIN_CODE_SIGNING) ||
                             variant.equals(Validator.VAR_CODE_SIGNING) ||
                             variant.equals(Validator.VAR_TSA_SERVER);
                         break;

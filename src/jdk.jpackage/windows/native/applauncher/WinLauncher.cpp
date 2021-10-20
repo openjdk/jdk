@@ -138,21 +138,59 @@ void launchApp() {
 
     const tstring launcherPath = SysInfo::getProcessModulePath();
     const tstring appImageRoot = FileUtils::dirname(launcherPath);
-    const tstring runtimeBinPath = FileUtils::mkpath()
-            << appImageRoot << _T("runtime") << _T("bin");
+    const tstring appDirPath = FileUtils::mkpath() << appImageRoot << _T("app");
 
-    std::unique_ptr<Jvm> jvm(AppLauncher()
-        .setImageRoot(appImageRoot)
+    const AppLauncher appLauncher = AppLauncher().setImageRoot(appImageRoot)
         .addJvmLibName(_T("bin\\jli.dll"))
-        .setAppDir(FileUtils::mkpath() << appImageRoot << _T("app"))
+        .setAppDir(appDirPath)
         .setLibEnvVariableName(_T("PATH"))
         .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
-                << _T("runtime"))
-        .createJvmLauncher());
+            << _T("runtime"));
 
-    // zip.dll may be loaded by java without full path
+    const bool restart = !appLauncher.libEnvVariableContainsAppDir();
+
+    std::unique_ptr<Jvm> jvm(appLauncher.createJvmLauncher());
+
+    if (restart) {
+        jvm = std::unique_ptr<Jvm>();
+
+        STARTUPINFOW si;
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+
+        PROCESS_INFORMATION pi;
+        ZeroMemory(&pi, sizeof(pi));
+
+        if (!CreateProcessW(launcherPath.c_str(), GetCommandLineW(),
+                NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+            JP_THROW(SysError(tstrings::any() << "CreateProcessW() failed",
+                                                            CreateProcessW));
+        }
+
+        WaitForSingleObject(pi.hProcess, INFINITE);
+
+        UniqueHandle childProcessHandle(pi.hProcess);
+        UniqueHandle childThreadHandle(pi.hThread);
+
+        DWORD exitCode;
+        if (!GetExitCodeProcess(pi.hProcess, &exitCode)) {
+            JP_THROW(SysError(tstrings::any() << "GetExitCodeProcess() failed",
+                                                        GetExitCodeProcess));
+        }
+
+        if (exitCode != 0) {
+            JP_THROW(tstrings::any() << "Child process exited with code "
+                                                                << exitCode);
+        }
+
+        return;
+    }
+
+    // zip.dll (and others) may be loaded by java without full path
     // make sure it will look in runtime/bin
+    const tstring runtimeBinPath = FileUtils::dirname(jvm->getPath());
     SetDllDirectory(runtimeBinPath.c_str());
+    LOG_TRACE(tstrings::any() << "SetDllDirectory to: " << runtimeBinPath);
 
     const DllWrapper jliDll(jvm->getPath());
     std::unique_ptr<DllWrapper> splashDll;

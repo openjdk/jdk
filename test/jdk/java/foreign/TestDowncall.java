@@ -29,7 +29,7 @@
  * @build NativeTestHelper CallGeneratorHelper TestDowncall
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
- *   --enable-native-access=ALL-UNNAMED
+ *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17
  *   TestDowncall
  */
 
@@ -94,9 +94,6 @@ public class TestDowncall extends CallGeneratorHelper {
         FunctionDescriptor descriptor = function(ret, paramTypes, fields);
         Object[] args = makeArgs(paramTypes, fields, checks);
         boolean needsScope = mt.returnType().equals(MemorySegment.class);
-        if (count % 100 == 0) {
-            System.gc();
-        }
         Object res = doCall(addr, IMPLICIT_ALLOCATOR, mt, descriptor, args);
         if (ret == Ret.NON_VOID) {
             checks.forEach(c -> c.accept(res));

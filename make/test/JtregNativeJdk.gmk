@@ -53,6 +53,8 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
 
+BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncStackWalk := $(LIBCXX)
+
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c exelauncher.c
@@ -63,6 +65,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := $(WIN_LIB_JLI)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := jvm.lib
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncStackWalk := /EHsc
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava

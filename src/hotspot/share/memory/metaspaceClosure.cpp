@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@
 void MetaspaceClosure::Ref::update(address new_loc) const {
   log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
                  p2i(mpp()), p2i(obj()), p2i(new_loc));
-  uintx p = (uintx)new_loc;
-  p |= flag_bits(); // Make sure the flag bits are copied to the new pointer.
-  *(address*)mpp() = (address)p;
+  *addr() = new_loc;
 }
 
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
@@ -95,11 +93,11 @@ MetaspaceClosure::~MetaspaceClosure() {
 
 bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) {
   bool created;
-  _has_been_visited.add_if_absent(ref->obj(), read_only, &created);
+  _has_been_visited.put_if_absent(ref->obj(), read_only, &created);
   if (!created) {
     return false; // Already visited: no need to iterate embedded pointers.
   } else {
-    if (_has_been_visited.maybe_grow(MAX_TABLE_SIZE)) {
+    if (_has_been_visited.maybe_grow()) {
       log_info(cds, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
     }
     return do_unique_ref(ref, read_only);

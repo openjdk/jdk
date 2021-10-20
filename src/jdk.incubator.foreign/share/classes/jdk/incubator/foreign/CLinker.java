@@ -41,6 +41,7 @@ import java.lang.constant.Constable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -285,7 +286,7 @@ public sealed interface CLinker permits AbstractCLinker {
     }
 
     /**
-     * Converts a Java string into a null-terminated C string, using the platform's default charset,
+     * Converts a Java string into a UTF-8 encoded, null-terminated C string,
      * storing the result into a native memory segment allocated using the provided allocator.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -300,11 +301,11 @@ public sealed interface CLinker permits AbstractCLinker {
     static MemorySegment toCString(String str, SegmentAllocator allocator) {
         Objects.requireNonNull(str);
         Objects.requireNonNull(allocator);
-        return toCString(str.getBytes(), allocator);
+        return toCString(str.getBytes(StandardCharsets.UTF_8), allocator);
     }
 
     /**
-     * Converts a Java string into a null-terminated C string, using the platform's default charset,
+     * Converts a Java string into a UTF-8 encoded, null-terminated C string,
      * storing the result into a native memory segment associated with the provided resource scope.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -323,48 +324,7 @@ public sealed interface CLinker permits AbstractCLinker {
     }
 
     /**
-     * Converts a Java string into a null-terminated C string, using the given {@linkplain java.nio.charset.Charset charset},
-     * storing the result into a new native memory segment native memory segment allocated using the provided allocator.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement byte array.  The
-     * {@link java.nio.charset.CharsetEncoder} class should be used when more
-     * control over the encoding process is required.
-     *
-     * @param str the Java string to be converted into a C string.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
-     * @param allocator the allocator to be used for the native segment allocation.
-     * @return a new native memory segment containing the converted C string.
-     */
-    static MemorySegment toCString(String str, Charset charset, SegmentAllocator allocator) {
-        Objects.requireNonNull(str);
-        Objects.requireNonNull(charset);
-        Objects.requireNonNull(allocator);
-        return toCString(str.getBytes(charset), allocator);
-    }
-
-    /**
-     * Converts a Java string into a null-terminated C string, using the given {@linkplain java.nio.charset.Charset charset},
-     * storing the result into a native memory segment associated with the provided resource scope.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement byte array.  The
-     * {@link java.nio.charset.CharsetEncoder} class should be used when more
-     * control over the encoding process is required.
-     *
-     * @param str the Java string to be converted into a C string.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
-     * @param scope the resource scope to be associated with the returned segment.
-     * @return a new native memory segment containing the converted C string.
-     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
-     * than the thread owning {@code scope}.
-     */
-    static MemorySegment toCString(String str, Charset charset, ResourceScope scope) {
-        return toCString(str, charset, SegmentAllocator.ofScope(scope));
-    }
-
-    /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the platform's default charset.
+     * Converts a UTF-8 encoded, null-terminated C string stored at given address into a Java string.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -378,7 +338,8 @@ public sealed interface CLinker permits AbstractCLinker {
      *
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform,
+     * or if {@code addr == MemoryAddress.NULL}.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -386,41 +347,12 @@ public sealed interface CLinker permits AbstractCLinker {
     @CallerSensitive
     static String toJavaString(MemoryAddress addr) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        Objects.requireNonNull(addr);
-        return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue(), Charset.defaultCharset());
+        SharedUtils.checkAddress(addr);
+        return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue());
     }
 
     /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the given {@linkplain java.nio.charset.Charset charset}.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement string.  The {@link
-     * java.nio.charset.CharsetDecoder} class should be used when more control
-     * over the decoding process is required.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
-     *
-     * @param addr the address at which the string is stored.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
-     * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
-     */
-    @CallerSensitive
-    static String toJavaString(MemoryAddress addr, Charset charset) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        Objects.requireNonNull(addr);
-        Objects.requireNonNull(charset);
-        return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue(), charset);
-    }
-
-    /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the platform's default charset.
+     * Converts a UTF-8 encoded, null-terminated C string stored at given address into a Java string.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -434,27 +366,7 @@ public sealed interface CLinker permits AbstractCLinker {
      */
     static String toJavaString(MemorySegment addr) {
         Objects.requireNonNull(addr);
-        return SharedUtils.toJavaStringInternal(addr, 0L, Charset.defaultCharset());
-    }
-
-    /**
-     * Converts a null-terminated C string stored at given address into a Java string, using the given {@linkplain java.nio.charset.Charset charset}.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement string.  The {@link
-     * java.nio.charset.CharsetDecoder} class should be used when more control
-     * over the decoding process is required.
-     * @param addr the address at which the string is stored.
-     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
-     * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
-     * @throws IllegalStateException if the size of the native string is greater than the size of the segment
-     * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
-     */
-    static String toJavaString(MemorySegment addr, Charset charset) {
-        Objects.requireNonNull(addr);
-        Objects.requireNonNull(charset);
-        return SharedUtils.toJavaStringInternal(addr, 0L, charset);
+        return SharedUtils.toJavaStringInternal(addr, 0L);
     }
 
     private static void copy(MemorySegment addr, byte[] bytes) {
@@ -505,13 +417,14 @@ public sealed interface CLinker permits AbstractCLinker {
      *
      * @param addr memory address of the native memory to be freed
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * @throws IllegalArgumentException if {@code addr == MemoryAddress.NULL}.
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     @CallerSensitive
     static void freeMemory(MemoryAddress addr) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
-        Objects.requireNonNull(addr);
+        SharedUtils.checkAddress(addr);
         SharedUtils.freeMemoryInternal(addr);
     }
 

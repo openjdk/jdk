@@ -33,6 +33,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -380,6 +381,18 @@ public abstract class IntVector extends AbstractVector<Integer> {
     }
 
     /*package-private*/
+    @ForceInline
+    static int rotateLeft(int a, int n) {
+        return Integer.rotateLeft(a, n);
+    }
+
+    /*package-private*/
+    @ForceInline
+    static int rotateRight(int a, int n) {
+        return Integer.rotateRight(a, n);
+    }
+
+    /*package-private*/
     @Override
     abstract IntSpecies vspecies();
 
@@ -599,12 +612,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 // This allows the JIT to ignore some ISA details.
                 that = that.lanewise(AND, SHIFT_MASK);
             }
-            if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-                IntVector neg = that.lanewise(NEG);
-                IntVector hi = this.lanewise(LSHL, (op == ROR) ? neg : that);
-                IntVector lo = this.lanewise(LSHR, (op == ROR) ? that : neg);
-                return hi.lanewise(OR, lo);
-            } else if (op == AND_NOT) {
+            if (op == AND_NOT) {
                 // FIXME: Support this in the JIT.
                 that = that.lanewise(NOT);
                 op = AND;
@@ -645,6 +653,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
                         v0.bOp(v1, (i, a, n) -> (int)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (int)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
+                case VECTOR_OP_RROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -791,11 +803,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
         assert(opKind(op, VO_SHIFT));
         // As per shift specification for Java, mask the shift count.
         e &= SHIFT_MASK;
-        if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-            IntVector hi = this.lanewise(LSHL, (op == ROR) ? -e : e);
-            IntVector lo = this.lanewise(LSHR, (op == ROR) ? e : -e);
-            return hi.lanewise(OR, lo);
-        }
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
             opc, getClass(), int.class, length(),
@@ -808,6 +815,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
                         v.uOp((i, a) -> (int)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (int)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v, n) ->
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
+                case VECTOR_OP_RROTATE: return (v, n) ->
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -3269,15 +3280,14 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     IntVector fromByteBuffer0Template(ByteBuffer bb, int offset) {
         IntSpecies vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            bb, offset, vsp,
-            (buf, off, s) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                return s.ldOp(wb, off,
-                        (wb_, o, i) -> wb_.getInt(o + i * 4));
-           });
+        return ScopedMemoryAccess.loadFromByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                bb, offset, vsp,
+                (buf, off, s) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off,
+                            (wb_, o, i) -> wb_.getInt(o + i * 4));
+                });
     }
 
     // Unchecked storing operations in native byte order.
@@ -3320,15 +3330,14 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     void intoByteBuffer0(ByteBuffer bb, int offset) {
         IntSpecies vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            this, bb, offset,
-            (buf, off, v) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                v.stOp(wb, off,
-                        (wb_, o, i, e) -> wb_.putInt(o + i * 4, e));
-            });
+        ScopedMemoryAccess.storeIntoByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                this, bb, offset,
+                (buf, off, v) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off,
+                            (wb_, o, i, e) -> wb_.putInt(o + i * 4, e));
+                });
     }
 
     // End of low-level memory operations.

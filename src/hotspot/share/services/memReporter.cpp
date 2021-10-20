@@ -98,10 +98,12 @@ void MemReporterBase::print_virtual_memory_region(const char* type, address base
 
 void MemSummaryReporter::report() {
   outputStream* out = output();
-  size_t total_reserved_amount = _malloc_snapshot->total() +
-    _vm_snapshot->total_reserved();
-  size_t total_committed_amount = _malloc_snapshot->total() +
-    _vm_snapshot->total_committed();
+  const size_t total_malloced_bytes = _malloc_snapshot->total();
+  const size_t total_mmap_reserved_bytes = _vm_snapshot->total_reserved();
+  const size_t total_mmap_committed_bytes = _vm_snapshot->total_committed();
+
+  size_t total_reserved_amount = total_malloced_bytes + total_mmap_reserved_bytes;
+  size_t total_committed_amount = total_malloced_bytes + total_mmap_committed_bytes;
 
   // Overall total
   out->print_cr("\nNative Memory Tracking:\n");
@@ -113,7 +115,14 @@ void MemSummaryReporter::report() {
 
   out->print("Total: ");
   print_total(total_reserved_amount, total_committed_amount);
-  out->print("\n");
+  out->cr();
+  out->print_cr("       malloc: " SIZE_FORMAT "%s #" SIZE_FORMAT,
+                amount_in_current_scale(total_malloced_bytes), current_scale(),
+                _malloc_snapshot->total_count());
+  out->print("       mmap:   ");
+  print_total(total_mmap_reserved_bytes, total_mmap_committed_bytes);
+  out->cr();
+  out->cr();
 
   // Summary by memory type
   for (int index = 0; index < mt_number_of_types; index ++) {

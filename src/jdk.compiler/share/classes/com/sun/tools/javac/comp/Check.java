@@ -33,6 +33,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileManager;
 
+import com.sun.source.tree.CaseTree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
@@ -118,9 +119,6 @@ public class Check {
         context.put(checkKey, this);
 
         names = Names.instance(context);
-        dfltTargetMeta = new Name[] { names.PACKAGE, names.TYPE,
-            names.FIELD, names.RECORD_COMPONENT, names.METHOD, names.CONSTRUCTOR,
-            names.ANNOTATION_TYPE, names.LOCAL_VARIABLE, names.PARAMETER, names.MODULE };
         log = Log.instance(context);
         rs = Resolve.instance(context);
         syms = Symtab.instance(context);
@@ -160,6 +158,7 @@ public class Check {
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
+        allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealed = Feature.SEALED_CLASSES.allowedInSource(source);
     }
@@ -192,6 +191,10 @@ public class Check {
     /** A handler for deferred lint warnings.
      */
     private DeferredLintHandler deferredLintHandler;
+
+    /** Are modules allowed
+     */
+    private final boolean allowModules;
 
     /** Are records allowed
      */
@@ -3099,7 +3102,9 @@ public class Check {
         List<Pair<MethodSymbol,Attribute>> l = repeatable.values;
         if (!l.isEmpty()) {
             Assert.check(l.head.fst.name == names.value);
-            t = ((Attribute.Class)l.head.snd).getValue();
+            if (l.head.snd instanceof Attribute.Class) {
+                t = ((Attribute.Class)l.head.snd).getValue();
+            }
         }
 
         if (t == null) {
@@ -3214,20 +3219,7 @@ public class Check {
     /* get a set of names for the default target */
     private Set<Name> getDefaultTargetSet() {
         if (defaultTargets == null) {
-            Set<Name> targets = new HashSet<>();
-            targets.add(names.ANNOTATION_TYPE);
-            targets.add(names.CONSTRUCTOR);
-            targets.add(names.FIELD);
-            if (allowRecords) {
-                targets.add(names.RECORD_COMPONENT);
-            }
-            targets.add(names.LOCAL_VARIABLE);
-            targets.add(names.METHOD);
-            targets.add(names.PACKAGE);
-            targets.add(names.PARAMETER);
-            targets.add(names.TYPE);
-
-            defaultTargets = java.util.Collections.unmodifiableSet(targets);
+            defaultTargets = Set.of(defaultTargetMetaInfo());
         }
 
         return defaultTargets;
@@ -3427,8 +3419,26 @@ public class Check {
         return (atValue instanceof Attribute.Array attributeArray) ? attributeArray : null;
     }
 
-    public final Name[] dfltTargetMeta;
+    private Name[] dfltTargetMeta;
     private Name[] defaultTargetMetaInfo() {
+        if (dfltTargetMeta == null) {
+            ArrayList<Name> defaultTargets = new ArrayList<>();
+            defaultTargets.add(names.PACKAGE);
+            defaultTargets.add(names.TYPE);
+            defaultTargets.add(names.FIELD);
+            defaultTargets.add(names.METHOD);
+            defaultTargets.add(names.CONSTRUCTOR);
+            defaultTargets.add(names.ANNOTATION_TYPE);
+            defaultTargets.add(names.LOCAL_VARIABLE);
+            defaultTargets.add(names.PARAMETER);
+            if (allowRecords) {
+              defaultTargets.add(names.RECORD_COMPONENT);
+            }
+            if (allowModules) {
+              defaultTargets.add(names.MODULE);
+            }
+            dfltTargetMeta = defaultTargets.toArray(new Name[0]);
+        }
         return dfltTargetMeta;
     }
 
@@ -4270,4 +4280,66 @@ public class Check {
         }
     }
 
+    /**
+     * Verify the case labels conform to the constraints. Checks constraints related
+     * combinations of patterns and other labels.
+     *
+     * @param cases the cases that should be checked.
+     */
+    void checkSwitchCaseStructure(List<JCCase> cases) {
+        boolean wasConstant = false;          // Seen a constant in the same case label
+        boolean wasDefault = false;           // Seen a default in the same case label
+        boolean wasNullPattern = false;       // Seen a null pattern in the same case label,
+                                              //or fall through from a null pattern
+        boolean wasPattern = false;           // Seen a pattern in the same case label
+                                              //or fall through from a pattern
+        boolean wasTypePattern = false;       // Seen a pattern in the same case label
+                                              //or fall through from a type pattern
+        boolean wasNonEmptyFallThrough = false;
+        for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+            JCCase c = l.head;
+            for (JCCaseLabel pat : c.labels) {
+                if (pat.isExpression()) {
+                    JCExpression expr = (JCExpression) pat;
+                    if (TreeInfo.isNull(expr)) {
+                        if (wasPattern && !wasTypePattern && !wasNonEmptyFallThrough) {
+                            log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                        }
+                        wasNullPattern = true;
+                    } else {
+                        if (wasPattern && !wasNonEmptyFallThrough) {
+                            log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                        }
+                        wasConstant = true;
+                    }
+                } else if (pat.hasTag(DEFAULTCASELABEL)) {
+                    if (wasPattern && !wasNonEmptyFallThrough) {
+                        log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                    }
+                    wasDefault = true;
+                } else {
+                    boolean isTypePattern = pat.hasTag(BINDINGPATTERN);
+                    if (wasPattern || wasConstant || wasDefault ||
+                        (wasNullPattern && (!isTypePattern || wasNonEmptyFallThrough))) {
+                        log.error(pat.pos(), Errors.FlowsThroughToPattern);
+                    }
+                    wasPattern = true;
+                    wasTypePattern = isTypePattern;
+                }
+            }
+
+            boolean completesNormally = c.caseKind == CaseTree.CaseKind.STATEMENT ? c.completesNormally
+                                                                                  : false;
+
+            if (c.stats.nonEmpty()) {
+                wasConstant = false;
+                wasDefault = false;
+                wasNullPattern &= completesNormally;
+                wasPattern &= completesNormally;
+                wasTypePattern &= completesNormally;
+            }
+
+            wasNonEmptyFallThrough = c.stats.nonEmpty() && completesNormally;
+        }
+    }
 }

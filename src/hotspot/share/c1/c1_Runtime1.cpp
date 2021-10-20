@@ -59,7 +59,6 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -348,8 +347,11 @@ const char* Runtime1::name_for_address(address entry) {
 
 
 JRT_ENTRY(void, Runtime1::new_instance(JavaThread* current, Klass* klass))
-  NOT_PRODUCT(_new_instance_slowcase_cnt++;)
-
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _new_instance_slowcase_cnt++;
+  }
+#endif
   assert(klass->is_klass(), "not a class");
   Handle holder(current, klass->klass_holder()); // keep the klass alive
   InstanceKlass* h = InstanceKlass::cast(klass);
@@ -363,7 +365,11 @@ JRT_END
 
 
 JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* current, Klass* klass, jint length))
-  NOT_PRODUCT(_new_type_array_slowcase_cnt++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _new_type_array_slowcase_cnt++;
+  }
+#endif
   // Note: no handle for klass needed since they are not used
   //       anymore after new_typeArray() and no GC can happen before.
   //       (This may have to change if this code changes!)
@@ -381,8 +387,11 @@ JRT_END
 
 
 JRT_ENTRY(void, Runtime1::new_object_array(JavaThread* current, Klass* array_klass, jint length))
-  NOT_PRODUCT(_new_object_array_slowcase_cnt++;)
-
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _new_object_array_slowcase_cnt++;
+  }
+#endif
   // Note: no handle for klass needed since they are not used
   //       anymore after new_objArray() and no GC can happen before.
   //       (This may have to change if this code changes!)
@@ -400,8 +409,11 @@ JRT_END
 
 
 JRT_ENTRY(void, Runtime1::new_multi_array(JavaThread* current, Klass* klass, int rank, jint* dims))
-  NOT_PRODUCT(_new_multi_array_slowcase_cnt++;)
-
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _new_multi_array_slowcase_cnt++;
+  }
+#endif
   assert(klass->is_klass(), "not a class");
   assert(rank >= 1, "rank must be nonzero");
   Handle holder(current, klass->klass_holder()); // keep the klass alive
@@ -653,7 +665,11 @@ address Runtime1::exception_handler_for_pc(JavaThread* current) {
 
 
 JRT_ENTRY(void, Runtime1::throw_range_check_exception(JavaThread* current, int index, arrayOopDesc* a))
-  NOT_PRODUCT(_throw_range_check_exception_count++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _throw_range_check_exception_count++;
+  }
+#endif
   const int len = 35;
   assert(len < strlen("Index %d out of bounds for length %d"), "Must allocate more space for message.");
   char message[2 * jintAsStringSize + len];
@@ -663,7 +679,11 @@ JRT_END
 
 
 JRT_ENTRY(void, Runtime1::throw_index_exception(JavaThread* current, int index))
-  NOT_PRODUCT(_throw_index_exception_count++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _throw_index_exception_count++;
+  }
+#endif
   char message[16];
   sprintf(message, "%d", index);
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_IndexOutOfBoundsException(), message);
@@ -671,19 +691,31 @@ JRT_END
 
 
 JRT_ENTRY(void, Runtime1::throw_div0_exception(JavaThread* current))
-  NOT_PRODUCT(_throw_div0_exception_count++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _throw_div0_exception_count++;
+  }
+#endif
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_ArithmeticException(), "/ by zero");
 JRT_END
 
 
 JRT_ENTRY(void, Runtime1::throw_null_pointer_exception(JavaThread* current))
-  NOT_PRODUCT(_throw_null_pointer_exception_count++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _throw_null_pointer_exception_count++;
+  }
+#endif
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_NullPointerException());
 JRT_END
 
 
 JRT_ENTRY(void, Runtime1::throw_class_cast_exception(JavaThread* current, oopDesc* object))
-  NOT_PRODUCT(_throw_class_cast_exception_count++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _throw_class_cast_exception_count++;
+  }
+#endif
   ResourceMark rm(current);
   char* message = SharedRuntime::generate_class_cast_message(current, object->klass());
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_ClassCastException(), message);
@@ -691,14 +723,22 @@ JRT_END
 
 
 JRT_ENTRY(void, Runtime1::throw_incompatible_class_change_error(JavaThread* current))
-  NOT_PRODUCT(_throw_incompatible_class_change_error_count++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _throw_incompatible_class_change_error_count++;
+  }
+#endif
   ResourceMark rm(current);
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_IncompatibleClassChangeError());
 JRT_END
 
 
 JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock))
-  NOT_PRODUCT(_monitorenter_slowcase_cnt++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _monitorenter_slowcase_cnt++;
+  }
+#endif
   if (!UseFastLocking) {
     lock->set_obj(obj);
   }
@@ -708,7 +748,11 @@ JRT_END
 
 
 JRT_LEAF(void, Runtime1::monitorexit(JavaThread* current, BasicObjectLock* lock))
-  NOT_PRODUCT(_monitorexit_slowcase_cnt++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _monitorexit_slowcase_cnt++;
+  }
+#endif
   assert(current->last_Java_sp(), "last_Java_sp must be set");
   oop obj = lock->obj();
   assert(oopDesc::is_oop(obj), "must be NULL or an object");
@@ -860,7 +904,11 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
 // patch only naturally aligned words, as single, full-word writes.
 
 JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_id ))
-  NOT_PRODUCT(_patch_code_slowcase_cnt++;)
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _patch_code_slowcase_cnt++;
+  }
+#endif
 
   ResourceMark rm(current);
   RegisterMap reg_map(current, false);
@@ -1255,7 +1303,11 @@ JRT_END
 #else // DEOPTIMIZE_WHEN_PATCHING
 
 void Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_id) {
-  NOT_PRODUCT(_patch_code_slowcase_cnt++);
+#ifndef PRODUCT
+  if (PrintC1Statistics) {
+    _patch_code_slowcase_cnt++;
+  }
+#endif
 
   // Enable WXWrite: the function is called by c1 stub as a runtime function
   // (see another implementation above).

@@ -89,6 +89,7 @@ class Deoptimization : AllStatic {
     Reason_rtm_state_change,      // rtm state change detected
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
+    Reason_receiver_constraint,   // receiver subtype check failed
 #if INCLUDE_JVMCI
     Reason_aliasing,              // optimistic assumption about aliasing failed
     Reason_transfer_to_interpreter, // explicit transferToInterpreter()
@@ -151,13 +152,6 @@ class Deoptimization : AllStatic {
   // find all marked nmethods and they are made not_entrant.
   static void deoptimize_all_marked(nmethod* nmethod_only = NULL);
 
- private:
-  // Revoke biased locks at deopt.
-  static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
-
-  static void revoke_for_object_deoptimization(JavaThread* deoptee_thread, frame fr,
-                                               RegisterMap* map, JavaThread* thread);
-
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
@@ -188,7 +182,6 @@ class Deoptimization : AllStatic {
   static bool relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*>* monitors,
                              JavaThread* deoptee_thread, frame& fr, int exec_mode, bool realloc_failures);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
-  NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects, bool realloc_failures);)
 #endif // COMPILER2_OR_JVMCI
 
   public:

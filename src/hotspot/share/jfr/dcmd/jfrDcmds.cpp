@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
@@ -33,6 +33,7 @@
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logMessage.hpp"
+#include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -153,19 +154,19 @@ static void print_message(outputStream* output, oop content, TRAPS) {
 }
 
 static void log(oop content, TRAPS) {
-    LogMessage(jfr,startup) msg;
-    objArrayOop lines = objArrayOop(content);
-    assert(lines != NULL, "invariant");
-    assert(lines->is_array(), "must be array");
-    const int length = lines->length();
-    for (int i = 0; i < length; ++i) {
-      const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
-      if (text == NULL) {
-        // An oome has been thrown and is pending.
-        break;
-      }
-      msg.info("%s", text);
+  LogMessage(jfr,startup) msg;
+  objArrayOop lines = objArrayOop(content);
+  assert(lines != NULL, "invariant");
+  assert(lines->is_array(), "must be array");
+  const int length = lines->length();
+  for (int i = 0; i < length; ++i) {
+    const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
+    if (text == NULL) {
+      // An oome has been thrown and is pending.
+      break;
     }
+    msg.info("%s", text);
+  }
 }
 
 static void handle_dcmd_result(outputStream* output,
@@ -214,12 +215,13 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
   return args->result()->get_oop();
 }
 
+JfrDCmd::JfrDCmd(outputStream* output, bool heap, int num_arguments) : DCmd(output, heap), _args(NULL), _num_arguments(num_arguments), _delimiter('\0') {}
+
 void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
   JavaValue constructor_result(T_OBJECT);
   JfrJavaArguments constructor_args(&constructor_result);
   constructor_args.set_klass(javaClass(), CHECK);
 
-  ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
   JNIHandleBlockManager jni_handle_management(THREAD);
 
@@ -241,12 +243,10 @@ void JfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
 }
 
 void JfrDCmd::execute(DCmdSource source, TRAPS) {
-  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;C)[Ljava/lang/String;";
-
   if (invalid_state(output(), THREAD)) {
     return;
   }
-
+  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;C)[Ljava/lang/String;";
   JavaValue result(T_OBJECT);
   JfrJavaArguments execute(&result, javaClass(), "execute", signature, CHECK);
   jstring argument = JfrJavaSupport::new_string(_args, CHECK);
@@ -271,13 +271,119 @@ void JfrDCmd::print_help(const char* name) const {
   static const char signature[] = "()[Ljava/lang/String;";
   JavaThread* thread = JavaThread::current();
   JavaValue result(T_OBJECT);
-  JfrJavaArguments print_help(&result, javaClass(), "printHelp", signature, thread);
-  invoke(print_help, thread);
+  JfrJavaArguments printHelp(&result, javaClass(), "printHelp", signature, thread);
+  invoke(printHelp, thread);
   handle_dcmd_result(output(), result.get_oop(), DCmd_Source_MBean, thread);
 }
 
+static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array) {
+  assert(array != NULL, "invariant");
+  DCmdArgumentInfo * const dummy = new DCmdArgumentInfo(NULL,
+                                                        NULL,
+                                                        NULL,
+                                                        NULL,
+                                                        false,
+                                                        true, // a DcmdFramework "option"
+                                                        false);
+  for (int i = 0; i < array->max_length(); ++i) {
+    array->append(dummy);
+  }
+}
+
+// Since the DcmdFramework does not support dynamically allocated strings,
+// we keep them in a thread local arena. The arena is reset between invocations.
+static THREAD_LOCAL Arena* dcmd_arena = NULL;
+
+static void prepare_dcmd_string_arena() {
+  if (dcmd_arena == NULL) {
+    dcmd_arena = new (mtTracing) Arena(mtTracing);
+  } else {
+    dcmd_arena->destruct_contents(); // will grow on next allocation
+  }
+}
+
+static char* dcmd_arena_allocate(size_t size) {
+  assert(dcmd_arena != NULL, "invariant");
+  return (char*)dcmd_arena->Amalloc(size);
+}
+
+static const char* get_as_dcmd_arena_string(oop string, JavaThread* t) {
+  char* str = NULL;
+  const typeArrayOop value = java_lang_String::value(string);
+  if (value != NULL) {
+    const size_t length = static_cast<size_t>(java_lang_String::utf8_length(string, value)) + 1;
+    str = dcmd_arena_allocate(length);
+    assert(str != NULL, "invariant");
+    java_lang_String::as_utf8_string(string, value, str, static_cast<int>(length));
+  }
+  return str;
+}
+
+static const char* read_string_field(oop argument, const char* field_name, TRAPS) {
+  JavaValue result(T_OBJECT);
+  JfrJavaArguments args(&result);
+  args.set_klass(argument->klass());
+  args.set_name(field_name);
+  args.set_signature("Ljava/lang/String;");
+  args.set_receiver(argument);
+  JfrJavaSupport::get_field(&args, THREAD);
+  const oop string_oop = result.get_oop();
+  return string_oop != NULL ? get_as_dcmd_arena_string(string_oop, (JavaThread*)THREAD) : NULL;
+}
+
+static bool read_boolean_field(oop argument, const char* field_name, TRAPS) {
+  JavaValue result(T_BOOLEAN);
+  JfrJavaArguments args(&result);
+  args.set_klass(argument->klass());
+  args.set_name(field_name);
+  args.set_signature("Z");
+  args.set_receiver(argument);
+  JfrJavaSupport::get_field(&args, THREAD);
+  return (result.get_jint() & 1) == 1;
+}
+
+static DCmdArgumentInfo* create_info(oop argument, TRAPS) {
+  return new DCmdArgumentInfo(
+    read_string_field(argument, "name", THREAD),
+    read_string_field(argument, "description", THREAD),
+    read_string_field(argument, "type", THREAD),
+    read_string_field(argument, "defaultValue", THREAD),
+    read_boolean_field(argument, "mandatory", THREAD),
+    true, // a DcmdFramework "option"
+    read_boolean_field(argument, "allowMultiple", THREAD));
+}
+
 GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
-  return new GrowableArray<DCmdArgumentInfo*>();
+  static const char signature[] = "()[Ljdk/jfr/internal/dcmd/Argument;";
+  JavaThread* thread = JavaThread::current();
+  GrowableArray<DCmdArgumentInfo*>* const array = new GrowableArray<DCmdArgumentInfo*>(_num_arguments);
+  JavaValue result(T_OBJECT);
+  JfrJavaArguments getArgumentInfos(&result, javaClass(), "getArgumentInfos", signature, thread);
+  invoke(getArgumentInfos, thread);
+  if (thread->has_pending_exception()) {
+    // Most likely an OOME, but the DCmdFramework is not the best place to handle it.
+    // We handle it locally by clearing the exception and returning an array with dummy descriptors.
+    // This lets the MBean server initialization routine complete successfully,
+    // but this particular command will have no argument descriptors exposed.
+    // Hence we postpone, or delegate, handling of OOME's to code that is better suited.
+    log_debug(jfr, system)("Exception in DCmd getArgumentInfos");
+    thread->clear_pending_exception();
+    initialize_dummy_descriptors(array);
+    assert(array->length() == _num_arguments, "invariant");
+    return array;
+  }
+  objArrayOop arguments = objArrayOop(result.get_oop());
+  assert(arguments != NULL, "invariant");
+  assert(arguments->is_array(), "must be array");
+  const int num_arguments = arguments->length();
+  assert(num_arguments == _num_arguments, "invariant");
+  prepare_dcmd_string_arena();
+  for (int i = 0; i < num_arguments; ++i) {
+    DCmdArgumentInfo* const dai = create_info(arguments->obj_at(i), thread);
+    assert(dai != NULL, "invariant");
+    array->append(dai);
+  }
+  return array;
 }
 
 GrowableArray<const char*>* JfrDCmd::argument_name_array() const {
@@ -387,7 +493,6 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
 
-  ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
   JNIHandleBlockManager jni_handle_management(THREAD);
 

@@ -78,7 +78,8 @@ StubCodeGenerator::~StubCodeGenerator() {
   CodeBuffer* cbuf = _masm->code();
   CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
   if (blob != NULL) {
-    blob->set_strings(cbuf->strings());
+    blob->use_remarks(cbuf->asm_remarks());
+    blob->use_strings(cbuf->dbg_strings());
   }
 #endif
 }
@@ -90,15 +91,15 @@ void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
 void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   if (_print_code) {
 #ifndef PRODUCT
-    // Find the code strings in the outer CodeBuffer.
-    CodeBuffer *outer_cbuf = _masm->code_section()->outer();
-    CodeStrings* cs = &outer_cbuf->strings();
+    // Find the assembly code remarks in the outer CodeBuffer.
+    AsmRemarks* remarks = &_masm->code_section()->outer()->asm_remarks();
 #endif
     ttyLocker ttyl;
     tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
     cdesc->print_on(tty);
     tty->cr();
-    Disassembler::decode(cdesc->begin(), cdesc->end(), tty NOT_PRODUCT(COMMA cs));
+    Disassembler::decode(cdesc->begin(), cdesc->end(), tty
+                         NOT_PRODUCT(COMMA remarks COMMA cdesc->disp()));
     tty->print_cr("- - - [END] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
     tty->cr();
   }
@@ -119,6 +120,11 @@ StubCodeMark::~StubCodeMark() {
   _cgen->assembler()->flush();
   _cdesc->set_end(_cgen->assembler()->pc());
   assert(StubCodeDesc::_list == _cdesc, "expected order on list");
+#ifndef PRODUCT
+  address base = _cgen->assembler()->code_section()->outer()->insts_begin();
+  address head = _cdesc->begin();
+  _cdesc->set_disp(uint(head - base));
+#endif
   _cgen->stub_epilog(_cdesc);
   Forte::register_stub(_cdesc->name(), _cdesc->begin(), _cdesc->end());
 

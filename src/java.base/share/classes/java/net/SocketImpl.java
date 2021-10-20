@@ -29,12 +29,9 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Set;
 
-import sun.net.NetProperties;
 import sun.net.PlatformSocketImpl;
 import sun.nio.ch.NioSocketImpl;
 
@@ -43,45 +40,16 @@ import sun.nio.ch.NioSocketImpl;
  * of all classes that actually implement sockets. It is used to
  * create both client and server sockets.
  *
- * @implNote Client and server sockets created with the {@code Socket} and
- * {@code SocketServer} public constructors create a system-default
- * {@code SocketImpl}. The JDK historically used a {@code SocketImpl}
- * implementation type named "PlainSocketImpl" that has since been replaced by a
- * newer implementation. The JDK continues to ship with the older implementation
- * to allow code to run that depends on unspecified behavior that differs between
- * the old and new implementations. The old implementation will be used if the
- * Java virtual machine is started with the system property {@systemProperty
- * jdk.net.usePlainSocketImpl} set to use the old implementation. It may also be
- * set in the JDK's network configuration file, located in {@code
- * ${java.home}/conf/net.properties}. The value of the property is the string
- * representation of a boolean. If set without a value then it defaults to {@code
- * true}, hence running with {@code -Djdk.net.usePlainSocketImpl} or {@code
- * -Djdk.net.usePlainSocketImpl=true} will configure the Java virtual machine
- * to use the old implementation. The property and old implementation will be
- * removed in a future version.
- *
  * @since   1.0
  */
 public abstract class SocketImpl implements SocketOptions {
-    private static final boolean USE_PLAINSOCKETIMPL = usePlainSocketImpl();
-
-    private static boolean usePlainSocketImpl() {
-        PrivilegedAction<String> pa = () -> NetProperties.get("jdk.net.usePlainSocketImpl");
-        @SuppressWarnings("removal")
-        String s = AccessController.doPrivileged(pa);
-        return (s != null) && !s.equalsIgnoreCase("false");
-    }
 
     /**
      * Creates an instance of platform's SocketImpl
      */
     @SuppressWarnings("unchecked")
     static <S extends SocketImpl & PlatformSocketImpl> S createPlatformSocketImpl(boolean server) {
-        if (USE_PLAINSOCKETIMPL) {
-            return (S) new PlainSocketImpl(server);
-        } else {
-            return (S) new NioSocketImpl(server);
-        }
+        return (S) new NioSocketImpl(server);
     }
 
     /**

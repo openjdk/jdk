@@ -104,6 +104,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_MANAGEMENT
+#include "services/finalizerService.hpp"
+#endif
 
 #include <errno.h>
 
@@ -424,7 +427,7 @@ JVM_ENTRY_NO_ENV(void, JVM_BeforeHalt())
 #if INCLUDE_CDS
   // Link all classes for dynamic CDS dumping before vm exit.
   if (DynamicDumpSharedSpaces) {
-    DynamicArchive::prepare_for_dynamic_dumping_at_exit();
+    DynamicArchive::prepare_for_dynamic_dumping();
   }
 #endif
   EventShutdown event;
@@ -679,6 +682,12 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   }
 
   return JNIHandles::make_local(THREAD, new_obj());
+JVM_END
+
+// java.lang.ref.Finalizer ////////////////////////////////////////////////////
+
+JVM_ENTRY(void, JVM_ReportFinalizationComplete(JNIEnv * env, jobject finalizee))
+  MANAGEMENT_ONLY(FinalizerService::on_complete(JNIHandles::resolve_non_null(finalizee), THREAD);)
 JVM_END
 
 // java.io.File ///////////////////////////////////////////////////////////////
@@ -2909,6 +2918,9 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
   assert(native_thread != NULL, "Starting null thread?");
 
   if (native_thread->osthread() == NULL) {
+    ResourceMark rm(thread);
+    log_warning(os, thread)("Failed to start the native thread for java.lang.Thread \"%s\"",
+                            JavaThread::name_for(JNIHandles::resolve_non_null(jthread)));
     // No one should hold a reference to the 'native_thread'.
     native_thread->smr_delete();
     if (JvmtiExport::should_post_resource_exhausted()) {
@@ -2958,7 +2970,7 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
       THROW_OOP(java_throwable);
     } else {
       // Use a VM_Operation to throw the exception.
-      JavaThread::send_async_exception(java_thread, java_throwable);
+      JavaThread::send_async_exception(receiver, java_throwable);
     }
   } else {
     // Either:
@@ -3848,3 +3860,4 @@ JVM_END
 JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
+

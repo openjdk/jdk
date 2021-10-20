@@ -148,6 +148,9 @@
   static const bool int_in_long = false;
 #endif
 
+  // Number of htbl entries for aes-gcm intrinsic
+  static const int htbl_entries = 96;
+
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return (UseAVX >= 2);
@@ -156,6 +159,11 @@
   // Does the CPU supports vector variable rotate instructions?
   static constexpr bool supports_vector_variable_rotates(void) {
     return true;
+  }
+
+  // Does the CPU supports vector constant rotate instructions?
+  static constexpr bool supports_vector_constant_rotates(int shift) {
+    return -0x80 <= shift && shift < 0x80;
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
@@ -178,11 +186,7 @@
 
   // Some microarchitectures have mask registers used on vectors
   static const bool has_predicated_vectors(void) {
-    bool ret_value = false;
-    if (UseAVX > 2) {
-      ret_value = VM_Version::supports_avx512vl();
-    }
-    return ret_value;
+    return VM_Version::supports_evex();
   }
 
   // true means we have fast l2f convers
@@ -190,5 +194,8 @@
   static constexpr bool convL2FSupported(void) {
       return true;
   }
+
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = true;
 
 #endif // CPU_X86_MATCHER_X86_HPP

@@ -43,17 +43,16 @@ import java.util.function.BinaryOperator;
 
 /* @test
  * @build SerialFilterFactoryTest
- * @run testng/othervm  SerialFilterFactoryTest
- * @run testng/othervm -Djdk.serialFilter="*" -Djdk.serialFilterFactory=OVERRIDE SerialFilterFactoryTest
- * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$PropertyFilterFactory SerialFilterFactoryTest
- * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$NotMyFilterFactory SerialFilterFactoryTest
+ * @run testng/othervm SerialFilterFactoryTest
+ * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$PropertyFilterFactory
+ *                     -Djava.util.logging.config.file=${test.src}/logging.properties SerialFilterFactoryTest
+ * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$NotMyFilterFactory
+ *                     -Djava.util.logging.config.file=${test.src}/logging.properties SerialFilterFactoryTest
  * @run testng/othervm/policy=security.policy
  *        -Djava.security.properties=${test.src}/java.security-extra-factory
  *        -Djava.security.debug=properties SerialFilterFactoryTest
- * @run testng/othervm/fail  -Djdk.serialFilterFactory=ForcedError_NoSuchClass SerialFilterFactoryTest
  * @run testng/othervm/policy=security.policy SerialFilterFactoryTest
  * @run testng/othervm/policy=security.policy.without.globalFilter SerialFilterFactoryTest
-
  *
  * @summary Test Context-specific Deserialization Filters
  */
@@ -121,6 +120,7 @@ public class SerialFilterFactoryTest {
     /**
      * Returns true if serialFilter actions are ok, either no SM or SM has serialFilter Permission
      */
+    @SuppressWarnings("removal")
     private static boolean hasFilterPerm() {
         boolean hasSerialPerm = true;
         SecurityManager sm = System.getSecurityManager();
@@ -163,6 +163,7 @@ public class SerialFilterFactoryTest {
      * Try to set it again, the second should throw.
      */
     @Test
+    @SuppressWarnings("removal")
     void testSecondSetShouldThrow() {
         if (System.getSecurityManager() != null) {
             // Skip test when running with SM
@@ -198,6 +199,7 @@ public class SerialFilterFactoryTest {
      * @throws ClassNotFoundException for class not found (should not occur)
      */
     @Test(dataProvider="FilterCases")
+    @SuppressWarnings("removal")
     void testCase(MyFilterFactory dynFilterFactory, Validator dynFilter, Validator streamFilter)
                 throws IOException, ClassNotFoundException {
 
@@ -253,7 +255,7 @@ public class SerialFilterFactoryTest {
     // Test that if the property jdk-serialFilterFactory is set, then initial factory has the same classname
     @Test
     void testPropertyFilterFactory() {
-        if (jdkSerialFilterFactoryProp != null && !jdkSerialFilterFactoryProp.equals("OVERRIDE")) {
+        if (jdkSerialFilterFactoryProp != null) {
             Assert.assertEquals(jdkSerialFilterFactory.getClass().getName(), jdkSerialFilterFactoryProp,
                     "jdk.serialFilterFactory property classname mismatch");
         }

@@ -1001,10 +1001,6 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
   return OptoRegPair(0, 0);
 }
 
-const int Matcher::float_pressure(int default_pressure_threshold) {
-  return default_pressure_threshold;
-}
-
 // Vector width in bytes
 const int Matcher::vector_width_in_bytes(BasicType bt) {
   return MaxVectorSize;
@@ -1055,7 +1051,7 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
   return NULL;
 }
 
-bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
@@ -1098,6 +1094,16 @@ bool Matcher::can_be_java_arg( int reg ) {
 
 bool Matcher::is_spillable_arg( int reg ) {
   return can_be_java_arg(reg);
+}
+
+uint Matcher::int_pressure_limit()
+{
+  return (INTPRESSURE == -1) ? 12 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 30 : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
@@ -5454,7 +5460,6 @@ instruct storeXConditional( memoryex mem, iRegX oldval, iRegX newval, iRegX tmp,
     __ cmp($tmp$$Register, 1, eq);
     __ b(loop, eq);
     __ teq($tmp$$Register, 0);
-    // used by biased locking only. Requires a membar.
     __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadStore | MacroAssembler::LoadLoad), noreg);
   %}
   ins_pipe( long_memory_op );
@@ -8954,7 +8959,6 @@ instruct partialSubtypeCheck( R0RegP index, R1RegP sub, R2RegP super, flagsRegP 
 instruct cmpFastLock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, iRegP scratch )
 %{
   match(Set pcc (FastLock object box));
-  predicate(!(UseBiasedLocking && !UseOptoBiasInlining));
 
   effect(TEMP scratch, TEMP scratch2);
   ins_cost(DEFAULT_COST*3);
@@ -8965,22 +8969,6 @@ instruct cmpFastLock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, iRe
   %}
   ins_pipe(long_memory_op);
 %}
-
-instruct cmpFastLock_noBiasInline(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2,
-                                  iRegP scratch, iRegP scratch3) %{
-  match(Set pcc (FastLock object box));
-  predicate(UseBiasedLocking && !UseOptoBiasInlining);
-
-  effect(TEMP scratch, TEMP scratch2, TEMP scratch3);
-  ins_cost(DEFAULT_COST*5);
-
-  format %{ "FASTLOCK  $object, $box; KILL $scratch, $scratch2, $scratch3" %}
-  ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $scratch$$Register, $scratch2$$Register, $scratch3$$Register);
-  %}
-  ins_pipe(long_memory_op);
-%}
-
 
 instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, iRegP scratch ) %{
   match(Set pcc (FastUnlock object box));

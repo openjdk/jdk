@@ -302,7 +302,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   if ((len > 0) && (result != NULL) &&
       is_deoptimized_caller_frame(current)) {
     // Zero array here if the caller is deoptimized.
-    int size = ((typeArrayOop)result)->object_size();
+    int size = TypeArrayKlass::cast(array_type)->oop_size(result);
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     const size_t hs = arrayOopDesc::header_size(elem_type);
     // Align to next 8 bytes to avoid trashing arrays's length.
@@ -955,6 +955,32 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
+//for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
+  // create input type (domain)
+  int num_args = 9;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL; // byte[] in + inOfs
+  fields[argp++] = TypeInt::INT;     // int len
+  fields[argp++] = TypePtr::NOTNULL; // byte[] ct + ctOfs
+  fields[argp++] = TypePtr::NOTNULL; // byte[] out + outOfs
+  fields[argp++] = TypePtr::NOTNULL; // byte[] key from AESCrypt obj
+  fields[argp++] = TypePtr::NOTNULL; // long[] state from GHASH obj
+  fields[argp++] = TypePtr::NOTNULL; // long[] subkeyHtbl from GHASH obj
+  fields[argp++] = TypePtr::NOTNULL; // long[] avx512_subkeyHtbl newly created
+  fields[argp++] = TypePtr::NOTNULL; // byte[] counter from GCTR obj
+
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+  // returning cipher len (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 /*
  * void implCompress(byte[] buf, int ofs)
  */
@@ -1193,7 +1219,7 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
 }
 // Base64 decode function
 const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
-  int argcnt = 6;
+  int argcnt = 7;
 
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -1203,6 +1229,7 @@ const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // dest array
   fields[argp++] = TypeInt::INT;        // dest offset
   fields[argp++] = TypeInt::BOOL;       // isURL
+  fields[argp++] = TypeInt::BOOL;       // isMIME
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1598,12 +1625,6 @@ void OptoRuntime::print_named_counters() {
           eliminated_lock_count += count;
         }
       }
-    } else if (c->tag() == NamedCounter::BiasedLockingCounter) {
-      BiasedLockingCounters* blc = ((BiasedLockingNamedCounter*)c)->counters();
-      if (blc->nonzero()) {
-        tty->print_cr("%s", c->name());
-        blc->print_on(tty);
-      }
 #if INCLUDE_RTM_OPT
     } else if (c->tag() == NamedCounter::RTMLockingCounter) {
       RTMLockingCounters* rlc = ((RTMLockingNamedCounter*)c)->counters();
@@ -1654,9 +1675,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     // To print linenumbers instead of bci use: m->line_number_from_bci(bci)
   }
   NamedCounter* c;
-  if (tag == NamedCounter::BiasedLockingCounter) {
-    c = new BiasedLockingNamedCounter(st.as_string());
-  } else if (tag == NamedCounter::RTMLockingCounter) {
+  if (tag == NamedCounter::RTMLockingCounter) {
     c = new RTMLockingNamedCounter(st.as_string());
   } else {
     c = new NamedCounter(st.as_string(), tag);

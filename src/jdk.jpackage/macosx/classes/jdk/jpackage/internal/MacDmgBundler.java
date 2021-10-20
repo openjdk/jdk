@@ -346,7 +346,11 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "-volname", APP_NAME.fetchFrom(params),
                 "-ov", protoDMG.toAbsolutePath().toString(),
                 "-fs", "HFS+");
-            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+            new RetryExecutor()
+                .setMaxAttemptsCount(10)
+                .setAttemptTimeoutMillis(3000)
+                .setWriteOutputToFile(true)
+                .execute(pb);
         }
 
         // mount temp image

@@ -1823,11 +1823,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (UseBiasedLocking) {
-      // Note that oop_handle_reg is trashed during this call
-      __ biased_locking_enter(lock_reg, obj_reg, swap_reg, oop_handle_reg, noreg, false, lock_done, &slow_path_lock);
-    }
-
     // Load immediate 1 into swap_reg %rax,
     __ movptr(swap_reg, 1);
 
@@ -1860,11 +1855,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ jcc(Assembler::notEqual, slow_path_lock);
     // Slow path will re-enter here
     __ bind(lock_done);
-
-    if (UseBiasedLocking) {
-      // Re-fetch oop_handle_reg as we trashed it above
-      __ movptr(oop_handle_reg, Address(rsp, wordSize));
-    }
   }
 
 
@@ -1992,10 +1982,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // Get locked oop from the handle we passed to jni
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
-
-    if (UseBiasedLocking) {
-      __ biased_locking_exit(obj_reg, rbx, done);
-    }
 
     // Simple recursive lock?
 

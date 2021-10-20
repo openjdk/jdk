@@ -867,8 +867,7 @@ void Metaspace::post_initialize() {
 }
 
 size_t Metaspace::max_allocation_word_size() {
-  const size_t max_overhead_words = metaspace::get_raw_word_size_for_requested_word_size(1);
-  return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE - max_overhead_words;
+  return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE;
 }
 
 // This version of Metaspace::allocate does not throw OOM but simply returns NULL, and

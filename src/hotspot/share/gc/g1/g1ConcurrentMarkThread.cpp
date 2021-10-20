@@ -324,6 +324,8 @@ void G1ConcurrentMarkThread::concurrent_undo_cycle_do() {
   // some reason.
   if (_cm->has_aborted()) { return; }
 
+  _cm->flush_all_task_caches();
+
   // Phase 1: Clear bitmap for next mark.
   phase_clear_bitmap_for_next_mark();
 }

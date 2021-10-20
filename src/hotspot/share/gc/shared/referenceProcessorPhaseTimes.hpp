@@ -49,7 +49,7 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
   // Records total queue balancing for each phase.
   double                   _balance_queues_time_ms[ReferenceProcessor::RefPhaseMax];
 
-  WorkerDataArray<double>* _phase2_worker_time_sec;
+  WorkerDataArray<double>* _soft_weak_final_refs_phase_worker_time_sec;
 
   // Total spent time for reference processing.
   double                   _total_time_ms;
@@ -80,7 +80,7 @@ public:
   ReferenceProcessorPhaseTimes(GCTimer* gc_timer, uint max_gc_threads);
   ~ReferenceProcessorPhaseTimes();
 
-  WorkerDataArray<double>* phase2_worker_time_sec() const { return _phase2_worker_time_sec; }
+  WorkerDataArray<double>* soft_weak_final_refs_phase_worker_time_sec() const { return _soft_weak_final_refs_phase_worker_time_sec; }
   WorkerDataArray<double>* sub_phase_worker_time_sec(ReferenceProcessor::RefProcSubPhases phase) const;
   void set_phase_time_ms(ReferenceProcessor::RefProcPhases phase, double par_phase_time_ms);
 

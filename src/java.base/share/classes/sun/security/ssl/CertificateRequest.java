@@ -31,6 +31,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -333,6 +334,16 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // If we're processing this message and the server's certificate
+            // message consumer has not already run then this is a state
+            // machine violation.
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             SSLConsumer certStatCons = chc.handshakeConsumers.remove(
                     SSLHandshake.CERTIFICATE_STATUS.id);
@@ -659,6 +670,16 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // If we're processing this message and the server's certificate
+            // message consumer has not already run then this is a state
+            // machine violation.
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             SSLConsumer certStatCons = chc.handshakeConsumers.remove(
                     SSLHandshake.CERTIFICATE_STATUS.id);
@@ -709,7 +730,7 @@ final class CertificateRequest {
             // the SSLPossession.  Instead, the choosePossession method
             // will use the accepted signature schemes in the message to
             // determine the set of acceptable certificate types to select from.
-            SSLPossession pos = choosePossession(chc);
+            SSLPossession pos = choosePossession(chc, crm);
             if (pos == null) {
                 return;
             }
@@ -719,8 +740,8 @@ final class CertificateRequest {
                     SSLHandshake.CERTIFICATE_VERIFY);
         }
 
-        private static SSLPossession choosePossession(HandshakeContext hc)
-                throws IOException {
+        private static SSLPossession choosePossession(HandshakeContext hc,
+                T12CertificateRequestMessage crm) throws IOException {
             if (hc.peerRequestedCertSignSchemes == null ||
                     hc.peerRequestedCertSignSchemes.isEmpty()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -730,7 +751,17 @@ final class CertificateRequest {
                 return null;
             }
 
+            // Put the CR key type into a more friendly format for searching
+            List<String> crKeyTypes = new ArrayList<>(
+                    Arrays.asList(crm.getKeyTypes()));
+            // For TLS 1.2 only if RSA is a requested key type then we
+            // should also allow RSASSA-PSS.
+            if (crKeyTypes.contains("RSA")) {
+                crKeyTypes.add("RSASSA-PSS");
+            }
+
             Collection<String> checkedKeyTypes = new HashSet<>();
+            List<String> supportedKeyTypes = new ArrayList<>();
             for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
                 if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -739,6 +770,7 @@ final class CertificateRequest {
                     }
                     continue;
                 }
+                checkedKeyTypes.add(ss.keyAlgorithm);
 
                 // Don't select a signature scheme unless we will be able to
                 // produce a CertificateVerify message later
@@ -752,36 +784,41 @@ final class CertificateRequest {
                             "Unable to produce CertificateVerify for " +
                             "signature scheme: " + ss.name);
                     }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
                     continue;
                 }
 
-                SSLAuthentication ka = X509Authentication.valueOf(ss);
+                X509Authentication ka = X509Authentication.valueOf(ss);
                 if (ka == null) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
                             "Unsupported authentication scheme: " + ss.name);
                     }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
                     continue;
-                }
-
-                SSLPossession pos = ka.createPossession(hc);
-                if (pos == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unavailable authentication scheme: " + ss.name);
+                } else {
+                    // Any auth object will have a set of allowed key types.
+                    // This set should share at least one common algorithm with
+                    // the CR's allowed key types.
+                    if (Collections.disjoint(crKeyTypes,
+                            Arrays.asList(ka.keyTypes))) {
+                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                            SSLLogger.warning(
+                                    "Unsupported authentication scheme: " +
+                                            ss.name);
+                        }
+                        continue;
                     }
-                    continue;
                 }
-
-                return pos;
+                supportedKeyTypes.add(ss.keyAlgorithm);
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.warning("No available authentication scheme");
+            SSLPossession pos = X509Authentication
+                    .createPossession(hc, supportedKeyTypes.toArray(String[]::new));
+            if (pos == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning("No available authentication scheme");
+                }
             }
-            return null;
+            return pos;
         }
     }
 
@@ -926,6 +963,15 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // Ensure that the CertificateRequest has not been sent prior
+            // to EncryptedExtensions
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.ENCRYPTED_EXTENSIONS.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             T13CertificateRequestMessage crm =
                     new T13CertificateRequestMessage(chc, message);

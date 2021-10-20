@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,15 @@ public class PowTests {
         failures += Tests.test("Math.pow(double, double)", input1, input2,
                                Math.pow(input1, input2), expected);
         return failures;
+    }
+
+    static int testStrictVsNonstrictPowCase(double input1, double input2) {
+        double smResult = StrictMath.pow(input1, input2);
+        double mResult = Math.pow(input1, input2);
+        return Tests.testUlpDiff(
+            "StrictMath.pow(double, double) vs Math.pow(double, double)",
+            input1, input2, mResult, smResult, 2.0
+        );
     }
 
     /*
@@ -206,8 +215,10 @@ public class PowTests {
                     assert y != 0.0;
                     failures += testStrictPowCase(x, y, f3(x, y));
                     failures += testNonstrictPowCase(x, y, f3ns(x, y));
+                    failures += testStrictVsNonstrictPowCase(x, y);
                     continue;
                 } else {
+                    failures += testStrictVsNonstrictPowCase(x, y);
                     // go to next iteration
                     expected = NaN;
                     continue;

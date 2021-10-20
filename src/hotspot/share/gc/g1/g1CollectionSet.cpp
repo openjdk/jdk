@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/orderAccess.hpp"
@@ -89,7 +89,7 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
   _survivor_region_length = survivor_cset_region_length;
 
   assert((size_t) young_region_length() == _collection_set_cur_length,
-         "Young region length %u should match collection set length " SIZE_FORMAT, young_region_length(), _collection_set_cur_length);
+         "Young region length %u should match collection set length %u", young_region_length(), _collection_set_cur_length);
 
   _old_region_length = 0;
   free_optional_regions();
@@ -130,8 +130,8 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert(!hr->in_collection_set(), "should not already be in the collection set");
   _g1h->register_old_region_with_region_attr(hr);
 
+  assert(_collection_set_cur_length < _collection_set_max_length, "Collection set now larger than maximum size.");
   _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
-  assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set now larger than maximum size.");
 
   _bytes_used_before += hr->used();
   _recorded_rs_length += hr->rem_set()->occupied();
@@ -153,7 +153,7 @@ void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(_inc_build_state == Inactive, "Precondition");
 #ifdef ASSERT
-  for (size_t i = 0; i < _collection_set_max_length; i++) {
+  for (uint i = 0; i < _collection_set_max_length; i++) {
     _inc_collection_set_stats[i].reset();
   }
 #endif
@@ -207,9 +207,8 @@ void G1CollectionSet::iterate(HeapRegionClosure* cl) const {
 
 void G1CollectionSet::par_iterate(HeapRegionClosure* cl,
                                   HeapRegionClaimer* hr_claimer,
-                                  uint worker_id,
-                                  uint total_workers) const {
-  iterate_part_from(cl, hr_claimer, 0, cur_length(), worker_id, total_workers);
+                                  uint worker_id) const {
+  iterate_part_from(cl, hr_claimer, 0, cur_length(), worker_id);
 }
 
 void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
@@ -224,38 +223,20 @@ void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
 
 void G1CollectionSet::iterate_incremental_part_from(HeapRegionClosure* cl,
                                                     HeapRegionClaimer* hr_claimer,
-                                                    uint worker_id,
-                                                    uint total_workers) const {
-  iterate_part_from(cl, hr_claimer, _inc_part_start, increment_length(), worker_id, total_workers);
+                                                    uint worker_id) const {
+  iterate_part_from(cl, hr_claimer, _inc_part_start, increment_length(), worker_id);
 }
 
 void G1CollectionSet::iterate_part_from(HeapRegionClosure* cl,
                                         HeapRegionClaimer* hr_claimer,
                                         size_t offset,
                                         size_t length,
-                                        uint worker_id,
-                                        uint total_workers) const {
-  assert_at_safepoint();
-  if (length == 0) {
-    return;
-  }
-
-  size_t start_pos = (worker_id * length) / total_workers;
-  size_t cur_pos = start_pos;
-
-  do {
-    uint region_idx = _collection_set_regions[cur_pos + offset];
-    if (hr_claimer == NULL || hr_claimer->claim_region(region_idx)) {
-      HeapRegion* r = _g1h->region_at(region_idx);
-      bool result = cl->do_heap_region(r);
-      guarantee(!result, "Must not cancel iteration");
-    }
-
-    cur_pos++;
-    if (cur_pos == length) {
-      cur_pos = 0;
-    }
-  } while (cur_pos != start_pos);
+                                        uint worker_id) const {
+  _g1h->par_iterate_regions_array(cl,
+                                  hr_claimer,
+                                  &_collection_set_regions[offset],
+                                  length,
+                                  worker_id);
 }
 
 void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,
@@ -326,15 +307,15 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
 
   // We use UINT_MAX as "invalid" marker in verification.
   assert(_collection_set_cur_length < (UINT_MAX - 1),
-         "Collection set is too large with " SIZE_FORMAT " entries", _collection_set_cur_length);
-  hr->set_young_index_in_cset((uint)_collection_set_cur_length + 1);
+         "Collection set is too large with %u entries", _collection_set_cur_length);
+  hr->set_young_index_in_cset(_collection_set_cur_length + 1);
 
+  assert(_collection_set_cur_length < _collection_set_max_length, "Collection set larger than maximum allowed.");
   _collection_set_regions[_collection_set_cur_length] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the length field.
   OrderAccess::storestore();
   _collection_set_cur_length++;
-  assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set larger than maximum allowed.");
 }
 
 void G1CollectionSet::add_survivor_regions(HeapRegion* hr) {
@@ -458,13 +439,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 }
 
 static int compare_region_idx(const uint a, const uint b) {
-  if (a > b) {
-    return 1;
-  } else if (a == b) {
-    return 0;
-  } else {
-    return -1;
-  }
+  return static_cast<int>(a-b);
 }
 
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
