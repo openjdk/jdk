@@ -75,6 +75,7 @@ public class MixingOnDialog
         d.add(light);
         d.add(heavy);
         d.setBounds(50, 50, 400, 400);
+        d.setLocationRelativeTo(null);
         d.setVisible(true);
 
 
