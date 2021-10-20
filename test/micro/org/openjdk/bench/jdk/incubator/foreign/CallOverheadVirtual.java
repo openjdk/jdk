@@ -72,12 +72,12 @@ public class CallOverheadVirtual {
 
     @Benchmark
     public MemorySegment panama_identity_struct_confined_3() throws Throwable {
-        return (MemorySegment) identity_struct_v.invokeExact(identity_struct_addr, recycling_allocator, confinedPoint, confinedPoint, confinedPoint);
+        return (MemorySegment) identity_struct_3_v.invokeExact(identity_struct_3_addr, recycling_allocator, confinedPoint, confinedPoint, confinedPoint);
     }
 
     @Benchmark
     public MemorySegment panama_identity_struct_shared_3() throws Throwable {
-        return (MemorySegment) identity_struct_v.invokeExact(identity_struct_addr, recycling_allocator, sharedPoint, sharedPoint, sharedPoint);
+        return (MemorySegment) identity_struct_3_v.invokeExact(identity_struct_3_addr, recycling_allocator, sharedPoint, sharedPoint, sharedPoint);
     }
 
     @Benchmark
@@ -102,22 +102,22 @@ public class CallOverheadVirtual {
 
     @Benchmark
     public MemoryAddress panama_identity_struct_ref_shared() throws Throwable {
-        return (MemoryAddress) identity_memory_address_v.invokeExact((Addressable)sharedPoint);
+        return (MemoryAddress) identity_memory_address_v.invokeExact(identity_struct_addr, (Addressable)sharedPoint);
     }
 
     @Benchmark
     public MemoryAddress panama_identity_struct_ref_confined() throws Throwable {
-        return (MemoryAddress) identity_memory_address_v.invokeExact((Addressable)confinedPoint);
+        return (MemoryAddress) identity_memory_address_v.invokeExact(identity_struct_addr, (Addressable)confinedPoint);
     }
 
     @Benchmark
     public MemoryAddress panama_identity_struct_ref_shared_3() throws Throwable {
-        return (MemoryAddress) identity_memory_address_3_v.invokeExact((Addressable)sharedPoint, (Addressable)sharedPoint, (Addressable)sharedPoint);
+        return (MemoryAddress) identity_memory_address_3_v.invokeExact(identity_struct_3_addr, (Addressable)sharedPoint, (Addressable)sharedPoint, (Addressable)sharedPoint);
     }
 
     @Benchmark
     public MemoryAddress panama_identity_struct_ref_confined_3() throws Throwable {
-        return (MemoryAddress) identity_memory_address_3_v.invokeExact((Addressable)confinedPoint, (Addressable)confinedPoint, (Addressable)confinedPoint);
+        return (MemoryAddress) identity_memory_address_3_v.invokeExact(identity_struct_3_addr, (Addressable)confinedPoint, (Addressable)confinedPoint, (Addressable)confinedPoint);
     }
 
     @Benchmark
@@ -132,7 +132,7 @@ public class CallOverheadVirtual {
 
     @Benchmark
     public MemoryAddress panama_identity_memory_address_null() throws Throwable {
-        return (MemoryAddress) identity_memory_address_v.invokeExact(identity_memory_address_addr, MemoryAddress.NULL);
+        return (MemoryAddress) identity_memory_address_v.invokeExact(identity_memory_address_addr, (Addressable)MemoryAddress.NULL);
     }
 
     @Benchmark

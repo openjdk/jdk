@@ -104,7 +104,7 @@ public class QSort extends CLayouts {
 
     @Benchmark
     public void native_qsort() throws Throwable {
-         clib_qsort.invokeExact((Addressable)INPUT_SEGMENT, (long) INPUT.length, JAVA_INT.byteSize(), native_compar);
+         clib_qsort.invokeExact((Addressable)INPUT_SEGMENT, (long) INPUT.length, JAVA_INT.byteSize(), (Addressable)native_compar);
     }
 
     @Benchmark
@@ -119,7 +119,7 @@ public class QSort extends CLayouts {
 
     @Benchmark
     public void panama_upcall_qsort() throws Throwable {
-        clib_qsort.invokeExact((Addressable)INPUT_SEGMENT, (long) INPUT.length, JAVA_INT.byteSize(), panama_upcall_compar);
+        clib_qsort.invokeExact((Addressable)INPUT_SEGMENT, (long) INPUT.length, JAVA_INT.byteSize(), (Addressable)panama_upcall_compar);
     }
 
     private static int getIntAbsolute(MemoryAddress addr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ public class Upcalls extends CLayouts {
 
     @Benchmark
     public void panama_blank() throws Throwable {
-        blank.invokeExact(cb_blank);
+        blank.invokeExact((Addressable)cb_blank);
     }
 
     @Benchmark
@@ -168,17 +168,17 @@ public class Upcalls extends CLayouts {
 
     @Benchmark
     public int panama_identity() throws Throwable {
-        return (int) identity.invokeExact(10, cb_identity);
+        return (int) identity.invokeExact(10, (Addressable)cb_identity);
     }
 
     @Benchmark
     public void panama_args5() throws Throwable {
-        args5.invokeExact(1L, 2D, 3L, 4D, 5L, cb_args5);
+        args5.invokeExact(1L, 2D, 3L, 4D, 5L, (Addressable)cb_args5);
     }
 
     @Benchmark
     public void panama_args10() throws Throwable {
-        args10.invokeExact(1L, 2D, 3L, 4D, 5L, 6D, 7L, 8D, 9L, 10D, cb_args10);
+        args10.invokeExact(1L, 2D, 3L, 4D, 5L, 6D, 7L, 8D, 9L, 10D, (Addressable)cb_args10);
     }
 
     static void blank() {}

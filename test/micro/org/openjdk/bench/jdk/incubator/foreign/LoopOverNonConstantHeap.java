@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,15 +140,6 @@ public class LoopOverNonConstantHeap {
         int res = 0;
         for (int i = 0; i < ELEM_SIZE; i ++) {
             res += segment.get(JAVA_INT, i * CARRIER_SIZE);
-        }
-        return res;
-    }
-
-    @Benchmark
-    public int segment_loop_instance_address() {
-        int res = 0;
-        for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += segment.address().get(JAVA_INT, i * CARRIER_SIZE);
         }
         return res;
     }

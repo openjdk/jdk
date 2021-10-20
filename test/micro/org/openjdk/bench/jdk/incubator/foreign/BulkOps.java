@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.TimeUnit;
 
-import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
 import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -138,20 +137,20 @@ public class BulkOps {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static() {
-        MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, 0, bytes.length);
+        MemorySegment.copy(bytes, 0, segment, JAVA_INT, 0, bytes.length);
     }
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static_small() {
-        MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, 0, 10);
+        MemorySegment.copy(bytes, 0, segment, JAVA_INT, 0, 10);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static_small_dontinline() {
-        MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, 0, 10);
+        MemorySegment.copy(bytes, 0, segment, JAVA_INT, 0, 10);
     }
 
     @Benchmark
@@ -176,7 +175,7 @@ public class BulkOps {
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static_dontinline() {
-        MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, 0, bytes.length);
+        MemorySegment.copy(bytes, 0, segment, JAVA_INT, 0, bytes.length);
     }
 
     @Benchmark

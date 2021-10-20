@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign.points.support;
 
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemoryAddress;
@@ -105,7 +106,7 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
 
     public double distanceToPtrs(PanamaPoint other) {
         try {
-            return (double) MH_distance_ptrs.invokeExact(segment.address(), other.segment.address());
+            return (double) MH_distance_ptrs.invokeExact((Addressable)segment, (Addressable)other.segment);
         } catch (Throwable throwable) {
             throw new InternalError(throwable);
         }
