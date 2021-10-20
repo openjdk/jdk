@@ -139,6 +139,9 @@ class MethodHandleStatics {
         if (TRACE_RESOLVE) {
             System.out.println("[SPECIES_RESOLVE] " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
         }
+        if (CDS.isDumpingClassList()) {
+            CDS.traceSpeciesType("[SPECIES_RESOLVE]", cn);
+        }
     }
     // handy shared exception makers (they simplify the common case code)
     /*non-public*/
