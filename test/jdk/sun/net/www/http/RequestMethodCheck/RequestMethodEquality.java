@@ -27,7 +27,7 @@
  *          rather than the "POST" String literal
  * @bug 8274779
  * @library /test/lib
- * @modules java.base/sun.net.www.http:+open
+ * @modules java.base/sun.net.www.http
  *          java.base/sun.net.www.protocol.http
  * @build java.base/sun.net.www.http.HttpClientAccess
  * @run testng/othervm RequestMethodEquality
