@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/thread.hpp"
 #include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/recorder/context/jfrContextFilter.hpp"
@@ -48,7 +49,7 @@ void JfrContextFilter::set_current(JfrContextFilter* context) {
 
 bool JfrContextFilter::accept(JfrEventId event_id) {
   JfrContextFilter *current = JfrContextFilter::current();
-  if (!current || !current->_matches_set) {
+  if (!current || !Atomic::load_acquire(&current->_matches_set)) {
     // There are no filters, it matches by default
     return true;
   }
@@ -65,7 +66,7 @@ void JfrContextFilter::configure(int *matches, int matches_len) {
     JfrContextFilter::set_current(current = new JfrContextFilter());
   }
   if (!matches) {
-    current->_matches_set = false;
+    Atomic::release_store(&current->_matches_set, false);
     return;
   }
   assert(matches_len > 0, "invariant");
@@ -76,6 +77,6 @@ void JfrContextFilter::configure(int *matches, int matches_len) {
   for (int i = 0; i < matches_len && matches[i+0] <= LAST_EVENT_ID; i += 2) {
     current->_matches[matches[i+0] + 1] = matches[i+1];
   }
-  current->_matches_set = true;
+  Atomic::release_store(&current->_matches_set, true);
   // Ignore non pre-defined events, we assert on this case in JfrContextFilter::accept
 }

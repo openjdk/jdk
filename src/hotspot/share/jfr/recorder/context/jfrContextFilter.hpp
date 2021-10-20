@@ -30,7 +30,7 @@
 class JfrContextFilter : public JfrCHeapObj {
  private:
   char _matches[LAST_EVENT_ID + 1 /* offset by 1 to store -1 */ + 1];
-  bool _matches_set;
+  volatile bool _matches_set;
 
   JfrContextFilter();
   ~JfrContextFilter();
