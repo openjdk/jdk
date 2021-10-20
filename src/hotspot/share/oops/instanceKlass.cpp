@@ -1721,16 +1721,6 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   }
 }
 
-void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
-  if (array_klasses() != NULL)
-    array_klasses()->array_klasses_do(f, THREAD);
-}
-
-void InstanceKlass::array_klasses_do(void f(Klass* k)) {
-  if (array_klasses() != NULL)
-    array_klasses()->array_klasses_do(f);
-}
-
 #ifdef ASSERT
 static int linear_search(const Array<Method*>* methods,
                          const Symbol* name,

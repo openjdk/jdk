@@ -28,7 +28,7 @@
 #include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
 #include "gc/g1/g1_globals.hpp"
 
-#ifndef PRODUCT
+#if EVAC_FAILURE_INJECTOR
 
 bool G1YoungGCEvacFailureInjector::arm_if_needed_for_gc_type(bool for_young_gc,
                                                              bool during_concurrent_start,
@@ -76,4 +76,4 @@ void G1YoungGCEvacFailureInjector::reset() {
   _inject_evacuation_failure_for_current_gc = false;
 }
 
-#endif // #ifndef PRODUCT
+#endif // #if EVAC_FAILURE_INJECTOR

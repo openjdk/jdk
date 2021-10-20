@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline G1CardSetInlinePtr::CardSetPtr G1CardSetInlinePtr::merge(CardSetPtr orig_value, uint card_in_region, uint idx, uint bits_per_card) {
   assert((idx & (SizeFieldMask >> SizeFieldPos)) == idx, "Index %u too large to fit into size field", idx);

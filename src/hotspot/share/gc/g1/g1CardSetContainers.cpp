@@ -22,28 +22,10 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
-#define SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
+#include "precompiled.hpp"
 
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1CardSetContainers.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-#include "gc/g1/g1_globals.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-
-#if EVAC_FAILURE_INJECTOR
-
-inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter) {
-  if (!_inject_evacuation_failure_for_current_gc) {
-    return false;
-  }
-  if (++counter < G1EvacuationFailureALotCount) {
-    return false;
-  }
-  counter = 0;
-  return true;
-}
-
-#endif  // #if EVAC_FAILURE_INJECTOR
-
-#endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP */
-
+// The only limitation is from the G1CardSetArray.
+uint G1CardSetContainer::LogCardsPerRegionLimit = sizeof(G1CardSetArray::EntryDataType) * BitsPerByte;

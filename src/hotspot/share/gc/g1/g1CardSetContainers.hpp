@@ -177,6 +177,9 @@ public:
   void set_next(G1CardSetContainer* next) {
     _next = next;
   }
+
+  // Log of largest card index that can be stored in any G1CardSetContainer
+  static uint LogCardsPerRegionLimit;
 };
 
 class G1CardSetArray : public G1CardSetContainer {
