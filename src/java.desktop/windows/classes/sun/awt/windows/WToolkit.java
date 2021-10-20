@@ -684,12 +684,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     private native Insets getScreenInsets(int screen);
 
-
-    @Override
-    public FontMetrics getFontMetrics(Font font) {
-        return super.getFontMetrics(font);
-    }
-
     @Override
     public FontPeer getFontPeer(String name, int style) {
         FontPeer retval = null;
