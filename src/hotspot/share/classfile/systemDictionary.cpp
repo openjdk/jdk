@@ -2352,11 +2352,10 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
     assert(appendix_box->obj_at(0) == NULL, "");
   }
 
-  // call condy: java.lang.invoke.MethodHandleNatives::linkDynamicConstant(caller, condy_index, bsm, type, info)
-  //       indy: java.lang.invoke.MethodHandleNatives::linkCallSite(caller, indy_index, bsm, name, mtype, info, &appendix)
+  // call condy: java.lang.invoke.MethodHandleNatives::linkDynamicConstant(caller, bsm, type, info)
+  //       indy: java.lang.invoke.MethodHandleNatives::linkCallSite(caller, bsm, name, mtype, info, &appendix)
   JavaCallArguments args;
   args.push_oop(Handle(THREAD, bootstrap_specifier.caller_mirror()));
-  args.push_int(bootstrap_specifier.bss_index());
   args.push_oop(bootstrap_specifier.bsm());
   args.push_oop(bootstrap_specifier.name_arg());
   args.push_oop(bootstrap_specifier.type_arg());
