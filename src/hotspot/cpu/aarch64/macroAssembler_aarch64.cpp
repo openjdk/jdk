@@ -5472,12 +5472,12 @@ static int reg2offset_out(VMReg r) {
 // 64 bits items (Aarch64 abi) even though java would only store
 // 32bits for a parameter. On 32bit it will simply be 32 bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
-void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
-      ldr(rscratch1, Address(rfp, reg2offset_in(src.first())));
-      str(rscratch1, Address(sp, reg2offset_out(dst.first())));
+      ldr(tmp, Address(rfp, reg2offset_in(src.first())));
+      str(tmp, Address(sp, reg2offset_out(dst.first())));
     } else {
       // stack to reg
       ldrsw(dst.first()->as_Register(), Address(rfp, reg2offset_in(src.first())));
@@ -5573,31 +5573,29 @@ void MacroAssembler::object_move(
 }
 
 // A float arg may have to do float reg int reg conversion
-void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
-  assert(src.first()->is_stack() && dst.first()->is_stack() ||
-         src.first()->is_reg() && dst.first()->is_reg(), "Unexpected error");
-  if (src.first()->is_stack()) {
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst, Register tmp) {
+ if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
-      ldrw(rscratch1, Address(rfp, reg2offset_in(src.first())));
-      strw(rscratch1, Address(sp, reg2offset_out(dst.first())));
+      ldrw(tmp, Address(rfp, reg2offset_in(src.first())));
+      strw(tmp, Address(sp, reg2offset_out(dst.first())));
     } else {
-      ShouldNotReachHere();
+      ldrs(dst.first()->as_FloatRegister(), Address(rfp, reg2offset_in(src.first())));
     }
   } else if (src.first() != dst.first()) {
     if (src.is_single_phys_reg() && dst.is_single_phys_reg())
       fmovs(dst.first()->as_FloatRegister(), src.first()->as_FloatRegister());
     else
-      ShouldNotReachHere();
+      strs(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
   }
 }
 
 // A long move
-void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
-      ldr(rscratch1, Address(rfp, reg2offset_in(src.first())));
-      str(rscratch1, Address(sp, reg2offset_out(dst.first())));
+      ldr(tmp, Address(rfp, reg2offset_in(src.first())));
+      str(tmp, Address(sp, reg2offset_out(dst.first())));
     } else {
       // stack to reg
       ldr(dst.first()->as_Register(), Address(rfp, reg2offset_in(src.first())));
@@ -5616,20 +5614,18 @@ void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
 
 
 // A double move
-void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
-  assert(src.first()->is_stack() && dst.first()->is_stack() ||
-         src.first()->is_reg() && dst.first()->is_reg(), "Unexpected error");
-  if (src.first()->is_stack()) {
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
+ if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
-      ldr(rscratch1, Address(rfp, reg2offset_in(src.first())));
-      str(rscratch1, Address(sp, reg2offset_out(dst.first())));
+      ldr(tmp, Address(rfp, reg2offset_in(src.first())));
+      str(tmp, Address(sp, reg2offset_out(dst.first())));
     } else {
-      ShouldNotReachHere();
+      ldrd(dst.first()->as_FloatRegister(), Address(rfp, reg2offset_in(src.first())));
     }
   } else if (src.first() != dst.first()) {
     if (src.is_single_phys_reg() && dst.is_single_phys_reg())
       fmovd(dst.first()->as_FloatRegister(), src.first()->as_FloatRegister());
     else
-      ShouldNotReachHere();
+      strd(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
   }
 }

@@ -236,9 +236,10 @@ void NativeInvokerGenerator::generate() {
   };
 
   Register input_addr_reg = tmp1;
+  Register shuffle_reg = r19;
   JavaCallConv in_conv;
   DowncallNativeCallConv out_conv(_input_registers, input_addr_reg->as_VMReg());
-  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, r19->as_VMReg());
+  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
 
 #ifdef ASSERT
   LogTarget(Trace, panama) lt;
@@ -281,7 +282,7 @@ void NativeInvokerGenerator::generate() {
   __ stlrw(tmp1, tmp2);
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm);
+  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), 0, _shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ blr(input_addr_reg);

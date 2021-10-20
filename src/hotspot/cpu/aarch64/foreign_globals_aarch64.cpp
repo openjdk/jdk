@@ -153,7 +153,9 @@ void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
   }
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
+  assert(in_stk_bias == 0 && out_stk_bias == 0, "bias not implemented");
+  Register tmp_reg = tmp->as_Register();
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
     BasicType arg_bt     = move.bt;
@@ -167,19 +169,19 @@ void ArgumentShuffle::pd_generate(MacroAssembler* masm) const {
       case T_SHORT:
       case T_CHAR:
       case T_INT:
-        masm->move32_64(from_vmreg, to_vmreg);
+        masm->move32_64(from_vmreg, to_vmreg, tmp_reg);
         break;
 
       case T_FLOAT:
-        masm->float_move(from_vmreg, to_vmreg);
+        masm->float_move(from_vmreg, to_vmreg, tmp_reg);
         break;
 
       case T_DOUBLE:
-        masm->double_move(from_vmreg, to_vmreg);
+        masm->double_move(from_vmreg, to_vmreg, tmp_reg);
         break;
 
       case T_LONG :
-        masm->long_move(from_vmreg, to_vmreg);
+        masm->long_move(from_vmreg, to_vmreg, tmp_reg);
         break;
 
       default:

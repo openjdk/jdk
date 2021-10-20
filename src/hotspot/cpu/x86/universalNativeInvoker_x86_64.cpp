@@ -251,9 +251,10 @@ void NativeInvokerGenerator::generate() {
   };
 
   Register input_addr_reg = rscratch1;
+  Register shufffle_reg = rbx;
   JavaCallConv in_conv;
   DowncallNativeCallConv out_conv(_input_registers, input_addr_reg->as_VMReg());
-  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, rbx->as_VMReg());
+  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shufffle_reg->as_VMReg());
 
 #ifdef ASSERT
   LogTarget(Trace, panama) lt;
@@ -305,7 +306,7 @@ void NativeInvokerGenerator::generate() {
   __ block_comment("} thread java2native");
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm);
+  arg_shuffle.generate(_masm, shufffle_reg->as_VMReg(), 0, _shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ call(input_addr_reg);

@@ -708,10 +708,10 @@ public:
   void get_thread(Register thread);
 
   // support for argument shuffling
-  void move32_64(VMRegPair src, VMRegPair dst);
-  void float_move(VMRegPair src, VMRegPair dst);
-  void long_move(VMRegPair src, VMRegPair dst);
-  void double_move(VMRegPair src, VMRegPair dst);
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
   void object_move(
                    OopMap* map,
                    int oop_handle_offset,

@@ -313,8 +313,9 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   BasicType* in_sig_bt = out_sig_bt + 1;
   int total_in_args = total_out_args - 1;
 
+  Register shuffle_reg = rbx;
   JavaCallConv out_conv;
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &call_regs, &out_conv, rbx->as_VMReg());
+  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &call_regs, &out_conv, shuffle_reg->as_VMReg());
   int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
   int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
 
@@ -398,7 +399,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   __ block_comment("{ argument shuffle");
   arg_spilller.generate_fill(_masm, arg_save_area_offset);
-  arg_shuffle.generate(_masm);
+  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");

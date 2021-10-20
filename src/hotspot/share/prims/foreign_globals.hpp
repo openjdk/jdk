@@ -157,13 +157,13 @@ public:
     VMReg shuffle_temp);
 
   int out_arg_stack_slots() const { return _out_arg_stack_slots; }
-  void generate(MacroAssembler* masm) const {
-    pd_generate(masm);
+  void generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
+    pd_generate(masm, tmp, in_stk_bias, out_stk_bias);
   }
 
   void print_on(outputStream* os) const;
 private:
-  void pd_generate(MacroAssembler* masm) const;
+  void pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const;
 };
 
 #endif // SHARE_PRIMS_FOREIGN_GLOBALS
