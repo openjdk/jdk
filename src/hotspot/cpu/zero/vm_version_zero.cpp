@@ -117,4 +117,8 @@ void VM_Version::initialize() {
 
   // Not implemented
   UNSUPPORTED_OPTION(CriticalJNINatives);
+  UNSUPPORTED_OPTION(UseCompiler);
+#ifdef ASSERT
+  UNSUPPORTED_OPTION(CountCompiledCalls);
+#endif
 }
