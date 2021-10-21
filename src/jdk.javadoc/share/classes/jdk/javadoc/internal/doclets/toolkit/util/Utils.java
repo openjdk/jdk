@@ -179,13 +179,7 @@ public class Utils {
         return getSymbol("java.lang.Object");
     }
 
-    public TypeMirror getExceptionType() {
-        return getSymbol("java.lang.Exception");
-    }
-
-    public TypeMirror getErrorType() {
-        return getSymbol("java.lang.Error");
-    }
+    public TypeMirror getThrowableType() { return getSymbol("java.lang.Throwable"); }
 
     public TypeMirror getSerializableType() {
         return getSymbol("java.io.Serializable");
@@ -501,7 +495,7 @@ public class Utils {
         if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
             return false;
         }
-        return !isExceptionClass(te);
+        return !isThrowable(te);
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
@@ -510,12 +504,11 @@ public class Utils {
                 && !isLinkable(enclosingTypeElement);
     }
 
-    public boolean isExceptionClass(TypeElement te) {
+    public boolean isThrowable(TypeElement te) {
         if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
             return false;
         }
-        return typeUtils.isSubtype(te.asType(), getExceptionType())
-            || typeUtils.isSubtype(te.asType(), getErrorType());
+        return typeUtils.isSubtype(te.asType(), getThrowableType());
     }
 
     public boolean isPrimitive(TypeMirror t) {
@@ -1265,7 +1258,7 @@ public class Utils {
             case RECORD ->
                     "doclet.RecordClass";
             case CLASS ->
-                    isExceptionClass(te) ? "doclet.ExceptionClass"
+                    isThrowable(te) ? "doclet.ExceptionClass"
                     : "doclet.Class";
             default ->
                     throw new IllegalArgumentException(te.getKind().toString());

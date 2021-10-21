@@ -120,7 +120,7 @@ public class SummaryAPIListBuilder {
                         eset.add(te);
                     }
                     case CLASS -> {
-                        if (utils.isExceptionClass(te)) {
+                        if (utils.isThrowable(te)) {
                             eset = summaryMap.get(SummaryElementKind.EXCEPTION_CLASS);
                         } else {
                             eset = summaryMap.get(SummaryElementKind.CLASS);
