@@ -124,13 +124,13 @@ void ShenandoahHeapRegionCounters::update() {
 }
 
 static int encode_phase(ShenandoahHeap* heap) {
-  if (heap->is_evacuation_in_progress()) {
+  if (heap->is_evacuation_in_progress() || heap->is_full_gc_move_in_progress()) {
     return 2;
   }
-  if (heap->is_update_refs_in_progress()) {
+  if (heap->is_update_refs_in_progress() || heap->is_full_gc_move_in_progress()) {
     return 3;
   }
-  if (heap->is_concurrent_mark_in_progress()) {
+  if (heap->is_concurrent_mark_in_progress() || heap->is_full_gc_in_progress()) {
     return 1;
   }
   assert(heap->is_idle(), "What is it doing?");
@@ -150,7 +150,7 @@ static int get_generation_shift(ShenandoahGeneration* generation) {
 
 jlong ShenandoahHeapRegionCounters::encode_heap_status(ShenandoahHeap* heap) {
 
-  if (heap->is_idle()) {
+  if (heap->is_idle() && !heap->is_full_gc_in_progress()) {
     return 0;
   }
 
