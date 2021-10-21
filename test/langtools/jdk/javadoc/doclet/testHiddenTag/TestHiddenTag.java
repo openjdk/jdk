@@ -143,7 +143,7 @@ public class TestHiddenTag extends JavadocTester {
         checkOutput("pkg1/InvisibleParent.VisibleInner.html", true,
                 """
                     <dt>Enclosing class:</dt>
-                    <dd>pkg1.InvisibleParent&lt;T extends pkg1.InvisibleParent&gt;</dd>
+                    <dd><code>pkg1.InvisibleParent&lt;T extends pkg1.InvisibleParent&gt;</code></dd>
                     </dl>""");
 
         checkOutput("pkg1/package-summary.html", false, "A.InvisibleInner");

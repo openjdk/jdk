@@ -83,6 +83,7 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/classLoadingService.hpp"
+#include "services/finalizerService.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -95,7 +96,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #endif
-
 
 #ifdef DTRACE_ENABLED
 
@@ -1405,8 +1405,9 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
   // Pass the handle as argument, JavaCalls::call expects oop as jobjects
   JavaValue result(T_VOID);
   JavaCallArguments args(h_i);
-  methodHandle mh (THREAD, Universe::finalizer_register_method());
+  methodHandle mh(THREAD, Universe::finalizer_register_method());
   JavaCalls::call(&result, mh, &args, CHECK_NULL);
+  MANAGEMENT_ONLY(FinalizerService::on_register(h_i(), THREAD);)
   return h_i();
 }
 
@@ -1718,16 +1719,6 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
       cl->do_field(&fd);
     }
   }
-}
-
-void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
-  if (array_klasses() != NULL)
-    array_klasses()->array_klasses_do(f, THREAD);
-}
-
-void InstanceKlass::array_klasses_do(void f(Klass* k)) {
-  if (array_klasses() != NULL)
-    array_klasses()->array_klasses_do(f);
 }
 
 #ifdef ASSERT
@@ -2584,6 +2575,9 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   constants()->restore_unshareable_info(CHECK);
 
   if (array_klasses() != NULL) {
+    // To get a consistent list of classes we need MultiArray_lock to ensure
+    // array classes aren't observed while they are being restored.
+     MutexLocker ml(MultiArray_lock);
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
     array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
@@ -3062,6 +3056,18 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
     constantPoolHandle i_cp(THREAD, constants());
     if (ooff != 0) {
       Klass* ok = i_cp->klass_at(ooff, CHECK_NULL);
+      if (!ok->is_instance_klass()) {
+        // If the outer class is not an instance klass then it cannot have
+        // declared any inner classes.
+        ResourceMark rm(THREAD);
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_IncompatibleClassChangeError(),
+          "%s and %s disagree on InnerClasses attribute",
+          ok->external_name(),
+          external_name());
+        return NULL;
+      }
       outer_klass = InstanceKlass::cast(ok);
       *inner_is_member = true;
     }

@@ -588,6 +588,17 @@ var getJibProfilesProfiles = function (input, common, data) {
             ])
         },
 
+        "linux-aarch64-zero": {
+            target_os: "linux",
+            target_cpu: "aarch64",
+            dependencies: ["devkit", "gtest"],
+            configure_args: concat(common.configure_args_64bit, [
+                "--with-zlib=system",
+                "--with-jvm-variants=zero",
+                "--enable-libffi-bundling"
+            ])
+        },
+
         "linux-x86-zero": {
             target_os: "linux",
             target_cpu: "x86",
@@ -1132,9 +1143,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "6",
+            version: "6.1",
             build_number: "1",
-            file: "bundles/jtreg-6+1.zip",
+            file: "bundles/jtreg-6.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),

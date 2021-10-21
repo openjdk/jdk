@@ -1163,23 +1163,23 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
         int count = 0;
 
-        Iterator<Map.Entry<Object, BCSSServiceProvider>> i = services.entrySet().iterator();
+        for (Map.Entry<Object, BCSSServiceProvider> entry : services.entrySet()) {
+            BCSSServiceProvider bcsp;
 
-        while (i.hasNext() && count < serializable) {
-            Map.Entry<Object, BCSSServiceProvider> entry = i.next();
-            BCSSServiceProvider bcsp  = null;
-
-             try {
+            try {
                 bcsp = entry.getValue();
-             } catch (ClassCastException cce) {
+            } catch (ClassCastException cce) {
                 continue;
-             }
+            }
 
-             if (bcsp.getServiceProvider() instanceof Serializable) {
+            if (bcsp.getServiceProvider() instanceof Serializable) {
                 oos.writeObject(entry.getKey());
                 oos.writeObject(bcsp);
                 count++;
-             }
+            }
+            if (count >= serializable) {
+                break;
+            }
         }
 
         if (count != serializable)

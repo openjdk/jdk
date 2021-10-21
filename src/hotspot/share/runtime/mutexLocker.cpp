@@ -157,11 +157,6 @@ Mutex*   Bootclasspath_lock           = NULL;
 Monitor* JVMCI_lock                   = NULL;
 #endif
 
-
-#define MAX_NUM_MUTEX 128
-static Mutex* _mutex_array[MAX_NUM_MUTEX];
-static int _num_mutex;
-
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
   // check if this thread owns the lock (common case)
@@ -194,26 +189,18 @@ void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread
 }
 #endif
 
-static void add_mutex(Mutex* var) {
-  assert(_num_mutex < MAX_NUM_MUTEX, "increase MAX_NUM_MUTEX");
-  _mutex_array[_num_mutex++] = var;
-}
-
 #define def(var, type, pri, vm_block) {       \
   var = new type(Mutex::pri, #var, vm_block); \
-  add_mutex(var);                             \
 }
 
 // Specify relative ranked lock
 #ifdef ASSERT
 #define defl(var, type, held_lock, vm_block) {         \
   var = new type(held_lock->rank()-1, #var, vm_block); \
-  add_mutex(var);                                      \
 }
 #else
 #define defl(var, type, held_lock, vm_block) {         \
   var = new type(Mutex::safepoint, #var, vm_block);    \
-  add_mutex(var);                                      \
 }
 #endif
 
@@ -305,6 +292,7 @@ void mutex_init() {
 
 #if INCLUDE_JFR
   def(JfrBuffer_lock               , PaddedMutex  , nosafepoint,       true);
+  def(JfrMsg_lock                  , PaddedMonitor, nosafepoint-3,     true);
   def(JfrStacktrace_lock           , PaddedMutex  , stackwatermark-1,  true);
   def(JfrThreadSampler_lock        , PaddedMonitor, nosafepoint,       true);
 #endif
@@ -365,10 +353,6 @@ void mutex_init() {
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock, false);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock,               true);
   defl(JNICritical_lock            , PaddedMonitor, MultiArray_lock,           true); // used for JNI critical regions
-
-#if INCLUDE_JFR
-  defl(JfrMsg_lock                 , PaddedMonitor, Module_lock,               true);
-#endif
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {
@@ -379,24 +363,4 @@ GCMutexLocker::GCMutexLocker(Mutex* mutex) {
     _locked = true;
     _mutex->lock();
   }
-}
-
-// Print all mutexes/monitors that are currently owned by a thread; called
-// by fatal error handler.
-void print_owned_locks_on_error(outputStream* st) {
-  st->print("VM Mutex/Monitor currently owned by a thread: ");
-  bool none = true;
-  for (int i = 0; i < _num_mutex; i++) {
-     // see if it has an owner
-     if (_mutex_array[i]->owner() != NULL) {
-       if (none) {
-          // print format used by Mutex::print_on_error()
-          st->print_cr(" ([mutex/lock_event])");
-          none = false;
-       }
-       _mutex_array[i]->print_on_error(st);
-       st->cr();
-     }
-  }
-  if (none) st->print_cr("None");
 }

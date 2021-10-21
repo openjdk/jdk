@@ -653,8 +653,6 @@ protected:
     clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
   }
 
-  virtual void array_klasses_do(void f(Klass* k)) {}
-
   // Return self, except for abstract classes with exactly 1
   // implementor.  Then return the 1 concrete implementation.
   Klass *up_cast_abstract();

@@ -82,6 +82,7 @@ class ValidOptions {
         options.put(CLIOptions.JAVA_OPTIONS.getId(), USE.LAUNCHER);
         options.put(CLIOptions.ADD_LAUNCHER.getId(), USE.LAUNCHER);
         options.put(CLIOptions.JLINK_OPTIONS.getId(), USE.LAUNCHER);
+        options.put(CLIOptions.APP_CONTENT.getId(), USE.LAUNCHER);
 
         options.put(CLIOptions.LICENSE_FILE.getId(), USE.INSTALL);
         options.put(CLIOptions.INSTALL_DIR.getId(), USE.INSTALL);

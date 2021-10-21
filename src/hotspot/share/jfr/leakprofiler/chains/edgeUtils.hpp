@@ -36,7 +36,6 @@ class EdgeUtils : public AllStatic {
   static const size_t root_context = 100;
   static const size_t max_ref_chain_depth = leak_context + root_context;
 
-  static bool is_leak_edge(const Edge& edge);
   static const Edge* root(const Edge& edge);
   static const Edge* ancestor(const Edge& edge, size_t distance);
 

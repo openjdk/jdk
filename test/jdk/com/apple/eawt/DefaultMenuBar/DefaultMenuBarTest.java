@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,21 @@
 /**
  * @test
  * @key headful
- * @bug 8007267
+ * @bug 8007267 8233648
  * @summary [macosx] com.apple.eawt.Application.setDefaultMenuBar is not working
  * @requires (os.family == "mac")
- * @author leonid.romanov@oracle.com
- * @modules java.desktop/sun.awt
- *          java.desktop/com.apple.eawt
- * @run main DefaultMenuBarTest
+ * @modules java.desktop/com.apple.eawt
+ * @run main/othervm DefaultMenuBarTest
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Robot;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.lang.reflect.Method;
 
 
@@ -50,14 +53,11 @@ public class DefaultMenuBarTest {
         }
 
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+        SwingUtilities.invokeAndWait(DefaultMenuBarTest::createAndShowGUI);
 
         Robot robot = new Robot();
         robot.setAutoDelay(100);
+        robot.waitForIdle();
 
         robot.keyPress(KeyEvent.VK_META);
         robot.keyPress(ks.getKeyCode());
@@ -76,13 +76,7 @@ public class DefaultMenuBarTest {
         JMenuItem newItem = new JMenuItem("Open");
 
         newItem.setAccelerator(ks);
-        newItem.addActionListener(
-            new ActionListener(){
-                public void actionPerformed(ActionEvent e) {
-                    listenerCallCounter++;
-                }
-            }
-        );
+        newItem.addActionListener(e -> listenerCallCounter++);
         menu.add(newItem);
 
         JMenuBar defaultMenu = new JMenuBar();
@@ -104,7 +98,7 @@ public class DefaultMenuBarTest {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

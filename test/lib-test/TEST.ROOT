@@ -29,7 +29,7 @@
 keys=randomness
 
 # Minimum jtreg version
-requiredVersion=6+1
+requiredVersion=6.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
