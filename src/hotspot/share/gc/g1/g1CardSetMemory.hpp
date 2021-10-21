@@ -54,7 +54,6 @@ public:
   }
 
   virtual uint next_num_elems(uint prev_num_elems) const override {
-    assert(_alignment == BufferAlignment, "Must be");
     return exponential_expand(prev_num_elems);
   }
 };
