@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.util;
 
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +41,14 @@ public class AlgorithmDecomposer {
     // '(?<!padd)in': match 'in' but not preceded with 'padd'.
     private static final Pattern PATTERN =
             Pattern.compile("with|and|(?<!padd)in", Pattern.CASE_INSENSITIVE);
+
+    // A map of standard message digest algorithm names to decomposed names
+    // so that a constraint can match for example, "SHA-1" and also
+    // "SHA1withRSA".
+    private static final Map<String, String> DECOMPOSED_DIGEST_NAMES =
+        Map.of("SHA-1", "SHA1", "SHA-224", "SHA224", "SHA-256", "SHA256",
+               "SHA-384", "SHA384", "SHA-512", "SHA512", "SHA-512/224",
+               "SHA512/224", "SHA-512/256", "SHA512/256");
 
     private static Set<String> decomposeImpl(String algorithm) {
         Set<String> elements = new HashSet<>();
@@ -93,44 +103,19 @@ public class AlgorithmDecomposer {
         // signature algorithm "SHA256withRSA". So we need to check both
         // "SHA-256" and "SHA256" to make the right constraint checking.
 
-        // handle special name: SHA-1 and SHA1
-        if (elements.contains("SHA1") && !elements.contains("SHA-1")) {
-            elements.add("SHA-1");
-        }
-        if (elements.contains("SHA-1") && !elements.contains("SHA1")) {
-            elements.add("SHA1");
+        // no need to check further if algorithm doesn't contain "SHA"
+        if (!algorithm.contains("SHA")) {
+            return elements;
         }
 
-        // handle special name: SHA-224 and SHA224
-        if (elements.contains("SHA224") && !elements.contains("SHA-224")) {
-            elements.add("SHA-224");
-        }
-        if (elements.contains("SHA-224") && !elements.contains("SHA224")) {
-            elements.add("SHA224");
-        }
-
-        // handle special name: SHA-256 and SHA256
-        if (elements.contains("SHA256") && !elements.contains("SHA-256")) {
-            elements.add("SHA-256");
-        }
-        if (elements.contains("SHA-256") && !elements.contains("SHA256")) {
-            elements.add("SHA256");
-        }
-
-        // handle special name: SHA-384 and SHA384
-        if (elements.contains("SHA384") && !elements.contains("SHA-384")) {
-            elements.add("SHA-384");
-        }
-        if (elements.contains("SHA-384") && !elements.contains("SHA384")) {
-            elements.add("SHA384");
-        }
-
-        // handle special name: SHA-512 and SHA512
-        if (elements.contains("SHA512") && !elements.contains("SHA-512")) {
-            elements.add("SHA-512");
-        }
-        if (elements.contains("SHA-512") && !elements.contains("SHA512")) {
-            elements.add("SHA512");
+        for (Map.Entry<String, String> e : DECOMPOSED_DIGEST_NAMES.entrySet()) {
+            if (elements.contains(e.getValue()) &&
+                    !elements.contains(e.getKey())) {
+                elements.add(e.getKey());
+            } else if (elements.contains(e.getKey()) &&
+                    !elements.contains(e.getValue())) {
+                elements.add(e.getValue());
+            }
         }
 
         return elements;
@@ -153,40 +138,44 @@ public class AlgorithmDecomposer {
         return Arrays.asList(aliases);
     }
 
-    private static void hasLoop(Set<String> elements, String find, String replace) {
-        if (elements.contains(find)) {
-            if (!elements.contains(replace)) {
-                elements.add(replace);
-            }
-            elements.remove(find);
-        }
-    }
-
-    /*
-     * This decomposes a standard name into sub-elements with a consistent
-     * message digest algorithm name to avoid overly complicated checking.
+    /**
+     * Decomposes a standard algorithm name into sub-elements and uses a
+     * consistent message digest algorithm name to avoid overly complicated
+     * checking.
      */
-    public static Set<String> decomposeOneHash(String algorithm) {
+    static Set<String> decomposeName(String algorithm) {
         if (algorithm == null || algorithm.isEmpty()) {
             return new HashSet<>();
         }
 
         Set<String> elements = decomposeImpl(algorithm);
 
-        hasLoop(elements, "SHA-1", "SHA1");
-        hasLoop(elements, "SHA-224", "SHA224");
-        hasLoop(elements, "SHA-256", "SHA256");
-        hasLoop(elements, "SHA-384", "SHA384");
-        hasLoop(elements, "SHA-512", "SHA512");
+        // no need to check further if algorithm doesn't contain "SHA"
+        if (!algorithm.contains("SHA")) {
+            return elements;
+        }
+
+        for (Map.Entry<String, String> e : DECOMPOSED_DIGEST_NAMES.entrySet()) {
+            if (elements.contains(e.getKey())) {
+                if (!elements.contains(e.getValue())) {
+                    elements.add(e.getValue());
+                }
+                elements.remove(e.getKey());
+            }
+        }
 
         return elements;
     }
 
-    /*
-     * The provided message digest algorithm name will return a consistent
-     * naming scheme.
+    /**
+     * Decomposes a standard message digest algorithm name into a consistent
+     * name for matching purposes.
+     *
+     * @param algorithm the name to be decomposed
+     * @return the decomposed name, or the passed in algorithm name if
+     *     it is not a digest algorithm or does not need to be decomposed
      */
-    public static String hashName(String algorithm) {
-        return algorithm.replace("-", "");
+    static String decomposeDigestName(String algorithm) {
+        return DECOMPOSED_DIGEST_NAMES.getOrDefault(algorithm, algorithm);
     }
 }
