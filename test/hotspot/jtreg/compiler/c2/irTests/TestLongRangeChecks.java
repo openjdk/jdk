@@ -59,5 +59,5 @@ public class TestLongRangeChecks {
     @Run(test = "testStridePosScalePos")
     private void testStridePosScalePos_runner() {
         testStridePosScalePos(0, 100, 100, 0);
-    }    
+    }
 }
