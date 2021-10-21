@@ -123,12 +123,13 @@ public class RSAPSSSignature extends SignatureSpi {
     @Override
     protected void engineInitVerify(PublicKey publicKey)
             throws InvalidKeyException {
-        if (!(publicKey instanceof RSAPublicKey)) {
+        if (publicKey instanceof RSAPublicKey rsaPubKey) {
+            this.pubKey = (RSAPublicKey) isPublicKeyValid(rsaPubKey);
+            this.privKey = null;
+            resetDigest();
+        } else {
             throw new InvalidKeyException("key must be RSAPublicKey");
         }
-        this.pubKey = (RSAPublicKey) isValid((RSAKey)publicKey);
-        this.privKey = null;
-        resetDigest();
     }
 
     // initialize for signing. See JCA doc
@@ -142,14 +143,15 @@ public class RSAPSSSignature extends SignatureSpi {
     @Override
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
             throws InvalidKeyException {
-        if (!(privateKey instanceof RSAPrivateKey)) {
+        if (privateKey instanceof RSAPrivateKey rsaPrivateKey) {
+            this.privKey = (RSAPrivateKey) isPrivateKeyValid(rsaPrivateKey);
+            this.pubKey = null;
+            this.random =
+                    (random == null ? JCAUtil.getSecureRandom() : random);
+            resetDigest();
+        } else {
             throw new InvalidKeyException("key must be RSAPrivateKey");
         }
-        this.privKey = (RSAPrivateKey) isValid((RSAKey)privateKey);
-        this.pubKey = null;
-        this.random =
-            (random == null? JCAUtil.getSecureRandom() : random);
-        resetDigest();
     }
 
     /**
@@ -202,6 +204,47 @@ public class RSAPSSSignature extends SignatureSpi {
     }
 
     /**
+     * Validate the specified RSAPrivateKey
+     */
+    private RSAKey isPrivateKeyValid(RSAPrivateKey prKey)  throws InvalidKeyException {
+        try {
+            if (prKey instanceof RSAPrivateCrtKey crtKey) {
+                RSAPrivateCrtKeyImpl.isValid(crtKey);
+                RSAKeyFactory.checkRSAProviderKeyLengths(
+                        crtKey.getModulus().bitLength(),
+                        crtKey.getPublicExponent());
+            } else {
+                RSAKeyFactory.checkRSAProviderKeyLengths(
+                        prKey.getModulus().bitLength(),
+                        null);
+            }
+        } catch (InvalidKeyException ikEx) {
+            throw ikEx;
+        } catch (Exception e) {
+            throw new InvalidKeyException(
+                    "Can not access private key components", e);
+        }
+        return isValid(prKey);
+    }
+
+    /**
+     * Validate the specified RSAPublicKey
+     */
+    private RSAKey isPublicKeyValid(RSAPublicKey pKey)  throws InvalidKeyException {
+        try {
+            RSAKeyFactory.checkRSAProviderKeyLengths(
+                    pKey.getModulus().bitLength(),
+                    pKey.getPublicExponent());
+        } catch (InvalidKeyException ikEx) {
+            throw ikEx;
+        } catch (Exception e) {
+            throw new InvalidKeyException(
+                    "Can not access public key components", e);
+        }
+        return isValid(pKey);
+    }
+
+    /**
      * Validate the specified RSAKey and its associated parameters against
      * internal signature parameters.
      */
@@ -233,25 +276,6 @@ public class RSAPSSSignature extends SignatureSpi {
             }
         }
 
-        // validate key attributes
-        try {
-            if (rsaKey.getModulus().signum() == 0 ||
-                (rsaKey instanceof RSAPrivateKey rsaPrKey &&
-                    (rsaPrKey.getPrivateExponent().signum() == 0 ||
-                        (rsaPrKey instanceof RSAPrivateCrtKey crtKey &&
-                            (crtKey.getPrimeP().signum() == 0 ||
-                             crtKey.getPrimeQ().signum() == 0 ||
-                             crtKey.getPrimeExponentP().signum() == 0 ||
-                             crtKey.getPrimeExponentQ().signum() == 0 ||
-                             crtKey.getCrtCoefficient().signum() == 0 ||
-                             crtKey.getPublicExponent().signum() == 0 )))) ||
-                (rsaKey instanceof RSAPublicKey rsaPubKey &&
-                    rsaPubKey.getPublicExponent().signum() == 0)) {
-                throw new InvalidKeyException("Invalid key attributes");
-            }
-        } catch(Exception ex) {
-            throw new InvalidKeyException("Invalid key attributes", ex);
-        }
         return rsaKey;
     }
 
