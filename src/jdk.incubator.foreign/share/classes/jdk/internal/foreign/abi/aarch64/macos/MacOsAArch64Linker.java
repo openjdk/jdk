@@ -61,7 +61,7 @@ public final class MacOsAArch64Linker implements CLinker {
     public final MethodHandle downcallHandle(FunctionDescriptor function) {
         Objects.requireNonNull(function);
         MethodType type = SharedUtils.inferMethodType(function, false);
-        MethodHandle handle = CallArranger.arrangeDowncall(type, function);
+        MethodHandle handle = CallArranger.MACOS.arrangeDowncall(type, function);
         if (!type.returnType().equals(MemorySegment.class)) {
             // not returning segment, just insert a throwing allocator
             handle = MethodHandles.insertArguments(handle, 1, SharedUtils.THROWING_ALLOCATOR);
@@ -78,7 +78,7 @@ public final class MacOsAArch64Linker implements CLinker {
         if (!type.equals(target.type())) {
             throw new IllegalArgumentException("Wrong method handle type: " + target.type());
         }
-        return CallArranger.arrangeUpcall(target, target.type(), function, scope);
+        return CallArranger.MACOS.arrangeUpcall(target, target.type(), function, scope);
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, ResourceScope scope) {
