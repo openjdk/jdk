@@ -757,7 +757,9 @@ blockOnDebuggerSuspend(jthread thread)
 }
 
 /*
- * The caller is expected to hold threadLock. It will be temporarily released though.
+ * The caller is expected to hold threadLock and handlerLock.
+ * eventHandler_createInternalThreadOnly() can deadlock because of
+ * wrong lock ordering if the caller does not hold handlerLock.
  */
 static void
 trackAppResume(jthread thread)
@@ -765,15 +767,6 @@ trackAppResume(jthread thread)
     jvmtiError  error;
     FrameNumber fnum;
     ThreadNode *node;
-
-    /*
-     * Set up the tracking of the Thread.resume() call.
-     * This requires handlerLock during eventHandler_createInternalThreadOnly()
-     * calls. For proper lock order handlerLock has to be acquired before threadLock.
-     */
-    debugMonitorExit(threadLock);
-    eventHandler_lock();
-    debugMonitorEnter(threadLock);
 
     fnum = 0;
     node = findThread(&runningThreads, thread);
@@ -807,8 +800,6 @@ trackAppResume(jthread thread)
             }
         }
     }
-
-    eventHandler_unlock();
 }
 
 /* Global breakpoint handler for Thread.resume() */
@@ -2194,6 +2185,14 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
         jthread resumer = node->thread;
         jthread resumee = getResumee(resumer);
 
+        /*
+         * trackAppResume() (indirectly) aquires handlerLock. For proper lock
+         * ordering handlerLock has to be acquired before threadLock.
+         */
+        debugMonitorExit(threadLock);
+        eventHandler_lock();
+        debugMonitorEnter(threadLock);
+
         if (resumer != NULL) {
             /*
              * Track the resuming thread by marking it as being within
@@ -2208,11 +2207,12 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
         }
 
         /*
-         * blockOnDebuggerSuspend() must be called after trackAppResume()
-         * because the latter releases threadLock which would allow the debugger
-         * to suspend resumee after return from blockOnDebuggerSuspend() which
-         * would invalidate this block's exit condition.
+         * handlerLock is not needed anymore. We release it before calling
+         * blockOnDebuggerSuspend() because it is required for resumes by the
+         * debugger so we cannot wait for that holding handlerLock.
          */
+        eventHandler_unlock();
+
         if (resumee != NULL) {
             /*
              * Hold up any attempt to resume as long as the debugger
