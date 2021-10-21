@@ -818,14 +818,10 @@ public class TestSearch extends JavadocTester {
                     <button id="all-classes-table-tab5" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Ex\
-                    ceptions</button>\
+                    ception Classes</button>\
                     <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">Er\
-                    rors</button>\
-                    <button id="all-classes-table-tab7" role="tab" aria-selected="false" aria-contro\
-                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab7', 2)" class="table-tab">An\
+                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
                     notation Interfaces</button>\
                     </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">

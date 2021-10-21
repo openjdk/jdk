@@ -107,7 +107,6 @@ import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
-import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UsesTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
@@ -502,10 +501,7 @@ public class Utils {
         if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
             return false;
         }
-        if (isError(te) || isException(te)) {
-            return false;
-        }
-        return true;
+        return !isExceptionClass(te);
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
@@ -514,18 +510,12 @@ public class Utils {
                 && !isLinkable(enclosingTypeElement);
     }
 
-    public boolean isError(TypeElement te) {
+    public boolean isExceptionClass(TypeElement te) {
         if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
             return false;
         }
-        return typeUtils.isSubtype(te.asType(), getErrorType());
-    }
-
-    public boolean isException(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
-            return false;
-        }
-        return typeUtils.isSubtype(te.asType(), getExceptionType());
+        return typeUtils.isSubtype(te.asType(), getExceptionType())
+            || typeUtils.isSubtype(te.asType(), getErrorType());
     }
 
     public boolean isPrimitive(TypeMirror t) {
@@ -1275,8 +1265,7 @@ public class Utils {
             case RECORD ->
                     "doclet.RecordClass";
             case CLASS ->
-                    isException(te) ? "doclet.Exception"
-                    : isError(te) ? "doclet.Error"
+                    isExceptionClass(te) ? "doclet.ExceptionClass"
                     : "doclet.Class";
             default ->
                     throw new IllegalArgumentException(te.getKind().toString());
@@ -1991,31 +1980,6 @@ public class Utils {
             oset.addAll(clist);
             return oset;
         });
-    }
-
-    /**
-     * Returns a list of classes that are not errors or exceptions
-     * @param e Element
-     * @return List
-     */
-    public List<TypeElement> getOrdinaryClasses(Element e) {
-        return getClasses(e).stream()
-                .filter(te -> (!isException(te) && !isError(te)))
-                .toList();
-    }
-
-    public List<TypeElement> getErrors(Element e) {
-        return getClasses(e)
-                .stream()
-                .filter(this::isError)
-                .toList();
-    }
-
-    public List<TypeElement> getExceptions(Element e) {
-        return getClasses(e)
-                .stream()
-                .filter(this::isException)
-                .toList();
     }
 
     /**
