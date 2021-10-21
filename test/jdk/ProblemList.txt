@@ -196,7 +196,7 @@ java/awt/FullScreen/FullScreenInsets/FullScreenInsets.java 7019055,8266245 windo
 java/awt/Focus/8013611/JDK8013611.java 8175366 windows-all,macosx-all
 java/awt/Focus/6981400/Test1.java 8029675 windows-all,macosx-all
 java/awt/Focus/6981400/Test3.java 8173264 generic-all
-java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows-all,macosx-all
+java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows-all
 java/awt/event/KeyEvent/KeyChar/KeyCharTest.java 8169474,8224055 macosx-all,windows-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_3.java 6854300 generic-all
 java/awt/event/KeyEvent/ExtendedModifiersTest/ExtendedModifiersTest.java 8129778 generic-all
@@ -507,11 +507,6 @@ java/awt/Window/WindowResizing/DoubleClickTitleBarTest.java 8233557 macosx-all
 java/awt/Window/WindowOwnedByEmbeddedFrameTest/WindowOwnedByEmbeddedFrameTest.java 8233558 macosx-all
 java/awt/keyboard/AllKeyCode/AllKeyCode.java 8242930 macosx-all
 java/awt/FullScreen/8013581/bug8013581.java 8169471 macosx-all
-java/awt/event/MouseEvent/RobotLWTest/RobotLWTest.java 8233568 macosx-all
-java/awt/event/MouseEvent/MultipleMouseButtonsTest/MultipleMouseButtonsTest.java 8233568 macosx-all
-java/awt/event/MouseEvent/ClickDuringKeypress/ClickDuringKeypress.java 8233568 macosx-all
-java/awt/event/KeyEvent/DeadKey/DeadKeyMacOSXInputText.java 8233568 macosx-all
-java/awt/event/KeyEvent/DeadKey/deadKeyMacOSX.java 8233568 macosx-all
 com/apple/eawt/DefaultMenuBar/DefaultMenuBarTest.java 8233648 macosx-all
 java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.java 7185258 macosx-all
 java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.java 8238720 windows-all
