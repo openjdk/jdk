@@ -137,17 +137,9 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             AlgorithmConstraints constraints, Date date, String variant) {
 
         if (anchor != null) {
-            if (anchor.getTrustedCert() != null) {
-                this.trustedPubKey = anchor.getTrustedCert().getPublicKey();
-            } else {
-                this.trustedPubKey = anchor.getCAPublicKey();
-            }
-            this.anchor = anchor;
-        } else {
-            this.trustedPubKey = null;
+            setTrustAnchorAndKeys(anchor);
         }
 
-        this.prevPubKey = this.trustedPubKey;
         this.constraints = constraints == null ?
             DisabledAlgorithmConstraints.certPathConstraints() : constraints;
         this.date = date;
@@ -341,6 +333,20 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     }
 
     /**
+     * Sets the anchor, trustedPubKey and prevPubKey fields based on the
+     * specified trust anchor.
+     */
+    private void setTrustAnchorAndKeys(TrustAnchor anchor) {
+        if (anchor.getTrustedCert() != null) {
+            this.trustedPubKey = anchor.getTrustedCert().getPublicKey();
+        } else {
+            this.trustedPubKey = anchor.getCAPublicKey();
+        }
+        this.anchor = anchor;
+        this.prevPubKey = this.trustedPubKey;
+    }
+
+    /**
      * Try to set the trust anchor of the checker.
      * <p>
      * If there is no trust anchor specified and the checker has not started,
@@ -350,16 +356,9 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *     certificate
      */
     void trySetTrustAnchor(TrustAnchor anchor) {
-        // Don't bother if the check has started or trust anchor has already
-        // been specified.
+        // Only set if trust anchor has not already been set.
         if (this.trustedPubKey == null) {
-            if (anchor.getTrustedCert() != null) {
-                this.trustedPubKey = anchor.getTrustedCert().getPublicKey();
-            } else {
-                this.trustedPubKey = anchor.getCAPublicKey();
-            }
-            this.prevPubKey = this.trustedPubKey;
-            this.anchor = anchor;
+            setTrustAnchorAndKeys(anchor);
         }
     }
 
