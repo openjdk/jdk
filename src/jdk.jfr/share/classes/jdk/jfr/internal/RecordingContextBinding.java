@@ -30,8 +30,8 @@ import java.lang.ref.Cleaner.Cleanable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
 import jdk.jfr.RecordingContextKey;
 import jdk.jfr.internal.JVM;
@@ -51,13 +51,15 @@ public final class RecordingContextBinding implements AutoCloseable {
     private final RecordingContextBinding previous;
     private RecordingContextBinding next;
 
-    private final Set<RecordingContextEntry> entries;
+    private final Map<RecordingContextKey, String> entries;
 
     private final NativeBindingWrapper nativeWrapper;
 
     private final Cleanable closer;
 
-    public RecordingContextBinding(Set<RecordingContextEntry> entries) {
+    public RecordingContextBinding(Map<RecordingContextKey, String> entries) {
+        Objects.requireNonNull(entries);
+
         this.previous = current.get();
         if (this.previous != null) {
             if (this.previous.next != null) {
@@ -67,7 +69,7 @@ public final class RecordingContextBinding implements AutoCloseable {
             this.previous.next = this;
         }
 
-        this.entries = Collections.unmodifiableSet(entries);
+        this.entries = Collections.unmodifiableMap(entries);
 
         this.nativeWrapper = new NativeBindingWrapper(
             this.previous != null ? this.previous.nativeWrapper : null, entries);
@@ -86,12 +88,12 @@ public final class RecordingContextBinding implements AutoCloseable {
         return previous;
     }
 
-    public Set<RecordingContextEntry> entries() {
+    public Map<RecordingContextKey, String> entries() {
         return entries;
     }
 
     public boolean containsKey(RecordingContextKey key) {
-        return nativeWrapper.containsKey(Objects.requireNonNull(key).name());
+        return entries.containsKey(Objects.requireNonNull(key));
 
     }
 
@@ -142,21 +144,25 @@ public final class RecordingContextBinding implements AutoCloseable {
 
         public NativeBindingWrapper(
                 NativeBindingWrapper previous,
-                Set<RecordingContextEntry> entries) {
+                Map<RecordingContextKey, String> entries) {
             this.previous = previous;
 
             // convert entries to an array of contiguous pair of String
             //  [ "key1", "value1", "key2", "value2", ... ]
+            final IntegerHolder h = new IntegerHolder();
             String[] entriesAsStrings = new String[entries.size() * 2];
-            int i = 0;
-            for (RecordingContextEntry entry : entries) {
-                entriesAsStrings[i * 2 + 0] = entry.key().name();
-                entriesAsStrings[i * 2 + 1] = entry.value();
-                i += 1;
-            }
+            entries.entrySet().stream()
+                .forEach(e -> {
+                    entriesAsStrings[h.i++] = e.getKey().name();
+                    entriesAsStrings[h.i++] = e.getValue();
+                });
 
             this.id = JVM.getJVM().recordingContextNew(
                             Objects.requireNonNull(entriesAsStrings));
+        }
+
+        private static class IntegerHolder {
+            public int i = 0;
         }
 
         public boolean containsKey(String key) {

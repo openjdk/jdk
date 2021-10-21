@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import jdk.jfr.internal.RecordingContextBinding;
-import jdk.jfr.internal.RecordingContextEntry;
 import jdk.jfr.internal.RecordingContextFilterEngine;
 import jdk.jfr.internal.RecordingContextPredicate;
 
@@ -130,14 +129,7 @@ public final class RecordingContextFilter {
             predicate = predicate.and(
                 String.format("[HasKeyPredicate: key=%s]", key.name()),
                 b -> {
-                    if (b != null) {
-                        for (RecordingContextEntry e : b.entries()) {
-                            if (Objects.equals(e.key(), key)) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
+                    return b != null && b.entries().containsKey(key);
                 });
             return this;
         }
@@ -147,14 +139,7 @@ public final class RecordingContextFilter {
             predicate = predicate.and(
                 String.format("[HasEntryPredicate: key=%s, value=%s]", key.name(), value),
                 b -> {
-                    if (b != null) {
-                        for (RecordingContextEntry e : b.entries()) {
-                            if (Objects.equals(e.key(), key) && Objects.equals(e.value(), value)) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
+                    return b != null && b.entries().containsKey(key) && Objects.equals(b.entries().get(key), value);
                 });
             return this;
         }

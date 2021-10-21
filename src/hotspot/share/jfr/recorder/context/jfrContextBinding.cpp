@@ -28,11 +28,11 @@
 #include "jfr/recorder/context/jfrContextBinding.hpp"
 
 JfrContextBinding::JfrContextBinding(const char** entries, int entries_len)
-    : _entries_len(entries_len),
+    : _entries_len(entries_len/2),
       _entries(JfrCHeapObj::new_array<JfrContextEntry>(_entries_len)) {
   assert(entries != NULL, "invariant");
-  for (int i = 0; i < _entries_len; i++) {
-    _entries[i] = JfrContextEntry(entries[i * 2 + 0], entries[i * 2 + 1]);
+  for (int i = 0; i < entries_len; i += 2) {
+    _entries[i/2] = JfrContextEntry(entries[i+0], entries[i+1]);
   }
 }
 

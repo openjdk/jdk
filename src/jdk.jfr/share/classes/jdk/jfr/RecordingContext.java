@@ -26,13 +26,12 @@
 package jdk.jfr;
 
 import java.util.Objects;
+import java.util.Map;
 import java.util.Collections;
-import java.util.Set;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.concurrent.Callable;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.RecordingContextBinding;
-import jdk.jfr.internal.RecordingContextEntry;
 import jdk.jfr.internal.RecordingContextFilterEngine;
 
 /**
@@ -46,7 +45,7 @@ public final class RecordingContext implements AutoCloseable {
     private final RecordingContextBinding binding;
 
     RecordingContext(RecordingContextBinding binding) {
-        this.binding = binding;
+        this.binding = Objects.requireNonNull(binding);
     }
 
     // snapshot + run
@@ -107,23 +106,21 @@ public final class RecordingContext implements AutoCloseable {
     // initialize
     public static class Builder {
 
-        final Set<RecordingContextEntry> entries;
+        final Map<RecordingContextKey, String> entries;
 
         Builder() {
-            entries = new LinkedHashSet<>();
+            entries = new LinkedHashMap<>();
 
             RecordingContextBinding current;
             if ((current = RecordingContextBinding.current()) != null) {
-                entries.addAll(current.entries());
+                entries.putAll(current.entries());
             }
         }
 
         // build and set current context
         public Builder where(RecordingContextKey key, String value) {
-            RecordingContextEntry entry = new RecordingContextEntry(key, value);
-            entries.remove(entry);
-            entries.add(entry);
-
+            entries.remove(key);
+            entries.put(key, value);
             return this;
         }
 

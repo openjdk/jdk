@@ -207,7 +207,7 @@ NO_TRANSITION(jlong, jfr_recording_context_new(JNIEnv* env, jobject jvm, jobject
     entries_utf[i] = entry != NULL ?
       env->GetStringUTFChars(entry, NULL) : NULL;
   }
-  JfrContextBinding* binding = new JfrContextBinding(entries_utf, entries_len / 2);
+  JfrContextBinding* binding = new JfrContextBinding(entries_utf, entries_len);
   assert(binding != NULL, "invariant");
   for (int i = 0; i < entries_len; i++) {
     jstring entry = (jstring)env->GetObjectArrayElement(entries, i);
