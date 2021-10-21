@@ -31,26 +31,64 @@ import java.net.InetAddress;
 import java.util.ServiceLoader;
 
 /**
- * A resolver provider class is a factory for custom implementations of {@linkplain
- * InetAddressResolver resolvers} which define operations for looking-up (resolving) host names
- * and IP addresses.
- * Resolver providers are <a href="{@docRoot}/java.base/java/net/InetAddress.html#resolverProviders">
- * discovered</a> by {@link InetAddress} to instantiate and install a <i>system-wide resolver</i>.
- * <p>
- * A resolver provider is a concrete subclass of this class that has a zero-argument
- * constructor and implements the abstract methods specified below.
- * <p>
- * Resolver providers are located using the {@link ServiceLoader} facility, as specified by
- * {@link InetAddress}.
+ * Service-provider class for {@linkplain InetAddressResolver InetAddress resolvers}.
+ *
+ * <p>A resolver provider is a factory for custom implementations of {@linkplain
+ * InetAddressResolver resolvers}. A resolver define operations for looking up
+ * (resolving) host names and IP addresses.
+ * <p>A resolver provider is a concrete subclass of this class that has a
+ * zero-argument constructor and implements the abstract methods specified below.
+ *
+ * <h2 id="system-wide-resolver"> Installing the system-wide resolver </h2>
+ * <p> Resolver providers are discovered by {@link InetAddress} to instantiate and
+ * install a <i>system-wide resolver</i>. Resolver providers are located by
+ * {@link InetAddress} using the {@link ServiceLoader} facility.
+ *
+ * <p>Host name resolution and reverse name resolution operations performed by
+ * {@link InetAddress} use the <i>system-wide</i> {@linkplain InetAddressResolver
+ * resolver}. The system-wide resolver is set once, lazily, after the VM is fully
+ * initialized and when an invocation of a method in {@link InetAddress} class
+ * triggers the first lookup operation.
+ *
+ * <p> A <i>custom resolver</i> can be installed as the system-wide resolver
+ * by deploying an {@code InetAddressResolverProvider}. If no resolver provider
+ * is found, then the <a href="../InetAddress.html#built-in-resolver">built-in
+ * resolver</a> will be set as the system-wide resolver.
+ *
+ * <p> A custom resolver is found and installed as the system-wide resolver
+ * as follows:
+ * <ol>
+ *  <li>The {@link ServiceLoader} mechanism is used to locate an
+ *      {@code InetAddressResolverProvider} using the
+ *      system class loader. The order in which providers are located is
+ *      {@linkplain ServiceLoader#load(java.lang.Class, java.lang.ClassLoader)
+ *      implementation specific}.
+ *      The first provider found will be used to instantiate the
+ *      {@link InetAddressResolver InetAddressResolver} by invoking the
+ *      {@link InetAddressResolverProvider#get(InetAddressResolverProvider.Configuration)}
+ *      method. The returned {@code InetAddressResolver} will be installed as the
+ *      system-wide resolver.
+ *  <li>If the previous step fails to find any resolver provider the
+ *      built-in resolver will be set as the system-wide resolver.
+ * </ol>
+ *
+ * <p> If instantiating a custom resolver from a provider discovered in
+ * step 1 throws an error or exception, the system-wide resolver will not be
+ * installed and the error or exception will be propagated to the calling thread.
+ * Otherwise, any lookup operation will be performed through the installed
+ * <i>system-wide resolver</i>.
+ *
+ * @implNote {@link InetAddress} will use the <i>built-in resolver</i> for any lookup operation
+ * that might occur before the VM is fully booted.
  *
  * @since 18
  */
 public abstract class InetAddressResolverProvider {
 
     /**
-     * Initialise and return the {@link InetAddressResolver} provided by
+     * Initialise and return an {@link InetAddressResolver} provided by
      * this provider. This method is called by {@link InetAddress} when
-     * <a href="{@docRoot}/java.base/java/net/InetAddress.html#resolverProviders">installing</a>
+     * <a href="#system-wide-resolver">installing</a>
      * the system-wide resolver implementation.
      * <p>
      * Any error or exception thrown by this method is considered as
@@ -85,9 +123,9 @@ public abstract class InetAddressResolverProvider {
      *                           {@code checkPermission} method doesn't allow the
      *                           {@code RuntimePermission("inetAddressResolverProvider")}.
      * @implNote It is recommended that an {@code InetAddressResolverProvider} service
-     * implementation does not perform any heavy initialization in its
-     * constructor, in order to avoid possible risks of deadlock or class
-     * loading cycles during the instantiation of the service provider.
+     * implementation initialization should be as simple as possible, in order to avoid
+     * possible risks of deadlock or class loading cycles during the instantiation of the
+     * service provider.
      */
     protected InetAddressResolverProvider() {
         this(checkPermission());
@@ -106,7 +144,7 @@ public abstract class InetAddressResolverProvider {
     }
 
     /**
-     * A {@code Configuration} interface is supplied to the
+     * A {@code Configuration} object is supplied to the
      * {@link InetAddressResolverProvider#get(Configuration)} method when installing a
      * system-wide custom resolver implementation.
      * The custom resolver implementation can then delegate to the built-in resolver

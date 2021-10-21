@@ -33,14 +33,13 @@ import java.util.stream.Stream;
 /**
  * This interface defines operations for looking-up host names and IP addresses.
  * An instance of {@code InetAddressResolver} is
- * <a href="{@docRoot}/java.base/java/net/InetAddress.html#resolverProviders">installed</a>
- * as a <i>system-wide resolver</i>.
- * {@link InetAddress} delegates all lookup requests to the installed <i>system-wide resolver</i>
- * instance.
+ * <a href="InetAddressResolverProvider.html#system-wide-resolver">installed</a> as a
+ * <i>system-wide resolver</i>. {@link InetAddress} delegates all lookup requests to
+ * the installed <i>system-wide resolver</i> instance.
  * <p>
  * The <i>system-wide resolver</i> can be customized by
- * <a href="{@docRoot}/java.base/java/net/InetAddress.html#resolverProviders">deploying an implementation</a>
- * of {@link InetAddressResolverProvider}.
+ * <a href="InetAddressResolverProvider.html#system-wide-resolver">
+ * deploying an implementation</a> of {@link InetAddressResolverProvider}.
  *
  * @since 18
  */
@@ -99,25 +98,27 @@ public interface InetAddressResolver {
     final class LookupPolicy {
 
         /**
-         * Specifies if IPv4 addresses need to be queried during lookup.
+         * Characteristic value signifying if IPv4 addresses need to be queried during lookup.
          */
         @Native
         public static final int IPV4 = 1 << 0;
 
         /**
-         * Specifies if IPv6 addresses need to be queried during lookup.
+         * Characteristic value signifying if IPv6 addresses need to be queried during lookup.
          */
         @Native
         public static final int IPV6 = 1 << 1;
 
         /**
-         * Specifies if IPv4 addresses should be returned first by {@code InetAddressResolver}.
+         * Characteristic value signifying if IPv4 addresses should be returned
+         * first by {@code InetAddressResolver}.
          */
         @Native
         public static final int IPV4_FIRST = 1 << 2;
 
         /**
-         * Specifies if IPv6 addresses should be returned first by {@code InetAddressResolver}.
+         * Characteristic value signifying if IPv6 addresses should be returned
+         * first by {@code InetAddressResolver}.
          */
         @Native
         public static final int IPV6_FIRST = 1 << 3;
@@ -183,7 +184,7 @@ public interface InetAddressResolver {
         }
 
         /**
-         * Returns an integer value which specifies lookup operation characteristics.
+         * Returns a set of characteristics of this lookup policy.
          * Type and order of address families queried during resolution of host IP addresses.
          *
          * @return a characteristics value

@@ -58,6 +58,7 @@ import jdk.internal.misc.VM;
 
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.Stable;
 import sun.net.ResolverProviderConfiguration;
 import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
@@ -148,13 +149,20 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * System Properties</a> affecting how IPv4 and IPv6 addresses are used.</P>
  *
  * <h3> Host Name Resolution </h3>
- *
- * Host name-to-IP address <i>resolution</i> is accomplished through
- * the use of a combination of local machine configuration information
- * and network naming services such as the Domain Name System (DNS)
- * and Network Information Service(NIS). The particular naming
- * services(s) being used is by default the local machine configured
- * one. For any host name, its corresponding IP address is returned.
+ * Host name-to-IP address <i>resolution</i> is accomplished through the use
+ * of an {@linkplain InetAddressResolver InetAddress resolver}. Lookup operations
+ * performed by this class use the
+ * <a href="spi/InetAddressResolverProvider.html#system-wide-resolver">
+ * system-wide resolver</a>. The <i>system-wide resolver</i> can be customized
+ * by <a href="spi/InetAddressResolverProvider.html#system-wide-resolver">
+ * deploying</a> an {@link InetAddressResolverProvider}.
+ * <p id="built-in-resolver">The built-in resolver implementation is used by
+ * default and accomplishes host name-to-IP address <i>resolution</i> through the
+ * use of a combination of local machine configuration information and network
+ * naming services such as the Domain Name System (DNS) and Network Information
+ * Service(NIS). The particular naming services(s) being used is by default the
+ * local machine configured one. For any host name, its corresponding IP address
+ * is returned.
  *
  * <p> <i>Reverse name resolution</i> means that for any IP address,
  * the host associated with the IP address is returned.
@@ -203,45 +211,6 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * A value of -1 indicates "cache forever".
  * </dd>
  * </dl>
- *
- * <h3 id="resolverProviders"> InetAddress Resolver Providers </h3>
- *
- * <p> Host name resolution and reverse name resolution operations are delegated to a
- * {@linkplain InetAddressResolver resolver}. Lookup operations performed by
- * this class use the <i>system-wide resolver</i>. The system-wide resolver
- * is set once, lazily, after the VM is fully initialized and when
- * an invocation of a method in this class triggers the first lookup operation.
- *
- * <p> A <i>custom resolver</i> can be installed as the system-wide resolver
- * by deploying a {@linkplain InetAddressResolverProvider resolver provider}.
- * A resolver provider is essentially a factory for resolvers, and is used
- * to instantiate a custom resolver. If no resolver provider
- * is found, then the <i>built-in resolver</i> will be set as the
- * system-wide resolver.
- *
- * <p> A custom resolver is found and installed as the system-wide resolver
- * as follows:
- * <ol>
- *  <li>The {@link ServiceLoader} mechanism is used to locate an
- *      {@link InetAddressResolverProvider InetAddressResolverProvider} using the
- *      system class loader. The order in which providers are located is
- *      {@linkplain ServiceLoader#load(java.lang.Class, java.lang.ClassLoader) implementation specific}.
- *      The first provider found will be used to instantiate the {@link InetAddressResolver InetAddressResolver}
- *      by invoking the {@link InetAddressResolverProvider#get(InetAddressResolverProvider.Configuration)}
- *      method. The returned {@code InetAddressResolver} will be installed as the system-wide
- *      resolver.
- *  <li>If the previous step fails to find any resolver provider the
- *      built-in resolver will be set as the system-wide resolver.
- * </ol>
- *
- * <p> If instantiating a custom resolver from a provider discovered in
- * step 1 throws an error or exception, the system-wide resolver will not be
- * installed and the error or exception will be propagated to the calling thread.
- * Otherwise, any lookup operation will be performed through the installed
- * <i>system-wide resolver</i>.
- * @implNote
- * For any lookup operation that might occur before the VM is fully booted the <i>built-in
- * resolver</i> will be used.
  *
  * @author  Chris Warth
  * @see     java.net.InetAddress#getByAddress(byte[])
@@ -337,6 +306,7 @@ public class InetAddress implements java.io.Serializable {
     }
 
     /* Used to store the system-wide resolver */
+    @Stable
     private static volatile InetAddressResolver resolver;
 
     private static final InetAddressResolver BUILTIN_RESOLVER;
