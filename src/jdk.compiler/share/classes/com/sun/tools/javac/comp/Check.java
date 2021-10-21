@@ -4570,7 +4570,6 @@ public class Check {
                 }
                 log.warning(LintCategory.SERIAL, tree.pos(),
                             Warnings.ExternalizableMissingPublicNoArgCtor);
-
             } else {
                 // Approximate access to the no-arg constructor up in
                 // the superclass chain by checking that the
@@ -4579,7 +4578,6 @@ public class Check {
                 Type superClass = c.getSuperclass();
                 // java.lang.Object is *not* Serializable so this loop
                 // should terminate.
-                // TOOD: checking needed for error types?
                 while (rs.isSerializable(superClass) ) {
                     try {
                         superClass = (Type)((TypeElement)(((DeclaredType)superClass)).asElement()).getSuperclass();
@@ -4666,11 +4664,6 @@ public class Check {
             }
         }
 
-        /*
-         * Methods can have modifiers: public, protected, private,
-         * abstract, static, final, synchronized, native, strictfp
-         */
-
         private void checkWriteObject(JCClassDecl tree, Element e, MethodSymbol method) {
             // The "synchronized" modifier is seen in the wild on
             // readObject and writeObject methods and is generally
@@ -4689,7 +4682,7 @@ public class Check {
             // ObjectStreamException
 
             // Excluding abstract, could have a more complicated
-            // rule based on abstract-ness of the class?
+            // rule based on abstract-ness of the class
             checkConcreteInstanceMethod(tree, e, method);
             checkReturnType(tree, e, method, syms.objectType);
             checkNoArgs(tree, e, method);
@@ -4724,7 +4717,7 @@ public class Check {
             // throws ObjectStreamException
 
             // Excluding abstract, could have a more complicated
-            // rule based on abstract-ness of the class?
+            // rule based on abstract-ness of the class
             checkConcreteInstanceMethod(tree, e, method);
             checkReturnType(tree,e, method, syms.objectType);
             checkNoArgs(tree, e, method);
@@ -4781,7 +4774,8 @@ public class Check {
         }
 
         /**
-         * Serialization-related fields and methods on interfaces are ineffectual.
+         * Most serialization-related fields and methods on interfaces
+         * are ineffectual or problematic.
          */
         @Override
         public Void visitTypeAsInterface(TypeElement e,
@@ -4896,8 +4890,9 @@ public class Check {
                         }
 
                         case "serialVersionUID" -> {
-                            // TODO: Extra warning that svuid value not
-                            // checked to match for records?
+                            // Could generate additional warning that
+                            // svuid value is not checked to match for
+                            // records.
                             checkSerialVersionUID(tree, e, (VarSymbol)enclosed);
                         }
 
@@ -4978,7 +4973,7 @@ public class Check {
         }
 
         private void checkNoArgs(JCClassDecl tree, Element enclosing, MethodSymbol method) {
-            var parameters= method.getParameters();
+            var parameters = method.getParameters();
             if (!parameters.isEmpty()) {
                 log.warning(LintCategory.SERIAL,
                             TreeInfo.diagnosticPositionFor(parameters.get(0), tree),
@@ -4987,7 +4982,7 @@ public class Check {
         }
 
         private void checkExternalizable(JCClassDecl tree, Element enclosing, MethodSymbol method) {
-            //if the enclosing class is externalizable, warn for the method
+            // If the enclosing class is externalizable, warn for the method
             if (isExternalizable((Type)enclosing.asType())) {
                 log.warning(LintCategory.SERIAL, tree.pos(),
                             Warnings.IneffectualSerialMethodExternalizable(method.getSimpleName()));

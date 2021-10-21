@@ -224,7 +224,7 @@ public class Symtab {
     public final Type valueBasedType;
     public final Type valueBasedInternalType;
 
-    // For serialization lint checking; may be moved elsewhere
+    // For serialization lint checking
     public final Type objectStreamFieldType;
     public final Type objectInputStreamType;
     public final Type objectOutputStreamType;
@@ -598,7 +598,7 @@ public class Symtab {
         switchBootstrapsType = enterClass("java.lang.runtime.SwitchBootstraps");
         valueBasedType = enterClass("jdk.internal.ValueBased");
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
-        // For serialization lint checking; may be moved elsewhere
+        // For serialization lint checking
         objectStreamFieldType = enterClass("java.io.ObjectStreamField");
         objectInputStreamType = enterClass("java.io.ObjectInputStream");
         objectOutputStreamType = enterClass("java.io.ObjectOutputStream");
