@@ -426,7 +426,7 @@ public:
 
 // This is the task used for parallel verification of the heap regions
 
-class G1ParVerifyTask: public AbstractGangTask {
+class G1ParVerifyTask: public WorkerTask {
 private:
   G1CollectedHeap*  _g1h;
   VerifyOption      _vo;
@@ -438,7 +438,7 @@ public:
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
-      AbstractGangTask("Parallel verify task"),
+      WorkerTask("Parallel verify task"),
       _g1h(g1h),
       _vo(vo),
       _failures(false),

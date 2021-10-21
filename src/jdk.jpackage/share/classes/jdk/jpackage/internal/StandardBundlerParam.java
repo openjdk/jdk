@@ -411,6 +411,14 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (Class<List<String>>) (Object)List.class,
                     p -> Collections.emptyList(),
                     (s, p) -> Arrays.asList(s.split(","))
+
+    @SuppressWarnings("unchecked")
+    static final StandardBundlerParam<List<String>> APP_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.APP_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p->Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
             );
 
     @SuppressWarnings("unchecked")

@@ -27,7 +27,7 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "unittest.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -44,15 +44,15 @@ class G1CardSetTest : public ::testing::Test {
     }
   };
 
-  static WorkGang* _workers;
+  static WorkerThreads* _workers;
   static uint _max_workers;
 
-  static WorkGang* workers() {
+  static WorkerThreads* workers() {
     if (_workers == NULL) {
       _max_workers = os::processor_count();
-      _workers = new WorkGang("G1CardSetTest Work Gang", _max_workers);
+      _workers = new WorkerThreads("G1CardSetTest Workers", _max_workers);
       _workers->initialize_workers();
-      _workers->update_active_workers(_max_workers);
+      _workers->set_active_workers(_max_workers);
     }
     return _workers;
   }
@@ -85,7 +85,7 @@ public:
   static void iterate_cards(G1CardSet* card_set, G1CardSet::G1CardSetCardIterator* cl);
 };
 
-WorkGang* G1CardSetTest::_workers = NULL;
+WorkerThreads* G1CardSetTest::_workers = NULL;
 uint G1CardSetTest::_max_workers = 0;
 
 void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards, G1AddCardResult* results) {
@@ -376,7 +376,7 @@ void G1CardSetTest::cardset_basic_test() {
   }
 }
 
-class G1CardSetMtTestTask : public AbstractGangTask {
+class G1CardSetMtTestTask : public WorkerTask {
   G1CardSet* _card_set;
 
   size_t _added;
@@ -384,7 +384,7 @@ class G1CardSetMtTestTask : public AbstractGangTask {
 
 public:
   G1CardSetMtTestTask(G1CardSet* card_set) :
-    AbstractGangTask(""),
+    WorkerTask(""),
     _card_set(card_set),
     _added(0),
     _found(0) { }

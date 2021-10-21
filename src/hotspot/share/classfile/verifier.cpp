@@ -2316,6 +2316,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   // Get field name and signature
   Symbol* field_name = cp->name_ref_at(index);
   Symbol* field_sig = cp->signature_ref_at(index);
+  bool is_getfield = false;
 
   // Field signature was checked in ClassFileParser.
   assert(SignatureVerifier::is_valid_type_signature(field_sig),
@@ -2362,11 +2363,9 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       break;
     }
     case Bytecodes::_getfield: {
+      is_getfield = true;
       stack_object_type = current_frame->pop_stack(
         target_class_type, CHECK_VERIFY(this));
-      for (int i = 0; i < n; i++) {
-        current_frame->push_stack(field_type[i], CHECK_VERIFY(this));
-      }
       goto check_protected;
     }
     case Bytecodes::_putfield: {
@@ -2396,7 +2395,15 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
     check_protected: {
       if (_this_type == stack_object_type)
         break; // stack_object_type must be assignable to _current_class_type
-      if (was_recursively_verified()) return;
+      if (was_recursively_verified()) {
+        if (is_getfield) {
+          // Push field type for getfield.
+          for (int i = 0; i < n; i++) {
+            current_frame->push_stack(field_type[i], CHECK_VERIFY(this));
+          }
+        }
+        return;
+      }
       Symbol* ref_class_name =
         cp->klass_name_at(cp->klass_ref_index_at(index));
       if (!name_in_supers(ref_class_name, current_class()))
@@ -2424,6 +2431,12 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       break;
     }
     default: ShouldNotReachHere();
+  }
+  if (is_getfield) {
+    // Push field type for getfield after doing protection check.
+    for (int i = 0; i < n; i++) {
+      current_frame->push_stack(field_type[i], CHECK_VERIFY(this));
+    }
   }
 }
 

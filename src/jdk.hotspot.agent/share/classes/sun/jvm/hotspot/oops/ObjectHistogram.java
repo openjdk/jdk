@@ -50,11 +50,7 @@ public class ObjectHistogram implements HeapVisitor {
   public List<ObjectHistogramElement> getElements() {
     List<ObjectHistogramElement> list = new ArrayList<>();
     list.addAll(map.values());
-    Collections.sort(list, new Comparator<>() {
-      public int compare(ObjectHistogramElement o1, ObjectHistogramElement o2) {
-        return o1.compare(o2);
-      }
-    });
+    list.sort(ObjectHistogramElement::compare);
     return list;
   }
 

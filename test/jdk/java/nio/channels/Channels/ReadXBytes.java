@@ -25,6 +25,7 @@
  * @test
  * @bug 8268435 8274780
  * @summary Verify ChannelInputStream methods readAllBytes and readNBytes
+ * @requires vm.bits == 64
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
