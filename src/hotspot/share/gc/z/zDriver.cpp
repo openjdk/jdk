@@ -355,12 +355,18 @@ bool ZDriverMinor::pause() {
   return op.success();
 }
 
-void ZDriverMinor::pause_mark_start() {
-  if (ZHeap::heap()->minor_collector()->should_skip_mark_start()) {
+void ZDriverMinor::pause_mark_start(const ZDriverRequest& request) {
+  ZMinorCollector* collector = ZHeap::heap()->minor_collector();
+  if (collector->should_skip_mark_start()) {
     // A major mark start also performs a minor mark start. So the next
     // minor cycle after a major mark start, doesn't run minor mark start.
+    // The number of GC threads has already been selected when this happens.
     return;
   }
+
+  // Select number of worker threads to use
+  const uint nworkers = select_active_worker_threads(request);
+  collector->set_active_workers(nworkers);
 
   pause<VM_ZMinorMarkStart>();
 }
@@ -423,10 +429,6 @@ public:
 
     // Update statistics
     collector->set_at_collection_start();
-
-    // Select number of worker threads to use
-    const uint nworkers = select_active_worker_threads(request);
-    collector->set_active_workers(nworkers);
   }
 
   ~ZDriverMinorGCScope() {
@@ -441,7 +443,7 @@ void ZDriverMinor::gc(const ZDriverRequest& request) {
   ZDriverMinorGCScope scope(request);
 
   // Phase 1: Pause Mark Start
-  pause_mark_start();
+  pause_mark_start(request);
 
   // Phase 2: Concurrent Mark
   abortable(concurrent_mark);

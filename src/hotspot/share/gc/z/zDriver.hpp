@@ -44,7 +44,7 @@ private:
   void inactive();
   void aborted();
 
-  void pause_mark_start();
+  void pause_mark_start(const ZDriverRequest& request);
   void concurrent_mark();
   bool pause_mark_end();
   void concurrent_mark_continue();
