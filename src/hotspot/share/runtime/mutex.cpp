@@ -31,6 +31,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadCritical.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
@@ -267,7 +268,36 @@ bool Monitor::wait(int64_t timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
+// Array used to print owned locks on error.
+static Mutex* _mutex_array = NULL;
+
+void Mutex::add_to_global_list() {
+  // Add mutex to print_owned_locks_on_error array
+  ThreadCritical tc;
+  Mutex* next = _mutex_array;
+  _next_mutex = next;
+  _prev_mutex = nullptr;
+  _mutex_array = this;
+  if (next != nullptr) {
+    next->_prev_mutex = this;
+  }
+}
+
+void Mutex::remove_from_global_list() {
+  // Remove mutex from print_owned_locks_on_error array
+  ThreadCritical tc;
+  Mutex* old_next = _next_mutex;
+  assert(old_next != nullptr, "this list can never be empty");
+  old_next->_prev_mutex = _prev_mutex;
+  if (_prev_mutex == nullptr) {
+    _mutex_array = old_next;
+  } else {
+    _prev_mutex->_next_mutex = old_next;
+  }
+}
+
 Mutex::~Mutex() {
+  remove_from_global_list();
   assert_owner(NULL);
   os::free(const_cast<char*>(_name));
 }
@@ -280,6 +310,8 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(NULL) {
   _allow_vm_block  = allow_vm_block;
   _rank            = rank;
   _skip_rank_check = false;
+  _next            = nullptr;
+  _last_owner      = nullptr;
 
   assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %s: %s", rank_name(), name);
 
@@ -288,16 +320,51 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(NULL) {
   assert(_rank > nosafepoint || _allow_vm_block,
          "Locks that don't check for safepoint should always allow the vm to block: %s", name);
 #endif
+  add_to_global_list();
 }
 
 bool Mutex::owned_by_self() const {
   return owner() == Thread::current();
 }
 
-void Mutex::print_on_error(outputStream* st) const {
+void Mutex::print_on(outputStream* st) const {
   st->print("[" PTR_FORMAT, p2i(this));
   st->print("] %s", _name);
   st->print(" - owner thread: " PTR_FORMAT, p2i(owner()));
+#ifdef ASSERT
+  if (_allow_vm_block) {
+    st->print_raw(" allow_vm_block");
+  }
+  st->print(" %s", rank_name());
+#endif
+  st->cr();
+}
+
+// Print all mutexes/monitors that are currently owned by a thread; called
+// by fatal error handler.
+// This function doesn't take the ThreadCritical lock to avoid potential
+// deadlock during error reporting.
+void Mutex::print_owned_locks_on_error(outputStream* st) {
+  assert(VMError::is_error_reported(), "should only be called during error reporting");
+  ResourceMark rm;
+  st->print("VM Mutexes/Monitors currently owned by a thread: ");
+  bool none = true;
+  Mutex *m = _mutex_array;
+  int array_count = 0;
+  while (m != nullptr) {
+     array_count++;
+     // see if it has an owner
+     if (m->owner() != NULL) {
+       if (none) {
+          st->cr();
+          none = false;
+       }
+       m->print_on(st);
+     }
+     m = m->_next_mutex;
+  }
+  if (none) st->print_cr("None");
+  st->print_cr("Total Mutex count %d", array_count);
 }
 
 // ----------------------------------------------------------------------------------
@@ -343,21 +410,7 @@ void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
            rank_name_internal(orig), adjust, rank_name_internal(adjusted));
   }
 }
-#endif // ASSERT
 
-#ifndef PRODUCT
-void Mutex::print_on(outputStream* st) const {
-  st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
-            p2i(this), _name, p2i(owner()));
-  if (_allow_vm_block) {
-    st->print("%s", " allow_vm_block");
-  }
-  DEBUG_ONLY(st->print(" %s", rank_name()));
-  st->cr();
-}
-#endif // PRODUCT
-
-#ifdef ASSERT
 void Mutex::assert_owner(Thread * expected) {
   const char* msg = "invalid owner";
   if (expected == NULL) {
