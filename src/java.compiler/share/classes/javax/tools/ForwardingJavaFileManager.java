@@ -26,9 +26,6 @@
 package javax.tools;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.Objects;
@@ -165,11 +162,16 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
                                                Kind kind,
                                                FileObject... originatingFiles) throws IOException {
         try {
-            Method delegate = getClass().getMethod("getJavaFileForOutput", Location.class, String.class, Kind.class, FileObject.class);
+            Method delegate = getClass().getMethod("getJavaFileForOutput",
+                                                   Location.class, String.class,
+                                                   Kind.class, FileObject.class);
             if (delegate.getDeclaringClass() == ForwardingJavaFileManager.class) {
-                return fileManager.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles);
+                return fileManager.getJavaFileForOutputForOriginatingFiles(location, className,
+                                                                           kind, originatingFiles);
             } else {
-                return JavaFileManager.super.getJavaFileForOutputForOriginatingFiles(location, className, kind, originatingFiles);
+                return JavaFileManager.super
+                                      .getJavaFileForOutputForOriginatingFiles(location, className,
+                                                                               kind, originatingFiles);
             }
         } catch (NoSuchMethodException ex) {
             throw new InternalError("This should never happen.", ex);
@@ -220,11 +222,16 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
                                        String relativeName,
                                        FileObject... originatingFiles) throws IOException {
         try {
-            Method delegate = getClass().getMethod("getFileForOutput", Location.class, String.class, String.class, FileObject.class);
+            Method delegate = getClass().getMethod("getFileForOutput",
+                                                   Location.class, String.class,
+                                                   String.class, FileObject.class);
             if (delegate.getDeclaringClass() == ForwardingJavaFileManager.class) {
-                return fileManager.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles);
+                return fileManager.getFileForOutputForOriginatingFiles(location, packageName,
+                                                                       relativeName, originatingFiles);
             } else {
-                return JavaFileManager.super.getFileForOutputForOriginatingFiles(location, packageName, relativeName, originatingFiles);
+                return JavaFileManager.super
+                                      .getFileForOutputForOriginatingFiles(location, packageName,
+                                                                           relativeName, originatingFiles);
             }
         } catch (NoSuchMethodException ex) {
             throw new InternalError("This should never happen.", ex);
