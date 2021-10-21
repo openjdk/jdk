@@ -48,13 +48,6 @@ public class GetMousePositionWithOverlay {
         try {
             SwingUtilities.invokeAndWait(GetMousePositionWithOverlay::constructTestUI);
             doTest();
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                // Do not wrap, just re-throw
-                throw e;
-            } else {
-                throw new RuntimeException("Unexpected Exception! ", e);
-            }
         } finally {
             dispose();
         }
