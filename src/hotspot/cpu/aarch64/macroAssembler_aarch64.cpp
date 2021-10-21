@@ -1376,7 +1376,7 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
     block_comment(buffer);
   }
 #endif
-  if (operand_valid_for_logical_immediate(false, imm64)) {
+  if (operand_valid_for_logical_immediate(64, imm64)) {
     orr(dst, zr, imm64);
   } else {
     // we can use a combination of MOVZ or MOVN with
@@ -1489,7 +1489,7 @@ void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32)
       block_comment(buffer);
     }
 #endif
-  if (operand_valid_for_logical_immediate(true, imm32)) {
+  if (operand_valid_for_logical_immediate(32, imm32)) {
     orrw(dst, zr, imm32);
   } else {
     // we can use MOVZ, MOVN or two calls to MOVK to build up the
@@ -3831,7 +3831,7 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
   }
 
   if (operand_valid_for_logical_immediate(
-        /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
+        64, (uint64_t)CompressedKlassPointers::base())) {
     const uint64_t range_mask =
       (1ULL << log2i(CompressedKlassPointers::range())) - 1;
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
