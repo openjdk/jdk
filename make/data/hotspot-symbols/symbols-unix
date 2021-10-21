@@ -184,8 +184,6 @@ JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
 JVM_ResumeThread
-JVM_ScopeLocalCache
-JVM_SetScopeLocalCache
 JVM_SetArrayElement
 JVM_SetClassSigners
 JVM_SetNativeThreadName

@@ -39,7 +39,7 @@ class JfrContextBinding : public JfrCHeapObj {
  public:
   JfrContextBinding(
     const char** entries /* of size entries_len * 2 */,
-    jsize entries_len);
+    int entries_len);
   ~JfrContextBinding();
 
   jlong id() { return (jlong)this; }
