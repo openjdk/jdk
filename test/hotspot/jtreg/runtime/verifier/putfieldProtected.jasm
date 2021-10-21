@@ -21,6 +21,9 @@
  * questions.
  */
 
+// This .jasm file is needed for this test to ensure that the illegal protected
+// access is done at runtime.  Otherwise, javac would detect and complain about
+// the illegal access
 super public class another/SuperC version 51:0 {
     protected Field f:I;
 
