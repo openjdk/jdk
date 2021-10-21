@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,22 @@
  * questions.
  */
 
-// key: compiler.warn.improper.SVUID
-// key: compiler.warn.constant.SVUID
-// key: compiler.warn.long.SVUID
+// key: compiler.warn.non.private.method.weaker.access
+// key: compiler.warn.default.ineffective
+// key: compiler.warn.ineffectual.serial.field.interface
 
 // options: -Xlint:serial
 
-import java.io.Serializable;
+import java.io.*;
 
-class ImproperSVUID implements Serializable {
-    int serialVersionUID;
+interface SerialInterfaceMethodsAndFields extends Serializable {
+    public static final ObjectStreamField[] serialPersistentFields = {};
+    public void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException;
+    public void readObjectNoData() throws ObjectStreamException;
+    public void writeObject(ObjectOutputStream stream) throws IOException;
+
+    default public Object readResolve() throws ObjectStreamException {
+        return null;
+    }
 }

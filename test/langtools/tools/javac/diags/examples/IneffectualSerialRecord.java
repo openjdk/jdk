@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,22 @@
  * questions.
  */
 
-// key: compiler.warn.improper.SVUID
-// key: compiler.warn.constant.SVUID
-// key: compiler.warn.long.SVUID
+// key: compiler.warn.ineffectual.serial.field.record
+// key: compiler.warn.ineffectual.serial.method.record
 
 // options: -Xlint:serial
 
-import java.io.Serializable;
+import java.io.*;
 
-class ImproperSVUID implements Serializable {
-    int serialVersionUID;
+record IneffectualSerialRecord(int foo) implements Serializable {
+
+    // A serialPersistentFields is ineffectual for enum classes.
+    private static final ObjectStreamField[] serialPersistentFields = {};
+
+    // The readObject method is ineffectual for record classes.
+    private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        return;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,36 @@
  * questions.
  */
 
-// key: compiler.warn.improper.SVUID
-// key: compiler.warn.constant.SVUID
-// key: compiler.warn.long.SVUID
+// key: compiler.warn.serializable.missing.access.no.arg.ctor
+// key: compiler.warn.non.serializable.instance.field
+// key: compiler.warn.non.serializable.instance.field.array
 
 // options: -Xlint:serial
 
-import java.io.Serializable;
+import java.io.*;
 
-class ImproperSVUID implements Serializable {
-    int serialVersionUID;
+class SerialMissingNoArgCtor {
+    public SerialMissingNoArgCtor(int foo) {
+    }
+
+    // Not accessible to SerialSubclass
+    private SerialMissingNoArgCtor() {}
+
+    // SerialSubclass does not have access to a non-arg ctor in the
+    // first non-serializable superclass in its superclass chain.
+    static class SerialSubclass extends SerialMissingNoArgCtor
+        implements Serializable {
+
+        private static final long serialVersionUID = 42;
+
+        // non-serializable non-transient instance field
+        private Object datum = null;
+
+        // base component type of array is non-serializable
+        private Object[] data = null;
+
+        public SerialSubclass() {
+            super(1);
+        }
+    }
 }

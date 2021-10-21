@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,18 @@
  * questions.
  */
 
-// key: compiler.warn.improper.SVUID
-// key: compiler.warn.constant.SVUID
-// key: compiler.warn.long.SVUID
+// key: compiler.warn.improper.SPF
+// key: compiler.warn.OSF.array.SPF
+// key: compiler.warn.SPF.null.init
 
 // options: -Xlint:serial
 
 import java.io.Serializable;
 
-class ImproperSVUID implements Serializable {
-    int serialVersionUID;
+class ImproperSPF implements Serializable {
+    // Proper declaration of serialPersistentFields is:
+    // private static final ObjectStreamField[] serialPersistentFields = ...
+    public /*instance*/ Object serialPersistentFields = null;
+
+    private static final long serialVersionUID = 42;
 }
