@@ -1102,6 +1102,10 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 }
 
 HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
+  if (mode()->is_generational() && req.affiliation() == YOUNG_GENERATION && young_generation()->used() + req.size() >= young_generation()->max_capacity()) {
+    return nullptr;
+  }
+
   ShenandoahHeapLocker locker(lock());
   HeapWord* result = _free_set->allocate(req, in_new_region);
   if (result != NULL && req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
