@@ -40,13 +40,13 @@ import static org.testng.Assert.assertNotEquals;
  */
 public class LastModifiedTest {
 
-    private final Instant milliPrecision = Instant.ofEpochMilli(1999L);
+    private static final Instant MILLISECOND_PRECISION = Instant.ofEpochMilli(1999L);
 
     @Test
-    public void lastModified_ioAndNioAreAlwaysSame() throws IOException {
+    public void verifyLastModifiedTime() throws IOException {
         File tempFile = Files.createTempFile("MillisecondPrecisionTest", "txt").toFile();
         try {
-            tempFile.setLastModified(milliPrecision.toEpochMilli());
+            tempFile.setLastModified(MILLISECOND_PRECISION.toEpochMilli());
 
             long ioTimestamp = tempFile.lastModified();
             long nioTimestamp = Files.getLastModifiedTime(tempFile.toPath()).toMillis();
