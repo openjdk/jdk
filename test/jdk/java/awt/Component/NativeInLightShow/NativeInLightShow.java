@@ -24,7 +24,7 @@
 /*
   @test 1.0 04/05/20
   @key headful
-  @bug 4140484 8202932
+  @bug 4140484
   @summary Heavyweight components inside invisible lightweight containers still show
   @run main NativeInLightShow
 */
