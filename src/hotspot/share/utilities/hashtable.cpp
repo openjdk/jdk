@@ -90,7 +90,7 @@ static size_t literal_size(oop obj) {
 
   if (obj->klass() == vmClasses::String_klass()) {
     // This may overcount if String.value arrays are shared.
-	  word_size += java_lang_String::value(obj)->size();
+    word_size += java_lang_String::value(obj)->size();
   }
 
   return word_size * HeapWordSize;
