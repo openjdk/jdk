@@ -327,7 +327,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = name.hashCode() * 43 + mods.hashCode();
+            int hash = name.hashCode() * 43 + ordinalHashCode(mods);
             if (compiledVersion != null)
                 hash = hash * 43 + compiledVersion.hashCode();
             if (rawCompiledVersion != null)
@@ -505,7 +505,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = mods.hashCode();
+            int hash = ordinalHashCode(mods);
             hash = hash * 43 + source.hashCode();
             return hash * 43 + targets.hashCode();
         }
@@ -708,7 +708,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = mods.hashCode();
+            int hash = ordinalHashCode(mods);
             hash = hash * 43 + source.hashCode();
             return hash * 43 + targets.hashCode();
         }
@@ -2261,7 +2261,7 @@ public class ModuleDescriptor
         int hc = hash;
         if (hc == 0) {
             hc = name.hashCode();
-            hc = hc * 43 + Objects.hashCode(modifiers);
+            hc = hc * 43 + ordinalHashCode(modifiers);
             hc = hc * 43 + requires.hashCode();
             hc = hc * 43 + Objects.hashCode(packages);
             hc = hc * 43 + exports.hashCode();
@@ -2544,6 +2544,21 @@ public class ModuleDescriptor
                                                       .toLowerCase(Locale.ROOT)),
                               Stream.of(what)))
                 .collect(Collectors.joining(" "));
+    }
+
+    /**
+     * Generates and returns a hashcode for the enum instances. The returned hashcode
+     * is a sum of each of the enum instances' {@link Enum#ordinal() ordinal} value.
+     */
+    private static int ordinalHashCode(final Iterable<? extends Enum<?>> enums) {
+        int h = 0;
+        for (final Enum<?> e : enums) {
+            if (e == null) {
+                continue;
+            }
+            h += e.ordinal();
+        }
+        return h;
     }
 
     private static <T extends Object & Comparable<? super T>>
