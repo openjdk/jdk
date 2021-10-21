@@ -21,14 +21,14 @@
  * questions.
  *
  */
-public class LambdaContainsOldInfApp { 
-    public static void main(final String... args) { 
-        getProvider(); 
-    } 
+public class LambdaContainsOldInfApp {
+    public static void main(final String... args) {
+        getProvider();
+    }
 
-    public static OldProvider getProvider() { 
-        return () -> { 
-            return null; 
-        }; 
-    } 
+    public static OldProvider getProvider() {
+        return () -> {
+            return null;
+        };
+    }
 }
