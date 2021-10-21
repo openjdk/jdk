@@ -294,11 +294,8 @@ public class DeployParams {
             StandardBundlerParam.ADD_MODULES.getID(),
             StandardBundlerParam.LIMIT_MODULES.getID(),
             StandardBundlerParam.FILE_ASSOCIATIONS.getID(),
-<<<<<<< HEAD
             StandardBundlerParam.DMG_CONTENT.getID(),
-=======
             StandardBundlerParam.APP_CONTENT.getID(),
->>>>>>> master
             StandardBundlerParam.JLINK_OPTIONS.getID()
     ));
 
