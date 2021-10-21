@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,12 +89,6 @@ void operator delete [](void* p) throw() {
   fatal("Should not call global delete []");
 }
 
-#ifdef __GNUG__
-// Warning disabled for gcc 5.4
-PRAGMA_DIAG_PUSH
-PRAGMA_DISABLE_GCC_WARNING("-Wc++14-compat")
-#endif // __GNUG__
-
 void operator delete(void* p, size_t size) throw() {
   fatal("Should not call global sized delete");
 }
@@ -102,9 +96,5 @@ void operator delete(void* p, size_t size) throw() {
 void operator delete [](void* p, size_t size) throw() {
   fatal("Should not call global sized delete []");
 }
-
-#ifdef __GNUG__
-PRAGMA_DIAG_POP
-#endif // __GNUG__
 
 #endif // Non-product
