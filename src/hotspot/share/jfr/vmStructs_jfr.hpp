@@ -25,11 +25,11 @@
 #ifndef SHARE_GC_SHARED_VMSTRUCTS_JFR_HPP
 #define SHARE_GC_SHARED_VMSTRUCTS_JFR_HPP
 
+#if INCLUDE_JFR
+
 #include "jfr/recorder/context/jfrContext.hpp"
 #include "jfr/recorder/context/jfrContextBinding.hpp"
 #include "jfr/recorder/context/jfrContextFilter.hpp"
-
-#if INCLUDE_JFR
 
 #define VM_STRUCTS_JFR(nonstatic_field) \
   nonstatic_field(JfrContextBinding,         _entries_len,                                  int)                                   \

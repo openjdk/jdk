@@ -73,7 +73,7 @@ void JfrContextFilter::configure(int *matches, int matches_len) {
   // Because the matches are ordered by event id, and we know the predefined type ids have
   // lower event ids, we can first deal with them, then with the dynamically declared ones
   // Set current->_matches
-  memset(current->_matches, (char)-1, sizeof(current->_matches));
+  memset(current->_matches, (short)-1, sizeof(current->_matches));
   for (int i = 0; i < matches_len && matches[i+0] <= LAST_EVENT_ID; i += 2) {
     current->_matches[matches[i+0] + 1] = matches[i+1];
   }
