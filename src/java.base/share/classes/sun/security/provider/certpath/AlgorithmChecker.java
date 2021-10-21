@@ -74,10 +74,10 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private final AlgorithmConstraints constraints;
-    private PublicKey trustedPubKey;
     private final Date date;
-    private PublicKey prevPubKey;
     private final String variant;
+    private PublicKey trustedPubKey;
+    private PublicKey prevPubKey;
     private TrustAnchor anchor;
 
     private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
@@ -175,11 +175,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     public void init(boolean forward) throws CertPathValidatorException {
         //  Note that this class does not support forward mode.
         if (!forward) {
-            if (trustedPubKey != null) {
-                prevPubKey = trustedPubKey;
-            } else {
-                prevPubKey = null;
-            }
+            prevPubKey = trustedPubKey;
         } else {
             throw new
                 CertPathValidatorException("forward checking not supported");
@@ -311,35 +307,32 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             }
         }
 
-        // If there is no previous key, set one and exit
-        if (prevPubKey == null) {
-            prevPubKey = currPubKey;
-            return;
-        }
+        if (prevPubKey != null) {
+            // Inherit key parameters from previous key
+            if (PKIX.isDSAPublicKeyWithoutParams(currPubKey)) {
+                // Inherit DSA parameters from previous key
+                if (!(prevPubKey instanceof DSAPublicKey)) {
+                    throw new CertPathValidatorException("Input key is not " +
+                            "of a appropriate type for inheriting parameters");
+                }
 
-        // Inherit key parameters from previous key
-        if (PKIX.isDSAPublicKeyWithoutParams(currPubKey)) {
-            // Inherit DSA parameters from previous key
-            if (!(prevPubKey instanceof DSAPublicKey)) {
-                throw new CertPathValidatorException("Input key is not " +
-                        "of a appropriate type for inheriting parameters");
-            }
+                DSAParams params = ((DSAPublicKey)prevPubKey).getParams();
+                if (params == null) {
+                    throw new CertPathValidatorException(
+                            "Key parameters missing from public key.");
+                }
 
-            DSAParams params = ((DSAPublicKey)prevPubKey).getParams();
-            if (params == null) {
-                throw new CertPathValidatorException(
-                        "Key parameters missing from public key.");
-            }
-
-            try {
-                BigInteger y = ((DSAPublicKey)currPubKey).getY();
-                KeyFactory kf = KeyFactory.getInstance("DSA");
-                DSAPublicKeySpec ks = new DSAPublicKeySpec(y, params.getP(),
-                        params.getQ(), params.getG());
-                currPubKey = kf.generatePublic(ks);
-            } catch (GeneralSecurityException e) {
-                throw new CertPathValidatorException("Unable to generate " +
-                        "key with inherited parameters: " + e.getMessage(), e);
+                try {
+                    BigInteger y = ((DSAPublicKey)currPubKey).getY();
+                    KeyFactory kf = KeyFactory.getInstance("DSA");
+                    DSAPublicKeySpec ks = new DSAPublicKeySpec(y, params.getP(),
+                            params.getQ(), params.getG());
+                    currPubKey = kf.generatePublic(ks);
+                } catch (GeneralSecurityException e) {
+                    throw new CertPathValidatorException("Unable to generate " +
+                            "key with inherited parameters: " +
+                            e.getMessage(), e);
+                }
             }
         }
 
@@ -359,12 +352,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     void trySetTrustAnchor(TrustAnchor anchor) {
         // Don't bother if the check has started or trust anchor has already
         // been specified.
-        if (this.prevPubKey == null) {
-            if (anchor == null) {
-                throw new IllegalArgumentException(
-                        "The trust anchor cannot be null");
-            }
-
+        if (this.trustedPubKey == null) {
             if (anchor.getTrustedCert() != null) {
                 this.trustedPubKey = anchor.getTrustedCert().getPublicKey();
             } else {
