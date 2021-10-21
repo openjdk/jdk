@@ -365,6 +365,10 @@ inline bool ZPage::is_remembered(volatile zpointer* p) {
 inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
   assert_zpage_mark_state();
 
+  if (type() == ZPageTypeLarge) {
+    return ZOffset::address_unsafe(start());
+  }
+
   const size_t index = bit_index(zaddress(uintptr_t(p)));
   const size_t base_index = _livemap.find_base_bit(index);
   if (base_index == size_t(-1)) {
