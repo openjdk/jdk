@@ -16501,7 +16501,7 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, fnoreg, StrIntrinsicNode::UU);
+                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::UU);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16518,7 +16518,7 @@ instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, fnoreg, StrIntrinsicNode::LL);
+                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::LL);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16538,7 +16538,7 @@ instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
-                      $vtmp3$$FloatRegister, StrIntrinsicNode::UL);
+                      $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::UL);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16558,7 +16558,7 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
-                      $vtmp3$$FloatRegister,StrIntrinsicNode::LU);
+                      $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::LU);
   %}
   ins_pipe(pipe_class_memory);
 %}
