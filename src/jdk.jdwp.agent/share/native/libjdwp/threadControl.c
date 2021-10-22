@@ -2207,9 +2207,11 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
         }
 
         /*
-         * handlerLock is not needed anymore. We release it before calling
-         * blockOnDebuggerSuspend() because it is required for resumes by the
-         * debugger so we cannot wait for that holding handlerLock.
+         * handlerLock is not needed anymore. We must release it before calling
+         * blockOnDebuggerSuspend() because it is required for resumes done by
+         * the debugger. If resumee is currently suspended by the debugger, then
+         * blockOnDebuggerSuspend() will block until a debugger resume is done.
+         * If it blocks while holding the handlerLock, then the resume will deadlock.
          */
         eventHandler_unlock();
 
