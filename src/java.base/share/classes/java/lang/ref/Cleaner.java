@@ -87,8 +87,10 @@ import java.util.function.Function;
  * <pre>{@code
  * public class CleaningExample implements AutoCloseable {
  *        // A cleaner, preferably one shared within a library
- *        private static final Cleaner cleaner = <cleaner>;
+ *        private static final Cleaner cleaner = Cleaner.create();
  *
+ *        // Static state class, capturing information necessary for
+ *        // cleanup, but no reference to the instance being cleaned
  *        static class State implements Runnable {
  *
  *            State(...) {
