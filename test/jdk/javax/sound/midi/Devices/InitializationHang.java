@@ -28,6 +28,7 @@ import javax.sound.midi.MidiUnavailableException;
 
 /**
  * @test
+ * @key headful sound
  * @bug 8068412
  */
 public final class InitializationHang {

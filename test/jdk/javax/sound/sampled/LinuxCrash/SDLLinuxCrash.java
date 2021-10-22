@@ -32,6 +32,7 @@ import javax.sound.sampled.SourceDataLine;
 
 /**
  * @test
+ * @key headful sound
  * @bug 4498848
  * @summary Sound causes crashes on Linux (part 2)
  */
