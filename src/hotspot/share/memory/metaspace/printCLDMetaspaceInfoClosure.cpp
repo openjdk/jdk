@@ -147,9 +147,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
       streamIndentor sti(_out, 6);
       _out->cr_indent();
       _out->print("Loaded classes");
-      if (ckc._num_classes_shared > 0) {
-        _out->print("('s' = shared)");
-      }
+      _out->print("('s' = shared, 'f' = override_finalize)");
       _out->print(":");
       PrintMetaspaceInfoKlassClosure pkic(_out, true);
       cld->classes_do(&pkic);
