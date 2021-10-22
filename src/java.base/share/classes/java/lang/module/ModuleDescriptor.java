@@ -2550,7 +2550,7 @@ public class ModuleDescriptor
      * Generates and returns a hashcode for the enum instances. The returned hashcode
      * is a sum of each of the enum instances' {@link Enum#ordinal() ordinal} value.
      */
-    private static int ordinalHashCode(final Iterable<? extends Enum<?>> enums) {
+    private static int ordinalHashCode(Iterable<? extends Enum<?>> enums) {
         int h = 0;
         for (Enum<?> e : enums) {
             h += e.ordinal();
