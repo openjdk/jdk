@@ -1015,7 +1015,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
      // mutexes/monitors that currently have an owner
      if (_verbose) {
-       Mutex::print_owned_locks_on_error(st);
+       print_owned_locks_on_error(st);
        st->cr();
      }
 
@@ -1913,12 +1913,6 @@ void VMError::controlled_crash(int how) {
   switch (how) {
     case 1: assert(how == 0, "test assert"); break;
     case 2: guarantee(how == 0, "test guarantee"); break;
-    case 3: {
-      Mutex* ErrorTest_lock = new Mutex(Mutex::nosafepoint, "ErrorTest_lock");
-      MutexLocker ml(ErrorTest_lock, Mutex::_no_safepoint_check_flag);
-      assert(how == 0, "test assert with lock");
-      break;
-    }
 
     // The other cases are unused.
     case 14: crash_with_segfault(); break;
