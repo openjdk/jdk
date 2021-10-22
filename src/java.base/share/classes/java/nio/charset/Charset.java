@@ -544,9 +544,6 @@ public abstract class Charset
      *          in case the charset object for the named charset is not
      *          available.
      *
-     * @throws  IllegalCharsetNameException
-     *          If the given charset name is illegal
-     *
      * @throws  IllegalArgumentException
      *          If the given {@code charsetName} is {@code null}
      *
@@ -554,8 +551,12 @@ public abstract class Charset
      */
     public static Charset forName(String charsetName,
                                   Charset fallback) {
-        Charset cs = lookup(charsetName);
-        return cs != null ? cs : fallback;
+        try {
+            Charset cs = lookup(charsetName);
+            return cs != null ? cs : fallback;
+        } catch (IllegalCharsetNameException icne) {
+            return fallback;
+        }
     }
 
     // Fold charsets from the given iterator into the given map, ignoring

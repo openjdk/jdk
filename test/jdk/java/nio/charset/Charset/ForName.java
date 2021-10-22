@@ -47,6 +47,8 @@ public class ForName {
                 {"windows-31j", StandardCharsets.US_ASCII, Charset.forName("windows-31j")},
                 {"foo", StandardCharsets.US_ASCII, StandardCharsets.US_ASCII},
                 {"foo", null, null},
+                {"\u3042", null, null},
+                {"\u3042", StandardCharsets.UTF_8, StandardCharsets.UTF_8},
         };
     }
 
@@ -58,14 +60,6 @@ public class ForName {
         };
     }
 
-    @DataProvider
-    Object[][] paramsICNE() {
-        return new Object[][] {
-                {"\u3042", null},
-                {"\u3042", StandardCharsets.UTF_8},
-        };
-    }
-
     @Test(dataProvider="params")
     public void testForName_2arg(String name, Charset fallback, Charset expected) throws Exception {
         var cs = Charset.forName(name, fallback);
@@ -74,11 +68,6 @@ public class ForName {
 
     @Test(dataProvider="paramsIAE", expectedExceptions=IllegalArgumentException.class)
     public void testForName_2arg_IAE(String name, Charset fallback) throws Exception {
-        Charset.forName(name, fallback);
-    }
-
-    @Test(dataProvider="paramsICNE", expectedExceptions=IllegalCharsetNameException.class)
-    public void testForName_2arg_ICNE(String name, Charset fallback) throws Exception {
         Charset.forName(name, fallback);
     }
 }
