@@ -449,7 +449,7 @@ public class Runtime {
      *
      * @see     ProcessBuilder
      */
-    public Process exec(String cmdarray[]) throws IOException {
+    public Process exec(String[] cmdarray) throws IOException {
         return exec(cmdarray, null, null);
     }
 

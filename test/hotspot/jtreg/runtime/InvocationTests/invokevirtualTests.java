@@ -23,19 +23,42 @@
  */
 
 /*
- * @test
+ * @test id=current-int
  * @bug 8224137
  * @summary Run invokevirtual invocation tests
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @compile shared/AbstractGenerator.java shared/AccessCheck.java shared/AccessType.java
- *          shared/Caller.java shared/ExecutorGenerator.java shared/Utils.java
- *          shared/ByteArrayClassLoader.java shared/Checker.java shared/GenericClassGenerator.java
  * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
  *
- * @run driver/timeout=1800 invokevirtualTests
+ * @run driver/timeout=1800 invokevirtualTests current-int
+ */
+
+/*
+ * @test id=current-comp
+ * @bug 8224137
+ * @summary Run invokevirtual invocation tests
+ * @requires vm.flagless
+ * @library /test/lib
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.misc
+ * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
+ *
+ * @run driver/timeout=1800 invokevirtualTests current-comp
+ */
+
+/*
+ * @test id=old-int
+ * @bug 8224137
+ * @summary Run invokevirtual invocation tests
+ * @requires vm.flagless
+ * @library /test/lib
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.misc
+ * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
+ *
+ * @run driver/timeout=1800 invokevirtualTests old-int
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -70,13 +93,28 @@ public class invokevirtualTests {
     }
 
     public static void main(String args[]) throws Throwable {
+        if (args.length < 1) {
+            throw new IllegalArgumentException("Should provide the test name");
+        }
+        String testName = args[0];
+
         // Get current major class file version and test with it.
         byte klassbuf[] = InMemoryJavaCompiler.compile("blah", "public class blah { }");
         int major_version = klassbuf[6] << 8 | klassbuf[7];
-        runTest(String.valueOf(major_version), "-Xint");
-        runTest(String.valueOf(major_version), "-Xcomp");
 
-        // Test old class file version.
-        runTest("51", "-Xint"); // JDK-7
+        switch (testName) {
+            case "current-int":
+                runTest(String.valueOf(major_version), "-Xint");
+                break;
+            case "current-comp":
+                runTest(String.valueOf(major_version), "-Xcomp");
+                break;
+            case "old-int":
+                // Test old class file version.
+                runTest("51", "-Xint"); // JDK-7
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown test name: " + testName);
+        }
     }
 }

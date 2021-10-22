@@ -886,18 +886,14 @@ public final class Subject implements java.io.Serializable {
         String suffix = "";
 
         synchronized(principals) {
-            Iterator<Principal> pI = principals.iterator();
-            while (pI.hasNext()) {
-                Principal p = pI.next();
+            for (Principal p : principals) {
                 suffix = suffix + ResourcesMgr.getString(".Principal.") +
                         p.toString() + ResourcesMgr.getString("NEWLINE");
             }
         }
 
         synchronized(pubCredentials) {
-            Iterator<Object> pI = pubCredentials.iterator();
-            while (pI.hasNext()) {
-                Object o = pI.next();
+            for (Object o : pubCredentials) {
                 suffix = suffix +
                         ResourcesMgr.getString(".Public.Credential.") +
                         o.toString() + ResourcesMgr.getString("NEWLINE");
@@ -951,17 +947,14 @@ public final class Subject implements java.io.Serializable {
         int hashCode = 0;
 
         synchronized(principals) {
-            Iterator<Principal> pIterator = principals.iterator();
-            while (pIterator.hasNext()) {
-                Principal p = pIterator.next();
+            for (Principal p : principals) {
                 hashCode ^= p.hashCode();
             }
         }
 
         synchronized(pubCredentials) {
-            Iterator<Object> pubCIterator = pubCredentials.iterator();
-            while (pubCIterator.hasNext()) {
-                hashCode ^= getCredHashCode(pubCIterator.next());
+            for (Object pubCredential : pubCredentials) {
+                hashCode ^= getCredHashCode(pubCredential);
             }
         }
         return hashCode;
@@ -1308,13 +1301,12 @@ public final class Subject implements java.io.Serializable {
                     });
                 }
 
-                Iterator<?> ce = c.iterator();
-                while (ce.hasNext()) {
-                    if (next.equals(ce.next())) {
-                            e.remove();
-                            modified = true;
-                            break;
-                        }
+                for (Object o : c) {
+                    if (next.equals(o)) {
+                        e.remove();
+                        modified = true;
+                        break;
+                    }
                 }
             }
             return modified;

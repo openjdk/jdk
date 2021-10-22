@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,14 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class BinaryParser implements GraphParser {
     private static final int BEGIN_GROUP = 0x00;
@@ -68,8 +69,6 @@ public class BinaryParser implements GraphParser {
     private static final int PROPERTY_SUBGRAPH = 0x08;
 
     private static final String NO_BLOCK = "noBlock";
-
-    private static final Charset utf8 = Charset.forName("UTF-8");
 
     private final GroupCallback callback;
     private final List<Object> constantPool;
@@ -341,7 +340,7 @@ public class BinaryParser implements GraphParser {
     }
 
     private String readString() throws IOException {
-        return new String(readBytes(), utf8).intern();
+        return new String(readBytes(), UTF_8).intern();
     }
 
     private byte[] readBytes() throws IOException {

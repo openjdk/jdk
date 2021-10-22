@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package javax.imageio.plugins.tiff;
 
-import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -401,11 +400,10 @@ public class TIFFTag {
         int[] intValues = null;
         if (valueNames != null) {
             Set<Integer> values = valueNames.keySet();
-            Iterator<Integer> iter = values.iterator();
             intValues = new int[values.size()];
             int i = 0;
-            while (iter.hasNext()) {
-                intValues[i++] = iter.next();
+            for (int value : values) {
+                intValues[i++] = value;
             }
         }
         return intValues;

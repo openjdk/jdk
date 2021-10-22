@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package build.tools.generatelsrequivmaps;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.ZoneId;
@@ -79,8 +78,7 @@ public class EquivMapsGenerator {
         String preferred = null;
         String prefix = null;
 
-        for (String line : Files.readAllLines(Paths.get(filename),
-                                              Charset.forName("UTF-8"))) {
+        for (String line : Files.readAllLines(Paths.get(filename))) {
             line = line.toLowerCase(Locale.ROOT);
             int index = line.indexOf(' ') + 1;
             if (line.startsWith("file-date:")) {

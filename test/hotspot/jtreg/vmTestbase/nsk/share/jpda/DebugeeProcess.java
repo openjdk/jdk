@@ -110,12 +110,16 @@ abstract public class DebugeeProcess extends FinalizableObject {
 
     // --------------------------------------------------- //
 
-    /** Created and return new IOPipe channel to the debugee VM. */
+    /** Create and return new IOPipe channel to the debuggee VM.
+     * The channel should be created before debuggee starts execution,
+     * i.e. the method assumes debuggee is started, but suspended before
+     * its main class is loaded.
+     */
     public IOPipe createIOPipe() {
         if (pipe != null) {
             throw new TestBug("IOPipe channel is already created");
         }
-        pipe = new IOPipe(this);
+        pipe = IOPipe.startDebuggerPipe(binder);
         return pipe;
     }
 

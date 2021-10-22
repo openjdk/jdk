@@ -6756,7 +6756,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             Object newValue = e.getNewValue();
 
                 // re-set tableModel listeners
-            if (name.compareTo("model") == 0) {
+            if (name.equals("model")) {
 
                 if (oldValue != null && oldValue instanceof TableModel) {
                     ((TableModel) oldValue).removeTableModelListener(this);
@@ -6766,7 +6766,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 }
 
                 // re-set selectionModel listeners
-            } else if (name.compareTo("selectionModel") == 0) {
+            } else if (name.equals("selectionModel")) {
 
                 Object source = e.getSource();
                 if (source == JTable.this) {    // row selection model
@@ -6797,7 +6797,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
                 // re-set columnModel listeners
                 // and column's selection property listener as well
-            } else if (name.compareTo("columnModel") == 0) {
+            } else if (name.equals("columnModel")) {
 
                 if (oldValue != null && oldValue instanceof TableColumnModel) {
                     TableColumnModel tcm = (TableColumnModel) oldValue;
@@ -6811,7 +6811,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 }
 
                 // re-se cellEditor listeners
-            } else if (name.compareTo("tableCellEditor") == 0) {
+            } else if (name.equals("tableCellEditor")) {
 
                 if (oldValue != null && oldValue instanceof TableCellEditor) {
                     ((TableCellEditor) oldValue).removeCellEditorListener(this);

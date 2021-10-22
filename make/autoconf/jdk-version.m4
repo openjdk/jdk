@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -525,7 +525,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
     # If VERSION_OPT consists of only numbers and periods, add it.
     if [ [[ $VERSION_OPT =~ ^[0-9\.]+$ ]] ]; then
-      MACOSX_BUNDLE_BUILD_VERSION+=".$VERSION_OPT"
+      MACOSX_BUNDLE_BUILD_VERSION="$MACOSX_BUNDLE_BUILD_VERSION.$VERSION_OPT"
     fi
   fi
   AC_SUBST(MACOSX_BUNDLE_BUILD_VERSION)

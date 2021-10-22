@@ -972,10 +972,13 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 
 // Visitors ...
 
-void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
+void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
   MonitorList::Iterator iter = _in_use_list.iterator();
   while (iter.has_next()) {
     ObjectMonitor* mid = iter.next();
+    if (mid->owner() != thread) {
+      continue;
+    }
     if (!mid->is_being_async_deflated() && mid->object_peek() != NULL) {
       // Only process with closure if the object is set.
 
@@ -1461,9 +1464,7 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
  public:
   ReleaseJavaMonitorsClosure(JavaThread* thread) : _thread(thread) {}
   void do_monitor(ObjectMonitor* mid) {
-    if (mid->owner() == _thread) {
-      (void)mid->complete_exit(_thread);
-    }
+    (void)mid->complete_exit(_thread);
   }
 };
 
@@ -1486,7 +1487,7 @@ void ObjectSynchronizer::release_monitors_owned_by_thread(JavaThread* current) {
   assert(current == JavaThread::current(), "must be current Java thread");
   NoSafepointVerifier nsv;
   ReleaseJavaMonitorsClosure rjmc(current);
-  ObjectSynchronizer::monitors_iterate(&rjmc);
+  ObjectSynchronizer::monitors_iterate(&rjmc, current);
   assert(!current->has_pending_exception(), "Should not be possible");
   current->clear_pending_exception();
 }

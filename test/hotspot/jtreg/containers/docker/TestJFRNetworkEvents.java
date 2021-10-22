@@ -51,7 +51,7 @@ public class TestJFRNetworkEvents {
             return;
         }
 
-        DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             runTest("jdk.SocketWrite");

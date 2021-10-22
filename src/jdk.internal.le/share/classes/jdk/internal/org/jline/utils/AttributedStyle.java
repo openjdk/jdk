@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2021, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -26,24 +26,28 @@ public class AttributedStyle {
 
     public static final int BRIGHT =    8;
 
-    static final int F_BOLD         = 0x00000001;
-    static final int F_FAINT        = 0x00000002;
-    static final int F_ITALIC       = 0x00000004;
-    static final int F_UNDERLINE    = 0x00000008;
-    static final int F_BLINK        = 0x00000010;
-    static final int F_INVERSE      = 0x00000020;
-    static final int F_CONCEAL      = 0x00000040;
-    static final int F_CROSSED_OUT  = 0x00000080;
-    static final int F_FOREGROUND   = 0x00000100;
-    static final int F_BACKGROUND   = 0x00000200;
-    static final int F_HIDDEN       = 0x00000400;
+    static final long F_BOLD            = 0x00000001;
+    static final long F_FAINT           = 0x00000002;
+    static final long F_ITALIC          = 0x00000004;
+    static final long F_UNDERLINE       = 0x00000008;
+    static final long F_BLINK           = 0x00000010;
+    static final long F_INVERSE         = 0x00000020;
+    static final long F_CONCEAL         = 0x00000040;
+    static final long F_CROSSED_OUT     = 0x00000080;
+    static final long F_FOREGROUND_IND  = 0x00000100;
+    static final long F_FOREGROUND_RGB  = 0x00000200;
+    static final long F_FOREGROUND      = F_FOREGROUND_IND | F_FOREGROUND_RGB;
+    static final long F_BACKGROUND_IND  = 0x00000400;
+    static final long F_BACKGROUND_RGB  = 0x00000800;
+    static final long F_BACKGROUND      = F_BACKGROUND_IND | F_BACKGROUND_RGB;
+    static final long F_HIDDEN          = 0x00001000;
 
-    static final int MASK           = 0x000007FF;
+    static final long MASK           = 0x00001FFF;
 
-    static final int FG_COLOR_EXP    = 16;
-    static final int BG_COLOR_EXP    = 24;
-    static final int FG_COLOR        = 0xFF << FG_COLOR_EXP;
-    static final int BG_COLOR        = 0xFF << BG_COLOR_EXP;
+    static final int FG_COLOR_EXP    = 15;
+    static final int BG_COLOR_EXP    = 39;
+    static final long FG_COLOR        = 0xFFFFFFL << FG_COLOR_EXP;
+    static final long BG_COLOR        = 0xFFFFFFL << BG_COLOR_EXP;
 
     public static final AttributedStyle DEFAULT = new AttributedStyle();
     public static final AttributedStyle BOLD = DEFAULT.bold();
@@ -53,8 +57,8 @@ public class AttributedStyle {
     public static final AttributedStyle HIDDEN = DEFAULT.hidden();
     public static final AttributedStyle HIDDEN_OFF = DEFAULT.hiddenOff();
 
-    final int style;
-    final int mask;
+    final long style;
+    final long mask;
 
     public AttributedStyle() {
         this(0, 0);
@@ -64,7 +68,7 @@ public class AttributedStyle {
         this(s.style, s.mask);
     }
 
-    public AttributedStyle(int style, int mask) {
+    public AttributedStyle(long style, long mask) {
         this.style = style;
         this.mask = mask & MASK | ((style & F_FOREGROUND) != 0 ? FG_COLOR : 0)
                                 | ((style & F_BACKGROUND) != 0 ? BG_COLOR : 0);
@@ -135,7 +139,7 @@ public class AttributedStyle {
     }
 
     public AttributedStyle inverseNeg() {
-        int s = (style & F_INVERSE) != 0 ? style & ~F_INVERSE : style | F_INVERSE;
+        long s = (style & F_INVERSE) != 0 ? style & ~F_INVERSE : style | F_INVERSE;
         return new AttributedStyle(s, mask | F_INVERSE);
     }
 
@@ -172,7 +176,15 @@ public class AttributedStyle {
     }
 
     public AttributedStyle foreground(int color) {
-        return new AttributedStyle(style & ~FG_COLOR | F_FOREGROUND | ((color << FG_COLOR_EXP) & FG_COLOR), mask | F_FOREGROUND);
+        return new AttributedStyle(style & ~FG_COLOR | F_FOREGROUND_IND | (((long) color << FG_COLOR_EXP) & FG_COLOR), mask | F_FOREGROUND_IND);
+    }
+
+    public AttributedStyle foreground(int r, int g, int b) {
+        return foregroundRgb(r << 16 | g << 8 | b);
+    }
+
+    public AttributedStyle foregroundRgb(int color) {
+        return new AttributedStyle(style & ~FG_COLOR | F_FOREGROUND_RGB | ((((long) color & 0xFFFFFF) << FG_COLOR_EXP) & FG_COLOR), mask | F_FOREGROUND_RGB);
     }
 
     public AttributedStyle foregroundOff() {
@@ -184,7 +196,15 @@ public class AttributedStyle {
     }
 
     public AttributedStyle background(int color) {
-        return new AttributedStyle(style & ~BG_COLOR | F_BACKGROUND | ((color << BG_COLOR_EXP) & BG_COLOR), mask | F_BACKGROUND);
+        return new AttributedStyle(style & ~BG_COLOR | F_BACKGROUND_IND | (((long) color << BG_COLOR_EXP) & BG_COLOR), mask | F_BACKGROUND_IND);
+    }
+
+    public AttributedStyle background(int r, int g, int b) {
+        return backgroundRgb(r << 16 | g << 8 | b);
+    }
+
+    public AttributedStyle backgroundRgb(int color) {
+        return new AttributedStyle(style & ~BG_COLOR | F_BACKGROUND_RGB | ((((long) color & 0xFFFFFF) << BG_COLOR_EXP) & BG_COLOR), mask | F_BACKGROUND_RGB);
     }
 
     public AttributedStyle backgroundOff() {
@@ -214,11 +234,11 @@ public class AttributedStyle {
         return new AttributedStyle(style & ~F_HIDDEN, mask & ~F_HIDDEN);
     }
 
-    public int getStyle() {
+    public long getStyle() {
         return style;
     }
 
-    public int getMask() {
+    public long getMask() {
         return mask;
     }
 
@@ -234,8 +254,22 @@ public class AttributedStyle {
 
     @Override
     public int hashCode() {
-        int result = style;
-        result = 31 * result + mask;
-        return result;
+        return 31 * Long.hashCode(style) + Long.hashCode(mask);
+    }
+
+    public String toAnsi() {
+        AttributedStringBuilder sb = new AttributedStringBuilder();
+        sb.styled(this, " ");
+        String s = sb.toAnsi(AttributedCharSequence.TRUE_COLORS, AttributedCharSequence.ForceMode.None);
+        return s.length() > 1 ? s.substring(2, s.indexOf('m')) : s;
+    }
+
+    @Override
+    public String toString() {
+        return "AttributedStyle{" +
+                "style=" + style +
+                ", mask=" + mask +
+                ", ansi=" + toAnsi() +
+                '}';
     }
 }

@@ -1376,7 +1376,7 @@ public class DatagramSocket implements java.io.Closeable {
      *                 {@code java.net.MulticastSocket}.
      * @return {@code null} if {@code bindaddr == NO_DELEGATE}, otherwise returns a
      * delegate for the requested {@code type}.
-     * @throws SocketException if an exception occurs while creating or binding the
+     * @throws SocketException if an exception occurs while creating or binding
      *                         the delegate.
      */
     static <T extends DatagramSocket> T createDelegate(SocketAddress bindaddr, Class<T> type)

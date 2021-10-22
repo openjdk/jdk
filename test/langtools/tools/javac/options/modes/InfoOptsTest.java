@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8044859 8230623
+ * @bug 8044859 8230623 8266239
  * @summary test support for info options -help -X -version -fullversion --help-lint
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -65,5 +65,27 @@ public class InfoOptsTest extends OptionModesTester {
 
         runParse(opts, files)
                 .checkIllegalArgumentException();
+    }
+
+    @Test
+    void testUniqueInfoOpts() throws IOException {
+        testUniqueInfoOpt(new String[] {"--help"},       new String[] {"--help", "--help"});
+        testUniqueInfoOpt(new String[] {"-X"},           new String[] {"-X", "-X"});
+        testUniqueInfoOpt(new String[] {"--help-lint"},  new String[] {"--help-lint", "--help-lint"});
+
+        testUniqueInfoOpt(new String[] {"-version"},     new String[] {"-version", "-version"});
+        testUniqueInfoOpt(new String[] {"-fullversion"}, new String[] {"-fullversion", "-fullversion"});
+    }
+
+    void testUniqueInfoOpt(String[] baseOpts, String[] testOpts) {
+        String[] files = { };
+
+        TestResult base = runMain(baseOpts, files)
+                                 .checkOK();
+
+        TestResult test = runMain(testOpts, files)
+                                 .checkOK();
+
+        base.checkSameLog(test);
     }
 }

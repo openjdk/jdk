@@ -244,8 +244,6 @@ class VM_CollectForMetadataAllocation: public VM_GC_Operation {
   virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();
   MetaWord* result() const       { return _result; }
-
-  bool initiate_concurrent_GC();
 };
 
 class SvcGCMarker : public StackObj {

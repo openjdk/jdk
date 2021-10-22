@@ -145,8 +145,8 @@ import sun.security.action.GetIntegerAction;
  * entire graphs.
  *
  * <p>Serializable classes that require special handling during the
- * serialization and deserialization process should implement the following
- * methods:
+ * serialization and deserialization process should implement methods
+ * with the following signatures:
  *
  * <pre>
  * private void writeObject(java.io.ObjectOutputStream stream)
@@ -156,6 +156,12 @@ import sun.security.action.GetIntegerAction;
  * private void readObjectNoData()
  *     throws ObjectStreamException;
  * </pre>
+ *
+ * <p>The method name, modifiers, return type, and number and type of
+ * parameters must match exactly for the method to be used by
+ * serialization or deserialization. The methods should only be
+ * declared to throw checked exceptions consistent with these
+ * signatures.
  *
  * <p>The readObject method is responsible for reading and restoring the state
  * of the object for its particular class using data written to the stream by
@@ -879,14 +885,14 @@ public class ObjectInputStream
      * objects is disabled until enableResolveObject is called. The
      * enableResolveObject method checks that the stream requesting to resolve
      * object can be trusted. Every reference to serializable objects is passed
-     * to resolveObject.  To insure that the private state of objects is not
+     * to resolveObject.  To ensure that the private state of objects is not
      * unintentionally exposed only trusted streams may use resolveObject.
      *
      * <p>This method is called after an object has been read but before it is
      * returned from readObject.  The default resolveObject method just returns
      * the same object.
      *
-     * <p>When a subclass is replacing objects it must insure that the
+     * <p>When a subclass is replacing objects it must ensure that the
      * substituted object is compatible with every field where the reference
      * will be stored.  Objects whose type is not a subclass of the type of the
      * field or array element abort the deserialization by raising an exception

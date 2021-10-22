@@ -277,9 +277,10 @@ public class TransPatterns extends TreeTranslator {
                               List<JCCase> cases,
                               boolean hasTotalPattern,
                               boolean patternSwitch) {
-        Type seltype = selector.type;
-
         if (patternSwitch) {
+            Type seltype = selector.type.hasTag(BOT)
+                    ? syms.objectType
+                    : selector.type;
             Assert.check(preview.isEnabled());
             Assert.check(preview.usesPreview(env.toplevel.sourcefile));
 
@@ -340,9 +341,8 @@ public class TransPatterns extends TreeTranslator {
             JCCase lastCase = cases.last();
 
             if (hasTotalPattern && !hasNullCase) {
-                JCCase last = lastCase;
-                if (last.labels.stream().noneMatch(l -> l.hasTag(Tag.DEFAULTCASELABEL))) {
-                    last.labels = last.labels.prepend(makeLit(syms.botType, null));
+                if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(l -> l.hasTag(Tag.DEFAULTCASELABEL))) {
+                    lastCase.labels = lastCase.labels.prepend(makeLit(syms.botType, null));
                     hasNullCase = true;
                 }
             }

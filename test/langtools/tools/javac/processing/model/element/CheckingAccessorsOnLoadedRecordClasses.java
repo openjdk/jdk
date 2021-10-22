@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,25 +42,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.RecordComponentElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.ElementScanner14;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.*;
 
 import java.lang.annotation.*;
 import java.util.*;
+import javax.lang.model.SourceVersion;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
-import javax.tools.Diagnostic.Kind;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -185,22 +174,20 @@ public class CheckingAccessorsOnLoadedRecordClasses extends TestRunner {
 
             if (recordComponents.isEmpty()) {
                 processingEnv.getMessager()
-                        .printMessage(Diagnostic.Kind.ERROR, "Record element " + recordElement.getQualifiedName()
-                                + " has no record components");
+                        .printError("Record element " + recordElement.getQualifiedName()
+                                    + " has no record components");
             } else {
                 for (RecordComponentElement recordComponent : recordComponents) {
                     ExecutableElement accessor = recordComponent.getAccessor();
                     if (accessor == null) {
                         processingEnv.getMessager()
-                                .printMessage(Diagnostic.Kind.ERROR,
-                                        "Record component " + recordComponent.getSimpleName() + " from record " + recordElement
-                                                .getQualifiedName() + " has no accessor");
+                                .printError("Record component " + recordComponent.getSimpleName() + " from record " + recordElement
+                                            .getQualifiedName() + " has no accessor");
                     }
                     if (!accessor.getSimpleName().equals(recordComponent.getSimpleName())) {
                         processingEnv.getMessager()
-                                .printMessage(Diagnostic.Kind.ERROR,
-                                        "Record component " + recordComponent.getSimpleName() + " from record " +
-                                                recordElement.getQualifiedName() + " has an accessor with name " + accessor.getSimpleName());
+                                .printError("Record component " + recordComponent.getSimpleName() + " from record " +
+                                            recordElement.getQualifiedName() + " has an accessor with name " + accessor.getSimpleName());
                     }
                 }
             }

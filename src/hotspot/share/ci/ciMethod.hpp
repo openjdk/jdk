@@ -365,6 +365,7 @@ class ciMethod : public ciMetadata {
   bool can_be_statically_bound(ciInstanceKlass* context) const;
 
   // Replay data methods
+  static void dump_name_as_ascii(outputStream* st, Method* method);
   void dump_name_as_ascii(outputStream* st);
   void dump_replay_data(outputStream* st);
 

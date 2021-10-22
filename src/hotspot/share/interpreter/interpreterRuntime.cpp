@@ -1320,7 +1320,8 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
                           fingerprint,
                           buffer.insts_size());
             if (buffer.insts_size() > 0) {
-              Disassembler::decode(handler, handler + buffer.insts_size());
+              Disassembler::decode(handler, handler + buffer.insts_size(), tty
+                                   NOT_PRODUCT(COMMA &buffer.asm_remarks()));
             }
 #ifndef PRODUCT
             address rh_begin = Interpreter::result_handler(method()->result_type());

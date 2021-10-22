@@ -948,6 +948,15 @@ void JavaThread::check_possible_safepoint() {
   // Clear unhandled oops in JavaThreads so we get a crash right away.
   clear_unhandled_oops();
 #endif // CHECK_UNHANDLED_OOPS
+
+  // Macos/aarch64 should be in the right state for safepoint (e.g.
+  // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
+  // happens in practice, making such issues hard to find and reproduce.
+#if defined(__APPLE__) && defined(AARCH64)
+  if (AssertWXAtThreadSync) {
+    assert_wx_state(WXWrite);
+  }
+#endif
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
@@ -992,8 +1001,10 @@ JavaThread::JavaThread() :
   _monitor_chunks(nullptr),
 
   _suspend_flags(0),
-  _async_exception_condition(_no_async_condition),
   _pending_async_exception(nullptr),
+#ifdef ASSERT
+  _is_unsafe_access_error(false),
+#endif
 
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
@@ -1015,8 +1026,8 @@ JavaThread::JavaThread() :
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _jvmci_counters(nullptr),
-  _jvmci_reserved0(nullptr),
-  _jvmci_reserved1(nullptr),
+  _jvmci_reserved0(0),
+  _jvmci_reserved1(0),
   _jvmci_reserved_oop0(nullptr),
 #endif // INCLUDE_JVMCI
 
@@ -1227,7 +1238,9 @@ void JavaThread::run() {
 
   // Thread is now sufficiently initialized to be handled by the safepoint code as being
   // in the VM. Change thread state from _thread_new to _thread_in_vm
-  ThreadStateTransition::transition(this, _thread_new, _thread_in_vm);
+  assert(this->thread_state() == _thread_new, "wrong thread state");
+  set_thread_state(_thread_in_vm);
+
   // Before a thread is on the threads list it is always safe, so after leaving the
   // _thread_new we should emit a instruction barrier. The distance to modified code
   // from here is probably far enough, but this is consistent and safe.
@@ -1561,9 +1574,6 @@ void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
 
 // Asynchronous exceptions support
 //
-// Note: this function shouldn't block if it's called in
-// _thread_in_native_trans state (such as from
-// check_special_condition_for_native_trans()).
 void JavaThread::check_and_handle_async_exceptions() {
   if (has_last_Java_frame() && has_async_exception_condition()) {
     // If we are at a polling page safepoint (not a poll return)
@@ -1589,21 +1599,12 @@ void JavaThread::check_and_handle_async_exceptions() {
     }
   }
 
-  AsyncExceptionCondition condition = clear_async_exception_condition();
-  if (condition == _no_async_condition) {
-    // Conditions have changed since has_special_runtime_exit_condition()
-    // was called:
-    // - if we were here only because of an external suspend request,
-    //   then that was taken care of above (or cancelled) so we are done
-    // - if we were here because of another async request, then it has
-    //   been cleared between the has_special_runtime_exit_condition()
-    //   and now so again we are done
+  if (!clear_async_exception_condition()) {
     return;
   }
 
-  // Check for pending async. exception
   if (_pending_async_exception != NULL) {
-    // Only overwrite an already pending exception, if it is not a threadDeath.
+    // Only overwrite an already pending exception if it is not a threadDeath.
     if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
 
       // We cannot call Exceptions::_throw(...) here because we cannot block
@@ -1620,39 +1621,35 @@ void JavaThread::check_and_handle_async_exceptions() {
           }
         ls.print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
       }
-      _pending_async_exception = NULL;
-      // Clear condition from _suspend_flags since we have finished processing it.
-      clear_suspend_flag(_has_async_exception);
     }
-  }
+    // Always null out the _pending_async_exception oop here since the async condition was
+    // already cleared above and thus considered handled.
+    _pending_async_exception = NULL;
+  } else {
+    assert(_is_unsafe_access_error, "must be");
+    DEBUG_ONLY(_is_unsafe_access_error = false);
 
-  if (condition == _async_unsafe_access_error && !has_pending_exception()) {
     // We may be at method entry which requires we save the do-not-unlock flag.
     UnlockFlagSaver fs(this);
     switch (thread_state()) {
     case _thread_in_vm: {
       JavaThread* THREAD = this;
       Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
-      return;
-    }
-    case _thread_in_native: {
-      ThreadInVMfromNative tiv(this);
-      JavaThread* THREAD = this;
-      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
+      // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
+      // suspend requests and object reallocation operations if any since we might be going to Java after this.
+      SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
       return;
     }
     case _thread_in_Java: {
       ThreadInVMfromJava tiv(this);
       JavaThread* THREAD = this;
-      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in a recent unsafe memory access operation in compiled Java code");
+      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation in compiled Java code");
       return;
     }
     default:
       ShouldNotReachHere();
     }
   }
-
-  assert(has_pending_exception(), "must have handled the async condition if no exception");
 }
 
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
@@ -1685,9 +1682,8 @@ public:
   }
 };
 
-void JavaThread::send_async_exception(oop java_thread, oop java_throwable) {
+void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   Handle throwable(Thread::current(), java_throwable);
-  JavaThread* target = java_lang_Thread::thread(java_thread);
   InstallAsyncExceptionClosure vm_stop(throwable);
   Handshake::execute(&vm_stop, target);
 }
@@ -1836,21 +1832,17 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
 
+  thread->set_thread_state(_thread_in_vm);
+
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
-  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
+  SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
 
   // After returning from native, it could be that the stack frames are not
   // yet safe to use. We catch such situations in the subsequent stack watermark
   // barrier, which will trap unsafe stack frames.
   StackWatermarkSet::before_unwind(thread);
-
-  if (thread->has_async_exception_condition(false /* check unsafe access error */)) {
-    // We are in _thread_in_native_trans state, don't handle unsafe
-    // access error since that may block.
-    thread->check_and_handle_async_exceptions();
-  }
 }
 
 #ifndef PRODUCT

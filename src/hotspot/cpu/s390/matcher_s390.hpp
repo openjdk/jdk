@@ -57,6 +57,9 @@
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
 
+  // No support for 48 extra htbl entries in aes-gcm intrinsic
+  static const int htbl_entries = -1;
+
   static constexpr bool isSimpleConstant64(jlong value) {
     // Probably always true, even if a temp register is required.
     return true;
@@ -128,6 +131,11 @@
     return false;
   }
 
+  // Does the CPU supports vector constant rotate instructions?
+  static constexpr bool supports_vector_constant_rotates(int shift) {
+    return false;
+  }
+
   // Does the CPU supports vector unsigned comparison instructions?
   static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
     return false;
@@ -143,5 +151,8 @@
   static constexpr bool convL2FSupported(void) {
       return true;
   }
+
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = false;
 
 #endif // CPU_S390_MATCHER_S390_HPP

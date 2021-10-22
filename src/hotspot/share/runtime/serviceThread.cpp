@@ -47,6 +47,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
+#include "services/finalizerService.hpp"
 #include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/threadIdTable.hpp"
@@ -115,6 +116,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool has_dcmd_notification_event = false;
     bool stringtable_work = false;
     bool symboltable_work = false;
+    bool finalizerservice_work = false;
     bool resolved_method_table_work = false;
     bool thread_id_table_work = false;
     bool protection_domain_table_work = false;
@@ -145,6 +147,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (has_dcmd_notification_event = (!UseNotificationThread && DCmdFactory::has_pending_jmx_notification())) |
               (stringtable_work = StringTable::has_work()) |
               (symboltable_work = SymbolTable::has_work()) |
+              (finalizerservice_work = FinalizerService::has_work()) |
               (resolved_method_table_work = ResolvedMethodTable::has_work()) |
               (thread_id_table_work = ThreadIdTable::has_work()) |
               (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
@@ -170,6 +173,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (symboltable_work) {
       SymbolTable::do_concurrent_work(jt);
+    }
+
+    if (finalizerservice_work) {
+      FinalizerService::do_concurrent_work(jt);
     }
 
     if (has_jvmti_events) {

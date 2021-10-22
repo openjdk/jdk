@@ -950,7 +950,6 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // has been updated.  KKK likely resides in a region to the left of the region
 // containing AAA.  These AAA's have there references updated at the end in a
 // clean up phase.  See the method PSParallelCompact::update_deferred_objects().
-// An alternate strategy is being investigated for this deferral of updating.
 //
 // Compaction is done on a region basis.  A region that is ready to be filled is
 // put on a ready list and GC threads take region off the list and fill them.  A
@@ -961,6 +960,25 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // regions and regions compacting into themselves.  There is always at least 1
 // region that can be put on the ready list.  The regions are atomically added
 // and removed from the ready list.
+//
+// During compaction, there is a natural task dependency among regions because
+// destination regions may also be source regions themselves.  Consequently, the
+// destination regions are not available for processing until all live objects
+// within them are evacuated to their destinations.  These dependencies lead to
+// limited thread utilization as threads spin waiting on regions to be ready.
+// Shadow regions are utilized to address these region dependencies.  The basic
+// idea is that, if a region is unavailable because it still contains live
+// objects and thus cannot serve as a destination momentarily, the GC thread
+// may allocate a shadow region as a substitute destination and directly copy
+// live objects into this shadow region.  Live objects in the shadow region will
+// be copied into the target destination region when it becomes available.
+//
+// For more details on shadow regions, please refer to §4.2 of the VEE'19 paper:
+// Haoyu Li, Mingyu Wu, Binyu Zang, and Haibo Chen.  2019.  ScissorGC: scalable
+// and efficient compaction for Java full garbage collection.  In Proceedings of
+// the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution
+// Environments (VEE 2019).  ACM, New York, NY, USA, 108-121.  DOI:
+// https://doi.org/10.1145/3313808.3313820
 
 class TaskQueue;
 
@@ -1045,7 +1063,6 @@ class PSParallelCompact : AllStatic {
 
   // Mark live objects
   static void marking_phase(ParCompactionManager* cm,
-                            bool maximum_heap_compaction,
                             ParallelOldTracer *gc_tracer);
 
   // Compute the dense prefix for the designated space.  This is an experimental
@@ -1114,7 +1131,6 @@ class PSParallelCompact : AllStatic {
   DEBUG_ONLY(static void write_block_fill_histogram();)
 
   // Move objects to new locations.
-  static void compact_perm(ParCompactionManager* cm);
   static void compact();
 
   // Add available regions to the stack and draining tasks to the task queue.

@@ -45,7 +45,7 @@
 G1CardSet::CardSetPtr G1CardSet::FullCardSet = (G1CardSet::CardSetPtr)-1;
 
 G1CardSetConfiguration::G1CardSetConfiguration() :
-  _inline_ptr_bits_per_card(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift) {
+  _inline_ptr_bits_per_card(HeapRegion::LogCardsPerRegion) {
 
   // Array of Cards card set container size calculation
   _num_cards_in_array = G1RemSetArrayOfCardsEntries;
@@ -64,6 +64,8 @@ G1CardSetConfiguration::G1CardSetConfiguration() :
   _log2_num_cards_in_howl_bitmap = log2i_exact(_num_cards_in_howl_bitmap);
   _cards_in_howl_bitmap_threshold = _num_cards_in_howl_bitmap * (double)G1RemSetCoarsenHowlBitmapToHowlFullPercent / 100;
   _bitmap_hash_mask = ~(~(0) << _log2_num_cards_in_howl_bitmap);
+
+  init_card_set_alloc_options();
 
   log_configuration();
 }
@@ -89,7 +91,21 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _log2_num_cards_in_howl_bitmap = log2i_exact(_num_cards_in_howl_bitmap);
   _bitmap_hash_mask = ~(~(0) << _log2_num_cards_in_howl_bitmap);
 
+  init_card_set_alloc_options();
+
   log_configuration();
+}
+
+G1CardSetConfiguration::~G1CardSetConfiguration() {
+  FREE_C_HEAP_ARRAY(size_t, _card_set_alloc_options);
+}
+
+void G1CardSetConfiguration::init_card_set_alloc_options() {
+  _card_set_alloc_options = NEW_C_HEAP_ARRAY(G1CardSetAllocOptions, num_mem_object_types(), mtGC);
+  new (&_card_set_alloc_options[0]) G1CardSetAllocOptions((uint)CardSetHash::get_node_size());
+  new (&_card_set_alloc_options[1]) G1CardSetAllocOptions((uint)G1CardSetArray::size_in_bytes(_num_cards_in_array), 2, 256);
+  new (&_card_set_alloc_options[2]) G1CardSetAllocOptions((uint)G1CardSetBitMap::size_in_bytes(_num_cards_in_howl_bitmap), 2, 256);
+  new (&_card_set_alloc_options[3]) G1CardSetAllocOptions((uint)G1CardSetHowl::size_in_bytes(_num_buckets_in_howl), 2, 256);
 }
 
 void G1CardSetConfiguration::log_configuration() {
@@ -112,15 +128,8 @@ uint G1CardSetConfiguration::num_cards_in_inline_ptr(uint bits_per_card) {
   return G1CardSetInlinePtr::max_cards_in_inline_ptr(bits_per_card);
 }
 
-G1CardSetAllocOptions* G1CardSetConfiguration::mem_object_alloc_options() {
-  G1CardSetAllocOptions* result = NEW_C_HEAP_ARRAY(G1CardSetAllocOptions, num_mem_object_types(), mtGC);
-
-  result[0] = { (uint)CardSetHash::get_node_size() };
-  result[1] = { (uint)G1CardSetArray::size_in_bytes(num_cards_in_array()), 2, 256 };
-  result[2] = { (uint)G1CardSetBitMap::size_in_bytes(num_cards_in_howl_bitmap()), 2, 256 };
-  result[3] = { (uint)G1CardSetHowl::size_in_bytes(num_buckets_in_howl()), 2, 256 };
-
-  return result;
+const G1CardSetAllocOptions* G1CardSetConfiguration::mem_object_alloc_options(uint idx) {
+  return &_card_set_alloc_options[idx];
 }
 
 const char* G1CardSetConfiguration::mem_object_type_name_str(uint index) {
@@ -194,6 +203,8 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   class G1CardSetHashTableFound : public StackObj {
     G1CardSetHashTableValue* _value;
   public:
+    G1CardSetHashTableFound() : _value(nullptr) { }
+
     void operator()(G1CardSetHashTableValue* value) {
       _value = value;
     }
@@ -247,14 +258,12 @@ public:
     return found.value();
   }
 
-  CardSetPtr get(uint region_idx) {
+  G1CardSetHashTableValue* get(uint region_idx) {
     G1CardSetHashTableLookUp lookup(region_idx);
     G1CardSetHashTableFound found;
 
-    if (_table.get(Thread::current(), lookup, found)) {
-      return found.value()->_card_set;
-    }
-    return nullptr;
+    _table.get(Thread::current(), lookup, found);
+    return found.value();
   }
 
   void iterate_safepoint(G1CardSet::G1CardSetPtrIterator* cl2) {
@@ -611,8 +620,9 @@ void G1CardSet::transfer_cards_in_howl(CardSetPtr parent_card_set,
     G1CardSetHowl* howling_array = card_set_ptr<G1CardSetHowl>(parent_card_set);
     Atomic::add(&howling_array->_num_entries, diff, memory_order_relaxed);
 
-    bool should_grow_table = false;
-    G1CardSetHashTableValue* table_entry = get_or_add_card_set(card_region, &should_grow_table);
+    G1CardSetHashTableValue* table_entry = get_card_set(card_region);
+    assert(table_entry != nullptr, "Table entry not found for transferred cards");
+
     Atomic::add(&table_entry->_num_occupied, diff, memory_order_relaxed);
 
     Atomic::add(&_num_occupied, diff, memory_order_relaxed);
@@ -656,7 +666,7 @@ G1CardSetHashTableValue* G1CardSet::get_or_add_card_set(uint card_region, bool* 
   return _table->get_or_add(card_region, should_grow_table);
 }
 
-G1CardSet::CardSetPtr G1CardSet::get_card_set(uint card_region) {
+G1CardSetHashTableValue* G1CardSet::get_card_set(uint card_region) {
   return _table->get(card_region);
 }
 
@@ -709,10 +719,13 @@ bool G1CardSet::contains_card(uint card_region, uint card_in_region) {
 
   // Protect the card set from reclamation.
   GlobalCounter::CriticalSection cs(Thread::current());
-  CardSetPtr card_set = get_card_set(card_region);
-  if (card_set == nullptr) {
+  G1CardSetHashTableValue* table_entry = get_card_set(card_region);
+  if (table_entry == nullptr) {
     return false;
-  } else if (card_set == FullCardSet) {
+  }
+
+  CardSetPtr card_set = table_entry->_card_set;
+  if (card_set == FullCardSet) {
     // contains_card() is not a performance critical method so we do not hide that
     // case in the switch below.
     return true;
@@ -736,11 +749,14 @@ bool G1CardSet::contains_card(uint card_region, uint card_in_region) {
 }
 
 void G1CardSet::print_info(outputStream* st, uint card_region, uint card_in_region) {
-  CardSetPtr card_set = get_card_set(card_region);
-  if (card_set == nullptr) {
+  G1CardSetHashTableValue* table_entry = get_card_set(card_region);
+  if (table_entry == nullptr) {
     st->print("NULL card set");
     return;
-  } else if (card_set == FullCardSet) {
+  }
+
+  CardSetPtr card_set = table_entry->_card_set;
+  if (card_set == FullCardSet) {
     st->print("FULL card set)");
     return;
   }

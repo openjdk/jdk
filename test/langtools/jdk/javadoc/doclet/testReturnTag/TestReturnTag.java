@@ -379,7 +379,7 @@ public class TestReturnTag extends JavadocTester {
 
         checkOutput("C.html", true,
                 """
-                    <div class="block"><span class="descfrm-type-label">Description copied from class:&nbsp;<code>Super</code></span></div>
+                    <div class="block"><span class="description-from-type-label">Description copied from class:&nbsp;<code>Super</code></span></div>
                     <div class="block">Returns the result.</div>
                     <dl class="notes">
                     <dt>Overrides:</dt>

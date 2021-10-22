@@ -43,6 +43,7 @@ class ciInstanceKlass : public ciKlass {
   friend class ciExceptionHandler;
   friend class ciMethod;
   friend class ciField;
+  friend class ciReplay;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };
@@ -165,6 +166,9 @@ public:
     return compute_shared_has_subklass();
   }
 
+  jint                   layout_helper_size_in_bytes()  {
+    return Klass::layout_helper_size_in_bytes(layout_helper());
+  }
   jint                   size_helper()  {
     return (Klass::layout_helper_size_in_bytes(layout_helper())
             >> LogHeapWordSize);
@@ -293,8 +297,13 @@ public:
     return !is_interface() && !is_abstract();
   }
 
+  // Replay support
+
   // Dump the current state of this klass for compilation replay.
   virtual void dump_replay_data(outputStream* out);
+
+  // Return stable class name suitable for replay file.
+  const char *replay_name() const;
 
 #ifdef ASSERT
   bool debug_final_field_at(int offset);
