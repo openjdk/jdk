@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 6263419
- * @summary No way to clean the memory for a java.security.Key
+ * @bug 6263419 8158689
+ * @summary Tests Destroyable interface on SecretKey, PublicKey, PrivateKey,
+ * and KeyPair classes.
  */
 
 import java.security.*;
@@ -40,6 +41,8 @@ public class KeyDestructionTest {
         // Check keys that support and have implemented key destruction
         testKeyDestruction(new MyDestroyableSecretKey());
         testKeyDestruction(new MyDestroyablePrivateKey());
+        testKeyPairDestruction(new KeyPair(keypair.getPublic(),
+            new MyDestroyablePrivateKey()));
 
         // Check keys that support but have not implemented key destruction
         testNoKeyDestruction(generateSecretKey("AES", 128));
@@ -122,6 +125,27 @@ public class KeyDestructionTest {
             return;
         }
         throw new Exception("error: key may been unexpectedly destroyed");
+    }
+
+    // Check the behaviour of a key that does not implement key destruction
+    private static void testKeyPairDestruction(KeyPair keypair)
+        throws Exception {
+
+        if (keypair.isDestroyed()) {
+            throw new Exception("KeyPair.privateKey unexpectedly destroyed.");
+        }
+
+        try {
+            keypair.destroy();
+        } catch (DestroyFailedException dfe) {
+            throw new Exception("KeyPair.privateKey wasn't able to be" +
+                " destroyed");
+        }
+
+        if (!keypair.isDestroyed()) {
+            throw new Exception("KeyPair.privateKey should have been " +
+                "destroyed");
+        }
     }
 
     private static KeyPair generateKeyPair(String algorithm, int size)

@@ -25,7 +25,9 @@
 
 package java.security;
 
-import java.util.*;
+import javax.security.auth.DestroyFailedException;
+import javax.security.auth.Destroyable;
+import java.io.Serializable;
 
 /**
  * This class is a simple holder for a key pair (a public key and a
@@ -39,16 +41,16 @@ import java.util.*;
  * @since 1.1
  */
 
-public final class KeyPair implements java.io.Serializable {
+public final class KeyPair implements Serializable, Destroyable {
 
     @java.io.Serial
     private static final long serialVersionUID = -7565189502268009837L;
 
     /** The private key. */
-    private PrivateKey privateKey;
+    private final PrivateKey privateKey;
 
     /** The public key. */
-    private PublicKey publicKey;
+    private final PublicKey publicKey;
 
     /**
      * Constructs a key pair from the given public key and private key.
@@ -82,5 +84,34 @@ public final class KeyPair implements java.io.Serializable {
      */
     public PrivateKey getPrivate() {
         return privateKey;
+    }
+
+    /**
+     * Check if the private key has been destroyed.
+     *
+     * @return true is if the private key has been destroyed.
+     *
+     * @since 18
+     */
+    @Override
+    public boolean isDestroyed() {
+        return (privateKey == null || privateKey.isDestroyed());
+    }
+
+    /**
+     * Call to destroy the private key in this key pair. DestroyFailedException
+     * will be thrown if the private key object does not implement a destroy
+     * method.
+     *
+     * @throws DestroyFailedException if the destroy operation fails or there is
+     * no underlying destroy method.
+     *
+     * @since 18
+     */
+    @Override
+    public void destroy() throws DestroyFailedException {
+        if (privateKey != null) {
+            privateKey.destroy();
+        }
     }
 }
