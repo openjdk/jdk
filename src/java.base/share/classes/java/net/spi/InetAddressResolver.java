@@ -31,13 +31,13 @@ import java.net.UnknownHostException;
 import java.util.stream.Stream;
 
 /**
- * This interface defines operations for looking-up host names and IP addresses.
+ * This interface defines operations for looking up host names and IP addresses.
  * An instance of {@code InetAddressResolver} is
- * <a href="InetAddressResolverProvider.html#system-wide-resolver">installed</a> as a
- * <i>system-wide resolver</i>. {@link InetAddress} delegates all lookup requests to
- * the installed <i>system-wide resolver</i> instance.
- * <p>
- * The <i>system-wide resolver</i> can be customized by
+ * deployed as a <a href="InetAddressResolverProvider.html#system-wide-resolver">
+ * system-wide resolver</a>. {@link InetAddress} delegates all lookup requests to
+ * the deployed <i>system-wide resolver</i> instance.
+ *
+ * <p> The <i>system-wide resolver</i> can be customized by
  * <a href="InetAddressResolverProvider.html#system-wide-resolver">
  * deploying an implementation</a> of {@link InetAddressResolverProvider}.
  *
@@ -48,21 +48,23 @@ public interface InetAddressResolver {
     /**
      * Given the name of a host, returns a stream of IP addresses of the requested
      * address family associated with a provided hostname.
-     * <p>
-     * {@code host} should be a machine name, such as "{@code www.example.com}",
+     *
+     * <p> {@code host} should be a machine name, such as "{@code www.example.com}",
      * not a textual representation of its IP address. No validation is performed on
      * the given {@code host} name: if a textual representation is supplied, the name
      * resolution is likely to fail and {@link UnknownHostException} may be thrown.
-     * <p>
-     * The address family type and addresses order are specified by the {@code LookupPolicy} instance.
-     * Lookup operation characteristics could be acquired with {@link LookupPolicy#characteristics()}. If
-     * {@link InetAddressResolver.LookupPolicy#IPV4} and {@link InetAddressResolver.LookupPolicy#IPV6}
-     * characteristics provided then this method returns addresses of both IPV4 and IPV6 families.
+     *
+     * <p> The address family type and addresses order are specified by the
+     * {@code LookupPolicy} instance. Lookup operation characteristics could be
+     * acquired with {@link LookupPolicy#characteristics()}.
+     * If {@link InetAddressResolver.LookupPolicy#IPV4} and
+     * {@link InetAddressResolver.LookupPolicy#IPV6} characteristics provided then this
+     * method returns addresses of both IPV4 and IPV6 families.
      *
      * @param host         the specified hostname
      * @param lookupPolicy the address lookup policy
      * @return a stream of IP addresses for the requested host
-     * @throws NullPointerException if {@code host} is {@code null}
+     * @throws NullPointerException if either parameter is {@code null}
      * @throws UnknownHostException if no IP address for the {@code host} could be found
      * @see LookupPolicy
      */
@@ -71,7 +73,7 @@ public interface InetAddressResolver {
     /**
      * Lookup the host name corresponding to the raw IP address provided.
      *
-     * <p>{@code addr} argument is in network byte order: the highest order byte of the address
+     * <p> {@code addr} argument is in network byte order: the highest order byte of the address
      * is in {@code addr[0]}.
      *
      * <p> IPv4 address byte array must be 4 bytes long and IPv6 byte array
@@ -79,17 +81,18 @@ public interface InetAddressResolver {
      *
      * @param addr byte array representing a raw IP address
      * @return {@code String} representing the host name mapping
-     * @throws UnknownHostException     if no host found for the specified IP address
-     * @throws IllegalArgumentException if IP address is of illegal length
+     * @throws UnknownHostException     if no host name is found for the specified IP address
+     * @throws IllegalArgumentException if the length of the provided byte array doesn't correspond
+     *                                  to a valid IP address length
      */
     String lookupByAddress(byte[] addr) throws UnknownHostException;
 
     /**
      * A {@code LookupPolicy} object describes characteristics that can be applied to a lookup operation.
-     * In particular, it is used to specify which ordering and filtering should be performed when
-     * {@linkplain InetAddressResolver#lookupByName(String, LookupPolicy) looking up a host addresses}.
-     * <p>
-     * The default platform-wide lookup policy is constructed by consulting
+     * In particular, it is used to specify the ordering and which filtering should be performed when
+     * {@linkplain InetAddressResolver#lookupByName(String, LookupPolicy) looking up host addresses}.
+     *
+     * <p> The default platform-wide lookup policy is constructed by consulting
      * <a href="doc-files/net-properties.html#Ipv4IPv6">System Properties</a> which affect
      * how IPv4 and IPv6 addresses are returned.
      *
@@ -130,8 +133,9 @@ public interface InetAddressResolver {
         }
 
         /**
-         * This factory method creates {@link LookupPolicy LookupPolicy} instance with the provided
+         * This factory method creates {@link LookupPolicy LookupPolicy} instance with a provided
          * {@code characteristics} value.
+         *
          * <p> The {@code characteristics} value is an integer bit mask which defines
          * parameters of a forward lookup operation. These parameters define at least:
          * <ul>
@@ -139,12 +143,14 @@ public interface InetAddressResolver {
          *     <li>the order in which a {@linkplain InetAddressResolver resolver}
          *         implementation should return its results</li>
          * </ul>
+         *
          * <p> To request addresses of specific family types the following bit masks can be combined:
          * <ul>
          *     <li>{@link LookupPolicy#IPV4}: to request IPv4 addresses</li>
          *     <li>{@link LookupPolicy#IPV6}: to request IPv6 addresses</li>
          * </ul>
          * <br>It is an error if neither {@link LookupPolicy#IPV4} or {@link LookupPolicy#IPV6} are set.
+         *
          * <p> To request a specific ordering of the results:
          * <ul>
          *     <li>{@link LookupPolicy#IPV4_FIRST}: return IPv4 addresses before any IPv6 address</li>
@@ -155,12 +161,12 @@ public interface InetAddressResolver {
          * order of addresses.
          * It is an error to request both {@link LookupPolicy#IPV4_FIRST} and {@link LookupPolicy#IPV6_FIRST}.
          *
-         * @param characteristics value which represents the set of lookup characteristics
+         * @param characteristics a value which represents the set of lookup characteristics
          * @return an instance of {@code InetAddressResolver.LookupPolicy}
-         * @throws IllegalArgumentException if illegal characteristic bit mask is provided
+         * @throws IllegalArgumentException if an illegal characteristics bit mask is provided
          * @see InetAddressResolver#lookupByName(String, LookupPolicy)
          */
-        public static final LookupPolicy of(int characteristics) {
+        public static LookupPolicy of(int characteristics) {
             // At least one type of addresses should be requested
             if ((characteristics & IPV4) == 0 && (characteristics & IPV6) == 0) {
                 throw new IllegalArgumentException("No address type specified");
@@ -184,13 +190,12 @@ public interface InetAddressResolver {
         }
 
         /**
-         * Returns a set of characteristics of this lookup policy.
-         * Type and order of address families queried during resolution of host IP addresses.
+         * Returns the set of characteristics of this lookup policy.
          *
          * @return a characteristics value
          * @see InetAddressResolver#lookupByName(String, LookupPolicy)
          */
-        public final int characteristics() {
+        public int characteristics() {
             return characteristics;
         }
     }

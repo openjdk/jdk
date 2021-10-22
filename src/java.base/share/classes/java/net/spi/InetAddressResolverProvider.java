@@ -33,27 +33,33 @@ import java.util.ServiceLoader;
 /**
  * Service-provider class for {@linkplain InetAddressResolver InetAddress resolvers}.
  *
- * <p>A resolver provider is a factory for custom implementations of {@linkplain
- * InetAddressResolver resolvers}. A resolver define operations for looking up
- * (resolving) host names and IP addresses.
+ * <p> A resolver provider is a factory for custom implementations of {@linkplain
+ * InetAddressResolver InetAddress resolvers}. A resolver defines operations for
+ * looking up (resolving) host names and IP addresses.
  * <p>A resolver provider is a concrete subclass of this class that has a
  * zero-argument constructor and implements the abstract methods specified below.
  *
- * <h2 id="system-wide-resolver"> Installing the system-wide resolver </h2>
- * <p> Resolver providers are discovered by {@link InetAddress} to instantiate and
- * install a <i>system-wide resolver</i>. Resolver providers are located by
+ * <p> A given invocation of the Java virtual machine maintains a single
+ * system-wide resolver instance, which is used by
+ * <a href="{@docRoot}/java.base/java/net/InetAddress.html#host-name-resolution">
+ * InetAddress</a>.
+ *
+ * <h2 id="system-wide-resolver"> Deploying a system-wide resolver </h2>
+ *
+ * <p> Resolver providers are discovered by {@link InetAddress}. It instantiates and
+ * sets the <i>system-wide resolver</i>. Resolver providers are located by
  * {@link InetAddress} using the {@link ServiceLoader} facility.
  *
- * <p>Host name resolution and reverse name resolution operations performed by
+ * <p> Host name resolution and reverse name resolution operations performed by
  * {@link InetAddress} use the <i>system-wide</i> {@linkplain InetAddressResolver
  * resolver}. The system-wide resolver is set once, lazily, after the VM is fully
  * initialized and when an invocation of a method in {@link InetAddress} class
  * triggers the first lookup operation.
  *
  * <p> A <i>custom resolver</i> can be installed as the system-wide resolver
- * by deploying an {@code InetAddressResolverProvider}. If no resolver provider
- * is found, then the <a href="../InetAddress.html#built-in-resolver">built-in
- * resolver</a> will be set as the system-wide resolver.
+ * by deploying an {@code InetAddressResolverProvider}. If no resolver provider is
+ * found, then the <a href="{@docRoot}/java.base/java/net/InetAddress.html#built-in-resolver">
+ * built-in resolver</a> will be set as the system-wide resolver.
  *
  * <p> A custom resolver is found and installed as the system-wide resolver
  * as follows:
@@ -90,8 +96,8 @@ public abstract class InetAddressResolverProvider {
      * this provider. This method is called by {@link InetAddress} when
      * <a href="#system-wide-resolver">installing</a>
      * the system-wide resolver implementation.
-     * <p>
-     * Any error or exception thrown by this method is considered as
+     *
+     * <p> Any error or exception thrown by this method is considered as
      * a failure of {@code InetAddressResolver} instantiation and will be propagated to
      * the calling thread.
      * @param configuration a {@link Configuration} instance containing platform built-in address
@@ -103,7 +109,7 @@ public abstract class InetAddressResolverProvider {
     /**
      * Returns the name of this provider.
      *
-     * @return the resolver provider name
+     * @return the resolver provider name or {@code null} if unnamed
      */
     public abstract String name();
 
@@ -145,16 +151,16 @@ public abstract class InetAddressResolverProvider {
 
     /**
      * A {@code Configuration} object is supplied to the
-     * {@link InetAddressResolverProvider#get(Configuration)} method when installing a
-     * system-wide custom resolver implementation.
-     * The custom resolver implementation can then delegate to the built-in resolver
+     * {@link InetAddressResolverProvider#get(Configuration)} method when
+     * setting the system-wide resolver.
+     * A resolver implementation can then delegate to the built-in resolver
      * provided by this interface if it needs to.
      *
      * @since 18
      */
     public sealed interface Configuration permits ResolverProviderConfiguration {
         /**
-         * Returns platform built-in {@linkplain InetAddressResolver resolver}.
+         * Returns the built-in {@linkplain InetAddressResolver resolver}.
          *
          * @return the JDK built-in resolver.
          */

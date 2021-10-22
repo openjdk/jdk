@@ -145,32 +145,35 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * address format, please refer to <A
  * HREF="Inet6Address.html#format">Inet6Address#format</A>.
  *
- * <P>There is a <a href="doc-files/net-properties.html#Ipv4IPv6">couple of
- * System Properties</a> affecting how IPv4 and IPv6 addresses are used.</P>
+ * <p> There is a <a href="doc-files/net-properties.html#Ipv4IPv6">couple of
+ * System Properties</a> affecting how IPv4 and IPv6 addresses are used.
  *
- * <h3> Host Name Resolution </h3>
- * Host name-to-IP address <i>resolution</i> is accomplished through the use
- * of an {@linkplain InetAddressResolver InetAddress resolver}. Lookup operations
- * performed by this class use the
- * <a href="spi/InetAddressResolverProvider.html#system-wide-resolver">
- * system-wide resolver</a>. The <i>system-wide resolver</i> can be customized
- * by <a href="spi/InetAddressResolverProvider.html#system-wide-resolver">
- * deploying</a> an {@link InetAddressResolverProvider}.
- * <p id="built-in-resolver">The built-in resolver implementation is used by
- * default and accomplishes host name-to-IP address <i>resolution</i> through the
- * use of a combination of local machine configuration information and network
- * naming services such as the Domain Name System (DNS) and Network Information
- * Service(NIS). The particular naming services(s) being used is by default the
- * local machine configured one. For any host name, its corresponding IP address
- * is returned.
+ * <h2 id="host-name-resolution"> Host Name Resolution </h2>
+ *
+ * <p> The InetAddress class provides methods to resolve host names to
+ * their IP addresses and vice versa. The actual resolution is delegated to an
+ * {@linkplain InetAddressResolver InetAddress resolver}.
+ *
+ * <p> <i>Host name-to-IP address resolution</i> maps a host name to an IP address.
+ * For any host name, its corresponding IP address is returned.
  *
  * <p> <i>Reverse name resolution</i> means that for any IP address,
  * the host associated with the IP address is returned.
  *
- * <p> The InetAddress class provides methods to resolve host names to
- * their IP addresses and vice versa.
+ * <p id="built-in-resolver"> The built-in InetAddress resolver implementation does
+ * host name-to-IP address resolution and vice versa through the use of
+ * a combination of local machine configuration information and network
+ * naming services such as the Domain Name System (DNS) and the Lightweight Directory
+ * Access Protocol (LDAP).
+ * The particular naming services that the built-in resolver uses by default
+ * depend on the configuration of the local machine.
  *
- * <h3> InetAddress Caching </h3>
+ * <p> {@code InetAddress} has a service provider mechanism for InetAddress resolvers
+ * that allows a custom InetAddress resolver to be used instead of the built-in implementation.
+ * {@link InetAddressResolverProvider} is the service provider class. Its API docs provide all the
+ * details on this mechanism.
+ *
+ * <h2> InetAddress Caching </h2>
  *
  * The InetAddress class has a cache to store successful as well as
  * unsuccessful host name resolutions.
