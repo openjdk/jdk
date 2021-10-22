@@ -219,7 +219,7 @@ abstract class OutputRecord
             flush();
 
             // Dispose of any intermediate state in the underlying cipher.
-            writeCipher.dispose();
+            this.writeCipher.dispose();
 
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
