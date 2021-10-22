@@ -134,7 +134,7 @@ public class ModuleDescriptorHashCodeTest {
 
     // Finds and returns the java.sql module from the boot layer
     private static Module fromBootLayer() {
-        // we use "java.sql" as the module of choice because it's module definition has
+        // we use "java.sql" as the module of choice because its module definition has
         // at least one "requires" with a "modifier":
         //  requires transitive java.logging;
         //  requires transitive java.transaction.xa;
