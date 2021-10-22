@@ -579,14 +579,30 @@ public class TestRecordTypes extends JavadocTester {
         checkOutput(Output.OUT, false,
                 "warning: no comment");
 
-        checkOutput("serialized-form.html", false,
-                "Serialized Fields");
-
         checkOutput("serialized-form.html", true,
                 """
-                        <section class="serialized-class-details" id="Point">
-                        <h3>Record Class&nbsp;<a href="Point.html" title="class in Unnamed Package">Point</a></h3>
-                        <div class="type-signature">class Point extends java.lang.Record implements java.io.Serializable</div>
-                        </section>""");
+                    <section class="serialized-class-details" id="Point">
+                    <h3>Record Class&nbsp;<a href="Point.html" title="class in Unnamed Package">Point</a></h3>
+                    <div class="type-signature">class Point extends java.lang.Record implements java.io.Serializable</div>
+                    <ul class="block-list">
+                    <li>
+                    <section class="detail">
+                    <h4>Serialized Fields</h4>
+                    <ul class="block-list">
+                    <li class="block-list">
+                    <h5>x</h5>
+                    <pre>int x</pre>
+                    <div class="block">The field for the <a href="./Point.html#param-x"><code>x</code></a> record component.</div>
+                    </li>
+                    <li class="block-list">
+                    <h5>y</h5>
+                    <pre>int y</pre>
+                    <div class="block">The field for the <a href="./Point.html#param-y"><code>y</code></a> record component.</div>
+                    </li>
+                    </ul>
+                    </section>
+                    </li>
+                    </ul>
+                    </section>""");
     }
 }
