@@ -1600,8 +1600,6 @@ void SystemDictionaryShared::restore_dumptime_tables() {
 
 class CleanupDumpTimeLambdaProxyClassTable: StackObj {
  public:
-  CleanupDumpTimeLambdaProxyClassTable() {}
-
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
     assert_lock_strong(DumpTimeTable_lock);
     for (int i = 0; i < info._proxy_klasses->length(); i++) {
