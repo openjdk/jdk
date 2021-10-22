@@ -237,7 +237,6 @@ java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 linux-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
 java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux-all
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
-java/awt/FontMetrics/FontCrash.java 8198336 windows-all
 java/awt/image/BufferedImage/ICMColorDataTest/ICMColorDataTest.java 8233028 generic-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187,8252812 macosx-all,windows-all,linux-x64
