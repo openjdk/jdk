@@ -190,7 +190,7 @@ abstract class OutputRecord
              * Since MAC's doFinal() is called for every SSL/TLS packet, it's
              * not necessary to do the same with MAC's.
              */
-            writeCipher.dispose();
+            this.writeCipher.dispose();
 
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
