@@ -254,8 +254,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
         Content classContentTree = writer.getClassContentHeader();
 
         buildSerializableMethods(classContentTree);
-        buildFieldHeader(classContentTree);
-        buildSerializableFields(classContentTree);
+        if (!utils.isRecord(currentTypeElement)) {
+            buildFieldHeader(classContentTree);
+            buildSerializableFields(classContentTree);
+        }
 
         classTree.add(classContentTree);
     }

@@ -2,10 +2,12 @@ module:java.base
 java.io
 java.lang
 java.lang.annotation
+java.lang.constant
 java.lang.invoke
 java.lang.module
 java.lang.ref
 java.lang.reflect
+java.lang.runtime
 java.math
 java.net
 java.net.spi
@@ -18,7 +20,6 @@ java.nio.file
 java.nio.file.attribute
 java.nio.file.spi
 java.security
-java.security.acl
 java.security.cert
 java.security.interfaces
 java.security.spec
@@ -35,6 +36,7 @@ java.util.concurrent.atomic
 java.util.concurrent.locks
 java.util.function
 java.util.jar
+java.util.random
 java.util.regex
 java.util.spi
 java.util.stream
@@ -131,6 +133,7 @@ javax.naming
 javax.naming.directory
 javax.naming.event
 javax.naming.ldap
+javax.naming.ldap.spi
 javax.naming.spi
 module:java.net.http
 java.net.http
@@ -138,7 +141,6 @@ module:java.prefs
 java.util.prefs
 module:java.rmi
 java.rmi
-java.rmi.activation
 java.rmi.dgc
 java.rmi.registry
 java.rmi.server
@@ -219,12 +221,14 @@ module:jdk.hotspot.agent
 module:jdk.httpserver
 com.sun.net.httpserver
 com.sun.net.httpserver.spi
+module:jdk.incubator.foreign
+jdk.incubator.foreign
+module:jdk.incubator.vector
+jdk.incubator.vector
 module:jdk.jartool
 com.sun.jarsigner
 jdk.security.jarsigner
 module:jdk.javadoc
-com.sun.javadoc
-com.sun.tools.javadoc
 jdk.javadoc.doclet
 module:jdk.jcmd
 module:jdk.jconsole
@@ -241,6 +245,7 @@ module:jdk.jfr
 jdk.jfr
 jdk.jfr.consumer
 module:jdk.jlink
+module:jdk.jpackage
 module:jdk.jshell
 jdk.jshell
 jdk.jshell.execution
@@ -260,10 +265,8 @@ module:jdk.naming.rmi
 module:jdk.net
 jdk.net
 jdk.nio
-module:jdk.pack
-module:jdk.scripting.nashorn
-jdk.nashorn.api.scripting
-jdk.nashorn.api.tree
+module:jdk.nio.mapmode
+jdk.nio.mapmode
 module:jdk.sctp
 com.sun.nio.sctp
 module:jdk.security.auth
@@ -279,4 +282,3 @@ org.w3c.dom.html
 org.w3c.dom.stylesheets
 org.w3c.dom.xpath
 module:jdk.zipfs
-
