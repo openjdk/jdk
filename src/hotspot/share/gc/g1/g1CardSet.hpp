@@ -64,9 +64,9 @@ class G1CardSetConfiguration {
   void init_card_set_alloc_options();
   void init(uint inline_ptr_bits_per_card,
             uint num_cards_in_array,
-            double cards_in_bitmap_threshold,
+            double cards_in_bitmap_threshold_percent,
             uint max_buckets_in_howl,
-            double cards_in_howl_threshold,
+            double cards_in_howl_threshold_percent,
             uint max_cards_in_cardset);
 
   void log_configuration();
@@ -77,9 +77,9 @@ public:
   // Initialize card set configuration from parameters.
   G1CardSetConfiguration(uint inline_ptr_bits_per_card,
                          uint num_cards_in_array,
-                         double cards_in_bitmap_threshold,
+                         double cards_in_bitmap_threshold_percent,
                          uint max_buckets_in_howl,
-                         double cards_in_howl_threshold,
+                         double cards_in_howl_threshold_percent,
                          uint max_cards_in_cardset);
 
   ~G1CardSetConfiguration();

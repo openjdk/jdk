@@ -48,22 +48,22 @@ G1CardSetConfiguration::G1CardSetConfiguration() {
   init(HeapRegion::LogCardsPerRegion,
        G1RemSetArrayOfCardsEntries,
        (double)G1RemSetCoarsenHowlBitmapToHowlFullPercent / 100,
-       0,
+       0,  // max_buckets_in_howl
        (double)G1RemSetCoarsenHowlToFullPercent / 100,
        (uint)HeapRegion::CardsPerRegion);
 }
 
 G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
                                                uint num_cards_in_array,
-                                               double cards_in_bitmap_threshold,
+                                               double cards_in_bitmap_threshold_percent,
                                                uint max_buckets_in_howl,
-                                               double cards_in_howl_threshold,
+                                               double cards_in_howl_threshold_percent,
                                                uint max_cards_in_cardset) {
   init(inline_ptr_bits_per_card,
        num_cards_in_array,
-       cards_in_bitmap_threshold,
+       cards_in_bitmap_threshold_percent,
        max_buckets_in_howl,
-       cards_in_howl_threshold,
+       cards_in_howl_threshold_percent,
        max_cards_in_cardset);
 }
 
@@ -73,16 +73,16 @@ G1CardSetConfiguration::~G1CardSetConfiguration() {
 
 void G1CardSetConfiguration::init(uint inline_ptr_bits_per_card,
                                   uint num_cards_in_array,
-                                  double cards_in_bitmap_threshold,
+                                  double cards_in_bitmap_threshold_percent,
                                   uint max_buckets_in_howl,
-                                  double cards_in_howl_threshold,
+                                  double cards_in_howl_threshold_percent,
                                   uint max_cards_in_cardset) {
   _inline_ptr_bits_per_card = inline_ptr_bits_per_card;
   _num_cards_in_array = num_cards_in_array;
   _max_cards_in_card_set = max_cards_in_cardset;
   assert(is_power_of_2(_max_cards_in_card_set),
          "max_cards_in_card_set must be a power of 2: %u", _max_cards_in_card_set);
-  _cards_in_howl_threshold = max_cards_in_cardset * cards_in_howl_threshold;
+  _cards_in_howl_threshold = max_cards_in_cardset * cards_in_howl_threshold_percent;
 
   if (max_buckets_in_howl == 0) {
     _num_buckets_in_howl = G1RemSetHowlNumBuckets;
@@ -91,7 +91,7 @@ void G1CardSetConfiguration::init(uint inline_ptr_bits_per_card,
   }
 
   _num_cards_in_howl_bitmap = G1CardSetHowl::bitmap_size(_max_cards_in_card_set, _num_buckets_in_howl);
-  _cards_in_howl_bitmap_threshold = _num_cards_in_howl_bitmap * cards_in_bitmap_threshold;
+  _cards_in_howl_bitmap_threshold = _num_cards_in_howl_bitmap * cards_in_bitmap_threshold_percent;
   _log2_num_cards_in_howl_bitmap = log2i_exact(_num_cards_in_howl_bitmap);
   _bitmap_hash_mask = ~(~(0) << _log2_num_cards_in_howl_bitmap);
 
