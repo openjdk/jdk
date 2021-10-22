@@ -2552,7 +2552,7 @@ public class ModuleDescriptor
      */
     private static int ordinalHashCode(final Iterable<? extends Enum<?>> enums) {
         int h = 0;
-        for (final Enum<?> e : enums) {
+        for (Enum<?> e : enums) {
             h += e.ordinal();
         }
         return h;
