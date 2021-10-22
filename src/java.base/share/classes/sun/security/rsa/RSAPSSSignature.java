@@ -209,7 +209,6 @@ public class RSAPSSSignature extends SignatureSpi {
      * Validate the specified RSAPrivateKey
      */
     private void isPrivateKeyValid(RSAPrivateKey prKey)  throws InvalidKeyException {
-        InvalidKeyException ikException = null;
         try {
             if (prKey instanceof RSAPrivateCrtKey crtKey) {
                 if (RSAPrivateCrtKeyImpl.checkComponents(crtKey)) {
@@ -217,7 +216,7 @@ public class RSAPSSSignature extends SignatureSpi {
                             crtKey.getModulus().bitLength(),
                             crtKey.getPublicExponent());
                 } else {
-                    ikException = new InvalidKeyException(
+                    throw new InvalidKeyException(
                             "Some of the CRT-specific components are not available");
                 }
             } else {
@@ -226,13 +225,11 @@ public class RSAPSSSignature extends SignatureSpi {
                         null);
             }
         } catch (InvalidKeyException ikEx) {
-            ikException = ikEx;
+            throw ikEx;
         } catch (Exception e) {
             throw new InvalidKeyException(
                     "Can not access private key components", e);
         }
-        if (ikException != null)
-            throw ikException;
         isValid(prKey);
     }
 
