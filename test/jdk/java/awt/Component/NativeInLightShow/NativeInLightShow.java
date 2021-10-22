@@ -72,6 +72,7 @@ public class NativeInLightShow {
         frame.setVisible(true);
 
         robot.waitForIdle();
+        robot.delay(1000);
 
         Point buttonLocation = button.getLocationOnScreen();
 
