@@ -100,9 +100,6 @@ public class CredentialsUtil {
         if (!creds.getClient().equals(user)) {
             throw new KrbException("S4U2self request not honored by KDC");
         }
-        if (!creds.isForwardable()) {
-            throw new KrbException("S4U2self ticket must be FORWARDABLE");
-        }
         return creds;
     }
 

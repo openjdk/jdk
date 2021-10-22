@@ -264,6 +264,13 @@ public final class KdcComm {
                 } else if (ke.getErrorCode() ==
                         Krb5.KDC_ERR_SVC_UNAVAILABLE) {
                     throw new KrbException("A service is not available");
+                } else if (ke.getErrorCode() == Krb5.KDC_ERR_BADOPTION) {
+                    if (req instanceof KrbTgsReq tgsReq) {
+                        Credentials t = tgsReq.getSecondCredentials();
+                        if (t != null && !t.isForwardable()) {
+                            throw new KrbException("S4U2Proxy with non-forwardable ticket");
+                        }
+                    }
                 }
             }
             KdcAccessibility.removeBad(tempKdc);

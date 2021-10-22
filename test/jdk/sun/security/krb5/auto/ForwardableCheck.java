@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8022582 8194486
+ * @bug 8022582 8194486 8272162
  * @summary Relax response flags checking in sun.security.krb5.KrbKdcRep.check.
  * @library /test/lib
  * @compile -XDignore.symbol.file ForwardableCheck.java
@@ -35,6 +35,8 @@ import org.ietf.jgss.GSSException;
 import sun.security.jgss.GSSUtil;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class ForwardableCheck {
 
@@ -45,6 +47,9 @@ public class ForwardableCheck {
         // USER can impersonate someone else
         kdc.setOption(KDC.Option.ALLOW_S4U2SELF,
                 Arrays.asList(OneKDC.USER + "@" + OneKDC.REALM));
+        kdc.setOption(KDC.Option.ALLOW_S4U2PROXY, Map.of(
+                OneKDC.USER + "@" + OneKDC.REALM,
+                List.of(OneKDC.BACKEND + "@" + OneKDC.REALM)));
         // USER2 is sensitive
         kdc.setOption(KDC.Option.SENSITIVE_ACCOUNTS,
                 Arrays.asList(OneKDC.USER2 + "@" + OneKDC.REALM));
@@ -74,7 +79,9 @@ public class ForwardableCheck {
         // it cannot impersonate USER2 coz it's sensitive.
         c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
         try {
-            c.impersonate(OneKDC.USER2);
+            c = c.impersonate(OneKDC.USER2);
+            c.startAsClient(OneKDC.BACKEND, GSSUtil.GSS_KRB5_MECH_OID);
+            c.take(new byte[0]);
             throw new Exception("Should fail");
         } catch (GSSException e) {
             e.printStackTrace();
