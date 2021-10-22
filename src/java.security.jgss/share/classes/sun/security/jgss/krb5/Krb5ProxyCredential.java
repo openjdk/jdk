@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.IOException;
 
 import sun.security.krb5.Credentials;
 import sun.security.krb5.KrbException;
-import sun.security.krb5.internal.Ticket;
 
 import javax.security.auth.kerberos.KerberosTicket;
 
@@ -52,14 +51,14 @@ public class Krb5ProxyCredential
     public final Krb5InitCredential self;   // the middle server
     private final Krb5NameElement client;     // the client
 
-    // The ticket with cname=client and sname=self. This can be a normal
-    // service ticket or an S4U2self ticket.
-    public final Ticket tkt;
+    // The creds with cname=client and sname=self. The ticket inside can
+    // be either a normal service ticket or an S4U2self ticket.
+    public final Credentials cred;
 
     Krb5ProxyCredential(Krb5InitCredential self, Krb5NameElement client,
-            Ticket tkt) {
+            Credentials cred) {
         this.self = self;
-        this.tkt = tkt;
+        this.cred = cred;
         this.client = client;
     }
 
@@ -130,7 +129,7 @@ public class Krb5ProxyCredential
                 Credentials proxyCreds = Krb5Util.ticketToCreds(proxy);
                 return new Krb5ProxyCredential(initiator,
                         Krb5NameElement.getInstance(proxyCreds.getClient()),
-                        proxyCreds.getTicket());
+                        proxyCreds);
             } else {
                 return initiator;
             }

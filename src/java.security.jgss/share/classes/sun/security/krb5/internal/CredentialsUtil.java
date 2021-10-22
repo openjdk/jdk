@@ -32,7 +32,6 @@
 package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
-import sun.security.util.DerValue;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -111,12 +110,12 @@ public class CredentialsUtil {
      * Used by a middle server to acquire a service ticket to a backend
      * server using the S4U2proxy extension.
      * @param backend the name of the backend service
-     * @param second the client's service ticket to the middle server
+     * @param second containing the client's service ticket to the middle server
      * @param ccreds the TGT of the middle server
      * @return the creds (cname=client, sname=backend)
      */
     public static Credentials acquireS4U2proxyCreds(
-                String backend, Ticket second,
+                String backend, Credentials second,
                 PrincipalName client, Credentials ccreds)
             throws KrbException, IOException {
         PrincipalName backendPrincipal = new PrincipalName(backend);
@@ -137,7 +136,7 @@ public class CredentialsUtil {
         Credentials creds = serviceCreds(KDCOptions.with(
                 KDCOptions.CNAME_IN_ADDL_TKT, KDCOptions.FORWARDABLE),
                 ccreds, ccreds.getClient(), backendPrincipal, null,
-                new Ticket[] {second}, new PAData[] {
+                second, new PAData[] {
                         new PAData(Krb5.PA_PAC_OPTIONS,
                                 new PaPacOptions()
                                         .setResourceBasedConstrainedDelegation(true)
@@ -325,13 +324,13 @@ public class CredentialsUtil {
     private static Credentials serviceCreds(
             KDCOptions options, Credentials asCreds,
             PrincipalName cname, PrincipalName sname,
-            PrincipalName user, Ticket[] additionalTickets,
+            PrincipalName user, Credentials second,
             PAData[] extraPAs, S4U2Type s4u2Type)
             throws KrbException, IOException {
         if (!Config.DISABLE_REFERRALS) {
             try {
                 return serviceCredsReferrals(options, asCreds, cname, sname,
-                        s4u2Type, user, additionalTickets, extraPAs);
+                        s4u2Type, user, second, extraPAs);
             } catch (KrbException e) {
                 // Server may raise an error if CANONICALIZE is true.
                 // Try CANONICALIZE false.
@@ -339,7 +338,7 @@ public class CredentialsUtil {
         }
         return serviceCredsSingle(options, asCreds, cname,
                 asCreds.getClientAlias(), sname, sname, s4u2Type,
-                user, additionalTickets, extraPAs);
+                user, second, extraPAs);
     }
 
     /*
@@ -350,7 +349,7 @@ public class CredentialsUtil {
             KDCOptions options, Credentials asCreds,
             PrincipalName cname, PrincipalName sname,
             S4U2Type s4u2Type, PrincipalName user,
-            Ticket[] additionalTickets, PAData[] extraPAs)
+            Credentials second, PAData[] extraPAs)
                     throws KrbException, IOException {
         options = new KDCOptions(options.toBooleanArray());
         options.set(KDCOptions.CANONICALIZE, true);
@@ -363,12 +362,12 @@ public class CredentialsUtil {
         while (referrals.size() <= Config.MAX_REFERRALS) {
             ReferralsCache.ReferralCacheEntry ref =
                     ReferralsCache.get(cname, sname, user,
-                            additionalTickets, refSname.getRealmString());
+                            second, refSname.getRealmString());
             String toRealm = null;
             if (ref == null) {
                 creds = serviceCredsSingle(options, asCreds, cname,
                         clientAlias, refSname, cSname, s4u2Type,
-                        user, additionalTickets, extraPAs);
+                        user, second, extraPAs);
                 PrincipalName server = creds.getServer();
                 if (!refSname.equals(server)) {
                     String[] serverNameStrings = server.getNameStrings();
@@ -380,7 +379,7 @@ public class CredentialsUtil {
                         // Server Name (sname) has the following format:
                         //      krbtgt/TO-REALM.COM@FROM-REALM.COM
                         ReferralsCache.put(cname, sname, user,
-                                additionalTickets, server.getRealmString(),
+                                second, server.getRealmString(),
                                 serverNameStrings[1], creds);
                         toRealm = serverNameStrings[1];
                         isReferral = true;
@@ -398,13 +397,11 @@ public class CredentialsUtil {
                     toRealm = handleS4U2ProxyReferral(asCreds,
                             credsInOut, sname);
                     creds = credsInOut[0];
-                    if (additionalTickets == null ||
-                            additionalTickets.length == 0 ||
-                            credsInOut[1] == null) {
+                    if (second == null) {
                         throw new KrbException("Additional tickets expected" +
                                 " for S4U2Proxy.");
                     }
-                    additionalTickets[0] = credsInOut[1].getTicket();
+                    second = credsInOut[1];
                 } else if (s4u2Type == S4U2Type.SELF) {
                     handleS4U2SelfReferral(extraPAs, user, creds);
                 }
@@ -436,7 +433,7 @@ public class CredentialsUtil {
             PrincipalName cname, PrincipalName clientAlias,
             PrincipalName refSname, PrincipalName sname,
             S4U2Type s4u2Type, PrincipalName user,
-            Ticket[] additionalTickets, PAData[] extraPAs)
+            Credentials second, PAData[] extraPAs)
                     throws KrbException, IOException {
         Credentials theCreds = null;
         boolean[] okAsDelegate = new boolean[]{true};
@@ -473,7 +470,7 @@ public class CredentialsUtil {
                     " same realm");
         }
         KrbTgsReq req = new KrbTgsReq(options, asCreds, cname, clientAlias,
-                refSname, sname, additionalTickets, extraPAs);
+                refSname, sname, second, extraPAs);
         theCreds = req.sendAndGetCreds();
         if (theCreds != null) {
             if (DEBUG) {

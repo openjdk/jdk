@@ -97,7 +97,7 @@ public class Credentials {
         this.authzData = authzData;
     }
 
-    // Warning: called by NativeCreds.c and nativeccache.c
+    // Warning: also called by NativeCreds.c and nativeccache.c
     public Credentials(Ticket new_ticket,
                        PrincipalName new_client,
                        PrincipalName new_client_alias,
@@ -497,7 +497,7 @@ public class Credentials {
     }
 
     public static Credentials acquireS4U2proxyCreds(String service,
-            Ticket second, PrincipalName client, Credentials ccreds)
+            Credentials second, PrincipalName client, Credentials ccreds)
         throws KrbException, IOException {
         return CredentialsUtil.acquireS4U2proxyCreds(
                 service, second, client, ccreds);

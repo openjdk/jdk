@@ -46,7 +46,6 @@ import javax.security.auth.kerberos.ServicePermission;
 import javax.security.auth.kerberos.KerberosCredMessage;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
-import sun.security.krb5.internal.Ticket;
 import sun.security.krb5.internal.AuthorizationData;
 
 /**
@@ -123,7 +122,6 @@ class Krb5Context implements GSSContextSpi {
     private Credentials tgt;
     private Credentials serviceCreds;
     private KrbApReq apReq;
-    Ticket serviceTicket;
     private final GSSCaller caller;
     private static final boolean DEBUG = Krb5Util.DEBUG;
 
@@ -549,7 +547,7 @@ class Krb5Context implements GSSContextSpi {
                     delegatedCred = new Krb5ProxyCredential(
                         Krb5InitCredential.getInstance(
                             GSSCaller.CALLER_ACCEPT, myName, lifetime),
-                        peerName, serviceTicket);
+                        peerName, serviceCreds);
                 } catch (GSSException gsse) {
                     // OK, delegatedCred is null then
                 }
@@ -703,7 +701,7 @@ class Krb5Context implements GSSContextSpi {
                         } else {
                             serviceCreds = Credentials.acquireS4U2proxyCreds(
                                     peerName.getKrb5PrincipalName().getName(),
-                                    second.tkt,
+                                    second.cred,
                                     second.getName().getKrb5PrincipalName(),
                                     tgt);
                         }
@@ -850,7 +848,7 @@ class Krb5Context implements GSSContextSpi {
                         retVal = new AcceptSecContextToken(this,
                                           token.getKrbApReq()).encode();
                 }
-                serviceTicket = token.getKrbApReq().getCreds().getTicket();
+                serviceCreds = token.getKrbApReq().getCreds();
                 myCred = null;
                 state = STATE_DONE;
             } else  {
