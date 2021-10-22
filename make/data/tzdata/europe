@@ -844,7 +844,7 @@ Zone	Europe/Andorra	0:06:04 -	LMT	1901
 # Shanks & Pottenger give 02:00, the BEV 00:00.  Go with the BEV,
 # and guess 02:00 for 1945-04-12.
 
-# From Alois Triendl (2019-07-22):
+# From Alois Treindl (2019-07-22):
 # In 1946 the end of DST was on Monday, 7 October 1946, at 3:00 am.
 # Shanks had this right.  Source: Die Weltpresse, 5. Oktober 1946, page 5.
 
@@ -1758,19 +1758,22 @@ Zone Atlantic/Reykjavik	-1:28	-	LMT	1908
 # advanced to sixty minutes later starting at hour two on 1944-04-02; ...
 # Starting at hour three on the date 1944-09-17 standard time will be resumed.
 #
-# From Alois Triendl (2019-07-02):
+# From Alois Treindl (2019-07-02):
 # I spent 6 Euros to buy two archive copies of Il Messaggero, a Roman paper,
 # for 1 and 2 April 1944.  The edition of 2 April has this note: "Tonight at 2
 # am, put forward the clock by one hour.  Remember that in the night between
 # today and Monday the 'ora legale' will come in force again."  That makes it
 # clear that in Rome the change was on Monday, 3 April 1944 at 2 am.
 #
-# From Paul Eggert (2016-10-27):
+# From Paul Eggert (2021-10-05):
 # Go with INRiM for DST rules, except as corrected by Inglis for 1944
 # for the Kingdom of Italy.  This is consistent with Renzo Baldini.
 # Model Rome's occupation by using C-Eur rules from 1943-09-10
 # to 1944-06-04; although Rome was an open city during this period, it
-# was effectively controlled by Germany.
+# was effectively controlled by Germany.  Using C-Eur is consistent
+# with Treindl's comment about Rome in April 1944, as the "Rule Italy"
+# lines during German occupation do not affect Europe/Rome
+# (though they do affect Europe/Malta).
 #
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Italy	1916	only	-	Jun	 3	24:00	1:00	S
@@ -2646,7 +2649,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # Although Shanks lists 1945-01-01 as the date for transition from
 # +01/+02 to +02/+03, more likely this is a placeholder.  Guess that
 # the transition occurred at 1945-04-10 00:00, which is about when
-# Königsberg surrendered to Soviet troops.  (Thanks to Alois Triendl.)
+# Königsberg surrendered to Soviet troops.  (Thanks to Alois Treindl.)
 
 # From Paul Eggert (2016-03-18):
 # The 1989 transition is from USSR act No. 227 (1989-03-14).
