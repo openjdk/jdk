@@ -42,11 +42,12 @@ void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
   _out->print(UINTX_FORMAT_W(4) ": ", _cnt);
 
   // Print a 's' for shared classes
-  _out->put(k->is_shared() ? 's': ' ');
+  _out->put(k->is_shared() ? 's' : ' ');
+  // Print 's' for classes that overrided finalize() method
+  _out->put(k->has_finalizer() ?'f' : ' ');
 
   ResourceMark rm;
-  _out->print("  %s", k->external_name());
-
+  _out->print("  %s (" INTPTR_FORMAT ")", k->external_name(), p2i(k));
   // Special treatment for generated core reflection accessor classes: print invocation target.
   if (ReflectionAccessorImplKlassHelper::is_generated_accessor(k)) {
     _out->print(" (invokes: ");
