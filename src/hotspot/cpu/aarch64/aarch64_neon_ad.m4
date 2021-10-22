@@ -164,7 +164,7 @@ instruct vcvt$1$2to$1$3`'(vec$4 dst, vec$5 src)
 %{
   predicate(n->as_Vector()->length() == $1 && n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
   match(Set dst (VectorCast$2`'2X src));
-  format %{ "$6  $dst, T$8,  $src, T$7\n\t"
+  format %{ "$6  $dst, T$8, $src, T$7\n\t"
             "$6  $dst, T$10, $dst, T$9\t# convert $1$2 to $1$3 vector"
   %}
   ins_encode %{
@@ -177,6 +177,7 @@ dnl               $1 $2 $3 $4 $5 $6    $7  $8  $9  $10
 VECTOR_CAST_I2I_L(4, I, B, D, X, xtn,  4S, 4H, 8H, 8B)
 VECTOR_CAST_I2I_L(4, B, I, X, D, sxtl, 8B, 8H, 4H, 4S)
 dnl
+
 instruct vcvt2Lto2F(vecD dst, vecX src)
 %{
   predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
@@ -225,6 +226,7 @@ dnl               $1 $2 $3 $4 $5 $6  $7
 VECTOR_CAST_I2F_L(4, S, F, X, D, 4H, 4S)
 VECTOR_CAST_I2F_L(2, I, D, X, D, 2S, 2D)
 dnl
+
 instruct vcvt4Bto4F(vecX dst, vecD src)
 %{
   predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
@@ -289,6 +291,7 @@ dnl               $1 $2 $3 $4 $5 $6  $7
 VECTOR_CAST_F2I_L(4, F, S, D, X, 4S, 4H)
 VECTOR_CAST_F2I_L(2, D, I, D, X, 2D, 2S)
 dnl
+
 instruct vcvt4Fto4B(vecD dst, vecX src)
 %{
   predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);

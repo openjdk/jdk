@@ -326,7 +326,7 @@ instruct vcvt4Ito4B(vecD dst, vecX src)
 %{
   predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (VectorCastI2X src));
-  format %{ "xtn  $dst, T4H,  $src, T4S\n\t"
+  format %{ "xtn  $dst, T4H, $src, T4S\n\t"
             "xtn  $dst, T8B, $dst, T8H\t# convert 4I to 4B vector"
   %}
   ins_encode %{
@@ -340,7 +340,7 @@ instruct vcvt4Bto4I(vecX dst, vecD src)
 %{
   predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (VectorCastB2X src));
-  format %{ "sxtl  $dst, T8H,  $src, T8B\n\t"
+  format %{ "sxtl  $dst, T8H, $src, T8B\n\t"
             "sxtl  $dst, T4S, $dst, T4H\t# convert 4B to 4I vector"
   %}
   ins_encode %{
@@ -349,6 +349,7 @@ instruct vcvt4Bto4I(vecX dst, vecD src)
   %}
   ins_pipe(pipe_class_default);
 %}
+
 instruct vcvt2Lto2F(vecD dst, vecX src)
 %{
   predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
@@ -423,6 +424,7 @@ instruct vcvt2Ito2D(vecX dst, vecD src)
   %}
   ins_pipe(pipe_slow);
 %}
+
 instruct vcvt4Bto4F(vecX dst, vecD src)
 %{
   predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
@@ -513,6 +515,7 @@ instruct vcvt2Dto2I(vecD dst, vecX src)
   %}
   ins_pipe(pipe_slow);
 %}
+
 instruct vcvt4Fto4B(vecD dst, vecX src)
 %{
   predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
