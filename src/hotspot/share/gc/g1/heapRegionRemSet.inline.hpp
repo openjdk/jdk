@@ -62,9 +62,10 @@ inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
 }
 
 void HeapRegionRemSet::split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const {
-  HeapRegion* hr = G1CollectedHeap::heap()->heap_region_containing(from);
-  card_region = hr->hrm_index();
-  card_within_region = (uint)(pointer_delta((HeapWord*)from, hr->bottom()) >> (CardTable::card_shift - LogHeapWordSize));
+  size_t offset = pointer_delta(from, _heap_base_address, 1);
+  card_region = (uint)(offset >> _split_card_shift);
+  card_within_region = (uint)((offset & _split_card_mask) >> CardTable::card_shift);
+  assert(card_within_region < ((uint)1 << G1CardSetContainer::LogCardsPerRegionLimit), "must be");
 }
 
 void HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {

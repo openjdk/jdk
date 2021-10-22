@@ -94,8 +94,7 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   DEBUG_ONLY(LOG_PREFIX(Test_log_prefix_prefixer, LOG_TAGS(logging, test))) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, tlab)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, verify)) \
-  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, verify, start)) \
-  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, workgang))
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, verify, start))
 
 
 // The empty prefix, used when there's no prefix defined.

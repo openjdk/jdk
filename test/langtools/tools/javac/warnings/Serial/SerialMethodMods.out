@@ -1,0 +1,6 @@
+SerialMethodMods.java:13:10: compiler.warn.serial.method.not.private: writeObject
+SerialMethodMods.java:18:17: compiler.warn.serial.method.not.private: readObject
+SerialMethodMods.java:24:25: compiler.warn.serial.method.static: readObjectNoData
+SerialMethodMods.java:27:28: compiler.warn.serial.concrete.instance.method: writeReplace
+SerialMethodMods.java:30:26: compiler.warn.serial.concrete.instance.method: readResolve
+5 warnings

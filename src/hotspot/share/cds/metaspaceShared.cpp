@@ -584,20 +584,19 @@ void VM_PopulateDumpSharedSpace::doit() {
 
 class CollectCLDClosure : public CLDClosure {
   GrowableArray<ClassLoaderData*> _loaded_cld;
-  GrowableArray<Handle> _loaded_cld_handles; // keep the CLDs alive
+  GrowableArray<OopHandle> _loaded_cld_handles; // keep the CLDs alive
   Thread* _current_thread;
 public:
   CollectCLDClosure(Thread* thread) : _current_thread(thread) {}
   ~CollectCLDClosure() {
-    for (int i = 0; i < _loaded_cld.length(); i++) {
-      ClassLoaderData* cld = _loaded_cld.at(i);
+    for (int i = 0; i < _loaded_cld_handles.length(); i++) {
+      _loaded_cld_handles.at(i).release(Universe::vm_global());
     }
   }
   void do_cld(ClassLoaderData* cld) {
-    if (!cld->is_unloading()) {
-      _loaded_cld.append(cld);
-      _loaded_cld_handles.append(Handle(_current_thread, cld->holder_phantom()));
-    }
+    assert(cld->is_alive(), "must be");
+    _loaded_cld.append(cld);
+    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder_phantom()));
   }
 
   int nof_cld() const                { return _loaded_cld.length(); }

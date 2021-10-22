@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author or authors.
+ * Copyright (c) 2002-2021, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -20,12 +20,16 @@ import static jdk.internal.org.jline.utils.AttributedStyle.BG_COLOR_EXP;
 import static jdk.internal.org.jline.utils.AttributedStyle.FG_COLOR;
 import static jdk.internal.org.jline.utils.AttributedStyle.FG_COLOR_EXP;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_BACKGROUND;
+import static jdk.internal.org.jline.utils.AttributedStyle.F_BACKGROUND_IND;
+import static jdk.internal.org.jline.utils.AttributedStyle.F_BACKGROUND_RGB;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_BLINK;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_BOLD;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_CONCEAL;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_CROSSED_OUT;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_FAINT;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_FOREGROUND;
+import static jdk.internal.org.jline.utils.AttributedStyle.F_FOREGROUND_IND;
+import static jdk.internal.org.jline.utils.AttributedStyle.F_FOREGROUND_RGB;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_INVERSE;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_ITALIC;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_UNDERLINE;
@@ -34,6 +38,15 @@ import static jdk.internal.org.jline.utils.AttributedStyle.MASK;
 import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_DISABLE_ALTERNATE_CHARSET;
 
 public abstract class AttributedCharSequence implements CharSequence {
+
+    public static final int TRUE_COLORS = 0x1000000;
+    private static final int HIGH_COLORS = 0x7FFF;
+
+    public enum ForceMode {
+        None,
+        Force256Colors,
+        ForceTrueColors
+    }
 
     // cache the value here as we can't afford to get it each time
     static final boolean DISABLE_ALTERNATE_CHARSET = Boolean.getBoolean(PROP_DISABLE_ALTERNATE_CHARSET);
@@ -55,33 +68,54 @@ public abstract class AttributedCharSequence implements CharSequence {
             return toString();
         }
         int colors = 256;
-        boolean force256colors = false;
+        ForceMode forceMode = ForceMode.None;
+        ColorPalette palette = null;
         String alternateIn = null, alternateOut = null;
         if (terminal != null) {
             Integer max_colors = terminal.getNumericCapability(Capability.max_colors);
             if (max_colors != null) {
                 colors = max_colors;
             }
-            force256colors = AbstractWindowsTerminal.TYPE_WINDOWS_256_COLOR.equals(terminal.getType())
-                || AbstractWindowsTerminal.TYPE_WINDOWS_CONEMU.equals(terminal.getType());
+            if (AbstractWindowsTerminal.TYPE_WINDOWS_256_COLOR.equals(terminal.getType())
+                    || AbstractWindowsTerminal.TYPE_WINDOWS_CONEMU.equals(terminal.getType())) {
+                forceMode = ForceMode.Force256Colors;
+            }
+            palette = terminal.getPalette();
             if (!DISABLE_ALTERNATE_CHARSET) {
                 alternateIn = Curses.tputs(terminal.getStringCapability(Capability.enter_alt_charset_mode));
                 alternateOut = Curses.tputs(terminal.getStringCapability(Capability.exit_alt_charset_mode));
             }
         }
-        return toAnsi(colors, force256colors, alternateIn, alternateOut);
+        return toAnsi(colors, forceMode, palette, alternateIn, alternateOut);
     }
 
+    @Deprecated
     public String toAnsi(int colors, boolean force256colors) {
         return toAnsi(colors, force256colors, null, null);
     }
 
+    @Deprecated
     public String toAnsi(int colors, boolean force256colors, String altIn, String altOut) {
+        return toAnsi(colors, force256colors ? ForceMode.Force256Colors : ForceMode.None, null, altIn, altOut);
+    }
+
+    public String toAnsi(int colors, ForceMode force) {
+        return toAnsi(colors, force, null, null, null);
+    }
+
+    public String toAnsi(int colors, ForceMode force, ColorPalette palette) {
+        return toAnsi(colors, force, palette, null, null);
+    }
+
+    public String toAnsi(int colors, ForceMode force, ColorPalette palette, String altIn, String altOut) {
         StringBuilder sb = new StringBuilder();
-        int style = 0;
-        int foreground = -1;
-        int background = -1;
+        long style = 0;
+        long foreground = 0;
+        long background = 0;
         boolean alt = false;
+        if (palette == null) {
+            palette = ColorPalette.DEFAULT;
+        }
         for (int i = 0; i < length(); i++) {
             char c = charAt(i);
             if (altIn != null && altOut != null) {
@@ -105,14 +139,14 @@ public abstract class AttributedCharSequence implements CharSequence {
                     sb.append(alt ? altIn : altOut);
                 }
             }
-            int  s = styleCodeAt(i) & ~F_HIDDEN; // The hidden flag does not change the ansi styles
+            long  s = styleCodeAt(i) & ~F_HIDDEN; // The hidden flag does not change the ansi styles
             if (style != s) {
-                int  d = (style ^ s) & MASK;
-                int fg = (s & F_FOREGROUND) != 0 ? (s & FG_COLOR) >>> FG_COLOR_EXP : -1;
-                int bg = (s & F_BACKGROUND) != 0 ? (s & BG_COLOR) >>> BG_COLOR_EXP : -1;
+                long  d = (style ^ s) & MASK;
+                long fg = (s & F_FOREGROUND) != 0 ? s & (FG_COLOR | F_FOREGROUND) : 0;
+                long bg = (s & F_BACKGROUND) != 0 ? s & (BG_COLOR | F_BACKGROUND) : 0;
                 if (s == 0) {
                     sb.append("\033[0m");
-                    foreground = background = -1;
+                    foreground = background = 0;
                 } else {
                     sb.append("\033[");
                     boolean first = true;
@@ -135,18 +169,38 @@ public abstract class AttributedCharSequence implements CharSequence {
                         first = attr(sb, (s & F_CROSSED_OUT) != 0 ? "9" : "29", first);
                     }
                     if (foreground != fg) {
-                        if (fg >= 0) {
-                            int rounded = Colors.roundColor(fg, colors);
-                            if (rounded < 8 && !force256colors) {
-                                first = attr(sb, "3" + Integer.toString(rounded), first);
-                                // small hack to force setting bold again after a foreground color change
-                                d |= (s & F_BOLD);
-                            } else if (rounded < 16 && !force256colors) {
-                                first = attr(sb, "9" + Integer.toString(rounded - 8), first);
-                                // small hack to force setting bold again after a foreground color change
-                                d |= (s & F_BOLD);
-                            } else {
-                                first = attr(sb, "38;5;" + Integer.toString(rounded), first);
+                        if (fg > 0) {
+                            int rounded = -1;
+                            if ((fg & F_FOREGROUND_RGB) != 0) {
+                                int r = (int)(fg >> (FG_COLOR_EXP + 16)) & 0xFF;
+                                int g = (int)(fg >> (FG_COLOR_EXP + 8)) & 0xFF;
+                                int b = (int)(fg >> FG_COLOR_EXP) & 0xFF;
+                                if (colors >= HIGH_COLORS) {
+                                    first = attr(sb, "38;2;" + r + ";" + g + ";" + b, first);
+                                } else {
+                                    rounded = palette.round(r, g, b);
+                                }
+                            } else if ((fg & F_FOREGROUND_IND) != 0) {
+                                rounded = palette.round((int)(fg >> FG_COLOR_EXP) & 0xFF);
+                            }
+                            if (rounded >= 0) {
+                                if (colors >= HIGH_COLORS && force == ForceMode.ForceTrueColors) {
+                                    int col = palette.getColor(rounded);
+                                    int r = (col >> 16) & 0xFF;
+                                    int g = (col >> 8) & 0xFF;
+                                    int b = col & 0xFF;
+                                    first = attr(sb, "38;2;" + r + ";" + g + ";" + b, first);
+                                } else if (force == ForceMode.Force256Colors || rounded >= 16) {
+                                    first = attr(sb, "38;5;" + rounded, first);
+                                } else if (rounded >= 8) {
+                                    first = attr(sb, "9" + (rounded - 8), first);
+                                    // small hack to force setting bold again after a foreground color change
+                                    d |= (s & F_BOLD);
+                                } else {
+                                    first = attr(sb, "3" + rounded, first);
+                                    // small hack to force setting bold again after a foreground color change
+                                    d |= (s & F_BOLD);
+                                }
                             }
                         } else {
                             first = attr(sb, "39", first);
@@ -154,14 +208,34 @@ public abstract class AttributedCharSequence implements CharSequence {
                         foreground = fg;
                     }
                     if (background != bg) {
-                        if (bg >= 0) {
-                            int rounded = Colors.roundColor(bg, colors);
-                            if (rounded < 8 && !force256colors) {
-                                first = attr(sb, "4" + Integer.toString(rounded), first);
-                            } else if (rounded < 16 && !force256colors) {
-                                first = attr(sb, "10" + Integer.toString(rounded - 8), first);
-                            } else {
-                                first = attr(sb, "48;5;" + Integer.toString(rounded), first);
+                        if (bg > 0) {
+                            int rounded = -1;
+                            if ((bg & F_BACKGROUND_RGB) != 0) {
+                                int r = (int)(bg >> (BG_COLOR_EXP + 16)) & 0xFF;
+                                int g = (int)(bg >> (BG_COLOR_EXP + 8)) & 0xFF;
+                                int b = (int)(bg >> BG_COLOR_EXP) & 0xFF;
+                                if (colors >= HIGH_COLORS) {
+                                    first = attr(sb, "48;2;" + r + ";" + g + ";" + b, first);
+                                } else {
+                                    rounded = palette.round(r, g, b);
+                                }
+                            } else if ((bg & F_BACKGROUND_IND) != 0) {
+                                rounded = palette.round((int)(bg >> BG_COLOR_EXP) & 0xFF);
+                            }
+                            if (rounded >= 0) {
+                                if (colors >= HIGH_COLORS && force == ForceMode.ForceTrueColors) {
+                                    int col = palette.getColor(rounded);
+                                    int r = (col >> 16) & 0xFF;
+                                    int g = (col >> 8) & 0xFF;
+                                    int b = col & 0xFF;
+                                    first = attr(sb, "48;2;" + r + ";" + g + ";" + b, first);
+                                } else if (force == ForceMode.Force256Colors || rounded >= 16) {
+                                    first = attr(sb, "48;5;" + rounded, first);
+                                } else if (rounded >= 8) {
+                                    first = attr(sb, "10" + (rounded - 8), first);
+                                } else {
+                                    first = attr(sb, "4" + rounded, first);
+                                }
                             }
                         } else {
                             first = attr(sb, "49", first);
@@ -220,7 +294,7 @@ public abstract class AttributedCharSequence implements CharSequence {
 
     public abstract AttributedStyle styleAt(int index);
 
-    int styleCodeAt(int index) {
+    long styleCodeAt(int index) {
         return styleAt(index).getStyle();
     }
 

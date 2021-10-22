@@ -773,8 +773,7 @@ void OffsetTableContigSpace::alloc_block(HeapWord* start, HeapWord* end) {
 OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
                                                MemRegion mr) :
   _offsets(sharedOffsetArray, mr),
-  _par_alloc_lock(Mutex::nonleaf, "OffsetTableContigSpaceParAlloc_lock",
-                  Mutex::_safepoint_check_always, true)
+  _par_alloc_lock(Mutex::safepoint, "OffsetTableContigSpaceParAlloc_lock", true)
 {
   _offsets.set_contig_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);

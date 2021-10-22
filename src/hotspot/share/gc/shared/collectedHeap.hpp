@@ -44,7 +44,7 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
-class AbstractGangTask;
+class WorkerTask;
 class AdaptiveSizePolicy;
 class BarrierSet;
 class GCHeapLog;
@@ -59,7 +59,7 @@ class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
-class WorkGang;
+class WorkerThreads;
 class nmethod;
 
 class ParallelObjectIterator : public CHeapObj<mtGC> {
@@ -469,7 +469,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // concurrent marking) for an intermittent non-GC safepoint.
   // If this method returns NULL, SafepointSynchronize will
   // perform cleanup tasks serially in the VMThread.
-  virtual WorkGang* safepoint_workers() { return NULL; }
+  virtual WorkerThreads* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. If supported, the GC

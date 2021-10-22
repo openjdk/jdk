@@ -359,7 +359,7 @@ void PSOldGen::post_resize() {
   start_array()->set_covered_region(new_memregion);
   ParallelScavengeHeap::heap()->card_table()->resize_covered_region(new_memregion);
 
-  WorkGang* workers = Thread::current()->is_VM_thread() ?
+  WorkerThreads* workers = Thread::current()->is_VM_thread() ?
                       &ParallelScavengeHeap::heap()->workers() : NULL;
 
   // The update of the space's end is done by this call.  As that
