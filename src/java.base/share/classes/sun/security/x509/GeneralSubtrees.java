@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public class GeneralSubtrees implements Cloneable {
     /**
      * Encode the GeneralSubtrees.
      *
-     * @param out the DerOutputStrean to encode this object to.
+     * @param out the DerOutputStream to encode this object to.
      */
     public void encode(DerOutputStream out) throws IOException {
         DerOutputStream seq = new DerOutputStream();
@@ -346,7 +346,6 @@ public class GeneralSubtrees implements Cloneable {
         // same type in this.
         for (int i = 0; i < size(); i++) {
             GeneralNameInterface thisEntry = getGeneralNameInterface(i);
-            boolean removeThisEntry = false;
 
             // Step 3a: If the widest name of this type in other narrows
             // thisEntry, remove thisEntry and add widest other to newThis.

@@ -208,7 +208,7 @@ public class RSAPSSSignature extends SignatureSpi {
     private RSAKey isValid(RSAKey rsaKey) throws InvalidKeyException {
         AlgorithmParameterSpec keyParams = rsaKey.getParams();
         // validate key parameters
-        if (!isCompatible(rsaKey.getParams(), this.sigParams)) {
+        if (!isCompatible(keyParams, this.sigParams)) {
             throw new InvalidKeyException
                 ("Key contains incompatible PSS parameter values");
         }

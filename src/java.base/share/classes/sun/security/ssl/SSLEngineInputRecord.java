@@ -358,7 +358,6 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
         // The packet should be a complete record.
         //
         int srcPos = packet.position();
-        int srcLim = packet.limit();
 
         byte firstByte = packet.get(srcPos);
         byte thirdByte = packet.get(srcPos + 2);
