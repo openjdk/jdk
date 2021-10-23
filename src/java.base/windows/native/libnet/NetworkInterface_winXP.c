@@ -276,14 +276,9 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     while (curr != NULL) {
         netaddr *netaddrP;
         ret = enumAddresses_win_ipaddrtable(env, curr, &netaddrP, tableP);
-        if (ret == -1) {
+        if (ret < 0) {
             free(tableP);
             return -1;
-        } else if (ret == -2) {
-            if ((*env)->ExceptionCheck(env)) {
-                (*env)->ExceptionClear(env);
-            }
-            break;
         } else{
             curr->addrs = netaddrP;
             curr->naddrs += ret;

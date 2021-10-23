@@ -438,8 +438,10 @@ int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrP
      * Iterate through the table to find the addresses with the
      * matching dwIndex. Ignore 0.0.0.0 addresses.
      */
-    if (tableP == NULL)
+    if (tableP == NULL) {
+        *netaddrPP = NULL;
         return 0;
+    }
     count = 0;
     netaddrP = NULL;
 
@@ -452,7 +454,6 @@ int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrP
             if (curr == NULL) {
                 JNU_ThrowOutOfMemoryError(env, "Native heap allocation failure");
                 free_netaddr(netaddrP);
-                free(tableP);
                 return -1;
             }
 
