@@ -576,6 +576,8 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             if ((*env)->ExceptionCheck(env)) {
                 (*env)->ExceptionClear(env);
             }
+            netaddrCount = 0;
+            netaddrPToFree = NULL;
         }
         netaddrP = netaddrPToFree;
     }
