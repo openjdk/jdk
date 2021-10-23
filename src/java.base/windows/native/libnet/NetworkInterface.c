@@ -923,6 +923,8 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
                 /* createNetworkInterface will free addrList */
                 netifObj = createNetworkInterface(env, curr, count, addrList);
                 break;
+            } else {
+                free_netaddr(addrList);
             }
 
             /* on next interface */
