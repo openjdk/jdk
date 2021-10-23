@@ -271,12 +271,14 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     curr = *netifPP;
     ret = lookupIPAddrTable(env, &tableP);
     if (ret < 0) {
+      free_netif(*netifPP);
       return -1;
     }
     while (curr != NULL) {
         netaddr *netaddrP;
         ret = enumAddresses_win_ipaddrtable(env, curr, &netaddrP, tableP);
         if (ret < 0) {
+            free_netif(*netifPP);
             free(tableP);
             return -1;
         } else{
