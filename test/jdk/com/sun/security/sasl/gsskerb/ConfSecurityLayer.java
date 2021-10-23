@@ -110,17 +110,17 @@ public class ConfSecurityLayer {
         byte[] response;
         byte[] challenge;
 
-        response = (byte[]) Subject.callAs(clntSubj,
+        response = Subject.callAs(clntSubj,
                 () -> (clnt.hasInitialResponse()? clnt.evaluateChallenge(EMPTY) : EMPTY));
 
         while (!clnt.isComplete() || !srv.isComplete()) {
             final byte[] responseCopy = response;
-            challenge = (byte[]) Subject.callAs(srvSubj,
+            challenge = Subject.callAs(srvSubj,
                     () -> srv.evaluateResponse(responseCopy));
 
             if (challenge != null) {
                 final byte[] challengeCopy = challenge;
-                response = (byte[]) Subject.callAs(clntSubj,
+                response = Subject.callAs(clntSubj,
                         () -> clnt.evaluateChallenge(challengeCopy));
             }
         }

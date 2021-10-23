@@ -61,12 +61,12 @@ public class Krb5Util {
      * pair from the Subject in the specified AccessControlContext.
      */
     static KerberosTicket getServiceTicket(GSSCaller caller,
-        String clientPrincipal, String serverPrincipal) throws LoginException {
-
+            String clientPrincipal, String serverPrincipal) {
+        // Try to get ticket from current Subject
         @SuppressWarnings("removal")
-        Subject accSubj = Subject.current();
+        Subject currSubj = Subject.current();
         KerberosTicket ticket =
-            SubjectComber.find(accSubj, serverPrincipal, clientPrincipal,
+            SubjectComber.find(currSubj, serverPrincipal, clientPrincipal,
                   KerberosTicket.class);
 
         return ticket;
@@ -82,9 +82,9 @@ public class Krb5Util {
     static KerberosTicket getInitialTicket(GSSCaller caller,
             String clientPrincipal) throws LoginException {
 
-        Subject accSubj = Subject.current();
+        Subject currSubj = Subject.current();
         KerberosTicket ticket =
-                SubjectComber.find(accSubj, null, clientPrincipal,
+                SubjectComber.find(currSubj, null, clientPrincipal,
                         KerberosTicket.class);
 
         // Try to get ticket from Subject obtained from GSSUtil
@@ -106,10 +106,10 @@ public class Krb5Util {
     public static ServiceCreds getServiceCreds(GSSCaller caller,
             String serverPrincipal) throws LoginException {
 
-        Subject accSubj = Subject.current();
+        Subject currSubj = Subject.current();
         ServiceCreds sc = null;
-        if (accSubj != null) {
-            sc = ServiceCreds.getInstance(accSubj, serverPrincipal);
+        if (currSubj != null) {
+            sc = ServiceCreds.getInstance(currSubj, serverPrincipal);
         }
         if (sc == null && !GSSUtil.useSubjectCredsOnly(caller)) {
             Subject subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);

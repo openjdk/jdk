@@ -39,15 +39,15 @@ public class PreserveCombiner {
         Subject s = new Subject();
         s.getPrincipals().add(new X500Principal("cn=duke"));
 
-        String result = (String)Subject.callAs(s, new Callable() {
-            public Object call() {
+        String result = Subject.callAs(s, new Callable<String>() {
+            public String call() {
 
                 // get subject from current ACC - this always worked
-                Subject doAsSubject = Subject.current();
-                if (doAsSubject == null) {
+                Subject callAsSubject = Subject.current();
+                if (callAsSubject == null) {
                     return "test 1 failed";
                 } else {
-                    System.out.println(doAsSubject);
+                    System.out.println(callAsSubject);
                     System.out.println("test 1 passed");
                 }
 

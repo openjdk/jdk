@@ -318,12 +318,12 @@ public class GSSUtil {
                 AccessController.doPrivilegedWithCombiner
                 (new PrivilegedExceptionAction<Vector<T>>() {
                     public Vector<T> run() throws Exception {
-                        Subject accSubj = Subject.current();
+                        Subject currSubj = Subject.current();
                         Vector<T> result = null;
-                        if (accSubj != null) {
+                        if (currSubj != null) {
                             result = new Vector<T>();
                             Iterator<GSSCredentialImpl> iterator =
-                                accSubj.getPrivateCredentials
+                                currSubj.getPrivateCredentials
                                 (GSSCredentialImpl.class).iterator();
                             while (iterator.hasNext()) {
                                 GSSCredentialImpl cred = iterator.next();

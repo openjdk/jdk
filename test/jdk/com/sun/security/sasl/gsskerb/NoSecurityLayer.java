@@ -83,7 +83,7 @@ public class NoSecurityLayer {
         clntprops.put(Sasl.QOP, "auth");
         srvprops.put(Sasl.QOP, "auth,auth-int,auth-conf");
 
-        final SaslClient clnt = (SaslClient)
+        final SaslClient clnt =
             Subject.callAs(clntSubj, () ->
                     Sasl.createSaslClient(
                         new String[]{MECH}, null, PROTOCOL, SERVER_FQDN,
@@ -93,7 +93,7 @@ public class NoSecurityLayer {
             System.out.println(clntSubj);
             System.out.println(srvSubj);
         }
-        final SaslServer srv = (SaslServer)
+        final SaslServer srv =
             Subject.callAs(srvSubj, () ->
                 Sasl.createSaslServer(MECH, PROTOCOL, SERVER_FQDN,
                         srvprops, srvCbh));

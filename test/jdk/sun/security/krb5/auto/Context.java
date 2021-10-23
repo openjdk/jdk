@@ -111,8 +111,8 @@ public class Context {
                     return cred;
                 }
             });
-        } catch (CompletionException pae) {
-            throw (Exception) pae.getCause();
+        } catch (CompletionException ce) {
+            throw (Exception) ce.getCause();
         }
         out.name = name + " as " + out.cred.getName().toString();
         return out;
@@ -346,8 +346,8 @@ public class Context {
                     return action.run(Context.this, in);
                 }
             });
-        } catch (CompletionException pae) {
-            throw (Exception) pae.getCause();
+        } catch (CompletionException ce) {
+            throw (Exception) ce.getCause();
         }
     }
 
@@ -631,8 +631,8 @@ public class Context {
             out.cred = creds;
             out.name = name + " as " + out.cred.getName().toString();
             return out;
-        } catch (CompletionException pae) {
-            Exception e = (Exception) pae.getCause();
+        } catch (CompletionException ce) {
+            Exception e = (Exception) ce.getCause();
             if (e instanceof InvocationTargetException) {
                 throw (Exception)((InvocationTargetException) e).getTargetException();
             } else {
