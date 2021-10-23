@@ -77,6 +77,10 @@
 import java.io.IOException;
 import java.io.File;
 
+import java.nio.file.attribute.FileTime;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSArchiveUtils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -95,7 +99,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
     public static void checkFileExists(String fileName) throws Exception {
         File file = new File(fileName);
         if (!file.exists()) {
-             throw new IOException("Archive " + file.getName() + " is not autamatically created!");
+             throw new IOException("Archive " + fileName + " is not automatically created");
         }
     }
 
@@ -147,6 +151,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_SOURCE);
                 });
+        // remember the FileTime
+        FileTime ft1 = Files.getLastModifiedTime(Paths.get(TOP_NAME));
 
         // 10.3 run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass
         print("10.3 run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass");
@@ -162,17 +168,21 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                       .shouldNotContain("Dumping shared data to file")
                       .shouldContain(HELLO_SOURCE);
                 });
+        FileTime ft2 = Files.getLastModifiedTime(Paths.get(TOP_NAME));
+        if (!ft2.equals(ft1)) {
+            throw new RuntimeException("Archive file " + TOP_NAME + "  should not be updated");
+        }
 
+        // 11 run with damaged magic should not regenerate dynamic archive
+        //    The bad magic will make the archive be opened as static archive
+        //    and failed, no shared for base archive either.
+        print("11 run with damaged magic should not regenerate dynamic archive");
+        String modMagic = startNewArchive("modify-magic");
+        File copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modMagic);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetMagic(), 0x1234);
+        ft1 = Files.getLastModifiedTime(Paths.get(modMagic));
 
-         // 11 run with damaged magic should not regenerate dynamic archive
-         //    The bad magic will make the archive be opened as static archive
-         //    and failed, no shared for base archive either.
-         print("11 run with damaged magic should not regenerate dynamic archive");
-         String modMagic = startNewArchive("modify-magic");
-         File copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modMagic);
-         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetMagic(), 0x1234);
-
-         run(modMagic,
+        run(modMagic,
             "-Xshare:auto",
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
@@ -183,13 +193,17 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0);
                 output.shouldNotContain("Dumping shared data to file");
                 });
+        ft2 = Files.getLastModifiedTime(Paths.get(modMagic));
+        if (!ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + modMagic + " should not automatically be generated");
+        }
 
         // 12 run with a bad versioned archive should create dynamic archive
         print("12 run with a bad versioned archive should create dynamic archive");
-        archiveFile = new File(TOP_NAME);
         String modVersion = startNewArchive("modify-version");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modVersion);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x00000000);
+        ft1 = Files.getLastModifiedTime(Paths.get(modVersion));
 
         run(modVersion,
             "-Xshare:auto",
@@ -201,14 +215,17 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 });
-        checkFileExists(modVersion);
+        ft2 = Files.getLastModifiedTime(Paths.get(modVersion));
+        if (ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + modVersion + " should automatically be generated");
+        }
 
         // 13 run with a bad jvm_indent archive should create dynamic archive
         print("13 run with a bad jvm_ident archive should create dynamic archive");
-        archiveFile = new File(TOP_NAME);
         String modJvmIdent = startNewArchive("modify-jvmident");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modJvmIdent);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetJvmIdent(), 0x00000000);
+        ft1 = Files.getLastModifiedTime(Paths.get(modJvmIdent));
 
         run(modJvmIdent,
             "-Xshare:auto",
@@ -220,26 +237,30 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 });
-        checkFileExists(modJvmIdent);
+        ft2 = Files.getLastModifiedTime(Paths.get(modJvmIdent));
+        if (ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + modJvmIdent + " should automatically be generated");
+        }
 
-         // 14 read base archive from top archive failed
-         //    the failure will cause the archive be opened as static
-         //    so no shared both for base and top
-         print("14 read base archive from top archive failed");
-         String modBaseName = startNewArchive("modify-basename");
-         copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modBaseName);
-         int nameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
-         int offset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
-         StringBuilder sb = new StringBuilder();
-         for (int i = 0; i < nameSize - 4; i++) {
-             sb.append('Z');
-         }
-         sb.append(".jsa");
-         sb.append('\0');
-         String newName = sb.toString();
-         CDSArchiveUtils.writeData(copiedJsa, offset, newName.getBytes());
+        // 14 read base archive from top archive failed
+        //    the failure will cause the archive be opened as static
+        //    so no shared both for base and top
+        print("14 read base archive from top archive failed");
+        String modBaseName = startNewArchive("modify-basename");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modBaseName);
+        int nameSize = CDSArchiveUtils.baseArchiveNameSize(copiedJsa);
+        int offset = CDSArchiveUtils.baseArchivePathOffset(copiedJsa);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < nameSize - 4; i++) {
+            sb.append('Z');
+        }
+        sb.append(".jsa");
+        sb.append('\0');
+        String newName = sb.toString();
+        CDSArchiveUtils.writeData(copiedJsa, offset, newName.getBytes());
 
-         run(modBaseName,
+        ft1 = Files.getLastModifiedTime(Paths.get(modBaseName));
+        run(modBaseName,
             "-Xshare:auto",
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
@@ -250,80 +271,106 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0);
                 output.shouldNotContain("Dumping shared data to file");
                 });
+        ft2 = Files.getLastModifiedTime(Paths.get(modBaseName));
+        if (!ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + modBaseName + " should not automatically be generated");
+        }
 
-         // 20 Testing with -XX:SharedArchiveFile=top:base
-         print("20 Testing with -XX:SharedArchiveFile=top:base");
-         // 20.1 dump base archive and top archive
-         print("20.1 dump base archive " + BASE_NAME);
-         dumpBaseArchive(BASE_NAME, "-Xlog:cds")
-             .assertNormalExit(output -> {
+        // delete top archive
+        if (archiveFile.exists()) {
+            archiveFile.delete();
+        }
+        // delete base archive
+        File baseFile = new File(BASE_NAME);
+        if (baseFile.exists()) {
+            baseFile.delete();
+        }
+        // 20 Testing with -XX:SharedArchiveFile=base:top
+        print("20 Testing with -XX:SharedArchiveFile=base:top");
+        // 20.1 dump base archive and top archive
+        print("20.1 dump base archive " + BASE_NAME);
+        dumpBaseArchive(BASE_NAME, "-Xlog:cds")
+            .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
-             });
-         checkFileExists(BASE_NAME);
+            });
+        checkFileExists(BASE_NAME);
 
-         // 20.2 dump top based on base
-         print("20.2 dump top based on base");
-         dump2(BASE_NAME, TOP_NAME,
-               "-Xlog:cds",
-               "-cp", appJar, mainAppClass)
+        // 20.2 dump top based on base
+        print("20.2 dump top based on base");
+        dump2(BASE_NAME, TOP_NAME,
+              "-Xlog:cds",
+              "-cp", appJar, mainAppClass)
+              .assertNormalExit(output -> {
+                  output.shouldHaveExitValue(0)
+                      .shouldContain("Dumping shared data to file:")
+                      .shouldContain(TOP_NAME);
+              });
+        checkFileExists(TOP_NAME);
+
+        // 20.3 run with base and top
+        print("20.3 run with base and top");
+        run2(BASE_NAME, TOP_NAME,
+             "-Xlog:cds",
+             "-Xlog:cds+dynamic=info",
+             "-Xlog:class+load",
+             "-cp", appJar,
+             mainAppClass)
+            .assertNormalExit(output -> {
+                output.shouldHaveExitValue(0)
+                      .shouldContain(HELLO_SOURCE);
+            });
+
+        // 21 top version is not correct, regenerate top
+        print("21 top version is not correct, regenerate top");
+        String modHeader = startNewArchive("modify-header");
+        File topFile = new File(TOP_NAME);
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(topFile, modHeader);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0xff);
+        ft1 = Files.getLastModifiedTime(Paths.get(modHeader));
+
+        run2(BASE_NAME, modHeader,
+             "-Xshare:auto",
+             "-XX:+AutoCreateSharedArchive",
+             "-Xlog:cds",
+             "-Xlog:cds+dynamic=info",
+             "-cp", appJar,
+             mainAppClass)
              .assertNormalExit(output -> {
                  output.shouldHaveExitValue(0)
                        .shouldContain("Dumping shared data to file:")
-                       .shouldContain(TOP_NAME);
+                       .shouldContain(modHeader)
+                       .shouldContain("Regenerate MethodHandle Holder classes");
              });
+        ft2 = Files.getLastModifiedTime(Paths.get(modHeader));
+        if (ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + modBaseName + " should automatically be generated");
+        }
 
-         // 20.3 run with base and top
-         print("20.3 run with base and top");
-         run2(BASE_NAME, TOP_NAME,
-              "-Xlog:cds",
-              "-Xlog:cds+dynamic=info",
-              "-Xlog:class+load",
-              "-cp", appJar,
-              mainAppClass)
+        // 22 screw up base archive, will not generate top
+        print("22 screw up base archive, will not generate top");
+        baseFile = new File(BASE_NAME);
+        String modBase = startNewArchive("modify-base");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(baseFile, modBase);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0xff);
+        ft1 = Files.getLastModifiedTime(Paths.get(TOP_NAME));
+
+        run2(modBase, TOP_NAME,
+             "-Xshare:auto",
+             "-XX:+AutoCreateSharedArchive",
+             "-Xlog:cds",
+             "-Xlog:cds+dynamic=info",
+             "-cp", appJar,
+             mainAppClass)
              .assertNormalExit(output -> {
-                 output.shouldHaveExitValue(0)
-                       .shouldContain(HELLO_SOURCE);
+                 output.shouldContain("The shared archive file has the wrong version")
+                       .shouldContain("Initialize static archive failed")
+                       .shouldContain("Unable to map shared spaces")
+                       .shouldContain("Hello World")
+                       .shouldNotContain("Dumping shared data to file:");
              });
-
-
-         File topFile = new File(TOP_NAME);
-         // 21 top version is not correct, regenerate top
-         print("21 top version is not correct, regenerate top");
-         String modHeader = startNewArchive("modify-header");
-         copiedJsa = CDSArchiveUtils.copyArchiveFile(topFile, modHeader);
-         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0xff);
-         run2(BASE_NAME, modHeader,
-              "-Xshare:auto",
-              "-XX:+AutoCreateSharedArchive",
-              "-Xlog:cds",
-              "-Xlog:cds+dynamic=info",
-              "-cp", appJar,
-              mainAppClass)
-              .assertNormalExit(output -> {
-                  output.shouldHaveExitValue(0)
-                        .shouldContain("Dumping shared data to file:")
-                        .shouldContain(modHeader)
-                        .shouldContain("Regenerate MethodHandle Holder classes");
-              });
-         // 22 screw up base archive, will not generate top
-         print("22 screw up base archive, will not generate top");
-         File baseFile = new File(BASE_NAME);
-         String modBase = startNewArchive("modify-base");
-         copiedJsa = CDSArchiveUtils.copyArchiveFile(baseFile, modBase);
-         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0xff);
-         run2(modBase, TOP_NAME,
-              "-Xshare:auto",
-              "-XX:+AutoCreateSharedArchive",
-              "-Xlog:cds",
-              "-Xlog:cds+dynamic=info",
-              "-cp", appJar,
-              mainAppClass)
-              .assertNormalExit(output -> {
-                  output.shouldContain("The shared archive file has the wrong version")
-                        .shouldContain("Initialize static archive failed")
-                        .shouldContain("Unable to map shared spaces")
-                        .shouldContain("Hello World")
-                        .shouldNotContain("Dumping shared data to file:");
-              });
+        ft2 = Files.getLastModifiedTime(Paths.get(TOP_NAME));
+        if (!ft1.equals(ft2)) {
+            throw new RuntimeException("Shared archive " + TOP_NAME + " should not be created at exit");
+        }
     }
 }
