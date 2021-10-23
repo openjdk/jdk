@@ -161,8 +161,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len);
-  // This assumes that all prototype bits fit in an int32_t
-  mov(t1, (int32_t)(intptr_t)markWord::prototype().value());
+  ldr(t1, Address(klass, Klass::prototype_header_offset()));
   str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
 
   if (UseCompressedClassPointers) { // Take care not to kill klass
