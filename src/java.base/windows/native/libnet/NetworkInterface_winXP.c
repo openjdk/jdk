@@ -331,6 +331,9 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
                          */
                         nif->ipv6Index = ptr->Ipv6IfIndex;
                         c = getAddrsFromAdapter(ptr, &nif->addrs);
+                        if (c == -1) {
+                            goto err;
+                        }
                         nif->naddrs += c;
                         break;
                     }
