@@ -182,16 +182,6 @@ abstract class OutputRecord
                 encodeChangeCipherSpec();
             }
 
-            /*
-             * Dispose of any intermediate state in the underlying cipher.
-             * For PKCS11 ciphers, this will release any attached sessions,
-             * and thus make finalization faster.
-             *
-             * Since MAC's doFinal() is called for every SSL/TLS packet, it's
-             * not necessary to do the same with MAC's.
-             */
-            this.writeCipher.dispose();
-
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
         } finally {
@@ -217,9 +207,6 @@ abstract class OutputRecord
             hm[hm.length - 1] = keyUpdateRequest;
             encodeHandshake(hm, 0, hm.length);
             flush();
-
-            // Dispose of any intermediate state in the underlying cipher.
-            this.writeCipher.dispose();
 
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
