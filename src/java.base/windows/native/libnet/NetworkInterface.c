@@ -161,7 +161,7 @@ MIB_IFROW *getIF(jint index) {
  * We use GetIfTable rather than other IP helper routines because it's
  * available on 98 & NT SP4+.
  *
- * Returns the number of interfaces found or -1 if error. If no error
+ * Returns the number of interfaces found or -1/-2 if error. If no error
  * occurs then netifPP be returned as list of netif structures or NULL
  * if no interfaces are found.
  */

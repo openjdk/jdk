@@ -253,12 +253,8 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     */
 
     ret = enumInterfaces(env, netifPP);
-    if (ret == -1) {
+    if (ret < 0) {
         return -1;
-    } else if( ret == -2){
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
-        }
     } else {
         count = ret;
     }
