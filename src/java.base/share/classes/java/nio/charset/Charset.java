@@ -529,8 +529,8 @@ public abstract class Charset
 
     /**
      * Returns a charset object for the named charset. If the charset object
-     * for the named charset is not available, then {@code fallback} is
-     * returned.
+     * for the named charset is not available or {@code charsetName} is not a
+     * legal charset name, then {@code fallback} is returned.
      *
      * @param  charsetName
      *         The name of the requested charset; may be either
@@ -538,11 +538,12 @@ public abstract class Charset
      *
      * @param  fallback
      *         fallback charset in case the charset object for the named
-     *         charset is not available. May be {@code null}
+     *         charset is not available or {@code charsetName} is not a legal
+     *         charset name. May be {@code null}
      *
      * @return  A charset object for the named charset, or {@code fallback}
      *          in case the charset object for the named charset is not
-     *          available.
+     *          available or {@code charsetName} is not a legal charset name
      *
      * @throws  IllegalArgumentException
      *          If the given {@code charsetName} is {@code null}

@@ -586,7 +586,8 @@ public final class Console implements Flushable
             }
         }
         if (cs == null) {
-            cs = Charset.forName(StaticProperty.nativeEncoding(), Charset.defaultCharset());
+            cs = Charset.forName(StaticProperty.nativeEncoding(),
+                    Charset.defaultCharset());
         }
 
         CHARSET = cs;
