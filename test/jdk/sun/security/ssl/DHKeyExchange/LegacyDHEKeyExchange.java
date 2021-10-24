@@ -32,8 +32,10 @@
  * @run main/othervm -Djdk.tls.ephemeralDHKeySize=legacy LegacyDHEKeyExchange
  */
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
+import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 
 public class LegacyDHEKeyExchange extends SSLSocketTemplate{
@@ -53,6 +55,10 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
                 throw she;
             }
             System.out.println("Expected exception thrown in server");
+        } catch (SSLException | SocketException se) {
+            // The client side may have closed the socket.
+            System.out.println("Server exception:");
+            se.printStackTrace(System.out);
         } finally {
             connDoneLatch.countDown();
             connDoneLatch.await();
@@ -75,6 +81,10 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
                 throw she;
             }
             System.out.println("Expected exception thrown in client");
+        } catch (SSLException | SocketException se) {
+            // The server side may have closed the socket.
+            System.out.println("Client exception:");
+            se.printStackTrace(System.out);
         } finally {
             connDoneLatch.countDown();
             connDoneLatch.await();

@@ -45,7 +45,7 @@ class ArchivedClassLoaderData {
     // system loaders (e.g., if you create a custom JDK image with only java.base).
     if (loader_data != NULL) {
       assert(!loader_data->has_class_mirror_holder(),
-             "loaders for non-strong hidden classes or unsafe anonymous classes not supported");
+             "loaders for non-strong hidden classes not supported");
     }
   }
 public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4028006 4044013 4096694 4107276 4107570 4112869 4130885 7039469 7126465 7158483
  *      8008577 8077685 8098547 8133321 8138716 8148446 8151876 8159684 8166875 8181157
- *      8228469
+ *      8228469 8274407
  * @modules java.base/sun.util.resources
  * @library /java/text/testlib
  * @summary test TimeZone
@@ -102,7 +102,7 @@ public class TimeZoneTest extends IntlTest
     public void TestShortZoneIDs() throws Exception {
 
         ZoneDescriptor[] JDK_116_REFERENCE_LIST = {
-            new ZoneDescriptor("MIT", 780, true),
+            new ZoneDescriptor("MIT", 780, false), // Samoa no longer observes DST starting 2021b
             new ZoneDescriptor("HST", -600, false),
             new ZoneDescriptor("AST", -540, true),
             new ZoneDescriptor("PST", -480, true),

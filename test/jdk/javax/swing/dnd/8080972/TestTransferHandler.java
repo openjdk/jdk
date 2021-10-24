@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.awt.datatransfer.*;
 /*
  * @test
  * @bug 8080972
+ * @run main/othervm -Djava.security.manager=allow TestTransferHandler
  * @summary Audit Core Reflection in module java.desktop for places that will
  *          require changes to work with modules
  * @author Alexander Scherbatiy

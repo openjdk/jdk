@@ -39,7 +39,7 @@ import org.w3c.dom.ls.LSResourceResolver;
  * @test
  * @bug 4997818
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4997818
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4997818
  * @run testng/othervm validation.Bug4997818
  * @summary Test SchemaFactory.newSchema(...) throws an exception, which is thrown from LSResourceResolver.
  */

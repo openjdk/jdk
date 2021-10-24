@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -149,6 +149,7 @@
   intptr_t*   fp() const { return _fp; }
 
   inline address* sender_pc_addr() const;
+  inline address  sender_pc_maybe_signed() const;
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;

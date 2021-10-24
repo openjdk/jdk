@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ LIB_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
     $(TESTLIBRARY_DIR)/jtreg \
     -maxdepth 1 -name '*.java')
-WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/sun/hotspot -name '*.java')
+WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/sun/hotspot $(TESTLIBRARY_DIR)/jdk/test/whitebox -name '*.java')
 EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.reflect=ALL-UNNAMED \

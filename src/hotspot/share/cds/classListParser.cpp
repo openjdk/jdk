@@ -29,6 +29,7 @@
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -54,7 +55,7 @@
 volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
-ClassListParser::ClassListParser(const char* file) {
+ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -85,10 +86,12 @@ bool ClassListParser::is_parsing_thread() {
 }
 
 ClassListParser::~ClassListParser() {
-  if (_file) {
+  if (_file != NULL) {
     fclose(_file);
   }
   Atomic::store(&_parsing_thread, (Thread*)NULL);
+  delete _indy_items;
+  delete _interfaces;
   _instance = NULL;
 }
 
@@ -118,6 +121,13 @@ int ClassListParser::parse(TRAPS) {
         return 0; // THROW
       }
 
+      ResourceMark rm(THREAD);
+      char* ex_msg = (char*)"";
+      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+      if (message != NULL) {
+        ex_msg = java_lang_String::as_utf8_string(message);
+      }
+      log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
       // We might have an invalid class name or an bad class. Warn about it
       // and keep going to the next line.
       CLEAR_PENDING_EXCEPTION;
@@ -456,7 +466,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  InstanceKlass* k = ClassLoaderExt::load_class(class_name, _source, CHECK_NULL);
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, _source, CHECK_NULL);
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);
@@ -464,15 +474,13 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
+  assert(k->is_shared_unregistered_class(), "must be");
+
   bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
   }
-
-  // This tells JVM_FindLoadedClass to not find this class.
-  k->set_shared_classpath_index(UNREGISTERED_INDEX);
-  k->clear_shared_class_loader_type();
 
   return k;
 }
@@ -505,7 +513,7 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
   }
 }
 
-bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS) {
+bool ClassListParser::is_matching_cp_entry(const constantPoolHandle &pool, int cp_index, TRAPS) {
   ResourceMark rm(THREAD);
   CDSIndyInfo cii;
   populate_cds_indy_info(pool, cp_index, &cii, CHECK_0);
@@ -522,9 +530,9 @@ bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_inde
   return true;
 }
 
-void ClassListParser::resolve_indy(Thread* current, Symbol* class_name_symbol) {
+void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbol) {
   ExceptionMark em(current);
-  Thread* THREAD = current; // For exception macros.
+  JavaThread* THREAD = current; // For exception macros.
   ClassListParser::resolve_indy_impl(class_name_symbol, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     ResourceMark rm(current);
@@ -612,9 +620,8 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     // delegate to the correct loader (boot, platform or app) depending on
     // the package name.
 
-    Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_NULL);
     // ClassLoader.loadClass() wants external class name format, i.e., convert '/' chars to '.'
-    Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_NULL);
+    Handle ext_class_name = java_lang_String::externalize_classname(class_name_symbol, CHECK_NULL);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
 
     JavaCalls::call_virtual(&result,
@@ -642,11 +649,14 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
     SystemDictionaryShared::update_shared_entry(ik, id);
-    InstanceKlass** old_ptr = table()->lookup(id);
-    if (old_ptr != NULL) {
+    bool created;
+    id2klass_table()->put_if_absent(id, ik, &created);
+    if (!created) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
-    table()->add(id, ik);
+    if (id2klass_table()->maybe_grow()) {
+      log_info(cds, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
+    }
   }
 
   return klass;
@@ -657,7 +667,7 @@ bool ClassListParser::is_loading_from_source() {
 }
 
 InstanceKlass* ClassListParser::lookup_class_by_id(int id) {
-  InstanceKlass** klass_ptr = table()->lookup(id);
+  InstanceKlass** klass_ptr = id2klass_table()->get(id);
   if (klass_ptr == NULL) {
     error("Class ID %d has not been defined", id);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ class PKIX {
         private Set<TrustAnchor> anchors;
         private List<X509Certificate> certs;
         private Timestamp timestamp;
+        private Date timestampDate;
         private String variant = Validator.VAR_GENERIC;
 
         ValidatorParams(CertPath cp, PKIXParameters params)
@@ -154,13 +155,22 @@ class PKIX {
                 stores = params.getCertStores();
             return stores;
         }
+        // The date() param is used when enforcing the validity period
+        // of certificates and when checking the time period of revocation data.
+        // The main difference between the date() and timestamp() method is
+        // that the date() method only uses the timestamp (if specified)
+        // for certificates in a code signer's chain.
         Date date() {
             if (!gotDate) {
-                // use timestamp if checking signed code that is
-                // timestamped, otherwise use date parameter
+                // Use timestamp if checking signed code that is
+                // timestamped, otherwise use date parameter.
+                // Note that TSA server certificates do not use the
+                // timestamp, which means that an expired TSA certificate
+                // is considered a validation failure. This policy means
+                // that signed and timestamped code is valid until the TSA
+                // certificate expires (assuming all other checks are valid).
                 if (timestamp != null &&
-                    (variant.equals(Validator.VAR_CODE_SIGNING) ||
-                     variant.equals(Validator.VAR_PLUGIN_CODE_SIGNING))) {
+                    variant.equals(Validator.VAR_CODE_SIGNING)) {
                     date = timestamp.getTimestamp();
                 } else {
                     date = params.getDate();
@@ -210,6 +220,17 @@ class PKIX {
         String variant() {
             return variant;
         }
+        // The timestamp() param is passed as the date param when creating an
+        // AlgorithmChecker. An AlgorithmChecker always uses the timestamp
+        // if specified in order to enforce the denyAfter constraint.
+        Date timestamp() {
+            // return timestamp date if set, otherwise use date parameter
+            if (timestampDate == null) {
+                timestampDate = (timestamp != null)
+                    ? timestamp.getTimestamp() : date();
+            }
+            return timestampDate;
+        }
     }
 
     static class BuilderParams extends ValidatorParams {
@@ -240,7 +261,7 @@ class PKIX {
             if (stores == null) {
                 // reorder CertStores so that local CertStores are tried first
                 stores = new ArrayList<>(params.getCertStores());
-                Collections.sort(stores, new CertStoreComparator());
+                stores.sort(new CertStoreComparator());
             }
             return stores;
         }

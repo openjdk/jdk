@@ -90,6 +90,7 @@ public class HotSpotAgent {
 
     // All needed information for server side
     private String serverID;
+    private String serverName;
 
     private String[] jvmLibNames;
 
@@ -203,7 +204,8 @@ public class HotSpotAgent {
       to which the RMI connector is bound. If not specified a random
       available port is used. */
     public synchronized void startServer(int processID,
-                                         String uniqueID,
+                                         String serverID,
+                                         String serverName,
                                          int rmiPort) {
         if (debugger != null) {
             throw new DebuggerException("Already attached");
@@ -211,7 +213,8 @@ public class HotSpotAgent {
         pid = processID;
         startupMode = PROCESS_MODE;
         isServer = true;
-        serverID = uniqueID;
+        this.serverID = serverID;
+        this.serverName = serverName;
         this.rmiPort = rmiPort;
         go();
     }
@@ -220,8 +223,8 @@ public class HotSpotAgent {
      starts a debug server, allowing remote machines to connect and
      examine this process. Uses specified name to uniquely identify a
      specific debuggee on the server */
-    public synchronized void startServer(int processID, String uniqueID) {
-        startServer(processID, uniqueID, 0);
+    public synchronized void startServer(int processID, String serverID, String serverName) {
+        startServer(processID, serverID, serverName, 0);
     }
 
     /** This attaches to a process running on the local machine and
@@ -229,7 +232,7 @@ public class HotSpotAgent {
       examine this process. */
     public synchronized void startServer(int processID)
     throws DebuggerException {
-        startServer(processID, null);
+        startServer(processID, null, null);
     }
 
     /** This opens a core file on the local machine and starts a debug
@@ -239,7 +242,8 @@ public class HotSpotAgent {
       is bound. If not specified a random available port is used.  */
     public synchronized void startServer(String javaExecutableName,
                                          String coreFileName,
-                                         String uniqueID,
+                                         String serverID,
+                                         String serverName,
                                          int rmiPort) {
         if (debugger != null) {
             throw new DebuggerException("Already attached");
@@ -251,7 +255,8 @@ public class HotSpotAgent {
         this.coreFileName = coreFileName;
         startupMode = CORE_FILE_MODE;
         isServer = true;
-        serverID = uniqueID;
+        this.serverID = serverID;
+        this.serverName = serverName;
         this.rmiPort = rmiPort;
         go();
     }
@@ -262,8 +267,9 @@ public class HotSpotAgent {
      debugee */
     public synchronized void startServer(String javaExecutableName,
                                          String coreFileName,
-                                         String uniqueID) {
-        startServer(javaExecutableName, coreFileName, uniqueID, 0);
+                                         String serverID,
+                                         String serverName) {
+        startServer(javaExecutableName, coreFileName, serverID, serverName, 0);
     }
 
     /** This opens a core file on the local machine and starts a debug
@@ -271,7 +277,7 @@ public class HotSpotAgent {
       core file. */
     public synchronized void startServer(String javaExecutableName, String coreFileName)
     throws DebuggerException {
-        startServer(javaExecutableName, coreFileName, null);
+        startServer(javaExecutableName, coreFileName, null, null);
     }
 
     /** This may only be called on the server side after startServer()
@@ -302,7 +308,7 @@ public class HotSpotAgent {
         DebuggerException ex = null;
         if (isServer) {
             try {
-                RMIHelper.unbind(serverID);
+                RMIHelper.unbind(serverID, serverName);
             }
             catch (DebuggerException de) {
                 ex = de;
@@ -377,7 +383,7 @@ public class HotSpotAgent {
                 catch (RemoteException rem) {
                     throw new DebuggerException(rem);
                 }
-                RMIHelper.rebind(serverID, remote);
+                RMIHelper.rebind(serverID, serverName, remote);
             }
         } else {
             //

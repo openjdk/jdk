@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,18 +49,15 @@ import static java.util.stream.Collectors.joining;
  * {@linkplain ClassDesc} for the component type and then call the {@link #arrayType()}
  * or {@link #arrayType(int)} methods.
  *
- * @apiNote In the future, if the Java language permits, {@linkplain ClassDesc}
- * may become a {@code sealed} interface, which would prohibit subclassing except
- * by explicitly permitted types.  Non-platform classes should not implement
- * {@linkplain ClassDesc} directly.
- *
  * @see ConstantDescs
  *
  * @since 12
  */
-public interface ClassDesc
+public sealed interface ClassDesc
         extends ConstantDesc,
-                TypeDescriptor.OfField<ClassDesc> {
+                TypeDescriptor.OfField<ClassDesc>
+        permits PrimitiveClassDescImpl,
+                ReferenceClassDescImpl {
 
     /**
      * Returns a {@linkplain ClassDesc} for a class or interface type,
@@ -102,7 +99,7 @@ public interface ClassDesc
         }
         validateMemberName(requireNonNull(className), false);
         return ofDescriptor("L" + binaryToInternal(packageName) +
-                (packageName.length() > 0 ? "/" : "") + className + ";");
+                "/" + className + ";");
     }
 
     /**

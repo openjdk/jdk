@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 
 class AllocTracer : AllStatic {
   public:
-    static void send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, Thread* thread);
-    static void send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, Thread* thread);
+    static void send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, JavaThread* thread);
+    static void send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, JavaThread* thread);
     static void send_allocation_requiring_gc_event(size_t size, uint gcId);
 };
 

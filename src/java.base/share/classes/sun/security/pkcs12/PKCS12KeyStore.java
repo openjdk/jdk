@@ -2736,6 +2736,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (useLegacy()) {
             return LEGACY_KEY_PBE_ALGORITHM;
         }
+        @SuppressWarnings("removal")
         String result = AccessController.doPrivileged(new PrivilegedAction<String>() {
             public String run() {
                 String result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public final class TaskHelper {
             return this;
         }
         public final String key;
+        @SuppressWarnings("serial") // Array component type is not Serializable
         public final Object[] args;
         public boolean showUsage;
     }
@@ -129,7 +130,7 @@ public final class TaskHelper {
                       String shortname,
                       boolean isTerminal)
         {
-            this(hasArg, processing, false, name, shortname, "", isTerminal);
+            this(hasArg, processing, hidden, name, shortname, "", isTerminal);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname, boolean isTerminal) {
@@ -420,7 +421,7 @@ public final class TaskHelper {
                     ) throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
-                    throw new PluginException(PluginsResourceBundle.
+                    throw new IllegalArgumentException(PluginsResourceBundle.
                             getMessage("err.dir.already.exits", output));
                 }
             }

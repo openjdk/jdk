@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,11 @@
  *          is paired with a sidecar container by sharing certain aspects of container
  *          namespace such as PID namespace, specific sub-directories, IPC and more.
  * @requires docker.support
- * @library /test/lib
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
+ * @library /test/lib
  * @build EventGeneratorLoop
  * @run driver TestJcmdWithSideCar
  */
@@ -64,7 +65,7 @@ public class TestJcmdWithSideCar {
             return;
         }
 
-        DockerTestUtils.buildJdkDockerImage(IMAGE_NAME, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(IMAGE_NAME);
 
         try {
             // Start the loop process in the "main" container, then run test cases
@@ -81,10 +82,8 @@ public class TestJcmdWithSideCar {
             // mainContainer.assertIsAlive();
             // testCase02(mainProcPid);
 
-            // JCMD does not work in sidecar configuration, except for "jcmd -l".
-            // Including this test case to assist in reproduction of the problem.
-            // mainContainer.assertIsAlive();
-            // testCase03(mainProcPid);
+            mainContainer.assertIsAlive();
+            testCase03(mainProcPid);
 
             mainContainer.waitForAndCheck(TIME_TO_RUN_MAIN_PROCESS * 1000);
         } finally {

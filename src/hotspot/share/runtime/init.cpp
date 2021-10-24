@@ -33,6 +33,7 @@
 #endif
 #include "interpreter/bytecodes.hpp"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logTag.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -55,7 +56,6 @@ void check_ThreadShadow();
 void eventlog_init();
 void mutex_init();
 void universe_oopstorage_init();
-void chunkpool_init();
 void perfMemory_init();
 void SuspendibleThreadSet_init();
 
@@ -103,7 +103,6 @@ void vm_init_globals() {
   eventlog_init();
   mutex_init();
   universe_oopstorage_init();
-  chunkpool_init();
   perfMemory_init();
   SuspendibleThreadSet_init();
 }
@@ -123,6 +122,7 @@ jint init_globals() {
   if (status != JNI_OK)
     return status;
 
+  AsyncLogWriter::initialize();
   gc_barrier_stubs_init();  // depends on universe_init, must be before interpreter_init
   interpreter_init_stub();  // before methods get loaded
   accessFlags_init();

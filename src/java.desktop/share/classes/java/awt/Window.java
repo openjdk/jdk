@@ -404,8 +404,8 @@ public class Window extends Container implements Accessible {
      * These fields are initialized in the native peer code
      * or via AWTAccessor's WindowAccessor.
      */
-    private transient volatile int securityWarningWidth = 0;
-    private transient volatile int securityWarningHeight = 0;
+    private transient volatile int securityWarningWidth;
+    private transient volatile int securityWarningHeight;
 
     static {
         /* ensure that the necessary native libraries are loaded */
@@ -414,12 +414,14 @@ public class Window extends Container implements Accessible {
             initIDs();
         }
 
+        @SuppressWarnings("removal")
         String s = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.awt.syncLWRequests"));
-        systemSyncLWRequests = (s != null && s.equals("true"));
-        s = java.security.AccessController.doPrivileged(
+        systemSyncLWRequests = "true".equals(s);
+        @SuppressWarnings("removal")
+        String s2 = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.awt.Window.locationByPlatform"));
-        locationByPlatformProp = (s != null && s.equals("true"));
+        locationByPlatformProp = "true".equals(s2);
     }
 
     /**
@@ -1397,6 +1399,7 @@ public class Window extends Container implements Accessible {
         return warningString;
     }
 
+    @SuppressWarnings("removal")
     private void setWarningString() {
         warningString = null;
         SecurityManager sm = System.getSecurityManager();
@@ -1701,6 +1704,7 @@ public class Window extends Container implements Accessible {
             return;
         }
         if (exclusionType == Dialog.ModalExclusionType.TOOLKIT_EXCLUDE) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(AWTPermissions.TOOLKIT_MODALITY_PERMISSION);
@@ -1745,7 +1749,7 @@ public class Window extends Container implements Accessible {
     }
 
     void updateChildrenBlocking() {
-        Vector<Window> childHierarchy = new Vector<Window>();
+        ArrayList<Window> childHierarchy = new ArrayList<>();
         Window[] ownedWindows = getOwnedWindows();
         for (int i = 0; i < ownedWindows.length; i++) {
             childHierarchy.add(ownedWindows[i]);
@@ -2251,6 +2255,7 @@ public class Window extends Container implements Accessible {
      * @since 1.5
      */
     public final void setAlwaysOnTop(boolean alwaysOnTop) throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);

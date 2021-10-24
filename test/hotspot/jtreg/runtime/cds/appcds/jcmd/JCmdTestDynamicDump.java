@@ -27,6 +27,7 @@
  * @bug 8259070
  * @summary Test jcmd to dump dynamic shared archive.
  * @requires vm.cds
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @modules jdk.jcmd/sun.tools.common:+open
  * @compile ../test-classes/Hello.java JCmdTestDumpBase.java
@@ -63,7 +64,7 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
 
         // Test dynamic dump twice to same process.
         print2ln(test_count++ + " Test dynamic dump second time to the same process.");
-        test("02.jsa", pid, noBoot,  EXPECT_FAIL);
+        test("02.jsa", pid, noBoot,  EXPECT_PASS);
         app.stopApp();
 
         // Test dynamic dump with -XX:-RecordDynamicDumpInfo.

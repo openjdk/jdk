@@ -155,8 +155,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         if (element instanceof OverviewElement) {
             return links.createLink(pathToRoot.resolve(i.getUrl()),
                     resources.getText("doclet.Overview"));
-        } else if (element instanceof DocletElement) {
-            DocletElement e = (DocletElement) element;
+        } else if (element instanceof DocletElement e) {
             // Implementations of DocletElement do not override equals and
             // hashCode; putting instances of DocletElement in a map is not
             // incorrect, but might well be inefficient

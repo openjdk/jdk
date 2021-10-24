@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class TestTagInheritence extends JavadocTester {
 
         //Test bad inheritDoc tag warning.
         checkOutput(Output.OUT, true,
-                "warning - @inheritDoc used but testBadInheritDocTag() "
+                "warning: @inheritDoc used but testBadInheritDocTag() "
                 + "does not override or implement any method.");
 
         //Test valid usage of inheritDoc tag.

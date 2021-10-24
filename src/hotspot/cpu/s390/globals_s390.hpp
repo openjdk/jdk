@@ -43,7 +43,6 @@ define_pd_global(uintx, CodeCacheSegmentSize,        256);
 // code size significantly by padding nops between IVC and second UEP.
 define_pd_global(intx,  CodeEntryAlignment,          64);
 define_pd_global(intx,  OptoLoopAlignment,           2);
-define_pd_global(intx,  InlineFrequencyCount,        100);
 define_pd_global(intx,  InlineSmallCode,             2000);
 
 #define DEFAULT_STACK_YELLOW_PAGES   (2)

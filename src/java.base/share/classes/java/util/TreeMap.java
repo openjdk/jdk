@@ -1341,18 +1341,16 @@ public class TreeMap<K,V>
         }
 
         public boolean contains(Object o) {
-            if (!(o instanceof Map.Entry))
+            if (!(o instanceof Map.Entry<?, ?> entry))
                 return false;
-            Map.Entry<?,?> entry = (Map.Entry<?,?>) o;
             Object value = entry.getValue();
             Entry<K,V> p = getEntry(entry.getKey());
             return p != null && valEquals(p.getValue(), value);
         }
 
         public boolean remove(Object o) {
-            if (!(o instanceof Map.Entry))
+            if (!(o instanceof Map.Entry<?, ?> entry))
                 return false;
-            Map.Entry<?,?> entry = (Map.Entry<?,?>) o;
             Object value = entry.getValue();
             Entry<K,V> p = getEntry(entry.getKey());
             if (p != null && valEquals(p.getValue(), value)) {
@@ -1963,9 +1961,8 @@ public class TreeMap<K,V>
             }
 
             public boolean contains(Object o) {
-                if (!(o instanceof Map.Entry))
+                if (!(o instanceof Entry<?, ?> entry))
                     return false;
-                Map.Entry<?,?> entry = (Map.Entry<?,?>) o;
                 Object key = entry.getKey();
                 if (!inRange(key))
                     return false;
@@ -1975,9 +1972,8 @@ public class TreeMap<K,V>
             }
 
             public boolean remove(Object o) {
-                if (!(o instanceof Map.Entry))
+                if (!(o instanceof Entry<?, ?> entry))
                     return false;
-                Map.Entry<?,?> entry = (Map.Entry<?,?>) o;
                 Object key = entry.getKey();
                 if (!inRange(key))
                     return false;
@@ -2425,11 +2421,9 @@ public class TreeMap<K,V>
         }
 
         public boolean equals(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-
-            return valEquals(key,e.getKey()) && valEquals(value,e.getValue());
+            return o instanceof Map.Entry<?, ?> e
+                    && valEquals(key,e.getKey())
+                    && valEquals(value,e.getValue());
         }
 
         public int hashCode() {

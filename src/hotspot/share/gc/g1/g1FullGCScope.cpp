@@ -25,6 +25,16 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 
+G1FullGCJFRTracerMark::G1FullGCJFRTracerMark(STWGCTimer* timer, GCTracer* tracer)
+  : G1JFRTracerMark(timer, tracer) {
+
+  G1CollectedHeap::heap()->pre_full_gc_dump(_timer);
+}
+
+G1FullGCJFRTracerMark::~G1FullGCJFRTracerMark() {
+  G1CollectedHeap::heap()->post_full_gc_dump(_timer);
+}
+
 G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              bool explicit_gc,
                              bool clear_soft,
@@ -32,35 +42,17 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _rm(),
     _explicit_gc(explicit_gc),
     _g1h(G1CollectedHeap::heap()),
-    _gc_id(),
     _svc_marker(SvcGCMarker::FULL),
     _timer(),
     _tracer(),
     _active(),
-    _cpu_time(),
+    _tracer_mark(&_timer, &_tracer),
     _soft_refs(clear_soft, _g1h->soft_ref_policy()),
     _monitoring_scope(monitoring_support, true /* full_gc */, true /* all_memory_pools_affected */),
-    _heap_transition(_g1h),
+    _heap_printer(_g1h),
     _region_compaction_threshold(do_maximum_compaction ?
                                  HeapRegion::GrainWords :
-                                 (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) {
-  _timer.register_gc_start();
-  _tracer.report_gc_start(_g1h->gc_cause(), _timer.gc_start());
-  _g1h->pre_full_gc_dump(&_timer);
-  _g1h->trace_heap_before_gc(&_tracer);
-}
-
-G1FullGCScope::~G1FullGCScope() {
-  // We must call G1MonitoringSupport::update_sizes() in the same scoping level
-  // as an active TraceMemoryManagerStats object (i.e. before the destructor for the
-  // TraceMemoryManagerStats is called) so that the G1 memory pools are updated
-  // before any GC notifications are raised.
-  _g1h->g1mm()->update_sizes();
-  _g1h->trace_heap_after_gc(&_tracer);
-  _g1h->post_full_gc_dump(&_timer);
-  _timer.register_gc_end();
-  _tracer.report_gc_end(_timer.gc_end(), _timer.time_partitions());
-}
+                                 (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) { }
 
 bool G1FullGCScope::is_explicit_gc() {
   return _explicit_gc;
@@ -76,10 +68,6 @@ STWGCTimer* G1FullGCScope::timer() {
 
 G1FullGCTracer* G1FullGCScope::tracer() {
   return &_tracer;
-}
-
-G1HeapTransition* G1FullGCScope::heap_transition() {
-  return &_heap_transition;
 }
 
 size_t G1FullGCScope::region_compaction_threshold() {

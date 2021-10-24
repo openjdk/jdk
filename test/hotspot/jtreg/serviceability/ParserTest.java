@@ -33,8 +33,8 @@
 
 import java.math.BigInteger;
 
-import sun.hotspot.parser.DiagnosticCommand;
-import sun.hotspot.parser.DiagnosticCommand.DiagnosticArgumentType;
+import jdk.test.whitebox.parser.DiagnosticCommand;
+import jdk.test.whitebox.parser.DiagnosticCommand.DiagnosticArgumentType;
 import sun.hotspot.WhiteBox;
 
 public class ParserTest {

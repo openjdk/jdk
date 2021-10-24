@@ -64,6 +64,8 @@ public:
 
   void push(T* stack);
   T* pop();
+
+  void clear();
 };
 
 using ZMarkStack = ZStack<ZMarkStackEntry, ZMarkStackSlots>;

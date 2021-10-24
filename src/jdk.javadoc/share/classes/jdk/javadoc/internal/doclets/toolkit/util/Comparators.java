@@ -511,7 +511,6 @@ public class Comparators {
             };
         }
 
-        @SuppressWarnings("preview")
         boolean hasParameters(Element e) {
             return new SimpleElementVisitor14<Boolean, Void>() {
                 @Override
@@ -533,7 +532,6 @@ public class Comparators {
          * @return a negative integer, zero, or a positive integer as the first argument is less
          * than, equal to, or greater than the second.
          */
-        @SuppressWarnings("preview")
         private String getFullyQualifiedName(Element e) {
             return new SimpleElementVisitor14<String, Void>() {
                 @Override

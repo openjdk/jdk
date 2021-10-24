@@ -55,7 +55,6 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -316,7 +315,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* current, int reason,
     MethodData* trap_mdo = trap_method->method_data();
     if (trap_mdo == NULL) {
       ExceptionMark em(current);
-      JavaThread* THREAD = current; // for exception macros
+      JavaThread* THREAD = current; // For exception macros.
       Method::build_interpreter_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
@@ -655,7 +654,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 
   {
     JvmtiHideSingleStepping jhss(current);
-    Thread* THREAD = current;  // for exception macros
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_field_access(info, pool, last_frame.get_index_u2_cpcache(bytecode),
                                        m, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
@@ -727,9 +726,6 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
-  if (PrintBiasedLockingStatistics) {
-    Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
-  }
   Handle h_obj(current, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
@@ -826,7 +822,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
 
   {
     JvmtiHideSingleStepping jhss(current);
-    Thread* THREAD = current;  // for exception macros
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
                                  CHECK);
@@ -866,11 +862,10 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
            info.call_kind() == CallInfo::vtable_call, "");
   }
 #endif
-  // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
-  // it is not an interface.  The receiver for invokespecial calls within interface
+  // Get sender and only set cpCache entry to resolved if it is not an
+  // interface.  The receiver for invokespecial calls within interface
   // methods must be checked for every call.
   InstanceKlass* sender = pool->pool_holder();
-  sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
@@ -907,7 +902,7 @@ void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
   constantPoolHandle pool(current, last_frame.method()->constants());
   {
     JvmtiHideSingleStepping jhss(current);
-    Thread* THREAD = current;  // for exception macros
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, Handle(), pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
                                  CHECK);
@@ -928,7 +923,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   int index = last_frame.get_index_u4(bytecode);
   {
     JvmtiHideSingleStepping jhss(current);
-    Thread* THREAD = current;  // for exception macros
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, Handle(), pool,
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
@@ -1033,27 +1028,6 @@ JRT_ENTRY(nmethod*,
   if (osr_nm != NULL && bs_nm != NULL) {
     if (!bs_nm->nmethod_osr_entry_barrier(osr_nm)) {
       osr_nm = NULL;
-    }
-  }
-
-  if (osr_nm != NULL) {
-    // We may need to do on-stack replacement which requires that no
-    // monitors in the activation are biased because their
-    // BasicObjectLocks will need to migrate during OSR. Force
-    // unbiasing of all monitors in the activation now (even though
-    // the OSR nmethod might be invalidated) because we don't have a
-    // safepoint opportunity later once the migration begins.
-    if (UseBiasedLocking) {
-      ResourceMark rm;
-      GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-      for( BasicObjectLock *kptr = last_frame.monitor_end();
-           kptr < last_frame.monitor_begin();
-           kptr = last_frame.next_monitor(kptr) ) {
-        if( kptr->obj() != NULL ) {
-          objects_to_revoke->append(Handle(current, kptr->obj()));
-        }
-      }
-      BiasedLocking::revoke(objects_to_revoke, current);
     }
   }
   return osr_nm;
@@ -1346,7 +1320,8 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
                           fingerprint,
                           buffer.insts_size());
             if (buffer.insts_size() > 0) {
-              Disassembler::decode(handler, handler + buffer.insts_size());
+              Disassembler::decode(handler, handler + buffer.insts_size(), tty
+                                   NOT_PRODUCT(COMMA &buffer.asm_remarks()));
             }
 #ifndef PRODUCT
             address rh_begin = Interpreter::result_handler(method()->result_type());

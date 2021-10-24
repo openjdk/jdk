@@ -1910,6 +1910,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
 
     private boolean getPrintToFileEnabled() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             FilePermission printToFilePermission =

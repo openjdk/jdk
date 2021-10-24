@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ public final class Krb5MechFactory implements MechanismFactory {
     }
 
     public static void checkInitCredPermission(Krb5NameElement name) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String realm = (name.getKrb5PrincipalName()).getRealmAsString();
@@ -163,6 +164,7 @@ public final class Krb5MechFactory implements MechanismFactory {
 
     public static void checkAcceptCredPermission(Krb5NameElement name,
                                            GSSNameSpi originalName) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null && name != null) {
             ServicePermission perm = new ServicePermission

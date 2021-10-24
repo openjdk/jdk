@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
 import java.io.File;
 import java.util.Map;
 import jdk.test.lib.Platform;
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.IOException;
@@ -50,17 +49,15 @@ public class CallerAccessTest {
         ProcessBuilder pb = new ProcessBuilder(launcher.toString());
         Map<String, String> env = pb.environment();
 
-        String libName = Platform.isWindows() ? "bin" : "lib";
-        Path libPath = Paths.get(Utils.TEST_JDK).resolve(libName);
-        String libDir = libPath.toAbsolutePath().toString();
-        String serverDir = libPath.resolve("server").toAbsolutePath().toString();
+        String libDir = Platform.libDir().toString();
+        String vmDir = Platform.jvmLibDir().toString();
 
         // set up shared library path
         String sharedLibraryPathEnvName = Platform.sharedLibraryPathVariableName();
         env.compute(sharedLibraryPathEnvName,
                     (k, v) -> (v == null) ? libDir : v + File.pathSeparator + libDir);
         env.compute(sharedLibraryPathEnvName,
-                    (k, v) -> (v == null) ? serverDir : v + File.pathSeparator + serverDir);
+                    (k, v) -> (v == null) ? vmDir : v + File.pathSeparator + vmDir);
 
         System.out.println("Launching: " + launcher + " shared library path: " +
                            env.get(sharedLibraryPathEnvName));

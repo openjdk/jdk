@@ -51,6 +51,11 @@ struct SpecialFlag {
   JDK_Version expired_in;    // When the option expires (or "undefined").
 };
 
+struct LegacyGCLogging {
+    const char* file;        // NULL -> stdout
+    int lastFlag;            // 0 not set; 1 -> -verbose:gc; 2 -> -Xloggc
+};
+
 // PathString is used as:
 //  - the underlying value for a SystemProperty
 //  - the path portion of an --patch-module module/path pair
@@ -317,8 +322,9 @@ class Arguments : AllStatic {
   // was this VM created via the -XXaltjvm=<path> option
   static bool   _sun_java_launcher_is_altjvm;
 
-  // Option flags
-  static const char*  _gc_log_filename;
+  // for legacy gc options (-verbose:gc and -Xloggc:)
+  static LegacyGCLogging _legacyGCLogging;
+
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 

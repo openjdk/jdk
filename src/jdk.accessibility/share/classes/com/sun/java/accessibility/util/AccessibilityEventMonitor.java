@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package com.sun.java.accessibility.util;
 
-import java.util.*;
 import java.beans.*;
 import java.awt.*;
-import java.awt.event.*;
 import javax.accessibility.*;
 
 /**
@@ -317,7 +315,7 @@ public class AccessibilityEventMonitor {
 
             // handle childbirth/death
             String name = e.getPropertyName();
-            if (name.compareTo(AccessibleContext.ACCESSIBLE_CHILD_PROPERTY) == 0) {
+            if (name.equals(AccessibleContext.ACCESSIBLE_CHILD_PROPERTY)) {
                 Object oldValue = e.getOldValue();
                 Object newValue = e.getNewValue();
 

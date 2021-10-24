@@ -26,54 +26,29 @@
 #ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_RUNTIME_THREAD_INLINE_HPP
 
+#include "runtime/thread.hpp"
+
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 #if defined(__APPLE__) && defined(AARCH64)
 #include "runtime/os.hpp"
 #endif
 
-inline void Thread::set_suspend_flag(SuspendFlags f) {
-  uint32_t flags;
-  do {
-    flags = _suspend_flags;
-  }
-  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
-}
-inline void Thread::clear_suspend_flag(SuspendFlags f) {
-  uint32_t flags;
-  do {
-    flags = _suspend_flags;
-  }
-  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
-}
-
-inline void Thread::set_has_async_exception() {
-  set_suspend_flag(_has_async_exception);
-}
-inline void Thread::clear_has_async_exception() {
-  clear_suspend_flag(_has_async_exception);
-}
-inline void Thread::set_trace_flag() {
-  set_suspend_flag(_trace_flag);
-}
-inline void Thread::clear_trace_flag() {
-  clear_suspend_flag(_trace_flag);
-}
-inline void Thread::set_obj_deopt_flag() {
-  set_suspend_flag(_obj_deopt);
-}
-inline void Thread::clear_obj_deopt_flag() {
-  clear_suspend_flag(_obj_deopt);
-}
-
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
-    size_t used_bytes = tlab().used_bytes();
+    // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
+    // Use only if top > start && used_bytes <= max_tlab_size_bytes.
+    const HeapWord* const top = tlab().top_relaxed();
+    const HeapWord* const start = tlab().start_relaxed();
+    if (top <= start) {
+      return allocated_bytes;
+    }
+    const size_t used_bytes = pointer_delta(top, start, 1);
     if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
       // Comparing used_bytes with the maximum allowed size will ensure
       // that we don't add the used bytes from a semi-initialized TLAB
@@ -119,10 +94,48 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
 }
 #endif // __APPLE__ && AARCH64
 
+inline void JavaThread::set_suspend_flag(SuspendFlags f) {
+  uint32_t flags;
+  do {
+    flags = _suspend_flags;
+  }
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
+}
+inline void JavaThread::clear_suspend_flag(SuspendFlags f) {
+  uint32_t flags;
+  do {
+    flags = _suspend_flags;
+  }
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
+}
+
+inline void JavaThread::set_trace_flag() {
+  set_suspend_flag(_trace_flag);
+}
+inline void JavaThread::clear_trace_flag() {
+  clear_suspend_flag(_trace_flag);
+}
+inline void JavaThread::set_obj_deopt_flag() {
+  set_suspend_flag(_obj_deopt);
+}
+inline void JavaThread::clear_obj_deopt_flag() {
+  clear_suspend_flag(_obj_deopt);
+}
+
+inline bool JavaThread::clear_async_exception_condition() {
+  bool ret = has_async_exception_condition();
+  clear_suspend_flag(_has_async_exception);
+  return ret;
+}
+
 inline void JavaThread::set_pending_async_exception(oop e) {
   _pending_async_exception = e;
-  _special_runtime_exit_condition = _async_exception;
-  set_has_async_exception();
+  set_suspend_flag(_has_async_exception);
+}
+
+inline void JavaThread::set_pending_unsafe_access_error() {
+  set_suspend_flag(_has_async_exception);
+  DEBUG_ONLY(_is_unsafe_access_error = true);
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {

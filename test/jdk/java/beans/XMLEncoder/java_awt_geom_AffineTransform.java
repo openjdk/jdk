@@ -25,6 +25,7 @@
  * @test
  * @bug 4358979
  * @summary Tests AffineTransform encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_geom_AffineTransform
  * @author Sergey Malenkov
  */
 

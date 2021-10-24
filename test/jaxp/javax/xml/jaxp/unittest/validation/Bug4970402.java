@@ -47,7 +47,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4970402
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4970402
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4970402
  * @run testng/othervm validation.Bug4970402
  * @summary Test TypeInfoProvider's attribute accessing methods throw IndexOutOfBoundsException when index parameter is invalid.
  */

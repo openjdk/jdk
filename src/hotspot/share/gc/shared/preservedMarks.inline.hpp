@@ -26,12 +26,13 @@
 #define SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
 
 #include "gc/shared/preservedMarks.hpp"
+
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
 inline bool PreservedMarks::should_preserve_mark(oop obj, markWord m) const {
-  return obj->mark_must_be_preserved_for_promotion_failure(m);
+  return obj->mark_must_be_preserved(m);
 }
 
 inline void PreservedMarks::push(oop obj, markWord m) {

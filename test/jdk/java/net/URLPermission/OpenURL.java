@@ -25,7 +25,7 @@
  * @test
  * @bug 8029354
  * @library /test/lib
- * @run main/othervm OpenURL
+ * @run main/othervm -Djava.security.manager=allow OpenURL
  */
 
 import java.net.*;

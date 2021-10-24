@@ -26,9 +26,8 @@ package vm.runtime.defmeth.shared;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeSet;
+import java.lang.reflect.Parameter;
+import java.util.*;
 import java.util.regex.Pattern;
 import nsk.share.TestFailure;
 import nsk.share.log.Log;
@@ -43,12 +42,15 @@ import vm.runtime.defmeth.PrivateMethodsTest;
 import vm.runtime.defmeth.StaticMethodsTest;
 import vm.runtime.defmeth.SuperCallTest;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
+import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.builder.TestBuilderFactory;
 import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 import static java.lang.String.format;
-import java.util.Collections;
+import static jdk.internal.org.objectweb.asm.Opcodes.V17;
+import static jdk.internal.org.objectweb.asm.Opcodes.V1_5;
+
 import vm.runtime.defmeth.RedefineTest;
 
 /**
@@ -108,6 +110,9 @@ public abstract class DefMethTest extends TestBase {
     String mode;
 
     private Pattern filter; // Precompiled pattern for filterString
+
+    public static final int MIN_MAJOR_VER = V1_5;
+    public static final int MAX_MAJOR_VER = V17;
 
     /**
      * Used from individual tests to get TestBuilder instances,
@@ -192,7 +197,8 @@ public abstract class DefMethTest extends TestBase {
         Class<? extends DefMethTest> test = this.getClass();
 
         int acc = m.getModifiers();
-        if (!Modifier.isPublic(acc) || Modifier.isStatic(acc) || m.getParameterTypes().length != 0) {
+        if (!Modifier.isPublic(acc) || Modifier.isStatic(acc) ||
+            m.getParameterTypes().length != 0 && !requiresTestBuilder(m)) {
             return false; // not a test
         }
 
@@ -214,6 +220,11 @@ public abstract class DefMethTest extends TestBase {
         }
 
         return true;
+    }
+
+    private boolean requiresTestBuilder(Method m) {
+        Parameter[] params = m.getParameters();
+        return params.length == 1 && (params[0].getType() == TestBuilder.class);
     }
 
     /** Information about the test being executed */
@@ -283,7 +294,13 @@ public abstract class DefMethTest extends TestBase {
                     try {
                         factory.setExecutionMode(mode.name());
                         getLog().info(format("    %s: ", mode));
-                        m.invoke(this);
+                        if (requiresTestBuilder(m)) {
+                            TestBuilder b = factory.getBuilder();
+                            m.invoke(this, b);
+                            b.run();
+                        } else {
+                            m.invoke(this);
+                        }
                     } catch (IllegalAccessException | IllegalArgumentException e) {
                         throw new TestFailure(e);
                     } catch (InvocationTargetException e) {
@@ -311,6 +328,35 @@ public abstract class DefMethTest extends TestBase {
             }
         } catch (Exception | Error e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static void runTest(Class<? extends DefMethTest> testClass,
+                               Set<Integer> majorVerValues,
+                               Set<Integer> flagsValues,
+                               Set<Boolean> redefineValues,
+                               Set<ExecutionMode> execModes) {
+        for (int majorVer : majorVerValues) {
+            for (int flags : flagsValues) {
+                for (boolean redefine : redefineValues) {
+                    for (ExecutionMode mode : execModes) {
+                        try {
+                            DefMethTest test = testClass.getDeclaredConstructor().newInstance();
+
+                            OptionSupport.setup(test, new String[]{
+                                        "-execMode", mode.toString(),
+                                        "-ver", Integer.toString(majorVer),
+                                        "-flags", Integer.toString(flags),
+                                        "-redefine", Boolean.toString(redefine)
+                                });
+
+                            test.run();
+                        } catch (ReflectiveOperationException e) {
+                            throw new TestFailure(e);
+                        }
+                    }
+                }
+            }
         }
     }
 

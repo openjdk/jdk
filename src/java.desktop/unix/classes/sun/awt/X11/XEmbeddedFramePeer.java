@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.awt.X11;
 import java.awt.*;
 
 import java.util.LinkedList;
-import java.util.Iterator;
 
 import sun.util.logging.PlatformLogger;
 
@@ -246,9 +245,8 @@ public class XEmbeddedFramePeer extends XFramePeer {
         // Register accelerators
         if (embedder != null && embedder.isActive()) {
             int i = 0;
-            Iterator<AWTKeyStroke> iter = strokes.iterator();
-            while (iter.hasNext()) {
-                embedder.registerAccelerator(iter.next(), i++);
+            for (AWTKeyStroke stroke : strokes) {
+                embedder.registerAccelerator(stroke, i++);
             }
         }
         // Now we know that the embedder is an XEmbed server, so we

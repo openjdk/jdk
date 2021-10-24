@@ -26,7 +26,7 @@
  * @summary A simple smoke test of the HttpURLPermission mechanism, which checks
  *          for either IOException (due to unknown host) or SecurityException
  *          due to lack of permission to connect
- * @run main/othervm -Djdk.net.hosts.file=LookupTestHosts LookupTest
+ * @run main/othervm -Djava.security.manager=allow -Djdk.net.hosts.file=LookupTestHosts LookupTest
  */
 
 import java.io.BufferedWriter;

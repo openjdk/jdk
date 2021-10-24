@@ -99,3 +99,12 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   return blob->code_begin();
 }
+
+address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject mh, Method* entry, jobject jabi, jobject jconv) {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+bool ProgrammableUpcallHandler::supports_optimized_upcalls() {
+  return false;
+}

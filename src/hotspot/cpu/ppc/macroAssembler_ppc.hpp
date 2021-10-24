@@ -88,6 +88,16 @@ class MacroAssembler: public Assembler {
   // nop padding
   void align(int modulus, int max = 252, int rem = 0);
 
+  // Align prefix opcode to make sure it's not on the last word of a
+  // 64-byte block.
+  //
+  // Note: do not call align_prefix() in a .ad file (e.g. ppc.ad).  Instead
+  // add ins_alignment(2) to the instruct definition and implement the
+  // compute_padding() method of the instruct node to use
+  // compute_prefix_padding().  See loadConI32Node::compute_padding() in
+  // ppc.ad for an example.
+  void align_prefix();
+
   //
   // Constants, loading constants, TOC support
   //
@@ -589,24 +599,6 @@ class MacroAssembler: public Assembler {
   // Method handle support (JSR 292).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot, Register temp_reg, int extra_slot_offset = 0);
 
-  // Biased locking support
-  // Upon entry,obj_reg must contain the target object, and mark_reg
-  // must contain the target object's header.
-  // Destroys mark_reg if an attempt is made to bias an anonymously
-  // biased lock. In this case a failure will go either to the slow
-  // case or fall through with the notEqual condition code set with
-  // the expectation that the slow case in the runtime will be called.
-  // In the fall-through case where the CAS-based lock is done,
-  // mark_reg is not destroyed.
-  void biased_locking_enter(ConditionRegister cr_reg, Register obj_reg, Register mark_reg, Register temp_reg,
-                            Register temp2_reg, Label& done, Label* slow_case = NULL);
-  // Upon entry, the base register of mark_addr must contain the oop.
-  // Destroys temp_reg.
-  // If allow_delay_slot_filling is set to true, the next instruction
-  // emitted after this one will go in an annulled delay slot if the
-  // biased locking exit case failed.
-  void biased_locking_exit(ConditionRegister cr_reg, Register mark_addr, Register temp_reg, Label& done);
-
   // allocation (for C1)
   void eden_allocate(
     Register obj,                      // result: pointer to object after successful allocation
@@ -655,7 +647,6 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
                                  Register tmp1, Register tmp2, Register tmp3,
-                                 bool try_bias = UseBiasedLocking,
                                  RTMLockingCounters* rtm_counters = NULL,
                                  RTMLockingCounters* stack_rtm_counters = NULL,
                                  Metadata* method_data = NULL,
@@ -663,7 +654,7 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3,
-                                   bool try_bias = UseBiasedLocking, bool use_rtm = false);
+                                   bool use_rtm = false);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);

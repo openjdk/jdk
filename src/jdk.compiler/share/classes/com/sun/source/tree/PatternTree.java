@@ -31,4 +31,4 @@ package com.sun.source.tree;
  *
  * @since 16
  */
-public interface PatternTree extends Tree {}
+public interface PatternTree extends Tree, CaseLabelTree {}

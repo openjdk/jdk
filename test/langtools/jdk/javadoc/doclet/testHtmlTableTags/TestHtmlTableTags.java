@@ -423,9 +423,9 @@ public class TestHtmlTableTags extends JavadocTester {
         // Deprecated
         checkOutput("deprecated-list.html", true,
                 """
-                    <div class="caption"><span>Fields</span></div>""",
+                    <div class="caption"><span>Deprecated Fields</span></div>""",
                 """
-                    <div class="caption"><span>Methods</span></div>""");
+                    <div class="caption"><span>Deprecated Methods</span></div>""");
 
         // Constant values
         checkOutput("constant-values.html", true,

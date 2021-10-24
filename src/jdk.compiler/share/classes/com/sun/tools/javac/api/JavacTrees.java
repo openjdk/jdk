@@ -75,6 +75,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -85,10 +86,8 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.UnionClassType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.code.Types.TypeRelation;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
@@ -97,7 +96,6 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.comp.Resolve;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.DocCommentParser;
@@ -151,7 +149,6 @@ import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import static com.sun.tools.javac.code.TypeTag.*;
 
 /**
  * Provides an implementation of Trees.
@@ -259,79 +256,16 @@ public class JavacTrees extends DocTrees {
 
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
-                    return ((DCTree) tree).getSourcePosition((DCDocComment) comment);
+                    DCDocComment dcComment = (DCDocComment) comment;
+                    DCTree dcTree = (DCTree) tree;
+                    return dcComment.getSourcePosition(dcTree.getStartPosition());
                 }
-                @Override  @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
+
+                @Override  @DefinedBy(Api.COMPILER_TREE)
                 public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
                     DCDocComment dcComment = (DCDocComment) comment;
-                    if (tree instanceof DCEndPosTree<?> dcEndPosTree) {
-                        int endPos = dcEndPosTree.getEndPos(dcComment);
-
-                        if (endPos != Position.NOPOS) {
-                            return endPos;
-                        }
-                    }
-                    int correction = 0;
-                    switch (tree.getKind()) {
-                        case TEXT:
-                            DCText text = (DCText) tree;
-
-                            return dcComment.comment.getSourcePos(text.pos + text.text.length());
-                        case ERRONEOUS:
-                            DCErroneous err = (DCErroneous) tree;
-
-                            return dcComment.comment.getSourcePos(err.pos + err.body.length());
-                        case IDENTIFIER:
-                            DCIdentifier ident = (DCIdentifier) tree;
-
-                            return dcComment.comment.getSourcePos(ident.pos + (ident.name != names.error ? ident.name.length() : 0));
-                        case PARAM:
-                            DCParam param = (DCParam) tree;
-
-                            if (param.isTypeParameter && param.getDescription().isEmpty()) {
-                                correction = 1;
-                            }
-                        case AUTHOR: case DEPRECATED: case RETURN: case SEE:
-                        case SERIAL: case SERIAL_DATA: case SERIAL_FIELD: case SINCE:
-                        case THROWS: case UNKNOWN_BLOCK_TAG: case VERSION: {
-                            DocTree last = getLastChild(tree);
-
-                            if (last != null) {
-                                return getEndPosition(file, comment, last) + correction;
-                            }
-
-                            int pos;
-                            String name;
-                            if (tree.getKind() == DocTree.Kind.RETURN) {
-                                DCTree.DCReturn dcReturn = (DCTree.DCReturn) tree;
-                                pos = dcReturn.pos;
-                                name = dcReturn.getTagName();
-                            } else {
-                                DCBlockTag block = (DCBlockTag) tree;
-                                pos = block.pos;
-                                name = block.getTagName();
-                            }
-
-                            return dcComment.comment.getSourcePos(pos + name.length() + 1);
-                        }
-                        case ENTITY: {
-                            DCEntity endEl = (DCEntity) tree;
-                            return dcComment.comment.getSourcePos(endEl.pos + (endEl.name != names.error ? endEl.name.length() : 0) + 2);
-                        }
-                        case COMMENT: {
-                            DCComment endEl = (DCComment) tree;
-                            return dcComment.comment.getSourcePos(endEl.pos + endEl.body.length());
-                        }
-                        default:
-                            DocTree last = getLastChild(tree);
-
-                            if (last != null) {
-                                return getEndPosition(file, comment, last);
-                            }
-                            break;
-                    }
-
-                    return Position.NOPOS;
+                    DCTree dcTree = (DCTree) tree;
+                    return dcComment.getSourcePosition(dcTree.getEndPosition());
                 }
             };
     }
@@ -624,12 +558,10 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#findField */
     private VarSymbol findField(ClassSymbol tsym, Name fieldName) {
         return searchField(tsym, fieldName, new HashSet<>());
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#searchField */
     private VarSymbol searchField(ClassSymbol tsym, Name fieldName, Set<ClassSymbol> searched) {
         if (searched.contains(tsym)) {
             return null;
@@ -676,7 +608,6 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#findConstructor */
     MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes) {
         for (Symbol sym : tsym.members().getSymbolsByName(names.init)) {
             if (sym.kind == MTH) {
@@ -688,12 +619,10 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#findMethod */
     private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes) {
         return searchMethod(tsym, methodName, paramTypes, new HashSet<>());
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl#searchMethod */
     private MethodSymbol searchMethod(ClassSymbol tsym, Name methodName,
                                        List<Type> paramTypes, Set<ClassSymbol> searched) {
         //### Note that this search is not necessarily what the compiler would do!
@@ -775,7 +704,6 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    /** @see com.sun.tools.javadoc.ClassDocImpl */
     private boolean hasParameterTypes(MethodSymbol method, List<Type> paramTypes) {
         if (paramTypes == null)
             return true;

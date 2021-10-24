@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,53 @@
 /**
  * @test
  * @bug 4759514
- * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/ /test/lib
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
+ * @library /test/lib
  * @run main/othervm B4759514
  * @run main/othervm -Djava.net.preferIPv6Addresses=true B4759514
  * @summary Digest Authentication is erroniously quoting the nc value, contrary to RFC 2617
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.Authenticator;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.concurrent.Executors;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
-public class B4759514 implements HttpCallback {
+public class B4759514 implements HttpHandler {
 
     static int count = 0;
     static String authstring;
 
-    void errorReply (HttpTransaction req, String reply) throws IOException {
-        req.addResponseHeader ("Connection", "close");
-        req.addResponseHeader ("WWW-Authenticate", reply);
-        req.sendResponse (401, "Unauthorized");
-        req.orderlyClose();
+    void errorReply (HttpExchange req, String reply) throws IOException {
+        req.getResponseHeaders().set("Connection", "close");
+        req.getResponseHeaders().set("WWW-Authenticate", reply);
+        req.sendResponseHeaders(401, -1);
     }
 
-    void okReply (HttpTransaction req) throws IOException {
-        req.setResponseEntityBody ("Hello .");
-        req.sendResponse (200, "Ok");
-        req.orderlyClose();
+    void okReply (HttpExchange req) throws IOException {
+        req.sendResponseHeaders(200, 0);
+        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+            pw.print("Hello .");
+        }
     }
 
-    public void request (HttpTransaction req) {
+    public void handle (HttpExchange req) {
         try {
-            authstring = req.getRequestHeader ("Authorization");
+            if(req.getRequestHeaders().get("Authorization") != null) {
+                authstring = req.getRequestHeaders().get("Authorization").get(0);
+                System.out.println(authstring);
+            }
             switch (count) {
             case 0:
                 errorReply (req, "Digest realm=\"wallyworld\", nonce=\"1234\", domain=\"/\"");
@@ -65,7 +79,7 @@ public class B4759514 implements HttpCallback {
                 int n = authstring.indexOf ("nc=");
                 if (n != -1) {
                     if (authstring.charAt (n+3) == '\"') {
-                        req.sendResponse (400, "Bad Request");
+                        req.sendResponseHeaders(400, -1);
                         break;
                     }
                 }
@@ -94,27 +108,31 @@ public class B4759514 implements HttpCallback {
         is.close();
     }
 
-    static TestHttpServer server;
+    static HttpServer server;
 
     public static void main (String[] args) throws Exception {
+        B4759514 b4759514 = new B4759514();
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         ProxySelector.setDefault(ProxySelector.of(null)); // no proxy
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();
-            server = new TestHttpServer (new B4759514(), 1, 10, loopback, 0);
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
+            server.createContext("/", b4759514);
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
             String serverURL = URIBuilder.newBuilder()
-                .scheme("http")
-                .loopback()
-                .port(server.getLocalPort())
-                .path("/")
-                .build()
-                .toString();
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getAddress().getPort())
+                    .path("/")
+                    .build()
+                    .toString();
             System.out.println("Server: listening at: " + serverURL);
             client(serverURL + "d1/foo.html");
         } catch (Exception e) {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
             throw e;
         }
@@ -122,11 +140,11 @@ public class B4759514 implements HttpCallback {
         if (f != 1) {
             except ("Authenticator was called "+f+" times. Should be 1");
         }
-        server.terminate();
+        server.stop(1);
     }
 
     public static void except (String s) {
-        server.terminate();
+        server.stop(1);
         throw new RuntimeException (s);
     }
 

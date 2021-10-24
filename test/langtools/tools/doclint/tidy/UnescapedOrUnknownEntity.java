@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref UnescapedOrUnknownEntity.out UnescapedOrUnknownEntity.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref UnescapedOrUnknownEntity.out UnescapedOrUnknownEntity.java
  */
 
 // tidy: Warning: unescaped & or unknown entity ".*"

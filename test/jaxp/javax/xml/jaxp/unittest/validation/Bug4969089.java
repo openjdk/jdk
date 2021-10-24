@@ -40,7 +40,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4969089
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4969089
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969089
  * @run testng/othervm validation.Bug4969089
  * @summary Test when an ErrorHandler is set for a SchemaFactory, SchemaFactory.newSchema(Source[])
  * method throws an exception that is not equal to the exception thrown from the ErrorHandler.

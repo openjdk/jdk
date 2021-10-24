@@ -174,8 +174,8 @@ public class HtmlTree extends Content {
      */
     @Override
     public HtmlTree add(Content content) {
-        if (content instanceof ContentBuilder) {
-            ((ContentBuilder) content).contents.forEach(this::add);
+        if (content instanceof ContentBuilder cb) {
+            cb.contents.forEach(this::add);
         }
         else if (content == HtmlTree.EMPTY || content.isValid()) {
             // quietly avoid adding empty or invalid nodes (except EMPTY)
@@ -520,20 +520,18 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Creates an HTML {@code INPUT} element with the given id and initial value.
+     * Creates an HTML {@code INPUT} element with the given id.
      * The element as marked as initially disabled.
      *
      * @param type  the type of input
      * @param id    the id
-     * @param value the initial value
      * @return the element
      */
-    public static HtmlTree INPUT(String type, HtmlId id, String value) {
+    public static HtmlTree INPUT(String type, HtmlId id) {
         return new HtmlTree(TagName.INPUT)
                 .put(HtmlAttr.TYPE, type)
                 .setId(id)
-                .put(HtmlAttr.VALUE, value)
-                .put(HtmlAttr.DISABLED, "disabled");
+                .put(HtmlAttr.DISABLED, "");
     }
 
     /**

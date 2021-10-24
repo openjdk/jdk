@@ -26,6 +26,7 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP
 
 #include "gc/serial/tenuredGeneration.hpp"
+
 #include "gc/shared/space.inline.hpp"
 
 HeapWord* TenuredGeneration::allocate(size_t word_size,

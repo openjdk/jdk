@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -158,7 +158,7 @@ public:
   NMethodMarkingClosure(CodeBlobClosure* cl) : HandshakeClosure("NMethodMarking"), _cl(cl) {}
   void do_thread(Thread* thread) {
     if (thread->is_Java_thread() && ! thread->is_Code_cache_sweeper_thread()) {
-      thread->as_Java_thread()->nmethods_do(_cl);
+      JavaThread::cast(thread)->nmethods_do(_cl);
     }
   }
 };

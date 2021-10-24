@@ -174,7 +174,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
 
         if (cipherAlgo.equals("AES")) {
-            this.keysize = keysize;
             switch (keysize) {
             case 128:
                 cipherAlgo_OID = aes128CBC_OID;
@@ -269,48 +268,34 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
         iCount = pBKDF2_params.data.getInteger();
 
-        DerValue prf = null;
         // keyLength INTEGER (1..MAX) OPTIONAL,
-        if (pBKDF2_params.data.available() > 0) {
-            DerValue keyLength = pBKDF2_params.data.getDerValue();
-            if (keyLength.tag == DerValue.tag_Integer) {
-                keysize = keyLength.getInteger() * 8; // keysize (in bits)
-            } else {
-                // Should be the prf
-                prf = keyLength;
-            }
+        var ksDer = pBKDF2_params.data.getOptional(DerValue.tag_Integer);
+        if (ksDer.isPresent()) {
+            keysize = ksDer.get().getInteger() * 8; // keysize (in bits)
         }
+
         // prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
-        String kdfAlgo = "HmacSHA1";
-        if (prf == null) {
-            if (pBKDF2_params.data.available() > 0) {
-                prf = pBKDF2_params.data.getDerValue();
-            }
-        }
-        if (prf != null) {
+        String kdfAlgo;
+        var prfDer = pBKDF2_params.data.getOptional(DerValue.tag_Sequence);
+        if (prfDer.isPresent()) {
+            DerValue prf = prfDer.get();
             kdfAlgo_OID = prf.data.getOID();
             KnownOIDs o = KnownOIDs.findMatch(kdfAlgo_OID.toString());
             if (o == null || (!o.stdName().equals("HmacSHA1") &&
-                !o.stdName().equals("HmacSHA224") &&
-                !o.stdName().equals("HmacSHA256") &&
-                !o.stdName().equals("HmacSHA384") &&
-                !o.stdName().equals("HmacSHA512"))) {
+                    !o.stdName().equals("HmacSHA224") &&
+                    !o.stdName().equals("HmacSHA256") &&
+                    !o.stdName().equals("HmacSHA384") &&
+                    !o.stdName().equals("HmacSHA512"))) {
                 throw new IOException("PBE parameter parsing error: "
                         + "expecting the object identifier for a HmacSHA key "
                         + "derivation function");
             }
             kdfAlgo = o.stdName();
-
-            if (prf.data.available() != 0) {
-                // parameter is 'NULL' for all HmacSHA KDFs
-                DerValue parameter = prf.data.getDerValue();
-                if (parameter.tag != DerValue.tag_Null) {
-                    throw new IOException("PBE parameter parsing error: "
-                            + "not an ASN.1 NULL tag");
-                }
-            }
+            prf.data.getOptional(DerValue.tag_Null);
+            prf.data.atEnd();
+        } else {
+            kdfAlgo = "HmacSHA1";
         }
-
         return kdfAlgo;
     }
 

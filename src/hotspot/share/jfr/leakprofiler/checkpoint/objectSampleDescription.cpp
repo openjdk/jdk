@@ -164,7 +164,7 @@ void ObjectSampleDescription::write_class_name() {
 
   if (k->is_instance_klass()) {
     const InstanceKlass* ik = InstanceKlass::cast(k);
-    if (ik->is_unsafe_anonymous() || ik->is_hidden()) {
+    if (ik->is_hidden()) {
       return;
     }
     const Symbol* name = ik->name();

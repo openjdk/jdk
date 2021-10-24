@@ -701,9 +701,6 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             pDst = PtrPixelsRow(pDst, dstx, dstInfo.pixelStride);
             pDst = PtrPixelsRow(pDst, dsty, dstInfo.scanStride);
 
-            // Metal texture is (0,0) at left-top
-            srcx = srcOps->xOffset + srcx;
-            srcy = srcOps->yOffset + srcy;
             NSUInteger byteLength = w * h * 4; // NOTE: assume that src format is MTLPixelFormatBGRA8Unorm
 
             // Create MTLBuffer (or use static)

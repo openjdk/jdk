@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,6 +348,7 @@ public abstract class PrintServiceLookup {
      *
      * @return all lookup services for this environment
      */
+    @SuppressWarnings("removal")
     private static ArrayList<PrintServiceLookup> getAllLookupServices() {
         synchronized (PrintServiceLookup.class) {
             ArrayList<PrintServiceLookup> listOfLookupServices = getListOfLookupServices();
@@ -429,6 +430,7 @@ public abstract class PrintServiceLookup {
          */
         ArrayList<PrintService> registeredServices = null;
         try {
+          @SuppressWarnings("removal")
           SecurityManager security = System.getSecurityManager();
           if (security != null) {
             security.checkPrintJobAccess();
@@ -493,6 +495,7 @@ public abstract class PrintServiceLookup {
          */
         ArrayList<PrintService> registeredServices = null;
         try {
+          @SuppressWarnings("removal")
           SecurityManager security = System.getSecurityManager();
           if (security != null) {
             security.checkPrintJobAccess();

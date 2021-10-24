@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6943252
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6943252Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug6943252Test
  * @run testng/othervm validation.tck.Bug6943252Test
  * @summary Test Schema doesn't allow to use value more than allowed by base type.
  */

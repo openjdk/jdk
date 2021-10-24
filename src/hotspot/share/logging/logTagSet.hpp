@@ -67,6 +67,10 @@ class LogTagSet {
   static void describe_tagsets(outputStream* out);
   static void list_all_tagsets(outputStream* out);
 
+  void wait_until_no_readers() const {
+    _output_list.wait_until_no_readers();
+  }
+
   static LogTagSet* first() {
     return _list;
   }
@@ -163,4 +167,5 @@ public:
 template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
 LogTagSet LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::_tagset(&LogPrefix<T0, T1, T2, T3, T4>::prefix, T0, T1, T2, T3, T4);
 
+extern const size_t vwrite_buffer_size;
 #endif // SHARE_LOGGING_LOGTAGSET_HPP

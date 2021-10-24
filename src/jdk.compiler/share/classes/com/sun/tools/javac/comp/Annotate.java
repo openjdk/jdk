@@ -53,6 +53,7 @@ import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
 import static com.sun.tools.javac.code.Kinds.Kind.PCK;
+import static com.sun.tools.javac.code.Kinds.Kind.TYP;
 import static com.sun.tools.javac.code.Kinds.Kind.VAR;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
@@ -369,13 +370,18 @@ public class Annotate {
                 }
             }
 
-            // Note: @Deprecated has no effect on local variables and parameters
             if (!c.type.isErroneous()
                     && types.isSameType(c.type, syms.previewFeatureType)) {
                 toAnnotate.flags_field |= Flags.PREVIEW_API;
                 if (isAttributeTrue(c.member(names.reflective))) {
                     toAnnotate.flags_field |= Flags.PREVIEW_REFLECTIVE;
                 }
+            }
+
+            if (!c.type.isErroneous()
+                    && toAnnotate.kind == TYP
+                    && types.isSameType(c.type, syms.valueBasedType)) {
+                toAnnotate.flags_field |= Flags.VALUE_BASED;
             }
         }
 

@@ -241,4 +241,19 @@ final class DCmdConfigure extends AbstractDCmd {
         printBytes(Options.getMaxChunkSize());
         println();
     }
+
+    @Override
+    public String[] printHelp() {
+        throw new InternalError("Should not reach here!");
+    }
+
+    @Override
+    public Argument[] getArgumentInfos() {
+        throw new InternalError("Should not reach here!");
+    }
+
+    @Override
+    protected void execute(ArgumentParser parser) throws DCmdException {
+        throw new InternalError("Should not reach here!");
+    }
 }

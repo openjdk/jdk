@@ -51,7 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
  */
 public class Contents {
 
-    public final Content allClassesLabel;
     public final Content allClassesAndInterfacesLabel;
     public final Content allImplementedInterfacesLabel;
     public final Content allModulesLabel;
@@ -82,8 +81,8 @@ public class Contents {
     public final Content deprecatedLabel;
     public final Content deprecatedPhrase;
     public final Content deprecatedForRemovalPhrase;
-    public final Content descfrmClassLabel;
-    public final Content descfrmInterfaceLabel;
+    public final Content descriptionFromClassLabel;
+    public final Content descriptionFromInterfaceLabel;
     public final Content descriptionLabel;
     public final Content detailLabel;
     public final Content enclosingClassLabel;
@@ -142,6 +141,8 @@ public class Contents {
     public final Content navProperty;
     public final Content navServices;
     public final Content nestedClassSummary;
+    public final Content newAPI;
+    public final Content newLabel;
     public final Content noScriptMessage;
     public final Content openModuleLabel;
     public final Content openedTo;
@@ -196,7 +197,6 @@ public class Contents {
     Contents(HtmlConfiguration configuration) {
         this.resources = configuration.getDocResources();
 
-        allClassesLabel = getNonBreakResource("doclet.All_Classes");
         this.allClassesAndInterfacesLabel = getContent("doclet.All_Classes_And_Interfaces");
         allImplementedInterfacesLabel = getContent("doclet.All_Implemented_Interfaces");
         allModulesLabel = getNonBreakResource("doclet.All_Modules");
@@ -227,8 +227,8 @@ public class Contents {
         deprecatedLabel = getContent("doclet.navDeprecated");
         deprecatedPhrase = getContent("doclet.Deprecated");
         deprecatedForRemovalPhrase = getContent("doclet.DeprecatedForRemoval");
-        descfrmClassLabel = getContent("doclet.Description_From_Class");
-        descfrmInterfaceLabel = getContent("doclet.Description_From_Interface");
+        descriptionFromClassLabel = getContent("doclet.Description_From_Class");
+        descriptionFromInterfaceLabel = getContent("doclet.Description_From_Interface");
         descriptionLabel = getContent("doclet.Description");
         detailLabel = getContent("doclet.Detail");
         enclosingClassLabel = getContent("doclet.Enclosing_Class");
@@ -287,6 +287,8 @@ public class Contents {
         navProperty = getContent("doclet.navProperty");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
+        newAPI = getContent("doclet.New_API");
+        newLabel = getContent("doclet.New_Label");
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
         openModuleLabel = getContent("doclet.Open_Module");
@@ -407,10 +409,10 @@ public class Contents {
 
             if (o == null) {
                 c.add("{" + m.group(1) + "}");
-            } else if (o instanceof String) {
-                c.add((String) o);
-            } else if (o instanceof Content) {
-                c.add((Content) o);
+            } else if (o instanceof String str) {
+                c.add(str);
+            } else if (o instanceof Content con) {
+                c.add(con);
             }
 
             start = m.end();

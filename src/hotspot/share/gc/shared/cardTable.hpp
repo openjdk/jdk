@@ -235,8 +235,8 @@ public:
     card_size_in_words          = card_size / sizeof(HeapWord)
   };
 
-  static CardValue clean_card_val()          { return clean_card; }
-  static CardValue dirty_card_val()          { return dirty_card; }
+  static constexpr CardValue clean_card_val()          { return clean_card; }
+  static constexpr CardValue dirty_card_val()          { return dirty_card; }
   static intptr_t clean_card_row_val()   { return clean_card_row; }
 
   // Card marking array base (adjusted for heap low boundary)

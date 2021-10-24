@@ -39,7 +39,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -754,10 +753,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       br(Assembler::NE, slow_case);
     }
 
-    if (UseBiasedLocking) {
-      biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp, false, done, &slow_case);
-    }
-
     // Load (object->mark() | 1) into swap_reg
     ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     orr(swap_reg, rscratch1, 1);
@@ -769,17 +764,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
            "displached header must be first word in BasicObjectLock");
 
     Label fail;
-    if (PrintBiasedLockingStatistics) {
-      Label fast;
-      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, fast, &fail);
-      bind(fast);
-      atomic_incw(Address((address)BiasedLocking::fast_path_entry_count_addr()),
-                  rscratch2, rscratch1, tmp);
-      b(done);
-      bind(fail);
-    } else {
-      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
-    }
+    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
 
     // Fast check for recursive lock.
     //
@@ -816,12 +801,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     // Save the test result, for recursive case, the result is zero
     str(swap_reg, Address(lock_reg, mark_offset));
-
-    if (PrintBiasedLockingStatistics) {
-      br(Assembler::NE, slow_case);
-      atomic_incw(Address((address)BiasedLocking::fast_path_entry_count_addr()),
-                  rscratch2, rscratch1, tmp);
-    }
     br(Assembler::EQ, done);
 
     bind(slow_case);
@@ -871,10 +850,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     // Free entry
     str(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
-
-    if (UseBiasedLocking) {
-      biased_locking_exit(obj_reg, header_reg, done);
-    }
 
     // Load the old header from BasicLock structure
     ldr(header_reg, Address(swap_reg,

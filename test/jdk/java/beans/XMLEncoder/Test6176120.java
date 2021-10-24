@@ -25,6 +25,7 @@
  * @test
  * @bug 6176120
  * @summary Tests bean that contains constructor marked with ConstructorProperties annotation
+ * @run main/othervm -Djava.security.manager=allow Test6176120
  * @author Sergey Malenkov
  */
 

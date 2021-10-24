@@ -93,9 +93,8 @@ public:
   uint32_t hash_oop(uintptr_t addr) const;
 
   // Threads
-  uint nconcurrent_worker_threads() const;
-  uint nconcurrent_no_boost_worker_threads() const;
-  void set_boost_worker_threads(bool boost);
+  uint active_workers() const;
+  void set_active_workers(uint nworkers);
   void threads_do(ThreadClosure* tc) const;
 
   // Reference processing
@@ -116,17 +115,18 @@ public:
   uintptr_t alloc_object(size_t size);
   uintptr_t alloc_object_for_relocation(size_t size);
   void undo_alloc_object_for_relocation(uintptr_t addr, size_t size);
-  bool is_alloc_stalled() const;
+  bool has_alloc_stalled() const;
   void check_out_of_memory();
 
   // Marking
   bool is_object_live(uintptr_t addr) const;
   bool is_object_strongly_live(uintptr_t addr) const;
-  template <bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
+  template <bool gc_thread, bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
   void mark_start();
   void mark(bool initial);
   void mark_flush_and_free(Thread* thread);
   bool mark_end();
+  void mark_free();
   void keep_alive(oop obj);
 
   // Relocation set

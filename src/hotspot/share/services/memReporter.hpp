@@ -180,9 +180,9 @@ class MemSummaryDiffReporter : public MemReporterBase {
   // report the comparison of each memory type
   void diff_summary_of_type(MEMFLAGS type,
     const MallocMemory* early_malloc, const VirtualMemory* early_vm,
-    const MetaspaceSnapshot* early_ms,
+    const MetaspaceCombinedStats& early_ms,
     const MallocMemory* current_malloc, const VirtualMemory* current_vm,
-    const MetaspaceSnapshot* current_ms) const;
+    const MetaspaceCombinedStats& current_ms) const;
 
  protected:
   void print_malloc_diff(size_t current_amount, size_t current_count,
@@ -192,10 +192,11 @@ class MemSummaryDiffReporter : public MemReporterBase {
   void print_arena_diff(size_t current_amount, size_t current_count,
     size_t early_amount, size_t early_count) const;
 
-  void print_metaspace_diff(const MetaspaceSnapshot* current_ms,
-                            const MetaspaceSnapshot* early_ms) const;
-  void print_metaspace_diff(Metaspace::MetadataType type,
-    const MetaspaceSnapshot* current_ms, const MetaspaceSnapshot* early_ms) const;
+  void print_metaspace_diff(const MetaspaceCombinedStats& current_ms,
+                            const MetaspaceCombinedStats& early_ms) const;
+  void print_metaspace_diff(const char* header,
+                            const MetaspaceStats& current_ms,
+                            const MetaspaceStats& early_ms) const;
 };
 
 /*

@@ -32,6 +32,7 @@ import java.security.PrivilegedAction;
  * Creates this platform's default SelectorProvider
  */
 
+@SuppressWarnings("removal")
 public class DefaultSelectorProvider {
     private static final SelectorProviderImpl INSTANCE;
     static {

@@ -84,16 +84,12 @@ public class TestMetaAccessProvider extends TypeUniverse {
         return false;
     }
 
-    private static boolean isUnsafeAnonymous(ResolvedJavaType type) {
-        return type.getHostClass() != null;
-    }
-
     @Test
     public void lookupJavaTypeTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             assertNotNull(c.toString(), type);
-            if (!isHiddenClass(c) && !isUnsafeAnonymous(type)) {
+            if (!isHiddenClass(c)) {
                 assertEquals(c.toString(), type.getName(), toInternalName(c.getName()));
                 assertEquals(c.toString(), type.getName(), toInternalName(type.toJavaName()));
                 assertEquals(c.toString(), c.getName(), type.toClassName());
@@ -114,7 +110,7 @@ public class TestMetaAccessProvider extends TypeUniverse {
         ResolvedJavaType[] result = metaAccess.lookupJavaTypes(classes.toArray(new Class<?>[classes.size()]));
         int counter = 0;
         for (Class<?> aClass : classes) {
-            if (!isHiddenClass(aClass) && !isUnsafeAnonymous(result[counter])) {
+            if (!isHiddenClass(aClass)) {
                 assertEquals("Unexpected javaType: " + result[counter] + " while expecting of class: " + aClass, result[counter].toClassName(), aClass.getName());
             }
             counter++;

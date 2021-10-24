@@ -750,6 +750,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     private void checkShutdownAccess() {
         // assert mainLock.isHeldByCurrentThread();
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(shutdownPerm);

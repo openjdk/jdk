@@ -25,6 +25,8 @@
 #ifndef OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 #define OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 
+// os_windows.hpp included by os.hpp
+
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 

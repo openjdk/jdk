@@ -25,6 +25,8 @@
 #ifndef SHARE_RUNTIME_SAFEFETCH_INLINE_HPP
 #define SHARE_RUNTIME_SAFEFETCH_INLINE_HPP
 
+// No safefetch.hpp
+
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 

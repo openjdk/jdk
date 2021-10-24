@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ public class DefaultLoggerFinder extends LoggerFinder {
     }
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -138,6 +139,7 @@ public class DefaultLoggerFinder extends LoggerFinder {
         static final SharedLoggers application = new SharedLoggers();
     }
 
+    @SuppressWarnings("removal")
     public static boolean isSystem(Module m) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override

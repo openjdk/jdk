@@ -32,16 +32,10 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS],
 
   # Setup the target toolchain
 
+  # The target dir matches the name of VM variant
+  TARGET_JVM_VARIANT_PATH=$JVM_VARIANT_MAIN
+
   # On some platforms (mac) the linker warns about non existing -L dirs.
-  # For any of the variants server, client or minimal, the dir matches the
-  # variant name. The "main" variant should be used for linking. For the
-  # rest, the dir is just server.
-  if HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client) \
-      || HOTSPOT_CHECK_JVM_VARIANT(minimal); then
-    TARGET_JVM_VARIANT_PATH=$JVM_VARIANT_MAIN
-  else
-    TARGET_JVM_VARIANT_PATH=server
-  fi
   FLAGS_SETUP_LDFLAGS_CPU_DEP([TARGET])
 
   # Setup the build toolchain

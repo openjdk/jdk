@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,7 @@ public final class CFontManager extends SunFontManager {
     protected void registerFontsInDir(final String dirName, boolean useJavaRasterizer,
                                       int fontRank, boolean defer, boolean resolveSymLinks) {
 
+        @SuppressWarnings("removal")
         String[] files = AccessController.doPrivileged((PrivilegedAction<String[]>) () -> {
             return new File(dirName).list(getTrueTypeFilter());
         });
@@ -201,6 +202,7 @@ public final class CFontManager extends SunFontManager {
     Object waitForFontsToBeLoaded  = new Object();
     private boolean loadedAllFonts = false;
 
+    @SuppressWarnings("removal")
     public void loadFonts()
     {
         synchronized(waitForFontsToBeLoaded)
@@ -223,7 +225,7 @@ public final class CFontManager extends SunFontManager {
             String defaultFallback = "Lucida Grande";
 
             setupLogicalFonts("Dialog", defaultFont, defaultFallback);
-            setupLogicalFonts("Serif", "Times", "Times");
+            setupLogicalFonts("Serif", "Times", "Times New Roman");
             setupLogicalFonts("SansSerif", defaultFont, defaultFallback);
             setupLogicalFonts("Monospaced", "Menlo", "Courier");
             setupLogicalFonts("DialogInput", defaultFont, defaultFallback);
@@ -249,7 +251,13 @@ public final class CFontManager extends SunFontManager {
         family = getFontFamily(realName, fallbackName);
         if (family != null) return family;
 
-        System.err.println("Warning: the fonts \"" + realName + "\" and \"" + fallbackName + "\" are not available for the Java logical font \"" + logicalName + "\", which may have unexpected appearance or behavior. Re-enable the \""+ realName +"\" font to remove this warning.");
+        if (FontUtilities.debugFonts()) {
+            FontUtilities.logSevere(
+                "The fonts \"" + realName + "\" and \"" + fallbackName +
+                "\" are not available for the Java logical font \"" + logicalName +
+                "\", which may have unexpected appearance or behavior. Re-enable the \""+
+                realName +"\" font to remove this warning.");
+        }
         return null;
     }
 
@@ -259,7 +267,12 @@ public final class CFontManager extends SunFontManager {
 
         family = FontFamily.getFamily(fallbackName);
         if (family != null){
-            System.err.println("Warning: the font \"" + realName + "\" is not available, so \"" + fallbackName + "\" has been substituted, but may have unexpected appearance or behavor. Re-enable the \""+ realName +"\" font to remove this warning.");
+            if (FontUtilities.debugFonts()) {
+                FontUtilities.logWarning(
+                    "The font \"" + realName + "\" is not available, so \"" + fallbackName +
+                    "\" has been substituted, but may have unexpected appearance or behavor. Re-enable the \"" +
+                    realName +"\" font to remove this warning.");
+             }
             return family;
         }
 

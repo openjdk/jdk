@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
      * <code>RMIServerImpl</code>.  Can be null, equivalent to an
      * empty map.
      */
+    @SuppressWarnings("removal")
     public RMIConnectionImpl(RMIServerImpl rmiServer,
                              String connectionId,
                              ClassLoader defaultClassLoader,
@@ -164,6 +165,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         this.env = env;
     }
 
+    @SuppressWarnings("removal")
     private static AccessControlContext withPermissions(Permission ... perms){
         Permissions col = new Permissions();
 
@@ -1235,6 +1237,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("removal")
     public NotificationResult fetchNotifications(long clientSequenceNumber,
                                                  int maxNotifications,
                                                  long timeout)
@@ -1336,6 +1339,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     // private methods
     //------------------------------------------------------------------------
 
+    @SuppressWarnings("removal")
     private ClassLoader getClassLoader(final ObjectName name)
         throws InstanceNotFoundException {
         try {
@@ -1353,6 +1357,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("removal")
     private ClassLoader getClassLoaderFor(final ObjectName name)
         throws InstanceNotFoundException {
         try {
@@ -1370,6 +1375,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("removal")
     private Object doPrivilegedOperation(final int operation,
                                          final Object[] params,
                                          final Subject delegationSubject)
@@ -1549,6 +1555,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("removal")
     private <T> T unwrap(final MarshalledObject<?> mo,
                                 final ClassLoader cl,
                                 final Class<T> wrappedClass,
@@ -1611,6 +1618,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             return null;
         }
         try {
+            @SuppressWarnings("removal")
             ClassLoader orderCL = AccessController.doPrivileged(
                 new PrivilegedExceptionAction<ClassLoader>() {
                     public ClassLoader run() throws Exception {
@@ -1699,6 +1707,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
     private final boolean removeCallerContext;
 
+    @SuppressWarnings("removal")
     private final AccessControlContext acc;
 
     private final RMIServerImpl rmiServer;

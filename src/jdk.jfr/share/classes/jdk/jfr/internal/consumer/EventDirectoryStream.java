@@ -66,6 +66,7 @@ public class EventDirectoryStream extends AbstractEventStream {
     private volatile Consumer<Long> onCompleteHandler;
 
     public EventDirectoryStream(
+            @SuppressWarnings("removal")
             AccessControlContext acc,
             Path p,
             FileAccess fileAccess,

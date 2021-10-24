@@ -357,6 +357,13 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
         AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
         AVAILABLE=false
       fi
+    elif test "x$OPENJDK_TARGET_CPU" = "xppc64le"; then
+      if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+        AC_MSG_RESULT([yes])
+      else
+        AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
+        AVAILABLE=false
+      fi
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
       AVAILABLE=false
@@ -542,6 +549,9 @@ AC_DEFUN([JVM_FEATURES_VERIFY],
   if ! JVM_FEATURES_IS_ACTIVE(jvmci); then
     INCLUDE_JVMCI="false"
   fi
+  if JVM_FEATURES_IS_ACTIVE(compiler2); then
+    INCLUDE_COMPILER2="true"
+  fi
 
   # Verify that we have at least one gc selected (i.e., feature named "*gc").
   if ! JVM_FEATURES_IS_ACTIVE(.*gc); then
@@ -565,6 +575,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_SETUP],
   # missing any of them.
   ENABLE_CDS="true"
   INCLUDE_JVMCI="true"
+  INCLUDE_COMPILER2="false"
 
   for variant in $JVM_VARIANTS; do
     # Figure out if any features are unavailable, or should be filtered out
@@ -601,5 +612,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_SETUP],
   AC_SUBST(JVM_FEATURES_custom)
 
   AC_SUBST(INCLUDE_JVMCI)
+  AC_SUBST(INCLUDE_COMPILER2)
 
 ])

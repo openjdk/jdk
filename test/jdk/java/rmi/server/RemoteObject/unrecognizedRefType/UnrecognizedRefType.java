@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
  * longer a supported "external ref type name", and the names of
  * other classes in the internal package sun.rmi.server should
  * produce the same result.
- * See also test/java/rmi/activation/Activatable/notSerializable.
  * @author Peter Jones
  *
  * @run main/othervm UnrecognizedRefType

@@ -464,9 +464,13 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     if (EnableVectorSupport && EnableVectorReboxing && FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing)) {
       FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, true);
     }
+    if (EnableVectorSupport && FLAG_IS_DEFAULT(UseVectorStubs)) {
+      FLAG_SET_DEFAULT(UseVectorStubs, true);
+    }
     log_info(compilation)("EnableVectorSupport=%s",            (EnableVectorSupport            ? "true" : "false"));
     log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
     log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
+    log_info(compilation)("UseVectorStubs=%s",                 (UseVectorStubs                 ? "true" : "false"));
   }
 #endif // COMPILER2
 }
@@ -694,7 +698,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
       ls.print("get_module(): module ");
       java_lang_String::print(module_name, tty);
     } else {
-      ls.print("get_module(): Unamed Module");
+      ls.print("get_module(): Unnamed Module");
     }
     if (klass != NULL) {
       ls.print_cr(" for class %s", klass->external_name());

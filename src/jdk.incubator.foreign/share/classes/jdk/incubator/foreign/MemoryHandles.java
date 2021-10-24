@@ -44,16 +44,16 @@ import java.util.Objects;
  * (see {@link MemoryHandles#varHandle(Class, ByteOrder)},
  * {@link MemoryHandles#varHandle(Class, long, ByteOrder)}). This determines the variable type
  * (all primitive types but {@code void} and {@code boolean} are supported), as well as the alignment constraint and the
- * byte order associated to a memory access var handle. The resulting memory access var handle can then be combined in various ways
+ * byte order associated with a memory access var handle. The resulting memory access var handle can then be combined in various ways
  * to emulate different addressing modes. The var handles created by this class feature a <em>mandatory</em> coordinate type
  * (of type {@link MemorySegment}), and one {@code long} coordinate type, which represents the offset, in bytes, relative
  * to the segment, at which dereference should occur.
  * <p>
  * As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
  * <blockquote><pre>{@code
-GroupLayout seq = MemoryLayout.ofStruct(
-        MemoryLayout.ofPaddingBits(32),
-        MemoryLayout.ofValueBits(32, ByteOrder.BIG_ENDIAN).withName("value")
+GroupLayout seq = MemoryLayout.structLayout(
+        MemoryLayout.paddingLayout(32),
+        MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN).withName("value")
 );
  * }</pre></blockquote>
  * To access the member layout named {@code value}, we can construct a memory access var handle as follows:
@@ -103,7 +103,7 @@ handle = MemoryHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
  */
 public final class MemoryHandles {
 
-    private final static JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
+    private static final JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
 
     private MemoryHandles() {
         //sorry, just the one!
@@ -254,7 +254,7 @@ public final class MemoryHandles {
      * Java {@code int} to avoid dealing with negative values, which would be
      * the case if modeled as a Java {@code short}. This is illustrated in the following example:
      * <blockquote><pre>{@code
-    MemorySegment segment = MemorySegment.allocateNative(2);
+    MemorySegment segment = MemorySegment.allocateNative(2, ResourceScope.newImplicitScope());
     VarHandle SHORT_VH = MemoryLayouts.JAVA_SHORT.varHandle(short.class);
     VarHandle INT_VH = MemoryHandles.asUnsigned(SHORT_VH, int.class);
     SHORT_VH.set(segment, (short)-1);

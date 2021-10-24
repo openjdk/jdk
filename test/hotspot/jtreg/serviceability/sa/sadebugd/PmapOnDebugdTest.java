@@ -35,7 +35,7 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires (os.family != "windows") & (os.family != "mac")
  * @library /test/lib
- * @run main/othervm PmapOnDebugdTest
+ * @run driver PmapOnDebugdTest
  */
 
 public class PmapOnDebugdTest {
@@ -49,7 +49,7 @@ public class PmapOnDebugdTest {
         try {
             theApp = LingeredApp.startApp();
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
-            debugd = new DebugdUtils(null);
+            debugd = new DebugdUtils();
             debugd.attach(theApp.getPid());
 
             JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");

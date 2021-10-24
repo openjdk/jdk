@@ -144,10 +144,10 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
 
     @DataProvider
     public static Object[][] structs() {
-        MemoryLayout struct2 = MemoryLayout.ofStruct(C_INT, C_INT, C_DOUBLE, C_INT);
+        MemoryLayout struct2 = MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE, C_INT);
         return new Object[][]{
             // struct s { int32_t a, b; double c; };
-            { MemoryLayout.ofStruct(C_INT, C_INT, C_DOUBLE), new Binding[] {
+            { MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE), new Binding[] {
                 dup(),
                     // s.a & s.b
                     bufferLoad(0, long.class), vmStore(r0, long.class),
@@ -162,7 +162,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
                 vmStore(r0, long.class)
             }},
             // struct s { int32_t a[2]; float b[2] };
-            { MemoryLayout.ofStruct(C_INT, C_INT, C_FLOAT, C_FLOAT), new Binding[] {
+            { MemoryLayout.structLayout(C_INT, C_INT, C_FLOAT, C_FLOAT), new Binding[] {
                 dup(),
                     // s.a[0] & s.a[1]
                     bufferLoad(0, long.class), vmStore(r0, long.class),
@@ -170,7 +170,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
                     bufferLoad(8, long.class), vmStore(r1, long.class),
             }},
             // struct s { float a; /* padding */ double b };
-            { MemoryLayout.ofStruct(C_FLOAT, MemoryLayout.ofPaddingBits(32), C_DOUBLE),
+            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32), C_DOUBLE),
               new Binding[] {
                 dup(),
                 // s.a
@@ -183,8 +183,8 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
 
     @Test
     public void testMultipleStructs() {
-        MemoryLayout struct1 = MemoryLayout.ofStruct(C_INT, C_INT, C_DOUBLE, C_INT);
-        MemoryLayout struct2 = MemoryLayout.ofStruct(C_LONG, C_LONG, C_LONG);
+        MemoryLayout struct1 = MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE, C_INT);
+        MemoryLayout struct2 = MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG);
 
         MethodType mt = MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, int.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(struct1, struct2, C_INT);
@@ -216,7 +216,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
 
     @Test
     public void testReturnStruct1() {
-        MemoryLayout struct = MemoryLayout.ofStruct(C_LONG, C_LONG, C_FLOAT);
+        MemoryLayout struct = MemoryLayout.structLayout(C_LONG, C_LONG, C_FLOAT);
 
         MethodType mt = MethodType.methodType(MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.of(struct);
@@ -239,7 +239,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
 
     @Test
     public void testReturnStruct2() {
-        MemoryLayout struct = MemoryLayout.ofStruct(C_LONG, C_LONG);
+        MemoryLayout struct = MemoryLayout.structLayout(C_LONG, C_LONG);
 
         MethodType mt = MethodType.methodType(MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.of(struct);
@@ -265,7 +265,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
 
     @Test
     public void testStructHFA1() {
-        MemoryLayout hfa = MemoryLayout.ofStruct(C_FLOAT, C_FLOAT);
+        MemoryLayout hfa = MemoryLayout.structLayout(C_FLOAT, C_FLOAT);
 
         MethodType mt = MethodType.methodType(MemorySegment.class, float.class, int.class, MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.of(hfa, C_FLOAT, C_INT, hfa);
@@ -281,27 +281,27 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
             { vmStore(r0, int.class) },
             {
                 dup(),
-                bufferLoad(0, int.class),
-                vmStore(v1, int.class),
-                bufferLoad(4, int.class),
-                vmStore(v2, int.class)
+                bufferLoad(0, float.class),
+                vmStore(v1, float.class),
+                bufferLoad(4, float.class),
+                vmStore(v2, float.class)
             }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{
             allocate(hfa),
             dup(),
-            vmLoad(v0, int.class),
-            bufferStore(0, int.class),
+            vmLoad(v0, float.class),
+            bufferStore(0, float.class),
             dup(),
-            vmLoad(v1, int.class),
-            bufferStore(4, int.class),
+            vmLoad(v1, float.class),
+            bufferStore(4, float.class),
         });
     }
 
     @Test
     public void testStructHFA3() {
-        MemoryLayout struct = MemoryLayout.ofStruct(C_FLOAT, C_FLOAT, C_FLOAT);
+        MemoryLayout struct = MemoryLayout.structLayout(C_FLOAT, C_FLOAT, C_FLOAT);
 
         MethodType mt = MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(struct, struct, struct);
@@ -315,23 +315,23 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         checkArgumentBindings(callingSequence, new Binding[][]{
             {
                 dup(),
-                bufferLoad(0, int.class),
-                vmStore(v0, int.class),
+                bufferLoad(0, float.class),
+                vmStore(v0, float.class),
                 dup(),
-                bufferLoad(4, int.class),
-                vmStore(v1, int.class),
-                bufferLoad(8, int.class),
-                vmStore(v2, int.class)
+                bufferLoad(4, float.class),
+                vmStore(v1, float.class),
+                bufferLoad(8, float.class),
+                vmStore(v2, float.class)
             },
             {
                 dup(),
-                bufferLoad(0, int.class),
-                vmStore(v3, int.class),
+                bufferLoad(0, float.class),
+                vmStore(v3, float.class),
                 dup(),
-                bufferLoad(4, int.class),
-                vmStore(v4, int.class),
-                bufferLoad(8, int.class),
-                vmStore(v5, int.class)
+                bufferLoad(4, float.class),
+                vmStore(v4, float.class),
+                bufferLoad(8, float.class),
+                vmStore(v5, float.class)
             },
             {
                 dup(),
@@ -351,7 +351,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         // stack should be passed as a pointer to a copy and occupy one
         // stack slot.
 
-        MemoryLayout struct = MemoryLayout.ofStruct(C_INT, C_INT, C_DOUBLE, C_INT);
+        MemoryLayout struct = MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE, C_INT);
 
         MethodType mt = MethodType.methodType(
             void.class, MemorySegment.class, MemorySegment.class, int.class, int.class,

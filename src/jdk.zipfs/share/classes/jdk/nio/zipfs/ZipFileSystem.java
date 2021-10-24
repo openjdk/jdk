@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ import static jdk.nio.zipfs.ZipUtils.*;
  */
 class ZipFileSystem extends FileSystem {
     // statics
+    @SuppressWarnings("removal")
     private static final boolean isWindows = AccessController.doPrivileged(
         (PrivilegedAction<Boolean>)()->System.getProperty("os.name")
                                              .startsWith("Windows"));
@@ -118,6 +119,11 @@ class ZipFileSystem extends FileSystem {
     private final boolean noExtt;        // see readExtra()
     private final boolean useTempFile;   // use a temp file for newOS, default
                                          // is to use BAOS for better performance
+
+    // a threshold, in bytes, to decide whether to create a temp file
+    // for outputstream of a zip entry
+    private final int tempFileCreationThreshold = 10 * 1024 * 1024; // 10 MB
+
     private final boolean forceEnd64;
     private final int defaultCompressionMethod; // METHOD_STORED if "noCompression=true"
                                                 // METHOD_DEFLATED otherwise
@@ -162,6 +168,7 @@ class ZipFileSystem extends FileSystem {
         }
         // sm and existence check
         zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
+        @SuppressWarnings("removal")
         boolean writeable = AccessController.doPrivileged(
             (PrivilegedAction<Boolean>)()->Files.isWritable(zfpath));
         this.readOnly = !writeable;
@@ -237,6 +244,7 @@ class ZipFileSystem extends FileSystem {
     // If not specified in env, it is the owner of the archive. If no owner can
     // be determined, we try to go with system property "user.name". If that's not
     // accessible, we return "<zipfs_default>".
+    @SuppressWarnings("removal")
     private UserPrincipal initOwner(Path zfpath, Map<String, ?> env) throws IOException {
         Object o = env.get(PROPERTY_DEFAULT_OWNER);
         if (o == null) {
@@ -274,6 +282,7 @@ class ZipFileSystem extends FileSystem {
     // If not specified in env, we try to determine the group of the zip archive itself.
     // If this is not possible/unsupported, we will return a group principal going by
     // the same name as the default owner.
+    @SuppressWarnings("removal")
     private GroupPrincipal initGroup(Path zfpath, Map<String, ?> env) throws IOException {
         Object o = env.get(PROPERTY_DEFAULT_GROUP);
         if (o == null) {
@@ -453,6 +462,7 @@ class ZipFileSystem extends FileSystem {
         return (path)->pattern.matcher(path.toString()).matches();
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void close() throws IOException {
         beginWrite();
@@ -1565,6 +1575,10 @@ class ZipFileSystem extends FileSystem {
                 throw new ZipException("invalid CEN header (bad header size)");
             }
             IndexNode inode = new IndexNode(cen, pos, nlen);
+            if (hasDotOrDotDot(inode.name)) {
+                throw new ZipException("ZIP file can't be opened as a file system " +
+                        "because an entry has a '.' or '..' element in its name");
+            }
             inodes.put(inode, inode);
             if (zc.isUTF8() || (flag & FLAG_USE_UTF8) != 0) {
                 checkUTF8(inode.name);
@@ -1579,6 +1593,44 @@ class ZipFileSystem extends FileSystem {
         }
         buildNodeTree();
         return cen;
+    }
+
+    /**
+     * Check Inode.name to see if it includes a "." or ".." in the name array
+     * @param path  the path as stored in Inode.name to verify
+     * @return true if the path contains a "." or ".." entry; false otherwise
+     */
+    private boolean hasDotOrDotDot(byte[] path) {
+        // Inode.name always includes "/" in path[0]
+        assert path[0] == '/';
+        if (path.length == 1) {
+            return false;
+        }
+        int index = 1;
+        while (index < path.length) {
+            int starting = index;
+            while (index < path.length && path[index] != '/') {
+                index++;
+            }
+            // Check the path snippet for a "." or ".."
+            if (isDotOrDotDotPath(path, starting, index)) {
+                return true;
+            }
+            index++;
+        }
+        return false;
+    }
+
+    /**
+     * Check the path to see if it includes a "." or ".."
+     * @param path  the path to check
+     * @return true if the path contains a "." or ".." entry; false otherwise
+     */
+    private boolean isDotOrDotDotPath(byte[] path, int start, int index) {
+        int pathLen = index - start;
+        if ((pathLen == 1 && path[start] == '.'))
+            return true;
+        return (pathLen == 2 && path[start] == '.') && path[start + 1] == '.';
     }
 
     private  final void checkUTF8(byte[] a) throws ZipException {
@@ -1939,11 +1991,11 @@ class ZipFileSystem extends FileSystem {
         if (zc.isUTF8())
             e.flag |= FLAG_USE_UTF8;
         OutputStream os;
-        if (useTempFile) {
+        if (useTempFile || e.size >= tempFileCreationThreshold) {
             e.file = getTempPathForEntry(null);
             os = Files.newOutputStream(e.file, WRITE);
         } else {
-            os = new ByteArrayOutputStream((e.size > 0)? (int)e.size : 8192);
+            os = new FileRolloverOutputStream(e);
         }
         if (e.method == METHOD_DEFLATED) {
             return new DeflatingEntryOutputStream(e, os);
@@ -1983,8 +2035,9 @@ class ZipFileSystem extends FileSystem {
             }
             isClosed = true;
             e.size = written;
-            if (out instanceof ByteArrayOutputStream)
-                e.bytes = ((ByteArrayOutputStream)out).toByteArray();
+            if (out instanceof FileRolloverOutputStream fros && fros.tmpFileOS == null) {
+                e.bytes = fros.toByteArray();
+            }
             super.close();
             update(e);
         }
@@ -2019,8 +2072,9 @@ class ZipFileSystem extends FileSystem {
             e.size  = def.getBytesRead();
             e.csize = def.getBytesWritten();
             e.crc = crc.getValue();
-            if (out instanceof ByteArrayOutputStream)
-                e.bytes = ((ByteArrayOutputStream)out).toByteArray();
+            if (out instanceof FileRolloverOutputStream fros && fros.tmpFileOS == null) {
+                e.bytes = fros.toByteArray();
+            }
             super.close();
             update(e);
             releaseDeflater(def);
@@ -2099,6 +2153,111 @@ class ZipFileSystem extends FileSystem {
             e.csize = def.getBytesWritten();
             e.crc = crc.getValue();
             releaseDeflater(def);
+        }
+    }
+
+    // A wrapper around the ByteArrayOutputStream. This FileRolloverOutputStream
+    // uses a threshold size to decide if the contents being written need to be
+    // rolled over into a temporary file. Until the threshold is reached, writes
+    // on this outputstream just write it to the internal in-memory byte array
+    // held by the ByteArrayOutputStream. Once the threshold is reached, the
+    // write operation on this outputstream first (and only once) creates a temporary file
+    // and transfers the data that has so far been written in the internal
+    // byte array, to that newly created file. The temp file is then opened
+    // in append mode and any subsequent writes, including the one which triggered
+    // the temporary file creation, will be written to the file.
+    // Implementation note: the "write" and the "close" methods of this implementation
+    // aren't "synchronized" because this FileRolloverOutputStream gets called
+    // only from either DeflatingEntryOutputStream or EntryOutputStream, both of which
+    // already have the necessary "synchronized" before calling these methods.
+    private class FileRolloverOutputStream extends OutputStream {
+        private ByteArrayOutputStream baos = new ByteArrayOutputStream(8192);
+        private final Entry entry;
+        private OutputStream tmpFileOS;
+        private long totalWritten = 0;
+
+        private FileRolloverOutputStream(final Entry e) {
+            this.entry = e;
+        }
+
+        @Override
+        public void write(final int b) throws IOException {
+            if (tmpFileOS != null) {
+                // already rolled over, write to the file that has been created previously
+                writeToFile(b);
+                return;
+            }
+            if (totalWritten + 1 < tempFileCreationThreshold) {
+                // write to our in-memory byte array
+                baos.write(b);
+                totalWritten++;
+                return;
+            }
+            // rollover into a file
+            transferToFile();
+            writeToFile(b);
+        }
+
+        @Override
+        public void write(final byte[] b) throws IOException {
+            write(b, 0, b.length);
+        }
+
+        @Override
+        public void write(final byte[] b, final int off, final int len) throws IOException {
+            if (tmpFileOS != null) {
+                // already rolled over, write to the file that has been created previously
+                writeToFile(b, off, len);
+                return;
+            }
+            if (totalWritten + len < tempFileCreationThreshold) {
+                // write to our in-memory byte array
+                baos.write(b, off, len);
+                totalWritten += len;
+                return;
+            }
+            // rollover into a file
+            transferToFile();
+            writeToFile(b, off, len);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (tmpFileOS != null) {
+                tmpFileOS.flush();
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            baos = null;
+            if (tmpFileOS != null) {
+                tmpFileOS.close();
+            }
+        }
+
+        private void writeToFile(int b) throws IOException {
+            tmpFileOS.write(b);
+            totalWritten++;
+        }
+
+        private void writeToFile(byte[] b, int off, int len) throws IOException {
+            tmpFileOS.write(b, off, len);
+            totalWritten += len;
+        }
+
+        private void transferToFile() throws IOException {
+            // create a tempfile
+            entry.file = getTempPathForEntry(null);
+            tmpFileOS = new BufferedOutputStream(Files.newOutputStream(entry.file));
+            // transfer the already written data from the byte array buffer into this tempfile
+            baos.writeTo(tmpFileOS);
+            // release the underlying byte array
+            baos = null;
+        }
+
+        private byte[] toByteArray() {
+            return baos == null ? null : baos.toByteArray();
         }
     }
 

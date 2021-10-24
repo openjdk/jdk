@@ -153,6 +153,9 @@ do
     fpvectortype=${typeprefix}${Fptype}${bits}Vector
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
+    if [[ "${vectortype}" == "ByteMaxVector" ]]; then
+      args="$args -KByteMax"
+    fi
     bitargs="$args -Dbits=$bits -Dvectortype=$vectortype -Dvectorteststype=$vectorteststype -Dvectorbenchtype=$vectorbenchtype -Dmasktype=$masktype -Dbitsvectortype=$bitsvectortype -Dfpvectortype=$fpvectortype -Dshape=$shape -DShape=$Shape"
     if [ $bits == 'Max' ]; then
       bitargs="$bitargs -KMaxBit"
@@ -225,6 +228,9 @@ do
     fpvectortype=${typeprefix}${Fptype}${bits}Vector
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
+    if [[ "${vectortype}" == "ByteMaxVector" ]]; then
+      args="$args -KByteMax"
+    fi
     bitargs="$args -Dbits=$bits -Dvectortype=$vectortype -Dvectorteststype=$vectorteststype -Dvectorbenchtype=$vectorbenchtype -Dmasktype=$masktype -Dbitsvectortype=$bitsvectortype -Dfpvectortype=$fpvectortype -Dshape=$shape -DShape=$Shape"
     if [ $bits == 'Max' ]; then
       bitargs="$bitargs -KMaxBit"

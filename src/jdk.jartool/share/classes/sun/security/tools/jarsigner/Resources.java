@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "Usage: jarsigner [options] jar-file alias"},
         {".jarsigner.verify.options.jar.file.alias.",
                 "       jarsigner -verify [options] jar-file [alias...]"},
+        {".jarsigner.version",
+                "       jarsigner -version"},
         {".keystore.url.keystore.location",
                 "[-keystore <url>]           keystore location"},
         {".storepass.password.password.for.keystore.integrity",
@@ -77,6 +79,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "[-sigalg <algorithm>]       name of signature algorithm"},
         {".verify.verify.a.signed.JAR.file",
                 "[-verify]                   verify a signed JAR file"},
+        {".version.print.the.program.version",
+                "[-version]                  print the program version"},
         {".verbose.suboptions.verbose.output.when.signing.verifying.",
                 "[-verbose[:suboptions]]     verbose output when signing/verifying."},
         {".suboptions.can.be.all.grouped.or.summary",
@@ -133,6 +137,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"s", "s"},
         {"m", "m"},
         {"k", "k"},
+        {"X", "X"},
+        {"q", "?"},
         {".and.d.more.", "(and %d more)"},
         {".s.signature.was.verified.",
                 "  s = signature was verified "},
@@ -142,9 +148,12 @@ public class Resources extends java.util.ListResourceBundle {
                 "  k = at least one certificate was found in keystore"},
         {".X.not.signed.by.specified.alias.es.",
                 "  X = not signed by specified alias(es)"},
+        {".q.unsigned.entry",
+                "  ? = unsigned entry"},
         {"no.manifest.", "no manifest."},
         {".Signature.related.entries.","(Signature related entries)"},
         {".Unsigned.entries.", "(Unsigned entries)"},
+        {".Directory.entries.", "(Directory entries)"},
         {"jar.is.unsigned",
                 "jar is unsigned."},
         {"jar.treated.unsigned",

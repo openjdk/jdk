@@ -1177,16 +1177,16 @@ public final class LocalDateTime
     @Override
     public LocalDateTime plus(long amountToAdd, TemporalUnit unit) {
         if (unit instanceof ChronoUnit chronoUnit) {
-            switch (chronoUnit) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plusDays(amountToAdd / MICROS_PER_DAY).plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
-                case MILLIS: return plusDays(amountToAdd / MILLIS_PER_DAY).plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000_000);
-                case SECONDS: return plusSeconds(amountToAdd);
-                case MINUTES: return plusMinutes(amountToAdd);
-                case HOURS: return plusHours(amountToAdd);
-                case HALF_DAYS: return plusDays(amountToAdd / 256).plusHours((amountToAdd % 256) * 12);  // no overflow (256 is multiple of 2)
-            }
-            return with(date.plus(amountToAdd, unit), time);
+            return switch (chronoUnit) {
+                case NANOS     -> plusNanos(amountToAdd);
+                case MICROS    -> plusDays(amountToAdd / MICROS_PER_DAY).plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
+                case MILLIS    -> plusDays(amountToAdd / MILLIS_PER_DAY).plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000_000);
+                case SECONDS   -> plusSeconds(amountToAdd);
+                case MINUTES   -> plusMinutes(amountToAdd);
+                case HOURS     -> plusHours(amountToAdd);
+                case HALF_DAYS -> plusDays(amountToAdd / 256).plusHours((amountToAdd % 256) * 12); // no overflow (256 is multiple of 2)
+                default -> with(date.plus(amountToAdd, unit), time);
+            };
         }
         return unit.addTo(this, amountToAdd);
     }

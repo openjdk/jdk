@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6941869
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.CR6941869Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.CR6941869Test
  * @run testng/othervm transform.CR6941869Test
  * @summary Test XSLT evaluate "count(.|key('props', d/e)[1])" correctly.
  */

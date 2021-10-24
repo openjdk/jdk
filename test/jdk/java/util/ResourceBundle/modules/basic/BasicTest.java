@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8044767 8139067 8210408
+ * @bug 8044767 8139067 8210408 8263202
  * @summary Basic tests for ResourceBundle with modules:
  *          1) Named module "test" contains resource bundles for root and en,
  *          and separate named modules "eubundles" and "asiabundles" contain
@@ -82,7 +82,7 @@ public class BasicTest {
     private static final List<String> LOCALE_LIST = List.of("de", "fr", "ja",
             "zh-tw", "en", "de");
     private static final List<String> LOCALE_LIST_BASIC = List.of("de", "fr",
-            "ja", "ja-jp", "zh-tw", "en", "de", "ja-jp");
+            "ja", "ja-jp", "zh-tw", "en", "de", "ja-jp", "in", "yi");
 
     private static final List<String> MODULE_LIST = List.of("asiabundles",
             "eubundles", "test");
@@ -130,6 +130,7 @@ public class BasicTest {
         moduleList.forEach(mn -> ModuleTestUtil.prepareModule(srcPath, modPath,
                 mn, resFormat));
         ModuleTestUtil.runModule(modPath.toString(), MAIN, localeList);
+        ModuleTestUtil.runModuleWithLegacyCode(modPath.toString(), MAIN, localeList);
     }
 
     @Test

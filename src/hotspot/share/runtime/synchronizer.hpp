@@ -133,7 +133,7 @@ class ObjectSynchronizer : AllStatic {
 
   // JNI detach support
   static void release_monitors_owned_by_thread(JavaThread* current);
-  static void monitors_iterate(MonitorClosure* m);
+  static void monitors_iterate(MonitorClosure* m, JavaThread* thread);
 
   // Initialize the gInflationLocks
   static void initialize();

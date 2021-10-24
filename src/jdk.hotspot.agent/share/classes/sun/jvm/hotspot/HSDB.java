@@ -951,8 +951,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
             SignalInfo sigInfo = (SignalInfo) interruptedFrameMap.get(curFrame);
             if (sigInfo != null) {
               // This frame took a signal and we need to report it.
-              anno = (anno + "\n*** INTERRUPTED BY SIGNAL " + Integer.toString(sigInfo.sigNum) +
-                      " (" + sigInfo.sigName + ")");
+              anno = anno + "\n*** INTERRUPTED BY SIGNAL " + sigInfo.sigNum +
+                      " (" + sigInfo.sigName + ")";
             }
 
             JavaVFrame nextVFrame = curVFrame;

@@ -25,7 +25,7 @@
  * @test
  * @bug 8072692
  * @summary Check the matching implemented by SecurityManager.checkPackageAccess
- * @run main/othervm CheckPackageMatching
+ * @run main/othervm -Djava.security.manager=allow CheckPackageMatching
  */
 
 import java.security.Security;
