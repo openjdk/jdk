@@ -1839,17 +1839,20 @@ public:
   void byte_array_inflate(Register src, Register dst, Register len,
                           XMMRegister tmp1, Register tmp2, KRegister mask = knoreg);
 
-  void fill64_masked_avx(uint shift, Register dst, int disp,
+  void fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRegister mask,
+                   Register length, Register temp, int vec_enc);
+
+  void fill64_masked(uint shift, Register dst, int disp,
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp, bool use64byteVector = false);
 
-  void fill32_masked_avx(uint shift, Register dst, int disp,
+  void fill32_masked(uint shift, Register dst, int disp,
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp);
 
-  void fill32_avx(Register dst, int disp, XMMRegister xmm);
+  void fill32(Register dst, int disp, XMMRegister xmm);
 
-  void fill64_avx(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
+  void fill64(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 
 #ifdef _LP64
   void convert_f2i(Register dst, XMMRegister src);
