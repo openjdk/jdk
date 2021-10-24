@@ -142,4 +142,9 @@ static jmethodID jm_getChildrenAndRoles = NULL;
         return NSMakeRect(point.x, point.y, width, height);
 }
 
+- (BOOL)isAccessibilityOrderedByRow
+{
+    return YES;
+}
+
 @end

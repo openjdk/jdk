@@ -126,9 +126,11 @@
 #if INCLUDE_MANAGEMENT
 #define NOT_MANAGEMENT_RETURN        /* next token must be ; */
 #define NOT_MANAGEMENT_RETURN_(code) /* next token must be ; */
+#define MANAGEMENT_ONLY(x) x
 #else
 #define NOT_MANAGEMENT_RETURN        {}
 #define NOT_MANAGEMENT_RETURN_(code) { return code; }
+#define MANAGEMENT_ONLY(x)
 #endif // INCLUDE_MANAGEMENT
 
 #ifndef INCLUDE_EPSILONGC

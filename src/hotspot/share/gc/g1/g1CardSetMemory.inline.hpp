@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
+#include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "utilities/ostream.hpp"
 
 #include "gc/g1/g1CardSetContainers.inline.hpp"
@@ -38,41 +39,8 @@ G1CardSetContainer* volatile* G1CardSetAllocator<Elem>::next_ptr(G1CardSetContai
 }
 
 template <class Elem>
-G1CardSetBuffer* G1CardSetAllocator<Elem>::create_new_buffer(G1CardSetBuffer* const prev) {
-
-  // Take an existing buffer if available.
-  G1CardSetBuffer* next = _free_buffer_list->get();
-  if (next == nullptr) {
-    uint prev_num_elems = (prev != nullptr) ? prev->num_elems() : 0;
-    uint num_elems = _alloc_options.next_num_elems(prev_num_elems);
-    next = new G1CardSetBuffer(elem_size(), num_elems, prev);
-  } else {
-    assert(elem_size() == next->elem_size() , "Mismatch %d != %d Elem %zu", elem_size(), next->elem_size(), sizeof(Elem));
-    next->reset(prev);
-  }
-
-  // Install it as current allocation buffer.
-  G1CardSetBuffer* old = Atomic::cmpxchg(&_first, prev, next);
-  if (old != prev) {
-    // Somebody else installed the buffer, use that one.
-    delete next;
-    return old;
-  } else {
-    // Did we install the first element in the list? If so, this is also the last.
-    if (prev == nullptr) {
-      _last = next;
-    }
-    // Successfully installed the buffer into the list.
-    Atomic::inc(&_num_buffers, memory_order_relaxed);
-    Atomic::add(&_mem_size, next->mem_size(), memory_order_relaxed);
-    Atomic::add(&_num_available_nodes, next->num_elems(), memory_order_relaxed);
-    return next;
-  }
-}
-
-template <class Elem>
 Elem* G1CardSetAllocator<Elem>::allocate() {
-  assert(elem_size() > 0, "instance size not set.");
+  assert(_segmented_array.elem_size() > 0, "instance size not set.");
 
   if (num_free_elems() > 0) {
     // Pop under critical section to deal with ABA problem
@@ -88,22 +56,9 @@ Elem* G1CardSetAllocator<Elem>::allocate() {
     }
   }
 
-  G1CardSetBuffer* cur = Atomic::load_acquire(&_first);
-  if (cur == nullptr) {
-    cur = create_new_buffer(cur);
-  }
-
-  while (true) {
-    Elem* elem = (Elem*)cur->get_new_buffer_elem();
-    if (elem != nullptr) {
-      Atomic::inc(&_num_allocated_nodes, memory_order_relaxed);
-      guarantee(is_aligned(elem, 8), "result " PTR_FORMAT " not aligned", p2i(elem));
-      return elem;
-    }
-    // The buffer is full. Next round.
-    assert(cur->is_full(), "must be");
-    cur = create_new_buffer(cur);
-  }
+  Elem* elem = _segmented_array.allocate();
+  assert(elem != nullptr, "must be");
+  return elem;
 }
 
 inline uint8_t* G1CardSetMemoryManager::allocate(uint type) {
@@ -117,11 +72,6 @@ inline uint8_t* G1CardSetMemoryManager::allocate_node() {
 
 inline void G1CardSetMemoryManager::free_node(void* value) {
   free(0, value);
-}
-
-template <class Elem>
-inline uint G1CardSetAllocator<Elem>::num_buffers() const {
-  return Atomic::load(&_num_buffers);
 }
 
 template <class Elem>

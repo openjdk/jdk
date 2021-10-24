@@ -65,6 +65,8 @@ G1CardSetConfiguration::G1CardSetConfiguration() :
   _cards_in_howl_bitmap_threshold = _num_cards_in_howl_bitmap * (double)G1RemSetCoarsenHowlBitmapToHowlFullPercent / 100;
   _bitmap_hash_mask = ~(~(0) << _log2_num_cards_in_howl_bitmap);
 
+  init_card_set_alloc_options();
+
   log_configuration();
 }
 
@@ -89,7 +91,21 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _log2_num_cards_in_howl_bitmap = log2i_exact(_num_cards_in_howl_bitmap);
   _bitmap_hash_mask = ~(~(0) << _log2_num_cards_in_howl_bitmap);
 
+  init_card_set_alloc_options();
+
   log_configuration();
+}
+
+G1CardSetConfiguration::~G1CardSetConfiguration() {
+  FREE_C_HEAP_ARRAY(size_t, _card_set_alloc_options);
+}
+
+void G1CardSetConfiguration::init_card_set_alloc_options() {
+  _card_set_alloc_options = NEW_C_HEAP_ARRAY(G1CardSetAllocOptions, num_mem_object_types(), mtGC);
+  new (&_card_set_alloc_options[0]) G1CardSetAllocOptions((uint)CardSetHash::get_node_size());
+  new (&_card_set_alloc_options[1]) G1CardSetAllocOptions((uint)G1CardSetArray::size_in_bytes(_num_cards_in_array), 2, 256);
+  new (&_card_set_alloc_options[2]) G1CardSetAllocOptions((uint)G1CardSetBitMap::size_in_bytes(_num_cards_in_howl_bitmap), 2, 256);
+  new (&_card_set_alloc_options[3]) G1CardSetAllocOptions((uint)G1CardSetHowl::size_in_bytes(_num_buckets_in_howl), 2, 256);
 }
 
 void G1CardSetConfiguration::log_configuration() {
@@ -112,15 +128,8 @@ uint G1CardSetConfiguration::num_cards_in_inline_ptr(uint bits_per_card) {
   return G1CardSetInlinePtr::max_cards_in_inline_ptr(bits_per_card);
 }
 
-G1CardSetAllocOptions* G1CardSetConfiguration::mem_object_alloc_options() {
-  G1CardSetAllocOptions* result = NEW_C_HEAP_ARRAY(G1CardSetAllocOptions, num_mem_object_types(), mtGC);
-
-  result[0] = { (uint)CardSetHash::get_node_size() };
-  result[1] = { (uint)G1CardSetArray::size_in_bytes(num_cards_in_array()), 2, 256 };
-  result[2] = { (uint)G1CardSetBitMap::size_in_bytes(num_cards_in_howl_bitmap()), 2, 256 };
-  result[3] = { (uint)G1CardSetHowl::size_in_bytes(num_buckets_in_howl()), 2, 256 };
-
-  return result;
+const G1CardSetAllocOptions* G1CardSetConfiguration::mem_object_alloc_options(uint idx) {
+  return &_card_set_alloc_options[idx];
 }
 
 const char* G1CardSetConfiguration::mem_object_type_name_str(uint index) {

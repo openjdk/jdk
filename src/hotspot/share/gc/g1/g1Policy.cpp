@@ -1501,7 +1501,6 @@ void G1Policy::update_survival_estimates_for_next_collection() {
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
   start_adding_survivor_regions();
 
-  HeapRegion* last = NULL;
   for (GrowableArrayIterator<HeapRegion*> it = survivors->regions()->begin();
        it != survivors->regions()->end();
        ++it) {
@@ -1512,8 +1511,6 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
     // the incremental collection set for the next evacuation
     // pause.
     _collection_set->add_survivor_regions(curr);
-
-    last = curr;
   }
   stop_adding_survivor_regions();
 

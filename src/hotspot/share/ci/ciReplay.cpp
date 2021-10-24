@@ -49,6 +49,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
@@ -90,6 +91,11 @@ typedef struct _ciMethodRecord {
   int _backedge_counter;
 } ciMethodRecord;
 
+typedef struct _ciInstanceKlassRecord {
+  const InstanceKlass* _klass;
+  jobject _java_mirror; // Global handle to java mirror to prevent unloading
+} ciInstanceKlassRecord;
+
 typedef struct _ciInlineRecord {
   const char* _klass_name;
   const char* _method_name;
@@ -111,6 +117,7 @@ class CompileReplay : public StackObj {
 
   GrowableArray<ciMethodRecord*>     _ci_method_records;
   GrowableArray<ciMethodDataRecord*> _ci_method_data_records;
+  GrowableArray<ciInstanceKlassRecord*> _ci_instance_klass_records;
 
   // Use pointer because we may need to return inline records
   // without destroying them.
@@ -121,7 +128,6 @@ class CompileReplay : public StackObj {
   char* _bufptr;
   char* _buffer;
   int   _buffer_length;
-  int   _buffer_pos;
 
   // "compile" data
   ciKlass* _iklass;
@@ -146,7 +152,6 @@ class CompileReplay : public StackObj {
     _buffer_length = 32;
     _buffer = NEW_RESOURCE_ARRAY(char, _buffer_length);
     _bufptr = _buffer;
-    _buffer_pos = 0;
 
     _imethod = NULL;
     _iklass  = NULL;
@@ -182,10 +187,6 @@ class CompileReplay : public StackObj {
 
   void report_error(const char* msg) {
     _error_message = msg;
-    // Restore the _buffer contents for error reporting
-    for (int i = 0; i < _buffer_pos; i++) {
-      if (_buffer[i] == '\0') _buffer[i] = ' ';
-    }
   }
 
   int parse_int(const char* label) {
@@ -225,6 +226,10 @@ class CompileReplay : public StackObj {
     }
   }
 
+  // Ignore the rest of the line
+  void skip_remaining() {
+    _bufptr = &_bufptr[strlen(_bufptr)]; // skip ahead to terminator
+  }
 
   char* scan_and_terminate(char delim) {
     char* str = _bufptr;
@@ -574,8 +579,9 @@ class CompileReplay : public StackObj {
   }
 
   int get_line(int c) {
+    int buffer_pos = 0;
     while(c != EOF) {
-      if (_buffer_pos + 1 >= _buffer_length) {
+      if (buffer_pos + 1 >= _buffer_length) {
         int new_length = _buffer_length * 2;
         // Next call will throw error in case of OOM.
         _buffer = REALLOC_RESOURCE_ARRAY(char, _buffer, _buffer_length, new_length);
@@ -587,13 +593,12 @@ class CompileReplay : public StackObj {
       } else if (c == '\r') {
         // skip LF
       } else {
-        _buffer[_buffer_pos++] = c;
+        _buffer[buffer_pos++] = c;
       }
       c = getc(_stream);
     }
     // null terminate it, reset the pointer
-    _buffer[_buffer_pos] = '\0'; // NL or EOF
-    _buffer_pos = 0;
+    _buffer[buffer_pos] = '\0'; // NL or EOF
     _bufptr = _buffer;
     return c;
   }
@@ -607,7 +612,8 @@ class CompileReplay : public StackObj {
       c = get_line(c);
       process_command(THREAD);
       if (had_error()) {
-        tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
+        int pos = _bufptr - _buffer + 1;
+        tty->print_cr("Error while parsing line %d at position %d: %s\n", line_no, pos, _error_message);
         if (ReplayIgnoreInitErrors) {
           CLEAR_PENDING_EXCEPTION;
           _error_message = NULL;
@@ -625,7 +631,11 @@ class CompileReplay : public StackObj {
       return;
     }
     if (strcmp("#", cmd) == 0) {
-      // ignore
+      // comment line, print or ignore
+      if (Verbose) {
+        tty->print_cr("# %s", _bufptr);
+      }
+      skip_remaining();
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
     } else if (strcmp("ciMethod", cmd) == 0) {
@@ -644,6 +654,9 @@ class CompileReplay : public StackObj {
 #endif // INCLUDE_JVMTI
     } else {
       report_error("unknown command");
+    }
+    if (!had_error() && *_bufptr != '\0') {
+      report_error("line not properly terminated");
     }
   }
 
@@ -870,9 +883,13 @@ class CompileReplay : public StackObj {
       report_error("hidden class with comment expected");
       return;
     }
-    if (is_comment && Verbose) {
-      const char* hidden = parse_string();
-      tty->print_cr("Found %s for %s", k->name()->as_quoted_ascii(), hidden);
+    // comment, print or ignore
+    if (is_comment) {
+      if (Verbose) {
+        const char* hidden = parse_string();
+        tty->print_cr("Found %s for %s", k->name()->as_quoted_ascii(), hidden);
+      }
+      skip_remaining();
     }
   }
 
@@ -882,7 +899,7 @@ class CompileReplay : public StackObj {
   // constant pool is the same length as 'length' and make sure the
   // constant pool tags are in the same state.
   void process_ciInstanceKlass(TRAPS) {
-    InstanceKlass* k = (InstanceKlass *)parse_klass(CHECK);
+    InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK);
     if (k == NULL) {
       return;
     }
@@ -905,6 +922,7 @@ class CompileReplay : public StackObj {
     } else if (is_linked) {
       k->link_class(CHECK);
     }
+    new_ciInstanceKlass(k);
     ConstantPool* cp = k->constants();
     if (length != cp->length()) {
       report_error("constant pool length mismatch: wrong class files?");
@@ -951,10 +969,10 @@ class CompileReplay : public StackObj {
           break;
 
         case JVM_CONSTANT_Class:
-          if (tag == JVM_CONSTANT_Class) {
-          } else if (tag == JVM_CONSTANT_UnresolvedClass) {
-            tty->print_cr("Warning: entry was unresolved in the replay data");
-          } else {
+          if (tag == JVM_CONSTANT_UnresolvedClass) {
+            Klass* k = cp->klass_at(i, CHECK);
+            tty->print_cr("Warning: entry was unresolved in the replay data: %s", k->name()->as_utf8());
+          } else if (tag != JVM_CONSTANT_Class) {
             report_error("Unexpected tag");
             return;
           }
@@ -982,6 +1000,7 @@ class CompileReplay : public StackObj {
 
     if (k == NULL || ReplaySuppressInitializers == 0 ||
         (ReplaySuppressInitializers == 2 && k->class_loader() == NULL)) {
+      skip_remaining();
       return;
     }
 
@@ -1132,6 +1151,28 @@ class CompileReplay : public StackObj {
     return NULL;
   }
 
+  // Create and initialize a record for a ciInstanceKlass which was present at replay dump time.
+  void new_ciInstanceKlass(const InstanceKlass* klass) {
+    ciInstanceKlassRecord* rec = NEW_RESOURCE_OBJ(ciInstanceKlassRecord);
+    rec->_klass = klass;
+    oop java_mirror = klass->java_mirror();
+    Handle h_java_mirror(_thread, java_mirror);
+    rec->_java_mirror = JNIHandles::make_global(h_java_mirror);
+    _ci_instance_klass_records.append(rec);
+  }
+
+  // Check if a ciInstanceKlass was present at replay dump time for a klass.
+  ciInstanceKlassRecord* find_ciInstanceKlass(const InstanceKlass* klass) {
+    for (int i = 0; i < _ci_instance_klass_records.length(); i++) {
+      ciInstanceKlassRecord* rec = _ci_instance_klass_records.at(i);
+      if (klass == rec->_klass) {
+        // ciInstanceKlass for this klass was resolved.
+        return rec;
+      }
+    }
+    return NULL;
+  }
+
   // Create and initialize a record for a ciMethodData
   ciMethodDataRecord* new_ciMethodData(Method* method) {
     ciMethodDataRecord* rec = NEW_RESOURCE_OBJ(ciMethodDataRecord);
@@ -1265,6 +1306,10 @@ void ciReplay::replay(TRAPS) {
   vm_exit(exit_code);
 }
 
+bool ciReplay::no_replay_state() {
+  return replay_state == NULL;
+}
+
 void* ciReplay::load_inline_data(ciMethod* method, int entry_bci, int comp_level) {
   if (FLAG_IS_DEFAULT(InlineDataFile)) {
     tty->print_cr("ERROR: no inline replay data file specified (use -XX:InlineDataFile=inline_pid12345.txt).");
@@ -1336,7 +1381,7 @@ int ciReplay::replay_impl(TRAPS) {
 }
 
 void ciReplay::initialize(ciMethodData* m) {
-  if (replay_state == NULL) {
+  if (no_replay_state()) {
     return;
   }
 
@@ -1390,7 +1435,7 @@ void ciReplay::initialize(ciMethodData* m) {
 
 
 bool ciReplay::should_not_inline(ciMethod* method) {
-  if (replay_state == NULL) {
+  if (no_replay_state()) {
     return false;
   }
   VM_ENTRY_MARK;
@@ -1427,7 +1472,7 @@ bool ciReplay::should_not_inline(void* data, ciMethod* method, int bci, int inli
 }
 
 void ciReplay::initialize(ciMethod* m) {
-  if (replay_state == NULL) {
+  if (no_replay_state()) {
     return;
   }
 
@@ -1456,8 +1501,17 @@ void ciReplay::initialize(ciMethod* m) {
   }
 }
 
+void ciReplay::initialize(ciInstanceKlass* ci_ik, InstanceKlass* ik) {
+  assert(!no_replay_state(), "must have replay state");
+
+  ASSERT_IN_VM;
+  ciInstanceKlassRecord* rec = replay_state->find_ciInstanceKlass(ik);
+  assert(rec != NULL, "ciInstanceKlass must be whitelisted");
+  ci_ik->_java_mirror = CURRENT_ENV->get_instance(JNIHandles::resolve(rec->_java_mirror));
+}
+
 bool ciReplay::is_loaded(Method* method) {
-  if (replay_state == NULL) {
+  if (no_replay_state()) {
     return true;
   }
 
@@ -1466,6 +1520,16 @@ bool ciReplay::is_loaded(Method* method) {
 
   ciMethodRecord* rec = replay_state->find_ciMethodRecord(method);
   return rec != NULL;
+}
+
+bool ciReplay::is_klass_unresolved(const InstanceKlass* klass) {
+  if (no_replay_state()) {
+    return false;
+  }
+
+  // Check if klass is found on whitelist.
+  ciInstanceKlassRecord* rec = replay_state->find_ciInstanceKlass(klass);
+  return rec == NULL;
 }
 #endif // PRODUCT
 

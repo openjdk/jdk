@@ -30,7 +30,7 @@
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 
-#ifndef PRODUCT
+#if EVAC_FAILURE_INJECTOR
 
 inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter) {
   if (!_inject_evacuation_failure_for_current_gc) {
@@ -43,7 +43,7 @@ inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter
   return true;
 }
 
-#endif  // #ifndef PRODUCT
+#endif  // #if EVAC_FAILURE_INJECTOR
 
 #endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP */
 
