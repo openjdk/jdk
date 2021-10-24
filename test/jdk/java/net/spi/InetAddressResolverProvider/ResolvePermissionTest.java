@@ -37,7 +37,8 @@ import org.testng.annotations.Test;
  * @library lib providers/simple
  * @build test.library/testlib.ResolutionRegistry simple.provider/impl.SimpleResolverProviderImpl
  *        ResolvePermissionTest
- * @run testng/othervm -Dtest.dataFileName=nonExistentFile ResolvePermissionTest
+ * @run testng/othervm -Dtest.dataFileName=nonExistentFile -Djava.security.manager=allow
+ *                      ResolvePermissionTest
  */
 
 public class ResolvePermissionTest {

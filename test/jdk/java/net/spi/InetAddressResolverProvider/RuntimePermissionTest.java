@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * @library lib providers/simple
  * @build test.library/testlib.ResolutionRegistry simple.provider/impl.SimpleResolverProviderImpl
  *        RuntimePermissionTest
- * @run testng/othervm RuntimePermissionTest
+ * @run testng/othervm -Djava.security.manager=allow RuntimePermissionTest
  */
 
 public class RuntimePermissionTest {
