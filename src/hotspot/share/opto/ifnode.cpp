@@ -1623,6 +1623,9 @@ Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
   if (!dom->is_If()) {
     return NULL;
   }
+  if (is_LongCountedLoopEnd()) {
+    return NULL;
+  }
   Node* bol = in(1);
   if (!bol->is_Bool()) {
     return NULL;
