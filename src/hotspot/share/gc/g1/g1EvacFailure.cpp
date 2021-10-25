@@ -100,7 +100,7 @@ public:
 
     HeapWord* obj_end = obj_addr + obj_size;
     _last_forwarded_object_end = obj_end;
-    _hr->cross_threshold(obj_addr, obj_end);
+    _hr->alloc_block_in_bot(obj_addr, obj_end);
   }
 
   // Fill the memory area from start to end with filler objects, and update the BOT
