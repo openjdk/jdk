@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class ClassLoaderNoUnnamedModuleTest {
                                "-XX:-CreateCoredumpOnCrash",
                                "ClassLoaderNoUnnamedModule");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldNotHaveExitValue(0);
         oa.shouldContain("Internal Error");
         oa.shouldContain("unnamed module");
         oa.shouldContain("null or not an instance of java.lang.Module");

@@ -75,6 +75,8 @@ public class XbootcpNoVisibility {
         new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
                 "-Xbootclasspath/a:.",
                 "Vis3_A")
-            .start()).shouldContain("XbootcpNoVisibility PASSED");
+            .start())
+            .shouldHaveExitValue(0)
+            .shouldContain("XbootcpNoVisibility PASSED");
     }
 }
