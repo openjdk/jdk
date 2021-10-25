@@ -512,8 +512,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 void VM_PopulateDumpSharedSpace::doit() {
   HeapShared::run_full_gc_in_vm_thread();
 
-  SystemDictionaryShared::start_dumping();
-
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
