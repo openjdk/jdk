@@ -48,6 +48,23 @@ public abstract class AbstractTerminal implements Terminal {
     protected Status status;
     protected Runnable onClose;
 
+
+    private final static Charset nativeCharset;
+    static {
+        Charset cs;
+        java.io.Console cons;
+        if ((cons = System.console()) != null) {
+            cs = cons.charset();
+        } else {
+            try {
+                cs = Charset.forName(System.getProperty("native.encoding"));
+            } catch (Exception e) {
+                cs = Charset.defaultCharset();
+            }
+        }
+        nativeCharset = cs;
+    }
+
     public AbstractTerminal(String name, String type) throws IOException {
         this(name, type, null, SignalHandler.SIG_DFL);
     }
@@ -55,7 +72,7 @@ public abstract class AbstractTerminal implements Terminal {
     public AbstractTerminal(String name, String type, Charset encoding, SignalHandler signalHandler) throws IOException {
         this.name = name;
         this.type = type != null ? type : "ansi";
-        this.encoding = encoding != null ? encoding : Charset.defaultCharset();
+        this.encoding = encoding != null ? encoding : nativeCharset;
         for (Signal signal : Signal.values()) {
             handlers.put(signal, signalHandler);
         }

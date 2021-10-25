@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,18 @@
 
 package jdk.internal.jshell.tool;
 
+import java.io.Console;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import jdk.internal.org.jline.utils.WriterOutputStream;
 import jdk.jshell.tool.JavaShellToolBuilder;
 
 /**
@@ -43,16 +47,40 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
     private static final String PREFERENCES_NODE = "tool/JShell";
     private InputStream cmdIn = System.in;
     private InputStream userIn = null;
-    private PrintStream cmdOut = System.out;
-    private PrintStream console = System.out;
-    private PrintStream userOut = System.out;
-    private PrintStream cmdErr = System.err;
-    private PrintStream userErr = System.err;
+    private PrintStream cmdOut = derivePrintStream(System.out);
+    private PrintStream console = cmdOut;
+    private PrintStream userOut = cmdOut;
+    private PrintStream cmdErr = derivePrintStream(System.err);
+    private PrintStream userErr = cmdErr;
     private PersistentStorage prefs = null;
     private Map<String, String> vars = null;
     private Locale locale = Locale.getDefault();
     private boolean interactiveTerminal;
     private boolean capturePrompt = false;
+
+    static final Charset NATIVE_CHARSET;
+
+    static {
+        Console console = System.console();
+        if (console != null) {
+            NATIVE_CHARSET = console.charset();
+        } else {
+            String nativeEncoding = System.getProperty("native.encoding", "UTF-8");
+            NATIVE_CHARSET = Charset.forName(nativeEncoding);
+        }
+    }
+
+    /**
+     *
+     */
+    static PrintStream derivePrintStream(PrintStream ps) {
+        if (Charset.defaultCharset().equals(NATIVE_CHARSET)) {
+            return ps;
+        } else {
+            return new PrintStream(new WriterOutputStream(
+                new OutputStreamWriter(ps, NATIVE_CHARSET), Charset.defaultCharset()));
+        }
+    }
 
     /**
      * Set the input channels.
