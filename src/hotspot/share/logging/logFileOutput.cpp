@@ -292,7 +292,7 @@ void LogFileOutput::force_rotate() {
 }
 
 void LogFileOutput::rotate() {
-  assert(LogConfiguration::is_async_mode() || FileLocker::current_thread_has_lock(),
+  assert(LogConfiguration::is_async_mode() || current_thread_has_lock(),
         "current thread must be holding _stream_lock!");
 
   if (_stream == NULL)

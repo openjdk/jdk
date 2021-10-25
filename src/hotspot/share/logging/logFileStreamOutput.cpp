@@ -98,7 +98,7 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
 // if async-logging is off, this function is called from write(). Therefore, current thread
 // is holding _stream_lock
 bool LogFileStreamOutput::flush(int written) {
-  assert(LogConfiguration::is_async_mode() || FileLocker::current_thread_has_lock(),
+  assert(LogConfiguration::is_async_mode() || current_thread_has_lock(),
         "current thread must be holding _stream_lock!");
 
   bool result = written >= 0 ? true : false;
@@ -221,8 +221,7 @@ void LogFileStreamOutput::describe(outputStream *out) {
 }
 
 #ifdef ASSERT
-intx LogFileStreamOutput::FileLocker::_locking_thread_id = -1;
-bool LogFileStreamOutput::FileLocker::current_thread_has_lock() {
+bool LogFileStreamOutput::current_thread_has_lock() {
   return _locking_thread_id == os::current_thread_id();
 }
 #endif

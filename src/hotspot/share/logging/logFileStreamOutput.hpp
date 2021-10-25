@@ -51,7 +51,7 @@ class LogFileStreamOutput : public LogOutput {
   FILE*               _stream;
   // Semaphore used for synchronizing file rotations and writes
   Semaphore           _stream_lock;
-
+  debug_only(intx     _locking_thread_id = -1;)
   size_t              _decorator_padding[LogDecorators::Count];
 
   LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream), _stream_lock(1) {
@@ -66,10 +66,14 @@ class LogFileStreamOutput : public LogOutput {
   // because fclose() automatically unlocks FILE->_lock and nullifies FileLocker protection.
   class FileLocker : public StackObj {
     Semaphore& _sem;
-    debug_only(static intx _locking_thread_id;)
+    debug_only(intx& _locking_thread_id;)
 
    public:
-    FileLocker(LogFileStreamOutput* output) : _sem(output->_stream_lock) {
+    FileLocker(LogFileStreamOutput* output) : _sem(output->_stream_lock)
+#ifdef ASSERT
+    , _locking_thread_id(output->_locking_thread_id)
+#endif
+     {
       _sem.wait();
       debug_only(_locking_thread_id = os::current_thread_id());
     }
@@ -78,9 +82,8 @@ class LogFileStreamOutput : public LogOutput {
       debug_only(_locking_thread_id = -1);
       _sem.signal();
     }
-
-    debug_only(static bool current_thread_has_lock();)
   };
+  debug_only(bool current_thread_has_lock();)
 
  public:
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
