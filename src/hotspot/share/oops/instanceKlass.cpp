@@ -1721,16 +1721,6 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   }
 }
 
-void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
-  if (array_klasses() != NULL)
-    array_klasses()->array_klasses_do(f, THREAD);
-}
-
-void InstanceKlass::array_klasses_do(void f(Klass* k)) {
-  if (array_klasses() != NULL)
-    array_klasses()->array_klasses_do(f);
-}
-
 #ifdef ASSERT
 static int linear_search(const Array<Method*>* methods,
                          const Symbol* name,
@@ -3066,6 +3056,18 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
     constantPoolHandle i_cp(THREAD, constants());
     if (ooff != 0) {
       Klass* ok = i_cp->klass_at(ooff, CHECK_NULL);
+      if (!ok->is_instance_klass()) {
+        // If the outer class is not an instance klass then it cannot have
+        // declared any inner classes.
+        ResourceMark rm(THREAD);
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_IncompatibleClassChangeError(),
+          "%s and %s disagree on InnerClasses attribute",
+          ok->external_name(),
+          external_name());
+        return NULL;
+      }
       outer_klass = InstanceKlass::cast(ok);
       *inner_is_member = true;
     }

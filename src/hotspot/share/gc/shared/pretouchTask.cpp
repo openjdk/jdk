@@ -81,7 +81,7 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
   }
 
   if (pretouch_workers != NULL) {
-    size_t num_chunks = (total_bytes + chunk_size - 1) / chunk_size;
+    size_t num_chunks = ((total_bytes - 1) / chunk_size) + 1;
 
     uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_workers->max_workers());
     log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",

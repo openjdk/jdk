@@ -1091,9 +1091,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
                                                                             \
-  notproduct(bool, PrintVtableStats, false,                                 \
-          "print vtables stats at end of run")                              \
-                                                                            \
   develop(bool, TraceCreateZombies, false,                                  \
           "trace creation of zombie nmethods")                              \
                                                                             \
