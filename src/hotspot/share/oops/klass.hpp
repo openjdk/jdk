@@ -661,7 +661,7 @@ protected:
   Symbol* name() const                   { return _name; }
   void set_name(Symbol* n);
 
-  virtual void release_C_heap_structures();
+  virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
   virtual jint compute_modifier_flags() const = 0;

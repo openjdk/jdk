@@ -583,7 +583,10 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   // Release C heap allocated data that this points to, which includes
   // reference counting symbol names.
-  release_C_heap_structures_internal();
+  // Can't release the constant pool here because the constant pool can be
+  // deallocated separately from the InstanceKlass for default methods and
+  // redefine classes.
+  release_C_heap_structures(/* release_constant_pool */ false);
 
   deallocate_methods(loader_data, methods());
   set_methods(NULL);
@@ -2682,19 +2685,13 @@ static void method_release_C_heap_structures(Method* m) {
   m->release_C_heap_structures();
 }
 
-void InstanceKlass::release_C_heap_structures() {
+// Called also by InstanceKlass::deallocate_contents, with false for release_constant_pool.
+void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
   // Clean up C heap
-  release_C_heap_structures_internal();
-  constants()->release_C_heap_structures();
-}
-
-// Called also by InstanceKlass::deallocate_contents
-void InstanceKlass::release_C_heap_structures_internal() {
   Klass::release_C_heap_structures();
-
-  // Can't release the constant pool here because the constant pool can be
-  // deallocated separately from the InstanceKlass for default methods and
-  // redefine classes.
+  if (release_constant_pool) {
+    constants()->release_C_heap_structures();
+  }
 
   // Deallocate and call destructors for MDO mutexes
   methods_do(method_release_C_heap_structures);

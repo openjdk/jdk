@@ -1101,7 +1101,7 @@ public:
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
 
-  virtual void release_C_heap_structures();
+  virtual void release_C_heap_structures(bool release_constant_pool = true);
 
   // Naming
   const char* signature_name() const;
@@ -1217,9 +1217,6 @@ private:
                                   OverpassLookupMode overpass_mode,
                                   StaticLookupMode static_mode,
                                   PrivateLookupMode private_mode);
-
-  // Free CHeap allocated fields.
-  void release_C_heap_structures_internal();
 
 #if INCLUDE_JVMTI
   // RedefineClasses support
