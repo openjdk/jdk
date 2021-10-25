@@ -601,7 +601,7 @@ public class DoubleByte {
             int dl = dst.arrayOffset() + dst.limit();
 
             try {
-                if (isASCIICompatible()) {
+                if (isASCIICompatible) {
                     int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                     sp += n;
                     dp += n;
@@ -686,7 +686,7 @@ public class DoubleByte {
         public int encode(char[] src, int sp, int len, byte[] dst) {
             int dp = 0;
             int sl = sp + len;
-            if (isASCIICompatible()) {
+            if (isASCIICompatible) {
                 int n = JLA.encodeASCII(src, sp, dst, dp, len);
                 sp += n;
                 dp += n;
