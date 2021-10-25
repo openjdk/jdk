@@ -57,7 +57,7 @@ public class bug6683775 {
         }
         Robot robot = new Robot();
 
-	try {
+        try {
             SwingUtilities.invokeAndWait(() -> {
                 testFrame = new JFrame(gc);
                 JFrame backgroundFrame = new JFrame("Background frame");
@@ -87,7 +87,7 @@ public class bug6683775 {
 
         } finally {
             SwingUtilities.invokeAndWait(testFrame::dispose);
-	}
+        }
 
         int redRGB = Color.RED.getRGB();
         if (redRGB != capture.getRGB(SIZE/2, SIZE/2)) {
