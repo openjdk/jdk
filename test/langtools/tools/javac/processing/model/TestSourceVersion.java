@@ -45,6 +45,8 @@ public class TestSourceVersion {
         testRestrictedKeywords();
         testVar();
         testYield();
+        testValueOfRV();
+        testRuntimeVersion();
     }
 
     private static void testLatestSupported() {
@@ -145,6 +147,39 @@ public class TestSourceVersion {
         if (result != expected) {
             throw new RuntimeException("Unexpected " + message +  "-ness of " + input +
                                        " on " + version);
+        }
+    }
+
+    private static void testValueOfRV() {
+        for (SourceVersion sv : SourceVersion.values()) {
+            if (sv == RELEASE_0) {
+                continue;
+            } else {
+                Runtime.Version rv = Runtime.Version.parse(Integer.toString(sv.ordinal()));
+                SourceVersion  result = SourceVersion.valueOf(rv);
+                if (result != sv) {
+                    throw new RuntimeException("Unexpected result " + result + 
+                                               " of mapping Runtime.Version " + rv);
+                }
+            }
+        }
+    }
+
+    private static void testRuntimeVersion() {
+        for (SourceVersion sv : SourceVersion.values()) {
+            Runtime.Version result = sv.runtimeVersion();
+            if (sv.compareTo(RELEASE_6) < 0) {
+                if (result != null) {
+                    throw new RuntimeException("Unexpected result non-null " + result +
+                                               " as runtime version of  " + sv);
+                }
+            } else {
+                Runtime.Version expected = Runtime.Version.parse(Integer.toString(sv.ordinal()));
+                if (!result.equals(expected)) {
+                    throw new RuntimeException("Unexpected result " + result +
+                                               " as runtime version of " + sv);
+                }
+            }
         }
     }
 }

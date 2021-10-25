@@ -536,9 +536,9 @@ public enum SourceVersion {
      * source version and has no other elements set.
      */
     public Runtime.Version runtimeVersion() {
-        // Runtime.Version was added in JDK 9 for for now, limiting
-        // supported range to 9 and up.
-        if (this.compareTo(RELEASE_9) >= 0) {
+        // The javax.lang.model API was added in JDK 6; for now,
+        // limiting supported range to 6 and up.
+        if (this.compareTo(RELEASE_6) >= 0) {
             return Runtime.Version.parse(Integer.toString(ordinal()));
         } else {
             return null;
