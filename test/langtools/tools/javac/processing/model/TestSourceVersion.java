@@ -158,7 +158,7 @@ public class TestSourceVersion {
                 Runtime.Version rv = Runtime.Version.parse(Integer.toString(sv.ordinal()));
                 SourceVersion  result = SourceVersion.valueOf(rv);
                 if (result != sv) {
-                    throw new RuntimeException("Unexpected result " + result + 
+                    throw new RuntimeException("Unexpected result " + result +
                                                " of mapping Runtime.Version " + rv);
                 }
             }
