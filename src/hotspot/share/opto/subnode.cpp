@@ -1718,23 +1718,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Change x +- Long.MIN_VALUE <=> y +- Long.MIN_VALUE into x u<=> y
-  if ((_test._test == BoolTest::lt || _test._test == BoolTest::le ||
-        _test._test == BoolTest::gt || _test._test == BoolTest::ge) &&
-      cop == Op_CmpL &&
-      (cmp1_op == Op_AddL || cmp1_op == Op_SubL) &&
-      phase->type(cmp1->in(2)) == TypeLong::MIN) {
-    if (cmp2->is_Con()) {
-      Node *ncmp2 = phase->longcon(java_add(cmp2->get_long(), TypeLong::MIN->get_con()));
-      Node *ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
-      return new BoolNode(ncmp, _test._test);
-    } else if ((cmp2_op == Op_AddL || cmp2_op == Op_SubL) &&
-        phase->type(cmp2->in(2)) == TypeLong::MIN) {
-      Node *ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
-      return new BoolNode(ncmp, _test._test);
-    }
-  }
-
   // Try to optimize signed integer comparison
   return fold_cmpI(phase, cmp->as_Sub(), cmp1, cop, cmp1_op, cmp2_type);
 
