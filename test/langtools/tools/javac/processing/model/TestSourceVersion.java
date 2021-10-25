@@ -150,18 +150,42 @@ public class TestSourceVersion {
         }
     }
 
+    /**
+     * Test that SourceVersion.valueOf() maps a Runtime.Version to a
+     * SourceVersion properly. The SourceVersion result is only a
+     * function of the feature() component of a Runtime.Version.
+     */
     private static void testValueOfRV() {
         for (SourceVersion sv : SourceVersion.values()) {
             if (sv == RELEASE_0) {
                 continue;
             } else {
-                Runtime.Version rv = Runtime.Version.parse(Integer.toString(sv.ordinal()));
-                SourceVersion  result = SourceVersion.valueOf(rv);
-                if (result != sv) {
-                    throw new RuntimeException("Unexpected result " + result +
-                                               " of mapping Runtime.Version " + rv);
-                }
+                // Plain mapping; e.g. "17" -> RELEASE_17
+                String featureBase = Integer.toString(sv.ordinal());
+                checkValueOfResult(sv, featureBase);
+
+                // More populated runtime version, N.N
+                checkValueOfResult(sv, featureBase + "." + featureBase);
             }
+        }
+
+        // Out of range test
+        try {
+            int latestFeature = SourceVersion.latest().runtimeVersion().feature();
+            SourceVersion.valueOf(Runtime.Version.parse(Integer.toString(latestFeature +1)));
+            throw new RuntimeException("Should not reach");
+        } catch (IllegalArgumentException iae) {
+            ; // Expected
+        }
+    }
+
+    private static void checkValueOfResult(SourceVersion expected, String versionString) {
+        Runtime.Version rv = Runtime.Version.parse(versionString);
+        SourceVersion  result = SourceVersion.valueOf(rv);
+        if (result != expected) {
+            throw new RuntimeException("Unexpected result " + result +
+                                       " of mapping Runtime.Version " + versionString +
+                                       " intead of " + expected);
         }
     }
 

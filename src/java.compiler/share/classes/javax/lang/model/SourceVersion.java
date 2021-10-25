@@ -497,8 +497,9 @@ public enum SourceVersion {
      * {@return the latest source version that is usable under the
      * runtime version argument} If the runtime version's {@linkplain
      * Runtime.Version#feature() feature} is greater than the feature
-     * of the platform's {@linkplain Runtime#version() version}, an
-     * {@code IllegalArgumentException} is thrown.
+     * of the {@linkplain #runtimeVersion() runtime version} of the
+     * {@linkplain #latest() latest source version}, an {@code
+     * IllegalArgumentException} is thrown.
      *
      * <p>Because the source versions of the Java programming language
      * have so far followed a linear progression, only the feature
@@ -519,21 +520,20 @@ public enum SourceVersion {
      * argument is greater than the feature of the platform version.
      */
     public static SourceVersion valueOf(Runtime.Version rv) {
-        int feature = rv.feature();
-        if (feature > Runtime.version().feature()) {
-            throw new IllegalArgumentException("No matching SourceVersion for " + rv);
-        } else {
-            // Could also implement this as a switch where a case was
-            // added with each new release.
-            return valueOf("RELEASE_" + feature);
-        }
+        // Could also implement this as a switch where a case was
+        // added with each new release.
+        return valueOf("RELEASE_" + rv.feature());
     }
 
     /**
      * {@return the least runtime version that supports this source
-     * version} The returned runtime version has a {@linkplain
-     * Runtime.Version#feature() feature} large enough to support this
-     * source version and has no other elements set.
+     * version; otherwise {@code null}} The returned runtime version
+     * has a {@linkplain Runtime.Version#feature() feature} large
+     * enough to support this source version and has no other elements
+     * set.
+     *
+     * Source versions greater than or equal to {@link RELEASE_6}
+     * have non-{@code null} results.
      */
     public Runtime.Version runtimeVersion() {
         // The javax.lang.model API was added in JDK 6; for now,
