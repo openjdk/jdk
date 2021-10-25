@@ -174,6 +174,11 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
     }
 
     @Override
+    void disposeWriteCipher() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     Ciphertext encode(
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {

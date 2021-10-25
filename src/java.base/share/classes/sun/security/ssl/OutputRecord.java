@@ -141,6 +141,9 @@ abstract class OutputRecord
     // SSLEngine and SSLSocket
     abstract void encodeChangeCipherSpec() throws IOException;
 
+    // SSLEngine and SSLSocket
+    abstract void disposeWriteCipher();
+
     // apply to SSLEngine only
     Ciphertext encode(
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
@@ -182,6 +185,16 @@ abstract class OutputRecord
                 encodeChangeCipherSpec();
             }
 
+            /*
+             * Dispose of any intermediate state in the underlying cipher.
+             * For PKCS11 ciphers, this will release any attached sessions,
+             * and thus make finalization faster.
+             *
+             * Since MAC's doFinal() is called for every SSL/TLS packet, it's
+             * not necessary to do the same with MAC's.
+             */
+            disposeWriteCipher();
+
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
         } finally {
@@ -207,6 +220,9 @@ abstract class OutputRecord
             hm[hm.length - 1] = keyUpdateRequest;
             encodeHandshake(hm, 0, hm.length);
             flush();
+
+            // Dispose of any intermediate state in the underlying cipher.
+            disposeWriteCipher();
 
             this.writeCipher = writeCipher;
             this.isFirstAppOutputRecord = true;
