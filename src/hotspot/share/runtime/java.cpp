@@ -352,6 +352,14 @@ void print_statistics() {
     CompileBroker::print_times();
   }
 
+#if defined(COMPILER1) || defined(COMPILER2) || defined(INCLUDE_JVMCI)
+  if ((LogVMOutput || LogCompilation) && UseCompiler) {
+    // Only print the statistics to the log file
+    FlagSetting fs(DisplayVMOutput, false);
+    Deoptimization::print_statistics();
+  }
+#endif /* COMPILER1 || COMPILER2 || INCLUDE_JVMCI */
+
   if (PrintCodeCache) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print();
