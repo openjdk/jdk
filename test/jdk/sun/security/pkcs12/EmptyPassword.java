@@ -27,7 +27,7 @@
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.x509
  * @library /test/lib
- * @summary Java Keystore fails to load PKCS12/PFX certificates created in WindowsServer2016
+ * @summary Testing empty (any of null, "", "\0") password behaviors
  */
 
 import jdk.test.lib.Asserts;
@@ -54,12 +54,16 @@ public class EmptyPassword {
                         gen.getSelfCertificate(new X500Name("CN=Me"), 100)
                 });
 
-        // 8202299: interop before new char[0] and new char[1]
+        // 8202299: interop between new char[0] and new char[1]
         store(ks, "p12", new char[1]);
 
         // It can be loaded with password "".
         ks = KeyStore.getInstance(new File("p12"), new char[0]);
         Asserts.assertTrue(ks.getKey("a", new char[0]) != null);
+        Asserts.assertTrue(ks.getCertificate("a") != null);
+
+        ks = KeyStore.getInstance(new File("p12"), new char[1]);
+        Asserts.assertTrue(ks.getKey("a", new char[1]) != null);
         Asserts.assertTrue(ks.getCertificate("a") != null);
 
         // 8231107: Store with null password makes it password-less
