@@ -1891,19 +1891,6 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, jobjec
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
-// Enforces volatile semantics for a non-volatile read.
-class VolatileRead : public StackObj {
- public:
-  VolatileRead() {
-    // Ensures a possibly volatile read is not reordered with a prior
-    // volatile write.
-    OrderAccess::storeload();
-  }
-  ~VolatileRead() {
-    OrderAccess::acquire();
-  }
-};
-
 C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, long displacement, jobject kind_object))
   if (object == NULL || kind_object == NULL) {
     JVMCI_THROW_0(NullPointerException);
@@ -1944,7 +1931,8 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
     ShouldNotReachHere();
   }
 
-  if (displacement < 0 || ((long) displacement + type2aelembytes(basic_type) > HeapWordSize * obj->size())) {
+  int basic_type_elemsize = type2aelembytes(basic_type);
+  if (displacement < 0 || ((long) displacement + basic_type_elemsize > HeapWordSize * obj->size())) {
     // Reading outside of the object bounds
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading outside object bounds");
   }
@@ -1989,24 +1977,21 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
 
   jlong value = 0;
 
-  // Treat all reads as volatile for simplicity as this function can be used
+  // Treat all aligned reads as volatile for simplicity as this function can be used
   // both for reading Java fields declared as volatile as well as for constant
-  // folding Unsafe.get* methods with volatile semantics. This is done by
-  // performing the volatile barrier operations around a call to an
-  // oopDesc::<kind>_field method. The oopDesc::<kind>_field_acquire method
-  // cannot be used since it does not support unaligned reads on all platforms
-  // (e.g., an unaligned ldar on AArch64 causes a SIGBUS).
+  // folding Unsafe.get* methods with volatile semantics.
 
+  bool aligned = (displacement % basic_type_elemsize) == 0;
 
   switch (basic_type) {
-    case T_BOOLEAN: { VolatileRead vr; value = obj->bool_field(displacement); } break;
-    case T_BYTE:    { VolatileRead vr; value = obj->byte_field(displacement); } break;
-    case T_SHORT:   { VolatileRead vr; value = obj->short_field(displacement);} break;
-    case T_CHAR:    { VolatileRead vr; value = obj->char_field(displacement); } break;
+    case T_BOOLEAN: value = aligned ? obj->bool_field_acquire(displacement)   : obj->bool_field(displacement);  break;
+    case T_BYTE:    value = aligned ? obj->byte_field_acquire(displacement)   : obj->byte_field(displacement);  break;
+    case T_SHORT:   value = aligned ? obj->short_field_acquire(displacement)  : obj->short_field(displacement); break;
+    case T_CHAR:    value = aligned ? obj->char_field_acquire(displacement)   : obj->char_field(displacement);  break;
     case T_FLOAT:
-    case T_INT:     { VolatileRead vr; value = obj->int_field(displacement);  } break;
+    case T_INT:     value = aligned ? obj->int_field_acquire(displacement)    : obj->int_field(displacement);   break;
     case T_DOUBLE:
-    case T_LONG:    { VolatileRead vr; value = obj->long_field(displacement); } break;
+    case T_LONG:    value = aligned ? obj->long_field_acquire(displacement)   : obj->long_field(displacement);  break;
 
     case T_OBJECT: {
       if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
@@ -2016,8 +2001,7 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       }
 
-      oop value;
-      { VolatileRead vr; value = obj->obj_field(displacement); }
+      oop value = aligned ? obj->obj_field_acquire(displacement) : obj->obj_field(displacement);
 
       if (value == NULL) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
