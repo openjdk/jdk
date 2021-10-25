@@ -27,6 +27,7 @@
 
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 
 class ConcurrentGCThread: public NamedThread {
 private:
@@ -41,6 +42,11 @@ protected:
 
 public:
   ConcurrentGCThread();
+
+  static ConcurrentGCThread* cast(Thread* t) {
+    assert(t->is_ConcurrentGC_thread(), "incorrect cast to ConcurrentGCThread");
+    return static_cast<ConcurrentGCThread*>(t);
+  }
 
   virtual bool is_ConcurrentGC_thread() const { return true; }
 

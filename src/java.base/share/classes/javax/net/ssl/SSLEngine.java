@@ -312,7 +312,7 @@ import java.util.function.BiFunction;
  *
  *      <LI> <em>Enabled</em> cipher suites, which may be fewer than
  *      the full set of supported suites.  This group is set using the
- *      {@link #setEnabledCipherSuites(String [])} method, and
+ *      {@link #setEnabledCipherSuites(String[])} method, and
  *      queried using the {@link #getEnabledCipherSuites()} method.
  *      Initially, a default set of cipher suites will be enabled on a
  *      new engine that represents the minimum suggested
@@ -495,8 +495,8 @@ public abstract class SSLEngine {
      * An invocation of this method behaves in exactly the same manner
      * as the invocation:
      * <blockquote><pre>
-     * {@link #wrap(ByteBuffer [], int, int, ByteBuffer)
-     *     engine.wrap(new ByteBuffer [] { src }, 0, 1, dst);}
+     * {@link #wrap(ByteBuffer[], int, int, ByteBuffer)
+     *     engine.wrap(new ByteBuffer[] { src }, 0, 1, dst);}
      * </pre></blockquote>
      *
      * @param   src
@@ -517,7 +517,7 @@ public abstract class SSLEngine {
      *          is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
-     * @see     #wrap(ByteBuffer [], int, int, ByteBuffer)
+     * @see     #wrap(ByteBuffer[], int, int, ByteBuffer)
      */
     public SSLEngineResult wrap(ByteBuffer src,
             ByteBuffer dst) throws SSLException {
@@ -531,7 +531,7 @@ public abstract class SSLEngine {
      * An invocation of this method behaves in exactly the same manner
      * as the invocation:
      * <blockquote><pre>
-     * {@link #wrap(ByteBuffer [], int, int, ByteBuffer)
+     * {@link #wrap(ByteBuffer[], int, int, ByteBuffer)
      *     engine.wrap(srcs, 0, srcs.length, dst);}
      * </pre></blockquote>
      *
@@ -554,7 +554,7 @@ public abstract class SSLEngine {
      *          is null, or if any element in {@code srcs} is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
-     * @see     #wrap(ByteBuffer [], int, int, ByteBuffer)
+     * @see     #wrap(ByteBuffer[], int, int, ByteBuffer)
      */
     public SSLEngineResult wrap(ByteBuffer [] srcs,
             ByteBuffer dst) throws SSLException {
@@ -650,8 +650,8 @@ public abstract class SSLEngine {
      * An invocation of this method behaves in exactly the same manner
      * as the invocation:
      * <blockquote><pre>
-     * {@link #unwrap(ByteBuffer, ByteBuffer [], int, int)
-     *     engine.unwrap(src, new ByteBuffer [] { dst }, 0, 1);}
+     * {@link #unwrap(ByteBuffer, ByteBuffer[], int, int)
+     *     engine.unwrap(src, new ByteBuffer[] { dst }, 0, 1);}
      * </pre></blockquote>
      *
      * @param   src
@@ -672,7 +672,7 @@ public abstract class SSLEngine {
      *          is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
-     * @see     #unwrap(ByteBuffer, ByteBuffer [], int, int)
+     * @see     #unwrap(ByteBuffer, ByteBuffer[], int, int)
      */
     public SSLEngineResult unwrap(ByteBuffer src,
             ByteBuffer dst) throws SSLException {
@@ -686,7 +686,7 @@ public abstract class SSLEngine {
      * An invocation of this method behaves in exactly the same manner
      * as the invocation:
      * <blockquote><pre>
-     * {@link #unwrap(ByteBuffer, ByteBuffer [], int, int)
+     * {@link #unwrap(ByteBuffer, ByteBuffer[], int, int)
      *     engine.unwrap(src, dsts, 0, dsts.length);}
      * </pre></blockquote>
      *
@@ -709,7 +709,7 @@ public abstract class SSLEngine {
      *          is null, or if any element in {@code dsts} is null.
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
-     * @see     #unwrap(ByteBuffer, ByteBuffer [], int, int)
+     * @see     #unwrap(ByteBuffer, ByteBuffer[], int, int)
      */
     public SSLEngineResult unwrap(ByteBuffer src,
             ByteBuffer [] dsts) throws SSLException {
@@ -926,7 +926,7 @@ public abstract class SSLEngine {
      *
      * @return  an array of cipher suite names
      * @see     #getEnabledCipherSuites()
-     * @see     #setEnabledCipherSuites(String [])
+     * @see     #setEnabledCipherSuites(String[])
      */
     public abstract String [] getSupportedCipherSuites();
 
@@ -952,7 +952,7 @@ public abstract class SSLEngine {
      *
      * @return  an array of cipher suite names
      * @see     #getSupportedCipherSuites()
-     * @see     #setEnabledCipherSuites(String [])
+     * @see     #setEnabledCipherSuites(String[])
      */
     public abstract String [] getEnabledCipherSuites();
 
@@ -983,7 +983,7 @@ public abstract class SSLEngine {
      * @see     #getSupportedCipherSuites()
      * @see     #getEnabledCipherSuites()
      */
-    public abstract void setEnabledCipherSuites(String suites []);
+    public abstract void setEnabledCipherSuites(String[] suites);
 
 
     /**
@@ -1005,7 +1005,7 @@ public abstract class SSLEngine {
      * by the protocol.
      *
      * @return  an array of protocols
-     * @see     #setEnabledProtocols(String [])
+     * @see     #setEnabledProtocols(String[])
      */
     public abstract String [] getEnabledProtocols();
 
@@ -1024,7 +1024,7 @@ public abstract class SSLEngine {
      *          when the protocols parameter is null.
      * @see     #getEnabledProtocols()
      */
-    public abstract void setEnabledProtocols(String protocols[]);
+    public abstract void setEnabledProtocols(String[] protocols);
 
 
     /**
@@ -1161,7 +1161,7 @@ public abstract class SSLEngine {
      *
      * @implNote
      * The JDK SunJSSE provider implementation returns false unless
-     * {@link setUseClientMode(boolean)} is used to change the mode to true.
+     * {@link #setUseClientMode(boolean)} is used to change the mode to true.
      *
      * @return  true if the engine should do handshaking
      *          in "client" mode

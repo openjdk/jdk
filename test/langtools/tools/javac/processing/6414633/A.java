@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ public class A extends JavacTestingAbstractProcessor {
         Messager m = processingEnv.getMessager();
         for (TypeElement anno: annotations) {
             for (Element e: roundEnv.getElementsAnnotatedWith(anno))
-                m.printMessage(Diagnostic.Kind.ERROR, "test", e);
+                m.printError("test", e);
 
         }
         return true;

@@ -36,7 +36,7 @@
 import jdk.test.lib.Platform;
 public class IntxTest {
     private static final String FLAG_NAME = "OnStackReplacePercentage";
-    private static final String FLAG_DEBUG_NAME = "InlineFrequencyCount";
+    private static final String FLAG_DEBUG_NAME = "BciProfileWidth";
     private static final long COMPILE_THRESHOLD = VmFlagTest.WHITE_BOX.getIntxVMFlag("CompileThreshold");
     private static final Long[] TESTS = {0L, 100L, (long)(Integer.MAX_VALUE>>3)*100L};
 

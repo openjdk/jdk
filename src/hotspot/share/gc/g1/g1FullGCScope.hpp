@@ -28,8 +28,6 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/shared/gcId.hpp"
-#include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -51,12 +49,10 @@ class G1FullGCScope : public StackObj {
   ResourceMark            _rm;
   bool                    _explicit_gc;
   G1CollectedHeap*        _g1h;
-  GCIdMark                _gc_id;
   SvcGCMarker             _svc_marker;
   STWGCTimer              _timer;
   G1FullGCTracer          _tracer;
   IsGCActiveMark          _active;
-  GCTraceCPUTime          _cpu_time;
   G1FullGCJFRTracerMark   _tracer_mark;
   ClearedAllSoftRefs      _soft_refs;
   G1MonitoringScope       _monitoring_scope;

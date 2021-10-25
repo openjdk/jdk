@@ -73,10 +73,13 @@ class markWord {
  public:
   explicit markWord(uintptr_t value) : _value(value) {}
 
-  markWord() { /* uninitialized */}
+  markWord() = default;         // Doesn't initialize _value.
 
   // It is critical for performance that this class be trivially
   // destructable, copyable, and assignable.
+  ~markWord() = default;
+  markWord(const markWord&) = default;
+  markWord& operator=(const markWord&) = default;
 
   static markWord from_pointer(void* ptr) {
     return markWord((uintptr_t)ptr);
@@ -156,12 +159,6 @@ class markWord {
 
   // Should this header be preserved during GC?
   bool must_be_preserved(const oopDesc* obj) const {
-    return (!is_unlocked() || !has_no_hash());
-  }
-
-  // Should this header (including its age bits) be preserved in the
-  // case of a promotion failure during scavenge?
-  bool must_be_preserved_for_promotion_failure(const oopDesc* obj) const {
     return (!is_unlocked() || !has_no_hash());
   }
 

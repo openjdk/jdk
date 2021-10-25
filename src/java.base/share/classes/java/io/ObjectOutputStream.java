@@ -83,9 +83,10 @@ import sun.reflect.misc.ReflectUtil;
  *      oos.close();
  * </pre>
  *
- * <p>Classes that require special handling during the serialization and
- * deserialization process must implement special methods with these exact
- * signatures:
+ * <p>Serializable classes that require special handling during the
+ * serialization and deserialization process should implement methods
+ * with the following signatures:
+ *
  * <br>
  * <pre>
  * private void readObject(java.io.ObjectInputStream stream)
@@ -95,6 +96,12 @@ import sun.reflect.misc.ReflectUtil;
  * private void readObjectNoData()
  *     throws ObjectStreamException;
  * </pre>
+ *
+ * <p>The method name, modifiers, return type, and number and type of
+ * parameters must match exactly for the method to be used by
+ * serialization or deserialization. The methods should only be
+ * declared to throw checked exceptions consistent with these
+ * signatures.
  *
  * <p>The writeObject method is responsible for writing the state of the object
  * for its particular class so that the corresponding readObject method can
@@ -568,7 +575,7 @@ public class ObjectOutputStream
      * Object (as opposed to type Serializable) to allow for cases where
      * non-serializable objects are replaced by serializable ones.
      *
-     * <p>When a subclass is replacing objects it must insure that either a
+     * <p>When a subclass is replacing objects it must ensure that either a
      * complementary substitution must be made during deserialization or that
      * the substituted object is compatible with every field where the
      * reference will be stored.  Objects whose type is not a subclass of the
@@ -1419,7 +1426,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes representation of a "ordinary" (i.e., not a String, Class,
+     * Writes representation of an "ordinary" (i.e., not a String, Class,
      * ObjectStreamClass, array, or enum constant) serializable object to the
      * stream.
      */

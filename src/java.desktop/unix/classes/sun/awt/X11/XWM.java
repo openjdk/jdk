@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,7 +252,7 @@ final class XWM
          * Quick checks for specific servers.
          */
         String vendor_string = XlibWrapper.ServerVendor(XToolkit.getDisplay());
-        if (vendor_string.indexOf("eXcursion") != -1) {
+        if (vendor_string.contains("eXcursion")) {
             /*
              * Use NO_WM since in all other aspects eXcursion is like not
              * having a window manager running. I.e. it does not reparent

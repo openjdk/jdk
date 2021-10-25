@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.EventListener;
 import java.util.Vector;
@@ -324,14 +325,14 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             }
 
             int nitems = getItemCount();
-            Vector<MenuItem> tempItems = new Vector<>();
+            ArrayList<MenuItem> tempItems = new ArrayList<>();
 
             /* Remove the item at index, nitems-index times
                storing them in a temporary vector in the
                order they appear on the menu.
             */
             for (int i = index ; i < nitems; i++) {
-                tempItems.addElement(getItem(index));
+                tempItems.add(getItem(index));
                 remove(index);
             }
 
@@ -341,7 +342,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                already in the correct order in the temp vector.
             */
             for (int i = 0; i < tempItems.size()  ; i++) {
-                add(tempItems.elementAt(i));
+                add(tempItems.get(i));
             }
         }
     }
@@ -390,14 +391,14 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             }
 
             int nitems = getItemCount();
-            Vector<MenuItem> tempItems = new Vector<>();
+            ArrayList<MenuItem> tempItems = new ArrayList<>();
 
             /* Remove the item at index, nitems-index times
                storing them in a temporary vector in the
                order they appear on the menu.
             */
             for (int i = index ; i < nitems; i++) {
-                tempItems.addElement(getItem(index));
+                tempItems.add(getItem(index));
                 remove(index);
             }
 
@@ -407,7 +408,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                already in the correct order in the temp vector.
             */
             for (int i = 0; i < tempItems.size()  ; i++) {
-                add(tempItems.elementAt(i));
+                add(tempItems.get(i));
             }
         }
     }
@@ -499,7 +500,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             } else {
                 MenuShortcut ms = mi.getShortcut();
                 if (ms != null) {
-                    shortcuts.addElement(ms);
+                    shortcuts.add(ms);
                 }
             }
         }

@@ -139,7 +139,7 @@ public class CommentHelper {
 
     public String getParameterName(DocTree dtree) {
         if (dtree.getKind() == PARAM) {
-            return ((ParamTree) dtree).getName().toString();
+            return ((ParamTree) dtree).getName().getName().toString();
         } else {
             return null;
         }
@@ -340,8 +340,12 @@ public class CommentHelper {
     }
 
     public TypeElement getReferencedClass(DocTree dtree) {
-        Utils utils = configuration.utils;
         Element e = getReferencedElement(dtree);
+        return getReferencedClass(e);
+    }
+
+    public TypeElement getReferencedClass(Element e) {
+        Utils utils = configuration.utils;
         if (e == null) {
             return null;
         } else if (utils.isTypeElement(e)) {
@@ -354,16 +358,24 @@ public class CommentHelper {
 
     public String getReferencedModuleName(DocTree dtree) {
         String s = getReferencedSignature(dtree);
-        if (s == null || s.contains("#") || s.contains("(")) {
+        return getReferencedModuleName(s);
+    }
+
+    public String getReferencedModuleName(String signature) {
+        if (signature == null || signature.contains("#") || signature.contains("(")) {
             return null;
         }
-        int n = s.indexOf("/");
-        return (n == -1) ? s : s.substring(0, n);
+        int n = signature.indexOf("/");
+        return (n == -1) ? signature : signature.substring(0, n);
     }
 
     public Element getReferencedMember(DocTree dtree) {
-        Utils utils = configuration.utils;
         Element e = getReferencedElement(dtree);
+        return getReferencedMember(e);
+    }
+
+    public Element getReferencedMember(Element e) {
+        Utils utils = configuration.utils;
         if (e == null) {
             return null;
         }
@@ -372,15 +384,23 @@ public class CommentHelper {
 
     public String getReferencedMemberName(DocTree dtree) {
         String s = getReferencedSignature(dtree);
-        if (s == null) {
+        return getReferencedMemberName(s);
+    }
+
+    public String getReferencedMemberName(String signature) {
+        if (signature == null) {
             return null;
         }
-        int n = s.indexOf("#");
-        return (n == -1) ? null : s.substring(n + 1);
+        int n = signature.indexOf("#");
+        return (n == -1) ? null : signature.substring(n + 1);
     }
 
     public PackageElement getReferencedPackage(DocTree dtree) {
         Element e = getReferencedElement(dtree);
+        return getReferencedPackage(e);
+    }
+
+    public PackageElement getReferencedPackage(Element e) {
         if (e != null) {
             Utils utils = configuration.utils;
             return utils.containingPackage(e);
@@ -390,12 +410,15 @@ public class CommentHelper {
 
     public ModuleElement getReferencedModule(DocTree dtree) {
         Element e = getReferencedElement(dtree);
+        return getReferencedModule(e);
+    }
+
+    public ModuleElement getReferencedModule(Element e) {
         if (e != null && configuration.utils.isModule(e)) {
             return (ModuleElement) e;
         }
         return null;
     }
-
 
     public List<? extends DocTree> getFirstSentenceTrees(List<? extends DocTree> body) {
         return configuration.docEnv.getDocTrees().getFirstSentence(body);

@@ -37,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Bootstrap methods for state-driven implementations of core methods,
  * including {@link Object#equals(Object)}, {@link Object#hashCode()}, and
@@ -317,22 +319,31 @@ public class ObjectMethods {
      * @param recordClass  the record class hosting the record components
      * @param names        the list of component names, joined into a string
      *                     separated by ";", or the empty string if there are no
-     *                     components. Maybe be null, if the {@code methodName}
-     *                     is {@code "equals"} or {@code "hashCode"}.
+     *                     components. This parameter is ignored if the {@code methodName}
+     *                     parameter is {@code "equals"} or {@code "hashCode"}
      * @param getters      method handles for the accessor methods for the components
      * @return             a call site if invoked by indy, or a method handle
      *                     if invoked by a condy
      * @throws IllegalArgumentException if the bootstrap arguments are invalid
      *                                  or inconsistent
+     * @throws NullPointerException if any argument but {@code lookup} is {@code null},
+     *                              in the case of the {@code getters} argument, its
+     *                              contents cannot be {@code null} either
      * @throws Throwable if any exception is thrown during call site construction
      */
     public static Object bootstrap(MethodHandles.Lookup lookup, String methodName, TypeDescriptor type,
                                    Class<?> recordClass,
                                    String names,
                                    MethodHandle... getters) throws Throwable {
+        requireNonNull(methodName);
+        requireNonNull(type);
+        requireNonNull(recordClass);
+        requireNonNull(names);
+        requireNonNull(getters);
+        Arrays.stream(getters).forEach(Objects::requireNonNull);
         MethodType methodType;
-        if (type instanceof MethodType)
-            methodType = (MethodType) type;
+        if (type instanceof MethodType mt)
+            methodType = mt;
         else {
             methodType = null;
             if (!MethodHandle.class.equals(type))

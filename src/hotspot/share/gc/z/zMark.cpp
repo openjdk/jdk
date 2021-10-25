@@ -288,7 +288,7 @@ static void try_deduplicate(ZMarkContext* context, oop obj) {
     return;
   }
 
-  if (!java_lang_String::is_instance_inlined(obj)) {
+  if (!java_lang_String::is_instance(obj)) {
     // Not a String object
     return;
   }

@@ -283,9 +283,7 @@ class MonitorClosure : public StackObj {
 // A closure that is applied without any arguments.
 class VoidClosure : public StackObj {
  public:
-  // I would have liked to declare this a pure virtual, but that breaks
-  // in mysterious ways, for unknown reasons.
-  virtual void do_void();
+  virtual void do_void() = 0;
 };
 
 

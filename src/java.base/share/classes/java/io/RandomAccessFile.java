@@ -374,7 +374,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param     len the number of bytes to read.
      * @throws    IOException If an I/O error has occurred.
      */
-    private native int readBytes(byte b[], int off, int len) throws IOException;
+    private native int readBytes(byte[] b, int off, int len) throws IOException;
 
     /**
      * Reads up to {@code len} bytes of data from this file into an
@@ -401,7 +401,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             {@code len} is negative, or {@code len} is greater than
      *             {@code b.length - off}
      */
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         return readBytes(b, off, len);
     }
 
@@ -424,7 +424,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             or if some other I/O error occurs.
      * @throws     NullPointerException If {@code b} is {@code null}.
      */
-    public int read(byte b[]) throws IOException {
+    public int read(byte[] b) throws IOException {
         return readBytes(b, 0, b.length);
     }
 
@@ -441,7 +441,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *              all the bytes.
      * @throws  IOException   if an I/O error occurs.
      */
-    public final void readFully(byte b[]) throws IOException {
+    public final void readFully(byte[] b) throws IOException {
         readFully(b, 0, b.length);
     }
 
@@ -463,7 +463,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *                all the bytes.
      * @throws  IOException   if an I/O error occurs.
      */
-    public final void readFully(byte b[], int off, int len) throws IOException {
+    public final void readFully(byte[] b, int off, int len) throws IOException {
         int n = 0;
         do {
             int count = this.read(b, off + n, len - n);
@@ -532,7 +532,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param     len the number of bytes that are written
      * @throws    IOException If an I/O error has occurred.
      */
-    private native void writeBytes(byte b[], int off, int len) throws IOException;
+    private native void writeBytes(byte[] b, int off, int len) throws IOException;
 
     /**
      * Writes {@code b.length} bytes from the specified byte array
@@ -541,7 +541,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      b   the data.
      * @throws     IOException  if an I/O error occurs.
      */
-    public void write(byte b[]) throws IOException {
+    public void write(byte[] b) throws IOException {
         writeBytes(b, 0, b.length);
     }
 
@@ -554,7 +554,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      len   the number of bytes to write.
      * @throws     IOException  if an I/O error occurs.
      */
-    public void write(byte b[], int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         writeBytes(b, off, len);
     }
 

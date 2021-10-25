@@ -416,6 +416,10 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         return CgroupSubsystem.limitFromString(pidsMaxStr);
     }
 
+    public long getPidsCurrent() {
+        return getLongValue(pids, "pids.current");
+    }
+
     /*****************************************************************
      * BlKIO Subsystem
      ****************************************************************/

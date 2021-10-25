@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
  * questions.
  */
 
-
 package javax.net.ssl;
 
 import java.io.*;
 import java.net.*;
-
 
 /**
  * This class extends <code>ServerSocket</code> and
@@ -205,7 +203,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      *
      * @return an array of cipher suites enabled
      * @see #getSupportedCipherSuites()
-     * @see #setEnabledCipherSuites(String [])
+     * @see #setEnabledCipherSuites(String[])
      */
     public abstract String [] getEnabledCipherSuites();
 
@@ -261,7 +259,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      *
      * @return an array of cipher suite names
      * @see #getEnabledCipherSuites()
-     * @see #setEnabledCipherSuites(String [])
+     * @see #setEnabledCipherSuites(String[])
      */
     public abstract String [] getSupportedCipherSuites();
 
@@ -271,7 +269,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      *
      * @return an array of protocol names supported
      * @see #getEnabledProtocols()
-     * @see #setEnabledProtocols(String [])
+     * @see #setEnabledProtocols(String[])
      */
     public abstract String [] getSupportedProtocols();
 
@@ -287,7 +285,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      *
      * @return an array of protocol names
      * @see #getSupportedProtocols()
-     * @see #setEnabledProtocols(String [])
+     * @see #setEnabledProtocols(String[])
      */
     public abstract String [] getEnabledProtocols();
 

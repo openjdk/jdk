@@ -32,7 +32,7 @@
 bool ShenandoahStringDedup::is_string_candidate(oop obj) {
   assert(Thread::current()->is_Worker_thread(),
         "Only from a GC worker thread");
-  return java_lang_String::is_instance_inlined(obj) &&
+  return java_lang_String::is_instance(obj) &&
          java_lang_String::value(obj) != nullptr;
 }
 

@@ -39,9 +39,13 @@ import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Container;
 
 public class TestPidsLimit {
     private static final String imageName = Common.imageName("pids");
+    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
+    private static final int UNLIMITED_PIDS_PODMAN = 0;
+    private static final int UNLIMITED_PIDS_DOCKER = -1;
 
     public static void main(String[] args) throws Exception {
         if (!DockerTestUtils.canTestDocker()) {
@@ -107,7 +111,8 @@ public class TestPidsLimit {
         Common.logNewTestCase("testPidsLimit (limit: " + pidsLimit + ")");
         DockerRunOptions opts = Common.newOptsShowSettings(imageName);
         if (pidsLimit.equals("Unlimited")) {
-            opts.addDockerOpts("--pids-limit=-1");
+            int unlimited = IS_PODMAN ? UNLIMITED_PIDS_PODMAN : UNLIMITED_PIDS_DOCKER;
+            opts.addDockerOpts("--pids-limit=" + unlimited);
         } else {
             opts.addDockerOpts("--pids-limit="+pidsLimit);
         }

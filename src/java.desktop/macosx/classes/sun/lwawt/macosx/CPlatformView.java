@@ -62,6 +62,7 @@ public class CPlatformView extends CFRetainedResource {
         initializeBase(peer, responder);
 
         this.windowLayer = CGraphicsDevice.usingMetalPipeline()? createMTLLayer() : createCGLayer();
+
         setPtr(nativeCreateView(0, 0, 0, 0, getWindowLayerPtr()));
     }
 

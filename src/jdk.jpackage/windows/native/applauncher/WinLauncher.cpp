@@ -139,8 +139,6 @@ void launchApp() {
     const tstring launcherPath = SysInfo::getProcessModulePath();
     const tstring appImageRoot = FileUtils::dirname(launcherPath);
     const tstring appDirPath = FileUtils::mkpath() << appImageRoot << _T("app");
-    const tstring runtimeBinPath = FileUtils::mkpath()
-            << appImageRoot << _T("runtime") << _T("bin");
 
     const AppLauncher appLauncher = AppLauncher().setImageRoot(appImageRoot)
         .addJvmLibName(_T("bin\\jli.dll"))
@@ -188,9 +186,11 @@ void launchApp() {
         return;
     }
 
-    // zip.dll may be loaded by java without full path
+    // zip.dll (and others) may be loaded by java without full path
     // make sure it will look in runtime/bin
+    const tstring runtimeBinPath = FileUtils::dirname(jvm->getPath());
     SetDllDirectory(runtimeBinPath.c_str());
+    LOG_TRACE(tstrings::any() << "SetDllDirectory to: " << runtimeBinPath);
 
     const DllWrapper jliDll(jvm->getPath());
     std::unique_ptr<DllWrapper> splashDll;

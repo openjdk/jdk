@@ -307,8 +307,6 @@ void G1DirtyCardQueueSet::enqueue_all_paused_buffers() {
 }
 
 void G1DirtyCardQueueSet::abandon_completed_buffers() {
-  enqueue_all_paused_buffers();
-  verify_num_cards();
   G1BufferNodeList list = take_all_completed_buffers();
   BufferNode* buffers_to_delete = list._head;
   while (buffers_to_delete != NULL) {
@@ -546,8 +544,6 @@ void G1DirtyCardQueueSet::abandon_logs() {
     }
   } closure(*this);
   Threads::threads_do(&closure);
-
-  G1BarrierSet::shared_dirty_card_queue().reset();
 }
 
 void G1DirtyCardQueueSet::concatenate_logs() {
@@ -571,7 +567,6 @@ void G1DirtyCardQueueSet::concatenate_logs() {
   } closure(*this);
   Threads::threads_do(&closure);
 
-  G1BarrierSet::shared_dirty_card_queue().flush();
   enqueue_all_paused_buffers();
   verify_num_cards();
   set_max_cards(old_limit);

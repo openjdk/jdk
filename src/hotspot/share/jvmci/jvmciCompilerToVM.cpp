@@ -1891,7 +1891,20 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, jobjec
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, long displacement, jboolean is_volatile, jobject kind_object))
+// Enforces volatile semantics for a non-volatile read.
+class VolatileRead : public StackObj {
+ public:
+  VolatileRead() {
+    // Ensures a possibly volatile read is not reordered with a prior
+    // volatile write.
+    OrderAccess::storeload();
+  }
+  ~VolatileRead() {
+    OrderAccess::acquire();
+  }
+};
+
+C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, long displacement, jobject kind_object))
   if (object == NULL || kind_object == NULL) {
     JVMCI_THROW_0(NullPointerException);
   }
@@ -1975,15 +1988,25 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
   }
 
   jlong value = 0;
+
+  // Treat all reads as volatile for simplicity as this function can be used
+  // both for reading Java fields declared as volatile as well as for constant
+  // folding Unsafe.get* methods with volatile semantics. This is done by
+  // performing the volatile barrier operations around a call to an
+  // oopDesc::<kind>_field method. The oopDesc::<kind>_field_acquire method
+  // cannot be used since it does not support unaligned reads on all platforms
+  // (e.g., an unaligned ldar on AArch64 causes a SIGBUS).
+
+
   switch (basic_type) {
-    case T_BOOLEAN: value = is_volatile ? obj->bool_field_acquire(displacement)   : obj->bool_field(displacement);  break;
-    case T_BYTE:    value = is_volatile ? obj->byte_field_acquire(displacement)   : obj->byte_field(displacement);  break;
-    case T_SHORT:   value = is_volatile ? obj->short_field_acquire(displacement)  : obj->short_field(displacement); break;
-    case T_CHAR:    value = is_volatile ? obj->char_field_acquire(displacement)   : obj->char_field(displacement);  break;
+    case T_BOOLEAN: { VolatileRead vr; value = obj->bool_field(displacement); } break;
+    case T_BYTE:    { VolatileRead vr; value = obj->byte_field(displacement); } break;
+    case T_SHORT:   { VolatileRead vr; value = obj->short_field(displacement);} break;
+    case T_CHAR:    { VolatileRead vr; value = obj->char_field(displacement); } break;
     case T_FLOAT:
-    case T_INT:     value = is_volatile ? obj->int_field_acquire(displacement)    : obj->int_field(displacement);   break;
+    case T_INT:     { VolatileRead vr; value = obj->int_field(displacement);  } break;
     case T_DOUBLE:
-    case T_LONG:    value = is_volatile ? obj->long_field_acquire(displacement)   : obj->long_field(displacement);  break;
+    case T_LONG:    { VolatileRead vr; value = obj->long_field(displacement); } break;
 
     case T_OBJECT: {
       if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
@@ -1993,7 +2016,9 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       }
 
-      oop value = is_volatile ? obj->obj_field_acquire(displacement) : obj->obj_field(displacement);
+      oop value;
+      { VolatileRead vr; value = obj->obj_field(displacement); }
+
       if (value == NULL) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       } else {
@@ -2629,6 +2654,49 @@ C2V_VMENTRY(void, notifyCompilerInliningEvent, (JNIEnv* env, jobject, jint compi
   }
 }
 
+C2V_VMENTRY(void, setThreadLocalObject, (JNIEnv* env, jobject, jint id, jobject value))
+  requireInHotSpot("setThreadLocalObject", JVMCI_CHECK);
+  if (id == 0) {
+    thread->set_jvmci_reserved_oop0(JNIHandles::resolve(value));
+    return;
+  }
+  THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+            err_msg("%d is not a valid thread local id", id));
+}
+
+C2V_VMENTRY_NULL(jobject, getThreadLocalObject, (JNIEnv* env, jobject, jint id))
+  requireInHotSpot("getThreadLocalObject", JVMCI_CHECK_NULL);
+  if (id == 0) {
+    return JNIHandles::make_local(thread->get_jvmci_reserved_oop0());
+  }
+  THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+              err_msg("%d is not a valid thread local id", id));
+}
+
+C2V_VMENTRY(void, setThreadLocalLong, (JNIEnv* env, jobject, jint id, jlong value))
+  requireInHotSpot("setThreadLocalLong", JVMCI_CHECK);
+  if (id == 0) {
+    thread->set_jvmci_reserved0(value);
+  } else if (id == 1) {
+    thread->set_jvmci_reserved1(value);
+  } else {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              err_msg("%d is not a valid thread local id", id));
+  }
+}
+
+C2V_VMENTRY_0(jlong, getThreadLocalLong, (JNIEnv* env, jobject, jint id))
+  requireInHotSpot("getThreadLocalLong", JVMCI_CHECK_0);
+  if (id == 0) {
+    return thread->get_jvmci_reserved0();
+  } else if (id == 1) {
+    return thread->get_jvmci_reserved1();
+  } else {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+                err_msg("%d is not a valid thread local id", id));
+  }
+}
+
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
 
@@ -2739,8 +2807,8 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "boxPrimitive",                                 CC "(" OBJECT ")" OBJECTCONSTANT,                                                     FN_PTR(boxPrimitive)},
   {CC "getDeclaredConstructors",                      CC "(" HS_RESOLVED_KLASS ")[" RESOLVED_METHOD,                                        FN_PTR(getDeclaredConstructors)},
   {CC "getDeclaredMethods",                           CC "(" HS_RESOLVED_KLASS ")[" RESOLVED_METHOD,                                        FN_PTR(getDeclaredMethods)},
-  {CC "readFieldValue",                               CC "(" HS_RESOLVED_KLASS HS_RESOLVED_KLASS "JZLjdk/vm/ci/meta/JavaKind;)" JAVACONSTANT, FN_PTR(readFieldValue)},
-  {CC "readFieldValue",                               CC "(" OBJECTCONSTANT HS_RESOLVED_KLASS "JZLjdk/vm/ci/meta/JavaKind;)" JAVACONSTANT,  FN_PTR(readFieldValue)},
+  {CC "readFieldValue",                               CC "(" HS_RESOLVED_KLASS HS_RESOLVED_KLASS "JLjdk/vm/ci/meta/JavaKind;)" JAVACONSTANT, FN_PTR(readFieldValue)},
+  {CC "readFieldValue",                               CC "(" OBJECTCONSTANT HS_RESOLVED_KLASS "JLjdk/vm/ci/meta/JavaKind;)" JAVACONSTANT,   FN_PTR(readFieldValue)},
   {CC "isInstance",                                   CC "(" HS_RESOLVED_KLASS OBJECTCONSTANT ")Z",                                         FN_PTR(isInstance)},
   {CC "isAssignableFrom",                             CC "(" HS_RESOLVED_KLASS HS_RESOLVED_KLASS ")Z",                                      FN_PTR(isAssignableFrom)},
   {CC "isTrustedForIntrinsics",                       CC "(" HS_RESOLVED_KLASS ")Z",                                                        FN_PTR(isTrustedForIntrinsics)},
@@ -2770,6 +2838,10 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "addFailedSpeculation",                         CC "(J[B)Z",                                                                          FN_PTR(addFailedSpeculation)},
   {CC "callSystemExit",                               CC "(I)V",                                                                            FN_PTR(callSystemExit)},
   {CC "ticksNow",                                     CC "()J",                                                                             FN_PTR(ticksNow)},
+  {CC "getThreadLocalObject",                         CC "(I)" OBJECT,                                                                      FN_PTR(getThreadLocalObject)},
+  {CC "setThreadLocalObject",                         CC "(I" OBJECT ")V",                                                                  FN_PTR(setThreadLocalObject)},
+  {CC "getThreadLocalLong",                           CC "(I)J",                                                                            FN_PTR(getThreadLocalLong)},
+  {CC "setThreadLocalLong",                           CC "(IJ)V",                                                                           FN_PTR(setThreadLocalLong)},
   {CC "registerCompilerPhase",                        CC "(" STRING ")I",                                                                   FN_PTR(registerCompilerPhase)},
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_RESOLVED_METHOD HS_RESOLVED_METHOD "ZLjava/lang/String;I)V",               FN_PTR(notifyCompilerInliningEvent)},

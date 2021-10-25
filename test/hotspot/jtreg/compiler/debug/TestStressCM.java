@@ -29,6 +29,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
+ * @key stress randomness
  * @bug 8253765
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that, when compiling with StressLCM or StressGCM, using the

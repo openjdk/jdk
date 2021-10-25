@@ -46,7 +46,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
@@ -1313,7 +1313,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @return the array of menu items
      */
     private MenuElement[] buildMenuElementArray(JMenu leaf) {
-        Vector<MenuElement> elements = new Vector<>();
+        ArrayList<MenuElement> elements = new ArrayList<>();
         Component current = leaf.getPopupMenu();
         JPopupMenu pop;
         JMenu menu;
@@ -1322,22 +1322,21 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         while (true) {
             if (current instanceof JPopupMenu) {
                 pop = (JPopupMenu) current;
-                elements.insertElementAt(pop, 0);
+                elements.add(0, pop);
                 current = pop.getInvoker();
             } else if (current instanceof JMenu) {
                 menu = (JMenu) current;
-                elements.insertElementAt(menu, 0);
+                elements.add(0, menu);
                 current = menu.getParent();
             } else if (current instanceof JMenuBar) {
                 bar = (JMenuBar) current;
-                elements.insertElementAt(bar, 0);
+                elements.add(0, bar);
                 break;
             } else {
                 break;
             }
         }
-        MenuElement[] me = new MenuElement[elements.size()];
-        elements.copyInto(me);
+        MenuElement[] me = elements.toArray(new MenuElement[0]);
         return me;
     }
 

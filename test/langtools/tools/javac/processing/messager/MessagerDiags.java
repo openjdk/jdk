@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
-import static javax.tools.Diagnostic.Kind.*;
 import static javax.tools.JavaFileObject.Kind.*;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -72,9 +71,9 @@ public class MessagerDiags extends AbstractProcessor {
                            RoundEnvironment roundEnv) {
         Messager messager = processingEnv.getMessager();
         for (Element e : roundEnv.getRootElements()) {
-            messager.printMessage(WARNING, WRN_NO_SOURCE);
-            messager.printMessage(WARNING, WRN_WITH_SOURCE, e);
-            messager.printMessage(WARNING, WRN_NO_SOURCE);
+            messager.printWarning(WRN_NO_SOURCE);
+            messager.printWarning(WRN_WITH_SOURCE, e);
+            messager.printWarning(WRN_NO_SOURCE);
         }
         return false;
     }
