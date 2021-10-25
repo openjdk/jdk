@@ -63,7 +63,6 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   bool phase_mark_loop();
   bool subphase_mark_from_roots();
-  bool subphase_preclean();
   bool subphase_delay_to_keep_mmu_before_remark();
   bool subphase_remark();
 

@@ -889,9 +889,44 @@ void G1ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
   // at this point everything should be re-initialized and ready to go
 }
 
+class G1PrecleanYieldClosure : public YieldClosure {
+  G1ConcurrentMark* _cm;
+
+public:
+  G1PrecleanYieldClosure(G1ConcurrentMark* cm) : _cm(cm) { }
+
+  bool should_return() override {
+    return _cm->has_aborted();
+  }
+
+  bool should_return_fine_grain() override {
+    _cm->do_yield_check();
+    return _cm->has_aborted();
+  }
+};
+
 class G1CMConcurrentMarkingTask : public WorkerTask {
   G1ConcurrentMark*     _cm;
+  ReferenceProcessor*   _cm_rp;
 
+  void do_mark_step(G1CMTask* task) {
+    do {
+      task->do_marking_step(G1ConcMarkStepDurationMillis,
+                            true  /* do_termination */,
+                            false /* is_serial*/);
+
+      _cm->do_yield_check();
+    } while (!_cm->has_aborted() && task->has_aborted());
+  }
+
+  void preclean() {
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
+    G1PrecleanYieldClosure yield_cl(_cm);
+    _cm_rp->preclean_discovered_references(_cm_rp->is_alive_non_header(),
+                                           &enqueue,
+                                           &yield_cl,
+                                           _cm->_gc_timer_cm);
+  }
 public:
   void work(uint worker_id) {
     ResourceMark rm;
@@ -906,26 +941,25 @@ public:
       G1CMTask* task = _cm->task(worker_id);
       task->record_start_time();
       if (!_cm->has_aborted()) {
-        do {
-          task->do_marking_step(G1ConcMarkStepDurationMillis,
-                                true  /* do_termination */,
-                                false /* is_serial*/);
+        do_mark_step(task);
 
-          _cm->do_yield_check();
-        } while (!_cm->has_aborted() && task->has_aborted());
+        // Marking is complete; preclean non-strong references
+        if (G1UseReferencePrecleaning) {
+          preclean();
+        }
       }
-      task->record_end_time();
       guarantee(!task->has_aborted() || _cm->has_aborted(), "invariant");
+      task->record_end_time();
     }
 
     double end_vtime = os::elapsedVTime();
     _cm->update_accum_task_vtime(worker_id, end_vtime - start_vtime);
   }
 
-  G1CMConcurrentMarkingTask(G1ConcurrentMark* cm) :
-      WorkerTask("Concurrent Mark"), _cm(cm) { }
-
-  ~G1CMConcurrentMarkingTask() { }
+  G1CMConcurrentMarkingTask(G1ConcurrentMark* cm, ReferenceProcessor* cm_rp) :
+      WorkerTask("Concurrent Mark"),
+      _cm(cm),
+      _cm_rp(cm_rp) {}
 };
 
 uint G1ConcurrentMark::calc_active_marking_workers() {
@@ -1052,7 +1086,7 @@ void G1ConcurrentMark::mark_from_roots() {
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
 
-  G1CMConcurrentMarkingTask marking_task(this);
+  G1CMConcurrentMarkingTask marking_task(this, _g1h->ref_processor_cm());
   _concurrent_workers->run_task(&marking_task);
   print_stats();
 }
@@ -1669,42 +1703,6 @@ void G1ConcurrentMark::weak_refs_work() {
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
     _g1h->complete_cleaning(&g1_is_alive, purged_classes);
   }
-}
-
-class G1PrecleanYieldClosure : public YieldClosure {
-  G1ConcurrentMark* _cm;
-
-public:
-  G1PrecleanYieldClosure(G1ConcurrentMark* cm) : _cm(cm) { }
-
-  virtual bool should_return() {
-    return _cm->has_aborted();
-  }
-
-  virtual bool should_return_fine_grain() {
-    _cm->do_yield_check();
-    return _cm->has_aborted();
-  }
-};
-
-void G1ConcurrentMark::preclean() {
-  assert(G1UseReferencePrecleaning, "Precleaning must be enabled.");
-
-  SuspendibleThreadSetJoiner joiner;
-
-  BarrierEnqueueDiscoveredFieldClosure enqueue;
-
-  set_concurrency_and_phase(1, true);
-
-  G1PrecleanYieldClosure yield_cl(this);
-
-  ReferenceProcessor* rp = _g1h->ref_processor_cm();
-  // Precleaning is single threaded. Temporarily disable MT discovery.
-  ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(rp, false);
-  rp->preclean_discovered_references(rp->is_alive_non_header(),
-                                     &enqueue,
-                                     &yield_cl,
-                                     _gc_timer_cm);
 }
 
 // When sampling object counts, we already swapped the mark bitmaps, so we need to use

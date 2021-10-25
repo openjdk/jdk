@@ -1068,75 +1068,23 @@ void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_al
                                                         EnqueueDiscoveredFieldClosure* enqueue,
                                                         YieldClosure* yield,
                                                         GCTimer* gc_timer) {
-  // These lists can be handled here in any order and, indeed, concurrently.
+  Ticks preclean_start = Ticks::now();
 
-  // Soft references
-  {
-    GCTraceTime(Debug, gc, ref) tm("Preclean SoftReferences", gc_timer);
-    log_reflist("SoftRef before: ", _discoveredSoftRefs, _max_num_queues);
-    for (uint i = 0; i < _max_num_queues; i++) {
-      if (yield->should_return()) {
-        return;
-      }
-      if (preclean_discovered_reflist(_discoveredSoftRefs[i], is_alive,
-                                      enqueue, yield)) {
-        log_reflist("SoftRef abort: ", _discoveredSoftRefs, _max_num_queues);
-        return;
-      }
-    }
-    log_reflist("SoftRef after: ", _discoveredSoftRefs, _max_num_queues);
-  }
+  uint worker_id = WorkerThread::current()->id();
 
-  // Weak references
-  {
-    GCTraceTime(Debug, gc, ref) tm("Preclean WeakReferences", gc_timer);
-    log_reflist("WeakRef before: ", _discoveredWeakRefs, _max_num_queues);
-    for (uint i = 0; i < _max_num_queues; i++) {
-      if (yield->should_return()) {
-        return;
-      }
-      if (preclean_discovered_reflist(_discoveredWeakRefs[i], is_alive,
-                                      enqueue, yield)) {
-        log_reflist("WeakRef abort: ", _discoveredWeakRefs, _max_num_queues);
-        return;
-      }
-    }
-    log_reflist("WeakRef after: ", _discoveredWeakRefs, _max_num_queues);
-  }
+  size_t soft_count    = _discoveredSoftRefs[worker_id].length();
+  size_t weak_count    = _discoveredWeakRefs[worker_id].length();
+  size_t final_count   = _discoveredFinalRefs[worker_id].length();
+  size_t phantom_count = _discoveredPhantomRefs[worker_id].length();
 
-  // Final references
-  {
-    GCTraceTime(Debug, gc, ref) tm("Preclean FinalReferences", gc_timer);
-    log_reflist("FinalRef before: ", _discoveredFinalRefs, _max_num_queues);
-    for (uint i = 0; i < _max_num_queues; i++) {
-      if (yield->should_return()) {
-        return;
-      }
-      if (preclean_discovered_reflist(_discoveredFinalRefs[i], is_alive,
-                                      enqueue, yield)) {
-        log_reflist("FinalRef abort: ", _discoveredFinalRefs, _max_num_queues);
-        return;
-      }
-    }
-    log_reflist("FinalRef after: ", _discoveredFinalRefs, _max_num_queues);
-  }
+  preclean_discovered_reflist(_discoveredSoftRefs[worker_id], is_alive, enqueue, yield);
+  preclean_discovered_reflist(_discoveredWeakRefs[worker_id], is_alive, enqueue, yield);
+  preclean_discovered_reflist(_discoveredFinalRefs[worker_id], is_alive, enqueue, yield);
+  preclean_discovered_reflist(_discoveredPhantomRefs[worker_id], is_alive, enqueue, yield);
 
-  // Phantom references
-  {
-    GCTraceTime(Debug, gc, ref) tm("Preclean PhantomReferences", gc_timer);
-    log_reflist("PhantomRef before: ", _discoveredPhantomRefs, _max_num_queues);
-    for (uint i = 0; i < _max_num_queues; i++) {
-      if (yield->should_return()) {
-        return;
-      }
-      if (preclean_discovered_reflist(_discoveredPhantomRefs[i], is_alive,
-                                      enqueue, yield)) {
-        log_reflist("PhantomRef abort: ", _discoveredPhantomRefs, _max_num_queues);
-        return;
-      }
-    }
-    log_reflist("PhantomRef after: ", _discoveredPhantomRefs, _max_num_queues);
-  }
+  log_trace(gc, ref)("Worker (%d): Precleaning Soft (%zu), Weak (%zu), Final (%zu), Phantom (%zu) %f ms",
+      worker_id, soft_count, weak_count, final_count, phantom_count,
+      (Ticks::now() - preclean_start).seconds()*1000);
 }
 
 bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,

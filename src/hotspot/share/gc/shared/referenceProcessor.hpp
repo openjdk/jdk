@@ -501,27 +501,6 @@ public:
   }
 };
 
-// A utility class to temporarily change the MT'ness of
-// reference discovery for the given ReferenceProcessor
-// in the scope that contains it.
-class ReferenceProcessorMTDiscoveryMutator: StackObj {
- private:
-  ReferenceProcessor* _rp;
-  bool                _saved_mt;
-
- public:
-  ReferenceProcessorMTDiscoveryMutator(ReferenceProcessor* rp,
-                                       bool mt):
-    _rp(rp) {
-    _saved_mt = _rp->discovery_is_mt();
-    _rp->set_mt_discovery(mt);
-  }
-
-  ~ReferenceProcessorMTDiscoveryMutator() {
-    _rp->set_mt_discovery(_saved_mt);
-  }
-};
-
 // A utility class to temporarily change the disposition
 // of the "is_alive_non_header" closure field of the
 // given ReferenceProcessor in the scope that contains it.

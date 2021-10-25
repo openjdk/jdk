@@ -191,15 +191,10 @@ bool G1ConcurrentMarkThread::phase_mark_loop() {
     // Subphase 1: Mark From Roots.
     if (subphase_mark_from_roots()) return true;
 
-    // Subphase 2: Preclean (optional)
-    if (G1UseReferencePrecleaning) {
-      if (subphase_preclean()) return true;
-    }
-
-    // Subphase 3: Wait for Remark.
+    // Subphase 2: Wait for Remark.
     if (subphase_delay_to_keep_mmu_before_remark()) return true;
 
-    // Subphase 4: Remark pause
+    // Subphase 3: Remark pause
     if (subphase_remark()) return true;
 
     // Check if we need to restart the marking loop.
@@ -223,12 +218,6 @@ bool G1ConcurrentMarkThread::subphase_mark_from_roots() {
   ConcurrentGCBreakpoints::at("AFTER MARKING STARTED");
   G1ConcPhaseTimer p(_cm, "Concurrent Mark From Roots");
   _cm->mark_from_roots();
-  return _cm->has_aborted();
-}
-
-bool G1ConcurrentMarkThread::subphase_preclean() {
-  G1ConcPhaseTimer p(_cm, "Concurrent Preclean");
-  _cm->preclean();
   return _cm->has_aborted();
 }
 
