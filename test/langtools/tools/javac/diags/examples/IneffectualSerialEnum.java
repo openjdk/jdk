@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,23 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8172999
- * @summary Verify no crash loading font metrics instance.
- * @run main/othervm FontCrash
- */
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Toolkit;
+// key: compiler.warn.ineffectual.serial.field.enum
+// key: compiler.warn.ineffectual.serial.method.enum
 
-public class FontCrash {
+// options: -Xlint:serial
 
-    public static void main(String[] args) {
-        System.setProperty("java2d.font.usePlatformFont", "true");
-        Font f = new Font(Font.DIALOG,Font.PLAIN,12);
-        Toolkit tk = Toolkit.getDefaultToolkit();
-        tk.getFontMetrics(f);
+import java.io.*;
+
+enum IneffectualSerialEnum implements Serializable {
+    INSTANCE;
+
+    // The serialVersionUID field is ineffectual for enum classes.
+    private static final long serialVersionUID = 42;
+
+    // The readObject method is ineffectual for enum classes.
+    private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        return;
     }
 }

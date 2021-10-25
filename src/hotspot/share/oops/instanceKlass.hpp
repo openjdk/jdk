@@ -393,7 +393,6 @@ class InstanceKlass: public Klass {
   // array klasses
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
   inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
-  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
   inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
 
   // methods
@@ -1006,8 +1005,6 @@ public:
   void print_nonstatic_fields(FieldClosure* cl); // including inherited and injected fields
 
   void methods_do(void f(Method* method));
-  void array_klasses_do(void f(Klass* k));
-  void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
 
   static InstanceKlass* cast(Klass* k) {
     return const_cast<InstanceKlass*>(cast(const_cast<const Klass*>(k)));

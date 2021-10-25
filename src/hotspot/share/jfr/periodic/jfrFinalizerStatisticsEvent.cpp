@@ -26,63 +26,20 @@
 #include "utilities/macros.hpp"
 #if INCLUDE_MANAGEMENT
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "jfr/jfrEvents.hpp"
-#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/support/jfrSymbolTable.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "oops/instanceKlass.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/finalizerService.hpp"
-
-static oop get_codesource(oop pd, Thread* thread) {
-  assert(pd != NULL, "invariant");
-  assert(thread != NULL, "invariant");
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result);
-  args.set_klass(pd->klass());
-  args.set_name("codesource");
-  args.set_signature("Ljava/security/CodeSource;");
-  args.set_receiver(pd);
-  JfrJavaSupport::get_field(&args, thread);
-  return result.get_oop();
-}
-
-// Caller needs ResourceMark
-static const char* get_locationNoFragString(oop codesource, Thread* thread) {
-  assert(codesource != NULL, "invariant");
-  assert(thread != NULL, "invariant");
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result);
-  args.set_klass(codesource->klass());
-  args.set_name("locationNoFragString");
-  args.set_signature("Ljava/lang/String;");
-  args.set_receiver(codesource);
-  JfrJavaSupport::get_field(&args, thread);
-  const oop string_oop = result.get_oop();
-  return string_oop != NULL ? JfrJavaSupport::c_str(string_oop, thread) : NULL;
-}
-
-// Caller needs ResourceMark
-static const char* codesource(const InstanceKlass* ik, Thread* thread) {
-  assert(ik != NULL, "invariant");
-  assert(thread != NULL, "invariant");
-  oop pd = java_lang_Class::protection_domain(ik->java_mirror());
-  if (pd == NULL) {
-    return NULL;
-  }
-  oop codesource = get_codesource(pd, thread);
-  return codesource != NULL ? get_locationNoFragString(codesource, thread) : NULL;
-}
 
 static void send_event(const FinalizerEntry* fe, const InstanceKlass* ik, const JfrTicks& timestamp, Thread* thread) {
   assert(ik != NULL, "invariant");
   assert(ik->has_finalizer(), "invariant");
   assert(thread != NULL, "invariant");
-  const char* const url = codesource(ik, thread);
+  const char* const url = fe != nullptr ? fe->codesource() : nullptr;
   const traceid url_symbol_id = url != NULL ? JfrSymbolTable::add(url) : 0;
   EventFinalizerStatistics event(UNTIMED);
   event.set_endtime(timestamp);

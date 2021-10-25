@@ -707,7 +707,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
             assert(fd->field_type() == T_OBJECT, "");
             if (value->is_a(vmClasses::String_klass())) {
               const char* ascii_value = java_lang_String::as_quoted_ascii(value);
-              _out->print("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
+              _out->print_cr("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
             } else {
               const char* klass_name  = value->klass()->name()->as_quoted_ascii();
               _out->print_cr("%s", klass_name);

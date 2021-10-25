@@ -81,6 +81,12 @@ public abstract class CiReplayBase {
     }
 
     public static class TestMain {
+        private static final String emptyString;
+
+        static {
+          emptyString = "";
+        }
+
         public static void main(String[] args) {
             // explicitly trigger native compilation
             Lambda start = () -> 0;
