@@ -1708,7 +1708,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       (cmp1_op == Op_AddI || cmp1_op == Op_SubI) &&
       phase->type(cmp1->in(2)) == TypeInt::MIN) {
     if (cmp2->is_Con()) {
-      Node *ncmp2 = phase->intcon(java_add(cmp2->get_int(), TypeInt::MIN->get_con()));
+      Node *ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
       Node *ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if ((cmp2_op == Op_AddI || cmp2_op == Op_SubI) &&
