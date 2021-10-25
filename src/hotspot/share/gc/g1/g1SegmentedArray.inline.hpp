@@ -56,6 +56,15 @@ void* G1SegmentedArrayBuffer<flag>::get_new_buffer_elem() {
 }
 
 template<MEMFLAGS flag>
+template<typename Visitor>
+void G1SegmentedArrayBuffer<flag>::iterate_elems(Visitor& v) const {
+  for (uint i = 0; i < length(); i++) {
+    void* ptr = _buffer + i * _elem_size;
+    v.visit_elem(ptr);
+  }
+}
+
+template<MEMFLAGS flag>
 void G1SegmentedArrayBufferList<flag>::bulk_add(G1SegmentedArrayBuffer<flag>& first,
                                                 G1SegmentedArrayBuffer<flag>& last,
                                                 size_t num,
@@ -231,6 +240,45 @@ Elem* G1SegmentedArray<Elem, flag>::allocate() {
 template <class Elem, MEMFLAGS flag>
 inline uint G1SegmentedArray<Elem, flag>::num_buffers() const {
   return Atomic::load(&_num_buffers);
+}
+
+#ifdef ASSERT
+template <MEMFLAGS flag>
+class LengthVisitor {
+  uint _total;
+public:
+  LengthVisitor() : _total(0) {}
+  void visit_buffer(G1SegmentedArrayBuffer<flag>* node, uint limit) {
+    _total += limit;
+  }
+  uint length() const {
+    return _total;
+  }
+};
+
+template <class Elem, MEMFLAGS flag>
+uint G1SegmentedArray<Elem, flag>::length() const {
+  LengthVisitor<flag> v;
+  iterate_nodes(v);
+  return v.length();
+}
+#endif
+
+template <class Elem, MEMFLAGS flag>
+template <typename Visitor>
+void G1SegmentedArray<Elem, flag>::iterate_nodes(Visitor& v) const {
+  G1SegmentedArrayBuffer<flag>* cur = Atomic::load_acquire(&_first);
+
+  if (cur != nullptr) {
+    assert(_last != nullptr, "If there is at least one element, there must be a last one.");
+
+    while (cur != nullptr) {
+      uint limit = cur->length();
+      v.visit_buffer(cur, limit);
+
+      cur = cur->next();
+    }
+  }
 }
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP

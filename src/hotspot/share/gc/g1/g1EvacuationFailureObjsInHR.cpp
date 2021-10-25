@@ -23,34 +23,41 @@
  */
 
 #include "precompiled.hpp"
-#include "g1EvacuationFailureObjsInHR.hpp"
+#include "gc/g1/g1EvacuationFailureObjsInHR.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "utilities/quickSort.hpp"
 
 
+const uint G1EvacuationFailureObjsInHR::MaxBufferLength =
+  static_cast<uint>(1u << (HeapRegion::LogOfHRGrainBytes-LogHeapWordSize));
 
-// === G1EvacuationFailureObjsInHR ===
+const G1SegmentedArrayAllocOptions G1EvacuationFailureObjsInHR::_alloc_options =
+  G1SegmentedArrayAllocOptions(uint(sizeof (Elem)), BufferLength, UINT_MAX, Alignment);
+G1SegmentedArrayBufferList<mtGC> G1EvacuationFailureObjsInHR::_free_buffer_list;
 
-void G1EvacuationFailureObjsInHR::visit(Elem elem) {
-  uint32_t offset = elem;
-  _offset_array[_objs_num++] = offset;
+void G1EvacuationFailureObjsInHR::visit_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint limit) {
+  node->copy_to(&_offset_array[_objs_num]);
+  _objs_num += limit;
+  // Verify elements in the buffer
+  DEBUG_ONLY(node->iterate_elems(*this));
 }
 
-void G1EvacuationFailureObjsInHR::visit(Array<NODE_LENGTH, Elem>::NODE_XXX* node, uint32_t limit) {
-  ::memcpy(&_offset_array[_objs_num], node->_oop_offsets, limit * sizeof(Elem));
-  _objs_num += limit;
+void G1EvacuationFailureObjsInHR::visit_elem(void* elem) {
+  uint* ptr = (uint*)elem;
+  assert(*ptr < _max_offset, "must be, %u", *ptr);
 }
 
 void G1EvacuationFailureObjsInHR::compact() {
   assert(_offset_array == NULL, "must be");
-  _offset_array = NEW_C_HEAP_ARRAY(Elem, _nodes_array.objs_num(), mtGC);
-  // _nodes_array.iterate_elements(this);
-  _nodes_array.iterate_nodes(this);
-  uint expected = _nodes_array.objs_num();
-  assert(_objs_num == expected, "must be %u, %u", _objs_num, expected);
-  _nodes_array.reset();
+  uint num = _nodes_array.num_allocated_nodes();
+  _offset_array = NEW_C_HEAP_ARRAY(Elem, num, mtGC);
+  // Copy buffers' data to local array
+  _nodes_array.iterate_nodes(*this);
+  assert(_objs_num == num, "must be %u, %u", _objs_num, num);
+  _nodes_array.drop_all();
 }
 
 static int order_oop(G1EvacuationFailureObjsInHR::Elem a,
@@ -83,7 +90,7 @@ G1EvacuationFailureObjsInHR::G1EvacuationFailureObjsInHR(uint region_idx, HeapWo
   _max_offset(static_cast<Elem>(1u << (HeapRegion::LogOfHRGrainBytes-LogHeapWordSize))),
   _region_idx(region_idx),
   _bottom(bottom),
-  _nodes_array(static_cast<uint32_t>(HeapRegion::GrainWords) / NODE_LENGTH + 2u),
+  _nodes_array("", &_alloc_options, &_free_buffer_list),
   _offset_array(NULL),
   _objs_num(0) {
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
@@ -99,7 +106,8 @@ void G1EvacuationFailureObjsInHR::record(oop obj) {
   Elem offset = cast_from_oop_addr(obj);
   assert(obj == cast_from_offset(offset), "must be");
   assert(offset < _max_offset, "must be, %u", offset);
-  _nodes_array.add(offset);
+  Elem* e = _nodes_array.allocate();
+  *e = offset;
 }
 
 void G1EvacuationFailureObjsInHR::iterate(ObjectClosure* closure) {
