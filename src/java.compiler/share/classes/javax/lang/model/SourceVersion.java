@@ -518,6 +518,7 @@ public enum SourceVersion {
      * @param rv runtime version to map to a source version
      * @throws IllegalArgumentException if the feature of version
      * argument is greater than the feature of the platform version.
+     * @since 18
      */
     public static SourceVersion valueOf(Runtime.Version rv) {
         // Could also implement this as a switch where a case was
@@ -534,6 +535,7 @@ public enum SourceVersion {
      *
      * Source versions greater than or equal to {@link RELEASE_6}
      * have non-{@code null} results.
+     * @since 18
      */
     public Runtime.Version runtimeVersion() {
         // The javax.lang.model API was added in JDK 6; for now,
