@@ -1602,11 +1602,12 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * This method are the overridden implementation of
+     * This method is the overridden implementation of the
      * getSubjectAlternativeNames method in X509Certificate in the Sun
      * provider. It is better performance-wise since it returns cached
      * values.
      */
+    @Override
     public synchronized Collection<List<?>> getSubjectAlternativeNames()
         throws CertificateParsingException {
         // return cached value if we can
@@ -1616,6 +1617,14 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         SubjectAlternativeNameExtension subjectAltNameExt =
             getSubjectAlternativeNameExtension();
         if (subjectAltNameExt == null) {
+            // check unparseable extensions
+            UnparseableExtension unparseableExt =
+                    (UnparseableExtension)getUnparseableExtension(
+                            PKIXExtensions.SubjectAlternativeName_Id);
+            if (unparseableExt != null) {
+                throw new CertificateParsingException(
+                        unparseableExt.exceptionMessage());
+            }
             return null;
         }
         GeneralNames names;
@@ -1632,7 +1641,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     /**
      * This static method is the default implementation of the
-     * getSubjectAlternaitveNames method in X509Certificate. A
+     * getSubjectAlternativeNames method in X509Certificate. A
      * X509Certificate provider generally should overwrite this to
      * provide among other things caching for better performance.
      */
@@ -1666,11 +1675,12 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * This method are the overridden implementation of
+     * This method is the overridden implementation of the
      * getIssuerAlternativeNames method in X509Certificate in the Sun
      * provider. It is better performance-wise since it returns cached
      * values.
      */
+    @Override
     public synchronized Collection<List<?>> getIssuerAlternativeNames()
         throws CertificateParsingException {
         // return cached value if we can
@@ -1680,6 +1690,14 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         IssuerAlternativeNameExtension issuerAltNameExt =
             getIssuerAlternativeNameExtension();
         if (issuerAltNameExt == null) {
+            // check unparseable extensions
+            UnparseableExtension unparseableExt =
+                    (UnparseableExtension)getUnparseableExtension(
+                            PKIXExtensions.IssuerAlternativeName_Id);
+            if (unparseableExt != null) {
+                throw new CertificateParsingException(
+                        unparseableExt.exceptionMessage());
+            }
             return null;
         }
         GeneralNames names;
@@ -1696,7 +1714,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     /**
      * This static method is the default implementation of the
-     * getIssuerAlternaitveNames method in X509Certificate. A
+     * getIssuerAlternativeNames method in X509Certificate. A
      * X509Certificate provider generally should overwrite this to
      * provide among other things caching for better performance.
      */
