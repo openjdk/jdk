@@ -1533,6 +1533,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // The XOR-1 is an idiom used to flip the sense of a bool.  We flip the
   // test instead.
   int cmp1_op = cmp1->Opcode();
+  int cmp2_op = cmp2->Opcode();
   const TypeInt* cmp2_type = phase->type(cmp2)->isa_int();
   if (cmp2_type == NULL)  return NULL;
   Node* j_xor = cmp1;
@@ -1698,6 +1699,40 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type( cmp1->in(2) )->higher_equal(TypeInt::SYMINT) ) {
     Node *ncmp = phase->transform( new CmpINode(cmp1->in(2),cmp2));
     return new BoolNode( ncmp, _test.commute() );
+  }
+
+  // Change x +- Integer.MIN_VALUE <=> y +- Integer.MIN_VALUE into x u<=> y
+  if ((_test._test == BoolTest::lt || _test._test == BoolTest::le ||
+        _test._test == BoolTest::gt || _test._test == BoolTest::ge) &&
+      cop == Op_CmpI &&
+      (cmp1_op == Op_AddI || cmp1_op == Op_SubI) &&
+      phase->type(cmp1->in(2)) == TypeInt::MIN) {
+    if (cmp2->is_Con()) {
+      Node *ncmp2 = phase->intcon(java_add(cmp2->get_int(), TypeInt::MIN->get_con()));
+      Node *ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
+      return new BoolNode(ncmp, _test._test);
+    } else if ((cmp2_op == Op_AddI || cmp2_op == Op_SubI) &&
+        phase->type(cmp2->in(2)) == TypeInt::MIN) {
+      Node *ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
+      return new BoolNode(ncmp, _test._test);
+    }
+  }
+
+  // Change x +- Long.MIN_VALUE <=> y +- Long.MIN_VALUE into x u<=> y
+  if ((_test._test == BoolTest::lt || _test._test == BoolTest::le ||
+        _test._test == BoolTest::gt || _test._test == BoolTest::ge) &&
+      cop == Op_CmpL &&
+      (cmp1_op == Op_AddL || cmp1_op == Op_SubL) &&
+      phase->type(cmp1->in(2)) == TypeLong::MIN) {
+    if (cmp2->is_Con()) {
+      Node *ncmp2 = phase->longcon(java_add(cmp2->get_long(), TypeLong::MIN->get_con()));
+      Node *ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
+      return new BoolNode(ncmp, _test._test);
+    } else if ((cmp2_op == Op_AddL || cmp2_op == Op_SubL) &&
+        phase->type(cmp2->in(2)) == TypeLong::MIN) {
+      Node *ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
+      return new BoolNode(ncmp, _test._test);
+    }
   }
 
   // Try to optimize signed integer comparison
