@@ -32,12 +32,17 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import jdk.test.lib.Platform;
+
 import static java.awt.Transparency.TRANSLUCENT;
 
 /**
  * @test
  * @bug 8255722 8255724
  * @key headful
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main BlitRotateClippedArea
  */
 public class BlitRotateClippedArea {
 
@@ -101,17 +106,31 @@ public class BlitRotateClippedArea {
 
     private static void validate(BufferedImage gold, BufferedImage img)
             throws IOException {
-        for (int x = 0; x < gold.getWidth(); ++x) {
-            for (int y = 0; y < gold.getHeight(); ++y) {
-                Color goldColor = new Color(gold.getRGB(x, y));
-                Color actualColor = new Color(img.getRGB(x, y));
-                if ((Math.abs(goldColor.getRed() - actualColor.getRed()) > 1) ||
-                    (Math.abs(goldColor.getGreen() - actualColor.getGreen()) > 1) ||
-                    (Math.abs(goldColor.getBlue() - actualColor.getBlue()) > 1)) {
-                     ImageIO.write(gold, "png", new File("gold.png"));
-                     ImageIO.write(img, "png", new File("snapshot.png"));
-                     throw new RuntimeException("Test failed for pixel :"
-                        + x + "/" + y);
+        if (!Platform.isLinux()) {
+            for (int x = 0; x < gold.getWidth(); ++x) {
+                for (int y = 0; y < gold.getHeight(); ++y) {
+                    if (gold.getRGB(x, y) != img.getRGB(x, y)) {
+                        ImageIO.write(gold, "png", new File("gold.png"));
+                        ImageIO.write(img, "png", new File("snapshot.png"));
+                        throw new RuntimeException("Test failed.");
+                    }
+                }
+            }
+        } else {
+            // In Linux where we use XRender pipeline there is
+            // little deviation because of less arithmetic precision
+            for (int x = 0; x < gold.getWidth(); ++x) {
+                for (int y = 0; y < gold.getHeight(); ++y) {
+                    Color goldColor = new Color(gold.getRGB(x, y));
+                    Color actualColor = new Color(img.getRGB(x, y));
+                    if ((Math.abs(goldColor.getRed() - actualColor.getRed()) > 1) ||
+                        (Math.abs(goldColor.getGreen() - actualColor.getGreen()) > 1) ||
+                        (Math.abs(goldColor.getBlue() - actualColor.getBlue()) > 1)) {
+                        ImageIO.write(gold, "png", new File("gold.png"));
+                        ImageIO.write(img, "png", new File("snapshot.png"));
+                        throw new RuntimeException("Test failed for pixel :"
+                            + x + "/" + y);
+                    }
                 }
             }
         }
