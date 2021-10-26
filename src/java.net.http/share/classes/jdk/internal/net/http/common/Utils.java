@@ -391,7 +391,6 @@ public final class Utils {
         return new URLPermission(urlString, actionStringBuilder.toString());
     }
 
-
     // ABNF primitives defined in RFC 7230
     private static final boolean[] tchar      = new boolean[256];
     private static final boolean[] fieldvchar = new boolean[256];
@@ -411,7 +410,7 @@ public final class Utils {
     }
 
     /*
-     * Validates a RFC 7230 field-name.
+     * Validates an RFC 7230 field-name.
      */
     public static boolean isValidName(String token) {
         for (int i = 0; i < token.length(); i++) {
@@ -472,7 +471,7 @@ public final class Utils {
     }
 
     /*
-     * Validates a RFC 7230 field-value.
+     * Validates an RFC 7230 field-value.
      *
      * "Obsolete line folding" rule
      *
@@ -494,7 +493,6 @@ public final class Utils {
         }
         return true;
     }
-
 
     @SuppressWarnings("removal")
     public static int getIntegerNetProperty(String name, int defaultValue) {
