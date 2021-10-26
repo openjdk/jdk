@@ -1452,6 +1452,9 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         ExtendedKeyUsageExtension ext = (ExtendedKeyUsageExtension)
             getExtensionIfParseable(PKIXExtensions.ExtendedKeyUsage_Id);
+        if (ext == null) {
+            return null;
+        }
         extKeyUsage = Collections.unmodifiableList(ext.getExtendedKeyUsage());
         return extKeyUsage;
     }
@@ -1635,6 +1638,9 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         SubjectAlternativeNameExtension subjectAltNameExt =
             (SubjectAlternativeNameExtension)getExtensionIfParseable(
                 PKIXExtensions.SubjectAlternativeName_Id);
+        if (subjectAltNameExt == null) {
+            return null;
+        }
         GeneralNames names;
         try {
             names = subjectAltNameExt.get(
@@ -1698,6 +1704,9 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         IssuerAlternativeNameExtension issuerAltNameExt =
             (IssuerAlternativeNameExtension)getExtensionIfParseable(
                 PKIXExtensions.IssuerAlternativeName_Id);
+        if (issuerAltNameExt == null) {
+            return null;
+        }
         GeneralNames names;
         try {
             names = issuerAltNameExt.get(
