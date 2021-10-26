@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_HEAPREGION_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
-#include "gc/g1/g1EvacuationFailureObjsInHR.hpp"
+#include "gc/g1/g1EvacFailureObjsInHR.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
@@ -259,7 +259,7 @@ private:
 
   uint _node_index;
 
-  G1EvacuationFailureObjsInHR _evac_failure_objs;
+  G1EvacFailureObjsInHR _evac_failure_objs;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 

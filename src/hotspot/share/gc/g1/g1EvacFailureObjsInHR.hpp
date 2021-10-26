@@ -33,7 +33,7 @@
 //   1. records the objects per region which have failed to evacuate.
 //   2. speeds up removing self forwarded ptrs in post evacuation phase.
 //
-class G1EvacuationFailureObjsInHR {
+class G1EvacFailureObjsInHR {
 
 public:
   typedef uint Elem;
@@ -75,8 +75,8 @@ private:
   void iterate_internal(ObjectClosure* closure);
 
 public:
-  G1EvacuationFailureObjsInHR(uint region_idx, HeapWord* bottom);
-  ~G1EvacuationFailureObjsInHR();
+  G1EvacFailureObjsInHR(uint region_idx, HeapWord* bottom);
+  ~G1EvacFailureObjsInHR();
 
   // Record an evac failure object
   void record(oop obj);

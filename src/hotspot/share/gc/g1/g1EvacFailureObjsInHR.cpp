@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1EvacuationFailureObjsInHR.hpp"
+#include "gc/g1/g1EvacFailureObjsInHR.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -31,26 +31,26 @@
 #include "utilities/quickSort.hpp"
 
 
-const uint G1EvacuationFailureObjsInHR::MaxBufferLength =
+const uint G1EvacFailureObjsInHR::MaxBufferLength =
   static_cast<uint>(1u << (HeapRegion::LogOfHRGrainBytes-LogHeapWordSize));
 
-const G1SegmentedArrayAllocOptions G1EvacuationFailureObjsInHR::_alloc_options =
+const G1SegmentedArrayAllocOptions G1EvacFailureObjsInHR::_alloc_options =
   G1SegmentedArrayAllocOptions(uint(sizeof (Elem)), BufferLength, UINT_MAX, Alignment);
-G1SegmentedArrayBufferList<mtGC> G1EvacuationFailureObjsInHR::_free_buffer_list;
+G1SegmentedArrayBufferList<mtGC> G1EvacFailureObjsInHR::_free_buffer_list;
 
-void G1EvacuationFailureObjsInHR::visit_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint limit) {
+void G1EvacFailureObjsInHR::visit_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint limit) {
   node->copy_to(&_offset_array[_objs_num]);
   _objs_num += limit;
   // Verify elements in the buffer
   DEBUG_ONLY(node->iterate_elems(*this));
 }
 
-void G1EvacuationFailureObjsInHR::visit_elem(void* elem) {
+void G1EvacFailureObjsInHR::visit_elem(void* elem) {
   uint* ptr = (uint*)elem;
   assert(*ptr < _max_offset, "must be, %u", *ptr);
 }
 
-void G1EvacuationFailureObjsInHR::compact() {
+void G1EvacFailureObjsInHR::compact() {
   assert_at_safepoint();
   assert(_offset_array == NULL, "must be");
   uint num = _nodes_array.num_allocated_nodes();
@@ -62,22 +62,22 @@ void G1EvacuationFailureObjsInHR::compact() {
   _nodes_array.drop_all();
 }
 
-static int order_oop(G1EvacuationFailureObjsInHR::Elem a,
-                     G1EvacuationFailureObjsInHR::Elem b) {
+static int order_oop(G1EvacFailureObjsInHR::Elem a,
+                     G1EvacFailureObjsInHR::Elem b) {
   return static_cast<int>(a-b);
 }
 
-void G1EvacuationFailureObjsInHR::sort() {
+void G1EvacFailureObjsInHR::sort() {
   QuickSort::sort(_offset_array, _objs_num, order_oop, true);
 }
 
-void G1EvacuationFailureObjsInHR::clear_array() {
+void G1EvacFailureObjsInHR::clear_array() {
   FREE_C_HEAP_ARRAY(Elem, _offset_array);
   _offset_array = NULL;
   _objs_num = 0;
 }
 
-void G1EvacuationFailureObjsInHR::iterate_internal(ObjectClosure* closure) {
+void G1EvacFailureObjsInHR::iterate_internal(ObjectClosure* closure) {
   Elem prev = 0;
   for (uint i = 0; i < _objs_num; i++) {
     assert(i == 0 ? (prev <= _offset_array[i]) : (prev < _offset_array[i]),
@@ -88,7 +88,7 @@ void G1EvacuationFailureObjsInHR::iterate_internal(ObjectClosure* closure) {
   clear_array();
 }
 
-G1EvacuationFailureObjsInHR::G1EvacuationFailureObjsInHR(uint region_idx, HeapWord* bottom) :
+G1EvacFailureObjsInHR::G1EvacFailureObjsInHR(uint region_idx, HeapWord* bottom) :
   _max_offset(static_cast<Elem>(1u << (HeapRegion::LogOfHRGrainBytes-LogHeapWordSize))),
   _region_idx(region_idx),
   _bottom(bottom),
@@ -98,11 +98,11 @@ G1EvacuationFailureObjsInHR::G1EvacuationFailureObjsInHR(uint region_idx, HeapWo
   assert(HeapRegion::LogOfHRGrainBytes < 32, "must be");
 }
 
-G1EvacuationFailureObjsInHR::~G1EvacuationFailureObjsInHR() {
+G1EvacFailureObjsInHR::~G1EvacFailureObjsInHR() {
   assert(_offset_array == NULL, "must be");
 }
 
-void G1EvacuationFailureObjsInHR::record(oop obj) {
+void G1EvacFailureObjsInHR::record(oop obj) {
   assert(obj != NULL, "must be");
   assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
   Elem offset = cast_from_oop_addr(obj);
@@ -112,7 +112,7 @@ void G1EvacuationFailureObjsInHR::record(oop obj) {
   *e = offset;
 }
 
-void G1EvacuationFailureObjsInHR::iterate(ObjectClosure* closure) {
+void G1EvacFailureObjsInHR::iterate(ObjectClosure* closure) {
   compact();
   sort();
   iterate_internal(closure);
