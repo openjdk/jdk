@@ -1439,24 +1439,42 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * This method are the overridden implementation of
+     * This method is the overridden implementation of the
      * getExtendedKeyUsage method in X509Certificate in the Sun
      * provider. It is better performance-wise since it returns cached
      * values.
      */
+    @Override
     public synchronized List<String> getExtendedKeyUsage()
         throws CertificateParsingException {
         if (readOnly && extKeyUsage != null) {
             return extKeyUsage;
-        } else {
-            ExtendedKeyUsageExtension ext = getExtendedKeyUsageExtension();
-            if (ext == null) {
-                return null;
-            }
-            extKeyUsage =
-                Collections.unmodifiableList(ext.getExtendedKeyUsage());
-            return extKeyUsage;
         }
+        ExtendedKeyUsageExtension ext = (ExtendedKeyUsageExtension)
+            getExtensionIfParseable(PKIXExtensions.ExtendedKeyUsage_Id);
+        extKeyUsage = Collections.unmodifiableList(ext.getExtendedKeyUsage());
+        return extKeyUsage;
+    }
+
+    /**
+     * Returns the extension identified by OID or null if it doesn't exist
+     * and is not unparseable.
+     *
+     * @throws CertificateParsingException if extension is unparseable
+     */
+    private Extension getExtensionIfParseable(ObjectIdentifier oid)
+            throws CertificateParsingException {
+        Extension ext = getExtension(oid);
+        if (ext == null) {
+            // check if unparseable
+            UnparseableExtension unparseableExt =
+                   (UnparseableExtension)getUnparseableExtension(oid);
+            if (unparseableExt != null) {
+                throw new CertificateParsingException(
+                        unparseableExt.exceptionMessage());
+            }
+        }
+        return ext;
     }
 
     /**
@@ -1615,18 +1633,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             return cloneAltNames(subjectAlternativeNames);
         }
         SubjectAlternativeNameExtension subjectAltNameExt =
-            getSubjectAlternativeNameExtension();
-        if (subjectAltNameExt == null) {
-            // check unparseable extensions
-            UnparseableExtension unparseableExt =
-                    (UnparseableExtension)getUnparseableExtension(
-                            PKIXExtensions.SubjectAlternativeName_Id);
-            if (unparseableExt != null) {
-                throw new CertificateParsingException(
-                        unparseableExt.exceptionMessage());
-            }
-            return null;
-        }
+            (SubjectAlternativeNameExtension)getExtensionIfParseable(
+                PKIXExtensions.SubjectAlternativeName_Id);
         GeneralNames names;
         try {
             names = subjectAltNameExt.get(
@@ -1688,18 +1696,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             return cloneAltNames(issuerAlternativeNames);
         }
         IssuerAlternativeNameExtension issuerAltNameExt =
-            getIssuerAlternativeNameExtension();
-        if (issuerAltNameExt == null) {
-            // check unparseable extensions
-            UnparseableExtension unparseableExt =
-                    (UnparseableExtension)getUnparseableExtension(
-                            PKIXExtensions.IssuerAlternativeName_Id);
-            if (unparseableExt != null) {
-                throw new CertificateParsingException(
-                        unparseableExt.exceptionMessage());
-            }
-            return null;
-        }
+            (IssuerAlternativeNameExtension)getExtensionIfParseable(
+                PKIXExtensions.IssuerAlternativeName_Id);
         GeneralNames names;
         try {
             names = issuerAltNameExt.get(
