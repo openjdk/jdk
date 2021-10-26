@@ -203,6 +203,13 @@ public class GetXSpace {
     }
 
     private static void compare(Space s) {
+        // On macOS the total size of /dev can vary over time
+        // so this test is skipped for /dev
+        if (Platform.isOSX() && s.name().equals("/dev")) {
+            out.println("/dev:\n  Skipping size comparison for /dev on macOS");
+            return;
+        }
+
         File f = new File(s.name());
         long ts = f.getTotalSpace();
         long fs = f.getFreeSpace();
@@ -230,7 +237,6 @@ public class GetXSpace {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
 
             // On macOS, the number of 1024 byte blocks might be incorrectly
             // calculated by 'df' using integer division by 2 of the number of
