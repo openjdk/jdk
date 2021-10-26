@@ -23,16 +23,12 @@
 
 /*
  * @test
- * @bug 6824466
+ * @bug 8271820
  * @modules java.base/jdk.internal.reflect
  * @summary Test compliance of ConstructorAccessor, FieldAccessor, MethodAccessor implementations
- * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -Dsun.reflect.inflationThreshold=1 -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
+ * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
  */
-/*
- * @test
- * @modules java.base/jdk.internal.reflect
- * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -Djdk.reflect.noInflation=true -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
- */
+
 /*
  * @test
  * @modules java.base/jdk.internal.reflect
