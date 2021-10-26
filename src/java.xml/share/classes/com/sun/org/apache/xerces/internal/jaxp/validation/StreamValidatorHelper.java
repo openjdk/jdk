@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  */
  /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,6 +41,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.SAXException;
@@ -51,6 +52,7 @@ import org.xml.sax.SAXException;
  *
  * @author Michael Glavassevich, IBM
  * @author Sunitha Reddy
+ * @LastModified: May 2021
  */
 final class StreamValidatorHelper implements ValidatorHelper {
 
@@ -139,7 +141,7 @@ final class StreamValidatorHelper implements ValidatorHelper {
             if (result != null) {
                 try {
                     SAXTransformerFactory tf = JdkXmlUtils.getSAXTransformFactory(
-                            fComponentManager.getFeature(JdkXmlUtils.OVERRIDE_PARSER));
+                            fComponentManager.getFeature(JdkConstants.OVERRIDE_PARSER));
 
                     identityTransformerHandler = tf.newTransformerHandler();
                 } catch (TransformerConfigurationException e) {
@@ -207,16 +209,16 @@ final class StreamValidatorHelper implements ValidatorHelper {
         config.setDocumentHandler(fSchemaValidator);
         config.setDTDHandler(null);
         config.setDTDContentModelHandler(null);
-        config.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER,
-                fComponentManager.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER));
+        config.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER,
+                fComponentManager.getProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER));
         config.setProperty(Constants.SECURITY_MANAGER,
                 fComponentManager.getProperty(Constants.SECURITY_MANAGER));
 
         // Passing on the CatalogFeatures settings
         JdkXmlUtils.catalogFeaturesConfig2Config(fComponentManager, config);
 
-        config.setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE,
-                fComponentManager.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE));
+        config.setProperty(JdkConstants.CDATA_CHUNK_SIZE,
+                fComponentManager.getProperty(JdkConstants.CDATA_CHUNK_SIZE));
 
         fConfiguration = new SoftReference<>(config);
         return config;

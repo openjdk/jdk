@@ -43,7 +43,7 @@ public class TestGetFreeSwapSpaceSize {
             return;
         }
 
-        DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             testGetFreeSwapSpaceSize(

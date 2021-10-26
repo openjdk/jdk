@@ -58,6 +58,10 @@ else
   JVM_EXCLUDE_PATTERNS += /zero/
 endif
 
+ifeq ($(JVM_VARIANT), core)
+  JVM_CFLAGS_FEATURES += -DVMTYPE=\"Core\"
+endif
+
 ifeq ($(JVM_VARIANT), custom)
   JVM_CFLAGS_FEATURES += -DVMTYPE=\"Custom\"
 endif
@@ -116,8 +120,12 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
+      cdsProtectionDomain.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
+      dumpTimeSharedClassInfo.cpp \
+      lambdaProxyClassDictionary.cpp \
+      runTimeSharedClassInfo.cpp \
       systemDictionaryShared.cpp
   JVM_EXCLUDE_PATTERNS += cds/
 endif
@@ -183,7 +191,6 @@ ifeq ($(call check-jvm-feature, opt-size), true)
       assembler.cpp \
       barrierSet.cpp \
       basicLock.cpp \
-      biasedLocking.cpp \
       bytecode.cpp \
       bytecodeInterpreter.cpp \
       c1_Compilation.cpp \

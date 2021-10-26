@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,16 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Random;
+import java.util.HexFormat;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * @test
@@ -43,7 +44,6 @@ import javax.crypto.spec.IvParameterSpec;
  *          doesn't use IV).
  * @author Liwen Wang
  * @author Parag Salvi
- * @key randomness
  */
 public class TestAESCipher {
 
@@ -56,7 +56,9 @@ public class TestAESCipher {
         "OFB32", "OFB40", "OFB48", "OFB56", "OFB64", "OFB72", "OFB80",
         "OFB88", "OFB96", "OFB104", "OFB112", "OFB120", "GCM" };
     private static final String[] PADDING = { "NoPadding", "PKCS5Padding" };
-    private static final int KEY_LENGTH = 128;
+    private static final int KEY_LENGTH = 16;
+    static byte[] plainText = new byte[128];
+    static byte[] key = new byte[KEY_LENGTH];
 
     public static void main(String argv[]) throws Exception {
         TestAESCipher test = new TestAESCipher();
@@ -73,32 +75,31 @@ public class TestAESCipher {
         }
     }
 
+
     public void runTest(String algo, String mo, String pad) throws Exception {
-        Cipher ci = null;
-        byte[] iv = null;
-        AlgorithmParameterSpec aps = null;
-        SecretKey key = null;
+        Cipher ci;
+        System.out.println("Testing " + algo + "/" + mo + "/" + pad);
+
+        byte[] iv = new byte[16];
+        AlgorithmParameterSpec aps = new GCMParameterSpec(128, iv);
+        SecretKey key = new SecretKeySpec(this.key, 0, KEY_LENGTH,"AES");
+
         try {
             // Initialization
-            Random rdm = new Random();
-            byte[] plainText = new byte[128];
-            rdm.nextBytes(plainText);
-
             ci = Cipher.getInstance(algo + "/" + mo + "/" + pad, PROVIDER);
-            KeyGenerator kg = KeyGenerator.getInstance(algo, PROVIDER);
-            kg.init(KEY_LENGTH);
-            key = kg.generateKey();
 
             // encrypt
-            if (!mo.equalsIgnoreCase("GCM")) {
+            if (mo.equalsIgnoreCase("GCM")) {
                 ci.init(Cipher.ENCRYPT_MODE, key, aps);
+            } else if (mo.equalsIgnoreCase("ECB")) {
+                ci.init(Cipher.ENCRYPT_MODE, key, (AlgorithmParameterSpec)null);
             } else {
-                ci.init(Cipher.ENCRYPT_MODE, key);
+                ci.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
             }
 
             byte[] cipherText = new byte[ci.getOutputSize(plainText.length)];
             int offset = ci.update(plainText, 0, plainText.length, cipherText,
-                    0);
+                0);
             ci.doFinal(cipherText, offset);
 
             if (!mo.equalsIgnoreCase("ECB")) {
@@ -117,25 +118,24 @@ public class TestAESCipher {
             byte[] recoveredText = new byte[ci.getOutputSize(cipherText.length)];
             int len = ci.doFinal(cipherText, 0, cipherText.length,
                     recoveredText);
-            byte[] tmp = new byte[len];
-            System.arraycopy(recoveredText, 0, tmp, 0, len);
 
             // Comparison
-            if (!java.util.Arrays.equals(plainText, tmp)) {
+            if (!java.util.Arrays.equals(plainText, 0 , plainText.length,
+                recoveredText, 0, len)) {
                 System.out.println("Original: ");
-                dumpBytes(plainText);
+                System.out.println(HexFormat.of().formatHex(plainText));
                 System.out.println("Recovered: ");
-                dumpBytes(tmp);
-                throw new RuntimeException(
-                        "Original text is not equal with recovered text, with mode:"
-                                + mo);
+                System.out.println(HexFormat.of().
+                    formatHex(recoveredText, 0, len));
+                throw new RuntimeException("Original text is not equal with " +
+                    "recovered text, with mode:" + mo);
             }
 
         } catch (NoSuchAlgorithmException e) {
             //CFB7 and OFB150 are for negative testing
             if (!mo.equalsIgnoreCase("CFB7") && !mo.equalsIgnoreCase("OFB150")) {
-                System.out.println("Unexpected NoSuchAlgorithmException with mode: "
-                        + mo);
+                System.out.println("Unexpected NoSuchAlgorithmException with" +
+                    " mode: " + mo);
                 throw new RuntimeException("Test failed!");
             }
         }  catch ( NoSuchProviderException | NoSuchPaddingException
@@ -145,13 +145,5 @@ public class TestAESCipher {
             System.out.println("Test failed!");
             throw e;
         }
-    }
-
-    private void dumpBytes(byte[] bytes) {
-        for (byte b : bytes) {
-            System.out.print(Integer.toHexString(b));
-        }
-
-        System.out.println();
     }
 }

@@ -431,6 +431,7 @@ public final class URL implements java.io.Serializable {
     public URL(String protocol, String host, int port, String file,
                URLStreamHandler handler) throws MalformedURLException {
         if (handler != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 // check for permission to specify a handler
@@ -602,6 +603,7 @@ public final class URL implements java.io.Serializable {
 
         // Check for permission to specify a handler
         if (handler != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 checkSpecifyHandler(sm);
@@ -770,7 +772,7 @@ public final class URL implements java.io.Serializable {
     /*
      * Checks for permission to specify a stream handler.
      */
-    private void checkSpecifyHandler(SecurityManager sm) {
+    private void checkSpecifyHandler(@SuppressWarnings("removal") SecurityManager sm) {
         sm.checkPermission(SecurityConstants.SPECIFY_HANDLER_PERMISSION);
     }
 
@@ -1129,6 +1131,7 @@ public final class URL implements java.io.Serializable {
 
         // Create a copy of Proxy as a security measure
         Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : sun.net.ApplicationProxy.create(proxy);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (p.type() != Proxy.Type.DIRECT && sm != null) {
             InetSocketAddress epoint = (InetSocketAddress) p.address();
@@ -1224,6 +1227,7 @@ public final class URL implements java.io.Serializable {
             if (factory != null) {
                 throw new Error("factory already defined");
             }
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkSetFactory();
@@ -1341,6 +1345,7 @@ public final class URL implements java.io.Serializable {
     // Thread-local gate to prevent recursive provider lookups
     private static ThreadLocal<Object> gate = new ThreadLocal<>();
 
+    @SuppressWarnings("removal")
     private static URLStreamHandler lookupViaProviders(final String protocol) {
         if (gate.get() != null)
             throw new Error("Circular loading of URL stream handler providers detected");

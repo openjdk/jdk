@@ -210,11 +210,13 @@ public final class SystemModuleFinders {
             throw new InternalError("Unable to detect the run-time image");
         ModuleFinder f = ModulePath.of(ModuleBootstrap.patcher(), dir);
         return new ModuleFinder() {
+            @SuppressWarnings("removal")
             @Override
             public Optional<ModuleReference> find(String name) {
                 PrivilegedAction<Optional<ModuleReference>> pa = () -> f.find(name);
                 return AccessController.doPrivileged(pa);
             }
+            @SuppressWarnings("removal")
             @Override
             public Set<ModuleReference> findAll() {
                 PrivilegedAction<Set<ModuleReference>> pa = f::findAll;
@@ -399,6 +401,7 @@ public final class SystemModuleFinders {
          * connect to the run-time image.
          */
         private static void checkPermissionToConnect(URI uri) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 try {

@@ -407,6 +407,7 @@ public final class ServiceLoader<S>
     private final ClassLoader loader;
 
     // The access control context taken when the ServiceLoader is created
+    @SuppressWarnings("removal")
     private final AccessControlContext acc;
 
     // The lazy-lookup iterator for iterator operations
@@ -474,6 +475,7 @@ public final class ServiceLoader<S>
      *         If {@code svc} is not accessible to {@code caller} or the caller
      *         module does not use the service type.
      */
+    @SuppressWarnings("removal")
     private ServiceLoader(Class<?> caller, ModuleLayer layer, Class<S> svc) {
         Objects.requireNonNull(caller);
         Objects.requireNonNull(layer);
@@ -497,6 +499,7 @@ public final class ServiceLoader<S>
      *         If {@code svc} is not accessible to {@code caller} or the caller
      *         module does not use the service type.
      */
+    @SuppressWarnings("removal")
     private ServiceLoader(Class<?> caller, Class<S> svc, ClassLoader cl) {
         Objects.requireNonNull(svc);
 
@@ -539,6 +542,7 @@ public final class ServiceLoader<S>
      * @throws ServiceConfigurationError
      *         If the caller module does not use the service type.
      */
+    @SuppressWarnings("removal")
     private ServiceLoader(Module callerModule, Class<S> svc, ClassLoader cl) {
         if (!callerModule.canUse(svc)) {
             fail(svc, callerModule + " does not declare `uses`");
@@ -610,6 +614,7 @@ public final class ServiceLoader<S>
      *         provider method or there is more than one public static
      *         provider method
      */
+    @SuppressWarnings("removal")
     private Method findStaticProviderMethod(Class<?> clazz) {
         List<Method> methods = null;
         try {
@@ -652,6 +657,7 @@ public final class ServiceLoader<S>
      * @throws ServiceConfigurationError if the class does not have
      *         public no-arg constructor
      */
+    @SuppressWarnings("removal")
     private Constructor<?> getConstructor(Class<?> clazz) {
         PrivilegedExceptionAction<Constructor<?>> pa
             = new PrivilegedExceptionAction<>() {
@@ -685,12 +691,13 @@ public final class ServiceLoader<S>
         final Class<? extends S> type;
         final Method factoryMethod;  // factory method or null
         final Constructor<? extends S> ctor; // public no-args constructor or null
+        @SuppressWarnings("removal")
         final AccessControlContext acc;
 
         ProviderImpl(Class<S> service,
                      Class<? extends S> type,
                      Method factoryMethod,
-                     AccessControlContext acc) {
+                     @SuppressWarnings("removal") AccessControlContext acc) {
             this.service = service;
             this.type = type;
             this.factoryMethod = factoryMethod;
@@ -701,7 +708,7 @@ public final class ServiceLoader<S>
         ProviderImpl(Class<S> service,
                      Class<? extends S> type,
                      Constructor<? extends S> ctor,
-                     AccessControlContext acc) {
+                     @SuppressWarnings("removal") AccessControlContext acc) {
             this.service = service;
             this.type = type;
             this.factoryMethod = null;
@@ -729,6 +736,7 @@ public final class ServiceLoader<S>
          * permissions that are restricted by the security context of whatever
          * created this loader.
          */
+        @SuppressWarnings("removal")
         private S invokeFactoryMethod() {
             Object result = null;
             Throwable exc = null;
@@ -772,6 +780,7 @@ public final class ServiceLoader<S>
          * with a security manager then the constructor runs with permissions that
          * are restricted by the security context of whatever created this loader.
          */
+        @SuppressWarnings("removal")
         private S newInstance() {
             S p = null;
             Throwable exc = null;
@@ -818,11 +827,8 @@ public final class ServiceLoader<S>
 
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof ProviderImpl))
-                return false;
-            @SuppressWarnings("unchecked")
-            ProviderImpl<?> that = (ProviderImpl<?>)ob;
-            return this.service == that.service
+            return ob instanceof @SuppressWarnings("unchecked")ProviderImpl<?> that
+                    && this.service == that.service
                     && this.type == that.type
                     && Objects.equals(this.acc, that.acc);
         }
@@ -838,6 +844,7 @@ public final class ServiceLoader<S>
      *         isn't the expected sub-type (or doesn't define a provider
      *         factory method that returns the expected type)
      */
+    @SuppressWarnings("removal")
     private Provider<S> loadProvider(ServiceProvider provider) {
         Module module = provider.module();
         if (!module.canRead(service.getModule())) {
@@ -1006,6 +1013,7 @@ public final class ServiceLoader<S>
         /**
          * Returns the class loader that a module is defined to
          */
+        @SuppressWarnings("removal")
         private ClassLoader loaderFor(Module module) {
             SecurityManager sm = System.getSecurityManager();
             if (sm == null) {
@@ -1258,6 +1266,7 @@ public final class ServiceLoader<S>
             }
         }
 
+        @SuppressWarnings("removal")
         @Override
         public boolean hasNext() {
             if (acc == null) {
@@ -1270,6 +1279,7 @@ public final class ServiceLoader<S>
             }
         }
 
+        @SuppressWarnings("removal")
         @Override
         public Provider<T> next() {
             if (acc == null) {

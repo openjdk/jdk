@@ -965,8 +965,9 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
         if (ctrl_proj != NULL) {
           _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
 #ifdef ASSERT
+          // If the InitializeNode has no memory out, it will die, and tmp will become NULL
           Node* tmp = init->in(TypeFunc::Control);
-          assert(tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
+          assert(tmp == NULL || tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
 #endif
         }
         Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
@@ -1909,15 +1910,15 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
 void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
-  if (oldbox->as_BoxLock()->is_eliminated())
+  if (oldbox->as_BoxLock()->is_eliminated()) {
     return; // This BoxLock node was processed already.
-
+  }
   // New implementation (EliminateNestedLocks) has separate BoxLock
   // node for each locked region so mark all associated locks/unlocks as
   // eliminated even if different objects are referenced in one locked region
   // (for example, OSR compilation of nested loop inside locked scope).
   if (EliminateNestedLocks ||
-      oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj)) {
+      oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj, NULL)) {
     // Box is used only in one lock region. Mark this box as eliminated.
     _igvn.hash_delete(oldbox);
     oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
@@ -2089,11 +2090,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
 
 #ifndef PRODUCT
   if (PrintEliminateLocks) {
-    if (alock->is_Lock()) {
-      tty->print_cr("++++ Eliminated: %d Lock", alock->_idx);
-    } else {
-      tty->print_cr("++++ Eliminated: %d Unlock", alock->_idx);
-    }
+    tty->print_cr("++++ Eliminated: %d %s '%s'", alock->_idx, (alock->is_Lock() ? "Lock" : "Unlock"), alock->kind_as_string());
   }
 #endif
 
@@ -2168,196 +2165,13 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node *mem_phi;
   Node *slow_path;
 
-  if (UseOptoBiasInlining) {
-    /*
-     *  See the full description in MacroAssembler::biased_locking_enter().
-     *
-     *  if( (mark_word & biased_lock_mask) == biased_lock_pattern ) {
-     *    // The object is biased.
-     *    proto_node = klass->prototype_header;
-     *    o_node = thread | proto_node;
-     *    x_node = o_node ^ mark_word;
-     *    if( (x_node & ~age_mask) == 0 ) { // Biased to the current thread ?
-     *      // Done.
-     *    } else {
-     *      if( (x_node & biased_lock_mask) != 0 ) {
-     *        // The klass's prototype header is no longer biased.
-     *        cas(&mark_word, mark_word, proto_node)
-     *        goto cas_lock;
-     *      } else {
-     *        // The klass's prototype header is still biased.
-     *        if( (x_node & epoch_mask) != 0 ) { // Expired epoch?
-     *          old = mark_word;
-     *          new = o_node;
-     *        } else {
-     *          // Different thread or anonymous biased.
-     *          old = mark_word & (epoch_mask | age_mask | biased_lock_mask);
-     *          new = thread | old;
-     *        }
-     *        // Try to rebias.
-     *        if( cas(&mark_word, old, new) == 0 ) {
-     *          // Done.
-     *        } else {
-     *          goto slow_path; // Failed.
-     *        }
-     *      }
-     *    }
-     *  } else {
-     *    // The object is not biased.
-     *    cas_lock:
-     *    if( FastLock(obj) == 0 ) {
-     *      // Done.
-     *    } else {
-     *      slow_path:
-     *      OptoRuntime::complete_monitor_locking_Java(obj);
-     *    }
-     *  }
-     */
+  region  = new RegionNode(3);
+  // create a Phi for the memory state
+  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
-    region  = new RegionNode(5);
-    // create a Phi for the memory state
-    mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-
-    Node* fast_lock_region  = new RegionNode(3);
-    Node* fast_lock_mem_phi = new PhiNode( fast_lock_region, Type::MEMORY, TypeRawPtr::BOTTOM);
-
-    // First, check mark word for the biased lock pattern.
-    Node* mark_node = make_load(ctrl, mem, obj, oopDesc::mark_offset_in_bytes(), TypeX_X, TypeX_X->basic_type());
-
-    // Get fast path - mark word has the biased lock pattern.
-    ctrl = opt_bits_test(ctrl, fast_lock_region, 1, mark_node,
-                         markWord::biased_lock_mask_in_place,
-                         markWord::biased_lock_pattern, true);
-    // fast_lock_region->in(1) is set to slow path.
-    fast_lock_mem_phi->init_req(1, mem);
-
-    // Now check that the lock is biased to the current thread and has
-    // the same epoch and bias as Klass::_prototype_header.
-
-    // Special-case a fresh allocation to avoid building nodes:
-    Node* klass_node = AllocateNode::Ideal_klass(obj, &_igvn);
-    if (klass_node == NULL) {
-      Node* k_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
-      klass_node = transform_later(LoadKlassNode::make(_igvn, NULL, mem, k_adr, _igvn.type(k_adr)->is_ptr()));
-#ifdef _LP64
-      if (UseCompressedClassPointers && klass_node->is_DecodeNKlass()) {
-        assert(klass_node->in(1)->Opcode() == Op_LoadNKlass, "sanity");
-        klass_node->in(1)->init_req(0, ctrl);
-      } else
-#endif
-      klass_node->init_req(0, ctrl);
-    }
-    Node *proto_node = make_load(ctrl, mem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeX_X, TypeX_X->basic_type());
-
-    Node* thread = transform_later(new ThreadLocalNode());
-    Node* cast_thread = transform_later(new CastP2XNode(ctrl, thread));
-    Node* o_node = transform_later(new OrXNode(cast_thread, proto_node));
-    Node* x_node = transform_later(new XorXNode(o_node, mark_node));
-
-    // Get slow path - mark word does NOT match the value.
-    STATIC_ASSERT(markWord::age_mask_in_place <= INT_MAX);
-    Node* not_biased_ctrl =  opt_bits_test(ctrl, region, 3, x_node,
-                                      (~(int)markWord::age_mask_in_place), 0);
-    // region->in(3) is set to fast path - the object is biased to the current thread.
-    mem_phi->init_req(3, mem);
-
-
-    // Mark word does NOT match the value (thread | Klass::_prototype_header).
-
-
-    // First, check biased pattern.
-    // Get fast path - _prototype_header has the same biased lock pattern.
-    ctrl =  opt_bits_test(not_biased_ctrl, fast_lock_region, 2, x_node,
-                          markWord::biased_lock_mask_in_place, 0, true);
-
-    not_biased_ctrl = fast_lock_region->in(2); // Slow path
-    // fast_lock_region->in(2) - the prototype header is no longer biased
-    // and we have to revoke the bias on this object.
-    // We are going to try to reset the mark of this object to the prototype
-    // value and fall through to the CAS-based locking scheme.
-    Node* adr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
-    Node* cas = new StoreXConditionalNode(not_biased_ctrl, mem, adr,
-                                          proto_node, mark_node);
-    transform_later(cas);
-    Node* proj = transform_later(new SCMemProjNode(cas));
-    fast_lock_mem_phi->init_req(2, proj);
-
-
-    // Second, check epoch bits.
-    Node* rebiased_region  = new RegionNode(3);
-    Node* old_phi = new PhiNode( rebiased_region, TypeX_X);
-    Node* new_phi = new PhiNode( rebiased_region, TypeX_X);
-
-    // Get slow path - mark word does NOT match epoch bits.
-    Node* epoch_ctrl =  opt_bits_test(ctrl, rebiased_region, 1, x_node,
-                                      markWord::epoch_mask_in_place, 0);
-    // The epoch of the current bias is not valid, attempt to rebias the object
-    // toward the current thread.
-    rebiased_region->init_req(2, epoch_ctrl);
-    old_phi->init_req(2, mark_node);
-    new_phi->init_req(2, o_node);
-
-    // rebiased_region->in(1) is set to fast path.
-    // The epoch of the current bias is still valid but we know
-    // nothing about the owner; it might be set or it might be clear.
-    Node* cmask   = MakeConX(markWord::biased_lock_mask_in_place |
-                             markWord::age_mask_in_place |
-                             markWord::epoch_mask_in_place);
-    Node* old = transform_later(new AndXNode(mark_node, cmask));
-    cast_thread = transform_later(new CastP2XNode(ctrl, thread));
-    Node* new_mark = transform_later(new OrXNode(cast_thread, old));
-    old_phi->init_req(1, old);
-    new_phi->init_req(1, new_mark);
-
-    transform_later(rebiased_region);
-    transform_later(old_phi);
-    transform_later(new_phi);
-
-    // Try to acquire the bias of the object using an atomic operation.
-    // If this fails we will go in to the runtime to revoke the object's bias.
-    cas = new StoreXConditionalNode(rebiased_region, mem, adr, new_phi, old_phi);
-    transform_later(cas);
-    proj = transform_later(new SCMemProjNode(cas));
-
-    // Get slow path - Failed to CAS.
-    not_biased_ctrl = opt_bits_test(rebiased_region, region, 4, cas, 0, 0);
-    mem_phi->init_req(4, proj);
-    // region->in(4) is set to fast path - the object is rebiased to the current thread.
-
-    // Failed to CAS.
-    slow_path  = new RegionNode(3);
-    Node *slow_mem = new PhiNode( slow_path, Type::MEMORY, TypeRawPtr::BOTTOM);
-
-    slow_path->init_req(1, not_biased_ctrl); // Capture slow-control
-    slow_mem->init_req(1, proj);
-
-    // Call CAS-based locking scheme (FastLock node).
-
-    transform_later(fast_lock_region);
-    transform_later(fast_lock_mem_phi);
-
-    // Get slow path - FastLock failed to lock the object.
-    ctrl = opt_bits_test(fast_lock_region, region, 2, flock, 0, 0);
-    mem_phi->init_req(2, fast_lock_mem_phi);
-    // region->in(2) is set to fast path - the object is locked to the current thread.
-
-    slow_path->init_req(2, ctrl); // Capture slow-control
-    slow_mem->init_req(2, fast_lock_mem_phi);
-
-    transform_later(slow_path);
-    transform_later(slow_mem);
-    // Reset lock's memory edge.
-    lock->set_req(TypeFunc::Memory, slow_mem);
-
-  } else {
-    region  = new RegionNode(3);
-    // create a Phi for the memory state
-    mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-
-    // Optimize test; set region slot 2
-    slow_path = opt_bits_test(ctrl, region, 2, flock, 0, 0);
-    mem_phi->init_req(2, mem);
-  }
+  // Optimize test; set region slot 2
+  slow_path = opt_bits_test(ctrl, region, 2, flock, 0, 0);
+  mem_phi->init_req(2, mem);
 
   // Make slow path call
   CallNode *call = make_slow_call((CallNode *) lock, OptoRuntime::complete_monitor_enter_Type(),
@@ -2407,23 +2221,9 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node *region;
   Node *mem_phi;
 
-  if (UseOptoBiasInlining) {
-    // Check for biased locking unlock case, which is a no-op.
-    // See the full description in MacroAssembler::biased_locking_exit().
-    region  = new RegionNode(4);
-    // create a Phi for the memory state
-    mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-    mem_phi->init_req(3, mem);
-
-    Node* mark_node = make_load(ctrl, mem, obj, oopDesc::mark_offset_in_bytes(), TypeX_X, TypeX_X->basic_type());
-    ctrl = opt_bits_test(ctrl, region, 3, mark_node,
-                         markWord::biased_lock_mask_in_place,
-                         markWord::biased_lock_pattern);
-  } else {
-    region  = new RegionNode(3);
-    // create a Phi for the memory state
-    mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-  }
+  region  = new RegionNode(3);
+  // create a Phi for the memory state
+  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
   FastUnlockNode *funlock = new FastUnlockNode( ctrl, obj, box );
   funlock = transform_later( funlock )->as_FastUnlock();
@@ -2502,16 +2302,21 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
 
-  // First, attempt to eliminate locks
+  // Before elimination may re-mark (change to Nested or NonEscObj)
+  // all associated (same box and obj) lock and unlock nodes.
   int cnt = C->macro_count();
   for (int i=0; i < cnt; i++) {
     Node *n = C->macro_node(i);
     if (n->is_AbstractLock()) { // Lock and Unlock nodes
-      // Before elimination mark all associated (same box and obj)
-      // lock and unlock nodes.
       mark_eliminated_locking_nodes(n->as_AbstractLock());
     }
   }
+  // Re-marking may break consistency of Coarsened locks.
+  if (!C->coarsened_locks_consistent()) {
+    return; // recompile without Coarsened locks if broken
+  }
+
+  // First, attempt to eliminate locks
   bool progress = true;
   while (progress) {
     progress = false;
@@ -2574,6 +2379,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 bool PhaseMacroExpand::expand_macro_nodes() {
   // Last attempt to eliminate macro nodes.
   eliminate_macro_nodes();
+  if (C->failing())  return true;
 
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
   bool progress = true;

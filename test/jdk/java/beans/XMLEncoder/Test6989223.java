@@ -25,6 +25,7 @@
  * @test
  * @bug 6989223
  * @summary Tests Rectangle2D.Double encoding
+ * @run main/othervm -Djava.security.manager=allow Test6989223
  * @author Sergey Malenkov
  */
 

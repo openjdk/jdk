@@ -77,6 +77,7 @@ public class SJIS_0213 extends Charset {
     }
 
     private static class Holder {
+        @SuppressWarnings("removal")
         static final CharsetMapping mapping = AccessController.doPrivileged(
                 new PrivilegedAction<CharsetMapping>() {
                     public CharsetMapping run() {

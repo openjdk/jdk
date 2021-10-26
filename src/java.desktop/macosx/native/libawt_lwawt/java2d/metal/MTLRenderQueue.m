@@ -46,10 +46,6 @@ static BMTLSDOps *dstOps = NULL;
 jint mtlPreviousOp = MTL_OP_INIT;
 
 
-/**
- * The following methods are implemented in the windowing system (i.e. GLX
- * and WGL) source files.
- */
 extern void MTLGC_DestroyMTLGraphicsConfig(jlong pConfigInfo);
 
 void MTLRenderQueue_CheckPreviousOp(jint op) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,9 @@ public class TestSecurityManager extends SecurityManager {
     }
 
     public void checkListen(int port) {
-        // 4269910: ok, now rmid and the regsitry will *really* go
-        // away...
+        // 4269910: ok, now the registry will *really* go away...
         //
-        // rmid and the registry need to listen on sockets so they
+        // the registry needs to listen on sockets so they
         // will exit when they try to do so... this is used as a sign
         // by the main test process to detect that the proper security
         // manager has been installed in the relevant VMs.

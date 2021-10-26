@@ -447,7 +447,7 @@ bool PhaseChaitin::is_high_pressure( Block *b, LRG *lrg, uint insidx ) {
   // Bound live ranges will split at the binding points first;
   // Intermediate splits should assume the live range's register set
   // got "freed up" and that num_regs will become INT_PRESSURE.
-  int bound_pres = is_float_or_vector ? FLOATPRESSURE : INTPRESSURE;
+  int bound_pres = is_float_or_vector ? Matcher::float_pressure_limit() : Matcher::int_pressure_limit();
   // Effective register pressure limit.
   int lrg_pres = (lrg->get_invalid_mask_size() > lrg->num_regs())
     ? (lrg->get_invalid_mask_size() >> (lrg->num_regs()-1)) : bound_pres;
@@ -800,12 +800,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         continue;
       }
       assert( insidx > b->_ihrp_index ||
-              (b->_reg_pressure < (uint)INTPRESSURE) ||
+              (b->_reg_pressure < Matcher::int_pressure_limit()) ||
               b->_ihrp_index > 4000000 ||
               b->_ihrp_index >= b->end_idx() ||
               !b->get_node(b->_ihrp_index)->is_Proj(), "" );
       assert( insidx > b->_fhrp_index ||
-              (b->_freg_pressure < (uint)FLOATPRESSURE) ||
+              (b->_freg_pressure < Matcher::float_pressure_limit()) ||
               b->_fhrp_index > 4000000 ||
               b->_fhrp_index >= b->end_idx() ||
               !b->get_node(b->_fhrp_index)->is_Proj(), "" );

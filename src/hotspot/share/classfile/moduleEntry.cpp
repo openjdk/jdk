@@ -372,8 +372,6 @@ void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
 typedef ResourceHashtable<
   const ModuleEntry*,
   ModuleEntry*,
-  primitive_hash<const ModuleEntry*>,
-  primitive_equals<const ModuleEntry*>,
   557, // prime number
   ResourceObj::C_HEAP> ArchivedModuleEntries;
 static ArchivedModuleEntries* _archive_modules_entries = NULL;

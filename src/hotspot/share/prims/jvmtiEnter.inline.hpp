@@ -25,6 +25,8 @@
 #ifndef SHARE_PRIMS_JVMTIENTER_INLINE_HPP
 #define SHARE_PRIMS_JVMTIENTER_INLINE_HPP
 
+// No jvmtiEnter.hpp
+
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/resourceArea.hpp"

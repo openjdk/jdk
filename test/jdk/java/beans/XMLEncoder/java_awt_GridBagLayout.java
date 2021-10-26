@@ -26,6 +26,7 @@
  * @bug 8007458
  * @summary Tests GridBagLayout encoding
  * @modules java.desktop/java.awt:open
+ * @run main/othervm -Djava.security.manager=allow java_awt_GridBagLayout
  * @author Sergey Malenkov
  */
 

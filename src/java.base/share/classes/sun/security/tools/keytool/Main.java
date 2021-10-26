@@ -262,6 +262,7 @@ public final class Main {
             ADDPROVIDER, PROVIDERCLASS, PROVIDERPATH, V),
         SHOWINFO("showinfo.command.help",
             TLS, V),
+        VERSION("Prints.the.program.version"),
 
         // Undocumented start here, KEYCLONE is used a marker in -help;
 
@@ -717,7 +718,7 @@ public final class Main {
     }
 
     boolean isKeyStoreRelated(Command cmd) {
-        return cmd != PRINTCERTREQ && cmd != SHOWINFO;
+        return cmd != PRINTCERTREQ && cmd != SHOWINFO && cmd != VERSION;
     }
 
     /**
@@ -1337,6 +1338,8 @@ public final class Main {
             doPrintCRL(filename, out);
         } else if (command == SHOWINFO) {
             doShowInfo();
+        } else if (command == VERSION) {
+            doPrintVersion();
         }
 
         // If we need to save the keystore, do so.
@@ -1445,8 +1448,7 @@ public final class Main {
                                            X509CertInfo.DN_NAME);
 
         Date firstDate = getStartDate(startDate);
-        Date lastDate = new Date();
-        lastDate.setTime(firstDate.getTime() + validity*1000L*24L*60L*60L);
+        Date lastDate = getLastDate(firstDate, validity);
         CertificateValidity interval = new CertificateValidity(firstDate,
                                                                lastDate);
 
@@ -1489,9 +1491,7 @@ public final class Main {
         info.set(X509CertInfo.SUBJECT,
                     dname==null?req.getSubjectName():new X500Name(dname));
         CertificateExtensions reqex = null;
-        Iterator<PKCS10Attribute> attrs = req.getAttributes().getAttributes().iterator();
-        while (attrs.hasNext()) {
-            PKCS10Attribute attr = attrs.next();
+        for (PKCS10Attribute attr : req.getAttributes().getAttributes()) {
             if (attr.getAttributeId().equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 reqex = (CertificateExtensions)attr.getAttributeValue();
             }
@@ -1560,11 +1560,9 @@ public final class Main {
                                                       X509CertInfo.DN_NAME);
 
         Date firstDate = getStartDate(startDate);
-        Date lastDate = (Date) firstDate.clone();
-        lastDate.setTime(lastDate.getTime() + validity*1000*24*60*60);
+        Date lastDate = getLastDate(firstDate, validity);
         CertificateValidity interval = new CertificateValidity(firstDate,
                                                                lastDate);
-
 
         PrivateKey privateKey =
                 (PrivateKey)recoverKey(alias, storePass, keyPass).fst;
@@ -2429,8 +2427,15 @@ public final class Main {
             newPass = destKeyPass;
             pp = new PasswordProtection(destKeyPass);
         } else if (objs.snd != null) {
-            newPass = P12KEYSTORE.equalsIgnoreCase(storetype) ?
-                    storePass : objs.snd;
+            if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
+                if (isPasswordlessKeyStore) {
+                    newPass = objs.snd;
+                } else {
+                    newPass = storePass;
+                }
+            } else {
+                newPass = objs.snd;
+            }
             pp = new PasswordProtection(newPass);
         }
 
@@ -2442,7 +2447,7 @@ public final class Main {
             keyStore.setEntry(newAlias, entry, pp);
             // Place the check so that only successful imports are blocked.
             // For example, we don't block a failed SecretEntry import.
-            if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
+            if (P12KEYSTORE.equalsIgnoreCase(storetype) && !isPasswordlessKeyStore) {
                 if (newPass != null && !Arrays.equals(newPass, storePass)) {
                     throw new Exception(rb.getString(
                             "The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified."));
@@ -2792,6 +2797,10 @@ public final class Main {
         }
     }
 
+    private void doPrintVersion() {
+        System.out.println("keytool " + System.getProperty("java.version"));
+    }
+
     private Collection<? extends Certificate> generateCertificates(InputStream in)
             throws CertificateException, IOException {
         byte[] data = in.readAllBytes();
@@ -3026,8 +3035,7 @@ public final class Main {
 
         // Extend its validity
         Date firstDate = getStartDate(startDate);
-        Date lastDate = new Date();
-        lastDate.setTime(firstDate.getTime() + validity*1000L*24L*60L*60L);
+        Date lastDate = getLastDate(firstDate, validity);
         CertificateValidity interval = new CertificateValidity(firstDate,
                                                                lastDate);
         certInfo.set(X509CertInfo.VALIDITY, interval);
@@ -4686,6 +4694,21 @@ public final class Main {
             throw new RuntimeException(e);
         }
         return result;
+    }
+
+    private Date getLastDate(Date firstDate, long validity)
+            throws Exception {
+        Date lastDate = new Date();
+        lastDate.setTime(firstDate.getTime() + validity*1000L*24L*60L*60L);
+
+        Calendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        c.setTime(lastDate);
+        if (c.get(Calendar.YEAR) > 9999) {
+            throw new Exception("Validity period ends at calendar year " +
+                    c.get(Calendar.YEAR) + " which is greater than 9999");
+        }
+
+        return lastDate;
     }
 
     private boolean isTrustedCert(Certificate cert) throws KeyStoreException {

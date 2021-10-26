@@ -41,7 +41,6 @@ import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.imageio.IIOException;
@@ -172,6 +171,11 @@ public class JPEGImageWriter extends ImageWriter {
     ///////// static initializer
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 @Override
@@ -1377,9 +1381,7 @@ public class JPEGImageWriter extends ImageWriter {
         List<SOSMarkerSegment> segments = new ArrayList<>();
         int SCAN_SIZE = 9;
         int MAX_COMPS_PER_SCAN = 4;
-        for (Iterator<MarkerSegment> iter = metadata.markerSequence.iterator();
-             iter.hasNext();) {
-            MarkerSegment seg = iter.next();
+        for (MarkerSegment seg : metadata.markerSequence) {
             if (seg instanceof SOSMarkerSegment) {
                 segments.add((SOSMarkerSegment) seg);
             }

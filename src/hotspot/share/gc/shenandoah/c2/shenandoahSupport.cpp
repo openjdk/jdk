@@ -1406,7 +1406,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     }
     if (addr->Opcode() == Op_AddP) {
       Node* orig_base = addr->in(AddPNode::Base);
-      Node* base = new CheckCastPPNode(ctrl, orig_base, orig_base->bottom_type(), true);
+      Node* base = new CheckCastPPNode(ctrl, orig_base, orig_base->bottom_type(), ConstraintCastNode::StrongDependency);
       phase->register_new_node(base, ctrl);
       if (addr->in(AddPNode::Base) == addr->in((AddPNode::Address))) {
         // Field access
@@ -2170,48 +2170,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
               assert(call->is_Call(), "");
               mem = call->in(TypeFunc::Memory);
             } else if (in->Opcode() == Op_NeverBranch) {
-              Node* head = in->in(0);
-              assert(head->is_Region(), "unexpected infinite loop graph shape");
-
-              Node* phi_mem = NULL;
-              for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
-                Node* u = head->fast_out(j);
-                if (u->is_Phi() && u->bottom_type() == Type::MEMORY) {
-                  if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
-                    assert(phi_mem == NULL || phi_mem->adr_type() == TypePtr::BOTTOM, "");
-                    phi_mem = u;
-                  } else if (u->adr_type() == TypePtr::BOTTOM) {
-                    assert(phi_mem == NULL || _phase->C->get_alias_index(phi_mem->adr_type()) == _alias, "");
-                    if (phi_mem == NULL) {
-                      phi_mem = u;
-                    }
-                  }
-                }
-              }
-              if (phi_mem == NULL) {
-                for (uint j = 1; j < head->req(); j++) {
-                  Node* tail = head->in(j);
-                  if (!_phase->is_dominator(head, tail)) {
-                    continue;
-                  }
-                  Node* c = tail;
-                  while (c != head) {
-                    if (c->is_SafePoint() && !c->is_CallLeaf()) {
-                      Node* m =c->in(TypeFunc::Memory);
-                      if (m->is_MergeMem()) {
-                        m = m->as_MergeMem()->memory_at(_alias);
-                      }
-                      assert(mem == NULL || mem == m, "several memory states");
-                      mem = m;
-                    }
-                    c = _phase->idom(c);
-                  }
-                  assert(mem != NULL, "should have found safepoint");
-                }
-                assert(mem != NULL, "should have found safepoint");
-              } else {
-                mem = phi_mem;
-              }
+              mem = collect_memory_for_infinite_loop(in);
             }
           }
         } else {
@@ -2433,6 +2392,67 @@ void MemoryGraphFixer::collect_memory_nodes() {
       }
     }
   }
+}
+
+Node* MemoryGraphFixer::collect_memory_for_infinite_loop(const Node* in) {
+  Node* mem = NULL;
+  Node* head = in->in(0);
+  assert(head->is_Region(), "unexpected infinite loop graph shape");
+
+  Node* phi_mem = NULL;
+  for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
+    Node* u = head->fast_out(j);
+    if (u->is_Phi() && u->bottom_type() == Type::MEMORY) {
+      if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
+        assert(phi_mem == NULL || phi_mem->adr_type() == TypePtr::BOTTOM, "");
+        phi_mem = u;
+      } else if (u->adr_type() == TypePtr::BOTTOM) {
+        assert(phi_mem == NULL || _phase->C->get_alias_index(phi_mem->adr_type()) == _alias, "");
+        if (phi_mem == NULL) {
+          phi_mem = u;
+        }
+      }
+    }
+  }
+  if (phi_mem == NULL) {
+    ResourceMark rm;
+    Node_Stack stack(0);
+    stack.push(head, 1);
+    do {
+      Node* n = stack.node();
+      uint i = stack.index();
+      if (i >= n->req()) {
+        stack.pop();
+      } else {
+        stack.set_index(i + 1);
+        Node* c = n->in(i);
+        assert(c != head, "should have found a safepoint on the way");
+        if (stack.size() != 1 || _phase->is_dominator(head, c)) {
+          for (;;) {
+            if (c->is_Region()) {
+              stack.push(c, 1);
+              break;
+            } else if (c->is_SafePoint() && !c->is_CallLeaf()) {
+              Node* m = c->in(TypeFunc::Memory);
+              if (m->is_MergeMem()) {
+                m = m->as_MergeMem()->memory_at(_alias);
+              }
+              assert(mem == NULL || mem == m, "several memory states");
+              mem = m;
+              break;
+            } else {
+              assert(c != c->in(0), "");
+              c = c->in(0);
+            }
+          }
+        }
+      }
+    } while (stack.size() > 0);
+    assert(mem != NULL, "should have found safepoint");
+  } else {
+    mem = phi_mem;
+  }
+  return mem;
 }
 
 Node* MemoryGraphFixer::get_ctrl(Node* n) const {

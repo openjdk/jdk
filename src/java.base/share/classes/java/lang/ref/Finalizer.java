@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             assert finalizee != null;
             if (!(finalizee instanceof java.lang.Enum)) {
                 jla.invokeFinalize(finalizee);
+                reportComplete(finalizee);
 
                 // Clear stack slot containing this variable, to decrease
                 // the chances of false retention with a conservative GC
@@ -94,6 +95,8 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         } catch (Throwable x) { }
         super.clear();
     }
+
+    private static native void reportComplete(Object finalizee);
 
     /* Create a privileged secondary finalizer thread in the system thread
      * group for the given Runnable, and wait for it to complete.
@@ -105,6 +108,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
      * The advantage of creating a fresh thread, however, is that it insulates
      * invokers of that method from a stalled or deadlocked finalizer thread.
      */
+    @SuppressWarnings("removal")
     private static void forkSecondaryFinalizer(final Runnable proc) {
         AccessController.doPrivileged(
             new PrivilegedAction<>() {

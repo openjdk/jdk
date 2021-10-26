@@ -41,7 +41,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.astro.SchemaValidationTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.SchemaValidationTest
  * @run testng/othervm test.astro.SchemaValidationTest
  * @summary test parser sets schema related properties to do validation
  */

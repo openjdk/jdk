@@ -210,10 +210,10 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
 #endif
   , _lrg_map(Thread::current()->resource_area(), unique)
   , _scheduling_info_generated(scheduling_info_generated)
-  , _sched_int_pressure(0, INTPRESSURE)
-  , _sched_float_pressure(0, FLOATPRESSURE)
-  , _scratch_int_pressure(0, INTPRESSURE)
-  , _scratch_float_pressure(0, FLOATPRESSURE)
+  , _sched_int_pressure(0, Matcher::int_pressure_limit())
+  , _sched_float_pressure(0, Matcher::float_pressure_limit())
+  , _scratch_int_pressure(0, Matcher::int_pressure_limit())
+  , _scratch_float_pressure(0, Matcher::float_pressure_limit())
 {
   Compile::TracePhase tp("ctorChaitin", &timers[_t_ctorChaitin]);
 
@@ -813,7 +813,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // processes as vector in RA.
         if (RegMask::is_vector(ireg)) {
           lrg._is_vector = 1;
-          if (ireg == Op_VecA) {
+          if (Matcher::implements_scalable_vector && ireg == Op_VecA) {
             assert(Matcher::supports_scalable_vector(), "scalable vector should be supported");
             lrg._is_scalable = 1;
             // For scalable vector, when it is allocated in physical register,

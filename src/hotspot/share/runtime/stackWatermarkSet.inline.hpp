@@ -25,8 +25,9 @@
 #ifndef SHARE_RUNTIME_STACKWATERMARKSET_INLINE_HPP
 #define SHARE_RUNTIME_STACKWATERMARKSET_INLINE_HPP
 
-#include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+
+#include "runtime/stackWatermark.hpp"
 
 inline StackWatermark* StackWatermarkSet::get(JavaThread* jt, StackWatermarkKind kind) {
   for (StackWatermark* stack_watermark = head(jt); stack_watermark != NULL; stack_watermark = stack_watermark->next()) {

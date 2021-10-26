@@ -703,7 +703,7 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
 
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events() &&
-      THREAD->as_Java_thread()->is_interp_only_mode()) {
+      THREAD->is_interp_only_mode()) {
     return NULL;
   }
   if (ReplayCompiles) {
@@ -753,7 +753,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
         mh->code()->make_not_used();
       }
       // Deoptimize immediately (we don't have to wait for a compile).
-      JavaThread* jt = THREAD->as_Java_thread();
+      JavaThread* jt = THREAD;
       RegisterMap map(jt, false);
       frame fr = jt->last_frame().sender(&map);
       Deoptimization::deoptimize_frame(jt, fr.id());
@@ -887,6 +887,10 @@ bool CompilationPolicy::is_method_profiled(const methodHandle& method) {
 
 // Determine is a method is mature.
 bool CompilationPolicy::is_mature(Method* method) {
+  if (Arguments::is_compiler_only()) {
+    // Always report profiles as immature with -Xcomp
+    return false;
+  }
   methodHandle mh(Thread::current(), method);
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
@@ -928,7 +932,7 @@ bool CompilationPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
 }
 
 // Create MDO if necessary.
-void CompilationPolicy::create_mdo(const methodHandle& mh, Thread* THREAD) {
+void CompilationPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
   if (mh->is_native() ||
       mh->is_abstract() ||
       mh->is_accessor() ||
@@ -941,8 +945,7 @@ void CompilationPolicy::create_mdo(const methodHandle& mh, Thread* THREAD) {
   if (ProfileInterpreter) {
     MethodData* mdo = mh->method_data();
     if (mdo != NULL) {
-      JavaThread* jt = THREAD->as_Java_thread();
-      frame last_frame = jt->last_frame();
+      frame last_frame = THREAD->last_frame();
       if (last_frame.is_interpreted_frame() && mh == last_frame.interpreter_frame_method()) {
         int bci = last_frame.interpreter_frame_bci();
         address dp = mdo->bci_to_dp(bci);

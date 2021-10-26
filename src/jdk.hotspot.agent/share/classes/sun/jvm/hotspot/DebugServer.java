@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,11 +103,11 @@ public class DebugServer {
     try {
       if (usePid) {
         System.err.println("Attaching to process ID " + pid + " and starting RMI services, please wait...");
-        agent.startServer(pid, serverID);
+        agent.startServer(pid, serverID, null);
       } else {
         System.err.println("Attaching to core " + coreFileName +
                            " from executable " + javaExecutableName + " and starting RMI services, please wait...");
-        agent.startServer(javaExecutableName, coreFileName, serverID);
+        agent.startServer(javaExecutableName, coreFileName, serverID, null);
       }
     }
     catch (DebuggerException e) {

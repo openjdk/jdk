@@ -25,6 +25,7 @@
  * @test
  * @bug 4358979
  * @summary Tests GradientPaint encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_GradientPaint
  * @author Sergey Malenkov
  */
 

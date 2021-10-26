@@ -83,6 +83,7 @@ public:
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc,
                                                BasicType type,
                                                bool is_clone,
+                                               bool is_clone_instance,
                                                ArrayCopyPhase phase) const;
   virtual void clone_at_expansion(PhaseMacroExpand* phase,
                                   ArrayCopyNode* ac) const;

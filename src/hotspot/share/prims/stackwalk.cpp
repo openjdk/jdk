@@ -342,7 +342,7 @@ oop StackWalk::walk(Handle stackStream, jlong mode,
                     objArrayHandle frames_array,
                     TRAPS) {
   ResourceMark rm(THREAD);
-  JavaThread* jt = THREAD->as_Java_thread();
+  JavaThread* jt = THREAD;
   log_debug(stackwalk)("Start walking: mode " JLONG_FORMAT " skip %d frames batch size %d",
                        mode, skip_frames, frame_count);
 
@@ -407,7 +407,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   int end_index = start_index;
   int numFrames = 0;
   if (!stream.at_end()) {
-    KeepStackGCProcessedMark keep_stack(THREAD->as_Java_thread());
+    KeepStackGCProcessedMark keep_stack(THREAD);
     numFrames = fill_in_frames(mode, stream, frame_count, start_index,
                                frames_array, end_index, CHECK_NULL);
     if (numFrames < 1) {
@@ -463,7 +463,7 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
                                objArrayHandle frames_array,
                                TRAPS)
 {
-  JavaThread* jt = THREAD->as_Java_thread();
+  JavaThread* jt = THREAD;
   BaseFrameStream* existing_stream = BaseFrameStream::from_current(jt, magic, frames_array);
   if (existing_stream == NULL) {
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: corrupted buffers", 0L);

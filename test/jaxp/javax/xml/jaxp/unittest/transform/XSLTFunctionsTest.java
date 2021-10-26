@@ -54,7 +54,7 @@ import static jaxp.library.JAXPTestUtilities.getSystemProperty;
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @compile DocumentExtFunc.java
- * @run testng/othervm -DrunSecMngr=true transform.XSLTFunctionsTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.XSLTFunctionsTest
  * @run testng/othervm transform.XSLTFunctionsTest
  * @summary This class contains tests for XSLT functions.
  */

@@ -642,8 +642,7 @@ public class IdentityHashMap<K,V>
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (o instanceof IdentityHashMap) {
-            IdentityHashMap<?,?> m = (IdentityHashMap<?,?>) o;
+        } else if (o instanceof IdentityHashMap<?, ?> m) {
             if (m.size() != size)
                 return false;
 
@@ -654,8 +653,7 @@ public class IdentityHashMap<K,V>
                     return false;
             }
             return true;
-        } else if (o instanceof Map) {
-            Map<?,?> m = (Map<?,?>)o;
+        } else if (o instanceof Map<?, ?> m) {
             return entrySet().equals(m.entrySet());
         } else {
             return false;  // o is not a Map
@@ -888,11 +886,9 @@ public class IdentityHashMap<K,V>
                 if (index < 0)
                     return super.equals(o);
 
-                if (!(o instanceof Map.Entry))
-                    return false;
-                Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-                return (e.getKey() == unmaskNull(traversalTable[index]) &&
-                       e.getValue() == traversalTable[index+1]);
+                return o instanceof Map.Entry<?, ?> e
+                        && e.getKey() == unmaskNull(traversalTable[index])
+                        && e.getValue() == traversalTable[index+1];
             }
 
             public int hashCode() {
@@ -1189,16 +1185,12 @@ public class IdentityHashMap<K,V>
             return new EntryIterator();
         }
         public boolean contains(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> entry = (Map.Entry<?,?>)o;
-            return containsMapping(entry.getKey(), entry.getValue());
+            return o instanceof Entry<?, ?> entry
+                    && containsMapping(entry.getKey(), entry.getValue());
         }
         public boolean remove(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> entry = (Map.Entry<?,?>)o;
-            return removeMapping(entry.getKey(), entry.getValue());
+            return o instanceof Entry<?, ?> entry
+                    && removeMapping(entry.getKey(), entry.getValue());
         }
         public int size() {
             return size;

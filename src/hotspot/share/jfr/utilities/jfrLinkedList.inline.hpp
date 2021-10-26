@@ -26,6 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRLINKEDLIST_INLINE_HPP
 
 #include "jfr/utilities/jfrLinkedList.hpp"
+
 #include "runtime/atomic.hpp"
 
 template <typename NodeType, typename AllocPolicy>

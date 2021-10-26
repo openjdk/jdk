@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,8 @@ public final class CRSACipher extends CipherSpi {
             encrypt = false;
             break;
         default:
-            throw new InvalidKeyException("Unknown mode: " + opmode);
+            // should never happen; checked by Cipher.init()
+            throw new AssertionError("Unknown mode: " + opmode);
         }
 
         if (!(key instanceof CKey)) {

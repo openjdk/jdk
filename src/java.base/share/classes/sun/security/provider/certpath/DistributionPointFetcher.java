@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,44 +62,6 @@ public class DistributionPointFetcher {
      * Private instantiation only.
      */
     private DistributionPointFetcher() {}
-
-    /**
-     * Return the X509CRLs matching this selector. The selector must be
-     * an X509CRLSelector with certificateChecking set.
-     */
-    public static Collection<X509CRL> getCRLs(X509CRLSelector selector,
-            boolean signFlag, PublicKey prevKey, String provider,
-            List<CertStore> certStores, boolean[] reasonsMask,
-            Set<TrustAnchor> trustAnchors, Date validity, String variant)
-            throws CertStoreException
-    {
-        return getCRLs(selector, signFlag, prevKey, null, provider, certStores,
-                reasonsMask, trustAnchors, validity, variant, null);
-    }
-    /**
-     * Return the X509CRLs matching this selector. The selector must be
-     * an X509CRLSelector with certificateChecking set.
-     */
-    // Called by com.sun.deploy.security.RevocationChecker
-    public static Collection<X509CRL> getCRLs(X509CRLSelector selector,
-                                              boolean signFlag,
-                                              PublicKey prevKey,
-                                              String provider,
-                                              List<CertStore> certStores,
-                                              boolean[] reasonsMask,
-                                              Set<TrustAnchor> trustAnchors,
-                                              Date validity)
-        throws CertStoreException
-    {
-        if (trustAnchors.isEmpty()) {
-            throw new CertStoreException(
-                "at least one TrustAnchor must be specified");
-        }
-        TrustAnchor anchor = trustAnchors.iterator().next();
-        return getCRLs(selector, signFlag, prevKey, null, provider, certStores,
-                reasonsMask, trustAnchors, validity,
-                Validator.VAR_PLUGIN_CODE_SIGNING, anchor);
-    }
 
     /**
      * Return the X509CRLs matching this selector. The selector must be

@@ -25,6 +25,7 @@
  * @test
  * @bug 6245149
  * @summary Tests URI encoding
+ * @run main/othervm -Djava.security.manager=allow java_net_URI
  * @author Sergey Malenkov
  */
 

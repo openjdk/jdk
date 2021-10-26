@@ -972,25 +972,14 @@ public abstract class NumberFormat extends Format  {
                                             Locale locale, Style formatStyle,
                                             int choice) {
         NumberFormatProvider provider = adapter.getNumberFormatProvider();
-        NumberFormat numberFormat = null;
-        switch (choice) {
-        case NUMBERSTYLE:
-            numberFormat = provider.getNumberInstance(locale);
-            break;
-        case PERCENTSTYLE:
-            numberFormat = provider.getPercentInstance(locale);
-            break;
-        case CURRENCYSTYLE:
-            numberFormat = provider.getCurrencyInstance(locale);
-            break;
-        case INTEGERSTYLE:
-            numberFormat = provider.getIntegerInstance(locale);
-            break;
-        case COMPACTSTYLE:
-            numberFormat = provider.getCompactNumberInstance(locale, formatStyle);
-            break;
-        }
-        return numberFormat;
+        return switch (choice) {
+            case NUMBERSTYLE   -> provider.getNumberInstance(locale);
+            case PERCENTSTYLE  -> provider.getPercentInstance(locale);
+            case CURRENCYSTYLE -> provider.getCurrencyInstance(locale);
+            case INTEGERSTYLE  -> provider.getIntegerInstance(locale);
+            case COMPACTSTYLE  -> provider.getCompactNumberInstance(locale, formatStyle);
+            default            -> null;
+        };
     }
 
     /**

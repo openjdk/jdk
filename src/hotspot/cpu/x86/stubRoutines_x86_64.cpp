@@ -31,6 +31,8 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
+jint    StubRoutines::x86::_mxcsr_std = 0;
+
 address StubRoutines::x86::_get_previous_sp_entry = NULL;
 
 address StubRoutines::x86::_f2i_fixup = NULL;
@@ -42,3 +44,4 @@ address StubRoutines::x86::_float_sign_flip = NULL;
 address StubRoutines::x86::_double_sign_mask = NULL;
 address StubRoutines::x86::_double_sign_flip = NULL;
 address StubRoutines::x86::_method_entry_barrier = NULL;
+

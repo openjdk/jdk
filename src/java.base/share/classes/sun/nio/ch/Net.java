@@ -228,6 +228,7 @@ public class Net {
      */
     static InetSocketAddress getRevealedLocalAddress(SocketAddress sa) {
         InetSocketAddress isa = (InetSocketAddress) sa;
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (isa != null && sm != null) {
             try {
@@ -240,6 +241,7 @@ public class Net {
         return isa;
     }
 
+    @SuppressWarnings("removal")
     static String getRevealedLocalAddressAsString(SocketAddress sa) {
         InetSocketAddress isa = (InetSocketAddress) sa;
         if (System.getSecurityManager() == null) {
@@ -308,6 +310,7 @@ public class Net {
      * Returns any IPv4 address of the given network interface, or
      * null if the interface does not have any IPv4 addresses.
      */
+    @SuppressWarnings("removal")
     static Inet4Address anyInet4Address(final NetworkInterface interf) {
         return AccessController.doPrivileged(new PrivilegedAction<Inet4Address>() {
             public Inet4Address run() {

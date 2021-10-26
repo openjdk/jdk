@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,8 @@ public class CheckACC_STRICTFlagOnPkgAccessClassTest {
     }
 
     private void compile(JavaCompiler comp) {
-        JavacTask ct = (JavacTask)comp.getTask(null, null, null, null, null,
+        JavacTask ct = (JavacTask)comp.getTask(null, null, null,
+                                               List.of("--release", "16"), null,
                 Arrays.asList(source));
         try {
             if (!ct.call()) {

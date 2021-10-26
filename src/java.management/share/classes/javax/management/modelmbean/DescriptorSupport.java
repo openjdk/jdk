@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,16 +119,8 @@ public class DescriptorSupport
     private static final ObjectStreamField[] serialPersistentFields;
     private static final String serialForm;
     static {
-        String form = null;
-        boolean compat = false;
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            form = AccessController.doPrivileged(act);
-            compat = "1.0".equals(form);  // form may be null
-        } catch (Exception e) {
-            // OK: No compat with 1.0
-        }
-        serialForm = form;
+        serialForm = getForm();
+        boolean compat = "1.0".equals(serialForm);  // serialForm may be null
         if (compat) {
             serialPersistentFields = oldSerialPersistentFields;
             serialVersionUID = oldSerialVersionUID;
@@ -137,6 +129,19 @@ public class DescriptorSupport
             serialVersionUID = newSerialVersionUID;
         }
     }
+
+    @SuppressWarnings("removal")
+    private static String getForm() {
+        String form = null;
+        try {
+            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
+            return  AccessController.doPrivileged(act);
+        } catch (Exception e) {
+            // OK: No compat with 1.0
+            return null;
+        }
+    }
+
     //
     // END Serialization compatibility stuff
 

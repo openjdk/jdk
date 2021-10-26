@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,18 @@ public class SignerInfo implements DerEncoder {
     throws NoSuchAlgorithmException, SignatureException {
 
         try {
-            Timestamp timestamp = getTimestamp();
+            Timestamp timestamp = null;
+            try {
+                timestamp = getTimestamp();
+            } catch (Exception e) {
+                // Log exception and continue. This allows for the case
+                // where, if there are no other errors, the code is
+                // signed but w/o a timestamp.
+                if (debug != null) {
+                    debug.println("Unexpected exception while getting" +
+                                  " timestamp: " + e);
+                }
+            }
 
             ContentInfo content = block.getContentInfo();
             if (data == null) {
@@ -471,7 +482,7 @@ public class SignerInfo implements DerEncoder {
             if (sig.verify(encryptedDigest)) {
                 return this;
             }
-        } catch (IOException | CertificateException e) {
+        } catch (IOException e) {
             throw new SignatureException("Error verifying signature", e);
         }
         return null;
@@ -504,6 +515,14 @@ public class SignerInfo implements DerEncoder {
             case "RSASSA-PSS":
                 PSSParameterSpec spec = (PSSParameterSpec)
                         SignatureUtil.getParamSpec(encAlg, encAlgId.getParameters());
+                /*
+                 * RFC 4056 section 3 for Signed-data:
+                 * signatureAlgorithm MUST contain id-RSASSA-PSS. The algorithm
+                 * parameters field MUST contain RSASSA-PSS-params.
+                 */
+                if (spec == null) {
+                    throw new NoSuchAlgorithmException("Missing PSSParameterSpec for RSASSA-PSS algorithm");
+                }
                 if (!AlgorithmId.get(spec.getDigestAlgorithm()).equals(digAlgId)) {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                 }

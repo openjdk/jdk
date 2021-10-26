@@ -39,7 +39,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 4915748
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug4915748
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug4915748
  * @run testng/othervm dom.Bug4915748
  * @summary Test DOMErrorHandler is called in case CDATA section is split by termination marker ']]>'.
  */

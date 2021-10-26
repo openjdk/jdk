@@ -245,6 +245,7 @@ public final class SocketPermission extends Permission
     };
 
     static {
+        @SuppressWarnings("removal")
         Boolean tmp = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetBooleanAction("sun.net.trustNameService"));
         trustNameService = tmp.booleanValue();
@@ -872,7 +873,7 @@ public final class SocketPermission extends Permission
 
     /**
      * Checks if the incoming Permission's action are a proper subset of
-     * the this object's actions.
+     * this object's actions.
      * <P>
      * Check, in the following order:
      * <ul>
@@ -1224,6 +1225,7 @@ public final class SocketPermission extends Permission
      * Check the system/security property for the ephemeral port range
      * for this system. The suffix is either "high" or "low"
      */
+    @SuppressWarnings("removal")
     private static int initEphemeralPorts(String suffix, int defval) {
         return AccessController.doPrivileged(
             new PrivilegedAction<>(){

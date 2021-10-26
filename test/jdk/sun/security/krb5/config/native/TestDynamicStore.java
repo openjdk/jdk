@@ -34,6 +34,13 @@
 import jdk.test.lib.Asserts;
 import sun.security.krb5.Config;
 
+// =================== Attention ===================
+// This test calls a native method implemented in libTestDynamicStore.m
+// to modify system-level Kerberos 5 settings stored in the dynamic store.
+// It must be launched by a user with enough privilege or with "sudo".
+// If launched with sudo, remember to remove the report and working
+// directories with sudo as well after executing the test.
+
 public class TestDynamicStore {
 
     native static int actionInternal(char what, char whom);
@@ -59,7 +66,10 @@ public class TestDynamicStore {
 
         try {
             System.out.println("Fill in dynamic store");
-            action('a', 'a');
+            if (action('a', 'a') == 0) {
+                throw new Exception("Cannot write native Kerberos settings. " +
+                        "Please make sure the test runs with enough privilege.");
+            }
             Asserts.assertTrue(Config.getInstance().get("libdefaults", "default_realm").equals("A.COM"));
             Asserts.assertTrue(Config.getInstance().exists("domain_realm"));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,40 +24,50 @@
 /**
  * @test
  * @bug 4921848
- * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/ /test/lib
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
+ * @library /test/lib
  * @run main/othervm -Dhttp.auth.preference=basic B4921848
  * @run main/othervm -Djava.net.preferIPv6Addresses=true
  *                   -Dhttp.auth.preference=basic B4921848
  * @summary Allow user control over authentication schemes
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.Authenticator;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.concurrent.Executors;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
-public class B4921848 implements HttpCallback {
+public class B4921848 implements HttpHandler {
 
     static int count = 0;
 
-    public void request (HttpTransaction req) {
+    public void handle (HttpExchange req) {
         try {
             if (count == 0 ) {
-                req.addResponseHeader ("Connection", "close");
-                req.addResponseHeader ("WWW-Authenticate", "Basic realm=\"foo\"");
-                req.addResponseHeader ("WWW-Authenticate", "Digest realm=\"bar\" domain=/biz nonce=\"hereisanonce\"");
-                req.sendResponse (401, "Unauthorized");
-                req.orderlyClose();
+                req.getResponseHeaders().set("Connection", "close");
+                req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"foo\"");
+                req.getResponseHeaders().add("WWW-Authenticate", "Digest realm=\"bar\" domain=/biz nonce=\"hereisanonce\"");
+                req.sendResponseHeaders(401, -1);
             } else {
-                String authheader = req.getRequestHeader ("Authorization");
+                String authheader = req.getRequestHeaders().get("Authorization").get(0);
                 if (authheader.startsWith ("Basic")) {
-                    req.setResponseEntityBody ("Hello .");
-                    req.sendResponse (200, "Ok");
-                    req.orderlyClose();
+                    req.sendResponseHeaders(200, 0);
+                    try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+                        pw.print("Hello .");
+                    }
                 } else {
-                    req.sendResponse (400, "Bad Request");
-                    req.orderlyClose();
+                    req.sendResponseHeaders(400, -1);
                 }
             }
             count ++;
@@ -86,19 +96,23 @@ public class B4921848 implements HttpCallback {
         is.close();
     }
 
-    static TestHttpServer server;
+    static HttpServer server;
 
     public static void main (String[] args) throws Exception {
+        B4921848 b4921848 = new B4921848();
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         ProxySelector.setDefault(ProxySelector.of(null)); // no proxy
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();
-            server = new TestHttpServer (new B4921848(), 1, 10, loopback, 0);
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
+            server.createContext("/", b4921848);
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
             String serverURL = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
-                .port(server.getLocalPort())
+                .port(server.getAddress().getPort())
                 .path("/")
                 .build()
                 .toString();
@@ -106,15 +120,15 @@ public class B4921848 implements HttpCallback {
             client(serverURL + "d1/d2/d3/foo.html");
         } catch (Exception e) {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
             throw e;
         }
-        server.terminate();
+        server.stop(1);
     }
 
     public static void except (String s) {
-        server.terminate();
+        server.stop(1);
         throw new RuntimeException (s);
     }
 

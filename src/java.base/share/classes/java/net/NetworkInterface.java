@@ -133,6 +133,7 @@ public final class NetworkInterface {
         InetAddress[] local_addrs = new InetAddress[addrs.length];
         boolean trusted = true;
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             try {
@@ -169,6 +170,7 @@ public final class NetworkInterface {
     public java.util.List<InterfaceAddress> getInterfaceAddresses() {
         java.util.List<InterfaceAddress> lst = new java.util.ArrayList<>(1);
         if (bindings != null) {
+            @SuppressWarnings("removal")
             SecurityManager sec = System.getSecurityManager();
             for (int j=0; j<bindings.length; j++) {
                 try {
@@ -512,6 +514,7 @@ public final class NetworkInterface {
      * @since 1.6
      */
     public byte[] getHardwareAddress() throws SocketException {
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             try {

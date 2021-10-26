@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,13 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpNet_socket0
     fd = socket(domain, (oneToOne ? SOCK_STREAM : SOCK_SEQPACKET), IPPROTO_SCTP);
 
     if (fd < 0) {
-        return handleSocketError(env, errno);
+        if (errno == EPROTONOSUPPORT || errno == ESOCKTNOSUPPORT) {
+            JNU_ThrowByNameWithLastError(env, "java/lang/UnsupportedOperationException",
+                                         "Protocol not supported");
+            return IOS_THROWN;
+        } else {
+            return handleSocketError(env, errno);
+        }
     }
 
     /* Enable events */

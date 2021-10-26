@@ -44,7 +44,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6992561
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.Bug6992561Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.Bug6992561Test
  * @run testng/othervm sax.Bug6992561Test
  * @summary Test encoding of SystemId in Locator.
  */

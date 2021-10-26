@@ -202,7 +202,6 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassID id) : _id(id),
-                           _prototype_header(markWord::prototype()),
                            _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
@@ -523,9 +522,14 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_primary_supers[i]);
   }
   it->push(&_super);
-  it->push((Klass**)&_subklass);
-  it->push((Klass**)&_next_sibling);
-  it->push(&_next_link);
+  if (!Arguments::is_dumping_archive()) {
+    // If dumping archive, these may point to excluded classes. There's no need
+    // to follow these pointers anyway, as they will be set to NULL in
+    // remove_unshareable_info().
+    it->push((Klass**)&_subklass);
+    it->push((Klass**)&_next_sibling);
+    it->push(&_next_link);
+  }
 
   vtableEntry* vt = start_of_vtable();
   for (int i=0; i<vtable_length(); i++) {
@@ -600,7 +604,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (HeapShared::open_archive_heap_region_mapped()) {
+    if (HeapShared::are_archived_mirrors_available()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -677,19 +681,7 @@ static char* convert_hidden_name_to_java(Symbol* name) {
 const char* Klass::external_name() const {
   if (is_instance_klass()) {
     const InstanceKlass* ik = static_cast<const InstanceKlass*>(this);
-    if (ik->is_unsafe_anonymous()) {
-      char addr_buf[20];
-      jio_snprintf(addr_buf, 20, "/" INTPTR_FORMAT, p2i(ik));
-      size_t addr_len = strlen(addr_buf);
-      size_t name_len = name()->utf8_length();
-      char*  result   = NEW_RESOURCE_ARRAY(char, name_len + addr_len + 1);
-      name()->as_klass_external_name(result, (int) name_len + 1);
-      assert(strlen(result) == name_len, "");
-      strcpy(result + name_len, addr_buf);
-      assert(strlen(result) == name_len + addr_len, "");
-      return result;
-
-    } else if (ik->is_hidden()) {
+    if (ik->is_hidden()) {
       char* result = convert_hidden_name_to_java(name());
       return result;
     }
@@ -724,10 +716,6 @@ const char* Klass::external_kind() const {
   return "class";
 }
 
-int Klass::atomic_incr_biased_lock_revocation_count() {
-  return (int) Atomic::add(&_biased_lock_revocation_count, 1);
-}
-
 // Unless overridden, jvmti_class_status has no flags set.
 jint Klass::jvmti_class_status() const {
   return 0;
@@ -755,8 +743,6 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
   if (WizardMode) {
      // print header
      obj->mark().print_on(st);
-     st->cr();
-     st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
      st->cr();
   }
 

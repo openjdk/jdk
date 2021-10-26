@@ -28,7 +28,7 @@
  * @library /test/lib
  * @compile -XDignore.symbol.file KeyPermissions.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
- * @run main/othervm -Djdk.net.hosts.file=TestHosts KeyPermissions
+ * @run main/othervm -Djava.security.manager=allow -Djdk.net.hosts.file=TestHosts KeyPermissions
  */
 
 import java.security.AccessControlException;

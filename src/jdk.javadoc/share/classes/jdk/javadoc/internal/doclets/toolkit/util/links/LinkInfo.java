@@ -27,10 +27,12 @@ package jdk.javadoc.internal.doclets.toolkit.util.links;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  *  Encapsulates information about a link.
@@ -125,7 +127,11 @@ public abstract class LinkInfo {
             return label;
         } else if (isLinkable()) {
             Content tlabel = newContent();
-            tlabel.add(configuration.utils.getSimpleName(typeElement));
+            Utils utils = configuration.utils;
+            tlabel.add(type instanceof DeclaredType dt && utils.isGenericType(dt.getEnclosingType())
+                    // If enclosing type is rendered as separate links only use own class name
+                    ? typeElement.getSimpleName().toString()
+                    : configuration.utils.getSimpleName(typeElement));
             return tlabel;
         } else {
             Content tlabel = newContent();

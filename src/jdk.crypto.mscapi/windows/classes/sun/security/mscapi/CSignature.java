@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,14 +584,14 @@ abstract class CSignature extends SignatureSpi {
             try {
                 ensureInit();
             } catch (SignatureException se) {
-                // hack for working around API bug
+                // workaround for API bug
                 throw new RuntimeException(se.getMessage());
             }
             if (fallbackSignature != null) {
                 try {
                     fallbackSignature.update(input);
                 } catch (SignatureException se) {
-                    // hack for working around API bug
+                    // workaround for API bug
                     throw new RuntimeException(se.getMessage());
                 }
             } else {

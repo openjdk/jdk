@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,8 @@ public class ThrowsTaglet extends BaseTaglet
         Element exception;
         CommentHelper ch = utils.getCommentHelper(input.element);
         if (input.tagId == null) {
-            exception = input.docTreeInfo.docTree instanceof ThrowsTree
-                    ? ch.getException((ThrowsTree) input.docTreeInfo.docTree) : null;
+            exception = input.docTreeInfo.docTree instanceof ThrowsTree tt
+                    ? ch.getException(tt) : null;
             input.tagId = exception == null
                     ? ch.getExceptionName(input.docTreeInfo.docTree).getSignature()
                     : utils.getFullyQualifiedName(exception);

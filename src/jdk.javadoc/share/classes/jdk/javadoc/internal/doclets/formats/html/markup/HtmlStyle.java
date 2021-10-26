@@ -51,41 +51,6 @@ import java.util.regex.Pattern;
  * @see <a href="https://html.spec.whatwg.org/#classes">WhatWG: {@code class} attribute</a>
  */
 public enum HtmlStyle {
-    block,
-    blockList,
-    circle,
-    classUses,
-    deprecatedLabel,
-    deprecationBlock,
-    deprecationComment,
-    descfrmTypeLabel,
-    externalLink,
-    hierarchy,
-    horizontal,
-    implementationLabel,
-    index,
-    inheritance,
-    inheritedList,
-    interfaceName,
-    legalCopy,
-    memberNameLabel,
-    memberNameLink,
-    nameValue,
-    packages,
-    packageHierarchyLabel,
-    packageUses,
-    permitsNote,
-    previewBlock,
-    previewComment,
-    previewLabel,
-    searchTagLink,
-    searchTagResult,
-    serializedPackageContainer,
-    sourceContainer,
-    sourceLineNo,
-    typeNameLabel,
-    typeNameLink,
-    verticalSeparator,
 
     //<editor-fold desc="navigation bar">
     //
@@ -109,6 +74,11 @@ public enum HtmlStyle {
      */
     // The etymology of the name is a mystery.
     navBarCell1Rev,
+
+    /**
+     * The class for the navigation bar toggle button for smaller displays.
+     */
+    navBarToggleIcon,
 
     /**
      * The class for the primary list of navigation links.
@@ -136,6 +106,11 @@ public enum HtmlStyle {
      * The class for the list of subsidiary navigation links.
      */
     subNavList,
+
+    /**
+     * The class for the list of subsidiary navigation links for smaller displays.
+     */
+    subNavListSmall,
 
     //</editor-fold>
 
@@ -358,6 +333,56 @@ public enum HtmlStyle {
 
     //</editor-fold>
 
+    //<editor-fold desc="additional details">
+    //
+    // The following constants are used for the additional information that may be provided
+    // for a declaration, such as whether it is deprecated or is a "preview" feature.
+
+    /**
+     * The class for the "Deprecated" label in a block describing the "deprecated" status
+     * of a declaration.
+     */
+    deprecatedLabel,
+
+    /**
+     * The class for a block describing the "deprecated" status of a declaration.
+     */
+    deprecationBlock,
+
+    /**
+     * The class for the details in a block describing the "deprecated" status of a declaration.
+     */
+    deprecationComment,
+
+    /**
+     * The class for a label indicating the element from which a description has been copied.
+     */
+    descriptionFromTypeLabel,
+
+    /**
+     * The class for a note providing information about the permitted subtypes of a
+     * sealed class.
+     */
+    permitsNote,
+
+    /**
+     * The class for a block describing the "preview" status of a declaration.
+     */
+    previewBlock,
+
+    /**
+     * The class for the details in a block describing the "preview" status of a declaration.
+     */
+    previewComment,
+
+    /**
+     * The class for the "Preview" label in a block describing the "preview" status
+     * of a declaration.
+     */
+    previewLabel,
+
+    //</editor-fold>
+
     //<editor-fold desc="tables">
     //
     // The following constants are used for "summary" and "details" tables.
@@ -552,6 +577,12 @@ public enum HtmlStyle {
     packageSignature,
 
     /**
+     * The class of a {@code span} element containing the type name in a
+     * type signature.
+     */
+    typeNameLabel,
+
+    /**
      * The class of an element containing a type signature.
      */
     typeSignature,
@@ -621,6 +652,30 @@ public enum HtmlStyle {
     typeParametersLong,
     //</editor-fold>
 
+    //<editor-fold desc="search index and results">
+    //
+    // The following constants are used for items in the static and interactive search indexes.
+
+    /**
+     * The class for a link in the static "Index" pages to a custom searchable item,
+     * such as defined with an {@code @index} tag.
+     */
+    searchTagLink,
+
+    /**
+     * The class for a custom searchable item,
+     * such as defined with an {@code @index} tag.
+     */
+    searchTagResult,
+
+    /**
+     * The class for the separator in the list of pages given at the top of the
+     * static "Index" page(s).
+     */
+    verticalSeparator,
+
+    //</editor-fold>
+
     //<editor-fold desc="page styles for <body> elements">
     //
     // The following constants are used for the class of the {@code <body>} element
@@ -657,6 +712,11 @@ public enum HtmlStyle {
     deprecatedListPage,
 
     /**
+     * The class of the {@code body} element for the page listing any deprecated items.
+     */
+    deprecatedInReleasePage,
+
+    /**
      * The class of the {@code body} element for a "doc-file" page..
      */
     docFilePage,
@@ -687,6 +747,11 @@ public enum HtmlStyle {
     moduleIndexPage,
 
     /**
+     * The class of the {@code body} element for the page listing new API elements.
+     */
+    newApiListPage,
+
+    /**
      * The class of the {@code body} element for a package-declaration page.
      */
     packageDeclarationPage,
@@ -707,7 +772,7 @@ public enum HtmlStyle {
     packageUsePage,
 
     /**
-     * The class of the {@code body} element for the page listing any deprecated items.
+     * The class of the {@code body} element for the page listing any preview items.
      */
     previewListPage,
 
@@ -730,12 +795,12 @@ public enum HtmlStyle {
      * The class of the {@code body} element for the page for the class hierarchy.
      */
     treePage,
+
     //</editor-fold>
 
-    //<editor-fold desc="page styles for <body> elements">
+    //<editor-fold desc="help page">
     //
-    // The following constants are used for the class of the {@code <body>} element
-    // for the corresponding pages.
+    // The following constants are used for the contents of the "Help" page.
 
     /**
      * The class of the footnote at the bottom of the page.
@@ -765,7 +830,134 @@ public enum HtmlStyle {
     /**
      * The class of the second-level lists in the table of contents for the page.
      */
-    helpSubTOC("help-subtoc");
+    helpSubTOC("help-subtoc"),
+
+    //</editor-fold>
+
+    //<editor-fold desc="miscellaneous">
+    //
+    // The following constants are used in various places across a variety of pages.
+
+    /**
+     * The class of a {@code div} element containing part of a documentation comment.
+     */
+    block,
+
+    /**
+     * The class of a {@code ul} element containing parts of documentation comments.
+     */
+    blockList,
+
+    /**
+     * The class of a {@code ul} element in the hierarchical tree view.
+     */
+    circle,
+
+    /**
+     * The class of a {@code ul} element listing classes in the uses page.
+     */
+    classUses,
+
+    /**
+     * The class of an {@code a} element for a link with an external target.
+     */
+    externalLink,
+
+    /**
+     *  The class of a {@code section} element containing a hierarchical
+     *  tree view.
+     */
+    hierarchy,
+
+    /**
+     * The class of a {@code ul} element with horizontal (inline) display style.
+     */
+    horizontal,
+
+    /**
+     * The class of a {@code span} element containing implementation details of
+     * a "provides" entry in a module page.
+     */
+    implementationLabel,
+
+    /**
+     * The class of a {@code dl} element in the body of index pages.
+     */
+    index,
+
+    /**
+     * The class of a {@code div} element containing the inheritance tree of
+     * a class page.
+     */
+    inheritance,
+
+    /**
+     * The class of a {@code div} element containing a summary of inherited
+     * members in the class page.
+     */
+    inheritedList,
+
+    /**
+     * The class of a {@code p} element containing legal copy in the page footer.
+     */
+    legalCopy,
+
+    /**
+     * The class of an {@code a} element for a link in member summary lists.
+     */
+    memberNameLink,
+
+    /**
+     * The class for a {@code dl} element containing serial UID information in
+     * the serialized form page.
+     */
+    nameValue,
+
+    /**
+     * The class of a {@code section} element containing the packages section
+     * in the constant field values page.
+     */
+    packages,
+
+    /**
+     * The class of a {@code span} element containing the package hierarchy
+     * label in the tree page.
+     */
+    packageHierarchyLabel,
+
+    /**
+     * The class of a {@code li} element containing a content section of
+     * the package uses page.
+     */
+    packageUses,
+
+    /**
+     * The class of a {@code section} element for a package in the serialized
+     * form page.
+     */
+    serializedPackageContainer,
+
+    /**
+     * The class of a {@code div} element containing source code in the
+     * source page.
+     */
+    sourceContainer,
+
+    /**
+     * The class of a {@code span} element containing a line number in the
+     * source page.
+     */
+    sourceLineNo,
+
+    /**
+     * The class of the {@code pre} element presenting a snippet.
+     */
+    snippet,
+
+    /**
+     * The class of an {@code a} element for a link to a class or interface.
+     */
+    typeNameLink;
 
     //</editor-fold>
 

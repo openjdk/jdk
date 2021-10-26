@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,14 +396,13 @@ public class Extern {
      */
     private Item findElementItem(Element element) {
         Item item = null;
-        if (element instanceof ModuleElement) {
-            item = moduleItems.get(utils.getModuleName((ModuleElement)element));
+        if (element instanceof ModuleElement me) {
+            item = moduleItems.get(utils.getModuleName(me));
         }
-        else if (element instanceof PackageElement) {
-            PackageElement packageElement = (PackageElement)element;
-            ModuleElement moduleElement = utils.containingModule(packageElement);
+        else if (element instanceof PackageElement pkg) {
+            ModuleElement moduleElement = utils.containingModule(pkg);
             Map<String, Item> pkgMap = packageItems.get(utils.getModuleName(moduleElement));
-            item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(packageElement)) : null;
+            item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(pkg)) : null;
         }
         return item;
     }
@@ -573,7 +572,7 @@ public class Extern {
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
                 // suppress the warning message in the case of automatic modules
-                if (!configuration.workArounds.isAutomaticModule(me) && issueWarning) {
+                if (!utils.elementUtils.isAutomaticModule(me) && issueWarning) {
                     configuration.getReporter().print(Kind.WARNING,
                             resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
                 }
@@ -624,8 +623,7 @@ public class Extern {
             in = conn.getInputStream();
             redir = false;
 
-            if (conn instanceof HttpURLConnection) {
-                HttpURLConnection http = (HttpURLConnection)conn;
+            if (conn instanceof HttpURLConnection http) {
                 int stat = http.getResponseCode();
                 // See:
                 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,26 +57,6 @@ static cairo_t *cr = NULL;
 static const char ENV_PREFIX[] = "GTK_MODULES=";
 
 static GtkWidget *gtk3_widgets[_GTK_WIDGET_TYPE_SIZE];
-
-static void throw_exception(JNIEnv *env, const char* name, const char* message)
-{
-    jclass class = (*env)->FindClass(env, name);
-
-    if (class != NULL)
-        (*env)->ThrowNew(env, class, message);
-
-    (*env)->DeleteLocalRef(env, class);
-}
-
-static void gtk3_add_state(GtkWidget *widget, GtkStateType state) {
-    GtkStateType old_state = fp_gtk_widget_get_state(widget);
-    fp_gtk_widget_set_state(widget, old_state | state);
-}
-
-static void gtk3_remove_state(GtkWidget *widget, GtkStateType state) {
-    GtkStateType old_state = fp_gtk_widget_get_state(widget);
-    fp_gtk_widget_set_state(widget, old_state & ~state);
-}
 
 /* This is a workaround for the bug:
  * http://sourceware.org/bugzilla/show_bug.cgi?id=1814
@@ -838,21 +818,6 @@ static void gtk3_set_direction(GtkWidget *widget, GtkTextDirection dir)
     }
 }
 
-/* GTK state_type filter */
-static GtkStateType get_gtk_state_type(WidgetType widget_type, gint synth_state)
-{
-    GtkStateType result = GTK_STATE_NORMAL;
-
-    if ((synth_state & DISABLED) != 0) {
-        result = GTK_STATE_INSENSITIVE;
-    } else if ((synth_state & PRESSED) != 0) {
-        result = GTK_STATE_ACTIVE;
-    } else if ((synth_state & MOUSE_OVER) != 0) {
-        result = GTK_STATE_PRELIGHT;
-    }
-    return result;
-}
-
 static GtkStateFlags get_gtk_state_flags(gint synth_state)
 {
     GtkStateFlags flags = 0;
@@ -896,19 +861,6 @@ static GtkStateFlags get_gtk_flags(GtkStateType state_type) {
     }
     return flags;
 }
-
-/* GTK shadow_type filter */
-static GtkShadowType get_gtk_shadow_type(WidgetType widget_type,
-                                                               gint synth_state)
-{
-    GtkShadowType result = GTK_SHADOW_OUT;
-
-    if ((synth_state & SELECTED) != 0) {
-        result = GTK_SHADOW_IN;
-    }
-    return result;
-}
-
 
 static GtkWidget* gtk3_get_arrow(GtkArrowType arrow_type,
                                                       GtkShadowType shadow_type)

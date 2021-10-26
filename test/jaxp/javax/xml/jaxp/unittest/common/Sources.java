@@ -57,7 +57,7 @@ import org.xml.sax.XMLReader;
  * @test
  * @bug 8144967
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true common.Sources
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.Sources
  * @run testng/othervm common.Sources
  * @summary Tests related to the javax.xml.transform.Source
  * and org.xml.sax.InputSource

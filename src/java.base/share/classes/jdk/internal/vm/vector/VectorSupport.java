@@ -27,11 +27,7 @@ package jdk.internal.vm.vector;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.ForceInline;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.util.Objects;
 import java.util.function.*;
 
 public class VectorSupport {
@@ -69,15 +65,53 @@ public class VectorSupport {
     public static final int VECTOR_OP_CAST        = 17;
     public static final int VECTOR_OP_REINTERPRET = 18;
 
-    // enum BoolTest
-    public static final int BT_eq = 0;
-    public static final int BT_ne = 4;
-    public static final int BT_le = 5;
-    public static final int BT_ge = 7;
-    public static final int BT_lt = 3;
-    public static final int BT_gt = 1;
-    public static final int BT_overflow = 2;
-    public static final int BT_no_overflow = 6;
+    // Mask manipulation operations
+    public static final int VECTOR_OP_MASK_TRUECOUNT = 19;
+    public static final int VECTOR_OP_MASK_FIRSTTRUE = 20;
+    public static final int VECTOR_OP_MASK_LASTTRUE  = 21;
+
+    // Rotate operations
+    public static final int VECTOR_OP_LROTATE = 22;
+    public static final int VECTOR_OP_RROTATE = 23;
+
+    // Math routines
+    public static final int VECTOR_OP_TAN = 101;
+    public static final int VECTOR_OP_TANH = 102;
+    public static final int VECTOR_OP_SIN = 103;
+    public static final int VECTOR_OP_SINH = 104;
+    public static final int VECTOR_OP_COS = 105;
+    public static final int VECTOR_OP_COSH = 106;
+    public static final int VECTOR_OP_ASIN = 107;
+    public static final int VECTOR_OP_ACOS = 108;
+    public static final int VECTOR_OP_ATAN = 109;
+    public static final int VECTOR_OP_ATAN2 = 110;
+    public static final int VECTOR_OP_CBRT = 111;
+    public static final int VECTOR_OP_LOG = 112;
+    public static final int VECTOR_OP_LOG10 = 113;
+    public static final int VECTOR_OP_LOG1P = 114;
+    public static final int VECTOR_OP_POW = 115;
+    public static final int VECTOR_OP_EXP = 116;
+    public static final int VECTOR_OP_EXPM1 = 117;
+    public static final int VECTOR_OP_HYPOT = 118;
+
+    // See src/hotspot/share/opto/subnode.hpp
+    //     struct BoolTest, and enclosed enum mask
+    public static final int BT_eq = 0;  // 0000
+    public static final int BT_ne = 4;  // 0100
+    public static final int BT_le = 5;  // 0101
+    public static final int BT_ge = 7;  // 0111
+    public static final int BT_lt = 3;  // 0011
+    public static final int BT_gt = 1;  // 0001
+    public static final int BT_overflow = 2;     // 0010
+    public static final int BT_no_overflow = 6;  // 0110
+    // never = 8    1000
+    // illegal = 9  1001
+    // Unsigned comparisons apply to BT_le, BT_ge, BT_lt, BT_gt for integral types
+    public static final int BT_unsigned_compare = 0b10000;
+    public static final int BT_ule = BT_le | BT_unsigned_compare;
+    public static final int BT_uge = BT_ge | BT_unsigned_compare;
+    public static final int BT_ult = BT_lt | BT_unsigned_compare;
+    public static final int BT_ugt = BT_gt | BT_unsigned_compare;
 
     // BasicType codes, for primitives only:
     public static final int
@@ -451,6 +485,20 @@ public class VectorSupport {
         // TODO: move the fence generation into C2. Generate only when reboxing is taking place.
         U.loadFence();
         return v;
+    }
+
+    /* ============================================================================ */
+    public interface VectorMaskOp<M> {
+        int apply(M m);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <E, M>
+    int maskReductionCoerced(int oper, Class<? extends M> maskClass, Class<?> elemClass, int length, M m,
+               VectorMaskOp<M> defaultImpl) {
+       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+       return defaultImpl.apply(m);
     }
 
     /* ============================================================================ */

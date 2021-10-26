@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test the jhsdb jmap -clstats command with CDS enabled
  * @requires vm.hasSA & vm.cds
  * @library /test/lib
- * @run main/othervm/timeout=2400 CDSJMapClstats
+ * @run driver/timeout=2400 CDSJMapClstats
  */
 
 import java.util.stream.Collectors;

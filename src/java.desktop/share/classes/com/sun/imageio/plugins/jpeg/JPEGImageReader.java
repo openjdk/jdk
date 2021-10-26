@@ -86,6 +86,11 @@ public class JPEGImageReader extends ImageReader {
     private int numImages = 0;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 @Override
@@ -1270,9 +1275,8 @@ public class JPEGImageReader extends ImageReader {
         // and set knownPassCount
         if (imageIndex == imageMetadataIndex) { // We have metadata
             knownPassCount = 0;
-            for (Iterator<MarkerSegment> iter =
-                    imageMetadata.markerSequence.iterator(); iter.hasNext();) {
-                if (iter.next() instanceof SOSMarkerSegment) {
+            for (MarkerSegment markerSegment : imageMetadata.markerSequence) {
+                if (markerSegment instanceof SOSMarkerSegment) {
                     knownPassCount++;
                 }
             }

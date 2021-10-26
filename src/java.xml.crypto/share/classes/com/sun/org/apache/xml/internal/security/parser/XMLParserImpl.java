@@ -45,6 +45,7 @@ import org.xml.sax.SAXException;
  */
 public class XMLParserImpl implements XMLParser {
 
+    @SuppressWarnings("removal")
     private static int parserPoolSize =
             AccessController.doPrivileged(
                     (PrivilegedAction<Integer>) () -> Integer.getInteger("com.sun.org.apache.xml.internal.security.parser.pool-size", 20));
@@ -113,6 +114,7 @@ public class XMLParserImpl implements XMLParser {
         }
     }
 
+    @SuppressWarnings("removal")
     private static ClassLoader getContextClassLoader() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -125,6 +127,7 @@ public class XMLParserImpl implements XMLParser {
         return Thread.currentThread().getContextClassLoader();
     }
 
+    @SuppressWarnings("removal")
     private static ClassLoader getClassLoader(final Class<?> clazz) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

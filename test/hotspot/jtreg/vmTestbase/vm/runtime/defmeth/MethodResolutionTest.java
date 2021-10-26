@@ -21,14 +21,31 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.MethodResolutionTest
+ */
 package vm.runtime.defmeth;
 
-import nsk.share.test.TestBase;
+import java.util.Set;
+
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.data.method.param.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /**
@@ -68,7 +85,11 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
 public class MethodResolutionTest extends DefMethTest {
 
     public static void main(String[] args) {
-        TestBase.runTest(new MethodResolutionTest(), args);
+        DefMethTest.runTest(MethodResolutionTest.class,
+                /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
+                /* redefine */ Set.of(false, true),
+                /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
 
     /*
@@ -80,9 +101,7 @@ public class MethodResolutionTest extends DefMethTest {
      * TEST: C c = new C(); c.m() == 1;
      * TEST: I i = new C(); i.m() == 1;
      */
-    public void testBasic() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testBasic(TestBuilder b) {
         Interface I =
             b.intf("I")
                 .abstractMethod("m", "()I").build()
@@ -100,8 +119,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m", "()I")
                 .returns(1)
-            .done()
-        .run();
+            .done();
     }
 
     /*
@@ -113,9 +131,7 @@ public class MethodResolutionTest extends DefMethTest {
      * TEST: C c = new C(); c.m() == 1;
      * TEST: I i = new C(); i.m() == 1;
      */
-    public void testBasicDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testBasicDefault(TestBuilder b) {
         Interface I =
             b.intf("I")
                 .defaultMethod("m", "()I").returns(1)
@@ -132,9 +148,7 @@ public class MethodResolutionTest extends DefMethTest {
             .done()
         .test().callSite(C, C, "m", "()I")
                 .returns(1)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -147,9 +161,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|J|K|C] i = new C(); i.m() == 1;
      */
-    public void testFarDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testFarDefault(TestBuilder b) {
         Interface I =
             b.intf("I")
                 .defaultMethod("m", "()I").returns(1)
@@ -175,9 +187,7 @@ public class MethodResolutionTest extends DefMethTest {
             .done()
         .test().callSite(C, C, "m", "()I")
                 .returns(1)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -191,9 +201,7 @@ public class MethodResolutionTest extends DefMethTest {
      * TEST: C c = new C(); c.m() == 1;
      * TEST: K k = new C(); k.m() == 1;
      */
-    public void testOverrideAbstract() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testOverrideAbstract(TestBuilder b) {
         Interface I = b.intf("I")
                 .abstractMethod("m", "()I").build()
             .build();
@@ -221,9 +229,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m", "()I")
                 .returns(1)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -234,9 +240,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [C|I] c = new C(); c.m() == 2;
      */
-    public void testDefaultVsConcrete() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testDefaultVsConcrete(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -252,9 +256,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m", "()I")
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -266,9 +268,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|B|C] v = new C(); v.m() == 1;
      */
-    public void testInheritedDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInheritedDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -287,9 +287,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(1)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -301,9 +299,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|B|C] v = new C(); v.m() == 2;
      */
-    public void testExistingInherited() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testExistingInherited(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -325,9 +321,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -339,9 +333,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|B|D] v = new C(); v.m() == 3;
      */
-    public void testExistingInheritedOverride() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testExistingInheritedOverride(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -365,9 +357,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(3)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -381,9 +371,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|J|C|D|J] v = new E(); v.m() == 22;
      */
-    public void testExistingInheritedPlusDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testExistingInheritedPlusDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(11).build()
             .build();
@@ -422,9 +410,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(E, E, "m","()I")
                 .returns(22)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -436,9 +422,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|B|C] v = new C(); v.m() == 2;
      */
-    public void testInheritedWithConcrete() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInheritedWithConcrete(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -460,9 +444,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -474,9 +456,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|B|C] v = new C(); v.m() == 2;
      */
-    public void testInheritedWithConcreteAndImpl() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInheritedWithConcreteAndImpl(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -498,9 +478,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -513,9 +491,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|J|K|C] c = new C(); c.m() == 99
      */
-    public void testDiamond() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testDiamond(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -541,9 +517,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(1)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -558,9 +532,7 @@ public class MethodResolutionTest extends DefMethTest {
      *
      * TEST: [I|J|K|L|M|C] c = new C(); c.m() == 1
      */
-    public void testExpandedDiamond() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testExpandedDiamond(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -596,9 +568,7 @@ public class MethodResolutionTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(1)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -614,9 +584,7 @@ public class MethodResolutionTest extends DefMethTest {
      * TEST: C c = new C(); c.m((Object)null) == 2;
      * TEST: C c = new C(); c.m((C)null) == 2;
      */
-    public void testSelfFillWithExplicitBridge() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSelfFillWithExplicitBridge(TestBuilder b) {
         /* interface I<T> { ... */
         Interface I = b.intf("I").sig("<T:Ljava/lang/Object;>Ljava/lang/Object;")
                     /* default int m(T t) { return 1; } */
@@ -656,9 +624,7 @@ public class MethodResolutionTest extends DefMethTest {
                 .callSite(C, C, "m", "(LC;)I")
                 .params(new NullParam())
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -689,8 +655,6 @@ public class MethodResolutionTest extends DefMethTest {
         b.test().callSite(C, C, "m", "(I)I").params(ICONST_0)
                 .returns(2)
             .build();
-
-        b.run();
     }
 
     /*
@@ -702,9 +666,7 @@ public class MethodResolutionTest extends DefMethTest {
      * TEST: J j = new C(); j.m() ==> NSME; j.m(0) == 2
      * TEST: C c = new C(); c.m() == 1;     c.m(0) == 2
      */
-    public void testConflictingDefaultMixedArity1() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testConflictingDefaultMixedArity1(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1)
                 .build()
@@ -741,8 +703,6 @@ public class MethodResolutionTest extends DefMethTest {
         b.test().callSite(C, C, "m", "(I)I").params(ICONST_0)
                 .returns(2)
             .build();
-
-        b.run();
     }
 
     /*
@@ -756,9 +716,7 @@ public class MethodResolutionTest extends DefMethTest {
      * TEST: J j = new C(); j.m(0) ==> ICCE
      * TEST: C c = new C(); c.m() ==> ICCE; c.m(0) == 3
      */
-    public void testConflictingDefaultMixedArity2() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testConflictingDefaultMixedArity2(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1)
                 .build()
@@ -797,8 +755,6 @@ public class MethodResolutionTest extends DefMethTest {
         b.test().callSite(C, C, "m", "(I)I").params(ICONST_0)
                 .returns(3)
             .build();
-
-        b.run();
     }
 
     /* In package1:
@@ -813,11 +769,9 @@ public class MethodResolutionTest extends DefMethTest {
      * A myA = new A;
      * myA.m();  // should return 10 except for reflect mode,
      *           // throw IllegalAccessException with reflect mode
-     * B myB = new B;  // not related
      */
 
-    public void testMethodResolvedInDifferentPackage() {
-        TestBuilder b = factory.getBuilder();
+    public void testMethodResolvedInDifferentPackage(TestBuilder b) {
         Interface I = b.intf("p1.I").flags(~ACC_PUBLIC & ACC_PUBLIC) // make it package private
                 .defaultMethod("m", "()I").returns(10)
                 .build()
@@ -832,18 +786,14 @@ public class MethodResolutionTest extends DefMethTest {
             b.test()
                 .callSite(myA, myA, "m", "()I")
                 .returns(10)
-                .done()
-            .run();
-         // -mode reflect will fail with IAE as expected
-         } else {
+                .done();
+        } else {
+            // -mode reflect will fail with IAE as expected
             b.test()
                 .callSite(myA, myA, "m", "()I")
                 .throws_(IllegalAccessException.class)
-                .done()
-            .run();
-         }
-
-        ConcreteClass myB = b.clazz("p2.B").build();
+                .done();
+        }
     }
 
     /* In package p1:
@@ -867,8 +817,7 @@ public class MethodResolutionTest extends DefMethTest {
      *   myA.m();  // should return 13, not throw IllegalAccessError
      */
 
-    public void testMethodResolvedInLocalFirst() {
-        TestBuilder b = factory.getBuilder();
+    public void testMethodResolvedInLocalFirst(TestBuilder b) {
         Interface I = b.intf("p1.I")
                 .defaultMethod("m", "()I").returns(12)
                 .build()
@@ -889,7 +838,6 @@ public class MethodResolutionTest extends DefMethTest {
         b.test()
                 .callSite(myB, myB, "m", "()I")
                 .returns(13)
-                .done()
-            .run();
+                .done();
     }
 }

@@ -188,6 +188,7 @@ class PipeImpl
      * loopback connection on older editions of Windows. When buffering is
      * disabled then it sets TCP_NODELAY on the sink channel.
      */
+    @SuppressWarnings("removal")
     PipeImpl(SelectorProvider sp, boolean buffering) throws IOException {
         Initializer initializer = new Initializer(sp);
         try {

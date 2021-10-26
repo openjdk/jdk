@@ -26,7 +26,6 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/metaspace/allocationGuard.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
@@ -123,6 +122,9 @@ MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPol
   _fbl(NULL),
   _total_used_words_counter(total_used_words_counter),
   _name(name)
+#ifdef ASSERT
+  , _first_fence(NULL)
+#endif
 {
   UL(debug, ": born.");
 
@@ -229,28 +231,56 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   MetaWord* p = NULL;
   const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
 
-  // 1) Attempt to allocate from the free blocks list
-  //    (Note: to reduce complexity, deallocation handling is disabled if allocation guards
-  //     are enabled, see Settings::ergo_initialize())
+  // Before bothering the arena proper, attempt to re-use a block from the free blocks list
   if (Settings::handle_deallocations() && _fbl != NULL && !_fbl->is_empty()) {
     p = _fbl->remove_block(raw_word_size);
     if (p != NULL) {
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
       UL2(trace, "taken from fbl (now: %d, " SIZE_FORMAT ").",
           _fbl->count(), _fbl->total_size());
-      // Note: Space which is kept in the freeblock dictionary still counts as used as far
-      //  as statistics go; therefore we skip the epilogue in this function to avoid double
-      //  accounting.
+      // Note: free blocks in freeblock dictionary still count as "used" as far as statistics go;
+      // therefore we have no need to adjust any usage counters (see epilogue of allocate_inner())
+      // and can just return here.
       return p;
     }
   }
 
+  // Primary allocation
+  p = allocate_inner(requested_word_size);
+
+#ifdef ASSERT
+  // Fence allocation
+  if (p != NULL && Settings::use_allocation_guard()) {
+    STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
+    MetaWord* guard = allocate_inner(sizeof(Fence) / BytesPerWord);
+    if (guard != NULL) {
+      // Ignore allocation errors for the fence to keep coding simple. If this
+      // happens (e.g. because right at this time we hit the Metaspace GC threshold)
+      // we miss adding this one fence. Not a big deal. Note that his would
+      // be pretty rare. Chances are much higher the primary allocation above
+      // would have already failed).
+      Fence* f = new(guard) Fence(_first_fence);
+      _first_fence = f;
+    }
+  }
+#endif // ASSERT
+
+  return p;
+}
+
+// Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
+MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
+
+  assert_lock_strong(lock());
+
+  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
+  MetaWord* p = NULL;
   bool current_chunk_too_small = false;
   bool commit_failure = false;
 
   if (current_chunk() != NULL) {
 
-    // 2) Attempt to satisfy the allocation from the current chunk.
+    // Attempt to satisfy the allocation from the current chunk.
 
     // If the current chunk is too small to hold the requested size, attempt to enlarge it.
     // If that fails, retire the chunk.
@@ -310,13 +340,6 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
       UL2(info, "failed to allocate new chunk for requested word size " SIZE_FORMAT ".", requested_word_size);
     }
   }
-
-#ifdef ASSERT
-  // When using allocation guards, establish a prefix.
-  if (p != NULL && Settings::use_allocation_guard()) {
-    p = establish_prefix(p, raw_word_size);
-  }
-#endif
 
   if (p == NULL) {
     InternalStats::inc_num_allocs_failed_limit();
@@ -425,36 +448,15 @@ void MetaspaceArena::verify_locked() const {
   }
 }
 
+void MetaspaceArena::Fence::verify() const {
+  assert(_eye1 == EyeCatcher && _eye2 == EyeCatcher,
+         "Metaspace corruption: fence block at " PTR_FORMAT " broken.", p2i(this));
+}
+
 void MetaspaceArena::verify_allocation_guards() const {
   assert(Settings::use_allocation_guard(), "Don't call with guards disabled.");
-
-  // Verify canaries of all allocations.
-  // (We can walk all allocations since at the start of a chunk an allocation
-  //  must be present, and the allocation header contains its size, so we can
-  //  find the next one).
-  for (const Metachunk* c = _chunks.first(); c != NULL; c = c->next()) {
-    const Prefix* first_broken_block = NULL;
-    int num_broken_blocks = 0;
-    const MetaWord* p = c->base();
-    while (p < c->top()) {
-      const Prefix* pp = (const Prefix*)p;
-      if (!pp->is_valid()) {
-        UL2(error, "Corrupt block at " PTR_FORMAT " (chunk: " METACHUNK_FORMAT ").",
-            p2i(pp), METACHUNK_FORMAT_ARGS(c));
-        if (first_broken_block == NULL) {
-          first_broken_block = pp;
-        }
-        num_broken_blocks ++;
-      }
-      p += pp->_word_size;
-    }
-    // After examining all blocks in a chunk, assert if any of those blocks
-    // was found to be corrupted.
-    if (first_broken_block != NULL) {
-      assert(false, "Corrupt block: found at least %d corrupt metaspace block(s) - "
-             "first corrupted block at " PTR_FORMAT ".",
-             num_broken_blocks, p2i(first_broken_block));
-    }
+  for (const Fence* f = _first_fence; f != NULL; f = f->next()) {
+    f->verify();
   }
 }
 

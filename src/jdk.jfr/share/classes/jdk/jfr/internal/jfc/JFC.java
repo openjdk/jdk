@@ -117,6 +117,32 @@ public final class JFC {
         return JFCParser.createConfiguration(name, reader);
     }
 
+    /**
+     * Create a path to a .jfc file.
+     * <p>
+     * If the name is predefined name,
+     * i.e. "default" or "profile.jfc", it will return the path for
+     * the predefined path in the JDK.
+     *
+     * @param path textual representation of the path
+     *
+     * @return a safe path, not null
+     */
+    public static SafePath createSafePath(String path) {
+        for (SafePath predefined : SecuritySupport.getPredefinedJFCFiles()) {
+            try {
+                String name = JFC.nameFromPath(predefined.toPath());
+                if (name.equals(path) || (name + ".jfc").equals(path)) {
+                    return predefined;
+                }
+            } catch (IOException e) {
+                throw new InternalError("Error in predefined .jfc file", e);
+            }
+        }
+        return new SafePath(path);
+    }
+
+
     private static String nullSafeFileName(Path file) throws IOException {
         Path filename = file.getFileName();
         if (filename == null) {

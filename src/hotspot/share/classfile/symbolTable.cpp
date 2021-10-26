@@ -132,11 +132,11 @@ public:
     }
   }
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     SymbolTable::item_added();
     return AllocateHeap(size, mtSymbol);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     // We get here because #1 some threads lost a race to insert a newly created Symbol
     // or #2 we're cleaning up unused symbol.
     // If #1, then the symbol can be either permanent,
@@ -452,7 +452,7 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
                               int* cp_indices, unsigned int* hashValues) {
-  // Note that c_heap will be true for non-strong hidden classes and unsafe anonymous classes
+  // Note that c_heap will be true for non-strong hidden classes.
   // even if their loader is the boot loader because they will have a different cld.
   bool c_heap = !loader_data->is_the_null_class_loader_data();
   for (int i = 0; i < names_count; i++) {
@@ -472,17 +472,17 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   bool clean_hint = false;
   bool rehash_warning = false;
   Symbol* sym = NULL;
-  Thread* THREAD = Thread::current();
+  Thread* current = Thread::current();
 
   do {
     // Callers have looked up the symbol once, insert the symbol.
     sym = allocate_symbol(name, len, heap);
-    if (_local_table->insert(THREAD, lookup, sym, &rehash_warning, &clean_hint)) {
+    if (_local_table->insert(current, lookup, sym, &rehash_warning, &clean_hint)) {
       break;
     }
     // In case another thread did a concurrent add, return value already in the table.
     // This could fail if the symbol got deleted concurrently, so loop back until success.
-    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
+    if (_local_table->get(current, lookup, stg, &rehash_warning)) {
       sym = stg.get_res_sym();
       break;
     }

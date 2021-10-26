@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -221,7 +221,7 @@ class LoaderTreeNode : public ResourceObj {
       if (print_classes) {
         if (_classes != NULL) {
           for (LoadedClassInfo* lci = _classes; lci; lci = lci->_next) {
-            // non-strong hidden and unsafe anonymous classes should not live in
+            // non-strong hidden classes should not live in
             // the primary CLD of their loaders.
             assert(lci->_cld == _cld, "must be");
 

@@ -146,8 +146,7 @@ public class Resolve {
         Target target = Target.instance(context);
         allowFunctionalInterfaceMostSpecific = Feature.FUNCTIONAL_INTERFACE_MOST_SPECIFIC.allowedInSource(source);
         allowLocalVariableTypeInference = Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source);
-        allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
-                Feature.SWITCH_EXPRESSION.allowedInSource(source);
+        allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         checkVarargsAccessAfterResolution =
                 Feature.POST_APPLICABILITY_VARARGS_ACCESS_CHECK.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
@@ -470,7 +469,7 @@ public class Resolve {
             return true;
         else {
             Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
-            return (s2 == null || s2 == sym || sym.owner == s2.owner ||
+            return (s2 == null || s2 == sym || sym.owner == s2.owner || (sym.owner.isInterface() && s2.owner == syms.objectType.tsym) ||
                     !types.isSubSignature(types.memberType(site, s2), types.memberType(site, sym)));
         }
     }
@@ -1488,30 +1487,24 @@ public class Resolve {
         boolean staticOnly = false;
         while (env1.outer != null) {
             Symbol sym = null;
-            if (isStatic(env1)) staticOnly = true;
             for (Symbol s : env1.info.scope.getSymbolsByName(name)) {
                 if (s.kind == VAR && (s.flags_field & SYNTHETIC) == 0) {
                     sym = s;
+                    if (staticOnly) {
+                        return new StaticError(sym);
+                    }
                     break;
                 }
             }
+            if (isStatic(env1)) staticOnly = true;
             if (sym == null) {
                 sym = findField(env1, env1.enclClass.sym.type, name, env1.enclClass.sym);
             }
             if (sym.exists()) {
                 if (staticOnly &&
-                   (sym.flags() & STATIC) == 0 &&
-                    sym.kind == VAR &&
-                        // if it is a field
-                        (sym.owner.kind == TYP ||
-                        // or it is a local variable but it is not declared inside of the static local type
-                        // then error
-                        allowRecords &&
-                        (sym.owner.kind == MTH) &&
-                        env1 != env &&
-                        !isInnerClassOfMethod(sym.owner, env.tree.hasTag(CLASSDEF) ?
-                                ((JCClassDecl)env.tree).sym :
-                                env.enclClass.sym)))
+                        sym.kind == VAR &&
+                        sym.owner.kind == TYP &&
+                        (sym.flags() & STATIC) == 0)
                     return new StaticError(sym);
                 else
                     return sym;
@@ -1861,7 +1854,8 @@ public class Resolve {
         List<Type>[] itypes = (List<Type>[])new List[] { List.<Type>nil(), List.<Type>nil() };
 
         InterfaceLookupPhase iphase = InterfaceLookupPhase.ABSTRACT_OK;
-        for (TypeSymbol s : superclasses(intype)) {
+        boolean isInterface = site.tsym.isInterface();
+        for (TypeSymbol s : isInterface ? List.of(intype.tsym) : superclasses(intype)) {
             bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
                     s.members(), bestSoFar, allowBoxing, useVarargs, true);
             if (name == names.init) return bestSoFar;
@@ -1897,6 +1891,19 @@ public class Resolve {
                     //to explicitly call that out (see CR 6178365)
                     bestSoFar = concrete;
                 }
+            }
+        }
+        if (isInterface && bestSoFar.kind.isResolutionError()) {
+            bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
+                    syms.objectType.tsym.members(), bestSoFar, allowBoxing, useVarargs, true);
+            if (bestSoFar.kind.isValid()) {
+                Symbol baseSymbol = bestSoFar;
+                bestSoFar = new MethodSymbol(bestSoFar.flags_field, bestSoFar.name, bestSoFar.type, intype.tsym) {
+                    @Override
+                    public Symbol baseSymbol() {
+                        return baseSymbol;
+                    }
+                };
             }
         }
         return bestSoFar;
@@ -2313,33 +2320,20 @@ public class Resolve {
         return bestSoFar;
     }
 
-    Symbol findTypeVar(Env<AttrContext> currentEnv, Env<AttrContext> originalEnv, Name name, boolean staticOnly) {
-        for (Symbol sym : currentEnv.info.scope.getSymbolsByName(name)) {
+    Symbol findTypeVar(Env<AttrContext> env, Name name, boolean staticOnly) {
+        for (Symbol sym : env.info.scope.getSymbolsByName(name)) {
             if (sym.kind == TYP) {
-                if (staticOnly &&
-                    sym.type.hasTag(TYPEVAR) &&
-                    ((sym.owner.kind == TYP) ||
-                    // are we trying to access a TypeVar defined in a method from a local static type: interface, enum or record?
-                    allowRecords &&
-                    (sym.owner.kind == MTH &&
-                    currentEnv != originalEnv &&
-                    !isInnerClassOfMethod(sym.owner, originalEnv.tree.hasTag(CLASSDEF) ?
-                            ((JCClassDecl)originalEnv.tree).sym :
-                            originalEnv.enclClass.sym)))) {
+                if (sym.type.hasTag(TYPEVAR) &&
+                        (staticOnly || (isStatic(env) && sym.owner.kind == TYP)))
+                    // if staticOnly is set, it means that we have recursed through a static declaration,
+                    // so type variable symbols should not be accessible. If staticOnly is unset, but
+                    // we are in a static declaration (field or method), we should not allow type-variables
+                    // defined in the enclosing class to "leak" into this context.
                     return new StaticError(sym);
-                }
                 return sym;
             }
         }
         return typeNotFound;
-    }
-
-    boolean isInnerClassOfMethod(Symbol msym, Symbol csym) {
-        while (csym.owner != msym) {
-            if (csym.isStatic()) return false;
-            csym = csym.owner.enclClass();
-        }
-        return (csym.owner == msym && !csym.isStatic());
     }
 
     /** Find an unqualified type symbol.
@@ -2353,9 +2347,9 @@ public class Resolve {
         Symbol sym;
         boolean staticOnly = false;
         for (Env<AttrContext> env1 = env; env1.outer != null; env1 = env1.outer) {
-            if (isStatic(env1)) staticOnly = true;
             // First, look for a type variable and the first member type
-            final Symbol tyvar = findTypeVar(env1, env, name, staticOnly);
+            final Symbol tyvar = findTypeVar(env1, name, staticOnly);
+            if (isStatic(env1)) staticOnly = true;
             sym = findImmediateMemberType(env1, env1.enclClass.sym.type,
                                           name, env1.enclClass.sym);
 
@@ -3437,7 +3431,7 @@ public class Resolve {
          */
         final boolean shouldStop(Symbol sym, MethodResolutionPhase phase) {
             return phase.ordinal() > maxPhase.ordinal() ||
-                !sym.kind.isResolutionError() || sym.kind == AMBIGUOUS;
+                 !sym.kind.isResolutionError() || sym.kind == AMBIGUOUS || sym.kind == STATICERR;
         }
 
         /**
@@ -3912,6 +3906,17 @@ public class Resolve {
             }
             return diagArgs;
         }
+    }
+
+    /** check if a type is a subtype of Serializable, if that is available.*/
+    boolean isSerializable(Type t) {
+        try {
+            syms.serializableType.complete();
+        }
+        catch (CompletionFailure e) {
+            return false;
+        }
+        return types.isSubtype(t, syms.serializableType);
     }
 
     /**

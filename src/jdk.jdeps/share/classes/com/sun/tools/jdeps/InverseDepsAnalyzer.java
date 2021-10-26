@@ -141,7 +141,7 @@ public class InverseDepsAnalyzer extends DepsAnalyzer {
             targets().forEach(builder::addNode);
 
             // transpose the module graph
-            configuration.getModules().values().stream()
+            configuration.getModules().values()
                 .forEach(m -> {
                     builder.addNode(m);
                     m.descriptor().requires().stream()
@@ -152,7 +152,7 @@ public class InverseDepsAnalyzer extends DepsAnalyzer {
 
             // add the dependences from the analysis
             Map<Archive, Set<Archive>> dependences = dependencyFinder.dependences();
-            dependences.entrySet().stream()
+            dependences.entrySet()
                 .forEach(e -> {
                     Archive u = e.getKey();
                     builder.addNode(u);
@@ -215,7 +215,7 @@ public class InverseDepsAnalyzer extends DepsAnalyzer {
             }
 
             // push unvisited adjacent edges
-            unvisitedDeps.stream().forEach(deque::push);
+            unvisitedDeps.forEach(deque::push);
 
 
             // when the adjacent edges of a node are visited, pop it from the path

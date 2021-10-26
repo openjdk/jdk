@@ -72,7 +72,7 @@ import transform.util.TransformerTestTemplate;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.TransformerTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.TransformerTest
  * @run testng/othervm transform.TransformerTest
  * @summary Transformer Tests
  * @bug 6272879 6305029 6505031 8150704 8162598 8169112 8169631 8169772

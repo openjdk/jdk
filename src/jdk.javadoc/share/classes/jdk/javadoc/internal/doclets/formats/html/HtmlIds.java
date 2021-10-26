@@ -89,6 +89,8 @@ public class HtmlIds {
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
     static final HtmlId MODULES = HtmlId.of("modules-summary");
     static final HtmlId MODULE_DESCRIPTION = HtmlId.of("module-description");
+    static final HtmlId NAVBAR_SUB_LIST = HtmlId.of("navbar-sub-list");
+    static final HtmlId NAVBAR_TOGGLE_BUTTON = HtmlId.of("navbar-toggle-button");
     static final HtmlId NAVBAR_TOP = HtmlId.of("navbar-top");
     static final HtmlId NAVBAR_TOP_FIRSTROW = HtmlId.of("navbar-top-firstrow");
     static final HtmlId NESTED_CLASS_SUMMARY = HtmlId.of("nested-class-summary");
@@ -216,7 +218,7 @@ public class HtmlIds {
      * @return the 1.4.x style anchor for the executable element
      */
     protected HtmlId forErasure(ExecutableElement executableElement) {
-        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName());
+        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName().toString());
         buf.append("(");
         List<? extends VariableElement> parameters = executableElement.getParameters();
         boolean foundTypeVariable = false;
@@ -237,7 +239,7 @@ public class HtmlIds {
 
                 @Override
                 public Boolean visitTypeVariable(TypeVariable t, Void p) {
-                    buf.append(utils.asTypeElement(t).getQualifiedName());
+                    buf.append(utils.asTypeElement(t).getQualifiedName().toString());
                     foundTypeVariable = true;
                     return foundTypeVariable;
                 }

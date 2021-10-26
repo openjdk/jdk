@@ -28,12 +28,12 @@
  */
 
 import jdk.incubator.foreign.MemoryHandles;
+import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import jdk.incubator.foreign.MemorySegment;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
@@ -74,7 +74,7 @@ public class TestVarHandleCombinators {
     public void testAlign() {
         VarHandle vh = MemoryHandles.varHandle(byte.class, 2, ByteOrder.nativeOrder());
 
-        MemorySegment segment = MemorySegment.allocateNative(1, 2);
+        MemorySegment segment = MemorySegment.allocateNative(1, 2, ResourceScope.newImplicitScope());
         vh.set(segment, 0L, (byte) 10); // fine, memory region is aligned
         assertEquals((byte) vh.get(segment, 0L), (byte) 10);
     }
@@ -108,7 +108,8 @@ public class TestVarHandleCombinators {
 
         VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
         int count = 0;
-        try (MemorySegment segment = MemorySegment.allocateNative(inner_size * outer_size * 8)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = MemorySegment.allocateNative(inner_size * outer_size * 8, 4, scope);
             for (long i = 0; i < outer_size; i++) {
                 for (long j = 0; j < inner_size; j++) {
                     vh.set(segment, i * 40 + j * 8, count);

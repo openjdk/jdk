@@ -206,7 +206,7 @@ class CompilationPolicy : AllStatic {
   // determines whether we should do that.
   inline static bool should_create_mdo(const methodHandle& method, CompLevel cur_level);
   // Create MDO if necessary.
-  static void create_mdo(const methodHandle& mh, Thread* thread);
+  static void create_mdo(const methodHandle& mh, JavaThread* THREAD);
   // Is method profiled enough?
   static bool is_method_profiled(const methodHandle& method);
 
@@ -237,6 +237,7 @@ class CompilationPolicy : AllStatic {
   // m must be compiled before executing it
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
 public:
+  static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
   static int c2_count() { return _c2_count; }
   static int compiler_count(CompLevel comp_level);

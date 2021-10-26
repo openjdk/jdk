@@ -48,7 +48,7 @@ import org.testng.annotations.Test;
  * @bug 8077931 8176405
  * @library /javax/xml/jaxp/libs
  * @modules java.xml/javax.xml.catalog:open
- * @run testng/othervm -DrunSecMngr=true catalog.DeferFeatureTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.DeferFeatureTest
  * @run testng/othervm catalog.DeferFeatureTest
  * @summary This case tests whether the catalogs specified in delegateSystem,
  *          delegatePublic, delegateURI and nextCatalog entries are used lazily

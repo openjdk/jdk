@@ -3244,6 +3244,7 @@ merge_stack(context_type *context, unsigned int from_inumber,
         jboolean change = JNI_FALSE;
         for (old = stack, new = new_stack; old != NULL;
                    old = old->next, new = new->next) {
+            assert(new != NULL);
             if (!isAssignableTo(context, new->item, old->item)) {
                 change = JNI_TRUE;
                 break;

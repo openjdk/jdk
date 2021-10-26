@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP
 
+#include "gc/parallel/psParallelCompact.hpp"
+
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"

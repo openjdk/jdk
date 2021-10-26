@@ -917,6 +917,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 }
 #endif // COMPILER2
 
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
 static address gen_c2i_adapter(MacroAssembler *masm,
                             int total_args_passed,
                             int comp_args_on_stack,
@@ -2146,14 +2153,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // Get the lock box slot's address.
     __ addi(r_box, R1_SP, lock_offset);
-
-#   ifdef ASSERT
-    if (UseBiasedLocking) {
-      // Making the box point to itself will make it clear it went unused
-      // but also be obviously invalid.
-      __ std(r_box, 0, r_box);
-    }
-#   endif // ASSERT
 
     // Try fastpath for locking.
     // fast_lock kills r_temp_1, r_temp_2, r_temp_3.

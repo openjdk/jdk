@@ -54,7 +54,7 @@ import org.w3c.dom.ls.LSSerializer;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.astro.DocumentLSTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.DocumentLSTest
  * @run testng/othervm test.astro.DocumentLSTest
  * @summary org.w3c.dom.ls tests
  */

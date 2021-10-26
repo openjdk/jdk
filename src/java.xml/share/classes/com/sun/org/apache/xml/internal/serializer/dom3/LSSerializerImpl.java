@@ -21,7 +21,6 @@
 
 package com.sun.org.apache.xml.internal.serializer.dom3;
 
-import com.sun.org.apache.xerces.internal.impl.Constants;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -39,10 +38,13 @@ import com.sun.org.apache.xml.internal.serializer.Encodings;
 import com.sun.org.apache.xml.internal.serializer.Serializer;
 import com.sun.org.apache.xml.internal.serializer.ToXMLStream;
 import com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory;
-import com.sun.org.apache.xml.internal.serializer.SerializerFactory;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
 import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkProperty.ImplPropMap;
+import jdk.xml.internal.JdkProperty.State;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
@@ -68,7 +70,7 @@ import org.w3c.dom.ls.LSSerializerFilter;
  * @version $Id:
  *
  * @xsl.usage internal
- * @LastModified: Jan 2021
+ * @LastModified: May 2021
  */
 final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
@@ -98,6 +100,9 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
     // The encoding to use during serialization.
     private String fEncoding;
+
+    // The isStandalone property
+    private JdkProperty<Boolean> fIsStandalone;
 
     // ************************************************************************
     // DOM Level 3 DOM Configuration parameter names
@@ -167,6 +172,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
     // ************************************************************************
 
     // Recognized parameters for which atleast one value can be set
+    @SuppressWarnings("deprecation")
     private String fRecognizedParameters [] = {
             DOMConstants.DOM_CANONICAL_FORM,
             DOMConstants.DOM_CDATA_SECTIONS,
@@ -187,7 +193,8 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
             DOMConstants.DOM_FORMAT_PRETTY_PRINT,
             DOMConstants.DOM_IGNORE_UNKNOWN_CHARACTER_DENORMALIZATIONS,
             DOMConstants.DOM_XMLDECL,
-            DOMConstants.FQ_IS_STANDALONE,
+            JdkConstants.FQ_IS_STANDALONE,
+            JdkConstants.SP_IS_STANDALONE,
             DOMConstants.DOM_ERROR_HANDLER
     };
 
@@ -358,9 +365,12 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
         fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "no");
 
         // JDK specific property isStandalone
-        String p = SecuritySupport.getJAXPSystemProperty(DOMConstants.SP_IS_STANDALONE);
+        boolean isStandalone = SecuritySupport.getJAXPSystemProperty(
+                Boolean.class, JdkConstants.SP_IS_STANDALONE, "false");
+
+        fIsStandalone = new JdkProperty<>(ImplPropMap.ISSTANDALONE, isStandalone, State.DEFAULT);
         // the system property is true only if it is "true" and false otherwise
-        if (p != null && p.equals("true")) {
+        if (isStandalone) {
             fFeatures |= IS_STANDALONE;
             fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE,
                     DOMConstants.DOM3_EXPLICIT_TRUE);
@@ -382,6 +392,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
      * @param name A String containing the DOMConfiguration parameter name.
      * @param value An Object specifying the value of the corresponding parameter.
      */
+    @SuppressWarnings("deprecation")
     public boolean canSetParameter(String name, Object value) {
         if (value instanceof Boolean){
             if ( name.equalsIgnoreCase(DOMConstants.DOM_CDATA_SECTIONS)
@@ -396,7 +407,8 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     || name.equalsIgnoreCase(DOMConstants.DOM_DISCARD_DEFAULT_CONTENT)
                     || name.equalsIgnoreCase(DOMConstants.DOM_FORMAT_PRETTY_PRINT)
                     || name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)
-                    || name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)){
+                    || name.equalsIgnoreCase(JdkConstants.FQ_IS_STANDALONE)
+                    || name.equalsIgnoreCase(JdkConstants.SP_IS_STANDALONE)){
                 // both values supported
                 return true;
             }
@@ -454,7 +466,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
             return ((fFeatures & PRETTY_PRINT) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)) {
             return ((fFeatures & XMLDECL) != 0) ? Boolean.TRUE : Boolean.FALSE;
-        } else if (name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)) {
+        } else if (ImplPropMap.ISSTANDALONE.is(name)) {
             return ((fFeatures & IS_STANDALONE) != 0) ? Boolean.TRUE : Boolean.FALSE;
         } else if (name.equalsIgnoreCase(DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE)) {
             return ((fFeatures & ELEM_CONTENT_WHITESPACE) != 0) ? Boolean.TRUE : Boolean.FALSE;
@@ -517,13 +529,13 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
     public void setParameter(String name, Object value) throws DOMException {
         // If the value is a boolean
         if (value instanceof Boolean) {
-            boolean state = ((Boolean) value).booleanValue();
+            boolean bValue = ((Boolean) value);
 
             if (name.equalsIgnoreCase(DOMConstants.DOM_COMMENTS)) {
-                fFeatures = state ? fFeatures | COMMENTS : fFeatures
+                fFeatures = bValue ? fFeatures | COMMENTS : fFeatures
                         & ~COMMENTS;
                 // comments
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_COMMENTS, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -531,10 +543,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                             + DOMConstants.DOM_COMMENTS, DOMConstants.DOM3_EXPLICIT_FALSE);
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_CDATA_SECTIONS)) {
-                fFeatures =  state ? fFeatures | CDATA : fFeatures
+                fFeatures =  bValue ? fFeatures | CDATA : fFeatures
                         & ~CDATA;
                 // cdata-sections
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_CDATA_SECTIONS, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -542,10 +554,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                             + DOMConstants.DOM_CDATA_SECTIONS, DOMConstants.DOM3_EXPLICIT_FALSE);
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_ENTITIES)) {
-                fFeatures = state ? fFeatures | ENTITIES : fFeatures
+                fFeatures = bValue ? fFeatures | ENTITIES : fFeatures
                         & ~ENTITIES;
                 // entities
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_ENTITIES, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -553,10 +565,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                             + DOMConstants.DOM_ENTITIES, DOMConstants.DOM3_EXPLICIT_FALSE);
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_NAMESPACES)) {
-                fFeatures = state ? fFeatures | NAMESPACES : fFeatures
+                fFeatures = bValue ? fFeatures | NAMESPACES : fFeatures
                         & ~NAMESPACES;
                 // namespaces
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_NAMESPACES, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -565,10 +577,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                 }
             } else if (name
                     .equalsIgnoreCase(DOMConstants.DOM_NAMESPACE_DECLARATIONS)) {
-                fFeatures = state ? fFeatures | NAMESPACEDECLS
+                fFeatures = bValue ? fFeatures | NAMESPACEDECLS
                         : fFeatures & ~NAMESPACEDECLS;
                 // namespace-declarations
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_NAMESPACE_DECLARATIONS, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -576,10 +588,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                             + DOMConstants.DOM_NAMESPACE_DECLARATIONS, DOMConstants.DOM3_EXPLICIT_FALSE);
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_SPLIT_CDATA)) {
-                fFeatures = state ? fFeatures | SPLITCDATA : fFeatures
+                fFeatures = bValue ? fFeatures | SPLITCDATA : fFeatures
                         & ~SPLITCDATA;
                 // split-cdata-sections
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_SPLIT_CDATA, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -587,10 +599,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                             + DOMConstants.DOM_SPLIT_CDATA, DOMConstants.DOM3_EXPLICIT_FALSE);
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_WELLFORMED)) {
-                fFeatures = state ? fFeatures | WELLFORMED : fFeatures
+                fFeatures = bValue ? fFeatures | WELLFORMED : fFeatures
                         & ~WELLFORMED;
                 // well-formed
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_WELLFORMED, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -599,10 +611,10 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                 }
             } else if (name
                     .equalsIgnoreCase(DOMConstants.DOM_DISCARD_DEFAULT_CONTENT)) {
-                fFeatures = state ? fFeatures | DISCARDDEFAULT
+                fFeatures = bValue ? fFeatures | DISCARDDEFAULT
                         : fFeatures & ~DISCARDDEFAULT;
                 // discard-default-content
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_DISCARD_DEFAULT_CONTENT, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -610,31 +622,32 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                             + DOMConstants.DOM_DISCARD_DEFAULT_CONTENT, DOMConstants.DOM3_EXPLICIT_FALSE);
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_FORMAT_PRETTY_PRINT)) {
-                fFeatures = state ? fFeatures | PRETTY_PRINT : fFeatures
+                fFeatures = bValue ? fFeatures | PRETTY_PRINT : fFeatures
                         & ~PRETTY_PRINT;
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_INDENT,DOMConstants.DOM3_EXPLICIT_TRUE);
                     fDOMConfigProperties.setProperty(OutputPropertiesFactory.S_KEY_INDENT_AMOUNT, Integer.toString(4));
                 } else {
                     fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_INDENT,DOMConstants.DOM3_EXPLICIT_FALSE);
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_XMLDECL)) {
-                fFeatures = state ? fFeatures | XMLDECL : fFeatures
+                fFeatures = bValue ? fFeatures | XMLDECL : fFeatures
                         & ~XMLDECL;
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "no");
                 } else {
                     fDOMConfigProperties.setProperty(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "yes");
                 }
-            } else if (name.equalsIgnoreCase(DOMConstants.FQ_IS_STANDALONE)) {
-                fFeatures = state ? fFeatures | IS_STANDALONE : fFeatures & ~IS_STANDALONE;
-                fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE, state ? "yes" : "no");
-
+            } else if (ImplPropMap.ISSTANDALONE.is(name)) {
+                fIsStandalone.setValue(name, bValue, State.APIPROPERTY);
+                fFeatures = fIsStandalone.getValue() ? fFeatures | IS_STANDALONE : fFeatures & ~IS_STANDALONE;
+                fDOMConfigProperties.setProperty(DOMConstants.NS_IS_STANDALONE,
+                        fIsStandalone.getValue() ? DOMConstants.DOM3_EXPLICIT_TRUE : DOMConstants.DOM3_EXPLICIT_FALSE);
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE)) {
-                fFeatures = state ? fFeatures | ELEM_CONTENT_WHITESPACE : fFeatures
+                fFeatures = bValue ? fFeatures | ELEM_CONTENT_WHITESPACE : fFeatures
                         & ~ELEM_CONTENT_WHITESPACE;
                 // element-content-whitespace
-                if (state) {
+                if (bValue) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE, DOMConstants.DOM3_EXPLICIT_TRUE);
                 } else {
@@ -643,7 +656,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_IGNORE_UNKNOWN_CHARACTER_DENORMALIZATIONS)) {
                 // false is not supported
-                if (!state) {
+                if (!bValue) {
                     // Here we have to add the Xalan specific DOM Message Formatter
                     String msg = Utils.messages.createMessage(
                             MsgKey.ER_FEATURE_NOT_SUPPORTED,
@@ -661,7 +674,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     // || name.equalsIgnoreCase(DOMConstants.DOM_NORMALIZE_CHARACTERS)
                     ) {
                 // true is not supported
-                if (state) {
+                if (bValue) {
                     String msg = Utils.messages.createMessage(
                             MsgKey.ER_FEATURE_NOT_SUPPORTED,
                             new Object[] { name });
@@ -688,7 +701,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     } */
                 }
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_INFOSET)) {
-                if (state) {
+                if (bValue) {
                     fFeatures &= ~ENTITIES;
                     fFeatures &= ~CDATA;
                     fFeatures &= ~SCHEMAVALIDATE;

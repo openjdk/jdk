@@ -254,12 +254,36 @@ findThread(ThreadList *list, jthread thread)
             node = nonTlsSearch(getEnv(), &otherThreads, thread);
         }
         /*
-         * Search runningThreads list. The TLS lookup may have failed because the
-         * thread has terminated, but the ThreadNode may still be present.
+         * Normally we can assume that a thread with no TLS will never be in the runningThreads
+         * list. This is because we always set the TLS when adding to runningThreads.
+         * However, when a thread exits, its TLS is automatically cleared. Normally this
+         * is not a problem because the debug agent will first get a THREAD_END event,
+         * and that will cause the thread to be removed from runningThreads, thus we
+         * avoid this situation of having a thread in runningThreads, but with no TLS.
+         *
+         * However... there is one exception to this. While handling VM_DEATH, the first thing
+         * the debug agent does is clear all the callbacks. This means we will no longer
+         * get THREAD_END events as threads exit. This means we might find threads on
+         * runningThreads with no TLS during VM_DEATH. Essentially the THREAD_END that
+         * would normally have resulted in removing the thread from runningThreads is
+         * missed, so the thread remains on runningThreads.
+         *
+         * The end result of all this is that if the TLS lookup failed, we still need to check
+         * if the thread is on runningThreads, but only if JVMTI callbacks have been cleared.
+         * Otherwise the thread should not be on the runningThreads.
          */
-        if ( node == NULL ) {
-            if ( list == NULL || list == &runningThreads ) {
-                node = nonTlsSearch(getEnv(), &runningThreads, thread);
+        if ( !gdata->jvmtiCallBacksCleared ) {
+            /* The thread better not be on runningThreads if the TLS lookup failed. */
+            JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
+        } else {
+            /*
+             * Search the runningThreads list. The TLS lookup may have failed because the
+             * thread has terminated, but we never got the THREAD_END event.
+             */
+            if ( node == NULL ) {
+                if ( list == NULL || list == &runningThreads ) {
+                    node = nonTlsSearch(getEnv(), &runningThreads, thread);
+                }
             }
         }
     }
@@ -2560,6 +2584,17 @@ threadControl_dumpAllThreads()
     dumpThreadList(&runningThreads);
     tty_message("Dumping otherThreads:\n");
     dumpThreadList(&otherThreads);
+}
+
+void
+threadControl_dumpThread(jthread thread)
+{
+    ThreadNode* node = findThread(NULL, thread);
+    if (node == NULL) {
+        tty_message("Thread not found");
+    } else {
+        dumpThread(node);
+    }
 }
 
 static void

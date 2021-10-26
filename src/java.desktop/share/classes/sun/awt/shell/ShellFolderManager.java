@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,11 +93,12 @@ class ShellFolderManager {
     }
 
     private static File checkFile(File f) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         return (sm == null || f == null) ? f : checkFile(f, sm);
     }
 
-    private static File checkFile(File f, SecurityManager sm) {
+    private static File checkFile(File f, @SuppressWarnings("removal") SecurityManager sm) {
         try {
             sm.checkRead(f.getPath());
             if (f instanceof ShellFolder) {
@@ -113,11 +114,12 @@ class ShellFolderManager {
     }
 
     private static File[] checkFiles(File[] fs) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         return (sm == null || fs == null) ? fs : checkFiles(Stream.of(fs), sm);
     }
 
-    private static File[] checkFiles(Stream<File> fs, SecurityManager sm) {
+    private static File[] checkFiles(Stream<File> fs, @SuppressWarnings("removal") SecurityManager sm) {
         return fs.filter(f -> f != null && checkFile(f, sm) != null)
                  .toArray(File[]::new);
     }

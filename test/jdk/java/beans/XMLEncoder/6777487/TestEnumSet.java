@@ -25,6 +25,7 @@
  * @test
  * @bug 6777487
  * @summary Tests private field access for EnumSet
+ * @run main/othervm -Djava.security.manager=allow TestEnumSet
  * @author Sergey Malenkov
  */
 

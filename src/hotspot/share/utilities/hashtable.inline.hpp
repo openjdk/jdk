@@ -25,10 +25,11 @@
 #ifndef SHARE_UTILITIES_HASHTABLE_INLINE_HPP
 #define SHARE_UTILITIES_HASHTABLE_INLINE_HPP
 
+#include "utilities/hashtable.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "services/memTracker.hpp"
-#include "utilities/hashtable.hpp"
 
 // Inline function definitions for hashtable.hpp.
 

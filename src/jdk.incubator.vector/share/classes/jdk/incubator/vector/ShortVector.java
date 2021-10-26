@@ -33,6 +33,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -381,16 +382,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /*package-private*/
     @ForceInline
-    static boolean doBinTest(int cond, short a, short b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a < b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a > b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError(Integer.toHexString(cond));
+    static short rotateLeft(short a, int n) {
+        return (short)(((((short)a) & Short.toUnsignedInt((short)-1)) << (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) >>> (Short.SIZE - (n & Short.SIZE-1))));
+    }
+
+    /*package-private*/
+    @ForceInline
+    static short rotateRight(short a, int n) {
+        return (short)(((((short)a) & Short.toUnsignedInt((short)-1)) >>> (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) << (Short.SIZE - (n & Short.SIZE-1))));
     }
 
     /*package-private*/
@@ -613,12 +612,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 // This allows the JIT to ignore some ISA details.
                 that = that.lanewise(AND, SHIFT_MASK);
             }
-            if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-                ShortVector neg = that.lanewise(NEG);
-                ShortVector hi = this.lanewise(LSHL, (op == ROR) ? neg : that);
-                ShortVector lo = this.lanewise(LSHR, (op == ROR) ? that : neg);
-                return hi.lanewise(OR, lo);
-            } else if (op == AND_NOT) {
+            if (op == AND_NOT) {
                 // FIXME: Support this in the JIT.
                 that = that.lanewise(NOT);
                 op = AND;
@@ -659,6 +653,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
                         v0.bOp(v1, (i, a, n) -> (short)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (short)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
+                case VECTOR_OP_RROTATE: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -805,11 +803,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         assert(opKind(op, VO_SHIFT));
         // As per shift specification for Java, mask the shift count.
         e &= SHIFT_MASK;
-        if (op == ROR || op == ROL) {  // FIXME: JIT should do this
-            ShortVector hi = this.lanewise(LSHL, (op == ROR) ? -e : e);
-            ShortVector lo = this.lanewise(LSHR, (op == ROR) ? e : -e);
-            return hi.lanewise(OR, lo);
-        }
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
             opc, getClass(), short.class, length(),
@@ -822,6 +815,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
                         v.uOp((i, a) -> (short)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (short)((a & LSHR_SETUP_MASK) >>> n));
+                case VECTOR_OP_LROTATE: return (v, n) ->
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
+                case VECTOR_OP_RROTATE: return (v, n) ->
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -1767,17 +1764,20 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     @ForceInline
-    private static
-    boolean compareWithOp(int cond, short a, short b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a <  b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a >  b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError();
+    private static boolean compareWithOp(int cond, short a, short b) {
+        return switch (cond) {
+            case BT_eq -> a == b;
+            case BT_ne -> a != b;
+            case BT_lt -> a < b;
+            case BT_le -> a <= b;
+            case BT_gt -> a > b;
+            case BT_ge -> a >= b;
+            case BT_ult -> Short.compareUnsigned(a, b) < 0;
+            case BT_ule -> Short.compareUnsigned(a, b) <= 0;
+            case BT_ugt -> Short.compareUnsigned(a, b) > 0;
+            case BT_uge -> Short.compareUnsigned(a, b) >= 0;
+            default -> throw new AssertionError();
+        };
     }
 
     /**
@@ -2175,6 +2175,29 @@ public abstract class ShortVector extends AbstractVector<Short> {
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
+    }
+
+    @ForceInline
+    private final
+    VectorShuffle<Short> toShuffle0(ShortSpecies dsp) {
+        short[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Short> toShuffleTemplate(Class<?> shuffleType) {
+        ShortSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), short.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     ShortVector::toShuffle0);
     }
 
     /**
@@ -2836,6 +2859,159 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     /**
+     * Loads a vector from an array of type {@code char[]}
+     * starting at an offset.
+     * For each vector lane, where {@code N} is the vector lane index, the
+     * array element at index {@code offset + N}
+     * is first cast to a {@code short} value and then
+     * placed into the resulting vector at lane index {@code N}.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array
+     * @return the vector loaded from an array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     */
+    @ForceInline
+    public static
+    ShortVector fromCharArray(VectorSpecies<Short> species,
+                                       char[] a, int offset) {
+        offset = checkFromIndexSize(offset, species.length(), a.length);
+        ShortSpecies vsp = (ShortSpecies) species;
+        return vsp.dummyVector().fromCharArray0(a, offset);
+    }
+
+    /**
+     * Loads a vector from an array of type {@code char[]}
+     * starting at an offset and using a mask.
+     * Lanes where the mask is unset are filled with the default
+     * value of {@code short} (zero).
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the mask lane at index {@code N} is set then the array element at
+     * index {@code offset + N}
+     * is first cast to a {@code short} value and then
+     * placed into the resulting vector at lane index
+     * {@code N}, otherwise the default element value is placed into the
+     * resulting vector at lane index {@code N}.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array
+     * @param m the mask controlling lane selection
+     * @return the vector loaded from an array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     */
+    @ForceInline
+    public static
+    ShortVector fromCharArray(VectorSpecies<Short> species,
+                                       char[] a, int offset,
+                                       VectorMask<Short> m) {
+        ShortSpecies vsp = (ShortSpecies) species;
+        if (offset >= 0 && offset <= (a.length - species.length())) {
+            ShortVector zero = vsp.zero();
+            return zero.blend(zero.fromCharArray0(a, offset), m);
+        }
+
+        // FIXME: optimize
+        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        return vsp.vOp(m, i -> (short) a[offset + i]);
+    }
+
+    /**
+     * Gathers a new vector composed of elements from an array of type
+     * {@code char[]},
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane is loaded from the expression
+     * {@code (short) a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array, may be negative if relative
+     * indexes in the index map compensate to produce a value within the
+     * array bounds
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @return the vector loaded from the indexed elements of the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     * @see ShortVector#toIntArray()
+     */
+    @ForceInline
+    public static
+    ShortVector fromCharArray(VectorSpecies<Short> species,
+                                       char[] a, int offset,
+                                       int[] indexMap, int mapOffset) {
+        // FIXME: optimize
+        ShortSpecies vsp = (ShortSpecies) species;
+        return vsp.vOp(n -> (short) a[offset + indexMap[mapOffset + n]]);
+    }
+
+    /**
+     * Gathers a new vector composed of elements from an array of type
+     * {@code char[]},
+     * under the control of a mask, and
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the lane is set in the mask,
+     * the lane is loaded from the expression
+     * {@code (short) a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     * Unset lanes in the resulting vector are set to zero.
+     *
+     * @param species species of desired vector
+     * @param a the array
+     * @param offset the offset into the array, may be negative if relative
+     * indexes in the index map compensate to produce a value within the
+     * array bounds
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @param m the mask controlling lane selection
+     * @return the vector loaded from the indexed elements of the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     * @see ShortVector#toIntArray()
+     */
+    @ForceInline
+    public static
+    ShortVector fromCharArray(VectorSpecies<Short> species,
+                                       char[] a, int offset,
+                                       int[] indexMap, int mapOffset,
+                                       VectorMask<Short> m) {
+        // FIXME: optimize
+        ShortSpecies vsp = (ShortSpecies) species;
+        return vsp.vOp(m, n -> (short) a[offset + indexMap[mapOffset + n]]);
+    }
+
+
+    /**
      * Loads a vector from a {@linkplain ByteBuffer byte buffer}
      * starting at an offset into the byte buffer.
      * Bytes are composed into primitive lane elements according
@@ -2967,7 +3143,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     /**
-     * Stores this vector into an array of {@code short}
+     * Stores this vector into an array of type {@code short[]}
      * starting at offset and using a mask.
      * <p>
      * For each vector lane, where {@code N} is the vector lane index,
@@ -3084,6 +3260,161 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     /**
+     * Stores this vector into an array of type {@code char[]}
+     * starting at an offset.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first cast to a {@code char} value and then
+     * stored into the array element {@code a[offset+N]}.
+     *
+     * @param a the array, of type {@code char[]}
+     * @param offset the offset into the array
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     */
+    @ForceInline
+    public final
+    void intoCharArray(char[] a, int offset) {
+        offset = checkFromIndexSize(offset, length(), a.length);
+        ShortSpecies vsp = vspecies();
+        VectorSupport.store(
+            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            a, charArrayAddress(a, offset),
+            this,
+            a, offset,
+            (arr, off, v)
+            -> v.stOp(arr, off,
+                      (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));
+    }
+
+    /**
+     * Stores this vector into an array of type {@code char[]}
+     * starting at offset and using a mask.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first cast to a {@code char} value and then
+     * stored into the array element {@code a[offset+N]}.
+     * If the mask lane at {@code N} is unset then the corresponding
+     * array element {@code a[offset+N]} is left unchanged.
+     * <p>
+     * Array range checking is done for lanes where the mask is set.
+     * Lanes where the mask is unset are not stored and do not need
+     * to correspond to legitimate elements of {@code a}.
+     * That is, unset lanes may correspond to array indexes less than
+     * zero or beyond the end of the array.
+     *
+     * @param a the array, of type {@code char[]}
+     * @param offset the offset into the array
+     * @param m the mask controlling lane storage
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     */
+    @ForceInline
+    public final
+    void intoCharArray(char[] a, int offset,
+                       VectorMask<Short> m) {
+        if (m.allTrue()) {
+            intoCharArray(a, offset);
+        } else {
+            // FIXME: optimize
+            ShortSpecies vsp = vspecies();
+            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            stOp(a, offset, m, (arr, off, i, v) -> arr[off+i] = (char) v);
+        }
+    }
+
+    /**
+     * Scatters this vector into an array of type {@code char[]}
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * the lane element at index {@code N}
+     * is first cast to a {@code char} value and then
+     * stored into the array
+     * element {@code a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     *
+     * @param a the array
+     * @param offset an offset to combine with the index map offsets
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     * @see ShortVector#toIntArray()
+     */
+    @ForceInline
+    public final
+    void intoCharArray(char[] a, int offset,
+                       int[] indexMap, int mapOffset) {
+        // FIXME: optimize
+        stOp(a, offset,
+             (arr, off, i, e) -> {
+                 int j = indexMap[mapOffset + i];
+                 arr[off + j] = (char) e;
+             });
+    }
+
+    /**
+     * Scatters this vector into an array of type {@code char[]},
+     * under the control of a mask, and
+     * using indexes obtained by adding a fixed {@code offset} to a
+     * series of secondary offsets from an <em>index map</em>.
+     * The index map is a contiguous sequence of {@code VLENGTH}
+     * elements in a second array of {@code int}s, starting at a given
+     * {@code mapOffset}.
+     * <p>
+     * For each vector lane, where {@code N} is the vector lane index,
+     * if the mask lane at index {@code N} is set then
+     * the lane element at index {@code N}
+     * is first cast to a {@code char} value and then
+     * stored into the array
+     * element {@code a[f(N)]}, where {@code f(N)} is the
+     * index mapping expression
+     * {@code offset + indexMap[mapOffset + N]]}.
+     *
+     * @param a the array
+     * @param offset an offset to combine with the index map offsets
+     * @param indexMap the index map
+     * @param mapOffset the offset into the index map
+     * @param m the mask
+     * @throws IndexOutOfBoundsException
+     *         if {@code mapOffset+N < 0}
+     *         or if {@code mapOffset+N >= indexMap.length},
+     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
+     *         is an invalid index into {@code a},
+     *         for any lane {@code N} in the vector
+     *         where the mask is set
+     * @see ShortVector#toIntArray()
+     */
+    @ForceInline
+    public final
+    void intoCharArray(char[] a, int offset,
+                       int[] indexMap, int mapOffset,
+                       VectorMask<Short> m) {
+        // FIXME: optimize
+        stOp(a, offset, m,
+             (arr, off, i, e) -> {
+                 int j = indexMap[mapOffset + i];
+                 arr[off + j] = (char) e;
+             });
+    }
+
+
+    /**
      * {@inheritDoc} <!--workaround-->
      */
     @Override
@@ -3189,6 +3520,22 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                     (arr_, off_, i) -> arr_[off_ + i]));
     }
 
+    /*package-private*/
+    abstract
+    ShortVector fromCharArray0(char[] a, int offset);
+    @ForceInline
+    final
+    ShortVector fromCharArray0Template(char[] a, int offset) {
+        ShortSpecies vsp = vspecies();
+        return VectorSupport.load(
+            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            a, charArrayAddress(a, offset),
+            a, offset, vsp,
+            (arr, off, s) -> s.ldOp(arr, off,
+                                    (arr_, off_, i) -> (short) arr_[off_ + i]));
+    }
+
+
     @Override
     abstract
     ShortVector fromByteArray0(byte[] a, int offset);
@@ -3213,15 +3560,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     final
     ShortVector fromByteBuffer0Template(ByteBuffer bb, int offset) {
         ShortSpecies vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            bb, offset, vsp,
-            (buf, off, s) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                return s.ldOp(wb, off,
-                        (wb_, o, i) -> wb_.getShort(o + i * 2));
-           });
+        return ScopedMemoryAccess.loadFromByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                bb, offset, vsp,
+                (buf, off, s) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off,
+                            (wb_, o, i) -> wb_.getShort(o + i * 2));
+                });
     }
 
     // Unchecked storing operations in native byte order.
@@ -3264,15 +3610,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     final
     void intoByteBuffer0(ByteBuffer bb, int offset) {
         ShortSpecies vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            this, bb, offset,
-            (buf, off, v) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                v.stOp(wb, off,
-                        (wb_, o, i, e) -> wb_.putShort(o + i * 2, e));
-            });
+        ScopedMemoryAccess.storeIntoByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                this, bb, offset,
+                (buf, off, v) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off,
+                            (wb_, o, i, e) -> wb_.putShort(o + i * 2, e));
+                });
     }
 
     // End of low-level memory operations.
@@ -3323,6 +3668,17 @@ public abstract class ShortVector extends AbstractVector<Short> {
     static long arrayAddress(short[] a, int index) {
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
     }
+
+    static final int ARRAY_CHAR_SHIFT =
+            31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_CHAR_INDEX_SCALE);
+    static final long ARRAY_CHAR_BASE =
+            Unsafe.ARRAY_CHAR_BASE_OFFSET;
+
+    @ForceInline
+    static long charArrayAddress(char[] a, int index) {
+        return ARRAY_CHAR_BASE + (((long)index) << ARRAY_CHAR_SHIFT);
+    }
+
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {

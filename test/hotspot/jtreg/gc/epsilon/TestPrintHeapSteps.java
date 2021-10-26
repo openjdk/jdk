@@ -27,9 +27,21 @@ package gc.epsilon;
  * @test TestPrintSteps
  * @requires vm.gc.Epsilon
  * @summary Tests -XX:EpsilonPrintHeapSteps works
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonPrintHeapSteps=0    gc.epsilon.TestPrintHeapSteps
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonPrintHeapSteps=1    gc.epsilon.TestPrintHeapSteps
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -XX:EpsilonPrintHeapSteps=1000 gc.epsilon.TestPrintHeapSteps
+ *
+ * @run main/othervm -Xmx64m -Xlog:gc
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   -XX:EpsilonPrintHeapSteps=0
+ *                   gc.epsilon.TestPrintHeapSteps
+ *
+ * @run main/othervm -Xmx64m -Xlog:gc
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   -XX:EpsilonPrintHeapSteps=1
+ *                   gc.epsilon.TestPrintHeapSteps
+ *
+ * @run main/othervm -Xmx64m -Xlog:gc
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   -XX:EpsilonPrintHeapSteps=1000
+ *                   gc.epsilon.TestPrintHeapSteps
  */
 
 public class TestPrintHeapSteps {

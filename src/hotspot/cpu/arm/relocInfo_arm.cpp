@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
-#include "assembler_arm.inline.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/compressedOops.inline.hpp"

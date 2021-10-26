@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -777,18 +777,15 @@ const Type* DivDNode::Value(PhaseGVN* phase) const {
   if( t2 == TypeD::ONE )
     return t1;
 
-#if defined(IA32)
-  if (!phase->C->method()->is_strict())
-    // Can't trust native compilers to properly fold strict double
-    // division with round-to-zero on this platform.
+  // IA32 would only execute this for non-strict FP, which is never the
+  // case now.
+#if ! defined(IA32)
+  // If divisor is a constant and not zero, divide them numbers
+  if( t1->base() == Type::DoubleCon &&
+      t2->base() == Type::DoubleCon &&
+      t2->getd() != 0.0 ) // could be negative zero
+    return TypeD::make( t1->getd()/t2->getd() );
 #endif
-    {
-      // If divisor is a constant and not zero, divide them numbers
-      if( t1->base() == Type::DoubleCon &&
-          t2->base() == Type::DoubleCon &&
-          t2->getd() != 0.0 ) // could be negative zero
-        return TypeD::make( t1->getd()/t2->getd() );
-    }
 
   // If the dividend is a constant zero
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)

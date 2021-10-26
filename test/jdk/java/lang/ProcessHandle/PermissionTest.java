@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @run testng/othervm PermissionTest
+ * @run testng/othervm -Djava.security.manager=allow PermissionTest
  * @summary Test Permissions to access Info
  */
 

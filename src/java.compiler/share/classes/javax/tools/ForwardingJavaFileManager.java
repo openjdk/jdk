@@ -37,6 +37,9 @@ import javax.tools.JavaFileObject.Kind;
  * might override some of these methods and might also provide
  * additional fields and methods.
  *
+ * <p>Unless stated otherwise, references in this class to "<em>this file manager</em>"
+ * should be interpreted as referring indirectly to the {@link #fileManager delegate file manager}.
+ *
  * @param <M> the kind of file manager forwarded to by this object
  * @author Peter von der Ah&eacute;
  * @since 1.6
@@ -44,7 +47,7 @@ import javax.tools.JavaFileObject.Kind;
 public class ForwardingJavaFileManager<M extends JavaFileManager> implements JavaFileManager {
 
     /**
-     * The file manager which all methods are delegated to.
+     * The file manager to which all methods are delegated.
      */
     protected final M fileManager;
 

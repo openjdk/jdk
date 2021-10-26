@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,7 @@ public class TestDocFiles extends JavadocTester {
             } else {
                 // be careful handing file separator characters in the message
                 checkOutput(Output.OUT, true,
-                        "warning - File " + f + " not copied: invalid name");
+                        "warning: File " + f + " not copied: invalid name");
             }
         }
     }

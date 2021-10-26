@@ -200,9 +200,10 @@ $(eval $(call SetTestOpt,FAILURE_HANDLER_TIMEOUT,JTREG))
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
-        RETRY_COUNT MAX_OUTPUT, \
+        RETRY_COUNT MAX_OUTPUT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
-        EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS, \
+        EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
+        $(CUSTOM_JTREG_STRING_KEYWORDS), \
 ))
 
 ifneq ($(JTREG), )
@@ -257,8 +258,6 @@ jaxp_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jaxp/ProblemList.txt
 langtools_JTREG_PROBLEM_LIST += $(TOPDIR)/test/langtools/ProblemList.txt
 hotspot_JTREG_PROBLEM_LIST += $(TOPDIR)/test/hotspot/jtreg/ProblemList.txt
 lib-test_JTREG_PROBLEM_LIST += $(TOPDIR)/test/lib-test/ProblemList.txt
-
-langtools_JTREG_MAX_MEM := 768m
 
 ################################################################################
 # Parse test selection
@@ -722,7 +721,7 @@ define SetupRunJtregTestBody
   # Convert JTREG_foo into $1_JTREG_foo with a suitable value.
   $$(eval $$(call SetJtregValue,$1,JTREG_TEST_MODE,agentvm))
   $$(eval $$(call SetJtregValue,$1,JTREG_ASSERT,true))
-  $$(eval $$(call SetJtregValue,$1,JTREG_MAX_MEM,512m))
+  $$(eval $$(call SetJtregValue,$1,JTREG_MAX_MEM,768m))
   $$(eval $$(call SetJtregValue,$1,JTREG_NATIVEPATH))
   $$(eval $$(call SetJtregValue,$1,JTREG_BASIC_OPTIONS))
   $$(eval $$(call SetJtregValue,$1,JTREG_PROBLEM_LIST))
@@ -738,7 +737,7 @@ define SetupRunJtregTestBody
 
   # Make sure MaxRAMPercentage is high enough to not cause OOM or swapping since
   # we may end up with a lot of JVM's
-  $1_JTREG_MAX_RAM_PERCENTAGE := $$(shell $$(EXPR) 25 / $$($1_JTREG_JOBS))
+  $1_JTREG_MAX_RAM_PERCENTAGE := $$(shell $(AWK) 'BEGIN { print 25 / $$($1_JTREG_JOBS); }')
 
   JTREG_TIMEOUT_FACTOR ?= 4
 
@@ -833,6 +832,8 @@ define SetupRunJtregTestBody
       $1_JTREG_BASIC_OPTIONS += -k:'$$($1_JTREG_KEYWORDS)'
     endif
   endif
+
+  $$(eval $$(call SetupRunJtregTestCustom, $1))
 
   clean-workdir-$1:
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)

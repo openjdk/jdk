@@ -25,6 +25,8 @@
 #ifndef OS_BSD_OS_BSD_INLINE_HPP
 #define OS_BSD_OS_BSD_INLINE_HPP
 
+// os_bsd.hpp included by os.hpp
+
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
 

@@ -39,7 +39,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6483188
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6483188
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6483188
  * @run testng/othervm validation.Bug6483188
  * @summary Test Schema Validator can handle element with having large maxOccurs, but doesn't accept sequence with having large maxOccurs in FEATURE_SECURE_PROCESSING mode.
  */

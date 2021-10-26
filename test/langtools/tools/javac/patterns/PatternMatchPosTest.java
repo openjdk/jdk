@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,7 @@ public class PatternMatchPosTest extends AbstractProcessor {
                         int start = (int) sp.getStartPosition(dataPath.getCompilationUnit(), tree);
                         int end = (int) sp.getEndPosition(dataPath.getCompilationUnit(), tree);
                         if (start != (-1) || end != (-1)) {
-                            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
-                                                                     text.substring(start, end));
+                            processingEnv.getMessager().printNote(text.substring(start, end));
                         }
                     }
                     return super.scan(tree, p);

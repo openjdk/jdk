@@ -111,9 +111,7 @@ ShenandoahConcurrentPhase::~ShenandoahConcurrentPhase() {
 
 ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase) :
   _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase) {
-  assert(!Thread::current()->is_Worker_thread() &&
-              (Thread::current()->is_VM_thread() ||
-               Thread::current()->is_ConcurrentGC_thread()),
+  assert(Thread::current()->is_VM_thread() || Thread::current()->is_ConcurrentGC_thread(),
           "Must be set by these threads");
   _parent_phase = _current_phase;
   _current_phase = phase;

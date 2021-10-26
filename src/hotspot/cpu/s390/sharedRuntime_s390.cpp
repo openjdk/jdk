@@ -852,6 +852,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return align_up(stk, 2);
 }
 
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
 ////////////////////////////////////////////////////////////////////////
 //
 //  Argument shufflers
@@ -1865,13 +1872,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     lock_offset = (lock_slot_offset * VMRegImpl::stack_slot_size);
     // Get the lock box slot's address.
     __ add2reg(r_box, lock_offset, Z_SP);
-
-#ifdef ASSERT
-    if (UseBiasedLocking)
-      // Making the box point to itself will make it clear it went unused
-      // but also be obviously invalid.
-      __ z_stg(r_box, 0, r_box);
-#endif // ASSERT
 
     // Try fastpath for locking.
     // Fast_lock kills r_temp_1, r_temp_2. (Don't use R1 as temp, won't work!)

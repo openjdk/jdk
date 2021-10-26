@@ -58,7 +58,6 @@ define_pd_global(intx, StackReservedPages,    DEFAULT_STACK_RESERVED_PAGES);
 define_pd_global(uintx, CodeCacheSegmentSize,  128);
 define_pd_global(intx,  CodeEntryAlignment,    128);
 define_pd_global(intx,  OptoLoopAlignment,     16);
-define_pd_global(intx,  InlineFrequencyCount,  100);
 define_pd_global(intx,  InlineSmallCode,       1500);
 
 // Flags for template interpreter.

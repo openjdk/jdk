@@ -67,7 +67,8 @@ public class DrawGlyphListAA extends GraphicsPrimitive {
     }
 
     public native void DrawGlyphListAA(SunGraphics2D sg2d, SurfaceData dest,
-                                       GlyphList srcData);
+                                       GlyphList srcData,
+                                       int fromGlyph, int toGlyph);
 
     static {
         GraphicsPrimitiveMgr.registerGeneral(
@@ -92,16 +93,14 @@ public class DrawGlyphListAA extends GraphicsPrimitive {
         }
 
         public void DrawGlyphListAA(SunGraphics2D sg2d, SurfaceData dest,
-                                    GlyphList gl)
+                                    GlyphList gl, int fromGlyph, int toGlyph)
         {
-            gl.getBounds(); // Don't delete, bug 4895493
-            int num = gl.getNumGlyphs();
             Region clip = sg2d.getCompClip();
             int cx1 = clip.getLoX();
             int cy1 = clip.getLoY();
             int cx2 = clip.getHiX();
             int cy2 = clip.getHiY();
-            for (int i = 0; i < num; i++) {
+            for (int i = fromGlyph; i < toGlyph; i++) {
                 gl.setGlyphIndex(i);
                 int[] metrics = gl.getMetrics();
                 int gx1 = metrics[0];
@@ -149,10 +148,11 @@ public class DrawGlyphListAA extends GraphicsPrimitive {
         }
 
         public void DrawGlyphListAA(SunGraphics2D sg2d, SurfaceData dest,
-                                    GlyphList glyphs)
+                                    GlyphList glyphs,
+                                    int fromGlyph, int toGlyph)
         {
             tracePrimitive(target);
-            target.DrawGlyphListAA(sg2d, dest, glyphs);
+            target.DrawGlyphListAA(sg2d, dest, glyphs, fromGlyph, toGlyph);
         }
     }
 }

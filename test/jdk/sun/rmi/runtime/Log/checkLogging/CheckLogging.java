@@ -33,7 +33,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary
- * @run main/othervm CheckLogging
+ * @run main/othervm -Djava.security.manager=allow CheckLogging
  */
 
 import java.util.logging.Level;

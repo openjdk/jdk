@@ -40,6 +40,7 @@ import com.sun.jndi.toolkit.ctx.Continuation;
 final class LdapBindingEnumeration
         extends AbstractLdapNamingEnumeration<Binding> {
 
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
 
     LdapBindingEnumeration(LdapCtx homeCtx, LdapResult answer, Name remain,
@@ -48,6 +49,7 @@ final class LdapBindingEnumeration
         super(homeCtx, answer, remain, cont);
     }
 
+    @SuppressWarnings("removal")
     @Override
     protected Binding
       createItem(String dn, Attributes attrs, Vector<Control> respCtls)

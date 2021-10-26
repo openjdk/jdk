@@ -26,11 +26,7 @@
 #ifndef CPU_AARCH64_COPY_AARCH64_HPP
 #define CPU_AARCH64_COPY_AARCH64_HPP
 
-// Inline functions for memory copy and fill.
-
-// Contains inline asm implementations
-#include OS_CPU_HEADER_INLINE(copy)
-
+#include OS_CPU_HEADER(copy)
 
 static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
   julong* to = (julong*) tohw;

@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6350682
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true common.Bug6350682
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.Bug6350682
  * @run testng/othervm common.Bug6350682
  * @summary Test SAXParserFactory and TransformerFactory can newInstance when setContextClassLoader(null).
  */

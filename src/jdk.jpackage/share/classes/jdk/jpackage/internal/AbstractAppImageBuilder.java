@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.List;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 /*
@@ -75,6 +77,11 @@ public abstract class AbstractAppImageBuilder {
                     appLayout.appDirectory());
         }
         AppImageFile.save(root, params);
+        List<String> items = APP_CONTENT.fetchFrom(params);
+        for (String item : items) {
+            IOUtils.copyRecursive(Path.of(item),
+                appLayout.contentDirectory().resolve(Path.of(item).getFileName()));
+        }
     }
 
     public static OverridableResource createIconResource(String defaultIconName,

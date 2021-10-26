@@ -70,6 +70,8 @@ import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  *
  * @author Thomas Wuerthinger
@@ -111,13 +113,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                 FileOutputStream os = null;
                 try {
                     os = new FileOutputStream(f);
-                    Writer out = new OutputStreamWriter(os, "UTF-8");
+                    Writer out = new OutputStreamWriter(os, UTF_8);
                     BatikSVG.printToStream(svgGenerator, out, true);
                 } catch (FileNotFoundException e) {
                     NotifyDescriptor message = new NotifyDescriptor.Message("For export to SVG files the Batik SVG Toolkit must be intalled.", NotifyDescriptor.ERROR_MESSAGE);
                     DialogDisplayer.getDefault().notifyLater(message);
-
-                } catch (UnsupportedEncodingException e) {
                 } finally {
                     if (os != null) {
                         try {

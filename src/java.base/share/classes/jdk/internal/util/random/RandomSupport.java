@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -755,6 +755,7 @@ public class RandomSupport {
 
     // The following decides which of two strategies initialSeed() will use.
     private static boolean secureRandomSeedRequested() {
+        @SuppressWarnings("removal")
         String pp = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                         "java.util.secureRandomSeed"));
@@ -2379,7 +2380,7 @@ public class RandomSupport {
             long bits = nextLong();
             long multiplier = (1L << SALT_SHIFT) - 1;
             long salt = multiplier << (64 - SALT_SHIFT);
-            while ((salt & multiplier) != 0) {
+            while ((salt & multiplier) == 0) {
                 long digit = Math.multiplyHigh(bits, multiplier);
                 salt = (salt >>> SALT_SHIFT) | (digit << (64 - SALT_SHIFT));
                 bits *= multiplier;

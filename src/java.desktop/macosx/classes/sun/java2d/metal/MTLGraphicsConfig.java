@@ -75,6 +75,7 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     private static boolean mtlAvailable;
     private static ImageCapabilities imageCaps = new MTLImageCaps();
 
+    @SuppressWarnings("removal")
     private static final String mtlShadersLib = AccessController.doPrivileged(
             (PrivilegedAction<String>) () ->
                     System.getProperty("java.home", "") + File.separator +

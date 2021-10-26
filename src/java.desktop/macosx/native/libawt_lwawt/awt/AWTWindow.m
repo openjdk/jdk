@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
 
             // send up to the GestureHandler to recursively dispatch on the AWT event thread
             DECLARE_CLASS(jc_GestureHandler, "com/apple/eawt/event/GestureHandler");
-            DECLARE_METHOD(sjm_handleGestureFromNative, jc_GestureHandler,
+            DECLARE_STATIC_METHOD(sjm_handleGestureFromNative, jc_GestureHandler,
                             "handleGestureFromNative", "(Ljava/awt/Window;IDDDD)V");
             (*env)->CallStaticVoidMethod(env, jc_GestureHandler, sjm_handleGestureFromNative,
                                awtWindow, type, (jdouble)loc.x, (jdouble)loc.y, (jdouble)a, (jdouble)b);
@@ -1094,6 +1094,24 @@ AWT_ASSERT_APPKIT_THREAD;
 
 @end // AWTWindow
 
+/*
+ * Class:     sun_lwawt_macosx_CPlatformWindow
+ * Method:    nativeSetAllAllowAutomaticTabbingProperty
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetAllowAutomaticTabbingProperty
+        (JNIEnv *env, jclass clazz, jboolean allowAutomaticTabbing)
+{
+    JNI_COCOA_ENTER(env);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        if (allowAutomaticTabbing) {
+            [NSWindow setAllowsAutomaticWindowTabbing:YES];
+        } else {
+            [NSWindow setAllowsAutomaticWindowTabbing:NO];
+        }
+    }];
+    JNI_COCOA_EXIT(env);
+}
 
 /*
  * Class:     sun_lwawt_macosx_CPlatformWindow

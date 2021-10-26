@@ -25,6 +25,7 @@
  * @test
  * @bug 6501431
  * @summary Tests AWTKeyStroke encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_AWTKeyStroke
  * @author Sergey Malenkov
  */
 

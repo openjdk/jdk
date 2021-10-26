@@ -374,7 +374,7 @@ class GenerateOopMap {
   static void   reachable_basicblock        (GenerateOopMap *c, int deltaBci, int *data);
 
   // Interpretation methods (primary)
-  void  do_interpretation                   (Thread* thread);
+  void  do_interpretation                   ();
   void  init_basic_blocks                   ();
   void  setup_method_entry_state            ();
   void  interp_all                          ();

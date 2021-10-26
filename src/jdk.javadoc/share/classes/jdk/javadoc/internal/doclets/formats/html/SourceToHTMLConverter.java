@@ -151,13 +151,13 @@ public class SourceToHTMLConverter {
         if (pkg == null) {
             return;
         }
-        for (Element te : utils.getAllClasses(pkg)) {
+        for (TypeElement te : utils.getAllClasses(pkg)) {
             // If -nodeprecated option is set and the class is marked as deprecated,
             // do not convert the package files to HTML. We do not check for
             // containing package deprecation since it is already check in
             // the calling method above.
             if (!(options.noDeprecated() && utils.isDeprecated(te)))
-                convertClass((TypeElement)te, outputdir);
+                convertClass(te, outputdir);
         }
     }
 
@@ -175,9 +175,9 @@ public class SourceToHTMLConverter {
             return;
         }
         for (Element elem : mdl.getEnclosedElements()) {
-            if (elem instanceof PackageElement && configuration.docEnv.isIncluded(elem)
+            if (elem instanceof PackageElement pkg && configuration.docEnv.isIncluded(elem)
                     && !(options.noDeprecated() && utils.isDeprecated(elem))) {
-                convertPackage((PackageElement) elem, outputdir);
+                convertPackage(pkg, outputdir);
             }
         }
     }

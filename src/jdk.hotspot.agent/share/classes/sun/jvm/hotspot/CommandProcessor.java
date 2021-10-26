@@ -33,13 +33,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Stack;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -236,9 +237,7 @@ public class CommandProcessor {
         }
 
         String at(int i) {
-            if (i < 0 || i >= length) {
-                throw new IndexOutOfBoundsException(String.valueOf(i));
-            }
+            Objects.checkIndex(i, length);
             return tokens[i];
         }
     }
@@ -986,7 +985,7 @@ public class CommandProcessor {
                 Iterator i = agent.getTypeDataBase().getTypes();
                 // Make sure the types are emitted in an order than can be read back in
                 HashSet<String> emitted = new HashSet<>();
-                Stack<Type> pending = new Stack<>();
+                ArrayDeque<Type> pending = new ArrayDeque<>();
                 while (i.hasNext()) {
                     Type n = (Type)i.next();
                     if (emitted.contains(n.getName())) {
@@ -997,7 +996,7 @@ public class CommandProcessor {
                         pending.push(n);
                         n = n.getSuperclass();
                     }
-                    while (!pending.empty()) {
+                    while (!pending.isEmpty()) {
                         n = (Type)pending.pop();
                         dumpType(n);
                         emitted.add(n.getName());
@@ -1382,7 +1381,7 @@ public class CommandProcessor {
                     Iterator i = agent.getTypeDataBase().getTypes();
                     // Make sure the types are emitted in an order than can be read back in
                     HashSet<String> emitted = new HashSet<>();
-                    Stack<Type> pending = new Stack<>();
+                    ArrayDeque<Type> pending = new ArrayDeque<>();
                     while (i.hasNext()) {
                         Type n = (Type)i.next();
                         if (emitted.contains(n.getName())) {
@@ -1393,7 +1392,7 @@ public class CommandProcessor {
                             pending.push(n);
                             n = n.getSuperclass();
                         }
-                        while (!pending.empty()) {
+                        while (!pending.isEmpty()) {
                             n = (Type)pending.pop();
                             dumpType(n);
                             emitted.add(n.getName());

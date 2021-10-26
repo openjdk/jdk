@@ -190,13 +190,17 @@ final public class LogParser {
     }
 
     private Map<Long, PlabInfo> getSpecifiedStats(List<Long> gcIds, LogParser.ReportType type, List<String> fieldNames, boolean extractId) {
-        return new HashMap<>(
-                getEntries().entryStream()
-                .filter(gcLogItem -> extractId == gcIds.contains(gcLogItem.getKey()))
-                .collect(Collectors.toMap(gcLogItem -> gcLogItem.getKey(),
-                                gcLogItem -> gcLogItem.getValue().get(type).filter(fieldNames)
+        var map = new HashMap<>(
+                        getEntries().entryStream()
+                        .filter(gcLogItem -> extractId == gcIds.contains(gcLogItem.getKey()))
+                        .collect(Collectors.toMap(gcLogItem -> gcLogItem.getKey(),
+                                        gcLogItem -> gcLogItem.getValue().get(type).filter(fieldNames)
+                                )
                         )
-                )
-        );
+                 );
+        if (map.isEmpty()) {
+            throw new RuntimeException("Cannot find relevant PLAB statistics in the log");
+        }
+        return map;
     }
 }

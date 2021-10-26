@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,10 @@ public abstract class Trees {
     public Trees() {}
 
     /**
-     * Returns a Trees object for a given CompilationTask.
-     * @param task the compilation task for which to get the Trees object
-     * @throws IllegalArgumentException if the task does not support the Trees API.
-     * @return the Trees object
+     * Returns a {@code Trees} object for a given {@code CompilationTask}.
+     * @param task the compilation task for which to get the {@code Trees} object
+     * @throws IllegalArgumentException if the task does not support the Tree API.
+     * @return the {@code Trees} object
      */
     public static Trees instance(CompilationTask task) {
         String taskClassName = task.getClass().getName();
@@ -72,10 +72,10 @@ public abstract class Trees {
     }
 
     /**
-     * Returns a Trees object for a given ProcessingEnvironment.
-     * @param env the processing environment for which to get the Trees object
-     * @throws IllegalArgumentException if the env does not support the Trees API.
-     * @return the Trees object
+     * Returns a {code Trees} object for a given {@code ProcessingEnvironment}.
+     * @param env the processing environment for which to get the {@code Trees} object
+     * @throws IllegalArgumentException if the env does not support the Tree API.
+     * @return the {@code Trees} object
      */
     public static Trees instance(ProcessingEnvironment env) {
         if (!env.getClass().getName().equals("com.sun.tools.javac.processing.JavacProcessingEnvironment"))
@@ -102,7 +102,7 @@ public abstract class Trees {
     public abstract SourcePositions getSourcePositions();
 
     /**
-     * Returns the Tree node for a given Element.
+     * Returns the {@code Tree} node for a given {@code Element}.
      * Returns {@code null} if the node can not be found.
      * @param element the element
      * @return the tree node
@@ -110,7 +110,7 @@ public abstract class Trees {
     public abstract Tree getTree(Element element);
 
     /**
-     * Returns the ClassTree node for a given TypeElement.
+     * Returns the {@code ClassTree} node for a given {@code TypeElement}.
      * Returns {@code null} if the node can not be found.
      * @param element the element
      * @return the class tree node
@@ -118,7 +118,7 @@ public abstract class Trees {
     public abstract ClassTree getTree(TypeElement element);
 
     /**
-     * Returns the MethodTree node for a given ExecutableElement.
+     * Returns the {@code MethodTree} node for a given {@code ExecutableElement}.
      * Returns {@code null} if the node can not be found.
      * @param method the executable element
      * @return the method tree node
@@ -126,7 +126,7 @@ public abstract class Trees {
     public abstract MethodTree getTree(ExecutableElement method);
 
     /**
-     * Returns the Tree node for an AnnotationMirror on a given Element.
+     * Returns the {@code Tree} node for an {@code AnnotationMirror} on a given {@code Element}.
      * Returns {@code null} if the node can not be found.
      * @param e the element
      * @param a the annotation mirror
@@ -135,7 +135,7 @@ public abstract class Trees {
     public abstract Tree getTree(Element e, AnnotationMirror a);
 
     /**
-     * Returns the Tree node for an AnnotationValue for an AnnotationMirror on a given Element.
+     * Returns the {@code Tree} node for an {@code AnnotationValue} for an {@code AnnotationMirror} on a given {@code Element}.
      * Returns {@code null} if the node can not be found.
      * @param e the element
      * @param a the annotation mirror
@@ -153,7 +153,7 @@ public abstract class Trees {
     public abstract TreePath getPath(CompilationUnitTree unit, Tree node);
 
     /**
-     * Returns the TreePath node for a given Element.
+     * Returns the {@code TreePath} node for a given {@code Element}.
      * Returns {@code null} if the node can not be found.
      * @param e the element
      * @return the tree path
@@ -161,7 +161,7 @@ public abstract class Trees {
     public abstract TreePath getPath(Element e);
 
     /**
-     * Returns the TreePath node for an AnnotationMirror on a given Element.
+     * Returns the {@code TreePath} node for an {@code AnnotationMirror} on a given {@code Element}.
      * Returns {@code null} if the node can not be found.
      * @param e the element
      * @param a the annotation mirror
@@ -170,7 +170,7 @@ public abstract class Trees {
     public abstract TreePath getPath(Element e, AnnotationMirror a);
 
     /**
-     * Returns the TreePath node for an AnnotationValue for an AnnotationMirror on a given Element.
+     * Returns the {@code TreePath} node for an {@code AnnotationValue} for an {@code AnnotationMirror} on a given {@code Element}.
      * Returns {@code null} if the node can not be found.
      * @param e the element
      * @param a the annotation mirror
@@ -180,35 +180,35 @@ public abstract class Trees {
     public abstract TreePath getPath(Element e, AnnotationMirror a, AnnotationValue v);
 
     /**
-     * Returns the Element for the Tree node identified by a given TreePath.
+     * Returns the {@code Element} for the {@code Tree} node identified by a given {@code TreePath}.
      * Returns {@code null} if the element is not available.
      * @param path the tree path
      * @return the element
-     * @throws IllegalArgumentException is the TreePath does not identify
-     * a Tree node that might have an associated Element.
+     * @throws IllegalArgumentException is the {@code TreePath} does not identify
+     * a {@code Tree} node that might have an associated {@code Element}.
      */
     public abstract Element getElement(TreePath path);
 
     /**
-     * Returns the TypeMirror for the Tree node identified by a given TreePath.
-     * Returns {@code null} if the TypeMirror is not available.
+     * Returns the {@code TypeMirror} for the {@code Tree} node identified by a given {@code TreePath}.
+     * Returns {@code null} if the {@code TypeMirror} is not available.
      * @param path the tree path
      * @return the type mirror
-     * @throws IllegalArgumentException is the TreePath does not identify
-     * a Tree node that might have an associated TypeMirror.
+     * @throws IllegalArgumentException is the {@code TreePath} does not identify
+     * a {@code Tree} node that might have an associated {@code TypeMirror}.
      */
     public abstract TypeMirror getTypeMirror(TreePath path);
 
     /**
-     * Returns the Scope for the Tree node identified by a given TreePath.
-     * Returns {@code null} if the Scope is not available.
+     * Returns the {@code Scope} for the {@code Tree} node identified by a given {@code TreePath}.
+     * Returns {@code null} if the {@code Scope} is not available.
      * @param path the tree path
      * @return the scope
      */
     public abstract Scope getScope(TreePath path);
 
     /**
-     * Returns the doc comment, if any, for the Tree node identified by a given TreePath.
+     * Returns the doc comment, if any, for the {@code Tree} node identified by a given {@code TreePath}.
      * Returns {@code null} if no doc comment was found.
      * @see DocTrees#getDocCommentTree(TreePath)
      * @param path the tree path
@@ -235,9 +235,9 @@ public abstract class Trees {
     public abstract boolean isAccessible(Scope scope, Element member, DeclaredType type);
 
     /**
-      * Returns the original type from the ErrorType object.
+      * Returns the original type from the {@code ErrorType} object.
       * @param errorType the errorType for which we want to get the original type
-      * @return the type mirror corresponding to the original type, replaced by the ErrorType
+      * @return the type mirror corresponding to the original type, replaced by the {@code ErrorType}
       */
     public abstract TypeMirror getOriginalType(ErrorType errorType);
 

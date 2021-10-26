@@ -110,28 +110,9 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     }
 
     @Override
-    public void addMemberHeader(TypeElement fieldType, String fieldTypeStr,
-            String fieldDimensions, String fieldName, Content contentTree) {
-        Content nameContent = Text.of(fieldName);
-        Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
-        contentTree.add(heading);
-        Content pre = new HtmlTree(TagName.PRE);
-        if (fieldType == null) {
-            pre.add(fieldTypeStr);
-        } else {
-            Content fieldContent = writer.getLink(new HtmlLinkInfo(
-                    configuration, HtmlLinkInfo.Kind.SERIAL_MEMBER, fieldType));
-            pre.add(fieldContent);
-        }
-        pre.add(fieldDimensions + " ");
-        pre.add(fieldName);
-        contentTree.add(pre);
-    }
-
-    @Override
     public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree) {
         Content nameContent = Text.of(fieldName);
-        Content heading = HtmlTree.HEADING(TagName.H5, nameContent);
+        Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         contentTree.add(heading);
         Content pre = new HtmlTree(TagName.PRE);
         Content fieldContent = writer.getLink(new HtmlLinkInfo(

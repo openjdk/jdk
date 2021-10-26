@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2065,7 +2065,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         Constructor<?> constr;
         try {
             stubClass = Class.forName(rmiConnectionImplStubClassName);
-            constr = (Constructor<?>) AccessController.doPrivileged(action);
+            @SuppressWarnings("removal")
+            Constructor<?> tmp = (Constructor<?>) AccessController.doPrivileged(action);
+            constr = tmp;
         } catch (Exception e) {
             logger.error("<clinit>",
                     "Failed to initialize proxy reference constructor "+
@@ -2209,6 +2211,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     //--------------------------------------------------------------------
     // Private stuff - Find / Set default class loader
     //--------------------------------------------------------------------
+    @SuppressWarnings("removal")
     private ClassLoader pushDefaultClassLoader() {
         final Thread t = Thread.currentThread();
         final ClassLoader old =  t.getContextClassLoader();
@@ -2222,6 +2225,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             return old;
     }
 
+    @SuppressWarnings("removal")
     private void popDefaultClassLoader(final ClassLoader old) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {

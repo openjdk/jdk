@@ -30,7 +30,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm GetPrivateKey
- * @run main/othervm GetPrivateKey sm policy
+ * @run main/othervm -Djava.security.manager=allow GetPrivateKey sm policy
  */
 
 import java.io.File;

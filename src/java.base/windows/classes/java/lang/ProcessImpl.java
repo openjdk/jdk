@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ final class ProcessImpl extends Process {
      * to append to a file does not open the file in a manner that guarantees
      * that writes by the child process will be atomic.
      */
+    @SuppressWarnings("removal")
     private static FileOutputStream newFileOutputStream(File f, boolean append)
         throws IOException
     {
@@ -417,6 +418,7 @@ final class ProcessImpl extends Process {
     private InputStream stdout_stream;
     private InputStream stderr_stream;
 
+    @SuppressWarnings("removal")
     private ProcessImpl(String cmd[],
                         final String envblock,
                         final String path,
@@ -608,6 +610,7 @@ final class ProcessImpl extends Process {
 
     @Override
     public ProcessHandle toHandle() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));

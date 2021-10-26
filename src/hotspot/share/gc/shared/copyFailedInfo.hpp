@@ -71,12 +71,7 @@ class PromotionFailedInfo : public CopyFailedInfo {
 
   void register_copy_failure(size_t size) {
     CopyFailedInfo::register_copy_failure(size);
-    if (_thread_trace_id == 0) {
-      _thread_trace_id = JFR_THREAD_ID(Thread::current());
-    } else {
-      assert(JFR_THREAD_ID(Thread::current()) == _thread_trace_id,
-        "The PromotionFailedInfo should be thread local.");
-    }
+    _thread_trace_id = JFR_THREAD_ID(Thread::current());
   }
 
   void reset() {
