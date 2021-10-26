@@ -81,7 +81,7 @@ public class MemoryAccessProviderData {
         return result.toArray(new Object[result.size()][]);
     }
     @DataProvider(name = "unalignedPrimitive")
-    public static Object[][] getUnalingedPrimitiveJavaKinds() {
+    public static Object[][] getUnalignedPrimitiveJavaKinds() {
         List<Object[]> result = new ArrayList<>();
         for (KindData k : PRIMITIVE_KIND_DATA) {
             if (k.unalignedInstanceFieldValue != null) {
