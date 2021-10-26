@@ -709,7 +709,11 @@ TEST_VM(os, pagesizes_test_print) {
   ASSERT_EQ(strcmp(expected, buffer), 0);
 }
 
-TEST_VM(os, dll_address_to_function_and_library_name) {
+#if defined(__APPLE__) && !defined(AARCH64)  // See JDK-8273967.
+  TEST_VM(os, DISABLED_dll_address_to_function_and_library_name) {
+#else
+  TEST_VM(os, dll_address_to_function_and_library_name) {
+#endif
   char tmp[1024];
   char output[1024];
   stringStream st(output, sizeof(output));
