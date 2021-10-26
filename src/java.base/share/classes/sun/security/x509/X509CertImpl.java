@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1917,25 +1917,57 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     private ConcurrentHashMap<String,String> fingerprints =
             new ConcurrentHashMap<>(2);
 
-    public String getFingerprint(String algorithm) {
+    private String getFingerprint(String algorithm, Debug debug) {
         return fingerprints.computeIfAbsent(algorithm,
-            x -> getFingerprint(x, this));
+            x -> {
+                try {
+                    return getFingerprintInternal(x, getEncodedInternal(), debug);
+                } catch (CertificateEncodingException e) {
+                    if (debug != null) {
+                        debug.println("Cannot encode certificate: " + e);
+                    }
+                    return null;
+                }
+            });
+    }
+
+    private static String getFingerprintInternal(String algorithm,
+            byte[] encodedCert, Debug debug) {
+        try {
+            MessageDigest md = MessageDigest.getInstance(algorithm);
+            byte[] digest = md.digest(encodedCert);
+            return HexFormat.of().withUpperCase().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            if (debug != null) {
+                debug.println("Cannot create " + algorithm
+                    + " MessageDigest: " + e);
+            }
+            return null;
+        }
     }
 
     /**
-     * Gets the requested finger print of the certificate. The result
+     * Gets the requested fingerprint of the certificate. The result
      * only contains 0-9 and A-F. No small case, no colon.
+     *
+     * @param algorithm the MessageDigest algorithm
+     * @param cert the X509Certificate
+     * @return the fingerprint, or null if it cannot be calculated because
+     *     of an exception
      */
     public static String getFingerprint(String algorithm,
-            X509Certificate cert) {
-        try {
-            byte[] encCertInfo = cert.getEncoded();
-            MessageDigest md = MessageDigest.getInstance(algorithm);
-            byte[] digest = md.digest(encCertInfo);
-            return HexFormat.of().withUpperCase().formatHex(digest);
-        } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
-            // ignored
+            X509Certificate cert, Debug debug) {
+        if (cert instanceof X509CertImpl) {
+            return ((X509CertImpl)cert).getFingerprint(algorithm, debug);
+        } else {
+            try {
+                return getFingerprintInternal(algorithm, cert.getEncoded(), debug);
+            } catch (CertificateEncodingException e) {
+                if (debug != null) {
+                    debug.println("Cannot encode certificate: " + e);
+                }
+                return null;
+            }
         }
-        return "";
     }
 }

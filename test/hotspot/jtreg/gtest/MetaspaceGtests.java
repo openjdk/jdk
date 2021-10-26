@@ -32,10 +32,10 @@
 /* @test id=reclaim-none-debug
  * @bug 8251158
  * @summary Run metaspace-related gtests for reclaim policy none (with verifications)
- * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.debug
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=none -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3
  */
@@ -46,6 +46,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.debug == false
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=none
  */
@@ -56,10 +57,10 @@
 /* @test id=reclaim-aggressive-debug
  * @bug 8251158
  * @summary Run metaspace-related gtests for reclaim policy aggressive (with verifications)
- * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.debug
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=aggressive -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3
  */
@@ -70,6 +71,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.debug == false
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=aggressive
  */
@@ -79,10 +81,10 @@
 
 /* @test id=balanced-with-guards
  * @summary Run metaspace-related gtests with allocation guards enabled
- * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.debug
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3 -XX:+MetaspaceGuardAllocations
  */
@@ -92,10 +94,10 @@
 
 /* @test id=balanced-no-ccs
  * @summary Run metaspace-related gtests with compressed class pointers off
- * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.bits == 64
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=balanced -XX:-UseCompressedClassPointers
  */

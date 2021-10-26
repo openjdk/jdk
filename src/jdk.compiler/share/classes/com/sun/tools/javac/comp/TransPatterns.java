@@ -277,9 +277,10 @@ public class TransPatterns extends TreeTranslator {
                               List<JCCase> cases,
                               boolean hasTotalPattern,
                               boolean patternSwitch) {
-        Type seltype = selector.type;
-
         if (patternSwitch) {
+            Type seltype = selector.type.hasTag(BOT)
+                    ? syms.objectType
+                    : selector.type;
             Assert.check(preview.isEnabled());
             Assert.check(preview.usesPreview(env.toplevel.sourcefile));
 

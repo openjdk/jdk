@@ -444,7 +444,7 @@ class JarVerifier {
         {
             this.is = Objects.requireNonNull(is);
             this.jv = jv;
-            this.mev = new ManifestEntryVerifier(man);
+            this.mev = new ManifestEntryVerifier(man, jv.manifestName);
             this.jv.beginEntry(je, mev);
             this.numLeft = je.getSize();
             if (this.numLeft == 0)

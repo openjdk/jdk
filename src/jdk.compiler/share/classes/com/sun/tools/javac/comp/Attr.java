@@ -613,7 +613,10 @@ public class Attr extends JCTree.Visitor {
                 }
                 @Override
                 public void report(DiagnosticPosition pos, JCDiagnostic details) {
-                    if (pt == Type.recoveryType) {
+                    boolean needsReport = pt == Type.recoveryType ||
+                            (details.getDiagnosticPosition() != null &&
+                            details.getDiagnosticPosition().getTree().hasTag(LAMBDA));
+                    if (needsReport) {
                         chk.basicHandler.report(pos, details);
                     }
                 }
@@ -1543,7 +1546,7 @@ public class Attr extends JCTree.Visitor {
                     // Check the return type of the method iterator().
                     // This is the bare minimum we need to verify to make sure code generation doesn't crash.
                     Symbol iterSymbol = rs.resolveInternalMethod(tree.pos(),
-                            loopEnv, exprType, names.iterator, List.nil(), List.nil());
+                            loopEnv, types.skipTypeVars(exprType, false), names.iterator, List.nil(), List.nil());
                     if (types.asSuper(iterSymbol.type.getReturnType(), syms.iteratorType.tsym) == null) {
                         log.error(tree.pos(),
                                 Errors.ForeachNotApplicableToType(exprType, Fragments.TypeReqArrayOrIterable));
@@ -1797,6 +1800,7 @@ public class Attr extends JCTree.Visitor {
                 }
                 addVars(c.stats, switchEnv.info.scope);
 
+                preFlow(c);
                 c.completesNormally = flow.aliveAfter(caseEnv, c, make);
 
                 prevBindings = c.caseKind == CaseTree.CaseKind.STATEMENT && c.completesNormally ? currentBindings
@@ -5911,6 +5915,8 @@ public class Attr extends JCTree.Visitor {
 
         @Override
         public void visitBindingPattern(JCBindingPattern that) {
+            initTypeIfNeeded(that);
+            initTypeIfNeeded(that.var);
             if (that.var.sym == null) {
                 that.var.sym = new BindingSymbol(0, that.var.name, that.var.type, syms.noSymbol);
                 that.var.sym.adr = 0;

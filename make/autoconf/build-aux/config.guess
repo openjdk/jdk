@@ -102,6 +102,15 @@ if [ "x$OUT" = x ]; then
   fi
 fi
 
+# Test and fix LoongArch64.
+if [ "x$OUT" = x ]; then
+  if [ `uname -s` = Linux ]; then
+    if [ `uname -m` = loongarch64 ]; then
+      OUT=loongarch64-unknown-linux-gnu
+    fi
+  fi
+fi
+
 # Test and fix cpu on macos-aarch64, uname -p reports arm, buildsys expects aarch64
 echo $OUT | grep arm-apple-darwin > /dev/null 2> /dev/null
 if test $? != 0; then

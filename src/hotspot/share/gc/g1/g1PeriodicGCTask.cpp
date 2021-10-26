@@ -27,12 +27,16 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1PeriodicGCTask.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 bool G1PeriodicGCTask::should_start_periodic_gc() {
+  // Ensure no GC safepoints while we're doing the checks, to avoid data races.
+  SuspendibleThreadSetJoiner sts;
+
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   // If we are currently in a concurrent mark we are going to uncommit memory soon.
   if (g1h->concurrent_mark()->cm_thread()->in_progress()) {

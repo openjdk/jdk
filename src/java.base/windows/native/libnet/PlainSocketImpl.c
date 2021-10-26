@@ -118,11 +118,24 @@ JNIEXPORT jint JNICALL Java_java_net_PlainSocketImpl_connect0
   (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
     SOCKETADDRESS sa;
     int rv, sa_len = 0;
+    int so_rv;
+    SOCKET s = (SOCKET)fd;
+    int type = 0, optlen = sizeof(type);
     jboolean v4MappedAddress = ipv6_available() ? JNI_TRUE : JNI_FALSE;
 
     if (NET_InetAddressToSockaddr(env, iaObj, port, &sa,
                                   &sa_len, v4MappedAddress) != 0) {
         return -1;
+    }
+
+    so_rv = getsockopt(s, SOL_SOCKET, SO_TYPE, (char*)&type, &optlen);
+
+    /**
+     * Windows has a very long socket connect timeout of 2 seconds.
+     * If it's the loopback adapter we can shorten the wait interval.
+     */
+    if (so_rv == 0 && type == SOCK_STREAM && IS_LOOPBACK_ADDRESS(&sa)) {
+        NET_EnableFastTcpLoopbackConnect(fd);
     }
 
     rv = connect(fd, &sa.sa, sa_len);
