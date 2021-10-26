@@ -1891,7 +1891,20 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, jobjec
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, long displacement, jboolean is_volatile, jobject kind_object))
+// Enforces volatile semantics for a non-volatile read.
+class VolatileRead : public StackObj {
+ public:
+  VolatileRead() {
+    // Ensures a possibly volatile read is not reordered with a prior
+    // volatile write.
+    OrderAccess::storeload();
+  }
+  ~VolatileRead() {
+    OrderAccess::acquire();
+  }
+};
+
+C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, long displacement, jobject kind_object))
   if (object == NULL || kind_object == NULL) {
     JVMCI_THROW_0(NullPointerException);
   }
@@ -1975,15 +1988,25 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
   }
 
   jlong value = 0;
+
+  // Treat all reads as volatile for simplicity as this function can be used
+  // both for reading Java fields declared as volatile as well as for constant
+  // folding Unsafe.get* methods with volatile semantics. This is done by
+  // performing the volatile barrier operations around a call to an
+  // oopDesc::<kind>_field method. The oopDesc::<kind>_field_acquire method
+  // cannot be used since it does not support unaligned reads on all platforms
+  // (e.g., an unaligned ldar on AArch64 causes a SIGBUS).
+
+
   switch (basic_type) {
-    case T_BOOLEAN: value = is_volatile ? obj->bool_field_acquire(displacement)   : obj->bool_field(displacement);  break;
-    case T_BYTE:    value = is_volatile ? obj->byte_field_acquire(displacement)   : obj->byte_field(displacement);  break;
-    case T_SHORT:   value = is_volatile ? obj->short_field_acquire(displacement)  : obj->short_field(displacement); break;
-    case T_CHAR:    value = is_volatile ? obj->char_field_acquire(displacement)   : obj->char_field(displacement);  break;
+    case T_BOOLEAN: { VolatileRead vr; value = obj->bool_field(displacement); } break;
+    case T_BYTE:    { VolatileRead vr; value = obj->byte_field(displacement); } break;
+    case T_SHORT:   { VolatileRead vr; value = obj->short_field(displacement);} break;
+    case T_CHAR:    { VolatileRead vr; value = obj->char_field(displacement); } break;
     case T_FLOAT:
-    case T_INT:     value = is_volatile ? obj->int_field_acquire(displacement)    : obj->int_field(displacement);   break;
+    case T_INT:     { VolatileRead vr; value = obj->int_field(displacement);  } break;
     case T_DOUBLE:
-    case T_LONG:    value = is_volatile ? obj->long_field_acquire(displacement)   : obj->long_field(displacement);  break;
+    case T_LONG:    { VolatileRead vr; value = obj->long_field(displacement); } break;
 
     case T_OBJECT: {
       if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
@@ -1993,7 +2016,9 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       }
 
-      oop value = is_volatile ? obj->obj_field_acquire(displacement) : obj->obj_field(displacement);
+      oop value;
+      { VolatileRead vr; value = obj->obj_field(displacement); }
+
       if (value == NULL) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       } else {
@@ -2782,8 +2807,8 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "boxPrimitive",                                 CC "(" OBJECT ")" OBJECTCONSTANT,                                                     FN_PTR(boxPrimitive)},
   {CC "getDeclaredConstructors",                      CC "(" HS_RESOLVED_KLASS ")[" RESOLVED_METHOD,                                        FN_PTR(getDeclaredConstructors)},
   {CC "getDeclaredMethods",                           CC "(" HS_RESOLVED_KLASS ")[" RESOLVED_METHOD,                                        FN_PTR(getDeclaredMethods)},
-  {CC "readFieldValue",                               CC "(" HS_RESOLVED_KLASS HS_RESOLVED_KLASS "JZLjdk/vm/ci/meta/JavaKind;)" JAVACONSTANT, FN_PTR(readFieldValue)},
-  {CC "readFieldValue",                               CC "(" OBJECTCONSTANT HS_RESOLVED_KLASS "JZLjdk/vm/ci/meta/JavaKind;)" JAVACONSTANT,  FN_PTR(readFieldValue)},
+  {CC "readFieldValue",                               CC "(" HS_RESOLVED_KLASS HS_RESOLVED_KLASS "JLjdk/vm/ci/meta/JavaKind;)" JAVACONSTANT, FN_PTR(readFieldValue)},
+  {CC "readFieldValue",                               CC "(" OBJECTCONSTANT HS_RESOLVED_KLASS "JLjdk/vm/ci/meta/JavaKind;)" JAVACONSTANT,   FN_PTR(readFieldValue)},
   {CC "isInstance",                                   CC "(" HS_RESOLVED_KLASS OBJECTCONSTANT ")Z",                                         FN_PTR(isInstance)},
   {CC "isAssignableFrom",                             CC "(" HS_RESOLVED_KLASS HS_RESOLVED_KLASS ")Z",                                      FN_PTR(isAssignableFrom)},
   {CC "isTrustedForIntrinsics",                       CC "(" HS_RESOLVED_KLASS ")Z",                                                        FN_PTR(isTrustedForIntrinsics)},

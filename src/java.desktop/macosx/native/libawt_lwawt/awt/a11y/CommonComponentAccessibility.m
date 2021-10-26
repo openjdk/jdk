@@ -419,13 +419,20 @@ static jobject sAccessibilityClass = NULL;
     GET_CACCESSIBLE_CLASS_RETURN(NULL);
     DECLARE_STATIC_METHOD_RETURN(sjm_getCAccessible, sjc_CAccessible, "getCAccessible",
                                 "(Ljavax/accessibility/Accessible;)Lsun/lwawt/macosx/CAccessible;", NULL);
-    if ((*env)->IsInstanceOf(env, jaccessible, sjc_CAccessible)) {
-        return jaccessible;
-    } else if ((*env)->IsInstanceOf(env, jaccessible, sjc_Accessible)) {
-        jobject o = (*env)->CallStaticObjectMethod(env, sjc_CAccessible,  sjm_getCAccessible, jaccessible);
+
+    // jaccessible is a weak ref, check it's still alive
+    jobject jaccessibleLocal = (*env)->NewLocalRef(env, jaccessible);
+    if ((*env)->IsSameObject(env, jaccessibleLocal, NULL)) return NULL;
+
+    if ((*env)->IsInstanceOf(env, jaccessibleLocal, sjc_CAccessible)) {
+        return jaccessibleLocal; // delete in the caller
+    } else if ((*env)->IsInstanceOf(env, jaccessibleLocal, sjc_Accessible)) {
+        jobject jCAX = (*env)->CallStaticObjectMethod(env, sjc_CAccessible,  sjm_getCAccessible, jaccessibleLocal);
         CHECK_EXCEPTION();
-        return o;
+        (*env)->DeleteLocalRef(env, jaccessibleLocal);
+        return jCAX; // delete in the caller
     }
+    (*env)->DeleteLocalRef(env, jaccessibleLocal);
     return NULL;
 }
 

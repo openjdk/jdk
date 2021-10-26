@@ -221,7 +221,6 @@ java/awt/TrayIcon/TrayIconEvents/TrayIconEventsTest.java 8150540 windows-all
 java/awt/TrayIcon/TrayIconMouseTest/TrayIconMouseTest.java 8150540 windows-all
 java/awt/TrayIcon/TrayIconPopup/TrayIconPopupClickTest.java 8150540 windows-all,macosx-all
 java/awt/TrayIcon/TrayIconPopup/TrayIconPopupTest.java 8150540 windows-all
-java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
 
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
@@ -237,7 +236,6 @@ java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 linux-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
 java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux-all
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
-java/awt/FontMetrics/FontCrash.java 8198336 windows-all
 java/awt/image/BufferedImage/ICMColorDataTest/ICMColorDataTest.java 8233028 generic-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187,8252812 macosx-all,windows-all,linux-x64
@@ -483,7 +481,6 @@ java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8030121 maco
 java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java 7124275 macosx-all
 java/awt/Focus/TranserFocusToWindow/TranserFocusToWindow.java 6848810 macosx-all,linux-all
-java/awt/Component/NativeInLightShow/NativeInLightShow.java 8202932 linux-all
 java/awt/FileDialog/ModalFocus/FileDialogModalFocusTest.java 8194751 linux-all
 java/awt/image/VolatileImage/BitmaskVolatileImage.java 8133102 linux-all
 java/awt/SplashScreen/MultiResolutionSplash/unix/UnixMultiResolutionSplashTest.java 8203004 linux-all
