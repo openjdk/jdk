@@ -58,27 +58,27 @@ ZHeap::ZHeap() :
     _young_generation(&_page_table, &_page_allocator),
     _old_generation(),
     _serviceability(initial_capacity(), min_capacity(), max_capacity(), &_young_generation, &_old_generation),
-    _minor_collector(&_page_table, &_page_allocator),
-    _major_collector(&_page_table, &_page_allocator),
+    _young_collector(&_page_table, &_page_allocator),
+    _old_collector(&_page_table, &_page_allocator),
     _initialized(false) {
 
   // Install global heap instance
   assert(_heap == NULL, "Already initialized");
   _heap = this;
 
-  if (!_page_allocator.is_initialized() || !_minor_collector.is_initialized() || !_major_collector.is_initialized()) {
+  if (!_page_allocator.is_initialized() || !_young_collector.is_initialized() || !_old_collector.is_initialized()) {
     return;
   }
 
   // Prime cache
-  if (!_page_allocator.prime_cache(_major_collector.workers(), InitialHeapSize)) {
+  if (!_page_allocator.prime_cache(_old_collector.workers(), InitialHeapSize)) {
     log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
     return;
   }
 
   // Update statistics
-  _minor_collector.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
-  _major_collector.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
+  _young_collector.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
+  _old_collector.stat_heap()->set_at_initialize(_page_allocator.stats(NULL));
 
   // Successfully initialized
   _initialized = true;
@@ -176,14 +176,14 @@ bool ZHeap::is_in_page_relaxed(const ZPage* page, zaddress addr) const {
   }
 
   // Could still be a from-object during an in-place relocation
-  if (_major_collector.is_phase_relocate()) {
-    const ZForwarding* const forwarding = _major_collector.forwarding(unsafe(addr));
+  if (_old_collector.is_phase_relocate()) {
+    const ZForwarding* const forwarding = _old_collector.forwarding(unsafe(addr));
     if (forwarding != NULL && forwarding->in_place_relocation_is_below_top_at_start(ZAddress::offset(addr))) {
       return true;
     }
   }
-  if (_minor_collector.is_phase_relocate()) {
-    const ZForwarding* const forwarding = _minor_collector.forwarding(unsafe(addr));
+  if (_young_collector.is_phase_relocate()) {
+    const ZForwarding* const forwarding = _young_collector.forwarding(unsafe(addr));
     if (forwarding != NULL && forwarding->in_place_relocation_is_below_top_at_start(ZAddress::offset(addr))) {
       return true;
     }
@@ -194,8 +194,8 @@ bool ZHeap::is_in_page_relaxed(const ZPage* page, zaddress addr) const {
 
 void ZHeap::threads_do(ThreadClosure* tc) const {
   _page_allocator.threads_do(tc);
-  _minor_collector.threads_do(tc);
-  _major_collector.threads_do(tc);
+  _young_collector.threads_do(tc);
+  _old_collector.threads_do(tc);
 }
 
 void ZHeap::out_of_memory() {
@@ -245,8 +245,8 @@ void ZHeap::free_pages(const ZArray<ZPage*>* pages, bool reclaimed) {
 }
 
 void ZHeap::mark_flush_and_free(Thread* thread) {
-  minor_collector()->mark_flush_and_free(thread);
-  major_collector()->mark_flush_and_free(thread);
+  young_collector()->mark_flush_and_free(thread);
+  old_collector()->mark_flush_and_free(thread);
 }
 
 void ZHeap::keep_alive(oop obj) {
@@ -346,7 +346,7 @@ void ZHeap::verify() {
   // Heap verification can only be done between mark end and
   // relocate start. This is the only window where all oop are
   // good and the whole heap is in a consistent state.
-  guarantee(ZHeap::heap()->major_collector()->is_phase_mark_complete(), "Invalid phase");
+  guarantee(ZHeap::heap()->old_collector()->is_phase_mark_complete(), "Invalid phase");
 
   ZVerify::after_weak_processing();
 }

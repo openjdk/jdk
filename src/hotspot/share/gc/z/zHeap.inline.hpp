@@ -44,7 +44,7 @@ inline ZHeap* ZHeap::heap() {
 }
 
 inline ZGeneration* ZHeap::generation(ZCollectorId id) {
-  if (id == ZCollectorId::_minor) {
+  if (id == ZCollectorId::young) {
     return &_young_generation;
   } else {
     return &_old_generation;
@@ -68,27 +68,27 @@ inline ZOldGeneration* ZHeap::old_generation() {
 }
 
 inline ZCollector* ZHeap::collector(ZCollectorId id) {
-  if (id == ZCollectorId::_minor) {
-    return &_minor_collector;
+  if (id == ZCollectorId::young) {
+    return &_young_collector;
   } else {
-    return &_major_collector;
+    return &_old_collector;
   }
 }
 
 inline ZCollector* ZHeap::collector(ZGenerationId id) {
   if (id == ZGenerationId::young) {
-    return &_minor_collector;
+    return &_young_collector;
   } else {
-    return &_major_collector;
+    return &_old_collector;
   }
 }
 
-inline ZMinorCollector* ZHeap::minor_collector() {
-  return &_minor_collector;
+inline ZYoungCollector* ZHeap::young_collector() {
+  return &_young_collector;
 }
 
-inline ZMajorCollector* ZHeap::major_collector() {
-  return &_major_collector;
+inline ZOldCollector* ZHeap::old_collector() {
+  return &_old_collector;
 }
 
 inline uint32_t ZHeap::hash_oop(zaddress addr) const {
@@ -117,37 +117,37 @@ inline bool ZHeap::is_old(volatile zpointer* ptr) const {
 inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   assert(!ZPointer::is_load_good(ptr), "no need to remap load-good pointer");
 
-  if (ZPointer::is_major_load_good(ptr)) {
-    return &_minor_collector;
+  if (ZPointer::is_old_load_good(ptr)) {
+    return &_young_collector;
   }
 
-  if (ZPointer::is_minor_load_good(ptr)) {
-    return &_major_collector;
+  if (ZPointer::is_young_load_good(ptr)) {
+    return &_old_collector;
   }
 
-  // Double remap bad - the pointer is neither major load good nor
-  // minor load good. First the code ...
+  // Double remap bad - the pointer is neither old load good nor
+  // young load good. First the code ...
 
   const uintptr_t remembered_bits = untype(ptr) & ZPointerRememberedMask;
   const bool old_to_old_ptr = remembered_bits == ZPointerRememberedMask;
 
   if (old_to_old_ptr) {
-    return &_major_collector;
+    return &_old_collector;
   }
 
   const zaddress_unsafe addr = ZPointer::uncolor_unsafe(ptr);
-  if (_minor_collector.forwarding(addr) != NULL) {
-    assert(_major_collector.forwarding(addr) == NULL, "Mutually exclusive");
-    return &_minor_collector;
+  if (_young_collector.forwarding(addr) != NULL) {
+    assert(_old_collector.forwarding(addr) == NULL, "Mutually exclusive");
+    return &_young_collector;
   } else {
-    return &_major_collector;
+    return &_old_collector;
   }
 
   // ... then the explanation. Time to put your seat belt on.
 
   // In this context we only have access to the ptr (colored oop), but we
   // don't know if this refers to a stale young gen or old gen object.
-  // However, by being careful with when we run minor and major collections,
+  // However, by being careful with when we run young and old collections,
   // and by explicitly remapping roots we can figure this out by looking
   // at the metadata bits in the pointer.
 
@@ -157,10 +157,10 @@ inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   // and will never enter this path. The reason is that there's always a
   // phase that remaps all roots between all relocation phases:
   //
-  // 1) Minor marking remaps the roots, before the minor relocate runs
+  // 1) Young marking remaps the roots, before the young relocation runs
   //
-  // 2) The major roots_remap phase blocks out minor collections and runs just
-  //    before major relocate starts
+  // 2) The old roots_remap phase blocks out young collections and runs just
+  //    before old relocation starts
 
   // *Heap object fields*:
   //
@@ -183,28 +183,28 @@ inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
 
   // Double remap bad pointers in young gen:
   //
-  // After minor relocate, the young gen objects were promoted to old gen,
+  // After young relocation, the young gen objects were promoted to old gen,
   // and we keep track of those old-to-young pointers via the remset
   // (described above in the roots section).
   //
-  // However, when minor mark started, the current set of young gen objects
-  // are snapshotted, and subsequent allocations end up in the next minor
-  // collection. Between minor mark start, and minor relocate start, stores
+  // However, when young marking started, the current set of young gen objects
+  // are snapshotted, and subsequent allocations end up in the next young
+  // collection. Between young mark start, and young relocate start, stores
   // can happen to either the "young allocating" objects, or objects that
   // are about to become survivors. For both survivors and young-allocating
   // objects, it is true that their zpointers will be store good when
-  // minor marking finishes, and can not get demoted. These pointers will become
-  // minor remap bad after minor relocate start. We don't maintain a remset
+  // young marking finishes, and can not get demoted. These pointers will become
+  // young remap bad after young relocate start. We don't maintain a remset
   // for the young allocating objects, so we don't have the same guarantee as
   // we have for roots (including remset). Pointers in these objects are
   // therefore therefore susceptible to become double remap bad.
   //
   // The scenario that can happen is:
-  //   - Store in young allocating or future survivor happens between minor mark
-  //     start and minor relocate start
-  //   - Minor relocate start makes this pointer minor remap bad
+  //   - Store in young allocating or future survivor happens between young mark
+  //     start and young relocate start
+  //   - Young relocate start makes this pointer young remap bad
   //   - It is NOT fixed in roots_remap (it is not part of the remset or roots)
-  //   - Major relocate start makes this pointer also major remap bad
+  //   - Old relocate start makes this pointer also old remap bad
 
   // Double remap bad pointers in old gen:
   //
@@ -216,14 +216,14 @@ inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   //
   // However, at some point the GC notices that the pointer points to an old
   // object, and that there's no need for a remset entry. Because of that,
-  // the minor collection will not visit the pointer, and the pointer can
+  // the young collection will not visit the pointer, and the pointer can
   // become double remap bad.
   //
   // The scenario that can happen is:
-  //   - Major mark visits the object
-  //   - Major relocate starts and then minor relocate starts
+  //   - Old marking visits the object
+  //   - Old relocation starts and then young relocation starts
   //      or
-  //   - Minor relocate start and then major relocate starts
+  //   - Young relocation starts and then old relocation starts
 
   // About double *remember* bits:
   //
@@ -249,10 +249,10 @@ inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   // remap good and the store/young mark barrier healed with a single remember bit.
   // No other barrier could replace that bit, because store good is the greatest
   // barrier, and all other barriers will take the fast-path. This is true until
-  // the minor relocate starts.
+  // the young relocation starts.
   //
-  // After the minor relocate has started, the pointer became minor remap
-  // bad, and maybe we even started a major relocate, and the pointer became
+  // After the young relocation has started, the pointer became young remap
+  // bad, and maybe we even started an old relocaton, and the pointer became
   // double remap bad. When the next load barrier triggers, it will self heal
   // with double remember bits, but *importantly* it will at the same time
   // heal with good remap bits.
@@ -273,24 +273,24 @@ inline ZCollector* ZHeap::remap_collector(zpointer ptr) {
   //
   // Iff we find a double remap bad pointer with *double remember bits*,
   // then we know that it is an old-to-old pointer, and we should use the
-  // forwarding table of the major collector.
+  // forwarding table of the old collector.
   //
   // Iff we find a double remap bad pointer with a *single remember bit*,
-  // then we know that it is and young-to-any pointer. We still don't know
+  // then we know that it is a young-to-any pointer. We still don't know
   // if the pointed-to object is young or old.
 
-  // Figuring out if a double remap bad pointer in young is pointed at
+  // Figuring out if a double remap bad pointer in young pointed at
   // young or old:
   //
   // The scenario that created a double remap bad pointer in the young
   // allocating or survivor memory is that it was written during the last
-  // minor mark before the major relocate started. At that point, the major
+  // young marking before the old relocation started. At that point, the old
   // collector has already taken its marking snapshot, and determined what
-  // pages will be marked and therefore eligible to become part of the major
-  // relocation set. If the minor collector relocated/freed a page
+  // pages will be marked and therefore eligible to become part of the old
+  // relocation set. If the young collector relocated/freed a page
   // (address range), and that address range was then reused for an old page,
-  // it won't be part of the major snapshot and it therefore won't be selected
-  // for major relocation.
+  // it won't be part of the old snapshot and it therefore won't be selected
+  // for old relocation.
   //
   // Because of this, we know that the object written into the young
   // allocating page will at most belong to one of the two relocation sets,
@@ -321,23 +321,23 @@ inline void ZHeap::mark_object(zaddress addr) {
   assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_old(addr)) {
-    if (_major_collector.is_phase_mark()) {
-      _major_collector.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
+    if (_old_collector.is_phase_mark()) {
+      _old_collector.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
     }
   } else {
-    if (_minor_collector.is_phase_mark()) {
-      _minor_collector.mark_object<resurrect, gc_thread, follow, ZMark::Strong, publish>(addr);
+    if (_young_collector.is_phase_mark()) {
+      _young_collector.mark_object<resurrect, gc_thread, follow, ZMark::Strong, publish>(addr);
     }
   }
 }
 
 template <bool follow, bool publish>
-inline void ZHeap::mark_minor_object(zaddress addr) {
-  assert(_minor_collector.is_phase_mark(), "Wrong phase");
+inline void ZHeap::mark_young_object(zaddress addr) {
+  assert(_young_collector.is_phase_mark(), "Wrong phase");
   assert(oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (is_young(addr)) {
-    _minor_collector.mark_object<ZMark::DontResurrect, ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
+    _young_collector.mark_object<ZMark::DontResurrect, ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
   }
 }
 
@@ -361,11 +361,11 @@ inline bool ZHeap::is_remembered(volatile zpointer* p) {
 
 inline void ZHeap::mark_follow_invisible_root(zaddress addr, size_t size) {
   if (is_old(addr)) {
-    assert(_major_collector.is_phase_mark(), "Mark not allowed");
-    _major_collector.mark_follow_invisible_root(addr, size);
+    assert(_old_collector.is_phase_mark(), "Mark not allowed");
+    _old_collector.mark_follow_invisible_root(addr, size);
   } else {
-    assert(_minor_collector.is_phase_mark(), "Mark not allowed");
-    _minor_collector.mark_follow_invisible_root(addr, size);
+    assert(_young_collector.is_phase_mark(), "Mark not allowed");
+    _young_collector.mark_follow_invisible_root(addr, size);
   }
 }
 

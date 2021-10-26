@@ -34,8 +34,8 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemsetForwarding("Concurrent Minor Mark Root Remset Forw");
-static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootRemsetPage("Concurrent Minor Mark Root Remset Page");
+static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemsetForwarding("Concurrent Young Mark Root Remset Forw");
+static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootRemsetPage("Concurrent Young Mark Root Remset Page");
 
 ZRemembered::ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _page_table(page_table),
@@ -61,7 +61,7 @@ void ZRemembered::oops_do_forwarded_via_containing(GrowableArrayView<ZRemembered
       from_addr = containing._addr;
 
       // Relocate object to new location
-      to_addr = ZHeap::heap()->major_collector()->relocate_or_remap_object(from_addr);
+      to_addr = ZHeap::heap()->old_collector()->relocate_or_remap_object(from_addr);
 
       // Figure out size
       object_size = ZUtils::object_size(to_addr);
@@ -89,24 +89,24 @@ void ZRemembered::oops_do_forwarded(ZForwarding* forwarding, Function function) 
 }
 
 bool ZRemembered::should_scan_page(ZPage* page) const {
-  if (!ZHeap::heap()->major_collector()->is_phase_relocate()) {
-    // If the major cycle is not in the relocation phase, then it will not need any
+  if (!ZHeap::heap()->old_collector()->is_phase_relocate()) {
+    // If the old collector is not in the relocation phase, then it will not need any
     // synchronization on its forwardings.
     return true;
   }
 
   if (page->is_allocating()) {
-    // If the page is old and was allocated after major mark start, then it can't be part
-    // of the major relocation set.
+    // If the page is old and was allocated after old marking start, then it can't be part
+    // of the old relocation set.
     return true;
   }
 
-  // If we get here, we know that the major collection is concurrently relocating objects,
+  // If we get here, we know that the old collection is concurrently relocating objects,
   // and the page was allocated at a time that makes it possible for it to be in the
   // relocation set.
 
-  if (ZHeap::heap()->major_collector()->forwarding(ZOffset::address_unsafe(page->start())) == NULL) {
-    // This page was provably not part of the major relocation set.
+  if (ZHeap::heap()->old_collector()->forwarding(ZOffset::address_unsafe(page->start())) == NULL) {
+    // This page was provably not part of the old relocation set.
     return true;
   }
 
@@ -115,7 +115,7 @@ bool ZRemembered::should_scan_page(ZPage* page) const {
 
 void ZRemembered::scan_page(ZPage* page) const {
   const bool can_trust_live_bits =
-      page->is_relocatable() && !ZHeap::heap()->major_collector()->is_phase_mark();
+      page->is_relocatable() && !ZHeap::heap()->old_collector()->is_phase_mark();
 
   if (!can_trust_live_bits) {
     // We don't have full liveness info - scan all remset entries
@@ -146,7 +146,7 @@ static void fill_containing(GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* 
 
 void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context) const {
   if (forwarding->get_and_set_remset_scanned()) {
-    // Scanned last minor cycle; implies that the to-space objects
+    // Scanned last young cycle; implies that the to-space objects
     // are going to be found in the page table scan
     return;
   }
@@ -179,7 +179,7 @@ private:
 public:
   ZRememberedScanForwardingTask(const ZRemembered& remembered) :
       ZTask("ZRememberedScanForwardingTask"),
-      _iterator(ZHeap::heap()->major_collector()->forwarding_table()),
+      _iterator(ZHeap::heap()->old_collector()->forwarding_table()),
       _remembered(remembered) {}
 
   virtual void work() {
@@ -215,21 +215,21 @@ public:
 };
 
 void ZRemembered::scan() const {
-  if (ZHeap::heap()->major_collector()->is_phase_relocate()) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootRemsetForwarding);
+  if (ZHeap::heap()->old_collector()->is_phase_relocate()) {
+    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemsetForwarding);
     ZRememberedScanForwardingTask task(*this);
-    ZHeap::heap()->minor_collector()->workers()->run(&task);
+    ZHeap::heap()->young_collector()->workers()->run(&task);
   }
 
-  ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootRemsetPage);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootRemsetPage);
   ZRememberedScanPageTask task(*this);
-  ZHeap::heap()->minor_collector()->workers()->run(&task);
+  ZHeap::heap()->young_collector()->workers()->run(&task);
 }
 
 void ZRemembered::scan_field(volatile zpointer* p) const {
-  assert(ZHeap::heap()->minor_collector()->is_phase_mark(), "Wrong phase");
+  assert(ZHeap::heap()->young_collector()->is_phase_mark(), "Wrong phase");
 
-  zaddress addr = ZBarrier::mark_minor_good_barrier_on_oop_field(p);
+  zaddress addr = ZBarrier::mark_young_good_barrier_on_oop_field(p);
 
   if (!is_null(addr) && ZHeap::heap()->is_young(addr)) {
     remember(p);

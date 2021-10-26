@@ -47,14 +47,14 @@ public:
   static void report_thread_event(const char* name, const Ticks& start, const Ticks& end);
 };
 
-class ZMinorTracer : public YoungGCTracer {
+class ZYoungTracer : public YoungGCTracer {
 public:
-  ZMinorTracer();
+  ZYoungTracer();
 };
 
-class ZMajorTracer : public OldGCTracer {
+class ZOldTracer : public OldGCTracer {
 public:
-  ZMajorTracer();
+  ZOldTracer();
 };
 
 class ZTraceThreadPhase : public StackObj {

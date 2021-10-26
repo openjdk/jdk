@@ -588,8 +588,6 @@ void ZStatMMU::print() {
 //
 // Stat phases
 //
-ConcurrentGCTimer ZStatPhase::_timer_minor;
-ConcurrentGCTimer ZStatPhase::_timer_major;
 
 ZStatPhase::ZStatPhase(const char* group, const char* name) :
     _sampler(group, name, ZStatUnitTime) {}
@@ -646,7 +644,7 @@ void ZStatPhaseMajorCycle::register_end(ConcurrentGCTimer* timer, const Ticks& s
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  ZMajorCollector* collector = ZHeap::heap()->major_collector();
+  ZOldCollector* collector = ZHeap::heap()->old_collector();
 
   log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
                GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
@@ -716,7 +714,7 @@ void ZStatPhaseGenerationCycle::register_end(ConcurrentGCTimer* timer, const Tic
   collector->stat_mark()->print();
   ZStatNMethods::print();
   ZStatMetaspace::print();
-  if (collector->is_major()) {
+  if (collector->is_old()) {
     ZStatReferences::print();
   }
   collector->stat_relocation()->print();
@@ -861,16 +859,16 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
 }
 
 ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->minor_collector()->timer()) {}
+    ZStatTimer(phase, ZHeap::heap()->young_collector()->timer()) {}
 
 ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->major_collector()->timer()) {}
+    ZStatTimer(phase, ZHeap::heap()->old_collector()->timer()) {}
 
 ZStatTimerMinor::ZStatTimerMinor(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->minor_collector()->minor_timer()) {}
+    ZStatTimer(phase, ZHeap::heap()->young_collector()->minor_timer()) {}
 
 ZStatTimerMajor::ZStatTimerMajor(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZHeap::heap()->major_collector()->major_timer()) {}
+    ZStatTimer(phase, ZHeap::heap()->old_collector()->major_timer()) {}
 
 //
 // Stat timer
@@ -1602,7 +1600,7 @@ void ZStatHeap::print(ZCollector* collector) {
                      .left(ZTABLE_ARGS(_at_relocate_end.used_high))
                      .left(ZTABLE_ARGS(_at_relocate_end.used_low))
                      .end());
-  log_info(gc, heap)("%s statistics:", collector->is_major() ? "Old generation" : "Young generation");
+  log_info(gc, heap)("%s statistics:", collector->is_old() ? "Old generation" : "Young generation");
   ZStatTablePrinter gen_table(10, 18);
   log_info(gc, heap)("%s", gen_table()
                      .fill()
@@ -1646,7 +1644,7 @@ void ZStatHeap::print(ZCollector* collector) {
                      .left(ZTABLE_ARGS(_at_relocate_start.reclaimed))
                      .left(ZTABLE_ARGS(_at_relocate_end.reclaimed))
                      .end());
-  if (collector->is_minor()) {
+  if (collector->is_young()) {
     log_info(gc, heap)("%s", gen_table()
                        .right("Promoted:")
                        .left(ZTABLE_ARGS_NA)

@@ -427,7 +427,7 @@ void ZReferenceProcessor::collect_statistics() {
                                       discovered[REF_WEAK],
                                       discovered[REF_FINAL],
                                       discovered[REF_PHANTOM]);
-  ZHeap::heap()->major_collector()->tracer()->report_gc_reference_stats(stats);
+  ZHeap::heap()->old_collector()->tracer()->report_gc_reference_stats(stats);
 }
 
 class ZReferenceProcessorTask : public ZTask {
@@ -473,7 +473,7 @@ void ZReferenceProcessor::verify_pending_references() {
     const ReferenceType type = reference_type(current);
     assert(ZReferenceProcessor::is_inactive(current, referent, type), "invariant");
     if (type == REF_FINAL) {
-      assert(ZPointer::is_marked_any_major(ZBarrier::load_atomic(referent_addr)), "invariant");
+      assert(ZPointer::is_marked_any_old(ZBarrier::load_atomic(referent_addr)), "invariant");
     }
 
     SuspendibleThreadSet::yield();

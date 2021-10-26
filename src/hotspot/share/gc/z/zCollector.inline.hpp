@@ -48,12 +48,12 @@ inline ZCollectorId ZCollector::id() const {
   return _id;
 }
 
-inline bool ZCollector::is_minor() const {
-  return _id == ZCollectorId::_minor;
+inline bool ZCollector::is_young() const {
+  return _id == ZCollectorId::young;
 }
 
-inline bool ZCollector::is_major() const {
-  return _id == ZCollectorId::_major;
+inline bool ZCollector::is_old() const {
+  return _id == ZCollectorId::old;
 }
 
 inline ZForwarding* ZCollector::forwarding(zaddress_unsafe addr) const {
@@ -115,7 +115,7 @@ inline zaddress ZCollector::remap_object(zaddress_unsafe addr) {
   return _relocate.forward_object(forwarding, addr);
 }
 
-inline ReferenceDiscoverer* ZMajorCollector::reference_discoverer() {
+inline ReferenceDiscoverer* ZOldCollector::reference_discoverer() {
   return &_reference_processor;
 }
 

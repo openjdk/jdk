@@ -42,7 +42,7 @@ GCName GCConfiguration::young_collector() const {
   }
 
   if (UseZGC) {
-    return ZMinor;
+    return ZYoung;
   }
 
   if (UseShenandoahGC) {
@@ -62,7 +62,7 @@ GCName GCConfiguration::old_collector() const {
   }
 
   if (UseZGC) {
-    return ZMajor;
+    return ZOld;
   }
 
   if (UseShenandoahGC) {

@@ -58,9 +58,9 @@ extern size_t    ZAddressOffsetMax;
 // +-------------+-------------------+--------------------------+
 // |     FF      | Finalizable bits  | Finalizable[0, 1]        |
 // +-------------+-------------------+--------------------------+
-// |     mm      | Marked minor bits | MarkedMinor[0, 1]        |
+// |     mm      | Marked young bits | MarkedYoung[0, 1]        |
 // +-------------+-------------------+--------------------------+
-// |     MM      | Marked major bits | MarkedMajor[0, 1]        |
+// |     MM      | Marked old bits   | MarkedOld[0, 1]          |
 // +-------------+-------------------+--------------------------+
 // |    RRRR     | Remapped bits     | Remapped[00, 01, 10, 11] |
 // +-------------+-------------------+--------------------------+
@@ -85,40 +85,40 @@ extern size_t    ZAddressOffsetMax;
 // bit check and unmasking into a single speculative shift instruction. On AArch64 we
 // don't do this, and hence there are no overlapping address and  metadata zeros there.
 //
-// The remapped bits are notably not grouped into two sets of bits, one for the minor
-// collection and one for the major collection, like the other bits. The reason is that
+// The remapped bits are notably not grouped into two sets of bits, one for the young
+// collection and one for the old collection, like the other bits. The reason is that
 // the load barrier is only compatible with bit patterns where there is a single zero in
 // its bits of operation (the load metadata bit mask). Instead, the single bit that we
-// set encodes the combined state of a conceptual RemappedMinor[0, 1] and
-// RemappedMajor[0, 1] pair. The encoding scheme is that the shift of the load good bit,
+// set encodes the combined state of a conceptual RemappedYoung[0, 1] and
+// RemappedOld[0, 1] pair. The encoding scheme is that the shift of the load good bit,
 // minus the shift of the load metadata bit start encodes the numbers 0, 1, 2 and 3.
 // These numbers in binary correspond to 00, 01, 10 and 11. The low order bit in said
-// numbers correspond to the simulated RemappedMinor[0, 1] value, and the high order bit
-// corresponds to the simulated RemappedMajor[0, 1] value. On AArch64, the remap bits
+// numbers correspond to the simulated RemappedYoung[0, 1] value, and the high order bit
+// corresponds to the simulated RemappedOld[0, 1] value. On AArch64, the remap bits
 // of zpointers are the complement of this bit. So there are 3 good bits and one bad bit
 // instead. This lends itself better to AArch64 instructions.
 //
-// We decide the bit to be taken by having the RemappedMinorMask and RemappedMajorMask
+// We decide the bit to be taken by having the RemappedYoungMask and RemappedOldMask
 // variables, which alternate between what two bits they accept for their corresponding
-// major and minor phase. The Remapped bit is chosen by taking the intersection of those
+// old and young phase. The Remapped bit is chosen by taking the intersection of those
 // two variables.
 //
-// RemappedMajorMask alternates between these two bit patterns:
+// RemappedOldMask alternates between these two bit patterns:
 //
-//  RemappedMajor0 => 0011
-//  RemappedMajor1 => 1100
+//  RemappedOld0 => 0011
+//  RemappedOld1 => 1100
 //
-// RemappedMinorMask alternates between these two bit patterns:
+// RemappedYoungMask alternates between these two bit patterns:
 //
-//  RemappedMinor0 => 0101
-//  RemappedMinor1 => 1010
+//  RemappedYoung0 => 0101
+//  RemappedYoung1 => 1010
 //
 // The corresponding intersections look like this:
 //
-//  RemappedMajor0 & RemappedMinor0 = 0001 = Remapped00
-//  RemappedMajor0 & RemappedMinor1 = 0010 = Remapped01
-//  RemappedMajor1 & RemappedMinor0 = 0100 = Remapped10
-//  RemappedMajor1 & RemappedMinor1 = 1000 = Remapped11
+//  RemappedOld0 & RemappedYoung0 = 0001 = Remapped00
+//  RemappedOld0 & RemappedYoung1 = 0010 = Remapped01
+//  RemappedOld1 & RemappedYoung0 = 0100 = Remapped10
+//  RemappedOld1 & RemappedYoung1 = 1000 = Remapped11
 
 constexpr uintptr_t z_pointer_mask(size_t shift, size_t bits) {
   return (((uintptr_t)1 << bits) - 1) << shift;
@@ -153,10 +153,10 @@ const uintptr_t   ZPointerMarkedMask      = z_pointer_mask(ZPointerMarkedShift, 
 
 const uintptr_t   ZPointerFinalizable0    = z_pointer_bit(ZPointerMarkedShift, 0);
 const uintptr_t   ZPointerFinalizable1    = z_pointer_bit(ZPointerMarkedShift, 1);
-const uintptr_t   ZPointerMarkedMinor0    = z_pointer_bit(ZPointerMarkedShift, 2);
-const uintptr_t   ZPointerMarkedMinor1    = z_pointer_bit(ZPointerMarkedShift, 3);
-const uintptr_t   ZPointerMarkedMajor0    = z_pointer_bit(ZPointerMarkedShift, 4);
-const uintptr_t   ZPointerMarkedMajor1    = z_pointer_bit(ZPointerMarkedShift, 5);
+const uintptr_t   ZPointerMarkedYoung0    = z_pointer_bit(ZPointerMarkedShift, 2);
+const uintptr_t   ZPointerMarkedYoung1    = z_pointer_bit(ZPointerMarkedShift, 3);
+const uintptr_t   ZPointerMarkedOld0      = z_pointer_bit(ZPointerMarkedShift, 4);
+const uintptr_t   ZPointerMarkedOld1      = z_pointer_bit(ZPointerMarkedShift, 5);
 
 // Remapped bits
 const size_t      ZPointerRemappedShift   = ZPointerMarkedShift + ZPointerMarkedBits;
@@ -189,15 +189,15 @@ const uintptr_t   ZPointerAllMetadataMask   = ZPointerStoreMetadataMask;
 
 // The current expected bit
 extern uintptr_t  ZPointerRemapped;
-extern uintptr_t  ZPointerMarkedMajor;
-extern uintptr_t  ZPointerMarkedMinor;
+extern uintptr_t  ZPointerMarkedOld;
+extern uintptr_t  ZPointerMarkedYoung;
 extern uintptr_t  ZPointerFinalizable;
 extern uintptr_t  ZPointerRemembered;
 
-// The current expected remap bit for the minor (or major) collection is either of two bits.
+// The current expected remap bit for the young (or old) collection is either of two bits.
 // The other collection alternates the bits, so we need to use a mask.
-extern uintptr_t  ZPointerRemappedMinorMask;
-extern uintptr_t  ZPointerRemappedMajorMask;
+extern uintptr_t  ZPointerRemappedYoungMask;
+extern uintptr_t  ZPointerRemappedOldMask;
 
 // Good/bad masks
 extern uintptr_t  ZPointerLoadGoodMask;
@@ -252,8 +252,8 @@ public:
   static bool is_load_good(zpointer ptr);
   static bool is_load_good_or_null(zpointer ptr);
 
-  static bool is_major_load_good(zpointer ptr);
-  static bool is_minor_load_good(zpointer ptr);
+  static bool is_old_load_good(zpointer ptr);
+  static bool is_young_load_good(zpointer ptr);
 
   static bool is_mark_bad(zpointer ptr);
   static bool is_mark_good(zpointer ptr);
@@ -264,9 +264,9 @@ public:
   static bool is_store_good_or_null(zpointer ptr);
 
   static bool is_marked_finalizable(zpointer ptr);
-  static bool is_marked_major(zpointer ptr);
-  static bool is_marked_minor(zpointer ptr);
-  static bool is_marked_any_major(zpointer ptr);
+  static bool is_marked_old(zpointer ptr);
+  static bool is_marked_young(zpointer ptr);
+  static bool is_marked_any_old(zpointer ptr);
   static bool is_remapped(zpointer ptr);
   static bool is_remembered_exact(zpointer ptr);
 
@@ -286,8 +286,8 @@ public:
   static zpointer load_good(zaddress addr, zpointer prev);
   static zpointer finalizable_good(zaddress addr, zpointer prev);
   static zpointer mark_good(zaddress addr, zpointer prev);
-  static zpointer mark_major_good(zaddress addr, zpointer prev);
-  static zpointer mark_minor_good(zaddress addr, zpointer prev);
+  static zpointer mark_old_good(zaddress addr, zpointer prev);
+  static zpointer mark_young_good(zaddress addr, zpointer prev);
   static zpointer store_good(zaddress addr);
   static zpointer store_good_or_null(zaddress addr);
 };
@@ -302,10 +302,10 @@ private:
 public:
   static void initialize();
 
-  static void flip_minor_mark_start();
-  static void flip_minor_relocate_start();
-  static void flip_major_mark_start();
-  static void flip_major_relocate_start();
+  static void flip_young_mark_start();
+  static void flip_young_relocate_start();
+  static void flip_old_mark_start();
+  static void flip_old_relocate_start();
 };
 
 #endif // SHARE_GC_Z_ZADDRESS_HPP

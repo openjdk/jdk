@@ -59,10 +59,10 @@ private:
   const size_t                 _max_capacity;
   ZServiceabilityMemoryPool    _young_memory_pool;
   ZServiceabilityMemoryPool    _old_memory_pool;
-  ZServiceabilityMemoryManager _minor_cycle_memory_manager;
-  ZServiceabilityMemoryManager _major_cycle_memory_manager;
-  ZServiceabilityMemoryManager _minor_pause_memory_manager;
-  ZServiceabilityMemoryManager _major_pause_memory_manager;
+  ZServiceabilityMemoryManager _young_cycle_memory_manager;
+  ZServiceabilityMemoryManager _old_cycle_memory_manager;
+  ZServiceabilityMemoryManager _young_pause_memory_manager;
+  ZServiceabilityMemoryManager _old_pause_memory_manager;
   ZServiceabilityCounters*     _counters;
 
 public:

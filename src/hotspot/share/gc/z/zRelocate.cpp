@@ -50,8 +50,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentMinorRelocateRemsetFlipPagePromoted("Concurrent Minor Relocate Remset FPP");
-static const ZStatSubPhase ZSubPhaseConcurrentMinorRelocateRemsetNormalPromoted("Concurrent Minor Relocate Remset NP");
+static const ZStatSubPhase ZSubPhaseConcurrentYoungRelocateRemsetFlipPagePromoted("Concurrent Young Relocate Remset FPP");
+static const ZStatSubPhase ZSubPhaseConcurrentYoungRelocateRemsetNormalPromoted("Concurrent Young Relocate Remset NP");
 
 ZRelocateQueue::ZRelocateQueue() :
     _lock(),
@@ -357,7 +357,7 @@ public:
     if (page == NULL) {
       return;
     }
-    if (_collector->is_minor() && _generation == ZGenerationId::old) {
+    if (_collector->is_young() && _generation == ZGenerationId::old) {
       _collector->decrease_promoted(page->remaining());
     } else {
       _collector->decrease_relocated(page->remaining());
@@ -409,7 +409,7 @@ public:
       return;
     }
     // Release remaining memory that was not relocated/promoted
-    if (_collector->is_minor() && _generation == ZGenerationId::old) {
+    if (_collector->is_young() && _generation == ZGenerationId::old) {
       _collector->decrease_promoted(_shared->remaining());
     } else {
       _collector->decrease_relocated(_shared->remaining());
@@ -591,7 +591,7 @@ private:
   static void update_remset_promoted_filter_and_remap_per_field(volatile zpointer* p) {
     const zpointer ptr = Atomic::load(p);
 
-    assert(ZPointer::is_major_load_good(ptr), "Should be at least major load good: " PTR_FORMAT, untype(ptr));
+    assert(ZPointer::is_old_load_good(ptr), "Should be at least old load good: " PTR_FORMAT, untype(ptr));
 
     if (ZPointer::is_store_good(ptr)) {
       // Already has a remset entry
@@ -609,19 +609,19 @@ private:
 
     if (is_null_any(ptr)) {
       // Eagerly remap to skip adding a remset entry just to get deferred remapping
-      ZBarrier::remap_minor_relocated(p, ptr);
+      ZBarrier::remap_young_relocated(p, ptr);
       return;
     }
 
     zaddress_unsafe addr_unsafe = ZPointer::uncolor_unsafe(ptr);
-    ZForwarding* forwarding = ZHeap::heap()->minor_collector()->forwarding(addr_unsafe);
+    ZForwarding* forwarding = ZHeap::heap()->young_collector()->forwarding(addr_unsafe);
 
     if (forwarding == NULL) {
       // Object isn't being relocated
       zaddress addr = safe(addr_unsafe);
       if (!add_remset_if_young(p, addr)) {
         // Not young - eagerly remap to skip adding a remset entry just to get deferred remapping
-        ZBarrier::remap_minor_relocated(p, ptr);
+        ZBarrier::remap_young_relocated(p, ptr);
       }
       return;
     }
@@ -632,7 +632,7 @@ private:
       // Object has already been relocated
       if (!add_remset_if_young(p, addr)) {
         // Not young - eagerly remap to skip adding a remset entry just to get deferred remapping
-        ZBarrier::remap_minor_relocated(p, ptr);
+        ZBarrier::remap_young_relocated(p, ptr);
       }
       return;
     }
@@ -693,8 +693,8 @@ private:
 
     if (promotion) {
       // Register the the promotion
-      ZHeap::heap()->minor_collector()->promote_reloc(prev_page, new_page);
-      ZHeap::heap()->minor_collector()->register_promote_relocated(prev_page);
+      ZHeap::heap()->young_collector()->promote_reloc(prev_page, new_page);
+      ZHeap::heap()->young_collector()->register_promote_relocated(prev_page);
     } else {
       // An in-place relocation conceptually allocates a to-space page,
       // relocates the objects, and then frees the from-space page. It just
@@ -883,7 +883,7 @@ static void remap_and_maybe_add_remset(volatile zpointer* p) {
   }
 
   // Remset entries are used for two reasons:
-  // 1) Minor marking old-to-young pointer roots
+  // 1) Young marking old-to-young pointer roots
   // 2) Deferred remapping of stale old-to-young pointers
   //
   // This load barrier will up-front perform the remapping of (2),
@@ -933,7 +933,7 @@ private:
 public:
   ZRelocateAddRemsetForNormalPromoted() :
       ZTask("ZRelocateAddRemsetForNormalPromoted"),
-      _iter(ZHeap::heap()->minor_collector()->forwarding_table()) {}
+      _iter(ZHeap::heap()->young_collector()->forwarding_table()) {}
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
@@ -959,14 +959,14 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
     workers()->run(&relocate_task);
   }
 
-  if (relocation_set->collector()->is_minor()) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentMinorRelocateRemsetFlipPagePromoted);
+  if (relocation_set->collector()->is_young()) {
+    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungRelocateRemsetFlipPagePromoted);
     ZRelocateAddRemsetForInPlacePromoted task(relocation_set->promote_flipped_pages());
     workers()->run(&task);
   }
 
-  if (relocation_set->collector()->is_minor() && ZRelocateRemsetStrategy == 2) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentMinorRelocateRemsetNormalPromoted);
+  if (relocation_set->collector()->is_young() && ZRelocateRemsetStrategy == 2) {
+    ZStatTimerYoung timer(ZSubPhaseConcurrentYoungRelocateRemsetNormalPromoted);
     ZRelocateAddRemsetForNormalPromoted task;
     workers()->run(&task);
   }
@@ -994,7 +994,7 @@ public:
     for (ZPage* prev_page; _iter.next(&prev_page);) {
       ZPageAge age_from = prev_page->age();
       ZPageAge age_to = ZForwarding::compute_age_to(age_from, promote_all);
-      assert(age_from != ZPageAge::old, "invalid age for a minor collection");
+      assert(age_from != ZPageAge::old, "invalid age for a young collection");
 
       // Figure out if this is proper promotion
       const ZGenerationId generation_to = age_to == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
@@ -1008,7 +1008,7 @@ public:
       new_page->reset(generation_to, age_to, ZPageResetType::InPlaceAging);
 
       if (promotion) {
-        ZHeap::heap()->minor_collector()->promote_flip(prev_page, new_page);
+        ZHeap::heap()->young_collector()->promote_flip(prev_page, new_page);
         // Defer promoted page registration times the lock is taken
         promoted_pages.push(prev_page);
       }
@@ -1016,7 +1016,7 @@ public:
       SuspendibleThreadSet::yield();
     }
 
-    ZHeap::heap()->minor_collector()->register_promote_flipped(promoted_pages);
+    ZHeap::heap()->young_collector()->register_promote_flipped(promoted_pages);
   }
 };
 

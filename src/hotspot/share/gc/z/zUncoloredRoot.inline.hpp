@@ -71,7 +71,7 @@ inline void ZUncoloredRoot::mark_object(zaddress addr) {
 }
 
 inline void ZUncoloredRoot::mark_young_object(zaddress addr) {
-  ZHeap::heap()->mark_minor_object<ZMark::Follow, ZMark::Publish>(addr);
+  ZHeap::heap()->mark_young_object<ZMark::Follow, ZMark::Publish>(addr);
 }
 
 inline void ZUncoloredRoot::mark_invisible_object(zaddress addr) {

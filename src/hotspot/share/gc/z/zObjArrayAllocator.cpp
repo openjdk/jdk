@@ -57,7 +57,7 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
     const size_t segment = MIN2(remaining, segment_max);
     uintptr_t* const start = (uintptr_t*)(mem + skip + processed);
     uintptr_t* const end = start + segment;
-    // Usually, the minor marking code has the responsibility to color
+    // Usually, the young marking code has the responsibility to color
     // raw nulls, before they end up in the old generation. However, the
     // invisible roots are hidden from the marking code, and therefore
     // we must color the nulls already here in the initialization. The

@@ -73,8 +73,8 @@ void ZStoreBarrierBuffer::install_base_pointers_inner() {
          ZPointer::remap_bits(_last_processed_color),
          "Can't deal with two pending base pointer installations");
 
-  assert((ZPointer::remap_bits(_last_processed_color) & ZPointerRemappedMinorMask) == 0 ||
-         (ZPointer::remap_bits(_last_processed_color) & ZPointerRemappedMajorMask) == 0,
+  assert((ZPointer::remap_bits(_last_processed_color) & ZPointerRemappedYoungMask) == 0 ||
+         (ZPointer::remap_bits(_last_processed_color) & ZPointerRemappedOldMask) == 0,
          "Should not have double bit errors");
 
   for (int i = current(); i < (int)_buffer_length; ++i) {
@@ -165,15 +165,15 @@ void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
     return;
   }
 
-  const uintptr_t last_mark_minor_bits = _last_processed_color & (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
-  const bool woke_up_in_minor_mark = last_mark_minor_bits != ZPointerMarkedMinor;
+  const uintptr_t last_mark_young_bits = _last_processed_color & (ZPointerMarkedYoung0 | ZPointerMarkedYoung1);
+  const bool woke_up_in_young_mark = last_mark_young_bits != ZPointerMarkedYoung;
 
-  if (woke_up_in_minor_mark) {
-    // When minor mark starts we "flip" the remembered sets. The remembered
-    // sets used before the minor mark start becomes read-only and used by
+  if (woke_up_in_young_mark) {
+    // When young mark starts we "flip" the remembered sets. The remembered
+    // sets used before the young mark start becomes read-only and used by
     // the GC to scan for old-to-young pointers to use as marking roots.
     //
-    // Entries in the store buffer that were added before the mark minor start,
+    // Entries in the store buffer that were added before the mark young start,
     // were supposed to be part of the remembered sets that the GC scans.
     // However, it is too late to add those entries at this point, so instead
     // we perform the GC remembered set scanning up-front here.
@@ -185,13 +185,13 @@ void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
   }
 }
 
-bool ZStoreBarrierBuffer::is_major_mark() const {
-  return ZHeap::heap()->major_collector()->is_phase_mark();
+bool ZStoreBarrierBuffer::is_old_mark() const {
+  return ZHeap::heap()->old_collector()->is_phase_mark();
 }
 
-bool ZStoreBarrierBuffer::stored_during_major_mark() const {
-  const uintptr_t last_mark_major_bits = _last_processed_color & (ZPointerMarkedMajor0 | ZPointerMarkedMajor1);
-  return last_mark_major_bits == ZPointerMarkedMajor;
+bool ZStoreBarrierBuffer::stored_during_old_mark() const {
+  const uintptr_t last_mark_old_bits = _last_processed_color & (ZPointerMarkedOld0 | ZPointerMarkedOld1);
+  return last_mark_old_bits == ZPointerMarkedOld;
 }
 
 void ZStoreBarrierBuffer::on_new_phase_mark(int i) {
@@ -204,15 +204,15 @@ void ZStoreBarrierBuffer::on_new_phase_mark(int i) {
 
   volatile zpointer* const p = entry._p;
 
-  // Minor collections can start during major collections, but not the other
-  // way around. Therefore, only major marking can see a collection phase
+  // Young collections can start during old collections, but not the other
+  // way around. Therefore, only old marking can see a collection phase
   // shift (resulting in a call to this function).
   //
   // Stores before the marking phase started is not a part of the SATB snapshot,
   // and therefore shouldn't be used for marking.
   //
   // Locations in the young generation are not part of the old marking.
-  if (is_major_mark() && stored_during_major_mark() && ZHeap::heap()->is_old(p)) {
+  if (is_old_mark() && stored_during_old_mark() && ZHeap::heap()->is_old(p)) {
     const zaddress addr = ZBarrier::make_load_good(prev);
     ZUncoloredRoot::mark_object(addr);
   }

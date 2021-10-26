@@ -33,16 +33,16 @@
 #include "utilities/debug.hpp"
 
 #ifdef ASSERT
-static bool during_minor_mark() {
-  return ZHeap::heap()->minor_collector()->is_phase_mark();
+static bool during_young_mark() {
+  return ZHeap::heap()->young_collector()->is_phase_mark();
 }
 
-static bool during_major_mark() {
-  return ZHeap::heap()->major_collector()->is_phase_mark();
+static bool during_old_mark() {
+  return ZHeap::heap()->old_collector()->is_phase_mark();
 }
 
 static bool during_any_mark() {
-  return during_minor_mark() || during_major_mark();
+  return during_young_mark() || during_old_mark();
 }
 #endif
 
@@ -66,16 +66,16 @@ static void mark(zaddress addr) {
 }
 
 template <bool follow,bool publish>
-static void mark_minor(zaddress addr) {
+static void mark_young(zaddress addr) {
   // FIXME: Maybe rely on earlier null-filtering
   if (is_null(addr)) {
     return;
   }
 
-  assert(during_minor_mark(), "Should only be called during marking");
+  assert(during_young_mark(), "Should only be called during marking");
 
   // Mark
-  ZHeap::heap()->mark_minor_object<follow, publish>(addr);
+  ZHeap::heap()->mark_young_object<follow, publish>(addr);
 }
 
 //
@@ -183,11 +183,11 @@ zaddress ZBarrier::mark_slow_path(zaddress addr) {
   return addr;
 }
 
-zaddress ZBarrier::mark_minor_slow_path(zaddress addr) {
-  assert(during_minor_mark(), "Invalid phase");
+zaddress ZBarrier::mark_young_slow_path(zaddress addr) {
+  assert(during_young_mark(), "Invalid phase");
 
   // Mark
-  mark_minor<ZMark::Follow, ZMark::Overflow>(addr);
+  mark_young<ZMark::Follow, ZMark::Overflow>(addr);
 
   return addr;
 }

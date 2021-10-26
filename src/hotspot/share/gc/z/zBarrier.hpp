@@ -90,7 +90,7 @@ private:
   static bool is_mark_good_fast_path(zpointer ptr);
   static bool is_store_good_fast_path(zpointer ptr);
 
-  static bool is_mark_minor_good_fast_path(zpointer ptr);
+  static bool is_mark_young_good_fast_path(zpointer ptr);
   static bool is_finalizable_good_fast_path(zpointer ptr);
 
   // Slow paths
@@ -102,7 +102,7 @@ private:
   static zaddress verify_old_object_live_slow_path(zaddress addr);
 
   static zaddress mark_slow_path(zaddress addr);
-  static zaddress mark_minor_slow_path(zaddress addr);
+  static zaddress mark_young_slow_path(zaddress addr);
   static zaddress mark_finalizable_slow_path(zaddress addr);
 
   static zaddress keep_alive_slow_path(zaddress addr);
@@ -122,7 +122,7 @@ public:
   static zpointer load_atomic(volatile zpointer* p);
 
   // Helper for relocation
-  static void remap_minor_relocated(volatile zpointer* p, zpointer o);
+  static void remap_young_relocated(volatile zpointer* p, zpointer o);
 
   // Load barrier
   static zaddress load_barrier_on_oop_field(volatile zpointer* p);
@@ -145,7 +145,7 @@ public:
   // Mark barrier
   static void mark_barrier_on_young_oop_field(volatile zpointer* p);
   static void mark_barrier_on_oop_field(volatile zpointer* p, bool finalizable);
-  static zaddress mark_minor_good_barrier_on_oop_field(volatile zpointer* p);
+  static zaddress mark_young_good_barrier_on_oop_field(volatile zpointer* p);
 
   // Store barrier
   static void store_barrier_on_heap_oop_field(volatile zpointer* p, bool heal);

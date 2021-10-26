@@ -102,8 +102,8 @@ public:
   uint32_t seqnum() const;
 
   ZCollectorId id() const;
-  bool is_minor() const;
-  bool is_major() const;
+  bool is_young() const;
+  bool is_old() const;
 
   // Statistics
   void reset_statistics();
@@ -164,14 +164,14 @@ public:
   void threads_do(ThreadClosure* tc) const;
 };
 
-class ZMinorCollector : public ZCollector {
+class ZYoungCollector : public ZCollector {
 private:
   bool              _skip_mark_start;
-  ZMinorTracer      _tracer;
+  ZYoungTracer      _tracer;
   ConcurrentGCTimer _minor_timer;
 
 public:
-  ZMinorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   // Statistics
   ConcurrentGCTimer* minor_timer();
@@ -198,17 +198,17 @@ public:
   virtual GCTracer* tracer();
 };
 
-class ZMajorCollector : public ZCollector {
+class ZOldCollector : public ZCollector {
 private:
   ZReferenceProcessor _reference_processor;
   ZWeakRootsProcessor _weak_roots_processor;
   ZUnload             _unload;
   int                 _total_collections_at_end;
-  ZMajorTracer        _tracer;
+  ZOldTracer          _tracer;
   ConcurrentGCTimer   _major_timer;
 
 public:
-  ZMajorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   // Statistics
   void reset_statistics();

@@ -207,9 +207,6 @@ public:
 //
 class ZStatPhase {
 protected:
-  static ConcurrentGCTimer _timer_minor;
-  static ConcurrentGCTimer _timer_major;
-
   const ZStatSampler _sampler;
 
   ZStatPhase(const char* group, const char* name);

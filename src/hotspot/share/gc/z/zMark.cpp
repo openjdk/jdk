@@ -67,8 +67,8 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/ticks.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootUncolored("Concurrent Minor Mark Root Uncolored");
-static const ZStatSubPhase ZSubPhaseConcurrentMinorMarkRootColored("Concurrent Minor Mark Root Colored");
+static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootUncolored("Concurrent Young Mark Root Uncolored");
+static const ZStatSubPhase ZSubPhaseConcurrentYoungMarkRootColored("Concurrent Young Mark Root Colored");
 static const ZStatSubPhase ZSubPhaseConcurrentMark("Concurrent Mark");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryFlush("Concurrent Mark Try Flush");
 static const ZStatSubPhase ZSubPhaseConcurrentMarkTryTerminate("Concurrent Mark Try Terminate");
@@ -188,7 +188,7 @@ void ZMark::follow_small_array(uintptr_t addr, size_t size, bool finalizable) {
 
   log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (" SIZE_FORMAT ")", addr, size);
 
-  mark_barrier_on_oop_array((zpointer*)addr, length, finalizable, _collector->is_minor());
+  mark_barrier_on_oop_array((zpointer*)addr, length, finalizable, _collector->is_young());
 }
 
 void ZMark::follow_large_array(uintptr_t addr, size_t size, bool finalizable) {
@@ -256,15 +256,15 @@ private:
 
   static ReferenceDiscoverer* discoverer() {
     if (!finalizable) {
-      return ZHeap::heap()->major_collector()->reference_discoverer();
+      return ZHeap::heap()->old_collector()->reference_discoverer();
     } else {
       return NULL;
     }
   }
 
   static bool visit_metadata() {
-    // Only visit metadata if we're marking through the major cycle
-    return ZHeap::heap()->major_collector()->is_phase_mark();
+    // Only visit metadata if we're marking through the old collector
+    return ZHeap::heap()->old_collector()->is_phase_mark();
   }
 
   const bool _visit_metadata;
@@ -294,7 +294,7 @@ public:
 };
 
 void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
-  if (_collector->is_major()) {
+  if (_collector->is_old()) {
     if (finalizable) {
       ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
       cl.do_klass(obj->klass());
@@ -314,7 +314,7 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
 }
 
 void ZMark::follow_object(oop obj, bool finalizable) {
-  if (_collector->is_major()) {
+  if (_collector->is_old()) {
     if (ZHeap::heap()->is_old(to_zaddress(obj))) {
       if (finalizable) {
         ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
@@ -327,7 +327,7 @@ void ZMark::follow_object(oop obj, bool finalizable) {
       fatal("Catch me!");
     }
   } else {
-    // Young gen must help out with major marking
+    // Young gen must help out with old marking
     ZMarkBarrierOldGenOopClosure<false /* finalizable */, true /* young */> cl;
     ZIterator::oop_iterate(obj, &cl);
   }
@@ -484,8 +484,8 @@ public:
     // Flush GC threads
     if (_gc_threads) {
       SuspendibleThreadSet::synchronize();
-      ZHeap::heap()->minor_collector()->workers()->threads_do(_cl);
-      ZHeap::heap()->major_collector()->workers()->threads_do(_cl);
+      ZHeap::heap()->young_collector()->workers()->threads_do(_cl);
+      ZHeap::heap()->old_collector()->workers()->threads_do(_cl);
       SuspendibleThreadSet::desynchronize();
     }
     // Flush VM thread
@@ -604,7 +604,7 @@ public:
 class ZMarkYoungOopClosure : public OopClosure {
 public:
   virtual void do_oop(oop* p) {
-    ZBarrier::mark_minor_good_barrier_on_oop_field((zpointer*)p);
+    ZBarrier::mark_young_good_barrier_on_oop_field((zpointer*)p);
   }
 
   virtual void do_oop(narrowOop* p) {
@@ -689,14 +689,14 @@ public:
       ZUncoloredRootMarkYoungOopClosure cl(prev_color);
       ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
-      // Disarm only the minor marking, not any potential major marking cycle
+      // Disarm only the young marking, not any potential old marking cycle
 
-      const uintptr_t major_marked_mask = ZPointerMarkedMask ^ (ZPointerMarkedMinor0 | ZPointerMarkedMinor1);
-      const uintptr_t major_marked = prev_color & major_marked_mask;
+      const uintptr_t old_marked_mask = ZPointerMarkedMask ^ (ZPointerMarkedYoung0 | ZPointerMarkedYoung1);
+      const uintptr_t old_marked = prev_color & old_marked_mask;
 
-      const zpointer new_disarm_value_ptr = ZAddress::color(zaddress::null, ZPointerLoadGoodMask | ZPointerMarkedMinor | major_marked | ZPointerRemembered);
+      const zpointer new_disarm_value_ptr = ZAddress::color(zaddress::null, ZPointerLoadGoodMask | ZPointerMarkedYoung | old_marked | ZPointerRemembered);
 
-      // Check if disarming for minor mark, completely disarms the nmethod entry barrier
+      // Check if disarming for young mark, completely disarms the nmethod entry barrier
       const bool complete_disarm = ZPointer::is_mark_good(new_disarm_value_ptr);
 
       if (complete_disarm) {
@@ -822,13 +822,13 @@ public:
 
   virtual void work() {
     {
-      ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootColored);
+      ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootColored);
       _roots_colored.apply(&_cl_colored,
                            &_cld_cl);
     }
 
     {
-      ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootUncolored);
+      ZStatTimerYoung timer(ZSubPhaseConcurrentYoungMarkRootUncolored);
       _roots_uncolored.apply(&_thread_cl,
                              &_nm_cl);
     }
@@ -863,7 +863,7 @@ public:
 void ZMark::mark_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
 
-  if (_collector->is_major()) {
+  if (_collector->is_old()) {
     ZMarkOldGenRootsTask task(this);
     workers()->run(&task);
   } else {

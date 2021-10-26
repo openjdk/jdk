@@ -19,15 +19,15 @@ define zpo
         if ((uintptr_t)$obj & (uintptr_t)ZPointerRemapped)
             printf "(Remapped)"
         else
-            if ((uintptr_t)$obj & (uintptr_t)ZPointerMarkedMajor)
-                printf "(MarkedMajor)"
+            if ((uintptr_t)$obj & (uintptr_t)ZPointerMarkedOld)
+                printf "(MarkedOld)"
             else
                 printf "(Unknown)"
             end
         end
     else
         printf "Bad "
-        if ((uintptr_t)ZPointerStoreGoodMask & (uintptr_t)ZPointerMarkedMajor)
+        if ((uintptr_t)ZPointerStoreGoodMask & (uintptr_t)ZPointerMarkedOld)
             # Should be marked
             if ((uintptr_t)$obj & (uintptr_t)ZPointerRemapped)
                 printf "(Not Marked, Remapped)"
@@ -37,7 +37,7 @@ define zpo
         else
             if ((uintptr_t)ZPointerStoreGoodMask & (uintptr_t)ZPointerRemapped)
                 # Should be remapped
-                if ((uintptr_t)$obj & (uintptr_t)ZPointerMarkedMajor)
+                if ((uintptr_t)$obj & (uintptr_t)ZPointerMarkedOld)
                     printf "(Marked, Not Remapped)"
                 else
                     printf "(Not Marked, Not Remapped)"
@@ -152,13 +152,13 @@ define z_print_cycle
 end
 
 define zz
-  printf "Major: "
-  z_print_cycle ZHeap::_heap->_major_collector
+  printf "Old: "
+  z_print_cycle ZHeap::_heap->_old_collector
 
   printf " | "
 
-  printf "Minor: "
-  z_print_cycle ZHeap::_heap->_minor_collector
+  printf "Young: "
+  z_print_cycle ZHeap::_heap->_young_collector
 
   printf "\n"
 end
@@ -166,18 +166,18 @@ end
 # Print heap information
 define zph
     printf "Heap\n"
-    printf "     Minor Phase:       %u\n", ZHeap::_heap->_minor_collector->_phase
-    printf "     Major Phase:       %u\n", ZHeap::_heap->_major_collector->_phase
-    printf "     Minor SeqNum:      %u\n", ZHeap::_heap->_minor_collector->_phase
-    printf "     Major SeqNum:      %u\n", ZHeap::_heap->_major_collector->_phase
+    printf "     Young Phase:       %u\n", ZHeap::_heap->_young_collector->_phase
+    printf "     Old Phase:       %u\n", ZHeap::_heap->_old_collector->_phase
+    printf "     Young SeqNum:      %u\n", ZHeap::_heap->_young_collector->_seqnum
+    printf "     Old SeqNum:      %u\n", ZHeap::_heap->_old_collector->_seqnum
     printf "     Offset Max:        %-15llu (0x%llx)\n", ZAddressOffsetMax, ZAddressOffsetMax
     printf "     Page Size Small:   %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
     printf "     Page Size Medium:  %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium
     printf "Metadata Bits\n"
     printf "     Good:              0x%016llx\n", ZPointerStoreGoodMask
     printf "     Bad:               0x%016llx\n", ZPointerStoreBadMask
-    printf "     MarkedMinor:       0x%016llx\n", ZPointerMarkedMinor
-    printf "     MarkedMajor:       0x%016llx\n", ZPointerMarkedMajor
+    printf "     MarkedYoung:       0x%016llx\n", ZPointerMarkedYoung
+    printf "     MarkedOld:         0x%016llx\n", ZPointerMarkedOld
     printf "     Remapped:          0x%016llx\n", ZPointerRemapped
 end
 
@@ -216,8 +216,8 @@ define zpm
     print_s_bits8 "\n     Mask:          " ZPointerStoreMetadataMask
     print_s_bits8 "\n     Good:          " ZPointerStoreGoodMask
     print_s_bits8 "\n     Bad:           " ZPointerStoreBadMask
-    print_s_bits8 "\n     MarkedMinor:   " ZPointerMarkedMinor
-    print_s_bits8 "\n     MarkedMajor:   " ZPointerMarkedMajor
+    print_s_bits8 "\n     MarkedYoung:   " ZPointerMarkedYoung
+    print_s_bits8 "\n     MarkedOld:     " ZPointerMarkedOld
     print_s_bits8 "\n     Finalizable:   " ZPointerFinalizable
     printf        "\n"
 end

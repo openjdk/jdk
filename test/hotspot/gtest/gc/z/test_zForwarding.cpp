@@ -50,11 +50,11 @@ public:
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
-    ZHeap::_heap->_major_collector._id = ZCollectorId::_major;
-    ZHeap::_heap->_minor_collector._id = ZCollectorId::_minor;
+    ZHeap::_heap->_old_collector._id = ZCollectorId::old;
+    ZHeap::_heap->_young_collector._id = ZCollectorId::young;
 
-    ZHeap::_heap->_major_collector._seqnum = 1;
-    ZHeap::_heap->_minor_collector._seqnum = 2;
+    ZHeap::_heap->_old_collector._seqnum = 1;
+    ZHeap::_heap->_young_collector._seqnum = 2;
 
 
     bool reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase, ZGranuleSize, false /* executable */);
@@ -183,9 +183,9 @@ public:
     const size_t object_size = 16;
     const zaddress object = page.alloc_object(object_size);
 
-    ZHeap::heap()->minor_collector()->set_phase(ZCollector::Phase::Mark);
-    ZHeap::heap()->minor_collector()->set_phase(ZCollector::Phase::MarkComplete);
-    ZHeap::heap()->minor_collector()->set_phase(ZCollector::Phase::Relocate);
+    ZHeap::heap()->young_collector()->set_phase(ZCollector::Phase::Mark);
+    ZHeap::heap()->young_collector()->set_phase(ZCollector::Phase::MarkComplete);
+    ZHeap::heap()->young_collector()->set_phase(ZCollector::Phase::Relocate);
 
     //page.mark_object(object, dummy, dummy);
     {

@@ -25,8 +25,8 @@
 #define SHARE_GC_Z_ZCYCLEID_HPP
 
 enum class ZCollectorId {
-  _minor,
-  _major
+  young,
+  old
 };
 
 #endif // SHARE_GC_Z_ZCYCLEID_HPP

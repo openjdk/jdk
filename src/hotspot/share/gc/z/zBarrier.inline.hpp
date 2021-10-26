@@ -121,17 +121,17 @@ inline void ZBarrier::assert_transition_monotonicity(zpointer old_ptr, zpointer 
     return;
   }
 
-  const bool old_is_marked_minor = ZPointer::is_marked_minor(old_ptr);
-  const bool old_is_marked_major = ZPointer::is_marked_major(old_ptr);
+  const bool old_is_marked_young = ZPointer::is_marked_young(old_ptr);
+  const bool old_is_marked_old = ZPointer::is_marked_old(old_ptr);
   const bool old_is_marked_finalizable = ZPointer::is_marked_finalizable(old_ptr);
 
-  const bool new_is_marked_minor = ZPointer::is_marked_minor(new_ptr);
-  const bool new_is_marked_major = ZPointer::is_marked_major(new_ptr);
+  const bool new_is_marked_young = ZPointer::is_marked_young(new_ptr);
+  const bool new_is_marked_old = ZPointer::is_marked_old(new_ptr);
   const bool new_is_marked_finalizable = ZPointer::is_marked_finalizable(new_ptr);
 
-  assert(!old_is_marked_minor || new_is_marked_minor, "non-monotonic marked minor transition");
-  assert(!old_is_marked_major || new_is_marked_major, "non-monotonic marked major transition");
-  assert(!old_is_marked_finalizable || new_is_marked_finalizable || new_is_marked_major, "non-monotonic marked final transition");
+  assert(!old_is_marked_young || new_is_marked_young, "non-monotonic marked young transition");
+  assert(!old_is_marked_old || new_is_marked_old, "non-monotonic marked old transition");
+  assert(!old_is_marked_finalizable || new_is_marked_finalizable || new_is_marked_old, "non-monotonic marked final transition");
 }
 
 inline void ZBarrier::self_heal(ZBarrierFastPath fast_path, volatile zpointer* p, zpointer ptr, zpointer heal_ptr, bool allow_null) {
@@ -236,9 +236,9 @@ inline zaddress ZBarrier::barrier(ZBarrierFastPath fast_path, ZBarrierSlowPath s
   return good_addr;
 }
 
-inline void ZBarrier::remap_minor_relocated(volatile zpointer* p, zpointer o) {
-  assert(ZPointer::is_major_load_good(o), "Should be load good");
-  assert(!ZPointer::is_minor_load_good(o), "Should be load good");
+inline void ZBarrier::remap_young_relocated(volatile zpointer* p, zpointer o) {
+  assert(ZPointer::is_old_load_good(o), "Should be old load good");
+  assert(!ZPointer::is_young_load_good(o), "Should not be young load good");
 
   // Make load good
   const zaddress load_good_addr = make_load_good_no_relocate(o);
@@ -273,12 +273,12 @@ inline bool ZBarrier::is_store_good_fast_path(zpointer ptr) {
   return ZPointer::is_store_good(ptr);
 }
 
-inline bool ZBarrier::is_mark_minor_good_fast_path(zpointer ptr) {
-  return ZPointer::is_load_good(ptr) && ZPointer::is_marked_minor(ptr);
+inline bool ZBarrier::is_mark_young_good_fast_path(zpointer ptr) {
+  return ZPointer::is_load_good(ptr) && ZPointer::is_marked_young(ptr);
 }
 
 inline bool ZBarrier::is_finalizable_good_fast_path(zpointer ptr) {
-  return ZPointer::is_load_good(ptr) && ZPointer::is_marked_any_major(ptr);
+  return ZPointer::is_load_good(ptr) && ZPointer::is_marked_any_old(ptr);
 }
 
 //
@@ -290,9 +290,9 @@ inline zpointer color_load_good(zaddress new_addr, zpointer old_ptr) {
 }
 
 inline zpointer color_finalizable_good(zaddress new_addr, zpointer old_ptr) {
-  if (ZPointer::is_marked_major(old_ptr)) {
+  if (ZPointer::is_marked_old(old_ptr)) {
     // Don't down-grade pointers
-    return ZAddress::mark_major_good(new_addr, old_ptr);
+    return ZAddress::mark_old_good(new_addr, old_ptr);
   } else {
     return ZAddress::finalizable_good(new_addr, old_ptr);
   }
@@ -302,8 +302,8 @@ inline zpointer color_mark_good(zaddress new_addr, zpointer old_ptr) {
   return ZAddress::mark_good(new_addr, old_ptr);
 }
 
-inline zpointer color_mark_minor_good(zaddress new_addr, zpointer old_ptr) {
-  return ZAddress::mark_minor_good(new_addr, old_ptr);
+inline zpointer color_mark_young_good(zaddress new_addr, zpointer old_ptr) {
+  return ZAddress::mark_young_good(new_addr, old_ptr);
 }
 
 inline zpointer color_store_good(zaddress new_addr, zpointer old_ptr) {
@@ -450,7 +450,7 @@ inline void ZBarrier::mark_barrier_on_oop_field(volatile zpointer* p, bool final
     // slow path so that we can mark the object as strongly reachable.
 
     // Note: that this does not color the pointer finalizable marked if it
-    // is already colored marked major good.
+    // is already colored marked old good.
     barrier(is_finalizable_good_fast_path, mark_finalizable_slow_path, color_finalizable_good, p, o);
   } else {
     barrier(is_mark_good_fast_path, mark_slow_path, color_mark_good, p, o);
@@ -465,9 +465,9 @@ inline void ZBarrier::mark_barrier_on_young_oop_field(volatile zpointer* p) {
 //
 // Mark barrier
 //
-inline zaddress ZBarrier::mark_minor_good_barrier_on_oop_field(volatile zpointer* p) {
+inline zaddress ZBarrier::mark_young_good_barrier_on_oop_field(volatile zpointer* p) {
   zpointer o = load_atomic(p);
-  return barrier(is_mark_minor_good_fast_path, mark_minor_slow_path, color_mark_minor_good, p, o);
+  return barrier(is_mark_young_good_fast_path, mark_young_slow_path, color_mark_young_good, p, o);
 }
 
 //

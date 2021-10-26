@@ -123,7 +123,7 @@ public:
       _type(type),
       _size(size),
       _flags(flags),
-      _seqnum(ZHeap::heap()->major_collector()->seqnum()),
+      _seqnum(ZHeap::heap()->old_collector()->seqnum()),
       _flushed(0),
       _committed(0),
       _pages(),
@@ -402,8 +402,8 @@ void ZPageAllocator::increase_used(size_t size, bool gc_relocation, ZCollector* 
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::add(&_used, size);
-  ZHeap::heap()->minor_collector()->update_used(used);
-  ZHeap::heap()->major_collector()->update_used(used);
+  ZHeap::heap()->young_collector()->update_used(used);
+  ZHeap::heap()->old_collector()->update_used(used);
 }
 
 void ZPageAllocator::decrease_used(size_t size, bool reclaimed, ZGenerationId id) {
@@ -415,8 +415,8 @@ void ZPageAllocator::decrease_used(size_t size, bool reclaimed, ZGenerationId id
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::sub(&_used, size);
-  ZHeap::heap()->minor_collector()->update_used(used);
-  ZHeap::heap()->major_collector()->update_used(used);
+  ZHeap::heap()->young_collector()->update_used(used);
+  ZHeap::heap()->old_collector()->update_used(used);
 }
 
 bool ZPageAllocator::commit_page(ZPage* page) {
@@ -892,7 +892,7 @@ void ZPageAllocator::check_out_of_memory() {
   // Fail allocation requests that were enqueued before the
   // last GC started, otherwise start a new GC.
   for (ZPageAllocation* allocation = _stalled.first(); allocation != NULL; allocation = _stalled.first()) {
-    if (allocation->seqnum() == ZHeap::heap()->major_collector()->seqnum()) {
+    if (allocation->seqnum() == ZHeap::heap()->old_collector()->seqnum()) {
       // Start a new GC, keep allocation requests enqueued
       allocation->satisfy(ZPageAllocationStallStartGC);
       return;

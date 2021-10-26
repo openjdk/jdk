@@ -50,9 +50,9 @@ public class TestMemoryManagerMXBean {
 
             System.out.println("MemoryManager: " + memoryManagerName);
 
-            if (memoryManagerName.equals("ZGC Minor Cycles") || memoryManagerName.equals("ZGC Major Cycles")) {
+            if (memoryManagerName.equals("ZGC Young Cycles") || memoryManagerName.equals("ZGC Old Cycles")) {
                 zgcCyclesMemoryManagers++;
-            } else if (memoryManagerName.equals("ZGC Minor Pauses") || memoryManagerName.equals("ZGC Major Pauses")) {
+            } else if (memoryManagerName.equals("ZGC Young Pauses") || memoryManagerName.equals("ZGC Old Pauses")) {
                 zgcPausesMemoryManagers++;
             }
 
@@ -62,9 +62,9 @@ public class TestMemoryManagerMXBean {
                 System.out.println("   MemoryPool:   " + memoryPoolName);
 
                 if (memoryPoolName.equals("ZYoungGeneration") || memoryPoolName.equals("ZOldGeneration")) {
-                    if (memoryManagerName.equals("ZGC Minor Cycles") || memoryManagerName.equals("ZGC Major Cycles")) {
+                    if (memoryManagerName.equals("ZGC Young Cycles") || memoryManagerName.equals("ZGC Old Cycles")) {
                         zgcCyclesMemoryPools++;
-                    } else if (memoryManagerName.equals("ZGC Minor Pauses") || memoryManagerName.equals("ZGC Major Pauses")) {
+                    } else if (memoryManagerName.equals("ZGC Young Pauses") || memoryManagerName.equals("ZGC Old Pauses")) {
                         zgcPausesMemoryPools++;
                     }
                 }

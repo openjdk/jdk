@@ -236,10 +236,10 @@ bool ZCollectedHeap::uses_stack_watermark_barrier() const {
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
   GrowableArray<GCMemoryManager*> memory_managers(4);
-  memory_managers.append(_heap.serviceability_cycle_memory_manager(ZCollectorId::_minor));
-  memory_managers.append(_heap.serviceability_cycle_memory_manager(ZCollectorId::_major));
-  memory_managers.append(_heap.serviceability_pause_memory_manager(ZCollectorId::_minor));
-  memory_managers.append(_heap.serviceability_pause_memory_manager(ZCollectorId::_major));
+  memory_managers.append(_heap.serviceability_cycle_memory_manager(ZCollectorId::young));
+  memory_managers.append(_heap.serviceability_cycle_memory_manager(ZCollectorId::old));
+  memory_managers.append(_heap.serviceability_pause_memory_manager(ZCollectorId::young));
+  memory_managers.append(_heap.serviceability_pause_memory_manager(ZCollectorId::old));
   return memory_managers;
 }
 
@@ -326,15 +326,15 @@ VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
-  ZHeap::heap()->minor_collector()->synchronize_relocation();
-  ZHeap::heap()->major_collector()->synchronize_relocation();
+  ZHeap::heap()->young_collector()->synchronize_relocation();
+  ZHeap::heap()->old_collector()->synchronize_relocation();
   SuspendibleThreadSet::synchronize();
 }
 
 void ZCollectedHeap::safepoint_synchronize_end() {
   SuspendibleThreadSet::desynchronize();
-  ZHeap::heap()->major_collector()->desynchronize_relocation();
-  ZHeap::heap()->minor_collector()->desynchronize_relocation();
+  ZHeap::heap()->old_collector()->desynchronize_relocation();
+  ZHeap::heap()->young_collector()->desynchronize_relocation();
 }
 
 void ZCollectedHeap::prepare_for_verify() {
@@ -347,8 +347,8 @@ void ZCollectedHeap::print_on(outputStream* st) const {
 
 void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr("ZGC Globals:");
-  st->print_cr(" Minor Phase/SeqNum: %s/%u", ZHeap::heap()->minor_collector()->phase_to_string(), ZHeap::heap()->minor_collector()->seqnum());
-  st->print_cr(" Major Phase/SeqNum: %s/%u", ZHeap::heap()->major_collector()->phase_to_string(), ZHeap::heap()->major_collector()->seqnum());
+  st->print_cr(" Young Collector Phase/SeqNum: %s/%u", ZHeap::heap()->young_collector()->phase_to_string(), ZHeap::heap()->young_collector()->seqnum());
+  st->print_cr(" Old Collector Phase/SeqNum: %s/%u", ZHeap::heap()->old_collector()->phase_to_string(), ZHeap::heap()->old_collector()->seqnum());
   st->print_cr(" Offset Max:         " SIZE_FORMAT "%s (" PTR_FORMAT ")",
                byte_size_in_exact_unit(ZAddressOffsetMax),
                exact_unit_for_byte_size(ZAddressOffsetMax),
@@ -363,8 +363,8 @@ void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr(" MarkBad:            " PTR_FORMAT, ZPointerMarkBadMask);
   st->print_cr(" StoreGood:          " PTR_FORMAT, ZPointerStoreGoodMask);
   st->print_cr(" StoreBad:           " PTR_FORMAT, ZPointerStoreBadMask);
-  st->print_cr(" MarkedMinor:        " PTR_FORMAT, ZPointerMarkedMinor);
-  st->print_cr(" MarkedMajor:        " PTR_FORMAT, ZPointerMarkedMajor);
+  st->print_cr(" MarkedYoung:        " PTR_FORMAT, ZPointerMarkedYoung);
+  st->print_cr(" MarkedOld:          " PTR_FORMAT, ZPointerMarkedOld);
   st->print_cr(" Remembered:         " PTR_FORMAT, ZPointerRemembered);
   st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
   st->cr();

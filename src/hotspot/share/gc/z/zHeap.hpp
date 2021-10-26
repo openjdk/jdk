@@ -51,8 +51,8 @@ private:
 
   ZServiceability     _serviceability;
 
-  ZMinorCollector     _minor_collector;
-  ZMajorCollector     _major_collector;
+  ZYoungCollector     _young_collector;
+  ZOldCollector       _old_collector;
 
   bool                _initialized;
 
@@ -74,8 +74,8 @@ public:
   // Collectors
   ZCollector* collector(ZCollectorId id);
   ZCollector* collector(ZGenerationId id);
-  ZMinorCollector* minor_collector();
-  ZMajorCollector* major_collector();
+  ZYoungCollector* young_collector();
+  ZOldCollector* old_collector();
 
   // Heap metrics
   size_t initial_capacity() const;
@@ -109,7 +109,7 @@ public:
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
   void mark_object(zaddress addr);
   template <bool follow, bool publish>
-  void mark_minor_object(zaddress addr);
+  void mark_young_object(zaddress addr);
   void mark_follow_invisible_root(zaddress addr, size_t size);
   void mark_flush_and_free(Thread* thread);
   void keep_alive(oop obj);

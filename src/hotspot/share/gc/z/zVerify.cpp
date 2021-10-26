@@ -60,8 +60,8 @@ static void z_verify_old_oop(zpointer* p) {
   assert(o != zpointer::null, "Old should not contain raw null");
   if (!z_is_null_relaxed(o)) {
     if (!ZPointer::is_mark_good(o)) {
-      // Old to old pointers are allowed to have bad minor bits
-      guarantee(ZPointer::is_marked_major(o),  BAD_OOP_ARG(o, p));
+      // Old to old pointers are allowed to have bad young bits
+      guarantee(ZPointer::is_marked_old(o),  BAD_OOP_ARG(o, p));
       guarantee(ZHeap::heap()->is_old(p), BAD_OOP_ARG(o, p));
     } else {
       zaddress addr = ZPointer::uncolor(o);
@@ -79,7 +79,7 @@ static void z_verify_young_oop(zpointer* p) {
   zpointer o = *p;
   if (!z_is_null_relaxed(o)) {
     guarantee(ZHeap::heap()->is_young(p), BAD_OOP_ARG(o, p));
-    guarantee(ZPointer::is_marked_minor(o),  BAD_OOP_ARG(o, p));
+    guarantee(ZPointer::is_marked_young(o),  BAD_OOP_ARG(o, p));
 
     if (ZPointer::is_load_good(o)) {
       guarantee(oopDesc::is_oop(to_oop(ZPointer::uncolor(o))), BAD_OOP_ARG(o, p));
@@ -95,7 +95,7 @@ static void z_verify_root_oop(zpointer* p) {
   assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
   zpointer o = *p;
   if (!z_is_null_relaxed(o)) {
-    guarantee(ZPointer::is_marked_major(o), BAD_OOP_ARG(o, p));
+    guarantee(ZPointer::is_marked_old(o), BAD_OOP_ARG(o, p));
     //z_verify_root_oop_object(ZPointer::uncolor(o), p);
     z_verify_root_oop_object(ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o), p);
   }
@@ -113,7 +113,7 @@ static void z_verify_possibly_weak_oop(zpointer* p) {
   zpointer o = *p;
   if (!z_is_null_relaxed(o)) {
     //guarantee(ZPointer::is_store_good(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
-    guarantee(ZPointer::is_marked_major(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
+    guarantee(ZPointer::is_marked_old(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
 
     const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
     guarantee(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), BAD_OOP_ARG(o, p));
@@ -469,8 +469,8 @@ public:
 
 void ZVerify::objects(bool verify_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(ZHeap::heap()->minor_collector()->is_phase_mark_complete() ||
-         ZHeap::heap()->major_collector()->is_phase_mark_complete(), "Invalid phase");
+  assert(ZHeap::heap()->young_collector()->is_phase_mark_complete() ||
+         ZHeap::heap()->old_collector()->is_phase_mark_complete(), "Invalid phase");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
   ZVerifyObjectClosure object_cl(verify_weaks);

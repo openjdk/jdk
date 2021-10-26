@@ -64,8 +64,8 @@ private:
 
   void clear();
 
-  bool is_major_mark() const;
-  bool stored_during_major_mark() const;
+  bool is_old_mark() const;
+  bool stored_during_old_mark() const;
   bool is_empty() const;
   intptr_t current() const;
 
