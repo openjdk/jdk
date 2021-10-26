@@ -1087,6 +1087,7 @@ public class InetAddress implements java.io.Serializable {
          * @return {@code String} representing the host name mapping
          * @throws UnknownHostException if no host found for the specified IP address
          * @throws IllegalArgumentException if IP address is of illegal length
+         * @throws NullPointerException     if addr is {@code null}
          */
         @Override
         public String lookupByAddress(byte[] addr) throws UnknownHostException {
@@ -1138,6 +1139,7 @@ public class InetAddress implements java.io.Serializable {
          * @param lookupPolicy IP addresses lookup policy which specifies addresses
          *                     family and their order
          * @return stream of IP addresses for the requested host
+         * @throws NullPointerException if either parameter is {@code null}
          * @throws UnknownHostException
          *             if no IP address for the {@code host} could be found
          */
