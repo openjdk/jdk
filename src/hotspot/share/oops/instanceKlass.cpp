@@ -1058,7 +1058,7 @@ void InstanceKlass::clean_initialization_error_table() {
     }
   };
 
-  MutexLocker ml(ClassInitError_lock);
+  assert_locked_or_safepoint(ClassInitError_lock);
   InitErrorTableCleaner cleaner;
   _initialization_error_table.unlink(&cleaner);
 }
