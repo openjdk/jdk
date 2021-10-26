@@ -48,10 +48,6 @@ class FreeChunkListVector;
 //  managing a single contiguous memory region. The first node of
 //  this list is the current node and used for allocation of new
 //  root chunks.
-//
-// Beyond access to those nodes and the ability to grow new nodes
-//  (if expandable) it allows for purging: purging this list means
-//  removing and unmapping all memory regions which are unused.
 
 class VirtualSpaceList : public CHeapObj<mtClass> {
 
@@ -100,11 +96,6 @@ public:
   // May return NULL if vslist would need to be expanded to hold the new root node but
   // the list cannot be expanded (in practice this means we reached CompressedClassSpaceSize).
   Metachunk* allocate_root_chunk();
-
-  // Attempts to purge nodes. This will remove and delete nodes which only contain free chunks.
-  // The free chunks are removed from the freelists before the nodes are deleted.
-  // Return number of purged nodes.
-  int purge(FreeChunkListVector* freelists);
 
   //// Statistics ////
 
