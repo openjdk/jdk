@@ -2847,6 +2847,15 @@ public final class Main {
         }
     }
 
+    private static String oneInManys(String label, int i, int num, int pos) {
+        if (num == 1) {
+            return String.format(rb.getString("one.in.many1"), label, pos);
+        } else {
+            return String.format(rb.getString("one.in.many2"), label, i,
+                    num, pos);
+        }
+    }
+
     private void doPrintCert(final PrintStream out) throws Exception {
         if (jarfile != null) {
             // reset "jdk.certpath.disabledAlgorithms" security property
@@ -2875,13 +2884,14 @@ public final class Main {
                             out.printf(rb.getString("Signer.d."), ++pos);
                             out.println();
                             out.println();
-                            out.println(rb.getString("Signature."));
                             out.println();
 
                             List<? extends Certificate> certs
                                     = signer.getSignerCertPath().getCertificates();
                             int cc = 0;
                             for (Certificate cert: certs) {
+                                out.printf(rb.getString("Certificate.d."), ++cc);
+                                out.println();
                                 X509Certificate x = (X509Certificate)cert;
                                 if (rfc) {
                                     out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
@@ -2890,7 +2900,9 @@ public final class Main {
                                     printX509Cert(x, out);
                                 }
                                 out.println();
-                                checkWeak(oneInMany(rb.getString("the.certificate"), cc++, certs.size()), x);
+                                checkWeak(oneInManys(rb.getString(
+                                        "the.certificate"), cc,
+                                        certs.size(), pos), x);
                             }
                             Timestamp ts = signer.getTimestamp();
                             if (ts != null) {
@@ -2899,6 +2911,8 @@ public final class Main {
                                 certs = ts.getSignerCertPath().getCertificates();
                                 cc = 0;
                                 for (Certificate cert: certs) {
+                                    out.printf(rb.getString("Certificate.d."), ++cc);
+                                    out.println();
                                     X509Certificate x = (X509Certificate)cert;
                                     if (rfc) {
                                         out.println(rb.getString("Certificate.owner.") + x.getSubjectX500Principal() + "\n");
@@ -2907,7 +2921,9 @@ public final class Main {
                                         printX509Cert(x, out);
                                     }
                                     out.println();
-                                    checkWeak(oneInMany(rb.getString("the.tsa.certificate"), cc++, certs.size()), x);
+                                    checkWeak(oneInManys(rb.getString(
+                                            "the.tsa.certificate"), cc,
+                                            certs.size(), pos), x);
                                 }
                             }
                         }
