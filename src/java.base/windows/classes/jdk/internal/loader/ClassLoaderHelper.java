@@ -32,6 +32,14 @@ class ClassLoaderHelper {
     private ClassLoaderHelper() {}
 
     /**
+     * Returns true if loading a native library only if
+     * it's present on the file system.
+     */
+    static boolean loadLibraryOnlyIfPresent() {
+        return true;
+    }
+
+    /**
      * Returns an alternate path name for the given file
      * such that if the original pathname did not exist, then the
      * file may be located at the alternate location.

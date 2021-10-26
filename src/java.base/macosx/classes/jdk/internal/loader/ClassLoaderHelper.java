@@ -27,10 +27,38 @@ package jdk.internal.loader;
 
 import java.io.File;
 import java.util.ArrayList;
+import sun.security.action.GetPropertyAction;
 
 class ClassLoaderHelper {
+    private static final boolean hasDynamicLoaderCache;
+    static {
+        String osVersion = GetPropertyAction.privilegedGetProperty("os.version");
+        // dynamic linker cache support on os.version >= 11.x
+        int major = 11;
+        int i = osVersion.indexOf('.');
+        if (i >= 0) {
+            try {
+                major = Integer.parseInt(osVersion.substring(0, i));
+            } catch (NumberFormatException e) {}
+        }
+        hasDynamicLoaderCache = major >= 11;
+    }
 
     private ClassLoaderHelper() {}
+
+    /**
+     * Returns true if loading a native library only if
+     * it's present on the file system.
+     *
+     * @implNote
+     * On macOS 11.x or later which supports dynamic loader cache,
+     * the dynamic library is not present on the filesystem.  The
+     * library cannot determine if a dynamic library exists on a
+     * given path or not and so this method returns false.
+     */
+    static boolean loadLibraryOnlyIfPresent() {
+        return !hasDynamicLoaderCache;
+    }
 
     /**
      * Returns an alternate path name for the given file
