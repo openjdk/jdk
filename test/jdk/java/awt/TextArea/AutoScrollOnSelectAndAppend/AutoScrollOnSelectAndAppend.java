@@ -101,12 +101,14 @@ public class AutoScrollOnSelectAndAppend {
     public AutoScrollOnSelectAndAppend() {
         try {
             robot = new Robot();
+            robot.setAutoDelay(100);
         } catch (Exception ex) {
             throw new RuntimeException("Robot Creation Failed.");
         }
         frame = new Frame();
         frame.setSize(200, 200);
         frame.setLayout(new FlowLayout());
+        frame.setLocationRelativeTo(null);
 
         textArea = new TextArea(5, 20);
         composeTextArea();
