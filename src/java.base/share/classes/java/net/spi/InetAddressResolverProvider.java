@@ -42,27 +42,12 @@ import java.util.ServiceLoader;
  * <p> A given invocation of the Java virtual machine maintains a single
  * system-wide resolver instance, which is used by
  * <a href="{@docRoot}/java.base/java/net/InetAddress.html#host-name-resolution">
- * InetAddress</a>.
+ * InetAddress</a>. It is set after the VM is fully initialized and when an
+ * invocation of a method in {@link InetAddress} class triggers the first lookup
+ * operation.
  *
- * <h2 id="system-wide-resolver"> Deploying a system-wide resolver </h2>
- *
- * <p> Resolver providers are discovered by {@link InetAddress}. It instantiates and
- * sets the <i>system-wide resolver</i>. Resolver providers are located by
- * {@link InetAddress} using the {@link ServiceLoader} facility.
- *
- * <p> Host name resolution and reverse name resolution operations performed by
- * {@link InetAddress} use the <i>system-wide</i> {@linkplain InetAddressResolver
- * resolver}. The system-wide resolver is set once, lazily, after the VM is fully
- * initialized and when an invocation of a method in {@link InetAddress} class
- * triggers the first lookup operation.
- *
- * <p> A <i>custom resolver</i> can be installed as the system-wide resolver
- * by deploying an {@code InetAddressResolverProvider}. If no resolver provider is
- * found, then the <a href="{@docRoot}/java.base/java/net/InetAddress.html#built-in-resolver">
- * built-in resolver</a> will be set as the system-wide resolver.
- *
- * <p> A custom resolver is found and installed as the system-wide resolver
- * as follows:
+ * <p id="system-wide-resolver"> A resolver provider is located and loaded by
+ * {@link InetAddress} to create the system-wide resolver as follows:
  * <ol>
  *  <li>The {@link ServiceLoader} mechanism is used to locate an
  *      {@code InetAddressResolverProvider} using the
@@ -72,16 +57,17 @@ import java.util.ServiceLoader;
  *      The first provider found will be used to instantiate the
  *      {@link InetAddressResolver InetAddressResolver} by invoking the
  *      {@link InetAddressResolverProvider#get(InetAddressResolverProvider.Configuration)}
- *      method. The returned {@code InetAddressResolver} will be installed as the
+ *      method. The returned {@code InetAddressResolver} will be set as the
  *      system-wide resolver.
  *  <li>If the previous step fails to find any resolver provider the
- *      built-in resolver will be set as the system-wide resolver.
+ *      <a href="{@docRoot}/java.base/java/net/InetAddress.html#built-in-resolver">
+ *      built-in resolver</a> will be set as the system-wide resolver.
  * </ol>
  *
  * <p> If instantiating a custom resolver from a provider discovered in
  * step 1 throws an error or exception, the system-wide resolver will not be
- * installed and the error or exception will be propagated to the calling thread.
- * Otherwise, any lookup operation will be performed through the installed
+ * set and the error or exception will be propagated to the calling thread.
+ * Otherwise, any lookup operation will be performed using the
  * <i>system-wide resolver</i>.
  *
  * @implNote {@link InetAddress} will use the <i>built-in resolver</i> for any lookup operation
@@ -92,7 +78,7 @@ import java.util.ServiceLoader;
 public abstract class InetAddressResolverProvider {
 
     /**
-     * Initialise and return an {@link InetAddressResolver} provided by
+     * Initialize and return an {@link InetAddressResolver} provided by
      * this provider. This method is called by {@link InetAddress} when
      * <a href="#system-wide-resolver">installing</a>
      * the system-wide resolver implementation.
@@ -107,9 +93,7 @@ public abstract class InetAddressResolverProvider {
     public abstract InetAddressResolver get(Configuration configuration);
 
     /**
-     * Returns the name of this provider.
-     *
-     * @return the resolver provider name or {@code null} if unnamed
+     * {@return the name of this provider, or {@code null} if unnamed}
      */
     public abstract String name();
 

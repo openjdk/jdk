@@ -166,7 +166,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * naming services such as the Domain Name System (DNS) and the Lightweight Directory
  * Access Protocol (LDAP).
  * The particular naming services that the built-in resolver uses by default
- * depend on the configuration of the local machine.
+ * depends on the configuration of the local machine.
  *
  * <p> {@code InetAddress} has a service provider mechanism for InetAddress resolvers
  * that allows a custom InetAddress resolver to be used instead of the built-in implementation.
@@ -1049,6 +1049,7 @@ public class InetAddress implements java.io.Serializable {
 
         public String lookupByAddress(byte[] addr)
                 throws UnknownHostException {
+            Objects.requireNonNull(addr);
             if (addr.length != Inet4Address.INADDRSZ && addr.length != Inet6Address.INADDRSZ) {
                 throw new IllegalArgumentException("Invalid address length");
             }
@@ -1091,7 +1092,7 @@ public class InetAddress implements java.io.Serializable {
         public String lookupByAddress(byte[] addr) throws UnknownHostException {
             String hostEntry;
             String host = null;
-
+            Objects.requireNonNull(addr);
             // Check the length of the address array
             if (addr.length != Inet4Address.INADDRSZ && addr.length != Inet6Address.INADDRSZ) {
                 throw new IllegalArgumentException("Invalid address length");
@@ -1145,14 +1146,15 @@ public class InetAddress implements java.io.Serializable {
             String hostEntry;
             String addrStr;
             byte addr[];
+
+            Objects.requireNonNull(host);
+            Objects.requireNonNull(lookupPolicy);
             List<InetAddress> inetAddresses = new ArrayList<>();
             List<InetAddress> inet4Addresses = new ArrayList<>();
             List<InetAddress> inet6Addresses = new ArrayList<>();
             int flags = lookupPolicy.characteristics();
             boolean needIPv4 = (flags & IPv4) != 0;
             boolean needIPv6 = (flags & IPv6) != 0;
-
-            Objects.requireNonNull(host);
 
             // lookup the file and create a list InetAddress for the specified host
             try (Scanner hostsFileScanner = new Scanner(new File(hostsFile),

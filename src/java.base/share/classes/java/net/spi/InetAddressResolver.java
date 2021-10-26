@@ -32,10 +32,8 @@ import java.util.stream.Stream;
 
 /**
  * This interface defines operations for looking up host names and IP addresses.
- * An instance of {@code InetAddressResolver} is
- * deployed as a <a href="InetAddressResolverProvider.html#system-wide-resolver">
- * system-wide resolver</a>. {@link InetAddress} delegates all lookup requests to
- * the deployed <i>system-wide resolver</i> instance.
+ * {@link InetAddress} delegates all lookup operations to the <i>system-wide
+ * resolver</i>.
  *
  * <p> The <i>system-wide resolver</i> can be customized by
  * <a href="InetAddressResolverProvider.html#system-wide-resolver">
@@ -84,6 +82,7 @@ public interface InetAddressResolver {
      * @throws UnknownHostException     if no host name is found for the specified IP address
      * @throws IllegalArgumentException if the length of the provided byte array doesn't correspond
      *                                  to a valid IP address length
+     * @throws NullPointerException     if addr is {@code null}
      */
     String lookupByAddress(byte[] addr) throws UnknownHostException;
 
@@ -133,8 +132,8 @@ public interface InetAddressResolver {
         }
 
         /**
-         * This factory method creates {@link LookupPolicy LookupPolicy} instance with a provided
-         * {@code characteristics} value.
+         * This factory method creates a {@link LookupPolicy LookupPolicy} instance with
+         * the given {@code characteristics} value.
          *
          * <p> The {@code characteristics} value is an integer bit mask which defines
          * parameters of a forward lookup operation. These parameters define at least:
