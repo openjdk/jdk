@@ -156,6 +156,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @throws    IOException if an I/O error has occurred
      */
     public void finish() throws IOException {
+    try {
         if (!def.finished()) {
             def.finish();
             while (!def.finished()) {
@@ -176,7 +177,12 @@ public class GZIPOutputStream extends DeflaterOutputStream {
             writeTrailer(trailer, 0);
             out.write(trailer);
         }
+    } catch (IOException e) {
+        if (usesDefaultDeflater)
+            def.end();
+        throw e;
     }
+  }
 
     /*
      * Writes GZIP member header.
