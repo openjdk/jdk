@@ -50,12 +50,14 @@ public class TestLoopEndNodeEliminate {
 
     public static int[] int1array(int sz, int seed) {
         int[] ret = new int[sz];
+
         init(ret, seed);
         return ret;
     }
 
     public static byte[] byte1array(int sz, byte seed) {
         byte[] ret = new byte[sz];
+
         init(ret, seed);
         return ret;
     }
@@ -74,6 +76,7 @@ public class TestLoopEndNodeEliminate {
 
     public static long checkSum(int[] a) {
         long sum = 0;
+
         for (int j = 0; j < a.length; j++) {
             sum += (a[j] / (j + 1) + a[j] % (j + 1));
         }
@@ -82,6 +85,7 @@ public class TestLoopEndNodeEliminate {
 
     public static void vSmallMeth(boolean b, int i12) {
         int iArr[]=new int[N];
+
         init(iArr, -115);
         iArr = int1array(N, (int)10852);
         iArr = (iArr = iArr);
@@ -216,7 +220,6 @@ public class TestLoopEndNodeEliminate {
                 bFld = true;
             }
         }
-
     }
 
     public static void main(String[] strArr) {
