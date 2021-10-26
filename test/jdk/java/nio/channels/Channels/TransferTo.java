@@ -139,8 +139,10 @@ public class TransferTo {
         Path targetFile = Files.createTempFile(null, null);
 
         // writing 3 GB of random bytes into source file
-        for (int i = 0; i < 3 * 1024; i++)
-            Files.write(sourceFile, createRandomBytes(1024 * 1024, 0), StandardOpenOption.APPEND);
+        int NUM_WRITES = 3 * 1024;
+        int BYTES_PER_WRITE = 1024 * 1024;
+        for (int i = 0; i < NUM_WRITES; i++)
+            Files.write(sourceFile, createRandomBytes(BYTES_PER_WRITE, 0), StandardOpenOption.APPEND);
 
         // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
         long count;
@@ -150,7 +152,7 @@ public class TransferTo {
         }
 
         // comparing reported transferred bytes, must be 3 GB
-        assertEquals(count, 3L * 1024 * 1024 * 1024);
+        assertEquals(count, (long) NUM_WRITES * BYTES_PER_WRITE);
 
         // comparing content of both files, failing in case of any difference
         assertEquals(Files.mismatch(sourceFile, targetFile), -1);
