@@ -126,8 +126,8 @@ protected:
   // Returns the number of bytes that have been filled up during retire.
   virtual size_t retire(bool fill_up);
 
-  // Update the BOT for the object at addr.
-  void update_bot_for_object(HeapWord* addr, size_t size);
+  // Update the BOT for the filler object allocated at the given address.
+  void update_bot_for_region_waste(HeapWord* addr, size_t size);
 
   size_t retire_internal(HeapRegion* alloc_region, bool fill_up);
 

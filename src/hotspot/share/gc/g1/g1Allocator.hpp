@@ -145,7 +145,8 @@ public:
                                    uint node_index);
 };
 
-// Helper to make sure
+// Helper class to get the information needed to do
+// BOT updates for the end of the PLAB.
 class G1PLAB : public PLAB {
 public:
   G1PLAB(size_t word_sz);
@@ -165,10 +166,10 @@ private:
   G1CollectedHeap* _g1h;
   G1Allocator* _allocator;
 
-  // Region where the current old generation PLAB is allocated.
-  // Used to do BOT updates.
+  // Region where the current old generation PLAB is allocated. Used to do BOT updates.
   HeapRegion* _bot_plab_region;
-  // Current threshold at which the BOT should be updated.
+  // Current BOT threshold, a PLAB allocation crossing this threshold will cause a BOT
+  // update.
   HeapWord* _bot_plab_threshold;
 
   G1PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
@@ -179,6 +180,13 @@ private:
   void flush_and_retire_stats();
   inline G1PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
   inline G1PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
+
+  // Helpers to do explicit BOT updates for allocations in old generation regions.
+  void update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size);
+  void update_bot_for_plab_waste(G1HeapRegionAttr dest, G1PLAB* plab);
+  // When a new PLAB is allocated a new threshold needs to be calculated and
+  // possibly also the current region where BOT updates should be done.
+  void calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr);
 
   // Returns the number of allocation buffers for the given dest.
   // There is only 1 buffer for Old while Young may have multiple buffers depending on
@@ -215,11 +223,8 @@ public:
 
   void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
 
-  // Update the BOT for a PLAB allocation in old.
+  // Update the BOT for an allocation inside an old PLAB.
   void update_bot_for_object(HeapWord* obj_start, size_t obj_size);
-  void update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size);
-  void update_bot_for_plab_waste(G1HeapRegionAttr dest, G1PLAB* plab);
-  void calculate_new_bot_threshold(G1HeapRegionAttr attr, HeapWord* addr);
 };
 
 // G1ArchiveAllocator is used to allocate memory in archive

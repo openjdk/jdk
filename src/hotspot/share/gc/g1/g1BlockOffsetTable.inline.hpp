@@ -29,7 +29,6 @@
 
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
-#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 
 inline HeapWord* G1BlockOffsetTablePart::threshold_for_addr(const void* addr) {

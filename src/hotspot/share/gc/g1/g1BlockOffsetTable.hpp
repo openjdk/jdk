@@ -182,6 +182,7 @@ public:
 
   void verify() const;
 
+  // Given an address calculate where the next threshold needing an update is.
   inline HeapWord* threshold_for_addr(const void* addr);
 
   // Returns the address of the start of the block containing "addr", or

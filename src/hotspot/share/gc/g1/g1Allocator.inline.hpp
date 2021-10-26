@@ -168,10 +168,11 @@ inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr a
     return;
   }
 
-  // Out of PLAB allocations in OLD, might need to updated BOT.
+  // Out of PLAB allocations in an old generation region. Update BOT.
   HeapRegion* region = _g1h->heap_region_containing(addr);
   region->update_bot_at(addr, size);
 }
+
 inline void G1PLABAllocator::update_bot_for_object(HeapWord* obj_start, size_t obj_size) {
   HeapWord* obj_end = obj_start + obj_size;
   if (obj_end <= _bot_plab_threshold) {
@@ -180,12 +181,11 @@ inline void G1PLABAllocator::update_bot_for_object(HeapWord* obj_start, size_t o
   }
 
   if (!alloc_buffer(G1HeapRegionAttr::Old, 0)->contains(obj_start)) {
-    // Out-of-PLAB allocation, BOT already updated.
+    // Out of PLAB allocation, BOT already updated.
     return;
   }
 
-  // Update the BOT. The threshold will also get updated with
-  // the next threshold by this call.
+  // Update the BOT. The threshold also gets updated to the next threshold by this call.
   _bot_plab_region->update_bot_crossing_threshold(&_bot_plab_threshold, obj_start, obj_end);
 }
 

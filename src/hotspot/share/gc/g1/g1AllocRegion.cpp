@@ -50,7 +50,7 @@ void G1AllocRegion::setup(G1CollectedHeap* g1h, HeapRegion* dummy_region) {
   _dummy_region = dummy_region;
 }
 
-void G1AllocRegion::update_bot_for_object(HeapWord* addr, size_t size) {
+void G1AllocRegion::update_bot_for_region_waste(HeapWord* addr, size_t size) {
   assert(_alloc_region != NULL, "invariant");
   assert(_bot_updates, "must only be called for regions doing BOT updates");
   _alloc_region->update_bot_at(addr, size);
@@ -86,7 +86,7 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
       result += free_word_size * HeapWordSize;
       // Update BOT if this is an old region requiring BOT updates.
       if (_bot_updates) {
-        update_bot_for_object(dummy, free_word_size);
+        update_bot_for_region_waste(dummy, free_word_size);
       }
       break;
     }
@@ -397,7 +397,7 @@ HeapRegion* OldGCAllocRegion::release() {
       if (to_allocate_words >= G1CollectedHeap::min_fill_size()) {
         HeapWord* dummy = attempt_allocation(to_allocate_words);
         CollectedHeap::fill_with_object(dummy, to_allocate_words);
-        update_bot_for_object(dummy, to_allocate_words);
+        update_bot_for_region_waste(dummy, to_allocate_words);
       }
     }
   }
