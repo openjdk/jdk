@@ -3177,20 +3177,12 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // Look for induction variables of the form:  X += constant
     if (phi2->region() != loop->_head ||
         incr2->req() != 3 ||
+        incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
         incr2->Opcode() != Op_AddI ||
         !incr2->in(2)->is_Con())
       continue;
-    if (incr2->in(1) != phi2) {
-      // incr2 maybe a CastII node whose input is phi2, this could also
-      // be recognized as parallel induction variable.
-      // ---->CountedLoop---->Phi<------------\
-      //                       \               \
-      //                        ---->CastII---->Add
-      if (!incr2->in(1)->is_CastII() || incr2->in(1)->as_CastII()->in(1) != phi2) {
-        continue;
-      }
-    }
+
     // Check for parallel induction variable (parallel to trip counter)
     // via an affine function.  In particular, count-down loops with
     // count-up array indices are common. We only RCE references off
