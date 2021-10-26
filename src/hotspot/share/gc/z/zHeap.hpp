@@ -123,7 +123,7 @@ public:
   void remember_fields(zaddress addr);
 
   // Page allocation
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZPageAge age);
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZPageAge age, ZCollector* collector);
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page, bool reclaimed);
   void free_pages(const ZArray<ZPage*>* pages, bool reclaimed);

@@ -53,8 +53,8 @@ public:
   zaddress alloc_tlab(size_t size);
   zaddress alloc_object(size_t size);
   zaddress alloc_object_non_blocking(size_t size);
-  virtual zaddress alloc_object_for_relocation(size_t size) = 0;
-  virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size) = 0;
+  virtual zaddress alloc_object_for_relocation(size_t size, bool promotion) = 0;
+  virtual void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) = 0;
   void undo_alloc_object(zaddress addr, size_t size);
 };
 
@@ -80,8 +80,8 @@ public:
   // and switch over to empty remembered sets.
   void flip_remembered_sets();
 
-  zaddress alloc_object_for_relocation(size_t size);
-  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
+  zaddress alloc_object_for_relocation(size_t size, bool promotion);
+  void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
   void retire_pages();
 
   // Statistics
@@ -97,14 +97,16 @@ class ZOldGeneration : public ZGeneration {
 public:
   ZOldGeneration();
 
-  zaddress alloc_object_for_relocation(size_t size);
-  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
+  zaddress alloc_object_for_relocation(size_t size, bool promotion);
+  void undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion);
   void retire_pages();
 
   // Statistics
+  void reset_promoted();
   size_t used() const;
   size_t remaining() const;
   size_t relocated() const;
+  size_t promoted() const;
 };
 
 #endif // SHARE_GC_Z_ZGENERATION_HPP

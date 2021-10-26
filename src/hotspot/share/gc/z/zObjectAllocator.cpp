@@ -48,6 +48,8 @@ ZObjectAllocator::ZObjectAllocator(ZGenerationId generation_id, ZPageAge age) :
     _undone(0),
     _alloc_for_relocation(0),
     _undo_alloc_for_relocation(0),
+    _alloc_for_promotion(0),
+    _undo_alloc_for_promotion(0),
     _shared_medium_page(NULL),
     _shared_small_page(NULL) {}
 
@@ -59,18 +61,26 @@ ZPage* const* ZObjectAllocator::shared_small_page_addr() const {
   return _use_per_cpu_shared_small_pages ? _shared_small_page.addr() : _shared_small_page.addr(0);
 }
 
-void ZObjectAllocator::register_alloc_for_relocation(const ZPage* page, zaddress addr, size_t size) {
+void ZObjectAllocator::register_alloc_for_relocation(const ZPage* page, size_t size, bool promotion) {
   const size_t aligned_size = align_up(size, page->object_alignment());
-  Atomic::add(_alloc_for_relocation.addr(), aligned_size);
+  if (promotion) {
+    Atomic::add(_alloc_for_promotion.addr(), aligned_size);
+  } else {
+    Atomic::add(_alloc_for_relocation.addr(), aligned_size);
+  }
 }
 
-void ZObjectAllocator::register_undo_alloc_for_relocation(const ZPage* page, size_t size) {
+void ZObjectAllocator::register_undo_alloc_for_relocation(const ZPage* page, size_t size, bool promotion) {
   const size_t aligned_size = align_up(size, page->object_alignment());
-  Atomic::add(_undo_alloc_for_relocation.addr(), aligned_size);
+  if (promotion) {
+    Atomic::add(_undo_alloc_for_promotion.addr(), aligned_size);
+  } else {
+    Atomic::add(_undo_alloc_for_relocation.addr(), aligned_size);
+  }
 }
 
 ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags) {
-  ZPage* const page = ZHeap::heap()->alloc_page(type, size, flags, _generation_id, _age);
+  ZPage* const page = ZHeap::heap()->alloc_page(type, size, flags, _generation_id, _age, NULL /* collector */);
   if (page != NULL) {
     // Increment used bytes
     Atomic::add(_used.addr(), size);
@@ -175,29 +185,29 @@ zaddress ZObjectAllocator::alloc_object(size_t size) {
   return alloc_object(size, flags);
 }
 
-zaddress ZObjectAllocator::alloc_object_for_relocation(size_t size) {
+zaddress ZObjectAllocator::alloc_object_for_relocation(size_t size, bool promotion) {
   ZAllocationFlags flags;
   flags.set_non_blocking();
 
   const zaddress addr = alloc_object(size, flags);
   if (!is_null(addr)) {
     const ZPage* page = ZHeap::heap()->page(addr);
-    register_alloc_for_relocation(page, addr, size);
+    register_alloc_for_relocation(page, size, promotion);
   }
 
   return addr;
 }
 
-void ZObjectAllocator::undo_alloc_object_for_relocation(ZPage* page, zaddress addr, size_t size) {
+void ZObjectAllocator::undo_alloc_object_for_relocation(ZPage* page, zaddress addr, size_t size, bool promotion) {
   const uint8_t type = page->type();
 
   if (type == ZPageTypeLarge) {
-    register_undo_alloc_for_relocation(page, size);
+    register_undo_alloc_for_relocation(page, size, promotion);
     undo_alloc_page(page);
     ZStatInc(ZCounterUndoObjectAllocationSucceeded);
   } else {
     if (page->undo_alloc_object_atomic(addr, size)) {
-      register_undo_alloc_for_relocation(page, size);
+      register_undo_alloc_for_relocation(page, size, promotion);
       ZStatInc(ZCounterUndoObjectAllocationSucceeded);
     } else {
       ZStatInc(ZCounterUndoObjectAllocationFailed);
@@ -252,6 +262,25 @@ size_t ZObjectAllocator::relocated() const {
   return total_alloc - total_undo_alloc;
 }
 
+size_t ZObjectAllocator::promoted() const {
+  size_t total_alloc = 0;
+  size_t total_undo_alloc = 0;
+
+  ZPerCPUConstIterator<size_t> iter_alloc(&_alloc_for_promotion);
+  for (const size_t* alloc; iter_alloc.next(&alloc);) {
+    total_alloc += Atomic::load(alloc);
+  }
+
+  ZPerCPUConstIterator<size_t> iter_undo_alloc(&_undo_alloc_for_promotion);
+  for (const size_t* undo_alloc; iter_undo_alloc.next(&undo_alloc);) {
+    total_undo_alloc += Atomic::load(undo_alloc);
+  }
+
+  assert(total_alloc >= total_undo_alloc, "Mismatch");
+
+  return total_alloc - total_undo_alloc;
+}
+
 void ZObjectAllocator::retire_pages() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
@@ -266,4 +295,9 @@ void ZObjectAllocator::retire_pages() {
   // Reset allocation pages
   _shared_medium_page.set(NULL);
   _shared_small_page.set_all(NULL);
+}
+
+void ZObjectAllocator::reset_promoted() {
+  _alloc_for_promotion.set_all(0);
+  _undo_alloc_for_promotion.set_all(0);
 }

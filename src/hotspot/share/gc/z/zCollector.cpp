@@ -44,6 +44,7 @@
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "prims/jvmtiTagMap.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmOperations.hpp"
@@ -215,6 +216,8 @@ void ZCollector::desynchronize_relocation() {
 void ZCollector::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   _reclaimed = 0;
+  _promoted = 0;
+  _relocated = 0;
   _used_high = _used_low = _page_allocator->used();
 }
 
@@ -231,11 +234,35 @@ ssize_t ZCollector::reclaimed() const {
 }
 
 void ZCollector::increase_reclaimed(size_t size) {
-  _reclaimed += size;
+  Atomic::add(&_reclaimed, size, memory_order_relaxed);
 }
 
 void ZCollector::decrease_reclaimed(size_t size) {
-  _reclaimed -= size;
+  Atomic::sub(&_reclaimed, size, memory_order_relaxed);
+}
+
+size_t ZCollector::promoted() const {
+  return _promoted;
+}
+
+void ZCollector::increase_promoted(size_t size) {
+  Atomic::add(&_promoted, size, memory_order_relaxed);
+}
+
+void ZCollector::decrease_promoted(size_t size) {
+  Atomic::sub(&_promoted, size, memory_order_relaxed);
+}
+
+size_t ZCollector::relocated() const {
+  return _relocated;
+}
+
+void ZCollector::increase_relocated(size_t size) {
+  Atomic::add(&_relocated, size, memory_order_relaxed);
+}
+
+void ZCollector::decrease_relocated(size_t size) {
+  Atomic::sub(&_relocated, size, memory_order_relaxed);
 }
 
 void ZCollector::update_used(size_t used) {
@@ -301,8 +328,12 @@ void ZCollector::set_phase(Phase new_phase) {
 }
 
 void ZCollector::set_at_collection_start() {
-  stat_cycle()->at_start();
   stat_heap()->set_at_collection_start(_page_allocator->stats(this));
+}
+
+void ZCollector::set_at_generation_collection_start() {
+  stat_cycle()->at_start();
+  stat_heap()->set_at_generation_collection_start(_page_allocator->stats(this));
 }
 
 const char* ZCollector::phase_to_string() const {
@@ -324,6 +355,16 @@ const char* ZCollector::phase_to_string() const {
 ZMinorCollector::ZMinorCollector(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZCollector(ZCollectorId::_minor, "ZWorkerMinor", page_table, page_allocator),
     _skip_mark_start(false) {}
+
+ConcurrentGCTimer* ZMinorCollector::minor_timer() {
+  return &_minor_timer;
+}
+
+void ZMinorCollector::reset_statistics() {
+  ZCollector::reset_statistics();
+
+  ZHeap::heap()->old_generation()->reset_promoted();
+}
 
 bool ZMinorCollector::should_skip_mark_start() {
   SuspendibleThreadSetJoiner sts_joiner;
@@ -364,12 +405,12 @@ void ZMinorCollector::mark_start() {
 }
 
 void ZMinorCollector::mark_roots() {
-  ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRoots);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRoots);
   _mark.mark_roots();
 }
 
 void ZMinorCollector::mark_follow() {
-  ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkFollow);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkFollow);
   _mark.mark_follow();
 }
 
@@ -426,21 +467,27 @@ void ZMinorCollector::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  stat_heap()->set_at_relocate_end(_page_allocator->stats(this), ZHeap::heap()->young_generation()->relocated());
+  stat_heap()->set_at_relocate_end(_page_allocator->stats(this),
+                                   ZHeap::heap()->young_generation()->relocated(),
+                                   ZHeap::heap()->old_generation()->promoted());
 }
 
-void ZMinorCollector::promote_flip(ZPage* old_page, ZPage* new_page) {
-  _page_table->replace(old_page, new_page);
+void ZMinorCollector::promote_flip(ZPage* from_page, ZPage* to_page) {
+  _page_table->replace(from_page, to_page);
 
-  ZHeap::heap()->young_generation()->decrease_used(old_page->size());
-  ZHeap::heap()->old_generation()->increase_used(old_page->size());
+  ZHeap::heap()->young_generation()->decrease_used(from_page->size());
+  ZHeap::heap()->minor_collector()->increase_reclaimed(from_page->size());
+  ZHeap::heap()->minor_collector()->increase_promoted(from_page->live_bytes());
+  ZHeap::heap()->old_generation()->increase_used(from_page->size());
 }
 
-void ZMinorCollector::promote_reloc(ZPage* old_page, ZPage* new_page) {
-  _page_table->replace(old_page, new_page);
+void ZMinorCollector::promote_reloc(ZPage* from_page, ZPage* to_page) {
+  _page_table->replace(from_page, to_page);
 
-  ZHeap::heap()->young_generation()->decrease_used(old_page->size());
-  ZHeap::heap()->old_generation()->increase_used(old_page->size());
+  ZHeap::heap()->young_generation()->decrease_used(from_page->size());
+  ZHeap::heap()->minor_collector()->increase_reclaimed(from_page->size());
+  ZHeap::heap()->minor_collector()->increase_promoted(from_page->size());
+  ZHeap::heap()->old_generation()->increase_used(from_page->size());
 }
 
 void ZMinorCollector::register_promote_flipped(const ZArray<ZPage*>& pages) {
@@ -461,6 +508,10 @@ ZMajorCollector::ZMajorCollector(ZPageTable* page_table, ZPageAllocator* page_al
   _weak_roots_processor(&_workers),
   _unload(&_workers),
   _total_collections_at_end(0) {}
+
+ConcurrentGCTimer* ZMajorCollector::major_timer() {
+  return &_major_timer;
+}
 
 void ZMajorCollector::reset_statistics() {
   ZCollector::reset_statistics();
@@ -496,12 +547,12 @@ void ZMajorCollector::mark_start() {
 }
 
 void ZMajorCollector::mark_roots() {
-  ZStatTimerMajor timer(ZSubPhaseConcurrentMajorMarkRoots);
+  ZStatTimerOld timer(ZSubPhaseConcurrentMajorMarkRoots);
   _mark.mark_roots();
 }
 
 void ZMajorCollector::mark_follow() {
-  ZStatTimerMajor timer(ZSubPhaseConcurrentMajorMarkFollow);
+  ZStatTimerOld timer(ZSubPhaseConcurrentMajorMarkFollow);
   _mark.mark_follow();
 }
 
@@ -617,7 +668,9 @@ void ZMajorCollector::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  stat_heap()->set_at_relocate_end(_page_allocator->stats(this), ZHeap::heap()->old_generation()->relocated());
+  stat_heap()->set_at_relocate_end(_page_allocator->stats(this),
+                                   ZHeap::heap()->old_generation()->relocated(),
+                                   0 /* promoted */);
   _total_collections_at_end = ZCollectedHeap::heap()->total_collections();
 }
 
@@ -702,13 +755,13 @@ public:
 
   virtual void work() {
     {
-      ZStatTimerMajor timer(ZSubPhaseConcurrentMajorRemapRootUncolored);
+      ZStatTimerOld timer(ZSubPhaseConcurrentMajorRemapRootUncolored);
       _roots_colored.apply(&_cl_colored,
                            &_cld_cl);
     }
 
     {
-      ZStatTimerMajor timer(ZSubPhaseConcurrentMajorRemapRootUncolored);
+      ZStatTimerOld timer(ZSubPhaseConcurrentMajorRemapRootUncolored);
       _roots_uncolored.apply(&_thread_cl,
                              &_nm_cl);
     }

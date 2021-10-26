@@ -112,6 +112,11 @@ inline size_t ZForwarding::object_alignment_shift() const {
   return _object_alignment_shift;
 }
 
+inline bool ZForwarding::is_promotion() const {
+  return _age_from != ZPageAge::old &&
+         _age_to == ZPageAge::old;
+}
+
 template <typename Function>
 inline void ZForwarding::object_iterate(Function function) {
   ZObjectClosure<Function> cl(function);

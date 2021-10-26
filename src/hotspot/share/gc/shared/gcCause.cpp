@@ -126,11 +126,14 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _z_minor_allocation_rate:
       return "Minor Allocation Rate";
 
-    case _z_minor_before_major:
-      return "Minor Before Major";
+    case _z_major_young_preclean:
+      return "Major Young Preclean";
 
-    case _z_minor_inside_major:
-      return "Minor Inside Major";
+    case _z_major_young:
+      return "Major Young";
+
+    case _z_major_old:
+      return "Major Old";
 
     case _z_major_timer:
       return "Major Timer";

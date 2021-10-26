@@ -624,14 +624,62 @@ const char* ZStatPhase::name() const {
   return _sampler.name();
 }
 
-ZStatPhaseCycle::ZStatPhaseCycle(ZCollectorId collector_id, const char* name) :
-    ZStatPhase("Collector", name),
-    _collector_id(collector_id) {}
+ZStatPhaseMajorCycle::ZStatPhaseMajorCycle(const char* name) :
+    ZStatPhase("Collector", name) {}
 
-void ZStatPhaseCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+void ZStatPhaseMajorCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_start(start);
 
-  GCTracer* tracer = ZHeap::heap()->collector(_collector_id)->tracer();
+  log_info(gc, start)("Garbage Collection (%s)",
+                       GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+}
+
+void ZStatPhaseMajorCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    log_info(gc)("Garbage Collection (%s) Aborted",
+                 GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+    return;
+  }
+
+  timer->register_gc_end(end);
+
+  const Tickspan duration = end - start;
+  ZStatSample(_sampler, duration.value());
+
+  ZMajorCollector* collector = ZHeap::heap()->major_collector();
+
+  log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
+               GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
+               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_start()),
+               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_end()));
+}
+
+ZStatPhaseMinorCycle::ZStatPhaseMinorCycle(const char* name) :
+    ZStatPhase("Collector", name) {}
+
+void ZStatPhaseMinorCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  timer->register_gc_start(start);
+}
+
+void ZStatPhaseMinorCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    return;
+  }
+
+  timer->register_gc_end(end);
+
+  const Tickspan duration = end - start;
+  ZStatSample(_sampler, duration.value());
+}
+
+ZStatPhaseGenerationCycle::ZStatPhaseGenerationCycle(ZGenerationId generation_id, const char* name) :
+    ZStatPhase("Collector", name),
+    _generation_id(generation_id) {}
+
+void ZStatPhaseGenerationCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  timer->register_gc_start(start);
+
+  GCTracer* tracer = ZHeap::heap()->collector(_generation_id)->tracer();
 
   tracer->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
 
@@ -642,7 +690,7 @@ void ZStatPhaseCycle::register_start(ConcurrentGCTimer* timer, const Ticks& star
                        GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
 }
 
-void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+void ZStatPhaseGenerationCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
     log_info(gc)("Garbage Collection (%s) Aborted",
                  GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
@@ -651,7 +699,7 @@ void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start,
 
   timer->register_gc_end(end);
 
-  GCTracer* tracer = ZHeap::heap()->collector(_collector_id)->tracer();
+  GCTracer* tracer = ZHeap::heap()->collector(_generation_id)->tracer();
 
   ZCollectedHeap::heap()->print_heap_after_gc();
   ZCollectedHeap::heap()->trace_heap_after_gc(tracer);
@@ -661,7 +709,7 @@ void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start,
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  ZCollector* collector = ZHeap::heap()->collector(_collector_id);
+  ZCollector* collector = ZHeap::heap()->collector(_generation_id);
 
   ZStatLoad::print();
   ZStatMMU::print();
@@ -672,13 +720,19 @@ void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start,
     ZStatReferences::print();
   }
   collector->stat_relocation()->print();
-  collector->stat_heap()->print();
+  collector->stat_heap()->print(collector);
 
   log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
                GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_start()),
+               ZSIZE_ARGS(collector->stat_heap()->used_at_generation_collection_start()),
                ZSIZE_ARGS(collector->stat_heap()->used_at_collection_end()));
 }
+
+ZStatPhaseYoungCycle::ZStatPhaseYoungCycle(const char* name) :
+    ZStatPhaseGenerationCycle(ZGenerationId::young, name) {}
+
+ZStatPhaseOldCycle::ZStatPhaseOldCycle(const char* name) :
+    ZStatPhaseGenerationCycle(ZGenerationId::old, name) {}
 
 Tickspan ZStatPhasePause::_max;
 
@@ -806,11 +860,17 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
   }
 }
 
-ZStatTimerMinor::ZStatTimerMinor(const ZStatPhase& phase) :
+ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase) :
     ZStatTimer(phase, ZHeap::heap()->minor_collector()->timer()) {}
 
-ZStatTimerMajor::ZStatTimerMajor(const ZStatPhase& phase) :
+ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
     ZStatTimer(phase, ZHeap::heap()->major_collector()->timer()) {}
+
+ZStatTimerMinor::ZStatTimerMinor(const ZStatPhase& phase) :
+    ZStatTimer(phase, ZHeap::heap()->minor_collector()->minor_timer()) {}
+
+ZStatTimerMajor::ZStatTimerMajor(const ZStatPhase& phase) :
+    ZStatTimer(phase, ZHeap::heap()->major_collector()->major_timer()) {}
 
 //
 // Stat timer
@@ -1107,7 +1167,8 @@ void ZStatCycle::at_start() {
 void ZStatCycle::at_end(GCCause::Cause cause, uint active_workers) {
   _end_of_last = Ticks::now();
 
-  if (cause == GCCause::_z_major_warmup) {
+  // FIXME: This should really check for the warmup GCCause.
+  if (cause == GCCause::_z_major_old && _nwarmup_cycles < 3) {
     _nwarmup_cycles++;
   }
 
@@ -1376,17 +1437,21 @@ size_t ZStatHeap::free(size_t used) {
   return _at_initialize.max_capacity - used;
 }
 
-size_t ZStatHeap::allocated(size_t used, size_t reclaimed) {
+size_t ZStatHeap::allocated(size_t used_generation, size_t reclaimed, size_t relocated) {
   // The amount of allocated memory between point A and B is used(B) - used(A).
   // However, we might also have reclaimed memory between point A and B. This
   // means the current amount of used memory must be incremented by the amount
   // reclaimed, so that used(B) represents the amount of used memory we would
   // have had if we had not reclaimed anything.
-  return (used + reclaimed) - _at_mark_start.used;
+  return used_generation + reclaimed - relocated - _at_mark_start.used_generation;
 }
 
-size_t ZStatHeap::garbage(size_t reclaimed) {
-  return _at_mark_end.garbage - reclaimed;
+size_t ZStatHeap::garbage(size_t reclaimed, size_t relocated, size_t promoted) {
+  return _at_mark_end.garbage + promoted + relocated - reclaimed;
+}
+
+size_t ZStatHeap::reclaimed(size_t reclaimed, size_t relocated, size_t promoted) {
+  return reclaimed - relocated - promoted;
 }
 
 void ZStatHeap::set_at_initialize(const ZPageAllocatorStats& stats) {
@@ -1399,6 +1464,15 @@ void ZStatHeap::set_at_collection_start(const ZPageAllocatorStats& stats) {
   _at_collection_start.capacity = stats.capacity();
   _at_collection_start.free = free(stats.used());
   _at_collection_start.used = stats.used();
+  _at_collection_start.used_generation = stats.used_generation();
+}
+
+void ZStatHeap::set_at_generation_collection_start(const ZPageAllocatorStats& stats) {
+  _at_generation_collection_start.soft_max_capacity = stats.soft_max_capacity();
+  _at_generation_collection_start.capacity = stats.capacity();
+  _at_generation_collection_start.free = free(stats.used());
+  _at_generation_collection_start.used = stats.used();
+  _at_generation_collection_start.used_generation = stats.used_generation();
 }
 
 void ZStatHeap::set_at_mark_start(const ZPageAllocatorStats& stats) {
@@ -1406,32 +1480,37 @@ void ZStatHeap::set_at_mark_start(const ZPageAllocatorStats& stats) {
   _at_mark_start.capacity = stats.capacity();
   _at_mark_start.free = free(stats.used());
   _at_mark_start.used = stats.used();
+  _at_mark_start.used_generation = stats.used_generation();
 }
 
 void ZStatHeap::set_at_mark_end(const ZPageAllocatorStats& stats) {
   _at_mark_end.capacity = stats.capacity();
   _at_mark_end.free = free(stats.used());
   _at_mark_end.used = stats.used();
-  _at_mark_end.allocated = allocated(stats.used(), 0 /* reclaimed */);
+  _at_mark_end.used_generation = stats.used_generation();
+  _at_mark_end.allocated = allocated(stats.used_generation(), 0 /* reclaimed */, 0 /* relocated */);
 }
 
 void ZStatHeap::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
   const size_t live = stats.small().live() + stats.medium().live() + stats.large().live();
   _at_mark_end.live = live;
-  _at_mark_end.garbage = _at_mark_start.used - live;
+  _at_mark_end.garbage = _at_mark_start.used_generation - live;
 }
 
 void ZStatHeap::set_at_relocate_start(const ZPageAllocatorStats& stats) {
   _at_relocate_start.capacity = stats.capacity();
   _at_relocate_start.free = free(stats.used());
   _at_relocate_start.used = stats.used();
-  _at_relocate_start.allocated = allocated(stats.used(), stats.reclaimed());
-  _at_relocate_start.garbage = garbage(stats.reclaimed());
-  _at_relocate_start.reclaimed = stats.reclaimed();
+  _at_relocate_start.used_generation = stats.used_generation();
+  _at_relocate_start.allocated = allocated(stats.used_generation(), stats.reclaimed(), 0 /* relocated */);
+  _at_relocate_start.garbage = garbage(stats.reclaimed(), 0 /* relocated */, 0 /* promoted */);
+  _at_relocate_start.reclaimed = reclaimed(stats.reclaimed(), 0 /* relocated */, 0 /* promoted */);
+  _at_relocate_start.promoted = 0 /* promoted */;
 }
 
-void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated) {
-  const size_t reclaimed = stats.reclaimed() - MIN2(non_worker_relocated, stats.reclaimed());
+void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated, size_t non_worker_promoted) {
+  const size_t relocated = stats.relocated() + non_worker_relocated;
+  const size_t promoted = stats.promoted() + non_worker_promoted;
 
   _at_relocate_end.capacity = stats.capacity();
   _at_relocate_end.capacity_high = capacity_high();
@@ -1442,9 +1521,11 @@ void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non
   _at_relocate_end.used = stats.used();
   _at_relocate_end.used_high = stats.used_high();
   _at_relocate_end.used_low = stats.used_low();
-  _at_relocate_end.allocated = allocated(stats.used(), reclaimed);
-  _at_relocate_end.garbage = garbage(reclaimed);
-  _at_relocate_end.reclaimed = reclaimed;
+  _at_relocate_end.used_generation = stats.used_generation();
+  _at_relocate_end.allocated = allocated(stats.used_generation(), stats.reclaimed(), relocated);
+  _at_relocate_end.garbage = garbage(stats.reclaimed(), relocated, promoted);
+  _at_relocate_end.reclaimed = reclaimed(stats.reclaimed(), relocated, promoted);
+  _at_relocate_end.promoted = promoted;
 }
 
 size_t ZStatHeap::max_capacity() {
@@ -1453,6 +1534,10 @@ size_t ZStatHeap::max_capacity() {
 
 size_t ZStatHeap::used_at_collection_start() {
   return _at_collection_start.used;
+}
+
+size_t ZStatHeap::used_at_generation_collection_start() {
+  return _at_generation_collection_start.used;
 }
 
 size_t ZStatHeap::used_at_mark_start() {
@@ -1471,7 +1556,7 @@ size_t ZStatHeap::used_at_collection_end() {
   return used_at_relocate_end();
 }
 
-void ZStatHeap::print() {
+void ZStatHeap::print(ZCollector* collector) {
   log_info(gc, heap)("Min Capacity: "
                      ZSIZE_FMT, ZSIZE_ARGS(_at_initialize.min_capacity));
   log_info(gc, heap)("Max Capacity: "
@@ -1479,8 +1564,9 @@ void ZStatHeap::print() {
   log_info(gc, heap)("Soft Max Capacity: "
                      ZSIZE_FMT, ZSIZE_ARGS(_at_mark_start.soft_max_capacity));
 
-  ZStatTablePrinter table(10, 18);
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("Java heap statistics:");
+  ZStatTablePrinter heap_table(10, 18);
+  log_info(gc, heap)("%s", heap_table()
                      .fill()
                      .center("Mark Start")
                      .center("Mark End")
@@ -1489,7 +1575,7 @@ void ZStatHeap::print() {
                      .center("High")
                      .center("Low")
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", heap_table()
                      .right("Capacity:")
                      .left(ZTABLE_ARGS(_at_mark_start.capacity))
                      .left(ZTABLE_ARGS(_at_mark_end.capacity))
@@ -1498,7 +1584,7 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS(_at_relocate_end.capacity_high))
                      .left(ZTABLE_ARGS(_at_relocate_end.capacity_low))
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", heap_table()
                      .right("Free:")
                      .left(ZTABLE_ARGS(_at_mark_start.free))
                      .left(ZTABLE_ARGS(_at_mark_end.free))
@@ -1507,7 +1593,7 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS(_at_relocate_end.free_high))
                      .left(ZTABLE_ARGS(_at_relocate_end.free_low))
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", heap_table()
                      .right("Used:")
                      .left(ZTABLE_ARGS(_at_mark_start.used))
                      .left(ZTABLE_ARGS(_at_mark_end.used))
@@ -1516,41 +1602,58 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS(_at_relocate_end.used_high))
                      .left(ZTABLE_ARGS(_at_relocate_end.used_low))
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s statistics:", collector->is_major() ? "Old generation" : "Young generation");
+  ZStatTablePrinter gen_table(10, 18);
+  log_info(gc, heap)("%s", gen_table()
+                     .fill()
+                     .center("Mark Start")
+                     .center("Mark End")
+                     .center("Relocate Start")
+                     .center("Relocate End")
+                     .end());
+  log_info(gc, heap)("%s", gen_table()
+                     .right("Used:")
+                     .left(ZTABLE_ARGS(_at_mark_start.used_generation))
+                     .left(ZTABLE_ARGS(_at_mark_end.used_generation))
+                     .left(ZTABLE_ARGS(_at_relocate_start.used_generation))
+                     .left(ZTABLE_ARGS(_at_relocate_end.used_generation))
+                     .end());
+  log_info(gc, heap)("%s", gen_table()
                      .right("Live:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_mark_end.live))
                      .left(ZTABLE_ARGS(_at_mark_end.live /* Same as at mark end */))
                      .left(ZTABLE_ARGS(_at_mark_end.live /* Same as at mark end */))
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS_NA)
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", gen_table()
                      .right("Allocated:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_mark_end.allocated))
                      .left(ZTABLE_ARGS(_at_relocate_start.allocated))
                      .left(ZTABLE_ARGS(_at_relocate_end.allocated))
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS_NA)
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", gen_table()
                      .right("Garbage:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_mark_end.garbage))
                      .left(ZTABLE_ARGS(_at_relocate_start.garbage))
                      .left(ZTABLE_ARGS(_at_relocate_end.garbage))
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS_NA)
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", gen_table()
                      .right("Reclaimed:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_relocate_start.reclaimed))
                      .left(ZTABLE_ARGS(_at_relocate_end.reclaimed))
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS_NA)
                      .end());
+  if (collector->is_minor()) {
+    log_info(gc, heap)("%s", gen_table()
+                       .right("Promoted:")
+                       .left(ZTABLE_ARGS_NA)
+                       .left(ZTABLE_ARGS_NA)
+                       .left(ZTABLE_ARGS(_at_relocate_start.promoted))
+                       .left(ZTABLE_ARGS(_at_relocate_end.promoted))
+                       .end());
+  }
 }
 

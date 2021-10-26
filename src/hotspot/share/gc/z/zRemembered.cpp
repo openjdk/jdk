@@ -216,12 +216,12 @@ public:
 
 void ZRemembered::scan() const {
   if (ZHeap::heap()->major_collector()->is_phase_relocate()) {
-    ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemsetForwarding);
+    ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootRemsetForwarding);
     ZRememberedScanForwardingTask task(*this);
     ZHeap::heap()->minor_collector()->workers()->run(&task);
   }
 
-  ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemsetPage);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootRemsetPage);
   ZRememberedScanPageTask task(*this);
   ZHeap::heap()->minor_collector()->workers()->run(&task);
 }

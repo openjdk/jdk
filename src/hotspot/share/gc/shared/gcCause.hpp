@@ -85,8 +85,10 @@ class GCCause : public AllStatic {
 
     _z_minor_timer,
     _z_minor_allocation_rate,
-    _z_minor_before_major,
-    _z_minor_inside_major,
+
+    _z_major_young_preclean,
+    _z_major_young,
+    _z_major_old,
 
     _z_major_timer,
     _z_major_warmup,

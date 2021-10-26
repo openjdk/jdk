@@ -822,13 +822,13 @@ public:
 
   virtual void work() {
     {
-      ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootColored);
+      ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootColored);
       _roots_colored.apply(&_cl_colored,
                            &_cld_cl);
     }
 
     {
-      ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootUncolored);
+      ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootUncolored);
       _roots_uncolored.apply(&_thread_cl,
                              &_nm_cl);
     }

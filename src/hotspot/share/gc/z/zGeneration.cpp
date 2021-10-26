@@ -35,12 +35,12 @@ ZGeneration::ZGeneration(ZGenerationId generation_id, ZPageAge age) :
 
 void ZGeneration::increase_used(size_t size) {
   // Update atomically since we have concurrent readers
-  Atomic::add(&_used, size);
+  Atomic::add(&_used, size, memory_order_relaxed);
 }
 
 void ZGeneration::decrease_used(size_t size) {
   // Update atomically since we have concurrent readers
-  Atomic::sub(&_used, size);
+  Atomic::sub(&_used, size, memory_order_relaxed);
 }
 
 size_t ZGeneration::used_total() const {
@@ -54,7 +54,7 @@ ZYoungGeneration::ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_
 }
 
 void ZYoungGeneration::scan_remembered_sets() {
-  ZStatTimerMinor timer(ZSubPhaseConcurrentMinorMarkRootRemset);
+  ZStatTimerYoung timer(ZSubPhaseConcurrentMinorMarkRootRemset);
   _remembered.scan();
 }
 
@@ -62,13 +62,13 @@ void ZYoungGeneration::flip_remembered_sets() {
   _remembered.flip();
 }
 
-zaddress ZYoungGeneration::alloc_object_for_relocation(size_t size) {
-  return _survivor_allocator.alloc_object_for_relocation(size);
+zaddress ZYoungGeneration::alloc_object_for_relocation(size_t size, bool promotion) {
+  return _survivor_allocator.alloc_object_for_relocation(size, promotion);
 }
 
-void ZYoungGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size) {
+void ZYoungGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) {
   ZPage* const page = ZHeap::heap()->page(addr);
-  _survivor_allocator.undo_alloc_object_for_relocation(page, addr, size);
+  _survivor_allocator.undo_alloc_object_for_relocation(page, addr, size, promotion);
 }
 
 void ZYoungGeneration::retire_pages() {
@@ -92,17 +92,21 @@ ZOldGeneration::ZOldGeneration() :
   ZGeneration(ZGenerationId::old, ZPageAge::old) {
 }
 
-zaddress ZOldGeneration::alloc_object_for_relocation(size_t size) {
-  return _object_allocator.alloc_object_for_relocation(size);
+zaddress ZOldGeneration::alloc_object_for_relocation(size_t size, bool promotion) {
+  return _object_allocator.alloc_object_for_relocation(size, promotion);
 }
 
-void ZOldGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size) {
+void ZOldGeneration::undo_alloc_object_for_relocation(zaddress addr, size_t size, bool promotion) {
   ZPage* const page = ZHeap::heap()->page(addr);
-  _object_allocator.undo_alloc_object_for_relocation(page, addr, size);
+  _object_allocator.undo_alloc_object_for_relocation(page, addr, size, promotion);
 }
 
 void ZOldGeneration::retire_pages() {
   _object_allocator.retire_pages();
+}
+
+void ZOldGeneration::reset_promoted() {
+  _object_allocator.reset_promoted();
 }
 
 size_t ZOldGeneration::used() const {
@@ -115,4 +119,8 @@ size_t ZOldGeneration::remaining() const {
 
 size_t ZOldGeneration::relocated() const {
   return _object_allocator.relocated();
+}
+
+size_t ZOldGeneration::promoted() const {
+  return _object_allocator.promoted();
 }

@@ -35,6 +35,7 @@
 #include "utilities/numberSeq.hpp"
 #include "utilities/ticks.hpp"
 
+class ZCollector;
 enum class ZCollectorId;
 class ZPage;
 class ZPageAllocatorStats;
@@ -223,15 +224,41 @@ public:
   virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const = 0;
 };
 
-class ZStatPhaseCycle : public ZStatPhase {
-private:
-  const ZCollectorId _collector_id;
-
+class ZStatPhaseMinorCycle : public ZStatPhase {
 public:
-  ZStatPhaseCycle(ZCollectorId collector_id, const char* name);
+  ZStatPhaseMinorCycle(const char* name);
 
   virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
   virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
+};
+
+class ZStatPhaseMajorCycle : public ZStatPhase {
+public:
+  ZStatPhaseMajorCycle(const char* name);
+
+  virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
+  virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
+};
+
+class ZStatPhaseGenerationCycle : public ZStatPhase {
+private:
+  const ZGenerationId _generation_id;
+
+public:
+  ZStatPhaseGenerationCycle(ZGenerationId collector_id, const char* name);
+
+  virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
+  virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
+};
+
+class ZStatPhaseYoungCycle : public ZStatPhaseGenerationCycle {
+public:
+  ZStatPhaseYoungCycle(const char* name);
+};
+
+class ZStatPhaseOldCycle : public ZStatPhaseGenerationCycle {
+public:
+  ZStatPhaseOldCycle(const char* name);
 };
 
 class ZStatPhasePause : public ZStatPhase {
@@ -328,6 +355,16 @@ public:
       _phase.register_end(_timer, _start, end);
     }
   }
+};
+
+class ZStatTimerYoung : public ZStatTimer {
+public:
+  ZStatTimerYoung(const ZStatPhase& phase);
+};
+
+class ZStatTimerOld : public ZStatTimer {
+public:
+  ZStatTimerOld(const ZStatPhase& phase);
 };
 
 class ZStatTimerMinor : public ZStatTimer {
@@ -544,19 +581,30 @@ private:
     size_t capacity;
     size_t free;
     size_t used;
+    size_t used_generation;
   } _at_collection_start;
+
+  struct ZAtGenerationCollectionStart {
+    size_t soft_max_capacity;
+    size_t capacity;
+    size_t free;
+    size_t used;
+    size_t used_generation;
+  } _at_generation_collection_start;
 
   struct ZAtMarkStart {
     size_t soft_max_capacity;
     size_t capacity;
     size_t free;
     size_t used;
+    size_t used_generation;
   } _at_mark_start;
 
   struct ZAtMarkEnd {
     size_t capacity;
     size_t free;
     size_t used;
+    size_t used_generation;
     size_t live;
     size_t allocated;
     size_t garbage;
@@ -566,9 +614,11 @@ private:
     size_t capacity;
     size_t free;
     size_t used;
+    size_t used_generation;
     size_t allocated;
     size_t garbage;
     size_t reclaimed;
+    size_t promoted;
   } _at_relocate_start;
 
   struct ZAtRelocateEnd {
@@ -581,34 +631,39 @@ private:
     size_t used;
     size_t used_high;
     size_t used_low;
+    size_t used_generation;
     size_t allocated;
     size_t garbage;
     size_t reclaimed;
+    size_t promoted;
   } _at_relocate_end;
 
   size_t capacity_high();
   size_t capacity_low();
   size_t free(size_t used);
-  size_t allocated(size_t used, size_t reclaimed);
-  size_t garbage(size_t reclaimed);
+  size_t allocated(size_t used, size_t reclaimed, size_t relocated);
+  size_t garbage(size_t reclaimed, size_t relocated, size_t promoted);
+  size_t reclaimed(size_t reclaimed, size_t relocated, size_t promoted);
 
 public:
   void set_at_initialize(const ZPageAllocatorStats& stats);
   void set_at_collection_start(const ZPageAllocatorStats& stats);
+  void set_at_generation_collection_start(const ZPageAllocatorStats& stats);
   void set_at_mark_start(const ZPageAllocatorStats& stats);
   void set_at_mark_end(const ZPageAllocatorStats& stats);
   void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
   void set_at_relocate_start(const ZPageAllocatorStats& stats);
-  void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated);
+  void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated, size_t non_worker_promoted);
 
   static size_t max_capacity();
   size_t used_at_collection_start();
+  size_t used_at_generation_collection_start();
   size_t used_at_mark_start();
   size_t live_at_mark_end();
   size_t used_at_relocate_end();
   size_t used_at_collection_end();
 
-  void print();
+  void print(ZCollector* collector);
 };
 
 #endif // SHARE_GC_Z_ZSTAT_HPP

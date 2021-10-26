@@ -90,6 +90,8 @@ public:
   size_t size() const;
   size_t object_alignment_shift() const;
 
+  bool is_promotion() const;
+
   // Visit from-objects
   template <typename Function>
   void object_iterate(Function function);

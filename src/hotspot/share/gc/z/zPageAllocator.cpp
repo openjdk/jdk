@@ -115,10 +115,11 @@ private:
   ZList<ZPage>                  _pages;
   ZListNode<ZPageAllocation>    _node;
   ZFuture<ZPageAllocationStall> _stall_result;
-  ZGenerationId                 _generation;
+  ZGenerationId const           _generation;
+  ZCollector* const             _collector;
 
 public:
-  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation) :
+  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZCollector* collector) :
       _type(type),
       _size(size),
       _flags(flags),
@@ -128,7 +129,8 @@ public:
       _pages(),
       _node(),
       _stall_result(),
-      _generation(generation) {}
+      _generation(generation),
+      _collector(collector) {}
 
   uint8_t type() const {
     return _type;
@@ -180,6 +182,10 @@ public:
 
   bool gc_relocation() const {
     return _flags.gc_relocation();
+  }
+
+  ZCollector* collector() const {
+    return _collector;
   }
 };
 
@@ -267,7 +273,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   flags.set_non_blocking();
   flags.set_low_address();
 
-  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZGenerationId::young, ZPageAge::eden);
+  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZGenerationId::young, ZPageAge::eden, NULL /* collector */);
   if (page == NULL) {
     return false;
   }
@@ -319,15 +325,28 @@ size_t ZPageAllocator::unused() const {
 }
 
 ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
+  if (collector == NULL) {
+    // The collector is NULL during bootstrapping
+    return ZPageAllocatorStats(_min_capacity,
+                               _max_capacity,
+                               soft_max_capacity(),
+                               _capacity,
+                               _used,
+                               0, 0, 0, 0, 0, 0);
+  }
+  ZGeneration* generation = ZHeap::heap()->generation(collector->id());
   ZLocker<ZLock> locker(&_lock);
   return ZPageAllocatorStats(_min_capacity,
                              _max_capacity,
                              soft_max_capacity(),
                              _capacity,
                              _used,
-                             collector != NULL ? collector->used_high() : 0,
-                             collector != NULL ? collector->used_low() : 0,
-                             collector != NULL ? collector->reclaimed() : 0);
+                             collector->used_high(),
+                             collector->used_low(),
+                             generation->used_total(),
+                             collector->reclaimed(),
+                             collector->promoted(),
+                             collector->relocated());
 }
 
 size_t ZPageAllocator::increase_capacity(size_t size) {
@@ -364,13 +383,21 @@ void ZPageAllocator::decrease_capacity(size_t size, bool set_max_capacity) {
   }
 }
 
-void ZPageAllocator::increase_used(size_t size, bool gc_relocation, ZGenerationId id) {
+void ZPageAllocator::increase_used(size_t size, bool gc_relocation, ZCollector* collector, ZGenerationId id) {
   ZHeap::heap()->generation(id)->increase_used(size);
 
   if (gc_relocation) {
-    // Allocating a page for the purpose of GC relocation has
-    // a negative contribution to the number of reclaimed bytes.
-    ZHeap::heap()->collector(id)->decrease_reclaimed(size);
+    if (ZHeap::heap()->collector(id) == collector) {
+      // Allocating a page for the purpose of GC relocation has
+      // a negative contribution to the number of reclaimed bytes,
+      // as long as the movement is within the same generation.
+      collector->increase_relocated(size);
+    } else {
+      // Allocating a page for the purpose of GC relocation into
+      // a different generation, has a positive contribution to
+      // the number of promoted bytes.
+      collector->increase_promoted(size);
+    }
   }
 
   // Update atomically since we have concurrent readers
@@ -476,7 +503,7 @@ bool ZPageAllocator::alloc_page_common(ZPageAllocation* allocation) {
   }
 
   // Updated used statistics
-  increase_used(size, allocation->gc_relocation(), allocation->generation_id());
+  increase_used(size, allocation->gc_relocation(), allocation->collector(), allocation->generation_id());
 
   // Success
   return true;
@@ -640,11 +667,11 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
   return NULL;
 }
 
-ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age) {
+ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age, ZCollector* collector) {
   EventZPageAllocation event;
 
 retry:
-  ZPageAllocation allocation(type, size, flags, generation_id);
+  ZPageAllocation allocation(type, size, flags, generation_id, collector);
 
   // Allocate one or more pages from the page cache. If the allocation
   // succeeds but the returned pages don't cover the complete allocation,
