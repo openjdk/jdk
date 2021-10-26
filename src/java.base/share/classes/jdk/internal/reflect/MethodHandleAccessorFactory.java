@@ -326,7 +326,33 @@ final class MethodHandleAccessorFactory {
                 (paramCount == 0 || !(member.getParameterTypes()[paramCount-1].isArray()))) {
             return true;
         }
+        // A method handle cannot be created if its type has an arity >= 255
+        // as the method handle's invoke method consumes an extra argument
+        // of the method handle itself. Fall back to use the native implementation.
+        if (slotCount(member) >= MAX_JVM_ARITY) {
+            return true;
+        }
         return false;
+    }
+
+    private static final int MAX_JVM_ARITY = 255;  // this is mandated by the JVM spec.
+    /*
+     * Return number of slots of the given member.
+     * - long/double args counts for two argument slots
+     * - A non-static method consumes an extra argument for the object on which
+     *   the method is called.
+     * - A constructor consumes an extra argument for the object which is being constructed.
+     */
+    private static int slotCount(Executable member) {
+        int slots = 0;
+        Class<?>[] ptypes = member.getParameterTypes();
+        for (Class<?> ptype : ptypes) {
+            if (ptype == double.class || ptype == long.class) {
+                slots++;
+            }
+        }
+        return ptypes.length + slots +
+                (Modifier.isStatic(member.getModifiers()) ? 0 : 1);
     }
 
     /*
