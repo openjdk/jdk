@@ -51,7 +51,7 @@ class ClassLoaderHelper {
      * it's present on the file system.
      *
      * @implNote
-     * On macOS 11.x or later which supports dynamic loader cache,
+     * On macOS 11.x or later which supports dynamic linker cache,
      * the dynamic library is not present on the filesystem.  The
      * library cannot determine if a dynamic library exists on a
      * given path or not and so this method returns false.
