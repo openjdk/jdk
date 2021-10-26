@@ -1654,7 +1654,7 @@ public:
 
   void try_sink_out_of_loop(Node* n);
 
-  Node* clamp(Node* pNode, Node* pNode1, Node* pNode2);
+  Node* clamp(Node* R, Node* L, Node* H);
 
   bool safe_for_if_replacement(const Node* dom) const;
 };

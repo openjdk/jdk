@@ -2570,6 +2570,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scal
     }
     if (is_scaled_iv(exp->in(2), iv, p_scale, bt)) {
       if (p_offset != NULL) {
+        // We can't handle a scale of min_jint (or min_jlong) here as -1 * min_jint = min_jint
         if (*p_scale == min_signed_integer(bt)) {
           return false;
         }
