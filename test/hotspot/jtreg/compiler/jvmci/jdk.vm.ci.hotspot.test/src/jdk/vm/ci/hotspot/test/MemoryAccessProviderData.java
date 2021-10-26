@@ -77,6 +77,13 @@ public class MemoryAccessProviderData {
         for (KindData k : PRIMITIVE_KIND_DATA) {
             result.add(new Object[] {k.kind, TEST_CONSTANT, k.instanceFieldOffset, k.instanceFieldValue, Math.max(8, k.kind.getBitCount())});
             result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, k.staticFieldOffset, k.staticFieldValue, Math.max(8, k.kind.getBitCount())});
+        }
+        return result.toArray(new Object[result.size()][]);
+    }
+    @DataProvider(name = "unalignedPrimitive")
+    public static Object[][] getUnalignedPrimitiveJavaKinds() {
+        List<Object[]> result = new ArrayList<>();
+        for (KindData k : PRIMITIVE_KIND_DATA) {
             if (k.unalignedInstanceFieldValue != null) {
                 result.add(new Object[] {k.kind, TEST_CONSTANT, k.instanceFieldOffset - 1, k.unalignedInstanceFieldValue, Math.max(8, k.kind.getBitCount())});
             }
