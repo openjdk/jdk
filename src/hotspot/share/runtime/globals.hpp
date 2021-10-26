@@ -1091,9 +1091,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
                                                                             \
-  notproduct(bool, PrintVtableStats, false,                                 \
-          "print vtables stats at end of run")                              \
-                                                                            \
   develop(bool, TraceCreateZombies, false,                                  \
           "trace creation of zombie nmethods")                              \
                                                                             \
@@ -1351,9 +1348,9 @@ const intx ObjectAlignmentInBytes = 8;
           "(using CompileCommand or marked w/ @ForceInline)")               \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, MinInliningThreshold, 250,                                  \
-          "The minimum invocation count a method needs to have to be "      \
-          "inlined")                                                        \
+  product(intx, MinInliningThreshold, 0,                                    \
+          "(Deprecated) The minimum invocation count a method needs to"     \
+          "have to be inlined")                                             \
           range(0, max_jint)                                                \
                                                                             \
   develop(intx, MethodHistogramCutoff, 100,                                 \
@@ -1406,6 +1403,10 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
+                                                                            \
+  product(double, MinInlineFrequencyRatio, 0.0085, DIAGNOSTIC,               \
+          "Minimum ratio of call site execution to caller method"           \
+          "invocation to be considered for inlining")                       \
                                                                             \
   develop(intx, InlineThrowCount,    50,                                    \
           "Force inlining of interpreted methods that throw this often")    \

@@ -135,24 +135,6 @@ objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   return o;
 }
 
-void ArrayKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
-  Klass* k = this;
-  // Iterate over this array klass and all higher dimensions
-  while (k != NULL) {
-    f(k, CHECK);
-    k = ArrayKlass::cast(k)->higher_dimension();
-  }
-}
-
-void ArrayKlass::array_klasses_do(void f(Klass* k)) {
-  Klass* k = this;
-  // Iterate over this array klass and all higher dimensions
-  while (k != NULL) {
-    f(k);
-    k = ArrayKlass::cast(k)->higher_dimension();
-  }
-}
-
 jint ArrayKlass::compute_modifier_flags() const {
   return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
 }

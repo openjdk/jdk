@@ -35,11 +35,14 @@ class Thread;
 class FinalizerEntry : public CHeapObj<mtServiceability> {
  private:
   const InstanceKlass* const _ik;
+  const char* _codesource;
   uintptr_t _objects_on_heap;
   uintptr_t _total_finalizers_run;
  public:
   FinalizerEntry(const InstanceKlass* ik);
+  ~FinalizerEntry();
   const InstanceKlass* klass() const NOT_MANAGEMENT_RETURN_(nullptr);
+  const char* codesource() const NOT_MANAGEMENT_RETURN_(nullptr);
   uintptr_t objects_on_heap() const NOT_MANAGEMENT_RETURN_(0L);
   uintptr_t total_finalizers_run() const NOT_MANAGEMENT_RETURN_(0L);
   void on_register() NOT_MANAGEMENT_RETURN;

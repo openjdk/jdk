@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.CompLevel;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.shared.TestRunException;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import sun.hotspot.WhiteBox;
 
@@ -72,7 +73,7 @@ public class FlagVM {
     private static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
     private static final boolean FLIP_C1_C2 = Boolean.getBoolean("FlipC1C2");
     private static final boolean REQUESTED_VERIFY_IR = Boolean.parseBoolean(System.getProperty("VerifyIR", "true"));
-    private static final boolean VERIFY_IR = REQUESTED_VERIFY_IR && USE_COMPILER && !EXCLUDE_RANDOM && !FLIP_C1_C2 && !TEST_C1;
+    private static final boolean VERIFY_IR = REQUESTED_VERIFY_IR && USE_COMPILER && !EXCLUDE_RANDOM && !FLIP_C1_C2 && !TEST_C1 && Platform.isServer();
 
     private static String[] getPrintFlags() {
         return new String[] {"-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions"};

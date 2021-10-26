@@ -31,8 +31,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 
-class G1CardSetBuffer;
-
 // Task handling deallocation of free card set memory.
 class G1CardSetFreeMemoryTask : public G1ServiceTask {
 

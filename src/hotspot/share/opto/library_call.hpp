@@ -210,6 +210,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_multiplyExactI();
   bool inline_math_multiplyExactL();
   bool inline_math_multiplyHigh();
+  bool inline_math_unsignedMultiplyHigh();
   bool inline_math_negateExactI();
   bool inline_math_negateExactL();
   bool inline_math_subtractExactI(bool is_decrement);
