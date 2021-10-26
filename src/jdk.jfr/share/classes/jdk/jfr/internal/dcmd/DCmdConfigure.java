@@ -187,6 +187,7 @@ final class DCmdConfigure extends AbstractDCmd {
             println("Current configuration:");
             println();
             printRepositoryPath();
+            printDumpPath();
             printStackDepth();
             printGlobalBufferCount();
             printGlobalBufferSize();
