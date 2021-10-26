@@ -394,6 +394,7 @@ bool JfrOptionSet::configure(TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, tty);
     CLEAR_PENDING_EXCEPTION;
+    tty->cr(); // java_lang_Throwable::print will not print '\n'
     return false;
   }
   return true;
