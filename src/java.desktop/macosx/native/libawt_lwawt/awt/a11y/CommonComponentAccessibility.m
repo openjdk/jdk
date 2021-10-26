@@ -218,9 +218,9 @@ static jobject sAccessibilityClass = NULL;
 
 /*
  * If new implementation of the accessible component peer for the given role exists
- * return the allocated class otherwise return nil to let old implementation being initialized
+ * return the component's class otherwise return CommonComponentAccessibility
  */
-+ (CommonComponentAccessibility *) getComponentAccessibility:(NSString *)role
++ (Class) getComponentAccessibilityClass:(NSString *)role
 {
     AWT_ASSERT_APPKIT_THREAD;
     if (rolesMap == nil) {
@@ -229,12 +229,12 @@ static jobject sAccessibilityClass = NULL;
 
     NSString *className = [rolesMap objectForKey:role];
     if (className != nil) {
-        return [NSClassFromString(className) alloc];
+        return NSClassFromString(className);
     }
-    return [CommonComponentAccessibility alloc];
+    return [CommonComponentAccessibility class];
 }
 
-+ (CommonComponentAccessibility *) getComponentAccessibility:(NSString *)role andParent:(CommonComponentAccessibility *)parent
++ (Class) getComponentAccessibilityClass:(NSString *)role andParent:(CommonComponentAccessibility *)parent
 {
     AWT_ASSERT_APPKIT_THREAD;
     if (rolesMap == nil) {
@@ -242,9 +242,9 @@ static jobject sAccessibilityClass = NULL;
     }
     NSString *className = [rowRolesMapForParent objectForKey:[[parent class] className]];
     if (className == nil) {
-        return [CommonComponentAccessibility getComponentAccessibility:role];
+        return [CommonComponentAccessibility getComponentAccessibilityClass:role];
     }
-    return [NSClassFromString(className) alloc];
+    return NSClassFromString(className);
 }
 
 - (id)initWithParent:(NSObject *)parent withEnv:(JNIEnv *)env withAccessible:(jobject)accessible withIndex:(jint)index withView:(NSView *)view withJavaRole:(NSString *)javaRole
@@ -532,10 +532,11 @@ static jobject sAccessibilityClass = NULL;
 
 + (CommonComponentAccessibility *) createWithParent:(CommonComponentAccessibility *)parent accessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view
 {
-    return [CommonComponentAccessibility createWithParent:parent accessible:jaccessible role:javaRole index:index withEnv:env withView:view isWrapped:NO];
+    Class classType = [self getComponentAccessibilityClass:javaRole andParent:parent];
+    return [CommonComponentAccessibility createWithParent:parent withClass:classType accessible:jaccessible role:javaRole index:index withEnv:env withView:view];
 }
 
-+ (CommonComponentAccessibility *) createWithParent:(CommonComponentAccessibility *)parent accessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view isWrapped:(BOOL)wrapped
++ (CommonComponentAccessibility *) createWithParent:(CommonComponentAccessibility *)parent withClass:(Class)classType accessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view
 {
     GET_CACCESSIBLE_CLASS_RETURN(NULL);
     DECLARE_FIELD_RETURN(jf_ptr, sjc_CAccessible, "ptr", "J", NULL);
@@ -548,11 +549,8 @@ static jobject sAccessibilityClass = NULL;
         return [[value retain] autorelease];
     }
 
-    // otherwise, create a new instance
-    CommonComponentAccessibility *newChild = [CommonComponentAccessibility getComponentAccessibility:javaRole andParent:parent];
-
-    // must init freshly -alloc'd object
-    [newChild initWithParent:parent withEnv:env withAccessible:jCAX withIndex:index withView:view withJavaRole:javaRole]; // must init new instance
+    CommonComponentAccessibility *newChild =
+        [[classType alloc] initWithParent:parent withEnv:env withAccessible:jCAX withIndex:index withView:view withJavaRole:javaRole];
 
     // If creating a JPopupMenu (not a combobox popup list) need to fire menuOpened.
     // This is the only way to know if the menu is opening; visible state change
