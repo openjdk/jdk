@@ -478,7 +478,7 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle readObjectNoDataForSerialization(Class<?> cl) {
-        return findReadWriteObjectForSerialization(cl, "readObjectNoData", ObjectInputStream.class);
+        return findReadWriteObjectForSerialization(cl, "readObjectNoData", null);
     }
 
     public final MethodHandle writeObjectForSerialization(Class<?> cl) {
@@ -493,7 +493,8 @@ public class ReflectionFactory {
         }
 
         try {
-            Method meth = cl.getDeclaredMethod(methodName, streamClass);
+            Method meth = streamClass == null ? cl.getDeclaredMethod(methodName)
+                    : cl.getDeclaredMethod(methodName, streamClass);
             int mods = meth.getModifiers();
             if (meth.getReturnType() != Void.TYPE ||
                     Modifier.isStatic(mods) ||
