@@ -143,9 +143,11 @@ public class TransferTo {
             Files.write(sourceFile, createRandomBytes(1024 * 1024, 0), StandardOpenOption.APPEND);
 
         // performing actual transfer, effectively by multiple invocations of Filechannel.transferTo(FileChannel)
-        InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
-        OutputStream outputStream = Channels.newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE));
-        long count = inputStream.transferTo(outputStream);
+        long count;
+        try (InputStream inputStream = Channels.newInputStream(FileChannel.open(sourceFile));
+        OutputStream outputStream = Channels.newOutputStream(FileChannel.open(targetFile, StandardOpenOption.WRITE))) {
+            count = inputStream.transferTo(outputStream);
+        }
 
         // comparing reported transferred bytes, must be 3 GB
         assertEquals(count, 3L * 1024 * 1024 * 1024);
