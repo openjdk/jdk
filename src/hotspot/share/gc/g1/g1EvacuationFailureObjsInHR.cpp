@@ -51,12 +51,14 @@ void G1EvacuationFailureObjsInHR::visit_elem(void* elem) {
 }
 
 void G1EvacuationFailureObjsInHR::compact() {
+  assert_at_safepoint();
   assert(_offset_array == NULL, "must be");
   uint num = _nodes_array.num_allocated_nodes();
   _offset_array = NEW_C_HEAP_ARRAY(Elem, num, mtGC);
   // Copy buffers' data to local array
   _nodes_array.iterate_nodes(*this);
   assert(_objs_num == num, "must be %u, %u", _objs_num, num);
+  // We're at safepoint, no need to sync by GlobalCounter
   _nodes_array.drop_all();
 }
 

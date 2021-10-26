@@ -203,7 +203,7 @@ class G1SegmentedArray {
 private:
   inline G1SegmentedArrayBuffer<flag>* create_new_buffer(G1SegmentedArrayBuffer<flag>* const prev);
 
-  DEBUG_ONLY(uint length() const;)
+  DEBUG_ONLY(uint calculate_length() const;)
 
 public:
   const G1SegmentedArrayBuffer<flag>* first_array_buffer() const { return Atomic::load(&_first); }
@@ -211,7 +211,7 @@ public:
   uint num_available_nodes() const { return Atomic::load(&_num_available_nodes); }
   uint num_allocated_nodes() const {
     uint allocated = Atomic::load(&_num_allocated_nodes);
-    assert(length() == allocated, "Must be");
+    assert(calculate_length() == allocated, "Must be");
     return allocated;
   }
 

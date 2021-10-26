@@ -257,7 +257,7 @@ public:
 };
 
 template <class Elem, MEMFLAGS flag>
-uint G1SegmentedArray<Elem, flag>::length() const {
+uint G1SegmentedArray<Elem, flag>::calculate_length() const {
   LengthVisitor<flag> v;
   iterate_nodes(v);
   return v.length();

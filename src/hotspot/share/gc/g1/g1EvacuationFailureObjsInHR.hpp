@@ -67,7 +67,7 @@ private:
     return static_cast<Elem>(offset);
   }
 
-  // Copy buffers' data to local array
+  // Copy buffers' data to local array, must be called at safepoint
   void compact();
   void sort();
   void clear_array();
@@ -83,7 +83,6 @@ public:
   // Iterate through evac failure objects
   void iterate(ObjectClosure* closure);
 
-  //
   // Copy a buffer data to local array
   void visit_buffer(G1SegmentedArrayBuffer<mtGC>* node, uint limit);
 
