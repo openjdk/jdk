@@ -228,10 +228,16 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     // dynamic header including base archive name for non-default base archive
     c_header_size = sizeof(DynamicArchiveHeader);
     header_size = c_header_size;
-    if (!FLAG_IS_DEFAULT(SharedArchiveFile)) {
-      base_archive_name_size = strlen(Arguments::GetSharedArchivePath()) + 1;
-      header_size += base_archive_name_size;
-      base_archive_path_offset = c_header_size;
+    if (SharedArchiveFile != nullptr) {
+      // -XX:SharedArchiveFile=<file> or <base>:<top>
+      char* def_base_archive = Arguments::get_default_shared_archive_path();
+      if (strcmp(def_base_archive, Arguments::GetSharedArchivePath()) != 0) {
+        base_archive_name_size = strlen(Arguments::GetSharedArchivePath()) + 1;
+        header_size += base_archive_name_size;
+        base_archive_path_offset = c_header_size;
+      }
+      // Arguments::get_default_shared_archive_path creates buffer, needs release
+      FREE_C_HEAP_ARRAY(char, def_base_archive);
     }
   }
   _header = (FileMapHeader*)os::malloc(header_size, mtInternal);
