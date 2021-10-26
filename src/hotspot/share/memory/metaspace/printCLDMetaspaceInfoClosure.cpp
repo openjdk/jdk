@@ -147,7 +147,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
       streamIndentor sti(_out, 6);
       _out->cr_indent();
       _out->print("Loaded classes");
-      _out->print("('s' = shared, 'f' = override_finalize)");
+      _out->print("('s' = shared, 'f' = has_nontrivial_finalize)");
       _out->print(":");
       PrintMetaspaceInfoKlassClosure pkic(_out, true);
       cld->classes_do(&pkic);
