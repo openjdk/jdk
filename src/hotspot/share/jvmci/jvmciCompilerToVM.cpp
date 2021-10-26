@@ -1939,6 +1939,10 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
 
   // Perform basic sanity checks on the read.  Primitive reads are permitted to read outside the
   // bounds of their fields but object reads must map exactly onto the underlying oop slot.
+  bool aligned = (displacement % basic_type_elemsize) == 0;
+  if (!aligned) {
+    JVMCI_THROW_MSG_NULL(IllegalArgumentException, "read is unaligned");
+  }
   if (basic_type == T_OBJECT) {
     if (obj->is_objArray()) {
       if (displacement < arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
@@ -1977,21 +1981,19 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
 
   jlong value = 0;
 
-  // Treat all aligned reads as volatile for simplicity as this function can be used
+  // Treat all reads as volatile for simplicity as this function can be used
   // both for reading Java fields declared as volatile as well as for constant
   // folding Unsafe.get* methods with volatile semantics.
 
-  bool aligned = (displacement % basic_type_elemsize) == 0;
-
   switch (basic_type) {
-    case T_BOOLEAN: value = aligned ? obj->bool_field_acquire(displacement)   : obj->bool_field(displacement);  break;
-    case T_BYTE:    value = aligned ? obj->byte_field_acquire(displacement)   : obj->byte_field(displacement);  break;
-    case T_SHORT:   value = aligned ? obj->short_field_acquire(displacement)  : obj->short_field(displacement); break;
-    case T_CHAR:    value = aligned ? obj->char_field_acquire(displacement)   : obj->char_field(displacement);  break;
+    case T_BOOLEAN: value = obj->bool_field_acquire(displacement);  break;
+    case T_BYTE:    value = obj->byte_field_acquire(displacement);  break;
+    case T_SHORT:   value = obj->short_field_acquire(displacement); break;
+    case T_CHAR:    value = obj->char_field_acquire(displacement);  break;
     case T_FLOAT:
-    case T_INT:     value = aligned ? obj->int_field_acquire(displacement)    : obj->int_field(displacement);   break;
+    case T_INT:     value = obj->int_field_acquire(displacement);   break;
     case T_DOUBLE:
-    case T_LONG:    value = aligned ? obj->long_field_acquire(displacement)   : obj->long_field(displacement);  break;
+    case T_LONG:    value = obj->long_field_acquire(displacement);  break;
 
     case T_OBJECT: {
       if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
@@ -2001,7 +2003,7 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       }
 
-      oop value = aligned ? obj->obj_field_acquire(displacement) : obj->obj_field(displacement);
+      oop value = obj->obj_field_acquire(displacement);
 
       if (value == NULL) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
