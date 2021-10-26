@@ -150,7 +150,6 @@ public abstract class SysDictTest extends ThreadedGCTest {
                     tmp = clz.getName();
                 } catch (OutOfMemoryError | ClassNotFoundException e) {
                     // just ignore
-                    // we do not check memory leaks in PermGen in this tests
                 } catch (StackOverflowError soe) {
                     // just ignore, chains could be too large
                     // StackOverflowError could be in some sparcs
