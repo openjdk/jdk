@@ -144,15 +144,14 @@ class DerIndefLenConverter {
      * then skip the tag and its 1 byte length of zero.
      */
     private void writeTag() {
-        if (dataPos == dataSize) {
-            return;
-        }
-        assert dataPos + 1 < dataSize;
-        if (isEOC(data, dataPos)) {
-            dataPos += 2;  // skip tag and length
-            writeTag();
-        } else {
-            newData[newDataPos++] = data[dataPos++];
+        while (dataPos < dataSize) {
+            assert dataPos + 1 < dataSize;
+            if (isEOC(data, dataPos)) {
+                dataPos += 2;  // skip tag and length
+            } else {
+                newData[newDataPos++] = data[dataPos++];
+                break;
+            }
         }
     }
 
