@@ -2689,9 +2689,6 @@ static void method_release_C_heap_structures(Method* m) {
 void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
   // Clean up C heap
   Klass::release_C_heap_structures();
-  if (release_constant_pool) {
-    constants()->release_C_heap_structures();
-  }
 
   // Deallocate and call destructors for MDO mutexes
   methods_do(method_release_C_heap_structures);
@@ -2730,6 +2727,10 @@ void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
 #endif
 
   FREE_C_HEAP_ARRAY(char, _source_debug_extension);
+
+  if (release_constant_pool) {
+    constants()->release_C_heap_structures();
+  }
 }
 
 void InstanceKlass::set_source_debug_extension(const char* array, int length) {
