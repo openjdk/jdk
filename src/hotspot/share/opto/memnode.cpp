@@ -1079,9 +1079,9 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
                             opc == Op_LoadFence)) ||
           opc == Op_MemBarRelease ||
           opc == Op_StoreFence ||
-          opc == Op_StoreStoreFence ||
           opc == Op_MemBarReleaseLock ||
-          opc == Op_MemBarStoreStore) {
+          opc == Op_MemBarStoreStore ||
+          opc == Op_StoreStoreFence) {
         Node* mem = current->in(0)->in(TypeFunc::Memory);
         if (mem->is_MergeMem()) {
           MergeMemNode* merge = mem->as_MergeMem();
