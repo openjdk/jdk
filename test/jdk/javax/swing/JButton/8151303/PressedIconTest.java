@@ -126,8 +126,8 @@ public class PressedIconTest {
         panel.add(button, BorderLayout.CENTER);
 
         frame.getContentPane().add(panel);
-	frame.setUndecorated(true);
-	frame.setLocationRelativeTo(null);
+        frame.setUndecorated(true);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

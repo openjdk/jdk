@@ -92,10 +92,10 @@ public class bug8069348 {
 
             robot.mouseMove(cx, cy);
             robot.waitForIdle();
-	    Color color = robot.getPixelColor(cx-10, cy-10);
+            Color color = robot.getPixelColor(cx-10, cy-10);
             if (!FRAME_COLOR.equals(color)) {
 
-		System.out.println("cx " + cx + " cy " + cy);
+                System.out.println("cx " + cx + " cy " + cy);
                 System.err.println("FRAME_COLOR Red: " + FRAME_COLOR.getRed() + "; Green: " + FRAME_COLOR.getGreen() + "; Blue: " + FRAME_COLOR.getBlue());
                 System.err.println("Pixel color Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -112,7 +112,7 @@ public class bug8069348 {
                 }
             });
         }
-	System.out.println("Test Passed");
+        System.out.println("Test Passed");
     }
 
     private static boolean isSupported() {

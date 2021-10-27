@@ -69,7 +69,7 @@ public class bug6276188 {
             robot.delay(1000);
 
             p = Util.getCenterPoint(button);
-	    System.out.println("Button center point: " + p);
+            System.out.println("Button center point: " + p);
 
             robot.mouseMove(p.x , p.y);
             robot.waitForIdle();
@@ -84,7 +84,7 @@ public class bug6276188 {
                 System.err.println("Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
                 throw new RuntimeException("Synth ButtonUI does not handle PRESSED & MOUSE_OVER state");
             }
-	} finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (testFrame != null) {
                     testFrame.dispose();
