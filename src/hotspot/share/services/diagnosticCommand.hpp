@@ -858,6 +858,28 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class ClassesDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _verbose;
+public:
+  ClassesDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.classes";
+  }
+  static const char* description() {
+    return "Prints list of all loaded java classes";
+  }
+  static const char* impact() {
+      return "Medium: Depends on Java content.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #if INCLUDE_JVMTI
 class DebugOnCmdStartDCmd : public DCmd {
 public:

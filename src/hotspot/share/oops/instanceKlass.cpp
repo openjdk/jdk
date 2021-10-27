@@ -2062,6 +2062,68 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   return NULL;
 }
 
+PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose)
+  :_st(st), _verbose(verbose) {
+  ResourceMark rm;
+  _st->print("%-18s", "KlassAddr");
+  _st->print("  ");
+  _st->print("%-4s", "Size");
+  _st->print("  ");
+  _st->print("%-8s", "State");
+  _st->print("  ");
+  _st->print("%-7s", "Flags");
+  _st->print("  ");
+  _st->print("%-12s", "LoaderName");
+  _st->print("  ");
+  _st->print("%-5s", "ClassName");
+  _st->cr();
+}
+
+void PrintClassClosure::do_klass(Klass* k)  {
+  ResourceMark rm;
+  // klass pointer
+  _st->print("" INTPTR_FORMAT "", p2i(k));
+  _st->print("  ");
+  // klass size
+  _st->print("%-4d", k->size());
+  _st->print("  ");
+  // initialization state
+  if (k->is_instance_klass()) {
+    _st->print("%-8s",InstanceKlass::cast(k)->init_state_name());
+  } else {
+    _st->print("%-8s","");
+  }
+  _st->print("  ");
+  // misc flags
+  char buf[10];
+  int i = 0;
+  if (k->has_finalizer()) buf[i++] = 'F';
+  if (k->has_final_method()) buf[i++] = 'f';
+  if (k->has_vanilla_constructor()) buf[i++] = 'V';
+  if (k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->is_rewritten()) buf[i++] = 'W';
+    if (ik->is_contended()) buf[i++] = 'C';
+    if (ik->has_been_redefined()) buf[i++] = 'R';
+    if (ik->is_shared()) buf[i++] = 'S';
+  }
+  buf[i++] = '\0';
+  _st->print("%-7s", buf);
+  _st->print("  ");
+  // classloader name
+  ClassLoaderData* cld = k->class_loader_data();
+  _st->print("%-12s", cld->loader_name());
+  _st->print("  ");
+  // klass name
+  _st->print("%-5s", k->external_name());
+  _st->print("  ");
+  // end
+  _st->cr();
+  if (_verbose) {
+    k->print_on(_st);
+  }
+}
+
 /* jni_id_for for jfieldIds only */
 JNIid* InstanceKlass::jni_id_for(int offset) {
   MutexLocker ml(JfieldIdCreation_lock);
@@ -3360,7 +3422,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 #define BULLET  " - "
 
 static const char* state_names[] = {
-  "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
+  "alloc", "load", "link", "initing", "inited", "init_err"
 };
 
 static void print_vtable(intptr_t* start, int len, outputStream* st) {
@@ -3379,6 +3441,10 @@ static void print_vtable(vtableEntry* start, int len, outputStream* st) {
   return print_vtable(reinterpret_cast<intptr_t*>(start), len, st);
 }
 
+const char* InstanceKlass::init_state_name() const {
+  return state_names[_init_state];
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
@@ -3386,7 +3452,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
-  st->print(BULLET"state:             "); st->print_cr("%s", state_names[_init_state]);
+  st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
   st->print(BULLET"sub:               ");

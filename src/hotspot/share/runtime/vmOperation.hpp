@@ -100,6 +100,7 @@
   template(CleanClassLoaderDataMetaspaces)        \
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
+  template(PrintClasses)                          \
   template(ThreadSuspend)                         \
   template(ThreadsSuspendJVMTI)                   \
   template(ICBufferFull)                          \
