@@ -741,7 +741,8 @@ public class JavacElements implements Elements {
                 ModuleSymbol msym = (ModuleSymbol) sym;
                 yield getFileObjectOf(msym.module_info);
             }
-            default -> getFileObjectOf(sym.outermostClass());
+            case TYP -> getFileObjectOf((ClassSymbol) sym);
+            default -> getFileObjectOf(sym.enclClass());
         };
     }
     //where:
