@@ -62,4 +62,3 @@ public class LibraryFromCache {
         return outputAnalyzer.getExitValue() == 0;
     }
 }
-

@@ -46,4 +46,4 @@ int main(int argc, char** argv)
     printf("Library successfully loaded!\n");
 
     return dlclose(handle);
-} 
+}
