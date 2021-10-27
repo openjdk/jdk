@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public class Setup {
          */
         f = new File(workDir + fileSeparator + "boot.dir");
         try (FileOutputStream out = new FileOutputStream(f)) {
-            out.write(bootDir.getBytes(defaultEncoding));
+            out.write(bootDir.getBytes(filePathEncoding));
         }
     }
 
@@ -102,7 +102,7 @@ public class Setup {
 
     private static final String fileSeparator = System.getProperty("file.separator");
     private static final String osName = System.getProperty("os.name");
-    private static final String defaultEncoding = Charset.defaultCharset().name();
+    private static final String filePathEncoding = System.getProperty("sun.jnu.encoding");
 
     // language names taken from java.util.Locale.getDisplayLanguage for the respective language
     private static final String arabic = "\u0627\u0644\u0639\u0631\u0628\u064a\u0629";
@@ -174,7 +174,7 @@ public class Setup {
             column = 1;
         }
         for (int i = 0; i < names.length; i++) {
-             if (names[i][0].equalsIgnoreCase(defaultEncoding)) {
+             if (names[i][0].equalsIgnoreCase(filePathEncoding)) {
                  return names[i][column];
              }
          }

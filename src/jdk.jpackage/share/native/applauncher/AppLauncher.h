@@ -65,6 +65,8 @@ public:
         return *this;
     }
 
+    bool libEnvVariableContainsAppDir() const;
+
     Jvm* createJvmLauncher() const;
 
     void launch() const;

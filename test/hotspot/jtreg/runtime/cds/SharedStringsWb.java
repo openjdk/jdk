@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ public class SharedStringsWb {
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
 
-        if (wb.areSharedStringsIgnored()) {
-            System.out.println("Shared strings are ignored, assuming PASS");
+        if (!wb.areSharedStringsMapped()) {
+            System.out.println("Shared strings are not mapped, assuming PASS");
             return;
         }
 
@@ -43,7 +43,7 @@ public class SharedStringsWb {
             throw new RuntimeException("Shared string is not a valid String: FAIL");
         }
 
-        if (wb.isShared(internedS)) {
+        if (wb.isSharedInternedString(internedS)) {
             System.out.println("Found shared string, result: PASS");
         } else {
             throw new RuntimeException("String is not shared, result: FAIL");

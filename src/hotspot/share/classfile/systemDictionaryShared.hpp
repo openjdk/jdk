@@ -208,7 +208,6 @@ public:
 
   static bool is_builtin_loader(ClassLoaderData* loader_data);
 
-  static bool add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k);
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
                                                             Symbol* super_name,  bool is_superclass);
 
@@ -289,6 +288,7 @@ public:
   static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);
   static void adjust_lambda_proxy_class_dictionary();
+  static void cleanup_lambda_proxy_class_dictionary();
   static void serialize_dictionary_headers(class SerializeClosure* soc,
                                            bool is_static_archive = true);
   static void serialize_vm_classes(class SerializeClosure* soc);

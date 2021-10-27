@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
@@ -41,7 +41,6 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
-#include "gc/g1/g1SharedDirtyCardQueue.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -407,7 +406,7 @@ public:
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    WorkGang* workers = g1h->workers();
+    WorkerThreads* workers = g1h->workers();
     uint const max_workers = workers->active_workers();
 
     uint const start_pos = num_regions * worker_id / max_workers;
@@ -1103,7 +1102,7 @@ public:
   }
 };
 
-class G1MergeHeapRootsTask : public AbstractGangTask {
+class G1MergeHeapRootsTask : public WorkerTask {
 
   class G1MergeCardSetStats {
     size_t _merged[G1GCPhaseTimes::MergeRSContainersSentinel];
@@ -1290,7 +1289,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       r->rem_set()->set_state_complete();
 #ifdef ASSERT
       G1HeapRegionAttr region_attr = g1h->region_attr(r->hrm_index());
-      assert(region_attr.needs_remset_update(), "must be");
+      assert(region_attr.remset_is_tracked(), "must be");
 #endif
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
 
@@ -1372,7 +1371,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
 
 public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
-    AbstractGangTask("G1 Merge Heap Roots"),
+    WorkerTask("G1 Merge Heap Roots"),
     _hr_claimer(num_workers),
     _scan_state(scan_state),
     _dirty_card_buffers(),
@@ -1491,7 +1490,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     }
   }
 
-  WorkGang* workers = g1h->workers();
+  WorkerThreads* workers = g1h->workers();
   size_t const increment_length = g1h->collection_set()->increment_length();
 
   uint const num_workers = initial_evacuation ? workers->active_workers() :
@@ -1688,12 +1687,27 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
     return;
   }
 
-  // Re-dirty the card and enqueue in the *shared* queue.  Can't use
-  // the thread-local queue, because that might be the queue that is
-  // being processed by us; we could be a Java thread conscripted to
-  // perform refinement on our queue's current buffer.
+  enqueue_for_reprocessing(card_ptr);
+}
+
+// Re-dirty and re-enqueue the card to retry refinement later.
+// This is used to deal with a rare race condition in concurrent refinement.
+void G1RemSet::enqueue_for_reprocessing(CardValue* card_ptr) {
+  // We can't use the thread-local queue, because that might be the queue
+  // that is being processed by us; we could be a Java thread conscripted to
+  // perform refinement on our queue's current buffer.  This situation only
+  // arises from rare race condition, so it's not worth any significant
+  // development effort or clever lock-free queue implementation.  Instead
+  // we use brute force, allocating and enqueuing an entire buffer for just
+  // this card.  Since buffers are processed in FIFO order and we try to
+  // keep some in the queue, it is likely that the racing state will have
+  // resolved by the time this card comes up for reprocessing.
   *card_ptr = G1CardTable::dirty_card_val();
-  G1BarrierSet::shared_dirty_card_queue().enqueue(card_ptr);
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  void** buffer = dcqs.allocate_buffer();
+  size_t index = dcqs.buffer_size() - 1;
+  buffer[index] = card_ptr;
+  dcqs.enqueue_completed_buffer(BufferNode::make_node_from_buffer(buffer, index));
 }
 
 void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {
@@ -1724,7 +1738,7 @@ void G1RemSet::print_summary_info() {
   }
 }
 
-class G1RebuildRemSetTask: public AbstractGangTask {
+class G1RebuildRemSetTask: public WorkerTask {
   // Aggregate the counting data that was constructed concurrently
   // with marking.
   class G1RebuildRemSetHeapRegionClosure : public HeapRegionClosure {
@@ -1960,7 +1974,7 @@ public:
   G1RebuildRemSetTask(G1ConcurrentMark* cm,
                       uint n_workers,
                       uint worker_id_offset) :
-      AbstractGangTask("G1 Rebuild Remembered Set"),
+      WorkerTask("G1 Rebuild Remembered Set"),
       _hr_claimer(n_workers),
       _cm(cm),
       _worker_id_offset(worker_id_offset) {
@@ -1977,7 +1991,7 @@ public:
 };
 
 void G1RemSet::rebuild_rem_set(G1ConcurrentMark* cm,
-                               WorkGang* workers,
+                               WorkerThreads* workers,
                                uint worker_id_offset) {
   uint num_workers = workers->active_workers();
 

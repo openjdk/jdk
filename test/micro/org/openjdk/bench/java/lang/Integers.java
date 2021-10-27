@@ -76,6 +76,13 @@ public class Integers {
         }
     }
 
+    @Benchmark
+    public void decode(Blackhole bh) {
+        for (String s : strings) {
+            bh.consume(Integer.decode(s));
+        }
+    }
+
     /** Performs toString on small values, just a couple of digits. */
     @Benchmark
     public void toStringSmall(Blackhole bh) {

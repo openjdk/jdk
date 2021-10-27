@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test archived mirror with reference fields
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile MirrorWithReferenceFieldsApp.java

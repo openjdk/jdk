@@ -63,6 +63,7 @@ public class TreePath implements Iterable<Tree> {
 
         class Result extends Error {
             static final long serialVersionUID = -5942088234594905625L;
+            @SuppressWarnings("serial") // Type of field is not Serializable
             TreePath path;
             Result(TreePath path) {
                 this.path = path;

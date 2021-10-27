@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class invokemethod007a {
         log = new Log(System.err, argHandler);
         waitTime = argHandler.getWaitTime() * 60000;
         pipe = argHandler.createDebugeeIOPipe(log);
-        im007aThread01 thread = null;
+        Thread thread = null;
         pipe.println(invokemethod007.SGNL_READY);
 
         String instr = pipe.readln();
@@ -54,7 +54,7 @@ public class invokemethod007a {
 
             // create new thread and start it
             if (instr.equals(invokemethod007.SGNL_STRTHRD)) {
-                thread = new im007aThread01("im007aThread01");
+                thread = JDIThreadFactory.newThread(new im007aThread01("im007aThread01"));
                 synchronized(im007aThread01.waitStarting) {
                     thread.start();
                     try {
@@ -117,7 +117,7 @@ public class invokemethod007a {
     }
 }
 
-class im007aThread01 extends Thread {
+class im007aThread01 extends NamedTask {
     public static Object waitInvoking = new Object();
     public static Object waitStarting = new Object();
     public static Object waitFinishing = new Object();

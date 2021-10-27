@@ -68,8 +68,14 @@ public final class SystemProps {
                 : raw.propDefault(Raw._file_encoding_NDX));
         put(props, "native.encoding", nativeEncoding);
 
-        // Add properties that have not been overridden on the cmdline
-        putIfAbsent(props, "file.encoding", nativeEncoding);
+        // "file.encoding" defaults to "UTF-8", unless specified in the command line
+        // where "COMPAT" designates the native encoding.
+        var fileEncoding = props.getOrDefault("file.encoding", "UTF-8");
+        if ("COMPAT".equals(fileEncoding)) {
+            put(props, "file.encoding", nativeEncoding);
+        } else {
+            putIfAbsent(props, "file.encoding", fileEncoding);
+        }
 
         // Use platform values if not overridden by a commandline -Dkey=value
         // In no particular order

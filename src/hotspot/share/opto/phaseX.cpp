@@ -792,9 +792,7 @@ ConLNode* PhaseTransform::longcon(jlong l) {
 }
 ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
   if (bt == T_INT) {
-    jint int_con = (jint)l;
-    assert(((long)int_con) == l, "not an int");
-    return intcon(int_con);
+    return intcon(checked_cast<jint>(l));
   }
   assert(bt == T_LONG, "not an integer");
   return longcon(l);
@@ -1967,7 +1965,9 @@ Node *PhaseCCP::transform_once( Node *n ) {
 
   // TEMPORARY fix to ensure that 2nd GVN pass eliminates NULL checks
   switch( n->Opcode() ) {
-  case Op_FastLock:      // Revisit FastLocks for lock coarsening
+  case Op_CallStaticJava:  // Give post-parse call devirtualization a chance
+  case Op_CallDynamicJava:
+  case Op_FastLock:        // Revisit FastLocks for lock coarsening
   case Op_If:
   case Op_CountedLoopEnd:
   case Op_Region:

@@ -167,8 +167,8 @@ public:
 
   // Full GC support methods.
 
-  HeapWord* initialize_threshold();
-  HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
+  void initialize_bot_threshold();
+  void alloc_block_in_bot(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc();

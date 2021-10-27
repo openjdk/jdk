@@ -33,7 +33,6 @@ class HeapRegion;
 
 class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   HeapRegion* _current_region;
-  HeapWord*   _threshold;
   HeapWord*   _compaction_top;
   GrowableArray<HeapRegion*>* _compaction_regions;
   GrowableArrayIterator<HeapRegion*> _compaction_region_iterator;

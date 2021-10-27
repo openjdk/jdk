@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624 8146215 8162745
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -31,6 +31,7 @@
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -95,16 +96,12 @@ public class Basic {
         return 0;
     }
 
-    static int checkContentTypes(String[] extensions, String[] expectedTypes)
+    static int checkContentTypes(ExType[] exTypes)
         throws IOException {
-        if (extensions.length != expectedTypes.length) {
-            System.err.println("Parameter array lengths differ");
-            return 1;
-        }
-
         int failures = 0;
-        for (int i = 0; i < extensions.length; i++) {
-            String extension = extensions[i];
+        for (int i = 0; i < exTypes.length; i++) {
+            String extension = exTypes[i].extension();
+            List<String> expectedTypes = exTypes[i].expectedTypes();
             Path file = Files.createTempFile("foo", "." + extension);
             try {
                 String type = Files.probeContentType(file);
@@ -112,9 +109,9 @@ public class Basic {
                     System.err.println("Content type of " + extension
                             + " cannot be determined");
                     failures++;
-                } else if (!type.equals(expectedTypes[i])) {
+                } else if (!expectedTypes.contains(type)) {
                     System.err.printf("Content type: %s; expected: %s%n",
-                        type, expectedTypes[i]);
+                        type, expectedTypes);
                     failures++;
                 }
             } finally {
@@ -155,27 +152,46 @@ public class Basic {
             Files.delete(file);
         }
 
-        // Verify that certain media extensions are mapped to the correct type.
-        String[] extensions = new String[]{
-            "jpg",
-            "mp3",
-            "mp4",
-            "pdf",
-            "png",
-            "webm"
+        // Verify that certain extensions are mapped to the correct type.
+        var exTypes = new ExType[] {
+                new ExType("adoc", List.of("text/plain")),
+                new ExType("bz2", List.of("application/bz2", "application/x-bzip2")),
+                new ExType("css", List.of("text/css")),
+                new ExType("csv", List.of("text/csv")),
+                new ExType("doc", List.of("application/msword")),
+                new ExType("docx", List.of("application/vnd.openxmlformats-officedocument.wordprocessingml.document")),
+                new ExType("gz", List.of("application/gzip", "application/x-gzip")),
+                new ExType("jar", List.of("application/java-archive", "application/x-java-archive")),
+                new ExType("jpg", List.of("image/jpeg")),
+                new ExType("js", List.of("text/javascript", "application/javascript")),
+                new ExType("json", List.of("application/json")),
+                new ExType("markdown", List.of("text/markdown")),
+                new ExType("md", List.of("text/markdown")),
+                new ExType("mp3", List.of("audio/mpeg")),
+                new ExType("mp4", List.of("video/mp4")),
+                new ExType("odp", List.of("application/vnd.oasis.opendocument.presentation")),
+                new ExType("ods", List.of("application/vnd.oasis.opendocument.spreadsheet")),
+                new ExType("odt", List.of("application/vnd.oasis.opendocument.text")),
+                new ExType("pdf", List.of("application/pdf")),
+                new ExType("php", List.of("text/plain", "text/php")),
+                new ExType("png", List.of("image/png")),
+                new ExType("ppt", List.of("application/vnd.ms-powerpoint")),
+                new ExType("pptx",List.of("application/vnd.openxmlformats-officedocument.presentationml.presentation")),
+                new ExType("py", List.of("text/plain", "text/x-python", "text/x-python-script")),
+                new ExType("rar", List.of("application/rar", "application/vnd.rar")),
+                new ExType("rtf", List.of("application/rtf", "text/rtf")),
+                new ExType("webm", List.of("video/webm")),
+                new ExType("webp", List.of("image/webp")),
+                new ExType("xls", List.of("application/vnd.ms-excel")),
+                new ExType("xlsx", List.of("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
+                new ExType("7z", List.of("application/x-7z-compressed")),
         };
-        String[] expectedTypes = new String[] {
-            "image/jpeg",
-            "audio/mpeg",
-            "video/mp4",
-            "application/pdf",
-            "image/png",
-            "video/webm"
-        };
-        failures += checkContentTypes(extensions, expectedTypes);
+        failures += checkContentTypes(exTypes);
 
         if (failures > 0) {
             throw new RuntimeException("Test failed!");
         }
     }
+
+    record ExType(String extension, List<String> expectedTypes) { }
 }

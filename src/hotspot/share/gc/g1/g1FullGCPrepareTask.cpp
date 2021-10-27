@@ -47,8 +47,8 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapReg
   } else {
     _g1h->free_region(hr, nullptr);
   }
+  _collector->set_free(hr->hrm_index());
   prepare_for_compaction(hr);
-  _collector->set_invalid(hr->hrm_index());
 }
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
@@ -182,9 +182,11 @@ size_t G1FullGCPrepareTask::G1RePrepareClosure::apply(oop obj) {
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction_work(G1FullGCCompactionPoint* cp,
                                                                                   HeapRegion* hr) {
-  G1PrepareCompactLiveClosure prepare_compact(cp);
   hr->set_compaction_top(hr->bottom());
-  hr->apply_to_marked_objects(_bitmap, &prepare_compact);
+  if (!_collector->is_free(hr->hrm_index())) {
+    G1PrepareCompactLiveClosure prepare_compact(cp);
+    hr->apply_to_marked_objects(_bitmap, &prepare_compact);
+  }
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(HeapRegion* hr) {

@@ -32,7 +32,6 @@
 #include "utilities/lockFreeStack.hpp"
 
 class G1CardSetAllocOptions;
-class G1CardSetBufferList;
 class G1CardSetHashTable;
 class G1CardSetHashTableValue;
 class G1CardSetMemoryManager;
@@ -47,15 +46,28 @@ enum G1AddCardResult {
 };
 
 class G1CardSetConfiguration {
+  // Holds the number of bits required to cover the maximum card index for the
+  // regions covered by this card set.
   uint _inline_ptr_bits_per_card;
+
   uint _num_cards_in_array;
-  uint _num_cards_in_howl_bitmap;
   uint _num_buckets_in_howl;
   uint _max_cards_in_card_set;
   uint _cards_in_howl_threshold;
+  uint _num_cards_in_howl_bitmap;
   uint _cards_in_howl_bitmap_threshold;
   uint _log2_num_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
+
+  G1CardSetAllocOptions* _card_set_alloc_options;
+
+  G1CardSetConfiguration(uint inline_ptr_bits_per_card,
+                         uint num_cards_in_array,
+                         double cards_in_bitmap_threshold_percent,
+                         uint num_buckets_in_howl,
+                         double cards_in_howl_threshold_percent,
+                         uint max_cards_in_card_set);
+  void init_card_set_alloc_options();
 
   void log_configuration();
 public:
@@ -63,12 +75,14 @@ public:
   // Initialize card set configuration from globals.
   G1CardSetConfiguration();
   // Initialize card set configuration from parameters.
-  G1CardSetConfiguration(uint inline_ptr_bits_per_card,
-                         uint num_cards_in_array,
-                         double cards_in_bitmap_threshold,
+  // Only for test
+  G1CardSetConfiguration(uint num_cards_in_array,
+                         double cards_in_bitmap_threshold_percent,
                          uint max_buckets_in_howl,
-                         double cards_in_howl_threshold,
-                         uint max_cards_in_cardset);
+                         double cards_in_howl_threshold_percent,
+                         uint max_cards_in_card_set);
+
+  ~G1CardSetConfiguration();
 
   // Inline pointer configuration
   uint inline_ptr_bits_per_card() const { return _inline_ptr_bits_per_card; }
@@ -105,9 +119,8 @@ public:
   // Number of distinctly sized memory objects on the card set heap.
   // Currently contains CHT-Nodes, ArrayOfCards, BitMaps, Howl
   static constexpr uint num_mem_object_types() { return 4; }
-  // Returns the memory allocation options for the memory objects on the card set heap. The returned
-  // array must be freed by the caller.
-  G1CardSetAllocOptions* mem_object_alloc_options();
+  // Returns the memory allocation options for the memory objects on the card set heap.
+  const G1CardSetAllocOptions* mem_object_alloc_options(uint idx);
 
   // For a given memory object, get a descriptive name.
   static const char* mem_object_type_name_str(uint index);
@@ -254,7 +267,7 @@ private:
   G1AddCardResult add_to_howl(CardSetPtr parent_card_set, uint card_region, uint card_in_region, bool increment_total = true);
 
   G1CardSetHashTableValue* get_or_add_card_set(uint card_region, bool* should_grow_table);
-  CardSetPtr get_card_set(uint card_region);
+  G1CardSetHashTableValue* get_card_set(uint card_region);
 
   // Iterate over cards of a card set container during transfer of the cards from
   // one container to another. Executes

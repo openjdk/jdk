@@ -349,10 +349,6 @@ class InstanceKlass: public Klass {
   // Check if the class can be shared in CDS
   bool is_shareable() const;
 
-  void clear_shared_class_loader_type() {
-    _misc_flags &= ~shared_loader_type_bits();
-  }
-
   bool shared_loading_failed() const {
     return (_misc_flags & _misc_shared_loading_failed) != 0;
   }
@@ -397,7 +393,6 @@ class InstanceKlass: public Klass {
   // array klasses
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
   inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
-  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
   inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
 
   // methods
@@ -1010,8 +1005,6 @@ public:
   void print_nonstatic_fields(FieldClosure* cl); // including inherited and injected fields
 
   void methods_do(void f(Method* method));
-  void array_klasses_do(void f(Klass* k));
-  void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
 
   static InstanceKlass* cast(Klass* k) {
     return const_cast<InstanceKlass*>(cast(const_cast<const Klass*>(k)));
@@ -1196,6 +1189,7 @@ public:
   virtual Klass* array_klass(TRAPS);
   virtual Klass* array_klass_or_null();
 
+  static void clean_initialization_error_table();
 private:
   void fence_and_clear_init_lock();
 
@@ -1206,6 +1200,9 @@ private:
   void eager_initialize_impl                     ();
   /* jni_id_for_impl for jfieldID only */
   JNIid* jni_id_for_impl                         (int offset);
+
+  void add_initialization_error(JavaThread* current, Handle exception);
+  oop get_initialization_error(JavaThread* current);
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(const Symbol* name,

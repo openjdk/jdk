@@ -272,8 +272,8 @@ public class VM {
         s = props.get("java.class.version");
         int index = s.indexOf('.');
         try {
-            classFileMajorVersion = Integer.valueOf(s.substring(0, index));
-            classFileMinorVersion = Integer.valueOf(s.substring(index+1, s.length()));
+            classFileMajorVersion = Integer.parseInt(s.substring(0, index));
+            classFileMinorVersion = Integer.parseInt(s.substring(index + 1));
         } catch (NumberFormatException e) {
             throw new InternalError(e);
         }
