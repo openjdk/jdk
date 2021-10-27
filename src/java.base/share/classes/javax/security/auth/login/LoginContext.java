@@ -717,7 +717,7 @@ public class LoginContext {
                                 }
                             providersCache.put(contextClassLoader,lmProviders);
                         }
-                    }    
+                    }
                     for (Provider<LoginModule> lm: lmProviders){
                         if (lm.type().getName().equals(name)){
                             moduleStack[i].module = lm.get();
