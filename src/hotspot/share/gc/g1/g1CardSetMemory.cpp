@@ -114,6 +114,7 @@ void G1CardSetAllocator<Elem>::drop_all() {
   _pending_nodes_list.pop_all();
   _num_pending_nodes = 0;
   _num_free_nodes = 0;
+  _segmented_array.drop_all();
 }
 
 template <class Elem>
