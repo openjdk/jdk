@@ -226,7 +226,8 @@ public class LoginContext {
 
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("logincontext", "\t[LoginContext]");
-    private static final WeakHashMap<ClassLoader, Set<Provider<LoginModule>>> cacheServiceProviders = new WeakHashMap<>();
+    private static final WeakHashMap<ClassLoader, Set<Provider<LoginModule>>> providersCache =
+        new WeakHashMap<>();
 
     @SuppressWarnings("removal")
     private void init(String name) throws LoginException {
@@ -698,11 +699,12 @@ public class LoginContext {
                     //
                     String name = moduleStack[i].entry.getLoginModuleName();
                     Set<Provider<LoginModule>> lmProviders;
-                    synchronized(cacheServiceProviders){
-                        lmProviders = cacheServiceProviders.get(contextClassLoader);
+                    synchronized(providersCache){
+                        lmProviders = providersCache.get(contextClassLoader);
                         if (lmProviders == null){
-                            if (debug != null)
+                            if (debug != null){
                                 debug.println("Build ServiceProviders cache for ClassLoader: " + contextClassLoader.getName());
+                            }
                             @SuppressWarnings("removal")
                             ServiceLoader<LoginModule> sc = AccessController.doPrivileged(
                                     (PrivilegedAction<ServiceLoader<LoginModule>>)
@@ -713,16 +715,16 @@ public class LoginContext {
                                     debug.println("Discovered ServiceProviders for ClassLoader: " + contextClassLoader.getName());
                                     lmProviders.forEach(System.err::println);
                                 }
-                            cacheServiceProviders.put(contextClassLoader,lmProviders);
+                            providersCache.put(contextClassLoader,lmProviders);
                         }
-                        for ( Provider<LoginModule> lm: lmProviders){
-                            if (lm.type().getName().equals(name)){
-                                moduleStack[i].module = lm.get();
-                                if (debug != null) {
-                                    debug.println(name + " loaded as a service");
-                                }
-                                break;
+                    }    
+                    for (Provider<LoginModule> lm: lmProviders){
+                        if (lm.type().getName().equals(name)){
+                            moduleStack[i].module = lm.get();
+                            if (debug != null) {
+                                debug.println(name + " loaded as a service");
                             }
+                            break;
                         }
                     }
                     if (moduleStack[i].module == null) {
