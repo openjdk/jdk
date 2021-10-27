@@ -119,7 +119,7 @@ public:
   // with more entries per region are coarsened to Full.
   uint max_cards_in_region() const { return _max_cards_in_card_set; }
 
-  // Heap region virtualization: there are some limitations to how much cards the
+  // Heap region virtualization: there are some limitations to how many cards the
   // containers can cover to save memory for the common case. Heap region virtualization
   // allows to use multiple entries in the G1CardSet hash table per area covered
   // by the remembered set (e.g. heap region); each such entry is called "card_region".

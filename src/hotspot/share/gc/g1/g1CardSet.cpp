@@ -45,12 +45,11 @@
 G1CardSet::CardSetPtr G1CardSet::FullCardSet = (G1CardSet::CardSetPtr)-1;
 
 static uint default_log2_card_region_per_region() {
-  // Heap region virtualization.
   uint log2_card_region_per_heap_region = 0;
 
-  uint bits_storable = G1CardSetContainer::LogCardsPerRegionLimit;
-  if (bits_storable < (uint)HeapRegion::LogCardsPerRegion) {
-    log2_card_region_per_heap_region = (uint)HeapRegion::LogCardsPerRegion - bits_storable;
+  const uint card_container_limit = G1CardSetContainer::LogCardsPerRegionLimit;
+  if (card_container_limit < (uint)HeapRegion::LogCardsPerRegion) {
+    log2_card_region_per_heap_region = (uint)HeapRegion::LogCardsPerRegion - card_container_limit;
   }
 
   return log2_card_region_per_heap_region;
