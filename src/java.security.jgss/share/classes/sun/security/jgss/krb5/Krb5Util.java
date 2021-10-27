@@ -100,8 +100,6 @@ public class Krb5Util {
      * Retrieves the ServiceCreds for the specified server principal from
      * the Subject in the specified AccessControlContext. If not found, and if
      * useSubjectCredsOnly is false, then obtain from a LoginContext.
-     *
-     * NOTE: This method is also used by JSSE Kerberos Cipher Suites
      */
     public static ServiceCreds getServiceCreds(GSSCaller caller,
             String serverPrincipal) throws LoginException {

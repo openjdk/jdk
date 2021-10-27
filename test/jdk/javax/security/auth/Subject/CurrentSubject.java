@@ -60,7 +60,7 @@ public class CurrentSubject {
     }
 
     /**
-     * Ensure the current subject is the expected Subject objet.
+     * Ensure the current subject is the expected Subject object.
      *
      * @param label label to print out
      * @param expected the expected Subject

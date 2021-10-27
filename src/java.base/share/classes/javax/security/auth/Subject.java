@@ -38,7 +38,7 @@ import java.security.ProtectionDomain;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 import sun.security.util.ResourcesMgr;
 
 /**
@@ -289,11 +289,10 @@ public final class Subject implements java.io.Serializable {
      * @deprecated This method depends on {@link AccessControlContext}
      *       which, in conjunction with
      *       {@linkplain SecurityManager the Security Manager}, is deprecated
-     *       and subject to removal in a future release. Instead, users can
-     *       call {@link #current()} to retrieve the current subject,
-     *       which is equivalent to
-     *       {@code Subject.getSubject(AccessController.getContext())}
-     *       by default in this implementation.
+     *       and subject to removal in a future release. However,
+     *       obtaining a Subject is useful independent of the Security Manager.
+     *       Thus, a replacement API named {@link #current()} has been added
+     *       which can be used to obtain the current subject.
      */
     @SuppressWarnings("removal")
     @Deprecated(since="17", forRemoval=true)
@@ -321,9 +320,9 @@ public final class Subject implements java.io.Serializable {
         });
     }
 
-    // Store the current subject to a ThreadLocal when a system property is set.
-    private static final boolean USE_TL = "true".equalsIgnoreCase(
-            GetPropertyAction.privilegedGetProperty("jdk.security.auth.subject.useTL"));
+    // Store the current subject in a ThreadLocal when a system property is set.
+    private static final boolean USE_TL = GetBooleanAction
+            .privilegedGetProperty("jdk.security.auth.subject.useTL");
 
     private static final InheritableThreadLocal<Subject> SUBJECT_THREAD_LOCAL =
             USE_TL ?
@@ -348,20 +347,17 @@ public final class Subject implements java.io.Serializable {
      * its parent thread's current subject is changed to another value.
      *
      * @implNote
-     * By default, the current subject is stored in the current
-     * {@code AccessControlContext}, i.e. this method returns the same value as
-     * {@code Subject.getSubject(AccessController.getContext())}.
-     * If the system property {@systemProperty jdk.security.auth.subject.useTL}
-     * is set to {@code true}, it will be retrieved from an inheritable
-     * {@code ThreadLocal} object. This behavior is subject to change in a
-     * future version.
-     * <p>
-     * No matter what storage is chosen, the current subject will
-     * always be installed by the {@link #callAs} method.
+     * By default, this method returns the same value as
+     * {@code Subject.getSubject(AccessController.getContext())}. This
+     * preserves compatibility with code that may still be calling {@code doAs}
+     * which installs the subject in an {@code AccessControlContext}. However,
+     * if the system property {@systemProperty jdk.security.auth.subject.useTL}
+     * is set to {@code true}, the subject is retrieved from an inheritable
+     * {@code ThreadLocal} object. This implementation behavior is subject to
+     * change in a future version.
      *
-     * @return the current subject. The return value can be
-     *      {@code null} if no current subject is installed
-     *      yet or a {@code null} value is explicitly installed.
+     * @return the current subject, or {@code null} if a current subject is
+     *      not installed or the current subject is set to {@code null}.
      * @see #callAs(Subject, Callable)
      * @since 18
      */
@@ -378,29 +374,26 @@ public final class Subject implements java.io.Serializable {
      *
      * @implNote
      * By default, this method calls {@link #doAs(Subject, PrivilegedExceptionAction)
-     * Subject.doAs(subject, altAction)} to store the subject into
+     * Subject.doAs(subject, altAction)} which stores the subject in
      * a new {@code AccessControlContext}, where {@code altAction.run()}
      * is equivalent to {@code action.call()} and the exception thrown is
      * modified to match the specification of this method.
      * If the system property {@code jdk.security.auth.subject.useTL}
-     * is set to {@code true}, it will be stored in an inheritable
-     * {@code ThreadLocal} object. The behavior is subject to change in a
+     * is set to {@code true}, the current subject will be stored in an inheritable
+     * {@code ThreadLocal} object. This behavior is subject to change in a
      * future version.
-     * <p>
-     * No matter what storage is chosen, the current subject will
-     * always be retrievable by the {@link #current} method.
      *
-     * @param subject the intended current subject for {@code action}.
-     *                Can be {@code null}.
+     * @param subject the {@code Subject} that the specified {@code action}
+     *               will run as.  This parameter may be {@code null}.
      * @param action the code to be run with {@code subject} as its current
      *               subject. Must not be {@code null}.
      * @param <T> the type of value returned by the {@code call} method
      *            of {@code action}
      * @return the value returned by the {@code call} method of {@code action}
-     * @throws NullPointerException if the {@code Callable} is {@code null}.
-     * @throws CompletionException if {@code action.call()} throws an
-     *          exception, which will be the cause of this
-     *          {@code CompletionException}.
+     * @throws NullPointerException if {@code code} is {@code null}
+     * @throws CompletionException if {@code action.call()} throws an exception.
+     *      The cause of the {@code CompletionException} is set to the exception
+     *      thrown by {@code action.call()}.
      * @see #current()
      * @since 18
      */
