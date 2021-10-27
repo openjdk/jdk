@@ -64,7 +64,10 @@ G1CardSetConfiguration::G1CardSetConfiguration() :
                          (double)G1RemSetCoarsenHowlToFullPercent / 100,            /* cards_in_howl_threshold_percent */
                          (uint)HeapRegion::CardsPerRegion,                          /* max_cards_in_cardset */
                          default_log2_card_region_per_region())                     /* log2_card_region_per_region */
-{ }
+{
+  assert((_log2_card_region_per_heap_region + _log2_card_region_size) == (uint)HeapRegion::LogCardsPerRegion,
+         "inconsistent heap region virtualization setup");
+}
 
 G1CardSetConfiguration::G1CardSetConfiguration(uint num_cards_in_array,
                                                double cards_in_bitmap_threshold_percent,
@@ -104,9 +107,6 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
 
   assert(is_power_of_2(_max_cards_in_card_set),
          "max_cards_in_card_set must be a power of 2: %u", _max_cards_in_card_set);
-
-  assert((_log2_card_region_per_heap_region + _log2_card_region_size) == (uint)HeapRegion::LogCardsPerRegion,
-          "inconsistent heap region virtualization setup");
 
   init_card_set_alloc_options();
   log_configuration();
