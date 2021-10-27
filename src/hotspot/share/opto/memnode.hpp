@@ -1312,8 +1312,7 @@ public:
 class StoreStoreFenceNode: public MemBarNode {
 public:
   StoreStoreFenceNode(Compile* C, int alias_idx, Node* precedent)
-    : MemBarNode(C, alias_idx, precedent) {
-  }
+    : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };
 
