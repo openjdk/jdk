@@ -45,6 +45,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class bug4634626 {
 
@@ -190,7 +191,14 @@ public class bug4634626 {
             clickMouseOn(robo, someText, popTrig);
             robo.waitForIdle();
             robo.delay(1000);
-            if(!commonPopup.isVisible()) {
+            AtomicBoolean popupVisible = new AtomicBoolean(false);
+            try {
+                SwingUtilities.invokeAndWait(() ->
+                        popupVisible.set(commonPopup.isVisible()));
+            } catch (Exception ex) {
+                throw new RuntimeException("Can not get commonPopup status");
+            }
+            if(!popupVisible.get()) {
                 toBeThrown = new Error("Popup should be visible");
                 passed = false;
             }
@@ -207,7 +215,13 @@ public class bug4634626 {
             clickMouseOn(robo, popButton, popTrig);
             robo.waitForIdle();
             robo.delay(1000);
-            if(!btnPopup.isVisible()) {
+            try {
+                SwingUtilities.invokeAndWait(() ->
+                    popupVisible.set(btnPopup.isVisible()));
+            } catch (Exception ex) {
+                throw new RuntimeException("Can not get btnPopup status");
+            }
+            if(!popupVisible.get()) {
                 toBeThrown = new Error("Popup should be visible");
                 passed = false;
             }
