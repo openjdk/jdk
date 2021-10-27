@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,9 @@ class ClassLoaderHelper {
         // dynamic linker cache support on os.version >= 11.x
         int major = 11;
         int i = osVersion.indexOf('.');
-        if (i >= 0) {
-            try {
-                major = Integer.parseInt(osVersion.substring(0, i));
-            } catch (NumberFormatException e) {}
-        }
+        try {
+            major = Integer.parseInt(i < 0 ? osVersion : osVersion.substring(0, i));
+        } catch (NumberFormatException e) {}
         hasDynamicLoaderCache = major >= 11;
     }
 
