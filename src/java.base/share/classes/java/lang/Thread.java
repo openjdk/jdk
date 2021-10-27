@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
 
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.reflect.CallerSensitive;
@@ -1377,7 +1378,22 @@ public class Thread implements Runnable {
      * This method is used only for debugging.
      */
     public static void dumpStack() {
-        new Exception("Stack trace").printStackTrace();
+        var walker = StackWalker.getInstance();
+        if (walker != null) {
+            System.err.println(Thread.currentThread().name + " Stack trace");
+            walker.forEach(new Consumer<StackWalker.StackFrame>() {
+                @Override
+                public void accept(final StackWalker.StackFrame stackFrame) {
+                    System.err.println("\tat " + stackFrame.toStackTraceElement());
+                }
+            });
+            return;
+        }
+        // Thread.dumpStack() could be called during the static initialization of
+        // the StackWalker itself, which means that the StackWalker isn't usable
+        // at this point in time. So we fallback to creating a Exception instance
+        // and printing its stacktrace
+        new Exception(Thread.currentThread().name + " Stack trace").printStackTrace();
     }
 
     /**
