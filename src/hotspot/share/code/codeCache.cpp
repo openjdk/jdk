@@ -1251,6 +1251,9 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
       warning("%s", msg1);
       warning("%s", msg2);
     }
+
+    heap->report_full();
+
     ResourceMark rm;
     stringStream s;
     // Dump code cache into a buffer before locking the tty.
@@ -1269,8 +1272,6 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
       }
     }
   }
-
-  heap->report_full();
 
   EventCodeCacheFull event;
   if (event.should_commit()) {
