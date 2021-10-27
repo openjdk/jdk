@@ -31,6 +31,40 @@
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "runtime/atomic.hpp"
 
+// If next available memory is not aligned on address that is multiple of alignment, fill the empty space
+// so that returned object is aligned on an address that is a multiple of alignment_in_words.  Requested
+// size is in words.
+HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocRequest req, size_t alignment_in_bytes) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
+
+  HeapWord* obj = top();
+  uintptr_t addr_as_int = (uintptr_t) obj;
+
+  size_t unalignment_bytes = addr_as_int % alignment_in_bytes;
+  size_t unalignment_words = unalignment_bytes / HeapWordSize;
+  if (pointer_delta(end(), obj + unalignment_words) >= size) {
+    if (unalignment_words > 0) {
+      size_t pad_words = (alignment_in_bytes / HeapWordSize) - unalignment_words;
+      ShenandoahHeap::fill_with_object(obj, pad_words);
+      ShenandoahHeap::heap()->card_scan()->register_object(obj);
+      obj += pad_words;
+    }
+
+    make_regular_allocation(req.affiliation());
+    adjust_alloc_metadata(req.type(), size);
+
+    HeapWord* new_top = obj + size;
+    set_top(new_top);
+    assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
+    assert(((uintptr_t) obj) % (alignment_in_bytes) == 0, "obj is not aligned: " PTR_FORMAT, p2i(obj));
+
+    return obj;
+  } else {
+    return NULL;
+  }
+}
+
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest req) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
