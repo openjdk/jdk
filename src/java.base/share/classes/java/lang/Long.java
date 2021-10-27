@@ -1138,7 +1138,7 @@ public final class Long extends Number
      * interpreted as representing a signed decimal {@code long},
      * exactly as if the argument were given to the {@link
      * #parseLong(java.lang.String)} method. The result is a
-     * {@code Long} object that represents the integer value
+     * {@code Long} object that represents the {@code Long} value
      * specified by the string.
      *
      * <p>In other words, this method returns a {@code Long} object
