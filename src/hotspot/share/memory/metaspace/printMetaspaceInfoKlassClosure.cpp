@@ -43,7 +43,7 @@ void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
 
   // Print a 's' for shared classes
   _out->put(k->is_shared() ? 's' : ' ');
-  // Print a 'f' for classes that having a non-trivial finalize() method
+  // Print a 'f' for classes that have an non-trivial finalize() method
   _out->put(k->has_finalizer() ? 'f' : ' ');
 
   ResourceMark rm;
