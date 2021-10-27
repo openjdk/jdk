@@ -315,6 +315,14 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     }
     new_phi = C->initial_gvn()->transform(new_phi);
     return new_phi;
+  } else if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
+    Node* new_phi = new PhiNode(vbox->as_Phi()->region(), box_type);
+    for (uint i = 1; i < vbox->req(); i++) {
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect, box_type, vect_type);
+      new_phi->set_req(i, new_box);
+    }
+    new_phi = C->initial_gvn()->transform(new_phi);
+    return new_phi;
   } else if (vbox->is_Proj() && vbox->in(0)->Opcode() == Op_VectorBoxAllocate) {
     VectorBoxAllocateNode* vbox_alloc = static_cast<VectorBoxAllocateNode*>(vbox->in(0));
     return expand_vbox_alloc_node(vbox_alloc, vect, box_type, vect_type);
