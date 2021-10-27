@@ -32,17 +32,12 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import jdk.test.lib.Platform;
-
 import static java.awt.Transparency.TRANSLUCENT;
 
 /**
  * @test
  * @bug 8255722 8255724
  * @key headful
- * @library /test/lib
- * @build jdk.test.lib.Platform
- * @run main BlitRotateClippedArea
  */
 public class BlitRotateClippedArea {
 
@@ -61,6 +56,7 @@ public class BlitRotateClippedArea {
         System.setProperty("sun.java2d.uiScale", "1");
         var ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         var gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
+        var className = gc.getClass().getSimpleName();
 
         var gold = gc.createCompatibleImage(1000, 1000, TRANSLUCENT);
         var dstVI2BI = gc.createCompatibleImage(1000, 1000, TRANSLUCENT);
@@ -99,14 +95,14 @@ public class BlitRotateClippedArea {
         } while (dstVI2VI.contentsLost() || dstBI2VI.contentsLost()
                 || srcVI.contentsLost());
 
-        validate(gold, snapshotVI2VI);
-        validate(gold, snapshotBI2VI);
-        validate(gold, dstVI2BI);
+        validate(gold, snapshotVI2VI, className);
+        validate(gold, snapshotBI2VI, className);
+        validate(gold, dstVI2BI, className);
     }
 
-    private static void validate(BufferedImage gold, BufferedImage img)
-            throws IOException {
-        if (!Platform.isLinux()) {
+    private static void validate(BufferedImage gold, BufferedImage img,
+                                 String className) throws IOException {
+        if (!(className.equals("XRGraphicsConfig"))) {
             for (int x = 0; x < gold.getWidth(); ++x) {
                 for (int y = 0; y < gold.getHeight(); ++y) {
                     if (gold.getRGB(x, y) != img.getRGB(x, y)) {
@@ -163,4 +159,3 @@ public class BlitRotateClippedArea {
         graphics.dispose();
     }
 }
-
