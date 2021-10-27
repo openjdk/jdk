@@ -29,6 +29,11 @@ import java.util.Map;
 
 public class FirstLoginModule implements LoginModule {
 
+    public static boolean isLoaded;
+
+    public FirstLoginModule() {
+        isLoaded = true;
+    }
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler,
             Map<String, ?> sharedState, Map<String, ?> options) {

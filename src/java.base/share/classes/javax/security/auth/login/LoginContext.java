@@ -294,23 +294,6 @@ public class LoginContext {
                 }
         });
 
-        synchronized(cacheServiceProviders){
-            if (cacheServiceProviders.get(contextClassLoader) == null){
-                if (debug != null)
-                    debug.println("Build ServiceProviders cache for ClassLoader: " + contextClassLoader.getName());
-                @SuppressWarnings("removal")
-                ServiceLoader<LoginModule> sc = AccessController.doPrivileged(
-                        (PrivilegedAction<ServiceLoader<LoginModule>>)
-                                () -> java.util.ServiceLoader.load(
-                                    LoginModule.class, contextClassLoader));
-                Set<Provider<LoginModule>> lmProviders = sc.stream().collect(Collectors.toSet());
-                    if (debug != null){
-                        debug.println("Discovered ServiceProviders for ClassLoader: " + contextClassLoader.getName());
-                        lmProviders.forEach(System.err::println);
-                    }
-                cacheServiceProviders.put(contextClassLoader,lmProviders);
-            }
-        }
     }
 
     @SuppressWarnings("removal")
@@ -714,9 +697,25 @@ public class LoginContext {
                     // locate and instantiate the LoginModule
                     //
                     String name = moduleStack[i].entry.getLoginModuleName();
+                    Set<Provider<LoginModule>> lmProviders;
                     synchronized(cacheServiceProviders){
-                        Set<Provider<LoginModule>> lmp = cacheServiceProviders.get(contextClassLoader);
-                        for ( Provider<LoginModule> lm: lmp){
+                        lmProviders = cacheServiceProviders.get(contextClassLoader);
+                        if (lmProviders == null){
+                            if (debug != null)
+                                debug.println("Build ServiceProviders cache for ClassLoader: " + contextClassLoader.getName());
+                            @SuppressWarnings("removal")
+                            ServiceLoader<LoginModule> sc = AccessController.doPrivileged(
+                                    (PrivilegedAction<ServiceLoader<LoginModule>>)
+                                            () -> java.util.ServiceLoader.load(
+                                                LoginModule.class, contextClassLoader));
+                            lmProviders = sc.stream().collect(Collectors.toSet());
+                                if (debug != null){
+                                    debug.println("Discovered ServiceProviders for ClassLoader: " + contextClassLoader.getName());
+                                    lmProviders.forEach(System.err::println);
+                                }
+                            cacheServiceProviders.put(contextClassLoader,lmProviders);
+                        }
+                        for ( Provider<LoginModule> lm: lmProviders){
                             if (lm.type().getName().equals(name)){
                                 moduleStack[i].module = lm.get();
                                 if (debug != null) {
