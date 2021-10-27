@@ -144,8 +144,8 @@ inline ParMarkBitMap::IterationStatus ParMarkBitMap::iterate(ParMarkBitMapClosur
                  addr_to_bit(dead_range_end));
 }
 
-inline bool ParMarkBitMap::mark_obj(oop obj, int size) {
-  return mark_obj(cast_from_oop<HeapWord*>(obj), (size_t)size);
+inline bool ParMarkBitMap::mark_obj(oop obj, size_t size) {
+  return mark_obj(cast_from_oop<HeapWord*>(obj), size);
 }
 
 inline ParMarkBitMap::idx_t ParMarkBitMap::addr_to_bit(HeapWord* addr) const {

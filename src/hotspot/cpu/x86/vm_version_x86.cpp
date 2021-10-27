@@ -1469,6 +1469,14 @@ void VM_Version::get_processor_features() {
 #endif
   }
 
+#ifdef COMPILER2
+  if (FLAG_IS_DEFAULT(OptimizeFill)) {
+    if (MaxVectorSize < 32 || !VM_Version::supports_avx512vlbw()) {
+      OptimizeFill = false;
+    }
+  }
+#endif
+
 #ifdef _LP64
   if (UseSSE42Intrinsics) {
     if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
@@ -1584,12 +1592,6 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(AlignVector)) {
     // Modern processors allow misaligned memory operations for vectors.
     AlignVector = !UseUnalignedLoadStores;
-  }
-  if (FLAG_IS_DEFAULT(OptimizeFill)) {
-    // 8247307: On x86, the auto-vectorized loop array fill code shows
-    // better performance than the array fill stubs. We should reenable
-    // this after the x86 stubs get improved.
-    OptimizeFill = false;
   }
 #endif // COMPILER2
 

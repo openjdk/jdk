@@ -8527,6 +8527,19 @@ instruct mulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
+instruct umulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
+%{
+  match(Set dst (UMulHiL src rax));
+  effect(USE_KILL rax, KILL cr);
+
+  ins_cost(300);
+  format %{ "mulq   RDX:RAX, RAX, $src\t# umulhi" %}
+  ins_encode %{
+    __ mulq($src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
 instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
                    rFlagsReg cr)
 %{

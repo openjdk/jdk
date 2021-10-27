@@ -206,7 +206,11 @@ void G1CardSetTest::cardset_basic_test() {
   const double FullCardSetThreshold = 0.8;
   const double BitmapCoarsenThreshold = 0.9;
 
-  G1CardSetConfiguration config(log2i_exact(CardsPerRegion), 28, BitmapCoarsenThreshold, 8, FullCardSetThreshold, CardsPerRegion);
+  G1CardSetConfiguration config(28,
+                                BitmapCoarsenThreshold,
+                                8,
+                                FullCardSetThreshold,
+                                CardsPerRegion);
   G1CardSetFreePool free_pool(config.num_mem_object_types());
   G1CardSetMemoryManager mm(&config, &free_pool);
 
@@ -420,7 +424,11 @@ void G1CardSetTest::cardset_mt_test() {
   const double FullCardSetThreshold = 1.0;
   const uint BitmapCoarsenThreshold = 1.0;
 
-  G1CardSetConfiguration config(log2i_exact(CardsPerRegion), 120, BitmapCoarsenThreshold, 8, FullCardSetThreshold, CardsPerRegion);
+  G1CardSetConfiguration config(120,
+                                BitmapCoarsenThreshold,
+                                8,
+                                FullCardSetThreshold,
+                                CardsPerRegion);
   G1CardSetFreePool free_pool(config.num_mem_object_types());
   G1CardSetMemoryManager mm(&config, &free_pool);
 

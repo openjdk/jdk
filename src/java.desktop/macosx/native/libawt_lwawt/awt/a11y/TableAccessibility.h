@@ -25,6 +25,9 @@
 #import "CommonComponentAccessibility.h"
 
 @interface TableAccessibility : CommonComponentAccessibility <NSAccessibilityTable>
+{
+    NSMutableDictionary<NSNumber*, id> *rowCache;
+}
 
 - (BOOL)isAccessibleChildSelectedFromIndex:(int)index;
 - (int) accessibleRowAtIndex:(int)index;
