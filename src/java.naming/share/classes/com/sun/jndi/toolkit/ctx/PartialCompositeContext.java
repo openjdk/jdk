@@ -511,10 +511,10 @@ public abstract class PartialCompositeContext implements Context, Resolver {
 
         Object obj = cont.getResolvedObj();
 
-        if (obj instanceof PartialCompositeContext) {
+        if (obj instanceof PartialCompositeContext partialCtx) {
             // Just cast if octx already is PartialCompositeContext
             // %%% ignoring environment for now
-            return (PartialCompositeContext)obj;
+            return partialCtx;
         } else {
             throw cont.fillInException(new CannotProceedException());
         }
