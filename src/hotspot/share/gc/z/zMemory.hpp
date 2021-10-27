@@ -66,7 +66,7 @@ public:
   };
 
 private:
-  ZLock          _lock;
+  mutable ZLock  _lock;
   ZList<ZMemory> _freelist;
   Callbacks      _callbacks;
 
@@ -82,6 +82,7 @@ public:
 
   void register_callbacks(const Callbacks& callbacks);
 
+  uintptr_t peek_alloc_from_front() const;
   uintptr_t alloc_from_front(size_t size);
   uintptr_t alloc_from_front_at_most(size_t size, size_t* allocated);
   uintptr_t alloc_from_back(size_t size);

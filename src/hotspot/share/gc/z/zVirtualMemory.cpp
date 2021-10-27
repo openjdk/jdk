@@ -33,6 +33,7 @@
 
 ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     _manager(),
+    _reserved(0),
     _initialized(false) {
 
   // Check max supported heap size
@@ -172,6 +173,9 @@ bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
                        (reserved == size ? "Complete" : "Degraded"));
   log_info_p(gc, init)("Address Space Size: " SIZE_FORMAT "M x " SIZE_FORMAT " = " SIZE_FORMAT "M",
                        reserved / M, ZHeapViews, (reserved * ZHeapViews) / M);
+
+  // Record reserved
+  _reserved = reserved;
 
   return reserved >= max_capacity;
 }

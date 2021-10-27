@@ -85,6 +85,18 @@ void ZMemoryManager::register_callbacks(const Callbacks& callbacks) {
   _callbacks = callbacks;
 }
 
+uintptr_t ZMemoryManager::peek_alloc_from_front() const {
+  ZLocker<ZLock> locker(&_lock);
+
+  const ZMemory* const area = _freelist.first();
+  if (area != NULL) {
+    return area->start();
+  }
+
+  // Out of memory
+  return UINTPTR_MAX;
+}
+
 uintptr_t ZMemoryManager::alloc_from_front(size_t size) {
   ZLocker<ZLock> locker(&_lock);
 
