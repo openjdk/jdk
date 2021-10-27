@@ -1261,7 +1261,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
     // Reset local static fields in the mirror
     InstanceKlass::cast(k)->do_local_static_fields(&reset);
 
-    java_lang_Class:set_init_lock(archived_mirror, NULL);
+    java_lang_Class::set_init_lock(archived_mirror, NULL);
 
     set_protection_domain(archived_mirror, NULL);
     set_signers(archived_mirror, NULL);
