@@ -23,7 +23,7 @@
  * questions.
  */
 
-package vm.fences;
+package org.openjdk.bench.vm.fences;
 
 import org.openjdk.jmh.annotations.*;
 
