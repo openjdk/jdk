@@ -3752,7 +3752,7 @@ public abstract class JComponent extends Container implements Serializable,
          * to add/remove ContainerListener and FocusListener to track
          * target JComponent's state
          */
-        private transient volatile int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount;
 
         /**
          * This field duplicates the function of the accessibleAWTFocusHandler field

@@ -140,6 +140,7 @@ class methodHandle;
   do_name(incrementExact_name,"incrementExact")                                                                         \
   do_name(multiplyExact_name,"multiplyExact")                                                                           \
   do_name(multiplyHigh_name,"multiplyHigh")                                                                             \
+  do_name(unsignedMultiplyHigh_name,"unsignedMultiplyHigh")                                                             \
   do_name(negateExact_name,"negateExact")                                                                               \
   do_name(subtractExact_name,"subtractExact")                                                                           \
   do_name(fma_name, "fma")                                                                                              \
@@ -173,6 +174,7 @@ class methodHandle;
   do_intrinsic(_multiplyExactI,           java_lang_Math,         multiplyExact_name, int2_int_signature,        F_S)   \
   do_intrinsic(_multiplyExactL,           java_lang_Math,         multiplyExact_name, long2_long_signature,      F_S)   \
   do_intrinsic(_multiplyHigh,             java_lang_Math,         multiplyHigh_name, long2_long_signature,       F_S)   \
+  do_intrinsic(_unsignedMultiplyHigh,     java_lang_Math,         unsignedMultiplyHigh_name, long2_long_signature, F_S) \
   do_intrinsic(_negateExactI,             java_lang_Math,         negateExact_name, int_int_signature,           F_S)   \
   do_intrinsic(_negateExactL,             java_lang_Math,         negateExact_name, long_long_signature,         F_S)   \
   do_intrinsic(_subtractExactI,           java_lang_Math,         subtractExact_name, int2_int_signature,        F_S)   \
@@ -352,6 +354,9 @@ class methodHandle;
    do_signature(encodeISOArray_signature,                        "([CI[BII)I")                                          \
                                                                                                                         \
   do_intrinsic(_encodeByteISOArray,     java_lang_StringCoding, encodeISOArray_name, indexOfI_signature,         F_S)   \
+                                                                                                                        \
+  do_intrinsic(_encodeAsciiArray,       java_lang_StringCoding, encodeAsciiArray_name, encodeISOArray_signature, F_S)   \
+   do_name(     encodeAsciiArray_name,                           "implEncodeAsciiArray")                                \
                                                                                                                         \
   do_class(java_math_BigInteger,                      "java/math/BigInteger")                                           \
   do_intrinsic(_multiplyToLen,      java_math_BigInteger, multiplyToLen_name, multiplyToLen_signature, F_S)             \

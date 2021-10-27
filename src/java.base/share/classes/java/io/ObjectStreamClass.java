@@ -1712,9 +1712,7 @@ public class ObjectStreamClass implements Serializable {
         } else if (th instanceof Error) {
             throw (Error) th;
         } else {
-            IOException ex = new IOException("unexpected exception type");
-            ex.initCause(th);
-            throw ex;
+            throw new IOException("unexpected exception type", th);
         }
     }
 

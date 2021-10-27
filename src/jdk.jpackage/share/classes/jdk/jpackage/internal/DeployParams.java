@@ -294,6 +294,8 @@ public class DeployParams {
             StandardBundlerParam.ADD_MODULES.getID(),
             StandardBundlerParam.LIMIT_MODULES.getID(),
             StandardBundlerParam.FILE_ASSOCIATIONS.getID(),
+            StandardBundlerParam.DMG_CONTENT.getID(),
+            StandardBundlerParam.APP_CONTENT.getID(),
             StandardBundlerParam.JLINK_OPTIONS.getID()
     ));
 
@@ -306,8 +308,10 @@ public class DeployParams {
                 String delim = "\n\n";
                 if (key.equals(StandardBundlerParam.MODULE_PATH.getID())) {
                     delim = File.pathSeparator;
-                } else if (key.equals(
-                        StandardBundlerParam.ADD_MODULES.getID())) {
+                } else if (
+                        key.equals(StandardBundlerParam.DMG_CONTENT.getID()) ||
+                        key.equals(StandardBundlerParam.APP_CONTENT.getID()) ||
+                        key.equals(StandardBundlerParam.ADD_MODULES.getID())) {
                     delim = ",";
                 }
                 bundlerArguments.put(key, existingValue + delim + value);

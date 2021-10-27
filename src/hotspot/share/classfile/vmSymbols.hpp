@@ -339,9 +339,9 @@
   template(linkMethod_name,                           "linkMethod")                               \
   template(linkMethod_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/invoke/MemberName;") \
   template(linkDynamicConstant_name,                  "linkDynamicConstant")                      \
-  template(linkDynamicConstant_signature, "(Ljava/lang/Object;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
+  template(linkDynamicConstant_signature, "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
   template(linkCallSite_name,                         "linkCallSite")                             \
-  template(linkCallSite_signature, "(Ljava/lang/Object;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/invoke/MemberName;") \
+  template(linkCallSite_signature, "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/invoke/MemberName;") \
   template(setTargetNormal_name,                      "setTargetNormal")                          \
   template(setTargetVolatile_name,                    "setTargetVolatile")                        \
   template(setTarget_signature,                       "(Ljava/lang/invoke/MethodHandle;)V")       \
@@ -697,7 +697,7 @@
                                                                                                                   \
   /* CDS */                                                                                                       \
   template(dumpSharedArchive,                               "dumpSharedArchive")                                  \
-  template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)V")                             \
+  template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)Ljava/lang/String;")            \
   template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
   template(generateLambdaFormHolderClasses_signature,       "([Ljava/lang/String;)[Ljava/lang/Object;")           \
   template(java_lang_invoke_Invokers_Holder,                "java/lang/invoke/Invokers$Holder")                   \
