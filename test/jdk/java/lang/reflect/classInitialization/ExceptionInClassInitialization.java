@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @build Initializer Test ExceptionInClassInitialization
  * @run main ExceptionInClassInitialization
- * @summary ensure InvoacationTargetException thrown due to the initialization of
+ * @summary ensure InvocationTargetException thrown due to the initialization of
  *          the declaring class wrapping with the proper cause
  */
 
