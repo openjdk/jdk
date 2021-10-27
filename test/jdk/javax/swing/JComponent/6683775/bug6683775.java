@@ -47,6 +47,7 @@ public class bug6683775 {
             SIZE = 200;
 
     static JFrame testFrame;
+    static JFrame backgroundFrame;
     static BufferedImage capture;
 
     public static void main(String[] args) throws Exception {
@@ -60,7 +61,7 @@ public class bug6683775 {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 testFrame = new JFrame(gc);
-                JFrame backgroundFrame = new JFrame("Background frame");
+                backgroundFrame = new JFrame("Background frame");
                 backgroundFrame.setUndecorated(true);
                 JPanel panel = new JPanel();
                 panel.setBackground(Color.RED);
@@ -87,6 +88,7 @@ public class bug6683775 {
 
         } finally {
             SwingUtilities.invokeAndWait(testFrame::dispose);
+            SwingUtilities.invokeAndWait(backgroundFrame::dispose);
         }
 
         int redRGB = Color.RED.getRGB();
