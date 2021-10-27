@@ -709,7 +709,7 @@ TEST_VM(os, pagesizes_test_print) {
   ASSERT_EQ(strcmp(expected, buffer), 0);
 }
 
-#if defined(__APPLE__) && !defined(AARCH64)  // See JDK-8273967.
+#if defined(__APPLE__)  // See JDK-8273967.
   TEST_VM(os, DISABLED_dll_address_to_function_and_library_name) {
 #else
   TEST_VM(os, dll_address_to_function_and_library_name) {
