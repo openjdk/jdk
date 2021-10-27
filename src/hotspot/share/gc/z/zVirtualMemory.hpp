@@ -71,7 +71,7 @@ public:
   bool is_initialized() const;
 
   size_t reserved() const;
-  uintptr_t peek_alloc_low_address() const;
+  uintptr_t lowest_available_address() const;
 
   ZVirtualMemory alloc(size_t size, bool force_low_address);
   void free(const ZVirtualMemory& vmem);

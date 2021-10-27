@@ -567,7 +567,7 @@ bool ZPageAllocator::should_defragment(const ZPage* page) const {
   // a lower address is available.
   return page->type() == ZPageTypeSmall &&
          page->start() >= _virtual.reserved() / 2 &&
-         page->start() > _virtual.peek_alloc_low_address();
+         page->start() > _virtual.lowest_available_address();
 }
 
 bool ZPageAllocator::is_alloc_satisfied(ZPageAllocation* allocation) const {
