@@ -46,9 +46,9 @@ public class Loader {
         lc.login();
 
         // LoginContext creates the only one instance of LoginModule,
-        // which ClassName is specified in the JAAS login config file. 
+        // which ClassName is specified in the JAAS login config file.
         // So SecondLoginModule, that is an implementation of LoginModule service,
-        // wasn't instantiated. 
+        // wasn't instantiated.
         if (SecondLoginModule.isLoaded && !FirstLoginModule.isLoaded) {
             throw new Exception();
         }
