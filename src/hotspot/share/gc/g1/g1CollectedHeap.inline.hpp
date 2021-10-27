@@ -189,7 +189,7 @@ void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* 
 }
 
 void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
-  _region_attr.set_has_remset(r->hrm_index(), r->rem_set()->is_tracked());
+  _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {

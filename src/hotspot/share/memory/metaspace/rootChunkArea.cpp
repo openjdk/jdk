@@ -481,16 +481,6 @@ RootChunkAreaLUT::~RootChunkAreaLUT() {
   FREE_C_HEAP_ARRAY(RootChunkArea, _arr);
 }
 
-// Returns true if all areas in this area table are free (only contain free chunks).
-bool RootChunkAreaLUT::is_free() const {
-  for (int i = 0; i < _num; i++) {
-    if (!_arr[i].is_free()) {
-      return false;
-    }
-  }
-  return true;
-}
-
 #ifdef ASSERT
 
 void RootChunkAreaLUT::verify() const {
