@@ -308,7 +308,7 @@ public class TestFileObjectOf extends TestRunner {
             return false;
         }
 
-        private void handleDeclaration(Element el) {
+        void handleDeclaration(Element el) {
             Elements elements = processingEnv.getElementUtils();
             JavaFileObject fileObjects = elements.getFileObjectOf(el);
             System.out.println(el.getSimpleName() + ": " + (fileObjects != null ? fileObjects.toUri().toString() : "<null>"));
