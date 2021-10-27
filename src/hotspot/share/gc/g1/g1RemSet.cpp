@@ -1289,7 +1289,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       r->rem_set()->set_state_complete();
 #ifdef ASSERT
       G1HeapRegionAttr region_attr = g1h->region_attr(r->hrm_index());
-      assert(region_attr.needs_remset_update(), "must be");
+      assert(region_attr.remset_is_tracked(), "must be");
 #endif
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
 

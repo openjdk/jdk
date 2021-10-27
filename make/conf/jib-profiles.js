@@ -559,7 +559,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             "ANT_HOME": input.get("ant", "home_path")
         }
     };
-    [ "linux-x64", "macosx-x64", "windows-x64"]
+    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64"]
         .forEach(function (name) {
             var maketestName = name + "-testmake";
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
@@ -580,6 +580,17 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64-zero": {
             target_os: "linux",
             target_cpu: "x64",
+            dependencies: ["devkit", "gtest"],
+            configure_args: concat(common.configure_args_64bit, [
+                "--with-zlib=system",
+                "--with-jvm-variants=zero",
+                "--enable-libffi-bundling"
+            ])
+        },
+
+        "linux-aarch64-zero": {
+            target_os: "linux",
+            target_cpu: "aarch64",
             dependencies: ["devkit", "gtest"],
             configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",

@@ -51,10 +51,10 @@ class G1CardSetConfiguration {
   uint _inline_ptr_bits_per_card;
 
   uint _num_cards_in_array;
-  uint _num_cards_in_howl_bitmap;
   uint _num_buckets_in_howl;
   uint _max_cards_in_card_set;
   uint _cards_in_howl_threshold;
+  uint _num_cards_in_howl_bitmap;
   uint _cards_in_howl_bitmap_threshold;
   uint _log2_num_cards_in_howl_bitmap;
   size_t _bitmap_hash_mask;
@@ -63,6 +63,13 @@ class G1CardSetConfiguration {
 
   G1CardSetAllocOptions* _card_set_alloc_options;
 
+  G1CardSetConfiguration(uint inline_ptr_bits_per_card,
+                         uint num_cards_in_array,
+                         double cards_in_bitmap_threshold_percent,
+                         uint num_buckets_in_howl,
+                         double cards_in_howl_threshold_percent,
+                         uint max_cards_in_card_set,
+                         uint log2_card_region_per_heap_region);
   void init_card_set_alloc_options();
 
   void log_configuration();
@@ -71,11 +78,11 @@ public:
   // Initialize card set configuration from globals.
   G1CardSetConfiguration();
   // Initialize card set configuration from parameters.
-  G1CardSetConfiguration(uint inline_ptr_bits_per_card,
-                         uint num_cards_in_array,
-                         double cards_in_bitmap_threshold,
+  // Testing only.
+  G1CardSetConfiguration(uint num_cards_in_array,
+                         double cards_in_bitmap_threshold_percent,
                          uint max_buckets_in_howl,
-                         double cards_in_howl_threshold,
+                         double cards_in_howl_threshold_percent,
                          uint max_cards_in_cardset,
                          uint log2_card_region_per_region);
 

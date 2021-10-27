@@ -72,14 +72,7 @@ static jclass sjc_CAccessible = NULL;
             return children;
         }
     }
-
-    return [NSArray arrayWithObject:[CommonComponentAccessibility createWithParent:self
-                                                                        accessible:self->fAccessible
-                                                                              role:self->fJavaRole
-                                                                             index:self->fIndex
-                                                                           withEnv:env
-                                                                          withView:self->fView
-                                                                         isWrapped:YES]];
+    return [super accessibilityChildren];
 }
 
 - (NSInteger)accessibilityDisclosureLevel

@@ -39,6 +39,9 @@ class outputStream;
 // Collects G1CardSetAllocator options/heuristics. Called by G1CardSetAllocator
 // to determine the next size of the allocated G1CardSetBuffer.
 class G1CardSetAllocOptions : public G1SegmentedArrayAllocOptions {
+  static const uint MinimumBufferSize = 8;
+  static const uint MaximumBufferSize =  UINT_MAX / 2;
+
   uint exponential_expand(uint prev_num_elems) const {
     return clamp(prev_num_elems * 2, _initial_num_elems, _max_num_elems);
   }

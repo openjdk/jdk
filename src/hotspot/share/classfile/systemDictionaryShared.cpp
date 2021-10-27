@@ -1598,6 +1598,28 @@ void SystemDictionaryShared::restore_dumptime_tables() {
   _cloned_dumptime_lambda_proxy_class_dictionary = NULL;
 }
 
+class CleanupDumpTimeLambdaProxyClassTable: StackObj {
+ public:
+  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    assert_lock_strong(DumpTimeTable_lock);
+    for (int i = 0; i < info._proxy_klasses->length(); i++) {
+      InstanceKlass* ik = info._proxy_klasses->at(i);
+      if (!ik->can_be_verified_at_dumptime()) {
+        info._proxy_klasses->remove_at(i);
+      }
+    }
+    return info._proxy_klasses->length() == 0 ? true /* delete the node*/ : false;
+  }
+};
+
+void SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary() {
+  assert_lock_strong(DumpTimeTable_lock);
+  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
+    _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
+  }
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 
 class ArchivedMirrorPatcher {

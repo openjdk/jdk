@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "runtime/prefetch.hpp"
 
 
-inline void Prefetch::read (void *loc, intx interval) {
+inline void Prefetch::read (const void *loc, intx interval) {
 #ifdef AMD64
   __asm__ ("prefetcht0 (%0,%1,1)" : : "r" (loc), "r" (interval));
 #endif // AMD64
