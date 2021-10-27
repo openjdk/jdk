@@ -1391,7 +1391,7 @@ bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
 
 objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
-  int size = objArrayOopDesc::object_size(length);
+  size_t size = objArrayOopDesc::object_size(length);
   Klass* ak = array_klass(n, CHECK_NULL);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
@@ -1416,7 +1416,7 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
   bool has_finalizer_flag = has_finalizer(); // Query before possible GC
-  int size = size_helper();  // Query before forming handle.
+  size_t size = size_helper();  // Query before forming handle.
 
   instanceOop i;
 
@@ -3545,7 +3545,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     }
   }
 
-  st->print_cr(BULLET"---- fields (total size %d words):", oop_size(obj));
+  st->print_cr(BULLET"---- fields (total size " SIZE_FORMAT " words):", oop_size(obj));
   FieldPrinter print_field(st, obj);
   print_nonstatic_fields(&print_field);
 
@@ -3555,7 +3555,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
     Klass* real_klass = java_lang_Class::as_Klass(obj);
     if (real_klass != NULL && real_klass->is_instance_klass()) {
-      st->print_cr(BULLET"---- static fields (%d words):", java_lang_Class::static_oop_field_count(obj));
+      st->print_cr(BULLET"---- static fields (%d):", java_lang_Class::static_oop_field_count(obj));
       InstanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
     }
   } else if (this == vmClasses::MethodType_klass()) {
