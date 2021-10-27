@@ -87,6 +87,7 @@ public class TestG1HeapRegionSize {
       checkG1HeapRegionSize(new String[] { "-Xmx4096m", "-XX:G1HeapRegionSize=64m" }, 64*M, 0);
       checkG1HeapRegionSize(new String[] { "-Xmx4096m", "-XX:G1HeapRegionSize=512m" }, 512*M, 0);
       checkG1HeapRegionSize(new String[] { "-Xmx4096m", "-XX:G1HeapRegionSize=1024m" }, 512*M, 1);
+      checkG1HeapRegionSize(new String[] { "-Xmx128g" }, 32*M, 0);
     } else {
       checkG1HeapRegionSize(new String[] { "-Xmx256m", "-XX:G1HeapRegionSize=64m" }, 64*M, 1);
     }
