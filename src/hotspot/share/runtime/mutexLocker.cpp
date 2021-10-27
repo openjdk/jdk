@@ -278,7 +278,7 @@ void mutex_init() {
   def(AdapterHandlerLibrary_lock   , PaddedMutex  , safepoint);
 
   def(Heap_lock                    , PaddedMonitor, safepoint); // Doesn't safepoint check during termination.
-  def(JfieldIdCreation_lock        , PaddedMutex  , safepoint);  // jfieldID, Used in VM_Operation
+  def(JfieldIdCreation_lock        , PaddedMutex  , safepoint);
 
   def(CompiledIC_lock              , PaddedMutex  , nosafepoint);  // locks VtableStubs_lock, InlineCacheBuffer_lock
   def(MethodCompileQueue_lock      , PaddedMonitor, safepoint);
