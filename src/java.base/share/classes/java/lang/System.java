@@ -2335,7 +2335,7 @@ public final class System {
             public Module defineModule(ClassLoader loader,
                                        ModuleDescriptor descriptor,
                                        URI uri) {
-                return new Module(null, loader, descriptor, uri, true);
+                return new Module(null, loader, descriptor, uri);
             }
             public Module defineUnnamedModule(ClassLoader loader) {
                 return new Module(loader);

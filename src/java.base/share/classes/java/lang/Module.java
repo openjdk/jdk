@@ -120,8 +120,16 @@ public final class Module implements AnnotatedElement {
     Module(ModuleLayer layer,
            ClassLoader loader,
            ModuleDescriptor descriptor,
+           URI uri)
+    {
+        this(layer, loader, descriptor, uri, true);
+    }
+
+    Module(ModuleLayer layer,
+           ClassLoader loader,
+           ModuleDescriptor descriptor,
            URI uri,
-           boolean defineToVM)
+           boolean performNativeUpdate)
     {
         this.layer = layer;
         this.name = descriptor.name();
@@ -135,7 +143,7 @@ public final class Module implements AnnotatedElement {
         String vs = Objects.toString(version, null);
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
-        if (defineToVM) {
+        if (performNativeUpdate) {
             defineModule0(this, isOpen, vs, loc, packages);
         }
         if (loader == null || loader == ClassLoaders.platformClassLoader()) {
@@ -1136,7 +1144,7 @@ public final class Module implements AnnotatedElement {
     private static Map<String, Module> defineModules(Configuration cf,
                                                      Function<String, ClassLoader> clf,
                                                      ModuleLayer layer,
-                                                     boolean defineToVM,
+                                                     boolean performNativeUpdate,
                                                      boolean isBootLayerOverride)
     {
         boolean isBootLayer = (ModuleLayer.boot() == null) || isBootLayerOverride;
@@ -1191,7 +1199,7 @@ public final class Module implements AnnotatedElement {
                 m = Object.class.getModule();
             } else {
                 URI uri = mref.location().orElse(null);
-                m = new Module(layer, loader, descriptor, uri, defineToVM);
+                m = new Module(layer, loader, descriptor, uri, performNativeUpdate);
             }
             nameToModule.put(name, m);
             modules[index] = m;
@@ -1231,7 +1239,7 @@ public final class Module implements AnnotatedElement {
                 reads.add(m2);
 
                 // update VM view
-                if (defineToVM) {
+                if (performNativeUpdate) {
                     addReads0(m, m2);
                 }
             }
@@ -1239,16 +1247,16 @@ public final class Module implements AnnotatedElement {
 
             // automatic modules read all unnamed modules
             if (descriptor.isAutomatic()) {
-                m.implAddReads(ALL_UNNAMED_MODULE, defineToVM);
+                m.implAddReads(ALL_UNNAMED_MODULE, performNativeUpdate);
             }
 
             // exports and opens, skipped for open and automatic
             if (!descriptor.isOpen() && !descriptor.isAutomatic()) {
                 if (isBootLayer && descriptor.opens().isEmpty()) {
                     // no open packages, no qualified exports to modules in parent layers
-                    initExports(m, nameToModule, defineToVM);
+                    initExports(m, nameToModule, performNativeUpdate);
                 } else {
-                    initExportsAndOpens(m, nameToSource, nameToModule, layer.parents(), defineToVM);
+                    initExportsAndOpens(m, nameToSource, nameToModule, layer.parents(), performNativeUpdate);
                 }
             }
         }
