@@ -189,7 +189,7 @@ public final class Float extends Number
      * These integers are the <em>significand</em> and
      * the <em>exponent</em>, respectively, of the decimal.
      * The <em>length</em> of the decimal is the (unique)
-     * integer <i>n</i> meeting
+     * positive integer <i>n</i> meeting
      * 10<sup><i>n</i>-1</sup> &le; <i>d</i> &lt; 10<sup><i>n</i></sup>.
      *
      * <p>The decimal <i>d</i><sub><code>v</code></sub>
@@ -217,7 +217,8 @@ public final class Float extends Number
      * Further, let <i>e</i> = <i>n</i> + <i>i</i> - 1 and let
      * <i>d</i><sub>1</sub>&hellip;<i>d</i><sub><i>n</i></sub>
      * be the usual decimal expansion of the significand.
-     * Note that <i>d</i><sub>1</sub> &ne; 0 &ne; <i>d</i><sub><i>n</i></sub>.
+     * Note that <i>d</i><sub>1</sub> &ne; 0
+     * and <i>d</i><sub><i>n</i></sub> &ne; 0.
      * <ul>
      * <li>Case -3 &le; <i>e</i> &lt; 0:
      * <i>d</i><sub><code>v</code></sub> is formatted as
