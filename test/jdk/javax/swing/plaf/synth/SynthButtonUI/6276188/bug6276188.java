@@ -37,46 +37,59 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.plaf.synth.*;
 
-public class bug6276188 extends JFrame {
+public class bug6276188 {
 
     private static JButton button;
     private static Point p;
+    private static JFrame testFrame;
 
     public static void main(String[] args) throws Throwable {
-        SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
-        lookAndFeel.load(bug6276188.class.getResourceAsStream("bug6276188.xml"), bug6276188.class);
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
 
-        UIManager.setLookAndFeel(lookAndFeel);
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                JFrame testFrame = new JFrame();
-                testFrame.setLayout(new BorderLayout());
-                testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                testFrame.add(BorderLayout.CENTER, button = new JButton());
+            SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
+            lookAndFeel.load(bug6276188.class.getResourceAsStream("bug6276188.xml"), bug6276188.class);
+            UIManager.setLookAndFeel(lookAndFeel);
 
-                testFrame.setSize(new Dimension(320, 200));
-                testFrame.setVisible(true);
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    testFrame = new JFrame();
+                    testFrame.setLayout(new BorderLayout());
+                    testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    testFrame.add(BorderLayout.CENTER, button = new JButton());
+
+                    testFrame.setSize(new Dimension(320, 200));
+                    testFrame.setLocationRelativeTo(null);
+                    testFrame.setVisible(true);
+                }
+            });
+
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            p = Util.getCenterPoint(button);
+	    System.out.println("Button center point: " + p);
+
+            robot.mouseMove(p.x , p.y);
+            robot.waitForIdle();
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+
+            Color color = robot.getPixelColor(p.x-10, p.y-10);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+            boolean red = color.getRed() > 0 && color.getGreen() == 0 && color.getBlue() == 0;
+            if (!red) {
+                System.err.println("Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
+                throw new RuntimeException("Synth ButtonUI does not handle PRESSED & MOUSE_OVER state");
             }
-        });
-
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        robot.waitForIdle();
-        robot.delay(200);
-
-        p = Util.getCenterPoint(button);
-
-        robot.mouseMove(p.x , p.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-        robot.delay(1000);
-
-        Color color = robot.getPixelColor(p.x, p.y);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        boolean red = color.getRed() > 0 && color.getGreen() == 0 && color.getBlue() == 0;
-        if (!red) {
-            System.err.println("Red: " + color.getRed() + "; Green: " + color.getGreen() + "; Blue: " + color.getBlue());
-            throw new RuntimeException("Synth ButtonUI does not handle PRESSED & MOUSE_OVER state");
+	} finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (testFrame != null) {
+                    testFrame.dispose();
+                }
+            });
         }
     }
 }
