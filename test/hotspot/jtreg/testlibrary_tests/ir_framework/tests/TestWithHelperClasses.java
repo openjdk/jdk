@@ -30,7 +30,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @requires vm.flagless
+ * @requires vm.flagless & vm.compiler1.enabled & vm.compiler2.enabled
  * @summary Test the framework with helper classes.
  * @library /test/lib /
  * @run driver ir_framework.tests.TestWithHelperClasses

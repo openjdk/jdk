@@ -262,6 +262,7 @@ public final class Main {
             ADDPROVIDER, PROVIDERCLASS, PROVIDERPATH, V),
         SHOWINFO("showinfo.command.help",
             TLS, V),
+        VERSION("Prints.the.program.version"),
 
         // Undocumented start here, KEYCLONE is used a marker in -help;
 
@@ -717,7 +718,7 @@ public final class Main {
     }
 
     boolean isKeyStoreRelated(Command cmd) {
-        return cmd != PRINTCERTREQ && cmd != SHOWINFO;
+        return cmd != PRINTCERTREQ && cmd != SHOWINFO && cmd != VERSION;
     }
 
     /**
@@ -1337,6 +1338,8 @@ public final class Main {
             doPrintCRL(filename, out);
         } else if (command == SHOWINFO) {
             doShowInfo();
+        } else if (command == VERSION) {
+            doPrintVersion();
         }
 
         // If we need to save the keystore, do so.
@@ -2792,6 +2795,10 @@ public final class Main {
         } else {
             System.out.println(rb.getString("showinfo.no.option"));
         }
+    }
+
+    private void doPrintVersion() {
+        System.out.println("keytool " + System.getProperty("java.version"));
     }
 
     private Collection<? extends Certificate> generateCertificates(InputStream in)

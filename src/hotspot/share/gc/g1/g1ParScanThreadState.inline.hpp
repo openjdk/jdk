@@ -128,13 +128,13 @@ template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegi
 
 #ifdef ASSERT
   HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
-  assert(region_attr.needs_remset_update() == hr_obj->rem_set()->is_tracked(),
+  assert(region_attr.remset_is_tracked() == hr_obj->rem_set()->is_tracked(),
          "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
-         BOOL_TO_STR(region_attr.needs_remset_update()),
+         BOOL_TO_STR(region_attr.remset_is_tracked()),
          BOOL_TO_STR(hr_obj->rem_set()->is_tracked()),
          hr_obj->hrm_index());
 #endif
-  if (!region_attr.needs_remset_update()) {
+  if (!region_attr.remset_is_tracked()) {
     return;
   }
   size_t card_index = ct()->index_for(p);

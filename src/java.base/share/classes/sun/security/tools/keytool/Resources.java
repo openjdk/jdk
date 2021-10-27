@@ -97,6 +97,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Changes.the.store.password.of.a.keystore",
                 "Changes the store password of a keystore"}, //-storepasswd
         {"showinfo.command.help", "Displays security-related information"},
+        {"Prints.the.program.version", "Prints the program version"},
 
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",

@@ -134,43 +134,6 @@ Metachunk*  VirtualSpaceList::allocate_root_chunk() {
   return c;
 }
 
-// Attempts to purge nodes. This will remove and delete nodes which only contain free chunks.
-// The free chunks are removed from the freelists before the nodes are deleted.
-// Return number of purged nodes.
-int VirtualSpaceList::purge(FreeChunkListVector* freelists) {
-  assert_lock_strong(Metaspace_lock);
-  UL(debug, "purging.");
-
-  VirtualSpaceNode* vsn = _first_node;
-  VirtualSpaceNode* prev_vsn = NULL;
-  int num = 0, num_purged = 0;
-  while (vsn != NULL) {
-    VirtualSpaceNode* next_vsn = vsn->next();
-    bool purged = vsn->attempt_purge(freelists);
-    if (purged) {
-      // Note: from now on do not dereference vsn!
-      UL2(debug, "purged node @" PTR_FORMAT ".", p2i(vsn));
-      if (_first_node == vsn) {
-        _first_node = next_vsn;
-      }
-      DEBUG_ONLY(vsn = (VirtualSpaceNode*)((uintptr_t)(0xdeadbeef));)
-      if (prev_vsn != NULL) {
-        prev_vsn->set_next(next_vsn);
-      }
-      num_purged++;
-      _nodes_counter.decrement();
-    } else {
-      prev_vsn = vsn;
-    }
-    vsn = next_vsn;
-    num ++;
-  }
-
-  UL2(debug, "purged %d nodes (before: %d, now: %d)",
-      num_purged, num, num_nodes());
-  return num_purged;
-}
-
 // Print all nodes in this space list.
 void VirtualSpaceList::print_on(outputStream* st) const {
   MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);

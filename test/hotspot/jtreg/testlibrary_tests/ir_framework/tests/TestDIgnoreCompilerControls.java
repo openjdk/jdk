@@ -24,6 +24,7 @@
 package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.driver.TestVMException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -39,51 +40,43 @@ import sun.hotspot.WhiteBox;
  */
 
 public class TestDIgnoreCompilerControls {
-    public static void main(String[] args) throws Exception {
-        if (args.length != 0) {
-            TestFramework.run();
-        } else {
-            OutputAnalyzer oa = run("true");
-            oa.shouldHaveExitValue(0);
-            oa = run("false");
-            oa.shouldNotHaveExitValue(0);
-            Asserts.assertTrue(oa.getOutput().contains("fail run"), "did not find run: " + oa.getOutput());
-            Asserts.assertTrue(oa.getOutput().contains("fail check"), "did not find check" + oa.getOutput());
+    public static void main(String[] args) {
+        // Ignore Compiler Control
+        TestFramework.runWithFlags("-XX:CompileCommand=option,ir_framework.tests.TestDIgnoreCompilerControls::test2,bool,PrintInlining,true",
+                                   "-DIgnoreCompilerControls=true");
+        Asserts.assertFalse(TestFramework.getLastTestVMOutput().contains("don't inline by annotation"), "should have inlined: "
+                                                                                                        + TestFramework.getLastTestVMOutput());
+        // Don't ignore compiler control, sanity check
+        try {
+            TestFramework.runWithFlags("-XX:CompileCommand=option,ir_framework.tests.TestDIgnoreCompilerControls::test2,bool,PrintInlining,true",
+                                       "-DIgnoreCompilerControls=false");
+            throw new RuntimeException("should throw exception");
+        } catch (TestVMException e) {
+            Asserts.assertTrue(e.getExceptionInfo().contains("fail run"), "did not find exception with msg \"fail run\"");
+            Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("don't inline by annotation"), "should not have inlined: " + TestFramework.getLastTestVMOutput());
         }
     }
 
-    private static OutputAnalyzer run(String flagValue) throws Exception {
-        OutputAnalyzer oa;
-        ProcessBuilder process = ProcessTools.createJavaProcessBuilder(
-                "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
-                "-Dtest.vm.opts=-DIgnoreCompilerControls=" + flagValue,
-                "ir_framework.tests.TestDIgnoreCompilerControls", flagValue);
-        oa = ProcessTools.executeProcess(process);
-        return oa;
-    }
-
     @Test
-    public void test() { }
+    public void test() {}
+
+    @ForceCompile
+    public void ignoredForceCompile() {}
 
     @Run(test = "test")
     @Warmup(10000)
     public void run(RunInfo info) throws NoSuchMethodException {
         if (!info.isWarmUp()) {
-            // Should be compiled with -DIgnoreCompilerControls=true
-            Asserts.assertTrue(WhiteBox.getWhiteBox().isMethodCompiled(getClass().getDeclaredMethod("run", RunInfo.class)), "fail run");
+            Asserts.assertFalse(WhiteBox.getWhiteBox().isMethodCompiled(getClass().getDeclaredMethod("ignoredForceCompile")), "fail run");
         }
     }
 
+    @DontInline
+    public void ignoreDontInline() {}
+
     @Test
     @Warmup(10000)
-    public void test2() {}
-
-
-    @Check(test = "test2")
-    public void check(TestInfo info) throws NoSuchMethodException {
-        if (!info.isWarmUp()) {
-            // Should be compiled with -DIgnoreCompilerControls=true
-            Asserts.assertTrue(WhiteBox.getWhiteBox().isMethodCompiled(getClass().getDeclaredMethod("check", TestInfo.class)), "fail check");
-        }
+    public void test2() {
+        ignoreDontInline(); // Is inlined and therefore not compiled separately.
     }
 }
