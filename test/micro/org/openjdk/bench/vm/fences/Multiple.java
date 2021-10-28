@@ -43,6 +43,22 @@ public class Multiple {
     }
 
     @Benchmark
+    public void loadLoad() {
+        VarHandle.loadLoadFence();
+        VarHandle.loadLoadFence();
+        VarHandle.loadLoadFence();
+        VarHandle.loadLoadFence();
+    }
+
+    @Benchmark
+    public void storeStore() {
+        VarHandle.storeStoreFence();
+        VarHandle.storeStoreFence();
+        VarHandle.storeStoreFence();
+        VarHandle.storeStoreFence();
+    }
+
+    @Benchmark
     public void acquire() {
         VarHandle.acquireFence();
         VarHandle.acquireFence();
@@ -56,14 +72,6 @@ public class Multiple {
         VarHandle.releaseFence();
         VarHandle.releaseFence();
         VarHandle.releaseFence();
-    }
-
-    @Benchmark
-    public void storeStore() {
-        VarHandle.storeStoreFence();
-        VarHandle.storeStoreFence();
-        VarHandle.storeStoreFence();
-        VarHandle.storeStoreFence();
     }
 
     @Benchmark

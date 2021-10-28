@@ -49,6 +49,30 @@ public class MultipleWithLoads {
     }
 
     @Benchmark
+    public int loadLoad() {
+        VarHandle.loadLoadFence();
+        int t1 = x + y + z;
+        VarHandle.loadLoadFence();
+        int t2 = x + y + z;
+        VarHandle.loadLoadFence();
+        int t3 = x + y + z;
+        VarHandle.loadLoadFence();
+        return t1 + t2 + t3;
+    }
+
+    @Benchmark
+    public int storeStore() {
+        VarHandle.storeStoreFence();
+        int t1 = x + y + z;
+        VarHandle.storeStoreFence();
+        int t2 = x + y + z;
+        VarHandle.storeStoreFence();
+        int t3 = x + y + z;
+        VarHandle.storeStoreFence();
+        return t1 + t2 + t3;
+    }
+
+    @Benchmark
     public int acquire() {
         VarHandle.acquireFence();
         int t1 = x + y + z;
@@ -69,18 +93,6 @@ public class MultipleWithLoads {
         VarHandle.releaseFence();
         int t3 = x + y + z;
         VarHandle.releaseFence();
-        return t1 + t2 + t3;
-    }
-
-    @Benchmark
-    public int storeStore() {
-        VarHandle.storeStoreFence();
-        int t1 = x + y + z;
-        VarHandle.storeStoreFence();
-        int t2 = x + y + z;
-        VarHandle.storeStoreFence();
-        int t3 = x + y + z;
-        VarHandle.storeStoreFence();
         return t1 + t2 + t3;
     }
 

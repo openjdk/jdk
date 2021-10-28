@@ -48,6 +48,28 @@ public class MultipleWithStores {
     }
 
     @Benchmark
+    public void loadLoad() {
+        VarHandle.loadLoadFence();
+        x = 1;
+        VarHandle.loadLoadFence();
+        y = 1;
+        VarHandle.loadLoadFence();
+        z = 1;
+        VarHandle.loadLoadFence();
+    }
+
+    @Benchmark
+    public void storeStore() {
+        VarHandle.storeStoreFence();
+        x = 1;
+        VarHandle.storeStoreFence();
+        y = 1;
+        VarHandle.storeStoreFence();
+        z = 1;
+        VarHandle.storeStoreFence();
+    }
+
+    @Benchmark
     public void acquire() {
         VarHandle.releaseFence();
         x = 1;
@@ -67,17 +89,6 @@ public class MultipleWithStores {
         VarHandle.releaseFence();
         z = 1;
         VarHandle.releaseFence();
-    }
-
-    @Benchmark
-    public void storeStore() {
-        VarHandle.storeStoreFence();
-        x = 1;
-        VarHandle.storeStoreFence();
-        y = 1;
-        VarHandle.storeStoreFence();
-        z = 1;
-        VarHandle.storeStoreFence();
     }
 
     @Benchmark

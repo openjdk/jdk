@@ -43,6 +43,16 @@ public class Single {
     }
 
     @Benchmark
+    public void loadLoad() {
+        VarHandle.loadLoadFence();
+    }
+
+    @Benchmark
+    public void storeStoreFence() {
+        VarHandle.storeStoreFence();
+    }
+
+    @Benchmark
     public void acquireFence() {
         VarHandle.acquireFence();
     }
@@ -50,11 +60,6 @@ public class Single {
     @Benchmark
     public void releaseFence() {
         VarHandle.releaseFence();
-    }
-
-    @Benchmark
-    public void storeStoreFence() {
-        VarHandle.storeStoreFence();
     }
 
     @Benchmark
